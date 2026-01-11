@@ -1,0 +1,247 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Sparkles,
+  PenLine,
+  MessageSquareText,
+  Lightbulb,
+  FileText,
+  Calendar,
+  BarChart3,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+
+const navigation = [
+  {
+    name: "Generator",
+    href: "/dashboard/generator",
+    icon: Sparkles,
+    description: "Create posts from ideas",
+  },
+  {
+    name: "Editor",
+    href: "/dashboard/editor",
+    icon: PenLine,
+    description: "Write and edit posts",
+  },
+  {
+    name: "Reddit Import",
+    href: "/dashboard/reddit",
+    icon: MessageSquareText,
+    description: "Convert Reddit posts",
+  },
+  {
+    name: "Ideas",
+    href: "/dashboard/ideas",
+    icon: Lightbulb,
+    description: "Get content ideas",
+  },
+  {
+    name: "My Posts",
+    href: "/dashboard/posts",
+    icon: FileText,
+    description: "Manage all posts",
+  },
+  {
+    name: "Calendar",
+    href: "/dashboard/calendar",
+    icon: Calendar,
+    description: "Schedule content",
+  },
+  {
+    name: "Analytics",
+    href: "/dashboard/analytics",
+    icon: BarChart3,
+    description: "Track performance",
+  },
+  {
+    name: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
+    description: "API keys & profile",
+  },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <>
+      {/* Mobile Sidebar Toggle */}
+      <button
+        onClick={() => setIsMobileOpen(true)}
+        className="lg:hidden fixed bottom-4 left-4 z-50 w-14 h-14 rounded-full bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
+        aria-label="Open menu"
+      >
+        <Sparkles className="w-6 h-6" />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
+          isCollapsed ? "lg:w-20" : "lg:w-64",
+          isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex items-center gap-2",
+              isCollapsed && "lg:justify-center"
+            )}
+          >
+            <div className="w-9 h-9 rounded-lg bg-linkedin-gradient flex items-center justify-center flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+            </div>
+            {!isCollapsed && (
+              <span className="text-lg font-bold">
+                Linked<span className="text-linkedin">Grow</span>
+              </span>
+            )}
+          </Link>
+
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
+            aria-label="Close menu"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Desktop Collapse Button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
+                  isActive
+                    ? "bg-linkedin/10 text-linkedin font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                  isCollapsed && "lg:justify-center lg:px-2"
+                )}
+                title={isCollapsed ? item.name : undefined}
+              >
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 flex-shrink-0",
+                    isActive && "text-linkedin"
+                  )}
+                />
+                {!isCollapsed && (
+                  <div className="flex-1 min-w-0">
+                    <span className="block truncate">{item.name}</span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {item.description}
+                    </span>
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Section */}
+        <div className="p-3 border-t border-border">
+          <div
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-lg bg-accent/50",
+              isCollapsed && "lg:justify-center lg:p-2"
+            )}
+          >
+            <div className="w-9 h-9 rounded-full bg-linkedin/20 flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 text-linkedin" />
+            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">John Doe</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  Creator Plan
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full mt-2 justify-start text-muted-foreground hover:text-destructive",
+              isCollapsed && "lg:justify-center"
+            )}
+          >
+            <LogOut className="w-4 h-4" />
+            {!isCollapsed && <span className="ml-2">Sign Out</span>}
+          </Button>
+        </div>
+      </aside>
+    </>
+  );
+}

@@ -1,0 +1,31 @@
+# LinkedGrow - Cloudflare Workers Configuration
+name = "linkedgrow"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Main worker entry point
+main = ".open-next/worker.js"
+
+# Environment variables (use wrangler secret for sensitive data)
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "linkedgrow-db"
+database_id = "4ad45ab9-2995-4ef2-8368-9e77ee39c63a"
+
+# KV Namespace for sessions and cache
+[[kv_namespaces]]
+binding = "KV"
+id = "81eb2d2d60614499b53acf5a51c9e20f"
+
+# Production environment
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"

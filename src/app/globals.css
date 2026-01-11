@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ===== Tailwind v4 Theme Configuration ===== */
+@theme {
+  /* Border radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* LinkedIn brand colors */
+  --color-linkedin: #0A66C2;
+  --color-linkedin-dark: #004182;
+  --color-linkedin-light: #70B5F9;
+
+  /* Semantic colors using light-dark() for auto theming */
+  --color-background: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
+  --color-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+
+  --color-card: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
+  --color-card-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+
+  --color-popover: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
+  --color-popover-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+
+  --color-primary: light-dark(hsl(210 100% 40%), hsl(210 100% 50%));
+  --color-primary-foreground: light-dark(hsl(210 40% 98%), hsl(222.2 47.4% 11.2%));
+
+  --color-secondary: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
+  --color-secondary-foreground: light-dark(hsl(222.2 47.4% 11.2%), hsl(210 40% 98%));
+
+  --color-muted: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
+  --color-muted-foreground: light-dark(hsl(215.4 16.3% 46.9%), hsl(215 20.2% 65.1%));
+
+  --color-accent: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
+  --color-accent-foreground: light-dark(hsl(222.2 47.4% 11.2%), hsl(210 40% 98%));
+
+  --color-destructive: light-dark(hsl(0 84.2% 60.2%), hsl(0 62.8% 30.6%));
+  --color-destructive-foreground: hsl(210 40% 98%);
+
+  --color-border: light-dark(hsl(214.3 31.8% 91.4%), hsl(217.2 32.6% 17.5%));
+  --color-input: light-dark(hsl(214.3 31.8% 91.4%), hsl(217.2 32.6% 17.5%));
+  --color-ring: light-dark(hsl(210 100% 40%), hsl(210 100% 50%));
+
+  /* Chart colors */
+  --color-chart-1: light-dark(hsl(12 76% 61%), hsl(220 70% 50%));
+  --color-chart-2: light-dark(hsl(173 58% 39%), hsl(160 60% 45%));
+  --color-chart-3: light-dark(hsl(197 37% 24%), hsl(30 80% 55%));
+  --color-chart-4: light-dark(hsl(43 74% 66%), hsl(280 65% 60%));
+  --color-chart-5: light-dark(hsl(27 87% 67%), hsl(340 75% 55%));
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-in: slide-in 0.3s ease-out;
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Keyframes */
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(10, 102, 194, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(10, 102, 194, 0.6); }
+}
+
+/* ===== Base Styles ===== */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* ===== Custom Utilities ===== */
+
+/* Custom scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(to right, var(--color-primary), var(--color-linkedin));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass effect */
+.glass {
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+/* LinkedIn brand gradient */
+.bg-linkedin-gradient {
+  background: linear-gradient(to right, var(--color-linkedin), var(--color-linkedin-dark));
+}
+
+/* Mobile touch targets - minimum 44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area insets for mobile devices */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .safe-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  .safe-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
