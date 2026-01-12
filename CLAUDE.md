@@ -310,3 +310,15 @@ Based in Montreux, Switzerland. LinkedGrow is a product of DigiHold.
 - [ ] Content calendar view
 - [ ] Analytics dashboard
 - [ ] Weekly report toggle in settings
+
+## Claude Code Configuration
+
+### GitHub SSH Access
+
+SSH key is configured for Claude Code. The remote uses SSH:
+
+```
+git@github.com:DigiHold/LinkedGrow.git
+```
+
+Always use `git push origin main` - SSH authentication is automatic.
