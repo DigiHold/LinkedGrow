@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -7,44 +7,86 @@
 # Testing
 /coverage
 
-# Next.js
+# Next.js build
 /.next/
 /out/
-
-# Production
 /build
 
-# Misc
-.DS_Store
-*.pem
+# Environment files (NEVER commit these!)
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.*.local
+!.env.example
 
-# Debug
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Keys and certificates (NEVER commit these!)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account.json
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Local env files
-.env*.local
-.env
+pnpm-debug.log*
+logs/
+*.log
 
 # Vercel
 .vercel
 
-# TypeScript
+# Cloudflare
+.wrangler/
+.worker-next/
+.dev.vars
+.open-next/
+
+# TypeScript cache
 *.tsbuildinfo
 next-env.d.ts
 
-# Cloudflare
-.wrangler
-.worker-next
-.dev.vars
+# Misc
+*.bak
+*.tmp
+*.temp
+.cache/
 
-# IDE
-.idea
-.vscode
-*.swp
-*.swo
+# Test snapshots (optional - remove if you want to commit these)
+# __snapshots__/
 
-# Logs
-logs
-*.log
+# Local migrations (if using local dev db)
+migrations/
+
+# Package manager locks (keep package-lock.json, ignore others if not using)
+# yarn.lock
+# pnpm-lock.yaml
