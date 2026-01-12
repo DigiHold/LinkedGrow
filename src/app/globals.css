@@ -115,7 +115,14 @@
 }
 
 /* ===== Base Styles ===== */
-* {
+*,
+*::before,
+*::after {
+  border-color: transparent;
+}
+
+/* Only apply border color to elements with explicit borders */
+[class*="border"] {
   border-color: var(--color-border);
 }
 
