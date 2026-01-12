@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { PhotonImage, resize, SamplingFilter } from "@cf-wasm/photon";
+import sharp from "sharp";
 
 // Maximum image size for LinkedIn (5MB)
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -64,49 +64,39 @@ function extractKeywordsFromContent(postContent: string): string {
 }
 
 /**
- * Convert image to optimized WebP using Photon (works on Cloudflare Workers)
- * Photon strips ALL metadata when converting - LinkedIn won't detect AI-generated
+ * Convert image to optimized WebP using Sharp (works on Vercel)
+ * Sharp strips ALL metadata when converting - LinkedIn won't detect AI-generated
  */
 async function optimizeImageToWebP(base64Image: string): Promise<{ base64: string; sizeKB: number }> {
-  const imageBuffer = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+  const imageBuffer = Buffer.from(base64Image, "base64");
 
-  // Load image with Photon
-  let inputImage = PhotonImage.new_from_byteslice(imageBuffer);
-
-  // Convert to WebP (Photon automatically strips all metadata)
-  let webpBytes = inputImage.get_bytes_webp();
+  // Process with sharp - auto strips metadata
+  let webpBuffer = await sharp(imageBuffer)
+    .webp({ quality: 85 })
+    .toBuffer();
 
   // Check size - if too large, resize and try again
-  if (webpBytes.length > MAX_IMAGE_SIZE) {
-    // Resize to smaller dimensions
-    const resizedImage = resize(inputImage, 1600, 900, SamplingFilter.Lanczos3);
-    inputImage.free();
-    inputImage = resizedImage;
-    webpBytes = inputImage.get_bytes_webp();
+  if (webpBuffer.length > MAX_IMAGE_SIZE) {
+    webpBuffer = await sharp(imageBuffer)
+      .resize(1600, 900, { fit: "inside" })
+      .webp({ quality: 80 })
+      .toBuffer();
 
-    if (webpBytes.length > MAX_IMAGE_SIZE) {
-      // Try even smaller
-      const smallerImage = resize(inputImage, 1200, 675, SamplingFilter.Lanczos3);
-      inputImage.free();
-      inputImage = smallerImage;
-      webpBytes = inputImage.get_bytes_webp();
+    if (webpBuffer.length > MAX_IMAGE_SIZE) {
+      webpBuffer = await sharp(imageBuffer)
+        .resize(1200, 675, { fit: "inside" })
+        .webp({ quality: 75 })
+        .toBuffer();
 
-      if (webpBytes.length > MAX_IMAGE_SIZE) {
-        inputImage.free();
+      if (webpBuffer.length > MAX_IMAGE_SIZE) {
         throw new Error("Generated image exceeds 5MB limit. Please try a simpler prompt.");
       }
     }
   }
 
-  // Free memory
-  inputImage.free();
-
-  // Convert to base64
-  const base64 = btoa(String.fromCharCode(...webpBytes));
-
   return {
-    base64,
-    sizeKB: Number((webpBytes.length / 1024).toFixed(2)),
+    base64: webpBuffer.toString("base64"),
+    sizeKB: Number((webpBuffer.length / 1024).toFixed(2)),
   };
 }
 

@@ -7,59 +7,81 @@
   --radius-md: 0.625rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
 
   /* LinkedIn brand colors */
   --color-linkedin: #0A66C2;
   --color-linkedin-dark: #004182;
   --color-linkedin-light: #70B5F9;
 
+  /* Premium brand colors - Modern Teal/Cyan */
+  --color-brand: #0891b2;
+  --color-brand-dark: #0e7490;
+  --color-brand-light: #22d3ee;
+
+  /* Accent - Coral/Orange for CTAs */
+  --color-accent-cta: #f97316;
+  --color-accent-cta-dark: #ea580c;
+
+  /* Success green */
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+
   /* Semantic colors using light-dark() for auto theming */
-  --color-background: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
-  --color-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+  --color-background: light-dark(hsl(0 0% 100%), hsl(222 47% 6%));
+  --color-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
 
-  --color-card: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
-  --color-card-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+  --color-card: light-dark(hsl(0 0% 100%), hsl(222 47% 8%));
+  --color-card-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
 
-  --color-popover: light-dark(hsl(0 0% 100%), hsl(222.2 84% 4.9%));
-  --color-popover-foreground: light-dark(hsl(222.2 84% 4.9%), hsl(210 40% 98%));
+  --color-popover: light-dark(hsl(0 0% 100%), hsl(222 47% 8%));
+  --color-popover-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
 
-  --color-primary: light-dark(hsl(210 100% 40%), hsl(210 100% 50%));
-  --color-primary-foreground: light-dark(hsl(210 40% 98%), hsl(222.2 47.4% 11.2%));
+  --color-primary: light-dark(#0891b2, #22d3ee);
+  --color-primary-foreground: light-dark(hsl(210 40% 98%), hsl(222 47% 11%));
 
-  --color-secondary: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
-  --color-secondary-foreground: light-dark(hsl(222.2 47.4% 11.2%), hsl(210 40% 98%));
+  --color-secondary: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
+  --color-secondary-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
 
-  --color-muted: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
-  --color-muted-foreground: light-dark(hsl(215.4 16.3% 46.9%), hsl(215 20.2% 65.1%));
+  --color-muted: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
+  --color-muted-foreground: light-dark(hsl(215 16% 47%), hsl(215 20% 65%));
 
-  --color-accent: light-dark(hsl(210 40% 96.1%), hsl(217.2 32.6% 17.5%));
-  --color-accent-foreground: light-dark(hsl(222.2 47.4% 11.2%), hsl(210 40% 98%));
+  --color-accent: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
+  --color-accent-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
 
-  --color-destructive: light-dark(hsl(0 84.2% 60.2%), hsl(0 62.8% 30.6%));
+  --color-destructive: light-dark(hsl(0 84% 60%), hsl(0 63% 31%));
   --color-destructive-foreground: hsl(210 40% 98%);
 
-  --color-border: light-dark(hsl(214.3 31.8% 91.4%), hsl(217.2 32.6% 17.5%));
-  --color-input: light-dark(hsl(214.3 31.8% 91.4%), hsl(217.2 32.6% 17.5%));
-  --color-ring: light-dark(hsl(210 100% 40%), hsl(210 100% 50%));
+  --color-border: light-dark(hsl(214 32% 91%), hsl(217 33% 17%));
+  --color-input: light-dark(hsl(214 32% 91%), hsl(217 33% 17%));
+  --color-ring: light-dark(#0891b2, #22d3ee);
 
   /* Chart colors */
-  --color-chart-1: light-dark(hsl(12 76% 61%), hsl(220 70% 50%));
-  --color-chart-2: light-dark(hsl(173 58% 39%), hsl(160 60% 45%));
-  --color-chart-3: light-dark(hsl(197 37% 24%), hsl(30 80% 55%));
-  --color-chart-4: light-dark(hsl(43 74% 66%), hsl(280 65% 60%));
-  --color-chart-5: light-dark(hsl(27 87% 67%), hsl(340 75% 55%));
+  --color-chart-1: light-dark(#0891b2, #22d3ee);
+  --color-chart-2: light-dark(#10b981, #34d399);
+  --color-chart-3: light-dark(#f97316, #fb923c);
+  --color-chart-4: light-dark(#8b5cf6, #a78bfa);
+  --color-chart-5: light-dark(#ec4899, #f472b6);
 
   /* Animations */
-  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-fade-in: fade-in 0.6s ease-out;
+  --animate-fade-in-up: fade-in-up 0.6s ease-out;
   --animate-slide-in: slide-in 0.3s ease-out;
   --animate-shimmer: shimmer 2s infinite;
   --animate-float: float 3s ease-in-out infinite;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-scale-in: scale-in 0.3s ease-out;
+  --animate-gradient: gradient 8s linear infinite;
 }
 
 /* Keyframes */
 @keyframes fade-in {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
@@ -78,8 +100,18 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(10, 102, 194, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(10, 102, 194, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(8, 145, 178, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(8, 145, 178, 0.6); }
+}
+
+@keyframes scale-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* ===== Base Styles ===== */
@@ -90,6 +122,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 /* ===== Custom Utilities ===== */
@@ -128,23 +161,71 @@ body {
   display: none;
 }
 
-/* Gradient text */
+/* Premium gradient text */
 .text-gradient {
-  background: linear-gradient(to right, var(--color-primary), var(--color-linkedin));
+  background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-light) 50%, var(--color-linkedin) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Animated gradient text */
+.text-gradient-animated {
+  background: linear-gradient(90deg, var(--color-brand), var(--color-linkedin), var(--color-brand-light), var(--color-brand));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient 8s linear infinite;
 }
 
 /* Glass effect */
 .glass {
   background: color-mix(in srgb, var(--color-background) 80%, transparent);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Premium glass card */
+.glass-card {
+  background: color-mix(in srgb, var(--color-background) 90%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
 }
 
 /* LinkedIn brand gradient */
 .bg-linkedin-gradient {
-  background: linear-gradient(to right, var(--color-linkedin), var(--color-linkedin-dark));
+  background: linear-gradient(135deg, var(--color-linkedin) 0%, var(--color-linkedin-dark) 100%);
+}
+
+/* Premium brand gradient */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-dark) 100%);
+}
+
+/* CTA gradient */
+.bg-cta-gradient {
+  background: linear-gradient(135deg, var(--color-accent-cta) 0%, var(--color-accent-cta-dark) 100%);
+}
+
+/* Glow effects */
+.glow-brand {
+  box-shadow: 0 0 20px rgba(8, 145, 178, 0.3), 0 0 40px rgba(8, 145, 178, 0.1);
+}
+
+.glow-cta {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.3), 0 0 40px rgba(249, 115, 22, 0.1);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 /* Mobile touch targets - minimum 44px */
@@ -166,5 +247,33 @@ body {
   }
   .safe-right {
     padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background-color: color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
+/* Focus ring */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

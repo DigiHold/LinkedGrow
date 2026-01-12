@@ -91,12 +91,45 @@ export const posts = sqliteTable("posts", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
-  status: text("status", { enum: ["draft", "scheduled", "published"] }).default("draft"),
+  status: text("status", { enum: ["draft", "scheduled", "published", "failed"] }).default("draft"),
+  postType: text("post_type", { enum: ["text", "image", "carousel", "video"] }).default("text"),
   scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
   publishedAt: integer("published_at", { mode: "timestamp" }),
   linkedinPostId: text("linkedin_post_id"),
+  linkedinPostUrl: text("linkedin_post_url"),
+  // Store metadata like formatting options, hashtags, etc.
+  metadata: text("metadata"), // JSON string
+  // Error message if publishing failed
+  errorMessage: text("error_message"),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Media table for images, carousels, videos
+export const media = sqliteTable("media", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  postId: text("post_id")
+    .references(() => posts.id, { onDelete: "cascade" }),
+  // Storage info
+  storageKey: text("storage_key").notNull(), // R2 object key
+  storageUrl: text("storage_url").notNull(), // Public URL
+  // File info
+  fileName: text("file_name"),
+  mimeType: text("mime_type").notNull(),
+  fileSize: integer("file_size"), // bytes
+  width: integer("width"),
+  height: integer("height"),
+  // For carousels - order of slides
+  sortOrder: integer("sort_order").default(0),
+  // Metadata like alt text, captions
+  altText: text("alt_text"),
+  caption: text("caption"),
+  // Status
+  status: text("status", { enum: ["uploading", "ready", "deleted"] }).default("uploading"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
 // Ideas table
@@ -112,7 +145,22 @@ export const ideas = sqliteTable("ideas", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
+// Waitlist table for pre-launch email capture
+export const waitlist = sqliteTable("waitlist", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  status: text("status", { enum: ["pending", "invited", "converted"] }).default("pending"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Post = typeof posts.$inferSelect;
+export type NewPost = typeof posts.$inferInsert;
+export type Media = typeof media.$inferSelect;
+export type NewMedia = typeof media.$inferInsert;
 export type Idea = typeof ideas.$inferSelect;
+export type NewIdea = typeof ideas.$inferInsert;
+export type Waitlist = typeof waitlist.$inferSelect;
+export type NewWaitlist = typeof waitlist.$inferInsert;

@@ -11,6 +11,9 @@ import { About } from "@/components/marketing/about";
 import { CTASection } from "@/components/marketing/cta-section";
 import { Footer } from "@/components/marketing/footer";
 
+// Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
+// Logged-in users and admins can still access this full landing page
+
 export default function HomePage() {
   return (
     <main className="min-h-screen">

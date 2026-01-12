@@ -2,6 +2,9 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
 
+// Check if we're in prelaunch mode
+const PRELAUNCH_MODE = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === "true";
+
 // Routes that require authentication
 const protectedRoutes = [
   "/dashboard",
@@ -14,12 +17,22 @@ const authRoutes = [
   "/sign-up",
 ];
 
+// Routes allowed during prelaunch (for non-logged-in users)
+const prelaunchAllowedRoutes = [
+  "/prelaunch",
+  "/sign-in",
+  "/sign-up",
+  "/privacy",
+  "/cookies",
+  "/api",
+];
+
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const isAdmin = req.auth?.user?.isAdmin === true;
 
-  // Check maintenance mode first
+  // Check maintenance mode first (takes priority)
   if (MAINTENANCE_MODE) {
     const isAllowedRoute = MAINTENANCE_ALLOWED_ROUTES.some((route) =>
       nextUrl.pathname.startsWith(route) || nextUrl.pathname === route
@@ -36,6 +49,18 @@ export default auth((req) => {
     }
   }
 
+  // Check prelaunch mode (only if not in maintenance mode)
+  if (PRELAUNCH_MODE && !isLoggedIn && !isAdmin) {
+    const isPrelaunchAllowed = prelaunchAllowedRoutes.some((route) =>
+      nextUrl.pathname.startsWith(route) || nextUrl.pathname === route
+    );
+
+    // Redirect non-logged-in users to prelaunch page
+    if (!isPrelaunchAllowed) {
+      return NextResponse.redirect(new URL("/prelaunch", nextUrl));
+    }
+  }
+
   const isProtectedRoute = protectedRoutes.some((route) =>
     nextUrl.pathname.startsWith(route)
   );
@@ -48,7 +73,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
-  // Redirect non-logged-in users to sign in
+  // Redirect non-logged-in users to sign in for protected routes
   if (isProtectedRoute && !isLoggedIn) {
     const signInUrl = new URL("/sign-in", nextUrl);
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);

@@ -1,9 +1,14 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
-// Create SQLite database (will be replaced with D1 in production)
-const sqlite = new Database("linkedgrow.db");
-export const db = drizzle(sqlite, { schema });
+// Turso/LibSQL client configuration
+// Uses Turso in production, local SQLite file in development
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL || "file:linkedgrow.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+export const db = drizzle(client, { schema });
 
 export * from "./schema";
