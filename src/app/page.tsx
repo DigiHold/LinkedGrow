@@ -7,13 +7,13 @@ import { Features } from "@/components/marketing/features";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
-import { About } from "@/components/marketing/about";
 import { CTASection } from "@/components/marketing/cta-section";
 import { Footer } from "@/components/marketing/footer";
 import { FAQJsonLd, linkedGrowFAQs } from "@/components/seo/json-ld";
 
 // Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
 // Logged-in users and admins can still access this full landing page
+// About section removed - now has dedicated /about page
 
 export default function HomePage() {
   return (
@@ -29,7 +29,6 @@ export default function HomePage() {
       <HowItWorks />
       <Pricing />
       <FAQ />
-      <About />
       <CTASection />
       <Footer />
     </main>
