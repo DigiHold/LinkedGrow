@@ -14,7 +14,7 @@ interface PrelaunchHeaderProps {
 
 export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHeaderProps) {
   return (
-    <header className="relative z-10 py-6 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800">
+    <header className="relative z-[9990] py-6 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <Link href="/prelaunch" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
