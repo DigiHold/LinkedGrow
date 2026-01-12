@@ -12,15 +12,17 @@ import ptMessages from "@/messages/pt.json";
 import nlMessages from "@/messages/nl.json";
 import plMessages from "@/messages/pl.json";
 
-const messagesMap: Record<string, typeof enMessages> = {
+// Use a more flexible type since not all languages have all sections (e.g., legal texts only in EN/FR)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const messagesMap: Record<string, any> = {
   en: enMessages,
   fr: frMessages,
-  de: deMessages,
-  es: esMessages,
-  it: itMessages,
-  pt: ptMessages,
-  nl: nlMessages,
-  pl: plMessages,
+  de: { ...deMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  es: { ...esMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  it: { ...itMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  pt: { ...ptMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  nl: { ...nlMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  pl: { ...plMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
 };
 
 export default getRequestConfig(async () => {

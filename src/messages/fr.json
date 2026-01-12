@@ -162,5 +162,154 @@
   },
   "language": {
     "select": "Choisir la langue"
+  },
+  "privacy": {
+    "title": "Politique de Confidentialite",
+    "lastUpdated": "Derniere mise a jour : Janvier 2026",
+    "section1": {
+      "title": "1. Introduction",
+      "p1": "LinkedGrow (\"nous\", \"notre\" ou \"nos\") s'engage a proteger votre vie privee. Cette Politique de Confidentialite explique comment nous collectons, utilisons, divulguons et protegeons vos informations lorsque vous utilisez notre site web et nos services sur linkedgrow.ai.",
+      "p2": "En utilisant LinkedGrow, vous acceptez la collecte et l'utilisation des informations conformement a cette politique."
+    },
+    "section2": {
+      "title": "2. Informations Que Nous Collectons",
+      "sub1": {
+        "title": "2.1 Informations Personnelles",
+        "description": "Lorsque vous creez un compte, nous collectons :",
+        "items": ["Adresse email", "Nom (optionnel)", "Mot de passe (chiffre)", "Informations de profil LinkedIn (lorsque vous connectez votre compte)", "Informations de paiement (traitees de maniere securisee par Stripe)"]
+      },
+      "sub2": {
+        "title": "2.2 Donnees d'Utilisation",
+        "description": "Nous collectons automatiquement certaines informations lorsque vous utilisez notre service :",
+        "items": ["Adresse IP et localisation approximative", "Type et version du navigateur", "Pages visitees et fonctionnalites utilisees", "Date et heure des visites", "Informations sur l'appareil"]
+      },
+      "sub3": {
+        "title": "2.3 Cles API IA",
+        "description": "Si vous choisissez d'apporter votre propre cle API IA (OpenAI, Anthropic, Google), nous la stockons de maniere securisee et chiffree. Nous n'utilisons jamais votre cle API a d'autres fins que la generation de contenu a votre demande."
+      }
+    },
+    "section3": {
+      "title": "3. Comment Nous Utilisons Vos Informations",
+      "description": "Nous utilisons vos informations pour :",
+      "items": ["Fournir et maintenir notre service", "Traiter vos transactions et envoyer les informations associees", "Vous envoyer des avis techniques et des messages de support", "Repondre a vos commentaires et questions", "Analyser les habitudes d'utilisation pour ameliorer notre service", "Detecter et prevenir les activites frauduleuses", "Respecter nos obligations legales"]
+    },
+    "section4": {
+      "title": "4. Cookies et Technologies de Suivi",
+      "p1": "Nous utilisons des cookies et des technologies de suivi similaires pour collecter et suivre les informations sur votre activite de navigation. Pour des informations detaillees sur les cookies que nous utilisons et vos choix concernant les cookies, veuillez consulter notre",
+      "cookieLink": "Politique des Cookies",
+      "p2": "Vous pouvez gerer vos preferences de cookies a tout moment via notre banniere de consentement aux cookies ou en ajustant les parametres de votre navigateur."
+    },
+    "section5": {
+      "title": "5. Services Tiers",
+      "description": "Nous partageons vos informations avec les services tiers suivants :",
+      "items": ["Stripe - Traitement des paiements", "LinkedIn - Connexion de compte et publication", "Google Analytics - Analyse du site web (avec votre consentement)", "Google Ads, Facebook, LinkedIn, TikTok - Publicite (avec votre consentement)", "Vercel - Hebergement du site web"]
+    },
+    "section6": {
+      "title": "6. Conservation des Donnees",
+      "description": "Nous conservons vos informations personnelles tant que votre compte est actif ou selon les besoins pour vous fournir des services. Vous pouvez demander la suppression de votre compte et des donnees associees a tout moment en nous contactant a contact@linkedgrow.ai."
+    },
+    "section7": {
+      "title": "7. Vos Droits (RGPD/CCPA)",
+      "description": "Selon votre localisation, vous pouvez avoir les droits suivants :",
+      "items": ["Acces - Demander une copie de vos donnees personnelles", "Rectification - Demander la correction de donnees inexactes", "Effacement - Demander la suppression de vos donnees", "Portabilite - Demander vos donnees dans un format portable", "Opposition - Vous opposer au traitement de vos donnees", "Retrait du Consentement - Retirer un consentement precedemment donne", "Ne Pas Vendre (CCPA) - Refuser la vente d'informations personnelles"],
+      "contact": "Pour exercer ces droits, contactez-nous a contact@linkedgrow.ai."
+    },
+    "section8": {
+      "title": "8. Securite des Donnees",
+      "description": "Nous mettons en oeuvre des mesures techniques et organisationnelles appropriees pour proteger vos informations personnelles, notamment le chiffrement, l'hebergement securise et des evaluations de securite regulieres. Cependant, aucune methode de transmission sur Internet n'est securisee a 100%."
+    },
+    "section9": {
+      "title": "9. Transferts Internationaux de Donnees",
+      "description": "Vos informations peuvent etre transferees et traitees dans des pays autres que le votre. Nous veillons a ce que des garanties appropriees soient en place pour ces transferts conformement au RGPD et aux autres lois applicables."
+    },
+    "section10": {
+      "title": "10. Confidentialite des Enfants",
+      "description": "LinkedGrow n'est pas destine aux utilisateurs de moins de 16 ans. Nous ne collectons pas sciemment d'informations personnelles aupres d'enfants de moins de 16 ans."
+    },
+    "section11": {
+      "title": "11. Modifications de Cette Politique",
+      "description": "Nous pouvons mettre a jour cette Politique de Confidentialite de temps a autre. Nous vous informerons de tout changement en publiant la nouvelle politique sur cette page et en mettant a jour la date de \"Derniere mise a jour\"."
+    },
+    "section12": {
+      "title": "12. Nous Contacter",
+      "description": "Si vous avez des questions sur cette Politique de Confidentialite ou nos pratiques de confidentialite, veuillez nous contacter a :",
+      "email": "Email :"
+    }
+  },
+  "cookies": {
+    "title": "Politique des Cookies",
+    "lastUpdated": "Derniere mise a jour : Janvier 2026",
+    "section1": {
+      "title": "1. Qu'est-ce que les Cookies ?",
+      "description": "Les cookies sont de petits fichiers texte stockes sur votre appareil lorsque vous visitez un site web. Ils aident les sites web a memoriser vos preferences, vous maintenir connecte et comprendre comment vous utilisez le site. Certains cookies sont essentiels au fonctionnement du site, tandis que d'autres nous aident a ameliorer votre experience ou a vous montrer des publicites pertinentes."
+    },
+    "section2": {
+      "title": "2. Comment Nous Utilisons les Cookies",
+      "description": "LinkedGrow utilise des cookies et des technologies similaires aux fins suivantes :",
+      "items": ["Vous maintenir connecte a votre compte", "Memoriser vos preferences et parametres", "Comprendre comment vous utilisez notre site web", "Ameliorer nos services selon les habitudes d'utilisation", "Vous montrer des publicites pertinentes sur d'autres plateformes", "Mesurer l'efficacite de nos campagnes marketing"]
+    },
+    "section3": {
+      "title": "3. Types de Cookies Que Nous Utilisons",
+      "alwaysActive": "Toujours Actif"
+    },
+    "section4": {
+      "title": "4. Cookies Tiers",
+      "description": "Avec votre consentement, nous permettons aux tiers suivants de placer des cookies sur notre site web :",
+      "ga": {
+        "title": "Google Analytics (GA4)",
+        "description": "Nous aide a comprendre comment les visiteurs interagissent avec notre site web, y compris les pages vues, la duree des sessions et les parcours utilisateurs.",
+        "link": "Politique de Confidentialite Google"
+      },
+      "gads": {
+        "title": "Google Ads",
+        "description": "Utilise pour suivre les conversions de Google Ads et vous montrer des publicites pertinentes basees sur votre visite sur LinkedGrow.",
+        "link": "Politique Google Ads"
+      },
+      "meta": {
+        "title": "Pixel Meta (Facebook/Instagram)",
+        "description": "Suit les conversions des publicites Meta et permet le remarketing pour vous montrer des publicites pertinentes sur Facebook et Instagram.",
+        "link": "Politique de Confidentialite Meta"
+      },
+      "linkedin": {
+        "title": "LinkedIn Insight Tag",
+        "description": "Suit les conversions des publicites LinkedIn et fournit des informations sur les visiteurs professionnels de notre site.",
+        "link": "Politique de Confidentialite LinkedIn"
+      },
+      "tiktok": {
+        "title": "Pixel TikTok",
+        "description": "Suit les conversions des publicites TikTok et permet le remarketing sur la plateforme TikTok.",
+        "link": "Politique de Confidentialite TikTok"
+      }
+    },
+    "section5": {
+      "title": "5. Vos Choix de Cookies",
+      "description": "Vous avez plusieurs options pour gerer les cookies :",
+      "items": ["Banniere de Cookies : Lors de votre premiere visite sur notre site, vous pouvez tout accepter, tout refuser ou personnaliser vos preferences.", "Parametres du Navigateur : La plupart des navigateurs vous permettent de bloquer ou supprimer les cookies via leurs parametres.", "Outils de Desinscription : Vous pouvez vous desinscrire de la publicite basee sur les interets via la Digital Advertising Alliance."],
+      "reset": {
+        "title": "Reinitialiser Vos Preferences de Cookies",
+        "description": "Cliquez sur le bouton ci-dessous pour effacer vos preferences de cookies et revoir la banniere de consentement.",
+        "button": "Reinitialiser les Preferences",
+        "cleared": "Preferences Effacees"
+      }
+    },
+    "section6": {
+      "title": "6. Utilisateurs UE/EEE",
+      "description": "Si vous etes situe dans l'Union Europeenne ou l'Espace Economique Europeen, nous obtenons votre consentement explicite avant de placer des cookies non essentiels sur votre appareil. Vous pouvez retirer votre consentement a tout moment en reinitialisant vos preferences ci-dessus ou en ajustant les parametres de votre navigateur."
+    },
+    "section7": {
+      "title": "7. Utilisateurs Californiens (CCPA)",
+      "description": "Si vous etes resident californien, vous avez le droit de refuser la \"vente\" ou le \"partage\" de vos informations personnelles. Nous ne vendons pas vos informations personnelles au sens traditionnel, mais nous pouvons les partager avec des partenaires publicitaires a des fins de publicite ciblee. Vous pouvez vous desinscrire en refusant les cookies marketing dans notre banniere de consentement."
+    },
+    "section8": {
+      "title": "8. Modifications de Cette Politique",
+      "description": "Nous pouvons mettre a jour cette Politique des Cookies de temps a autre. Tout changement sera publie sur cette page avec une date de revision mise a jour."
+    },
+    "section9": {
+      "title": "9. Nous Contacter",
+      "description": "Si vous avez des questions sur notre utilisation des cookies, veuillez nous contacter a :",
+      "email": "Email :",
+      "moreInfo": "Pour plus d'informations sur la maniere dont nous traitons vos donnees personnelles, veuillez consulter notre",
+      "privacyLink": "Politique de Confidentialite"
+    }
   }
 }
