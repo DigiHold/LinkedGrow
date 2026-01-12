@@ -10,6 +10,7 @@ import { FAQ } from "@/components/marketing/faq";
 import { About } from "@/components/marketing/about";
 import { CTASection } from "@/components/marketing/cta-section";
 import { Footer } from "@/components/marketing/footer";
+import { FAQJsonLd, linkedGrowFAQs } from "@/components/seo/json-ld";
 
 // Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
 // Logged-in users and admins can still access this full landing page
@@ -17,6 +18,8 @@ import { Footer } from "@/components/marketing/footer";
 export default function HomePage() {
   return (
     <main className="min-h-screen">
+      {/* FAQ Rich Results for Google */}
+      <FAQJsonLd questions={linkedGrowFAQs} />
       <Header />
       <Hero />
       <SocialProof />

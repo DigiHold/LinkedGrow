@@ -3,6 +3,11 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { CookieBanner } from "@/components/cookie-consent";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/cookie-consent";
+import {
+  OrganizationJsonLd,
+  WebsiteJsonLd,
+  SoftwareApplicationJsonLd,
+} from "@/components/seo/json-ld";
 import "./globals.css";
 
 const inter = Inter({
@@ -62,6 +67,10 @@ export default function RootLayout({
       <head>
         {/* Google Tag Manager with Consent Mode V2 */}
         {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
+        {/* JSON-LD Structured Data for SEO */}
+        <OrganizationJsonLd />
+        <WebsiteJsonLd />
+        <SoftwareApplicationJsonLd />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
