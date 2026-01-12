@@ -14,7 +14,6 @@ import {
   Rocket,
   Play,
   Pause,
-  ChevronRight,
   ChevronDown,
   Zap,
   Target,
@@ -31,14 +30,9 @@ import {
   Shield,
   RefreshCw,
   Gift,
-  ArrowUpRight,
-  MousePointer2,
-  Flame,
-  Crown,
-  Bolt,
   CircleDollarSign,
-  Timer,
   Award,
+  Crown,
   BadgeCheck,
   Heart,
   ThumbsUp,
@@ -48,109 +42,16 @@ import {
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 
 // ============================================
-// HERO VARIANTS - Choose your favorite!
+// HERO SECTION
 // ============================================
 
-// Hero Variant 1: Split Layout with 3D Product Preview
-function HeroVariant1({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
-  return (
-    <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Content */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mb-6">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Join 179+ founders on the waitlist
-              </span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]">
-              Turn LinkedIn into your
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
-                growth machine
-              </span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
-              AI-powered content that sounds like you. Viral analytics that predict engagement.
-              Pay <span className="font-bold text-slate-900 dark:text-white">$3-5/month</span> in API costs - not $50+ subscriptions.
-            </p>
-
-            {/* Stats Row */}
-            <div className="flex flex-wrap gap-6 mb-8">
-              {[
-                { value: "10x", label: "faster content" },
-                { value: "96%", label: "cost savings" },
-                { value: "47%", label: "more reach" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA Form */}
-            {!isSuccess ? (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-14 px-5 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-base flex-1"
-                />
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="h-14 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30"
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get 30% Off <ArrowRight className="w-5 h-5 ml-2" /></>}
-                </Button>
-              </form>
-            ) : (
-              <SuccessMessage />
-            )}
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-              No credit card required. Cancel anytime.
-            </p>
-          </motion.div>
-
-          {/* Right: 3D Product Preview */}
-          <motion.div
-            initial={{ opacity: 0, x: 30, rotateY: -10 }}
-            animate={{ opacity: 1, x: 0, rotateY: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative perspective-1000"
-          >
-            <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
-            <div className="relative transform-gpu hover:scale-[1.02] transition-transform duration-500">
-              <DemoPreview />
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Hero Variant 2: Centered with Floating Elements - ENHANCED
-function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
+// Hero Section with Floating Elements
+function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
-      {/* Floating Elements - Enhanced animations */}
+      {/* Floating Elements with Icons */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* LinkedIn Icon */}
         <motion.div
           animate={{
             y: [0, -30, 0],
@@ -158,8 +59,14 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
             scale: [1, 1.1, 1]
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-[10%] w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 opacity-30"
-        />
+          className="absolute top-20 left-[10%] w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-[#0A66C2] to-[#004182] flex items-center justify-center shadow-lg"
+        >
+          <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </motion.div>
+
+        {/* Sparkles/Star Icon */}
         <motion.div
           animate={{
             y: [0, 25, 0],
@@ -167,24 +74,60 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
             x: [0, 10, 0]
           }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          className="absolute top-32 right-[12%] w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 opacity-25"
-        />
+          className="absolute top-32 right-[12%] w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg"
+        >
+          <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-white" />
+        </motion.div>
+
+        {/* Pencil/Edit Icon */}
         <motion.div
           animate={{
             y: [0, -20, 0],
             scale: [1, 1.2, 1]
           }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-32 left-[15%] w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 opacity-30"
-        />
+          className="absolute bottom-32 left-[15%] w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg"
+        >
+          <FileText className="w-7 h-7 md:w-8 md:h-8 text-white" />
+        </motion.div>
+
+        {/* OpenAI Icon */}
         <motion.div
           animate={{
             y: [0, 15, 0],
             x: [0, -15, 0]
           }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="absolute top-1/2 right-[8%] w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 opacity-25"
-        />
+          className="absolute top-1/2 right-[8%] w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center shadow-lg border border-slate-700"
+        >
+          <svg className="w-7 h-7 md:w-8 md:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
+          </svg>
+        </motion.div>
+
+        {/* Claude/Anthropic Icon */}
+        <motion.div
+          animate={{
+            y: [0, -25, 0],
+            rotate: [0, -5, 0]
+          }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute top-[45%] left-[5%] w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg"
+        >
+          <Brain className="w-6 h-6 md:w-7 md:h-7 text-white" />
+        </motion.div>
+
+        {/* TrendingUp/Growth Icon */}
+        <motion.div
+          animate={{
+            y: [0, 20, 0],
+            x: [0, 10, 0]
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+          className="absolute bottom-40 right-[18%] w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg"
+        >
+          <TrendingUp className="w-6 h-6 md:w-7 md:h-7 text-white" />
+        </motion.div>
       </div>
 
       <div className="max-w-5xl mx-auto text-center">
@@ -389,231 +332,6 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
 
         {/* Video Section - Right under social proof */}
         <HeroVideoSection />
-      </div>
-    </section>
-  );
-}
-
-// Hero Variant 3: Video/Visual First with Glassmorphism
-function HeroVariant3({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
-  return (
-    <section className="relative z-10 pt-8 md:pt-12 pb-16 md:pb-24 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Top Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center mb-8"
-        >
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-            <Gift className="w-5 h-5 text-amber-500" />
-            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-              Early Access: 30% OFF for first year
-            </span>
-            <ChevronRight className="w-4 h-4 text-amber-500" />
-          </div>
-        </motion.div>
-
-        {/* Headline */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-4">
-            Write viral LinkedIn posts
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
-              in seconds, not hours
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Bring your own AI key. Pay only for what you use.
-            <br className="hidden sm:block" />
-            Create weeks of content in minutes.
-          </p>
-        </motion.div>
-
-        {/* CTA - Glassmorphism Style */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="max-w-xl mx-auto mb-12"
-        >
-          {!isSuccess ? (
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 rounded-2xl blur-xl" />
-              <form onSubmit={handleSubmit} className="relative backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 rounded-2xl p-4 border border-white/50 dark:border-slate-700/50 shadow-2xl">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-14 px-5 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-base flex-1"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
-                  >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowUpRight className="w-5 h-5 ml-2" /></>}
-                  </Button>
-                </div>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-1"><Check className="w-4 h-4 text-emerald-500" /> Free to start</span>
-                  <span className="flex items-center gap-1"><Check className="w-4 h-4 text-emerald-500" /> No credit card</span>
-                  <span className="flex items-center gap-1"><Check className="w-4 h-4 text-emerald-500" /> Cancel anytime</span>
-                </div>
-              </form>
-            </div>
-          ) : (
-            <SuccessMessage />
-          )}
-        </motion.div>
-
-        {/* Product Preview with Play Button Overlay */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="relative max-w-4xl mx-auto"
-        >
-          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-violet-500/30 rounded-3xl blur-2xl" />
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
-            <DemoPreview />
-            {/* Overlay gradient at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end justify-center pb-6">
-              <div className="flex items-center gap-2 text-white text-sm font-medium">
-                <MousePointer2 className="w-4 h-4" />
-                Interactive demo - try it yourself
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// Hero Variant 4: Bold Statement with Metrics Grid
-function HeroVariant4({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
-  return (
-    <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Main Content */}
-        <div className="text-center mb-12">
-          {/* Pre-headline */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 dark:text-cyan-400 mb-6"
-          >
-            <Bolt className="w-4 h-4" />
-            THE SMARTER WAY TO GROW ON LINKEDIN
-          </motion.div>
-
-          {/* Bold Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.05]"
-          >
-            Stop paying $50+/month
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
-              for AI content tools
-            </span>
-          </motion.h1>
-
-          {/* Value Prop */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8"
-          >
-            LinkedGrow lets you use your own AI key (OpenAI, Claude, Gemini).
-            <br className="hidden sm:block" />
-            Same powerful features. <span className="font-bold text-slate-900 dark:text-white">96% less cost.</span>
-          </motion.p>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="max-w-md mx-auto"
-          >
-            {!isSuccess ? (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-14 px-5 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-base flex-1"
-                />
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="h-14 px-8 rounded-xl bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-base"
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Join Waitlist</>}
-                </Button>
-              </form>
-            ) : (
-              <SuccessMessage />
-            )}
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-          </motion.div>
-        </div>
-
-        {/* Metrics Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12"
-        >
-          {[
-            { icon: CircleDollarSign, value: "$3-5", label: "avg. monthly API cost", color: "from-emerald-500 to-teal-500" },
-            { icon: Timer, value: "10x", label: "faster content creation", color: "from-cyan-500 to-blue-500" },
-            { icon: TrendingUp, value: "+47%", label: "engagement increase", color: "from-violet-500 to-purple-500" },
-            { icon: Users, value: "179+", label: "founders on waitlist", color: "from-orange-500 to-red-500" },
-          ].map((metric, i) => (
-            <motion.div
-              key={metric.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + i * 0.1 }}
-              className="relative group"
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity`} />
-              <div className="relative bg-white dark:bg-slate-800/80 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 text-center">
-                <metric.icon className={`w-8 h-8 mx-auto mb-3 text-transparent bg-clip-text bg-gradient-to-r ${metric.color}`} style={{ color: 'transparent', background: `linear-gradient(to right, var(--tw-gradient-stops))`, WebkitBackgroundClip: 'text' }} />
-                <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{metric.value}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">{metric.label}</div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Product Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.8 }}
-          className="max-w-4xl mx-auto"
-        >
-          <DemoPreview />
-        </motion.div>
       </div>
     </section>
   );
@@ -904,6 +622,9 @@ function PainPointsSection() {
     },
     {
       icon: CircleDollarSign,
+  Award,
+  Crown,
+  BadgeCheck,
       stat: "$600+/year",
       title: "Overpriced AI tools",
       description: "Other tools charge $50+/month with strict limits. You pay even when you don't use it.",
@@ -912,7 +633,7 @@ function PainPointsSection() {
   ];
 
   return (
-    <section className="relative z-10 py-20 md:py-28 px-4">
+    <section className="relative z-10 pt-8 md:pt-12 pb-20 md:pb-28 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -1638,15 +1359,6 @@ function HeroVideoSection() {
       transition={{ delay: 0.8 }}
       className="mt-16 max-w-4xl mx-auto"
     >
-      <div className="text-center mb-6">
-        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2">
-          See LinkedGrow in action
-        </h3>
-        <p className="text-slate-600 dark:text-slate-400 text-sm">
-          Watch how founders create a week of content in under 5 minutes
-        </p>
-      </div>
-
       <div className="relative">
         {/* Glow effect */}
         <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
@@ -1836,160 +1548,8 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
   );
 }
 
-// CTA Variant 1: Dark card with floating orbs (Original)
-function CTAVariant1(props: CTAProps) {
-  return (
-    <section className="relative z-10 py-20 md:py-28 px-4">
-      <div className="max-w-5xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse" />
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-[2rem] opacity-50" />
-
-          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)`, backgroundSize: "32px 32px" }} />
-            </div>
-            <div className="absolute top-0 left-1/4 w-64 h-64 bg-cyan-500/30 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/30 rounded-full blur-[100px]" />
-
-            <div className="relative z-10 p-8 md:p-12 lg:p-16">
-              <div className="text-center max-w-3xl mx-auto mb-10">
-                <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight">
-                  Ready to 10x your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">LinkedIn growth?</span>
-                </motion.h2>
-                <p className="text-lg md:text-xl text-slate-300">Join the waitlist and lock in <span className="font-bold text-white">30% off</span> for your first year.</p>
-              </div>
-
-              <div className="flex justify-center gap-3 sm:gap-4 mb-10">
-                {[{ value: props.timeLeft.days, label: "Days" }, { value: props.timeLeft.hours, label: "Hours" }, { value: props.timeLeft.minutes, label: "Min" }, { value: props.timeLeft.seconds, label: "Sec" }].map((item, i) => (
-                  <div key={i} className="text-center">
-                    <div className="relative w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      <span className="text-2xl sm:text-3xl font-bold text-white font-mono">{String(item.value).padStart(2, "0")}</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-2 font-medium">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="max-w-lg mx-auto">
-                <CTAForm {...props} variant="dark" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// CTA Variant 2: Split layout with image/stats
-function CTAVariant2(props: CTAProps) {
-  return (
-    <section className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Content */}
-          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-6">
-              <Gift className="w-4 h-4" />
-              <span>Limited Time: 30% OFF</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6">
-              Stop leaving growth on the table
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
-              Join 179+ founders who are building their personal brands with AI that costs 96% less than competitors.
-            </p>
-            <div className="mb-8">
-              <CTAForm {...props} variant="light" />
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
-              {[{ icon: Shield, text: "Bank-level security" }, { icon: Key, text: "Your data, your control" }, { icon: RefreshCw, text: "Cancel anytime" }].map((b) => (
-                <span key={b.text} className="flex items-center gap-1.5"><b.icon className="w-4 h-4" />{b.text}</span>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Right: Stats card */}
-          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
-              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">What you get with LinkedGrow</h3>
-                <div className="space-y-4">
-                  {[
-                    { stat: "10x", label: "Faster content creation" },
-                    { stat: "96%", label: "Cost savings vs competitors" },
-                    { stat: "47%", label: "More engagement on posts" },
-                    { stat: "$3-5", label: "Average monthly AI cost" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                        <span className="text-xl font-black text-white">{item.stat}</span>
-                      </div>
-                      <span className="text-slate-600 dark:text-slate-400 font-medium">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// CTA Variant 3: Minimal with large countdown
-function CTAVariant3(props: CTAProps) {
-  return (
-    <section className="relative z-10 py-20 md:py-28 px-4">
-      <div className="max-w-4xl mx-auto text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-4">
-            Don&apos;t miss the <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">founder&apos;s discount</span>
-          </h2>
-          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-12">
-            Early access pricing ends when the timer hits zero
-          </p>
-        </motion.div>
-
-        {/* Large countdown */}
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="flex justify-center gap-4 sm:gap-6 mb-12">
-          {[{ value: props.timeLeft.days, label: "Days" }, { value: props.timeLeft.hours, label: "Hours" }, { value: props.timeLeft.minutes, label: "Minutes" }, { value: props.timeLeft.seconds, label: "Seconds" }].map((item, i) => (
-            <div key={i} className="text-center">
-              <div className="w-20 sm:w-28 h-20 sm:h-28 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-lg">
-                <span className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white font-mono">{String(item.value).padStart(2, "0")}</span>
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 font-medium">{item.label}</p>
-            </div>
-          ))}
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-md mx-auto">
-          <CTAForm {...props} variant="light" />
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="mt-8 flex items-center justify-center gap-2">
-          <div className="flex -space-x-2">
-            {["S", "M", "E", "J"].map((l, i) => (
-              <div key={l} className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs font-bold" style={{ zIndex: 4 - i }}>{l}</div>
-            ))}
-          </div>
-          <span className="text-sm text-slate-600 dark:text-slate-400">+179 founders already joined</span>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// CTA Variant 4: Full-width gradient banner
-function CTAVariant4(props: CTAProps) {
+// CTA Section: Full-width gradient banner
+function CTASection(props: CTAProps) {
   return (
     <section className="relative z-10 py-20 md:py-28 px-4 overflow-hidden">
       {/* Full width gradient background */}
@@ -2054,18 +1614,6 @@ function CTAVariant4(props: CTAProps) {
   );
 }
 
-// Main CTA component that switches between variants
-function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error, variant = 1 }: CTAProps & { variant?: 1 | 2 | 3 | 4 }) {
-  const ctaProps = { timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error };
-
-  switch (variant) {
-    case 1: return <CTAVariant1 {...ctaProps} />;
-    case 2: return <CTAVariant2 {...ctaProps} />;
-    case 3: return <CTAVariant3 {...ctaProps} />;
-    case 4: return <CTAVariant4 {...ctaProps} />;
-    default: return <CTAVariant1 {...ctaProps} />;
-  }
-}
 
 // ============================================
 // MAIN PAGE COMPONENT
@@ -2077,8 +1625,6 @@ export default function PreLaunchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [heroVariant, setHeroVariant] = useState<1 | 2 | 3 | 4>(2); // Hero 2 is the chosen one
-  const [ctaVariant, setCtaVariant] = useState<1 | 2 | 3 | 4>(4); // CTA 4 is the chosen one
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -2141,52 +1687,8 @@ export default function PreLaunchPage() {
     isMounted,
   };
 
-  // Variant selector for development - remove in production
-  const VariantSelector = () => (
-    <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
-      <div>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Hero Variant:</p>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4].map((v) => (
-            <button
-              key={v}
-              onClick={() => setHeroVariant(v as 1 | 2 | 3 | 4)}
-              className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-                heroVariant === v
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">CTA Variant:</p>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4].map((v) => (
-            <button
-              key={v}
-              onClick={() => setCtaVariant(v as 1 | 2 | 3 | 4)}
-              className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-                ctaVariant === v
-                  ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* Variant Selector - REMOVE THIS IN PRODUCTION */}
-      <VariantSelector />
 
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -2215,12 +1717,9 @@ export default function PreLaunchPage() {
 
       <PrelaunchHeader showCountdown timeLeft={timeLeft} />
 
-      {/* Hero Section - Switch between variants */}
+      {/* Hero Section */}
       <motion.div ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}>
-        {heroVariant === 1 && <HeroVariant1 {...heroProps} />}
-        {heroVariant === 2 && <HeroVariant2 {...heroProps} />}
-        {heroVariant === 3 && <HeroVariant3 {...heroProps} />}
-        {heroVariant === 4 && <HeroVariant4 {...heroProps} />}
+        <HeroSection {...heroProps} />
       </motion.div>
 
       {/* Pain Points Section */}
@@ -2350,8 +1849,8 @@ export default function PreLaunchPage() {
         </div>
       </section>
 
-      {/* Final CTA - With variant selector */}
-      <FinalCTA
+      {/* Final CTA Section */}
+      <CTASection
         timeLeft={timeLeft}
         email={email}
         setEmail={setEmail}
@@ -2359,7 +1858,6 @@ export default function PreLaunchPage() {
         isLoading={isLoading}
         isSuccess={isSuccess}
         error={error}
-        variant={ctaVariant}
       />
 
       {/* Footer */}

@@ -1,0 +1,166 @@
+{
+  "hero": {
+    "badge": "Early Access Open",
+    "spotsLeft": "Only {count} spots left",
+    "headline1": "LinkedIn content that",
+    "headline2": "actually converts",
+    "description": "Stop wasting hours on content that gets ignored.",
+    "descriptionSub": "LinkedGrow writes viral posts in your voice, schedules them at peak times, and costs {savings} less than competitors.",
+    "savings": "96%",
+    "valueProp1": "10x faster writing",
+    "valueProp2": "47% more engagement",
+    "valueProp3": "$3-5/mo vs $50+",
+    "emailPlaceholder": "Enter your email",
+    "cta": "Get 30% Off",
+    "noCreditCard": "No credit card",
+    "lockedIn": "30% locked in",
+    "cancelAnytime": "Cancel anytime",
+    "trustedBy": "Trusted by {count}+ founders"
+  },
+  "painPoints": {
+    "title": "Sound familiar?",
+    "description": "You know LinkedIn can transform your business. But creating content that actually works? That's the hard part.",
+    "pain1": {
+      "stat": "4+ hours/week",
+      "title": "Creating content is exhausting",
+      "description": "Writing compelling posts takes hours. Research, drafting, editing - it never ends."
+    },
+    "pain2": {
+      "stat": "0 views",
+      "title": "The algorithm ignores you",
+      "description": "You post consistently but get zero engagement. Your content disappears into the void."
+    },
+    "pain3": {
+      "stat": "$600+/year",
+      "title": "Overpriced AI tools",
+      "description": "Other tools charge $50+/month with strict limits. You pay even when you don't use it."
+    },
+    "betterWay": "There's a better way"
+  },
+  "features": {
+    "title": "Your complete LinkedIn growth engine",
+    "description": "AI-powered content creation that writes like you, costs almost nothing, and actually drives results.",
+    "byok": {
+      "title": "Bring Your Own AI Key",
+      "description": "Connect OpenAI, Claude, or Gemini directly. No markup fees - pay only what you use.",
+      "highlight": "96% cheaper"
+    },
+    "voice": {
+      "title": "AI Learns Your Voice",
+      "description": "Train the AI on your writing style. Every post sounds authentically you.",
+      "stat": "95%",
+      "statLabel": "accuracy"
+    },
+    "viral": {
+      "title": "Viral Content Formula",
+      "description": "Data-driven templates and hooks proven to drive engagement.",
+      "stat": "47%",
+      "statLabel": "more reach"
+    },
+    "schedule": {
+      "title": "Smart Scheduling",
+      "description": "Post at optimal times based on your audience's activity patterns.",
+      "stat": "3x",
+      "statLabel": "engagement"
+    },
+    "reddit": {
+      "title": "Reddit Idea Finder",
+      "description": "Turn trending Reddit discussions into viral LinkedIn posts.",
+      "stat": "100+",
+      "statLabel": "ideas/day"
+    },
+    "carousel": {
+      "title": "Carousel Creator",
+      "description": "Design beautiful carousels and documents that stop the scroll."
+    }
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "description": "Start creating viral content in under 5 minutes",
+    "step1": {
+      "title": "Connect your AI key",
+      "description": "Add your OpenAI, Claude, or Gemini API key. You only pay for what you use - typically $3-5/month."
+    },
+    "step2": {
+      "title": "Train your voice",
+      "description": "Paste a few of your best posts. Our AI learns your unique writing style and tone."
+    },
+    "step3": {
+      "title": "Create & schedule",
+      "description": "Generate a week of content in minutes. Schedule at optimal times and watch engagement grow."
+    }
+  },
+  "pricing": {
+    "title": "Simple, transparent pricing",
+    "description": "Choose your plan. All include BYOK - use your own AI keys.",
+    "discount": "-30%",
+    "founder": "Founder's Discount",
+    "perMonth": "/month",
+    "free": {
+      "name": "Free",
+      "description": "Try it out",
+      "features": ["3 posts/month", "Basic editor", "BYOK support"]
+    },
+    "starter": {
+      "name": "Starter",
+      "description": "For regular creators",
+      "features": ["Unlimited posts", "10 scheduled posts", "Content calendar", "AI voice training"]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "For serious growth",
+      "features": ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Carousel creator", "Analytics dashboard"]
+    },
+    "business": {
+      "name": "Business",
+      "description": "For teams & agencies",
+      "features": ["Everything in Pro", "A/B testing", "API access", "Priority support", "Team collaboration"]
+    },
+    "cta": "Get {discount}% Off"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": {
+      "question": "What is BYOK (Bring Your Own Key)?",
+      "answer": "BYOK means you connect your own AI API key (from OpenAI, Anthropic, or Google). This way, you pay only for your actual usage - typically $3-5/month - instead of expensive monthly subscriptions."
+    },
+    "q2": {
+      "question": "How much does AI usage actually cost?",
+      "answer": "Most users spend $3-5/month on AI API costs. That's 90-95% less than traditional AI content tools that charge $50+ monthly subscriptions."
+    },
+    "q3": {
+      "question": "Will the AI sound like me?",
+      "answer": "Yes! Our AI learns from your previous posts and writing samples. After training, it captures your unique voice, tone, and style - your audience won't know the difference."
+    },
+    "q4": {
+      "question": "Can I try before committing?",
+      "answer": "Absolutely! Our Free plan includes 3 posts per month with full BYOK support. No credit card required to start."
+    },
+    "q5": {
+      "question": "What's the 30% founder's discount?",
+      "answer": "Early access members lock in 30% off for their entire first year. This discount applies to any paid plan and is only available during pre-launch."
+    }
+  },
+  "cta": {
+    "badge": "Launch Special - Ends in {days}d {hours}h",
+    "title": "Your LinkedIn growth journey starts here",
+    "description": "Join the waitlist now and get 30% off your first year.",
+    "subDescription": "Save up to $500/year compared to other tools.",
+    "button": "Join Now",
+    "security": "Bank-level security",
+    "yourData": "Your API, your data",
+    "madeIn": "Made in Switzerland"
+  },
+  "success": {
+    "title": "You're on the list!",
+    "description": "Your 30% discount is locked in. Check your inbox!"
+  },
+  "footer": {
+    "copyright": "2026 LinkedGrow. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy"
+  },
+  "language": {
+    "select": "Select Language"
+  }
+}

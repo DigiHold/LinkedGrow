@@ -1,19 +1,34 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Globe, Check, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 import {
   SUPPORTED_LANGUAGES,
   LanguageCode,
   DEFAULT_LANGUAGE,
-  getSavedLanguage,
-  saveLanguage,
   getLanguageFromCountry,
 } from "@/lib/i18n/languages";
 
+// Cookie helpers
+function setLocaleCookie(locale: string) {
+  // Set cookie for 1 year
+  document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+}
+
+function getLocaleCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 export function LanguageSelector() {
+  const t = useTranslations("language");
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>(DEFAULT_LANGUAGE);
   const [mounted, setMounted] = useState(false);
@@ -22,10 +37,10 @@ export function LanguageSelector() {
   useEffect(() => {
     setMounted(true);
 
-    // Check saved language first
-    const saved = getSavedLanguage();
-    if (saved) {
-      setCurrentLanguage(saved);
+    // Check cookie first (user's explicit choice)
+    const savedLocale = getLocaleCookie();
+    if (savedLocale && SUPPORTED_LANGUAGES.some(lang => lang.code === savedLocale)) {
+      setCurrentLanguage(savedLocale as LanguageCode);
       return;
     }
 
@@ -38,7 +53,12 @@ export function LanguageSelector() {
           if (geo.countryCode) {
             const langFromCountry = getLanguageFromCountry(geo.countryCode);
             setCurrentLanguage(langFromCountry);
-            saveLanguage(langFromCountry);
+            // Set cookie so next-intl picks it up
+            setLocaleCookie(langFromCountry);
+            // Refresh to apply the new locale
+            startTransition(() => {
+              router.refresh();
+            });
             return;
           }
         }
@@ -48,11 +68,11 @@ export function LanguageSelector() {
 
       // Fallback to default English
       setCurrentLanguage(DEFAULT_LANGUAGE);
-      saveLanguage(DEFAULT_LANGUAGE);
+      setLocaleCookie(DEFAULT_LANGUAGE);
     };
 
     detectLanguage();
-  }, []);
+  }, [router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -73,10 +93,13 @@ export function LanguageSelector() {
 
   const handleSelectLanguage = (code: LanguageCode) => {
     setCurrentLanguage(code);
-    saveLanguage(code);
+    setLocaleCookie(code);
     setIsOpen(false);
-    // In a real app, this would trigger a page reload or i18n context update
-    // For now, we just save the preference
+
+    // Refresh the page to apply new locale
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   const currentLang = SUPPORTED_LANGUAGES.find((l) => l.code === currentLanguage);
@@ -84,7 +107,7 @@ export function LanguageSelector() {
   if (!mounted) {
     return (
       <Button variant="ghost" size="sm" className="h-9 px-3 gap-2">
-        <Globe className="w-4 h-4" />
+        <span className="text-lg">{getFlagEmoji("GB")}</span>
         <span className="hidden sm:inline text-sm">EN</span>
       </Button>
     );
@@ -96,6 +119,7 @@ export function LanguageSelector() {
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={isPending}
         className="h-9 px-3 gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
         title={`Language: ${currentLang?.name}`}
       >
@@ -127,7 +151,7 @@ export function LanguageSelector() {
               {/* Header */}
               <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Select Language
+                  {t("select")}
                 </p>
               </div>
 
