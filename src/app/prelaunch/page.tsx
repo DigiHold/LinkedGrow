@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +19,17 @@ import {
 } from "lucide-react";
 
 export default function PreLaunchPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Prevent hydration mismatch with framer-motion
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,13 +93,13 @@ export default function PreLaunchPage() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left column - Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMounted ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
             {/* Badge */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={isMounted ? { opacity: 0, scale: 0.9 } : false}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm mb-6"
@@ -147,7 +153,7 @@ export default function PreLaunchPage() {
               ].map((feature, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={isMounted ? { opacity: 0, x: -20 } : false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + i * 0.1 }}
                   className="flex items-center gap-3 text-gray-300"
@@ -163,7 +169,7 @@ export default function PreLaunchPage() {
 
           {/* Right column - Form */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMounted ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
@@ -245,7 +251,7 @@ export default function PreLaunchPage() {
                   </div>
                 ) : (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={isMounted ? { opacity: 0, scale: 0.95 } : false}
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-8"
                   >
@@ -269,7 +275,7 @@ export default function PreLaunchPage() {
 
         {/* Features preview */}
         <motion.section
-          initial={{ opacity: 0, y: 40 }}
+          initial={isMounted ? { opacity: 0, y: 40 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
           className="mt-24"
@@ -307,7 +313,7 @@ export default function PreLaunchPage() {
             ].map((feature, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
+                initial={isMounted ? { opacity: 0, y: 20 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 + i * 0.1 }}
                 className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-colors"
@@ -328,7 +334,7 @@ export default function PreLaunchPage() {
 
         {/* Testimonial */}
         <motion.section
-          initial={{ opacity: 0 }}
+          initial={isMounted ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
           className="mt-24"
