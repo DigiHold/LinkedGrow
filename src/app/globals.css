@@ -165,24 +165,31 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Headings use display font */
+/* Headings use display font - extra bold */
 h1, h2, h3, h4, h5, h6,
 .font-display {
   font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
 h1 {
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
 h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 700;
+}
+
+/* Better body text */
+p, li, span, div {
+  line-height: 1.7;
 }
 
 /* Interactive elements cursor and transitions */
@@ -310,10 +317,9 @@ textarea {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* Mobile touch targets - minimum 44px */
+/* Mobile touch targets - minimum 44px height only */
 .touch-target {
   min-height: 44px;
-  min-width: 44px;
 }
 
 /* Safe area insets for mobile devices */

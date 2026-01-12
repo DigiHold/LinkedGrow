@@ -11,7 +11,7 @@ import {
   Check,
   Clock,
   Users,
-  Flame,
+  Rocket,
   Play,
   Pause,
   ChevronRight,
@@ -29,13 +29,13 @@ import {
   FileText,
   Globe,
   Key,
-  Mic,
   Shield,
   RefreshCw,
+  Gift,
 } from "lucide-react";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 
-// Slower typewriter effect - always on second line
+// Slower typewriter effect with longer phrases
 function TypewriterText({ texts }: { texts: string[] }) {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
@@ -43,8 +43,8 @@ function TypewriterText({ texts }: { texts: string[] }) {
 
   useEffect(() => {
     const currentFullText = texts[currentTextIndex];
-    const typeSpeed = isDeleting ? 40 : 100; // Slower typing
-    const pauseTime = 3000; // Longer pause to read
+    const typeSpeed = isDeleting ? 30 : 80;
+    const pauseTime = 2500;
 
     if (!isDeleting && displayText === currentFullText) {
       setTimeout(() => setIsDeleting(true), pauseTime);
@@ -74,45 +74,7 @@ function TypewriterText({ texts }: { texts: string[] }) {
   );
 }
 
-// Logo marquee component
-function LogoMarquee() {
-  const logos = [
-    { name: "TechCrunch", icon: "TC" },
-    { name: "Forbes", icon: "F" },
-    { name: "Entrepreneur", icon: "E" },
-    { name: "Inc.", icon: "Inc" },
-    { name: "Fast Company", icon: "FC" },
-    { name: "Wired", icon: "W" },
-    { name: "Bloomberg", icon: "B" },
-    { name: "Business Insider", icon: "BI" },
-  ];
-
-  return (
-    <div className="relative overflow-hidden py-8">
-      <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
-      <motion.div
-        animate={{ x: [0, -1920] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        className="flex gap-16 items-center"
-      >
-        {[...logos, ...logos, ...logos, ...logos].map((logo, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 text-slate-400 dark:text-slate-600 whitespace-nowrap"
-          >
-            <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-sm">
-              {logo.icon}
-            </div>
-            <span className="text-lg font-semibold">{logo.name}</span>
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-// Interactive demo mockup - improved content
+// Interactive demo mockup
 function DemoPreview() {
   const [activeTab, setActiveTab] = useState<"write" | "analyze" | "schedule">("write");
   const [isPlaying, setIsPlaying] = useState(true);
@@ -125,7 +87,7 @@ function DemoPreview() {
         if (prev === "analyze") return "schedule";
         return "write";
       });
-    }, 5000); // Slower to let users absorb
+    }, 5000);
     return () => clearInterval(interval);
   }, [isPlaying]);
 
@@ -185,13 +147,13 @@ function DemoPreview() {
             {[
               { label: "Hook Score", value: "94", max: "100", color: "emerald" },
               { label: "Readability", value: "A+", max: "", color: "cyan" },
-              { label: "Engagement Prediction", value: "High", max: "", color: "violet" },
-              { label: "Best Time to Post", value: "9 AM", max: "Tue", color: "blue" },
+              { label: "Engagement", value: "High", max: "", color: "violet" },
+              { label: "Best Time", value: "9 AM", max: "Tue", color: "blue" },
             ].map((stat) => (
               <div key={stat.label} className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.value}</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white">{stat.value}</span>
                   {stat.max && <span className="text-xs text-slate-400">/{stat.max}</span>}
                 </div>
               </div>
@@ -279,12 +241,9 @@ function DemoPreview() {
       transition={{ delay: 0.4, duration: 0.8 }}
       className="relative"
     >
-      {/* Glow effect */}
       <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
 
-      {/* Browser frame */}
       <div className="relative bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
-        {/* Browser header */}
         <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
@@ -304,9 +263,7 @@ function DemoPreview() {
           </button>
         </div>
 
-        {/* App content */}
         <div className="p-4 bg-slate-900">
-          {/* Tabs */}
           <div className="flex gap-1 mb-4 bg-slate-800 rounded-lg p-1">
             {(["write", "analyze", "schedule"] as const).map((tab) => (
               <button
@@ -329,7 +286,6 @@ function DemoPreview() {
             ))}
           </div>
 
-          {/* Content */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -354,61 +310,53 @@ function DemoPreview() {
   );
 }
 
-// Bento grid for features
+// Bento grid for features - improved
 function BentoFeatures() {
   const features = [
     {
       icon: Key,
-      title: "Bring Your Own AI",
-      description: "Use OpenAI, Claude, or Gemini. No markup fees - pay only what you use.",
-      stat: "~$3/mo",
-      statLabel: "avg cost",
+      title: "Bring Your Own AI Key",
+      description: "Connect OpenAI, Claude, or Gemini directly. No markup fees - pay only what you use. Average users spend $3-5/month on AI calls.",
+      highlight: "96% cheaper than alternatives",
       size: "large",
       gradient: "from-amber-500 to-orange-500",
     },
     {
       icon: Brain,
-      title: "AI That Learns You",
-      description: "Train on your voice. Every post sounds like you wrote it.",
+      title: "AI Learns Your Voice",
+      description: "Train the AI on your writing style. Every post sounds authentically you, not generic AI.",
       stat: "95%",
-      statLabel: "voice match",
+      statLabel: "voice accuracy",
       size: "medium",
       gradient: "from-cyan-500 to-blue-500",
     },
     {
       icon: TrendingUp,
       title: "Viral Analytics",
-      description: "Real-time scoring predicts post performance before you publish.",
+      description: "Real-time scoring predicts engagement before you publish. Know what works.",
       stat: "91%",
-      statLabel: "accuracy",
+      statLabel: "prediction accuracy",
       size: "medium",
       gradient: "from-emerald-500 to-green-500",
     },
     {
       icon: FileText,
       title: "Carousel Generator",
-      description: "Turn ideas into beautiful PDF carousels in minutes.",
+      description: "Transform ideas into beautiful PDF carousels that drive engagement.",
       size: "small",
       gradient: "from-violet-500 to-purple-500",
     },
     {
       icon: Globe,
       title: "40+ Languages",
-      description: "Create content in any language with native quality.",
+      description: "Create content in any language with native-quality translations.",
       size: "small",
       gradient: "from-blue-500 to-indigo-500",
     },
     {
-      icon: Mic,
-      title: "Voice to Post",
-      description: "Record a memo, get a polished post.",
-      size: "small",
-      gradient: "from-pink-500 to-rose-500",
-    },
-    {
       icon: Calendar,
       title: "Smart Scheduling",
-      description: "AI finds your audience's peak hours. Auto-schedule weeks ahead.",
+      description: "AI finds your audience's peak hours. Schedule weeks of content in minutes.",
       stat: "+47%",
       statLabel: "more reach",
       size: "medium",
@@ -416,8 +364,8 @@ function BentoFeatures() {
     },
     {
       icon: MessageSquare,
-      title: "First Comment Magic",
-      description: "Auto-post strategic first comments with CTAs.",
+      title: "Auto First Comments",
+      description: "Strategic first comments with CTAs boost engagement automatically.",
       stat: "+50%",
       statLabel: "engagement",
       size: "medium",
@@ -426,7 +374,7 @@ function BentoFeatures() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       {features.map((feature, i) => (
         <motion.div
           key={feature.title}
@@ -435,20 +383,28 @@ function BentoFeatures() {
           viewport={{ once: true }}
           transition={{ delay: i * 0.05 }}
           className={`group relative rounded-2xl overflow-hidden ${
-            feature.size === "large" ? "col-span-2 row-span-2" : feature.size === "medium" ? "col-span-2 md:col-span-1" : ""
+            feature.size === "large" ? "sm:col-span-2 lg:col-span-2 lg:row-span-2" : feature.size === "medium" ? "sm:col-span-2 lg:col-span-1" : ""
           }`}
         >
           <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity`} />
-          <div className="relative h-full bg-white dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-5 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-              <feature.icon className="w-5 h-5 text-white" />
+          <div className={`relative h-full bg-white dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-5 md:p-6 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all ${feature.size === "large" ? "flex flex-col justify-between" : ""}`}>
+            <div>
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <feature.icon className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{feature.description}</p>
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white mb-1">{feature.title}</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{feature.description}</p>
+            {feature.highlight && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
+                <Zap className="w-4 h-4" />
+                {feature.highlight}
+              </div>
+            )}
             {feature.stat && (
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-slate-900 dark:text-white">{feature.stat}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{feature.statLabel}</span>
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-3xl font-black text-slate-900 dark:text-white">{feature.stat}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{feature.statLabel}</span>
               </div>
             )}
           </div>
@@ -458,88 +414,118 @@ function BentoFeatures() {
   );
 }
 
-// Auto-scrolling testimonials
+// Auto-scrolling testimonials - more rows, full width
 function TestimonialsCarousel() {
   const testimonials = [
-    { quote: "I went from 200 to 15K followers in 3 months. The viral analysis feature is insane.", author: "Sarah M.", role: "Marketing Director", metric: "+7,400%", avatar: "SM" },
-    { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings", avatar: "MC" },
-    { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%", avatar: "ER" },
-    { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%", avatar: "JL" },
-    { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%", avatar: "PS" },
-    { quote: "The scheduling AI is scary accurate. My posts now always hit peak engagement.", author: "David K.", role: "Consultant", metric: "+210%", avatar: "DK" },
+    { quote: "I went from 200 to 15K followers in 3 months. The viral analysis is insane.", author: "Sarah M.", role: "Marketing Director", metric: "+7,400%" },
+    { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings" },
+    { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%" },
+    { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%" },
+    { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%" },
+    { quote: "The scheduling AI is scary accurate. Posts always hit peak engagement.", author: "David K.", role: "Consultant", metric: "+210%" },
+    { quote: "Saved 15 hours per week on content creation. ROI is incredible.", author: "Lisa T.", role: "Agency Owner", metric: "15h saved" },
+    { quote: "Best investment for my LinkedIn growth. Paid for itself in the first week.", author: "Tom R.", role: "B2B Sales", metric: "5x ROI" },
   ];
 
   return (
     <div className="relative overflow-hidden py-4">
-      {/* Gradient masks */}
-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
 
-      {/* First row - scrolling left */}
+      {/* Row 1 - scrolling left */}
       <motion.div
-        animate={{ x: [0, -1500] }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        animate={{ x: [0, -2000] }}
+        transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
         className="flex gap-4 mb-4"
       >
-        {[...testimonials, ...testimonials].map((t, i) => (
+        {[...testimonials, ...testimonials, ...testimonials].map((t, i) => (
           <div
             key={i}
-            className="flex-shrink-0 w-[350px] bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200/50 dark:border-slate-700/50"
+            className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[380px] bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50"
           >
             <div className="flex items-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">&ldquo;{t.quote}&rdquo;</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                  {t.avatar}
+                  {t.author.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{t.metric}</p>
-              </div>
+              <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{t.metric}</p>
             </div>
           </div>
         ))}
       </motion.div>
 
-      {/* Second row - scrolling right */}
+      {/* Row 2 - scrolling right */}
       <motion.div
-        animate={{ x: [-1500, 0] }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-        className="flex gap-4"
+        animate={{ x: [-2000, 0] }}
+        transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+        className="flex gap-4 mb-4"
       >
-        {[...testimonials.slice(3), ...testimonials.slice(0, 3), ...testimonials.slice(3), ...testimonials.slice(0, 3)].map((t, i) => (
+        {[...testimonials.slice(4), ...testimonials.slice(0, 4), ...testimonials.slice(4), ...testimonials.slice(0, 4), ...testimonials].map((t, i) => (
           <div
             key={i}
-            className="flex-shrink-0 w-[350px] bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200/50 dark:border-slate-700/50"
+            className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[380px] bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50"
           >
             <div className="flex items-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">&ldquo;{t.quote}&rdquo;</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                  {t.avatar}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                  {t.author.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{t.metric}</p>
+              <p className="text-lg font-bold text-violet-600 dark:text-violet-400">{t.metric}</p>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Row 3 - scrolling left slower */}
+      <motion.div
+        animate={{ x: [0, -2000] }}
+        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        className="flex gap-4"
+      >
+        {[...testimonials.slice(2), ...testimonials.slice(0, 2), ...testimonials.slice(2), ...testimonials.slice(0, 2), ...testimonials].map((t, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[380px] bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50"
+          >
+            <div className="flex items-center gap-1 mb-3">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold">
+                  {t.author.split(" ").map(n => n[0]).join("")}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+                </div>
               </div>
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{t.metric}</p>
             </div>
           </div>
         ))}
@@ -548,61 +534,111 @@ function TestimonialsCarousel() {
   );
 }
 
-// How it works section
+// How it works with animated steps
 function HowItWorks() {
+  const [activeStep, setActiveStep] = useState(0);
   const steps = [
     {
       number: "01",
-      title: "Connect Your AI",
-      description: "Add your OpenAI, Claude, or Gemini API key. Takes 30 seconds.",
+      title: "Connect Your AI Key",
+      description: "Add your OpenAI, Claude, or Gemini API key. Takes 30 seconds. You pay the AI provider directly - no middleman markup.",
       icon: Key,
+      color: "from-amber-500 to-orange-500",
     },
     {
       number: "02",
-      title: "Tell Us About You",
-      description: "Share your niche, audience, and writing style. AI learns your voice.",
+      title: "Define Your Voice",
+      description: "Tell us about your niche, audience, and style. The AI learns to write exactly like you - not generic AI content.",
       icon: Target,
+      color: "from-cyan-500 to-blue-500",
     },
     {
       number: "03",
-      title: "Generate & Schedule",
-      description: "Create weeks of content in minutes. AI schedules at optimal times.",
-      icon: Calendar,
+      title: "Generate & Refine",
+      description: "Create weeks of viral-ready content in minutes. Tweak, regenerate, or approve. You're always in control.",
+      icon: Sparkles,
+      color: "from-violet-500 to-purple-500",
     },
     {
       number: "04",
-      title: "Watch It Grow",
-      description: "Track analytics, iterate on what works, and scale your presence.",
+      title: "Schedule & Grow",
+      description: "AI picks optimal posting times. Schedule ahead, track analytics, and watch your audience explode.",
       icon: TrendingUp,
+      color: "from-emerald-500 to-green-500",
     },
   ];
 
-  return (
-    <div className="relative">
-      {/* Connection line */}
-      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 hidden lg:block" style={{ transform: "translateY(-50%)" }} />
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % steps.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [steps.length]);
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* Progress bar */}
+      <div className="hidden md:flex items-center justify-between mb-12 relative">
+        <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-200 dark:bg-slate-700 -translate-y-1/2" />
+        <motion.div
+          className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 -translate-y-1/2"
+          initial={{ width: "0%" }}
+          animate={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+          transition={{ duration: 0.5 }}
+        />
         {steps.map((step, i) => (
-          <motion.div
+          <button
             key={step.number}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-            className="relative"
+            onClick={() => setActiveStep(i)}
+            className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+              i <= activeStep
+                ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110"
+                : "bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400"
+            }`}
           >
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 relative z-10">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                  <step.icon className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-4xl font-black text-slate-200 dark:text-slate-700">{step.number}</span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{step.description}</p>
+            <step.icon className="w-6 h-6" />
+          </button>
+        ))}
+      </div>
+
+      {/* Active step content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeStep}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-10 border border-slate-200 dark:border-slate-700 shadow-xl"
+        >
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${steps[activeStep].color} flex items-center justify-center flex-shrink-0`}>
+              {(() => {
+                const Icon = steps[activeStep].icon;
+                return <Icon className="w-10 h-10 text-white" />;
+              })()}
             </div>
-          </motion.div>
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-3">
+                <span className="text-5xl font-black text-slate-200 dark:text-slate-700">{steps[activeStep].number}</span>
+                <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{steps[activeStep].title}</h3>
+              </div>
+              <p className="text-lg text-slate-600 dark:text-slate-400">{steps[activeStep].description}</p>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Mobile step indicators */}
+      <div className="flex justify-center gap-2 mt-6 md:hidden">
+        {steps.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveStep(i)}
+            className={`w-3 h-3 rounded-full transition-all ${
+              i === activeStep ? "bg-cyan-500 w-8" : "bg-slate-300 dark:bg-slate-600"
+            }`}
+          />
         ))}
       </div>
     </div>
@@ -613,12 +649,11 @@ function HowItWorks() {
 function ComparisonSection() {
   const comparisons = [
     { feature: "AI Content Generation", linkedgrow: "Unlimited", others: "50-100/mo" },
-    { feature: "Monthly AI Cost", linkedgrow: "~$3 (your API)", others: "$49-199" },
-    { feature: "AI Models Available", linkedgrow: "GPT-4, Claude, Gemini...", others: "1-2 locked models" },
+    { feature: "Monthly Cost", linkedgrow: "Platform fee + ~$3-5 API", others: "$49-199/mo" },
+    { feature: "AI Models", linkedgrow: "GPT-4, Claude, Gemini...", others: "1-2 locked models" },
     { feature: "Viral Post Analysis", linkedgrow: true, others: false },
     { feature: "Carousel Generator", linkedgrow: true, others: "Extra $29/mo" },
     { feature: "Smart Scheduling", linkedgrow: true, others: true },
-    { feature: "Voice to Post", linkedgrow: true, others: false },
     { feature: "Your Data Privacy", linkedgrow: "100% yours", others: "Used for training" },
   ];
 
@@ -631,7 +666,6 @@ function ComparisonSection() {
     >
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-3xl" />
       <div className="relative bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
-        {/* Header */}
         <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
           <div className="text-sm font-semibold text-slate-600 dark:text-slate-400">Feature</div>
           <div className="text-center">
@@ -643,7 +677,6 @@ function ComparisonSection() {
           <div className="text-center text-sm font-semibold text-slate-400">Other Tools</div>
         </div>
 
-        {/* Rows */}
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {comparisons.map((row, i) => (
             <motion.div
@@ -685,30 +718,50 @@ function ComparisonSection() {
   );
 }
 
-// FAQ Section
+// FAQ Section - expanded
 function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
     {
       q: "What does \"Bring Your Own AI Key\" mean?",
-      a: "Instead of paying us $50+/month for AI, you use your own API key from OpenAI, Anthropic (Claude), or Google (Gemini). You pay the AI provider directly - usually $3-5/month for typical usage. No middleman markup.",
+      a: "Instead of paying us inflated fees for AI, you connect your own API key from OpenAI, Anthropic (Claude), or Google (Gemini). You pay the AI provider directly at their rates - typically $3-5/month for average usage. No middleman markup, no content limits.",
     },
     {
-      q: "How is this different from other LinkedIn tools?",
-      a: "Most tools lock you into expensive subscriptions with limited generations. We charge a flat platform fee, and you pay only what you use for AI. Plus, we analyze viral content to help you write posts that actually perform.",
+      q: "What's the total cost of using LinkedGrow?",
+      a: "You pay a platform subscription fee to LinkedGrow (see pricing page) plus your actual AI API usage which averages $3-5/month for most users. This is 80-90% cheaper than competitors who charge $50-200/month with strict generation limits.",
     },
     {
-      q: "Will posts sound like me or like AI?",
-      a: "Like you. Our AI learns your writing style, tone, and vocabulary. We analyze your best-performing content to understand what makes YOUR voice unique. The result? Posts that sound authentically you.",
+      q: "Is this safe to use with LinkedIn?",
+      a: "Yes. LinkedGrow doesn't automate LinkedIn interactions or violate their terms of service. We help you create content that you then post manually or schedule through LinkedIn's native tools. Your account stays safe.",
     },
     {
-      q: "What's included in the founder's discount?",
-      a: "Early supporters get 30% off for their entire first year. This includes all features: AI writing, carousel generator, scheduling, analytics, and unlimited content generation (you just pay your API costs).",
+      q: "Will my posts sound like generic AI content?",
+      a: "No. Our AI learns your unique writing style, tone, and vocabulary by analyzing your inputs and preferences. We use advanced prompting to match your voice. The result is content that sounds like you wrote it - because you guided the AI to do so.",
     },
     {
-      q: "When does LinkedGrow launch?",
-      a: "We're launching January 26, 2026. Join the waitlist now to lock in your founder's discount and get early access before the public launch.",
+      q: "How is this different from ChatGPT?",
+      a: "LinkedGrow is purpose-built for LinkedIn. We have viral content formulas, engagement analysis, optimal posting times, carousel generators, and scheduling - all optimized for LinkedIn's algorithm. ChatGPT is a general tool; we're specialized.",
+    },
+    {
+      q: "Can I try before committing?",
+      a: "Yes. We offer a free tier so you can test the platform before subscribing. You'll just need to add your own AI API key to generate content, which typically costs pennies per post.",
+    },
+    {
+      q: "What if I don't have an AI API key?",
+      a: "Getting an API key takes 2 minutes. We have step-by-step guides for OpenAI, Claude, and Gemini. Most providers offer free credits to start, so you can try everything at no cost.",
+    },
+    {
+      q: "Do you store or train on my content?",
+      a: "Never. Your content is yours. We don't store your generated posts or use them to train AI models. Your API calls go directly to the AI provider. We only save your preferences and drafts that you choose to keep.",
+    },
+    {
+      q: "What happens to my early access discount?",
+      a: "Early supporters get 30% off their first year. This discount is locked in when you join the waitlist and claim it at launch. The discount applies to annual plans only.",
+    },
+    {
+      q: "Can I cancel anytime?",
+      a: "Yes, no contracts. Cancel your subscription anytime from your dashboard. If you cancel, you keep access until the end of your billing period.",
     },
   ];
 
@@ -721,15 +774,15 @@ function FAQSection() {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: i * 0.05 }}
+            transition={{ delay: i * 0.03 }}
           >
             <button
               onClick={() => setOpenIndex(openIndex === i ? null : i)}
               className="w-full text-left bg-white dark:bg-slate-800/80 rounded-xl p-5 border border-slate-200/50 dark:border-slate-700/50 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900 dark:text-white pr-4">{faq.q}</h3>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${openIndex === i ? "rotate-180" : ""}`} />
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="font-semibold text-slate-900 dark:text-white text-left">{faq.q}</h3>
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform flex-shrink-0 ${openIndex === i ? "rotate-180" : ""}`} />
               </div>
               <AnimatePresence>
                 {openIndex === i && (
@@ -765,7 +818,7 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
   error: string;
 }) {
   return (
-    <section className="relative z-10 py-24 px-4">
+    <section className="relative z-10 py-16 md:py-24 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -773,12 +826,10 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
           viewport={{ once: true }}
           className="relative"
         >
-          {/* Multi-layer glow */}
           <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-violet-500/30 rounded-[2.5rem] blur-2xl" />
           <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-[2rem] blur-xl" />
 
           <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden">
-            {/* Animated background */}
             <div className="absolute inset-0">
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute inset-0" style={{
@@ -790,16 +841,16 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
               <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
             </div>
 
-            <div className="relative z-10 p-8 md:p-16">
+            <div className="relative z-10 p-6 md:p-12 lg:p-16">
               {/* Badge */}
               <div className="flex justify-center mb-8">
-                <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-                  <div className="flex items-center gap-1">
-                    <Flame className="w-5 h-5 text-orange-400" />
-                    <span className="font-bold text-orange-400">FOUNDER&apos;S DEAL</span>
-                  </div>
-                  <div className="w-px h-4 bg-white/20" />
+                <div className="inline-flex items-center gap-3 px-4 md:px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
                   <div className="flex items-center gap-2">
+                    <Gift className="w-5 h-5 text-cyan-400" />
+                    <span className="font-bold text-cyan-400 text-sm md:text-base">EARLY ACCESS</span>
+                  </div>
+                  <div className="w-px h-4 bg-white/20 hidden sm:block" />
+                  <div className="hidden sm:flex items-center gap-2">
                     <Users className="w-4 h-4 text-white/60" />
                     <span className="text-white/80 text-sm">Only 153 spots left</span>
                   </div>
@@ -807,23 +858,23 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
               </div>
 
               {/* Headline */}
-              <div className="text-center max-w-2xl mx-auto mb-10">
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4">
+              <div className="text-center max-w-2xl mx-auto mb-8 md:mb-10">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                   Ready to 10x your
                   <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">
                     LinkedIn growth?
                   </span>
                 </h2>
-                <p className="text-lg text-slate-300">
-                  Join now and lock in <span className="font-bold text-white">30% off</span> for your entire first year.
-                  <br />
-                  This deal disappears at launch.
+                <p className="text-base md:text-lg text-slate-300">
+                  Join the waitlist and lock in <span className="font-bold text-white">30% off</span> for your first year.
+                  <br className="hidden sm:block" />
+                  This deal ends at launch.
                 </p>
               </div>
 
               {/* Countdown */}
-              <div className="flex justify-center gap-3 sm:gap-4 mb-10">
+              <div className="flex justify-center gap-2 sm:gap-3 md:gap-4 mb-8 md:mb-10">
                 {[
                   { value: timeLeft.days, label: "Days" },
                   { value: timeLeft.hours, label: "Hours" },
@@ -831,12 +882,12 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
                   { value: timeLeft.seconds, label: "Sec" },
                 ].map((item, i) => (
                   <div key={i} className="text-center">
-                    <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                      <span className="text-2xl sm:text-3xl font-bold text-white font-mono">
+                    <div className="w-14 sm:w-16 md:w-20 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-mono">
                         {String(item.value).padStart(2, "0")}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">{item.label}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-400 mt-2">{item.label}</p>
                   </div>
                 ))}
               </div>
@@ -852,51 +903,51 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="flex-1 h-14 px-5 rounded-xl bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-base focus:bg-white/20"
+                        className="flex-1 h-12 md:h-14 px-4 md:px-5 rounded-xl bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-base focus:bg-white/20"
                       />
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
+                        className="h-12 md:h-14 px-6 md:px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
                       >
                         {isLoading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                           <>
-                            Claim 30% Off
+                            Get 30% Off
                             <ArrowRight className="w-5 h-5 ml-2" />
                           </>
                         )}
                       </Button>
                     </div>
                     {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                    <p className="text-center text-sm text-slate-400">
-                      Join 179 founders • No spam, ever • Unsubscribe anytime
+                    <p className="text-center text-xs md:text-sm text-slate-400">
+                      Join 179 founders • No spam • Unsubscribe anytime
                     </p>
                   </form>
                 ) : (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-emerald-500/20 border border-emerald-500/30 rounded-2xl p-8 text-center"
+                    className="bg-emerald-500/20 border border-emerald-500/30 rounded-2xl p-6 md:p-8 text-center"
                   >
-                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
-                      <Check className="w-8 h-8 text-white" />
+                    <div className="w-14 md:w-16 h-14 md:h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
+                      <Check className="w-7 md:w-8 h-7 md:h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">You&apos;re on the list!</h3>
-                    <p className="text-slate-300">Your 30% founder discount is locked in. Check your inbox!</p>
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-2">You&apos;re on the list!</h3>
+                    <p className="text-slate-300">Your 30% discount is locked in. Check your inbox!</p>
                   </motion.div>
                 )}
               </div>
 
               {/* Trust badges */}
-              <div className="flex flex-wrap justify-center gap-6 mt-10 pt-10 border-t border-white/10">
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-8 md:mt-10 pt-8 md:pt-10 border-t border-white/10">
                 {[
                   { icon: Shield, text: "Bank-level security" },
                   { icon: Key, text: "Your API, your data" },
                   { icon: RefreshCw, text: "Cancel anytime" },
                 ].map((badge) => (
-                  <div key={badge.text} className="flex items-center gap-2 text-slate-400 text-sm">
+                  <div key={badge.text} className="flex items-center gap-2 text-slate-400 text-xs md:text-sm">
                     <badge.icon className="w-4 h-4" />
                     <span>{badge.text}</span>
                   </div>
@@ -926,8 +977,8 @@ export default function PreLaunchPage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
 
-  // Fixed launch date
-  const LAUNCH_DATE = new Date("2026-01-26T00:00:00Z");
+  // Launch date: February 1st 2026
+  const LAUNCH_DATE = new Date("2026-02-01T00:00:00Z");
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -982,11 +1033,11 @@ export default function PreLaunchPage() {
       <div className="relative z-20 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-3 px-4 border-b border-slate-700">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-400 animate-pulse" />
-            <span className="font-bold text-orange-400">FOUNDER&apos;S DEAL</span>
+            <Gift className="w-5 h-5 text-cyan-400" />
+            <span className="font-bold text-cyan-400">EARLY ACCESS</span>
           </div>
-          <span className="text-slate-300">
-            Join now → <span className="font-bold text-white">30% OFF</span> for your first year
+          <span className="text-slate-300 text-sm sm:text-base">
+            Join the waitlist → <span className="font-bold text-white">30% OFF</span> for your first year
           </span>
           <div className="hidden md:flex items-center gap-2 text-sm">
             <span className="text-slate-400">|</span>
@@ -1002,51 +1053,51 @@ export default function PreLaunchPage() {
       <motion.section
         ref={heroRef}
         style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative z-10 pt-8 pb-16 px-4"
+        className="relative z-10 pt-8 md:pt-12 pb-12 md:pb-16 px-4"
       >
         <div className="max-w-6xl mx-auto">
           {/* Social proof badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-8"
+            className="flex justify-center mb-6 md:mb-8"
           >
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50">
+            <div className="inline-flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50">
               <div className="flex -space-x-2">
                 {["A", "B", "C", "D"].map((letter) => (
-                  <div key={letter} className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-bold">
+                  <div key={letter} className="w-7 md:w-8 h-7 md:h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-bold">
                     {letter}
                   </div>
                 ))}
               </div>
-              <div className="text-sm">
+              <div className="text-xs md:text-sm">
                 <span className="font-bold text-slate-900 dark:text-white">179 founders</span>
-                <span className="text-slate-500 dark:text-slate-400"> already joined</span>
+                <span className="text-slate-500 dark:text-slate-400"> joined</span>
               </div>
-              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-              <div className="flex items-center gap-1">
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+              <div className="hidden sm:flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="w-3 md:w-4 h-3 md:h-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
             </div>
           </motion.div>
 
-          {/* Headline - fixed structure */}
-          <div className="text-center max-w-4xl mx-auto mb-12">
+          {/* Headline */}
+          <div className="text-center max-w-4xl mx-auto mb-10 md:mb-12">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-4 md:mb-6"
             >
               Stop struggling to
               <br />
-              <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">
                 {isMounted ? (
-                  <TypewriterText texts={["write LinkedIn posts", "get real engagement", "go viral consistently", "grow your audience"]} />
+                  <TypewriterText texts={["create engaging content", "grow your audience fast", "write posts that convert", "build real authority"]} />
                 ) : (
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">write LinkedIn posts</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">create engaging content</span>
                 )}
               </span>
             </motion.h1>
@@ -1055,19 +1106,18 @@ export default function PreLaunchPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8"
+              className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-6 md:mb-8 px-2"
             >
-              LinkedGrow analyzes viral content, generates posts in your voice, and costs{" "}
-              <span className="font-bold text-slate-900 dark:text-white">96% less</span> than other AI tools.
-              No subscription limits. Just results.
+              LinkedGrow analyzes viral content, generates posts in your voice, and lets you use your own AI key -
+              paying only <span className="font-bold text-slate-900 dark:text-white">$3-5/month in API costs</span> instead of $50+ subscriptions.
             </motion.p>
 
-            {/* CTA inline form - fixed sizing */}
+            {/* CTA form */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="max-w-xl mx-auto"
+              className="max-w-xl mx-auto px-2"
             >
               {!isSuccess ? (
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -1077,12 +1127,12 @@ export default function PreLaunchPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-14 px-5 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-base sm:flex-1"
+                    className="h-12 md:h-14 px-4 md:px-5 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-base flex-1"
                   />
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="h-14 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
+                    className="h-12 md:h-14 px-5 md:px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ChevronRight className="w-5 h-5 ml-1" /></>}
                   </Button>
@@ -1093,16 +1143,16 @@ export default function PreLaunchPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 text-center"
                 >
-                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
-                    <Check className="w-8 h-8 text-white" />
+                  <div className="w-14 md:w-16 h-14 md:h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
+                    <Check className="w-7 md:w-8 h-7 md:h-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">You&apos;re on the list!</h3>
-                  <p className="text-slate-600 dark:text-slate-400">Your 30% founder discount is locked in. Check your inbox!</p>
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-2">You&apos;re on the list!</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Your 30% discount is locked in. Check your inbox!</p>
                 </motion.div>
               )}
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                Join 179 founders • 30% off locked in • No spam, ever
+                Join 179 founders • 30% off locked in • No spam
               </p>
             </motion.div>
           </div>
@@ -1114,40 +1164,32 @@ export default function PreLaunchPage() {
         </div>
       </motion.section>
 
-      {/* Logo Marquee */}
-      <section className="relative z-10 py-8 border-y border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-        <div className="max-w-6xl mx-auto px-4">
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">Trusted by creators featured in</p>
-          <LogoMarquee />
-        </div>
-      </section>
-
       {/* Pain Points Section */}
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-16 md:py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium mb-4">
               <X className="w-4 h-4" />
               The LinkedIn Content Struggle
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
               Sound familiar?
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              You know LinkedIn is a goldmine for your business. But creating content feels like pulling teeth.
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              You know LinkedIn can grow your business. But creating content that actually works feels impossible.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {[
               { title: "Hours wasted writing", description: "Staring at a blank screen, trying to write something that doesn't sound generic.", stat: "3h+" },
-              { title: "No engagement", description: "You post consistently but the algorithm ignores you. Zero likes, zero comments.", stat: "0%" },
-              { title: "Expensive tools", description: "AI writing tools cost $50+/month with strict limits. You pay even when you don't use it.", stat: "$600/yr" },
+              { title: "Zero engagement", description: "You post consistently but the algorithm ignores you. Zero likes, zero leads.", stat: "0%" },
+              { title: "Expensive AI tools", description: "Other tools cost $50+/month with strict limits. You pay even when you don't use it.", stat: "$600/yr" },
             ].map((pain, i) => (
               <motion.div
                 key={pain.title}
@@ -1158,9 +1200,9 @@ export default function PreLaunchPage() {
                 className="group relative"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-hover:opacity-100" />
-                <div className="relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:border-red-300 dark:hover:border-red-700 transition-all">
-                  <div className="text-4xl font-black text-red-500/20 dark:text-red-400/20 mb-2">{pain.stat}</div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{pain.title}</h3>
+                <div className="relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 md:p-6 border border-slate-200/50 dark:border-slate-700/50 hover:border-red-300 dark:hover:border-red-700 transition-all h-full">
+                  <div className="text-3xl md:text-4xl font-black text-red-500/20 dark:text-red-400/20 mb-2">{pain.stat}</div>
+                  <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2">{pain.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400">{pain.description}</p>
                 </div>
               </motion.div>
@@ -1170,23 +1212,23 @@ export default function PreLaunchPage() {
       </section>
 
       {/* Features Bento Grid */}
-      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
+      <section className="relative z-10 py-16 md:py-24 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-4">
               <Sparkles className="w-4 h-4" />
-              Introducing LinkedGrow
+              The Solution
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-              Everything you need to dominate LinkedIn
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              Your complete LinkedIn growth engine
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              An AI-powered content engine that writes like you, costs almost nothing, and actually gets results.
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              AI-powered content creation that writes like you, costs almost nothing, and actually drives results.
             </p>
           </motion.div>
 
@@ -1195,18 +1237,18 @@ export default function PreLaunchPage() {
       </section>
 
       {/* How It Works */}
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-16 md:py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
               How it works
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400">
               From zero to viral in 4 simple steps
             </p>
           </motion.div>
@@ -1216,18 +1258,18 @@ export default function PreLaunchPage() {
       </section>
 
       {/* Comparison Section */}
-      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
+      <section className="relative z-10 py-16 md:py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-              Why founders choose us
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              Why founders choose LinkedGrow
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400">
               The honest comparison they don&apos;t want you to see
             </p>
           </motion.div>
@@ -1237,18 +1279,18 @@ export default function PreLaunchPage() {
       </section>
 
       {/* Testimonials Carousel */}
-      <section className="relative z-10 py-24 px-4">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative z-10 py-16 md:py-24 px-0">
+        <div className="max-w-full mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-10 md:mb-12 px-4"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
               Real results from real founders
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400">
               Beta testers are already seeing incredible growth
             </p>
           </motion.div>
@@ -1258,18 +1300,18 @@ export default function PreLaunchPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
+      <section className="relative z-10 py-16 md:py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-              Frequently asked questions
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              Questions? We&apos;ve got answers
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400">
               Everything you need to know about LinkedGrow
             </p>
           </motion.div>
@@ -1290,8 +1332,8 @@ export default function PreLaunchPage() {
       />
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-200 dark:border-slate-800 py-8 px-4 bg-white dark:bg-slate-900">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
+      <footer className="relative z-10 border-t border-slate-200 dark:border-slate-800 py-6 md:py-8 px-4 bg-white dark:bg-slate-900">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
           <div>&copy; 2026 LinkedGrow. All rights reserved.</div>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
