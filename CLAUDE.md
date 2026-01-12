@@ -9,15 +9,15 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS + shadcn/ui components
-- **Authentication:** Clerk
-- **Database:** Supabase (PostgreSQL)
-- **Payments:** Stripe (subscriptions)
-- **Email:** Mailchimp (waitlist/marketing), Resend (transactional)
-- **Hosting:** Vercel
-- **AI Providers:** OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI (user provides keys)
+-   **Framework:** Next.js 16 (App Router)
+-   **Language:** TypeScript
+-   **Styling:** Tailwind CSS + shadcn/ui components
+-   **Authentication:** Clerk
+-   **Database:** Supabase (PostgreSQL)
+-   **Payments:** Stripe (subscriptions)
+-   **Email:** Mailchimp (waitlist/marketing), Resend (transactional)
+-   **Hosting:** Vercel
+-   **AI Providers:** OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI (user provides keys)
 
 ## Project Structure
 
@@ -45,31 +45,41 @@ src/
 
 ## Pricing Plans
 
-| Plan | Price | Key Features |
-|------|-------|--------------|
-| **Free** | $0 | 3 posts/month, basic editor, BYOK |
-| **Starter** | $19/mo | Unlimited posts, 10 scheduled, content calendar |
-| **Pro** | $39/mo | Unlimited scheduling, AI images, carousels, analytics |
-| **Business** | $79/mo | A/B testing, API access, priority support |
+| Plan         | Price  | Key Features                                          |
+| ------------ | ------ | ----------------------------------------------------- |
+| **Free**     | $0     | 3 posts/month, basic editor, BYOK                     |
+| **Starter**  | $19/mo | Unlimited posts, 10 scheduled, content calendar       |
+| **Pro**      | $39/mo | Unlimited scheduling, AI images, carousels, analytics |
+| **Business** | $79/mo | A/B testing, API access, priority support             |
 
 ## Stripe Configuration
 
 ### Environment Variables
+
 ```env
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_STARTER_PRICE_ID=price_1SoKzYDZ5QtFd12cEZHEDn5Q
-STRIPE_PRO_PRICE_ID=price_1SoL05DZ5QtFd12capBIf37Q
-STRIPE_BUSINESS_PRICE_ID=price_1SoL0rDZ5QtFd12c7kcCeiyu
+AUTH_SECRET=REMOVED
+AUTH_URL=https://linkedgrow.ai
+NEXT_PUBLIC_APP_URL=https://linkedgrow.ai
+NEXT_PUBLIC_APP_NAME=LinkedGrow
+NEXT_PUBLIC_PRELAUNCH_MODE=true
+TURSO_DATABASE_URL=libsql://linkedgrow-linkedgrow.aws-us-east-1.turso.io
+TURSO_AUTH_TOKEN=[full token from Turso dashboard]
+STRIPE_SECRET_KEY=REMOVED
+LINKEDIN_CLIENT_ID=REMOVED
+LINKEDIN_CLIENT_SECRET=REMOVED
+LINKEDIN_COMMUNITY_CLIENT_ID=REMOVED
+LINKEDIN_COMMUNITY_CLIENT_SECRET=REMOVED
+LINKEDIN_REDIRECT_URI=https://linkedgrow.ai/api/linkedin/callback
 ```
 
 ### Coupon System
-- **PRELAUNCH30**: 30% off for 12 months (founder's discount for waitlist users)
-- Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
-- Auto-applies at Stripe checkout
+
+-   **PRELAUNCH30**: 30% off for 12 months (founder's discount for waitlist users)
+-   Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
+-   Auto-applies at Stripe checkout
 
 ### Checkout Flow
+
 1. User clicks plan button on pricing page
 2. Email input appears
 3. Redirect to Stripe Checkout (hosted page)
@@ -79,61 +89,71 @@ STRIPE_BUSINESS_PRICE_ID=price_1SoL0rDZ5QtFd12c7kcCeiyu
 ## Key Features
 
 ### BYOK (Bring Your Own Key)
+
 Users connect their own AI API keys stored securely in browser localStorage. This enables:
-- Unlimited AI generations (no monthly caps)
-- Choice of any AI model (GPT-4, Claude, Gemini, etc.)
-- AI image generation (DALL-E, Flux, Stable Diffusion)
-- Lower costs (~$2-5/month API usage vs $49+ competitors)
+
+-   Unlimited AI generations (no monthly caps)
+-   Choice of any AI model (GPT-4, Claude, Gemini, etc.)
+-   AI image generation (DALL-E, Flux, Stable Diffusion)
+-   Lower costs (~$2-5/month API usage vs $49+ competitors)
 
 ### Content Creation
-- AI post generation with multiple styles/tones
-- Reddit-to-LinkedIn idea finder
-- Carousel/document generator
-- Image generation for posts
-- 40+ language support
+
+-   AI post generation with multiple styles/tones
+-   Reddit-to-LinkedIn idea finder
+-   Carousel/document generator
+-   Image generation for posts
+-   40+ language support
 
 ### Scheduling & Analytics
-- Content calendar
-- Post scheduling with optimal time suggestions
-- Engagement analytics
-- A/B testing (Business plan)
+
+-   Content calendar
+-   Post scheduling with optimal time suggestions
+-   Engagement analytics
+-   A/B testing (Business plan)
 
 ## Current State: Pre-Launch
 
 ### Active Page
+
 `/prelaunch` - Waitlist collection with urgency marketing:
-- Countdown timer (7 days)
-- "Only X spots left" scarcity
-- 30% Founder's Discount offer
-- Email collection → Mailchimp with "prelaunch" tag
+
+-   Countdown timer (7 days)
+-   "Only X spots left" scarcity
+-   30% Discount offer
+-   Email collection → Mailchimp with "prelaunch" tag
 
 ### Post-Launch
+
 Main landing page at `/` with full marketing sections:
-- Hero, Features, Pricing, BYOK explanation, About, FAQ
+
+-   Hero, Features, Pricing, BYOK explanation, About, FAQ
 
 ## Design System
 
 ### Theme: Light & Modern (2026 design)
-- **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
-- **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
-- **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
-- **Accents:** Emerald (success), Amber (warnings/BYOK)
+
+-   **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
+-   **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
+-   **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
+-   **Accents:** Emerald (success), Amber (warnings/BYOK)
 
 ### Key Design Patterns
-- Rounded corners: `rounded-2xl` for cards
-- Subtle shadows: `shadow-lg shadow-slate-200/50`
-- Gradient text: `text-transparent bg-clip-text bg-gradient-to-r`
-- Consistent spacing: `py-20 md:py-28` for sections
+
+-   Rounded corners: `rounded-2xl` for cards
+-   Subtle shadows: `shadow-lg shadow-slate-200/50`
+-   Gradient text: `text-transparent bg-clip-text bg-gradient-to-r`
+-   Consistent spacing: `py-20 md:py-28` for sections
 
 ## API Routes
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/stripe/checkout` | POST | Create Stripe checkout session |
-| `/api/stripe/webhook` | POST | Handle Stripe events |
-| `/api/waitlist` | POST | Add email to Mailchimp waitlist |
-| `/api/posts` | CRUD | Post management |
-| `/api/media` | POST | Image upload/generation |
+| Route                  | Method | Purpose                         |
+| ---------------------- | ------ | ------------------------------- |
+| `/api/stripe/checkout` | POST   | Create Stripe checkout session  |
+| `/api/stripe/webhook`  | POST   | Handle Stripe events            |
+| `/api/waitlist`        | POST   | Add email to Mailchimp waitlist |
+| `/api/posts`           | CRUD   | Post management                 |
+| `/api/media`           | POST   | Image upload/generation         |
 
 ## Environment Variables
 
@@ -176,18 +196,18 @@ RESEND_API_KEY=re_...
 
 ## Code Style Rules
 
-1. **No em dashes**: Never use em dashes (—) in any text or code. Use regular dashes with spaces ` - ` instead.
-   - Wrong: `"no hidden costs—just results"`
-   - Correct: `"no hidden costs - just results"`
+1. **No em dashes**: Never use em dashes (—) in any text or code. Use regular dashes with spaces `-` instead.
+    - Wrong: `"no hidden costs—just results"`
+    - Correct: `"no hidden costs - just results"`
 2. **Contact email**: Use only `contact@linkedgrow.ai` for all contact references
 
 ## Founders
 
-- **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
-- **Maria Lecocq** - Operations & Community
+-   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
+-   **Maria Lecocq** - Operations & Community
 
 Based in Montreux, Switzerland. LinkedGrow is a product of DigiHold.
 
 ## Related Projects
 
-- **DigiHold** (https://digihold.me) - Parent company, WordPress products
+-   **DigiHold** (https://digihold.me) - Parent company, WordPress products

@@ -35,41 +35,58 @@ import {
 } from "lucide-react";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 
-// Slower typewriter effect with longer phrases
+// Smooth typewriter effect - types word by word for better readability
 function TypewriterText({ texts }: { texts: string[] }) {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [charIndex, setCharIndex] = useState(0);
 
   useEffect(() => {
     const currentFullText = texts[currentTextIndex];
-    const typeSpeed = isDeleting ? 30 : 80;
-    const pauseTime = 2500;
+    const typeSpeed = isDeleting ? 20 : 50; // Faster typing for smoother effect
+    const pauseTime = 3000; // Longer pause to read
 
-    if (!isDeleting && displayText === currentFullText) {
-      setTimeout(() => setIsDeleting(true), pauseTime);
-      return;
+    // Finished typing - pause then start deleting
+    if (!isDeleting && charIndex === currentFullText.length) {
+      const timeout = setTimeout(() => setIsDeleting(true), pauseTime);
+      return () => clearTimeout(timeout);
     }
 
-    if (isDeleting && displayText === "") {
+    // Finished deleting - move to next text
+    if (isDeleting && charIndex === 0) {
       setIsDeleting(false);
       setCurrentTextIndex((prev) => (prev + 1) % texts.length);
       return;
     }
 
+    // Type or delete characters
     const timeout = setTimeout(() => {
-      setDisplayText((prev) =>
-        isDeleting ? prev.slice(0, -1) : currentFullText.slice(0, prev.length + 1)
-      );
+      if (isDeleting) {
+        // Delete faster - remove multiple chars at once
+        const charsToRemove = Math.min(2, charIndex);
+        setCharIndex((prev) => prev - charsToRemove);
+        setDisplayText(currentFullText.slice(0, charIndex - charsToRemove));
+      } else {
+        // Type character by character
+        setCharIndex((prev) => prev + 1);
+        setDisplayText(currentFullText.slice(0, charIndex + 1));
+      }
     }, typeSpeed);
 
     return () => clearTimeout(timeout);
-  }, [displayText, isDeleting, currentTextIndex, texts]);
+  }, [charIndex, isDeleting, currentTextIndex, texts]);
+
+  // Reset charIndex when text changes
+  useEffect(() => {
+    setCharIndex(0);
+    setDisplayText("");
+  }, [currentTextIndex]);
 
   return (
     <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
       {displayText}
-      <span className="animate-pulse text-cyan-500">|</span>
+      <span className="animate-blink text-cyan-500 font-light">|</span>
     </span>
   );
 }
@@ -310,106 +327,121 @@ function DemoPreview() {
   );
 }
 
-// Bento grid for features - improved
+// Modern animated features section with 3D cards
 function BentoFeatures() {
   const features = [
     {
       icon: Key,
       title: "Bring Your Own AI Key",
-      description: "Connect OpenAI, Claude, or Gemini directly. No markup fees - pay only what you use. Average users spend $3-5/month on AI calls.",
-      highlight: "96% cheaper than alternatives",
-      size: "large",
-      gradient: "from-amber-500 to-orange-500",
+      description: "Connect OpenAI, Claude, or Gemini directly. No markup fees - pay only what you use.",
+      highlight: "96% cheaper",
+      color: "amber",
+      iconBg: "from-amber-500 to-orange-500",
     },
     {
       icon: Brain,
       title: "AI Learns Your Voice",
-      description: "Train the AI on your writing style. Every post sounds authentically you, not generic AI.",
+      description: "Train the AI on your writing style. Every post sounds authentically you.",
       stat: "95%",
-      statLabel: "voice accuracy",
-      size: "medium",
-      gradient: "from-cyan-500 to-blue-500",
+      statLabel: "accuracy",
+      color: "cyan",
+      iconBg: "from-cyan-500 to-blue-500",
     },
     {
       icon: TrendingUp,
       title: "Viral Analytics",
-      description: "Real-time scoring predicts engagement before you publish. Know what works.",
+      description: "Real-time scoring predicts engagement before you publish.",
       stat: "91%",
-      statLabel: "prediction accuracy",
-      size: "medium",
-      gradient: "from-emerald-500 to-green-500",
+      statLabel: "prediction",
+      color: "emerald",
+      iconBg: "from-emerald-500 to-green-500",
     },
     {
       icon: FileText,
       title: "Carousel Generator",
       description: "Transform ideas into beautiful PDF carousels that drive engagement.",
-      size: "small",
-      gradient: "from-violet-500 to-purple-500",
+      color: "violet",
+      iconBg: "from-violet-500 to-purple-500",
     },
     {
       icon: Globe,
       title: "40+ Languages",
       description: "Create content in any language with native-quality translations.",
-      size: "small",
-      gradient: "from-blue-500 to-indigo-500",
+      color: "blue",
+      iconBg: "from-blue-500 to-indigo-500",
     },
     {
       icon: Calendar,
       title: "Smart Scheduling",
-      description: "AI finds your audience's peak hours. Schedule weeks of content in minutes.",
+      description: "AI finds your audience's peak hours. Schedule weeks of content.",
       stat: "+47%",
-      statLabel: "more reach",
-      size: "medium",
-      gradient: "from-cyan-500 to-teal-500",
-    },
-    {
-      icon: MessageSquare,
-      title: "Auto First Comments",
-      description: "Strategic first comments with CTAs boost engagement automatically.",
-      stat: "+50%",
-      statLabel: "engagement",
-      size: "medium",
-      gradient: "from-orange-500 to-red-500",
+      statLabel: "reach",
+      color: "teal",
+      iconBg: "from-cyan-500 to-teal-500",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-      {features.map((feature, i) => (
-        <motion.div
-          key={feature.title}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: i * 0.05 }}
-          className={`group relative rounded-2xl overflow-hidden ${
-            feature.size === "large" ? "sm:col-span-2 lg:col-span-2 lg:row-span-2" : feature.size === "medium" ? "sm:col-span-2 lg:col-span-1" : ""
-          }`}
-        >
-          <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity`} />
-          <div className={`relative h-full bg-white dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-5 md:p-6 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all ${feature.size === "large" ? "flex flex-col justify-between" : ""}`}>
-            <div>
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <feature.icon className="w-6 h-6 text-white" />
+    <div className="relative">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-full blur-3xl animate-pulse" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((feature, i) => (
+          <motion.div
+            key={feature.title}
+            initial={{ opacity: 0, y: 30, rotateX: -10 }}
+            whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
+            whileHover={{ y: -8, scale: 1.02 }}
+            className="group relative"
+          >
+            {/* Card glow on hover */}
+            <div className={`absolute -inset-0.5 bg-gradient-to-r ${feature.iconBg} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500`} />
+
+            {/* Card content */}
+            <div className="relative h-full bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden">
+              {/* Animated corner accent */}
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.iconBg} opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-150 transition-transform duration-500`} />
+
+              {/* Icon with animated ring */}
+              <div className="relative mb-5">
+                <div className={`absolute inset-0 w-14 h-14 rounded-xl bg-gradient-to-br ${feature.iconBg} opacity-20 blur-lg group-hover:blur-xl transition-all`} />
+                <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${feature.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                  <feature.icon className="w-7 h-7 text-white" />
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{feature.description}</p>
+
+              {/* Content */}
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-slate-600 dark:group-hover:from-white dark:group-hover:to-slate-300 transition-all">
+                {feature.title}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">
+                {feature.description}
+              </p>
+
+              {/* Stats or highlight badge */}
+              {feature.stat && (
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-3xl font-black bg-gradient-to-r ${feature.iconBg} bg-clip-text text-transparent`}>
+                    {feature.stat}
+                  </span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{feature.statLabel}</span>
+                </div>
+              )}
+              {feature.highlight && (
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r ${feature.iconBg} text-white text-sm font-semibold shadow-lg`}>
+                  <Zap className="w-4 h-4" />
+                  {feature.highlight}
+                </div>
+              )}
             </div>
-            {feature.highlight && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
-                <Zap className="w-4 h-4" />
-                {feature.highlight}
-              </div>
-            )}
-            {feature.stat && (
-              <div className="flex items-baseline gap-1 mt-2">
-                <span className="text-3xl font-black text-slate-900 dark:text-white">{feature.stat}</span>
-                <span className="text-sm text-slate-500 dark:text-slate-400">{feature.statLabel}</span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -534,9 +566,8 @@ function TestimonialsCarousel() {
   );
 }
 
-// How it works with animated steps
+// Modern "How it works" with animated vertical timeline
 function HowItWorks() {
-  const [activeStep, setActiveStep] = useState(0);
   const steps = [
     {
       number: "01",
@@ -544,6 +575,7 @@ function HowItWorks() {
       description: "Add your OpenAI, Claude, or Gemini API key. Takes 30 seconds. You pay the AI provider directly - no middleman markup.",
       icon: Key,
       color: "from-amber-500 to-orange-500",
+      time: "30 sec",
     },
     {
       number: "02",
@@ -551,6 +583,7 @@ function HowItWorks() {
       description: "Tell us about your niche, audience, and style. The AI learns to write exactly like you - not generic AI content.",
       icon: Target,
       color: "from-cyan-500 to-blue-500",
+      time: "2 min",
     },
     {
       number: "03",
@@ -558,6 +591,7 @@ function HowItWorks() {
       description: "Create weeks of viral-ready content in minutes. Tweak, regenerate, or approve. You're always in control.",
       icon: Sparkles,
       color: "from-violet-500 to-purple-500",
+      time: "5 min",
     },
     {
       number: "04",
@@ -565,92 +599,131 @@ function HowItWorks() {
       description: "AI picks optimal posting times. Schedule ahead, track analytics, and watch your audience explode.",
       icon: TrendingUp,
       color: "from-emerald-500 to-green-500",
+      time: "2 min",
     },
   ];
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % steps.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [steps.length]);
-
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Progress bar */}
-      <div className="hidden md:flex items-center justify-between mb-12 relative">
-        <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-200 dark:bg-slate-700 -translate-y-1/2" />
-        <motion.div
-          className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 -translate-y-1/2"
-          initial={{ width: "0%" }}
-          animate={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
-          transition={{ duration: 0.5 }}
-        />
-        {steps.map((step, i) => (
-          <button
-            key={step.number}
-            onClick={() => setActiveStep(i)}
-            className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              i <= activeStep
-                ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110"
-                : "bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400"
-            }`}
-          >
-            <step.icon className="w-6 h-6" />
-          </button>
-        ))}
-      </div>
-
-      {/* Active step content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeStep}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-10 border border-slate-200 dark:border-slate-700 shadow-xl"
-        >
-          <div className="flex flex-col md:flex-row items-start gap-6">
-            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${steps[activeStep].color} flex items-center justify-center flex-shrink-0`}>
-              {(() => {
-                const Icon = steps[activeStep].icon;
-                return <Icon className="w-10 h-10 text-white" />;
-              })()}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-3">
-                <span className="text-5xl font-black text-slate-200 dark:text-slate-700">{steps[activeStep].number}</span>
-                <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{steps[activeStep].title}</h3>
-              </div>
-              <p className="text-lg text-slate-600 dark:text-slate-400">{steps[activeStep].description}</p>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Mobile step indicators */}
-      <div className="flex justify-center gap-2 mt-6 md:hidden">
-        {steps.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveStep(i)}
-            className={`w-3 h-3 rounded-full transition-all ${
-              i === activeStep ? "bg-cyan-500 w-8" : "bg-slate-300 dark:bg-slate-600"
-            }`}
+    <div className="relative max-w-4xl mx-auto">
+      {/* Desktop: Horizontal timeline */}
+      <div className="hidden lg:block">
+        {/* Progress line */}
+        <div className="absolute top-[60px] left-0 right-0 h-1 bg-slate-200 dark:bg-slate-800">
+          <motion.div
+            className="h-full bg-gradient-to-r from-amber-500 via-cyan-500 via-violet-500 to-emerald-500"
+            initial={{ width: "0%" }}
+            whileInView={{ width: "100%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
           />
-        ))}
+        </div>
+
+        <div className="grid grid-cols-4 gap-8">
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.2, duration: 0.5 }}
+              className="relative pt-20"
+            >
+              {/* Step circle */}
+              <motion.div
+                className="absolute top-0 left-1/2 -translate-x-1/2"
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 + 0.3, type: "spring", stiffness: 200 }}
+              >
+                <div className={`relative w-[120px] h-[120px] rounded-full bg-gradient-to-br ${step.color} p-1 shadow-xl`}>
+                  <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center">
+                    <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                      <step.icon className="w-10 h-10 text-white" />
+                    </div>
+                  </div>
+                </div>
+                {/* Step number badge */}
+                <div className={`absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+                  {step.number}
+                </div>
+              </motion.div>
+
+              {/* Content */}
+              <div className="text-center pt-8">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium mb-3">
+                  <Clock className="w-3 h-3" />
+                  {step.time}
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{step.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
+
+      {/* Mobile/Tablet: Vertical timeline */}
+      <div className="lg:hidden relative">
+        {/* Vertical line */}
+        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-500 via-cyan-500 via-violet-500 to-emerald-500" />
+
+        <div className="space-y-8">
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+              className="relative pl-20"
+            >
+              {/* Step circle */}
+              <div className={`absolute left-0 top-0 w-16 h-16 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}>
+                <step.icon className="w-8 h-8 text-white" />
+              </div>
+
+              {/* Content card */}
+              <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className={`text-2xl font-black bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
+                    {step.number}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{step.title}</h3>
+                  <span className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs">
+                    <Clock className="w-3 h-3" />
+                    {step.time}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{step.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Total time badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.8 }}
+        className="mt-12 flex justify-center"
+      >
+        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xl shadow-cyan-500/30">
+          <Rocket className="w-5 h-5" />
+          <span className="font-bold">Total setup time: ~10 minutes</span>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-// Comparison table
+// Comparison table with clear pricing
 function ComparisonSection() {
   const comparisons = [
     { feature: "AI Content Generation", linkedgrow: "Unlimited", others: "50-100/mo" },
-    { feature: "Monthly Cost", linkedgrow: "Platform fee + ~$3-5 API", others: "$49-199/mo" },
-    { feature: "AI Models", linkedgrow: "GPT-4, Claude, Gemini...", others: "1-2 locked models" },
+    { feature: "AI Models Available", linkedgrow: "GPT-4, Claude, Gemini...", others: "1-2 locked models" },
     { feature: "Viral Post Analysis", linkedgrow: true, others: false },
     { feature: "Carousel Generator", linkedgrow: true, others: "Extra $29/mo" },
     { feature: "Smart Scheduling", linkedgrow: true, others: true },
@@ -715,6 +788,140 @@ function ComparisonSection() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// Pricing preview section
+function PricingPreview() {
+  const plans = [
+    {
+      name: "Free",
+      price: "$0",
+      period: "forever",
+      description: "Perfect to try it out",
+      features: ["3 posts/month", "Basic editor", "BYOK support"],
+      highlight: false,
+      color: "slate",
+    },
+    {
+      name: "Starter",
+      price: "$19",
+      originalPrice: "$27",
+      period: "/month",
+      description: "For regular creators",
+      features: ["Unlimited posts", "10 scheduled posts", "Content calendar", "AI voice training"],
+      highlight: false,
+      color: "cyan",
+    },
+    {
+      name: "Pro",
+      price: "$39",
+      originalPrice: "$56",
+      period: "/month",
+      description: "For serious growth",
+      features: ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Carousel creator", "Analytics dashboard"],
+      highlight: true,
+      color: "violet",
+      badge: "Most Popular",
+    },
+    {
+      name: "Business",
+      price: "$79",
+      originalPrice: "$113",
+      period: "/month",
+      description: "For teams & agencies",
+      features: ["Everything in Pro", "A/B testing", "API access", "Priority support", "Team collaboration"],
+      highlight: false,
+      color: "emerald",
+    },
+  ];
+
+  return (
+    <div className="relative">
+      {/* Background glow */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-cyan-500/10 via-violet-500/10 to-emerald-500/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Pricing note */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center mb-8"
+      >
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
+          <Key className="w-4 h-4" />
+          <span>All plans + ~$3-5/month in AI API costs (you pay the AI provider directly)</span>
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {plans.map((plan, i) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            whileHover={{ y: -5 }}
+            className={`relative ${plan.highlight ? "lg:-mt-4 lg:mb-4" : ""}`}
+          >
+            {/* Popular badge */}
+            {plan.badge && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                <div className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
+                  {plan.badge}
+                </div>
+              </div>
+            )}
+
+            <div className={`relative h-full rounded-2xl p-6 border-2 transition-all ${
+              plan.highlight
+                ? "bg-gradient-to-b from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            }`}>
+              {/* Plan name */}
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{plan.name}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{plan.description}</p>
+
+              {/* Price */}
+              <div className="flex items-baseline gap-2 mb-6">
+                {plan.originalPrice && (
+                  <span className="text-lg text-slate-400 line-through">{plan.originalPrice}</span>
+                )}
+                <span className="text-4xl font-black text-slate-900 dark:text-white">{plan.price}</span>
+                <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+              </div>
+
+              {/* Features */}
+              <ul className="space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.highlight ? "text-violet-500" : "text-emerald-500"}`} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Early bird discount note */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.5 }}
+        className="text-center mt-8"
+      >
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">Early access pricing shown.</span>
+          {" "}Join the waitlist to lock in 30% off for your first year.
+        </p>
+      </motion.div>
+    </div>
   );
 }
 
@@ -1296,6 +1503,31 @@ export default function PreLaunchPage() {
           </motion.div>
 
           <TestimonialsCarousel />
+        </div>
+      </section>
+
+      {/* Pricing Preview Section */}
+      <section className="relative z-10 py-16 md:py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 md:mb-16"
+          >
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-4">
+              <Gift className="w-4 h-4" />
+              Early Access Pricing
+            </span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Choose the plan that fits your growth goals. Prices shown include the 30% early access discount.
+            </p>
+          </motion.div>
+
+          <PricingPreview />
         </div>
       </section>
 

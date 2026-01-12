@@ -72,6 +72,44 @@
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-scale-in: scale-in 0.3s ease-out;
   --animate-gradient: gradient 8s linear infinite;
+  --animate-blink: blink 1s step-end infinite;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: hsl(222 47% 6%);
+  --color-foreground: hsl(210 40% 98%);
+
+  --color-card: hsl(222 47% 8%);
+  --color-card-foreground: hsl(210 40% 98%);
+
+  --color-popover: hsl(222 47% 8%);
+  --color-popover-foreground: hsl(210 40% 98%);
+
+  --color-primary: #22d3ee;
+  --color-primary-foreground: hsl(222 47% 11%);
+
+  --color-secondary: hsl(217 33% 17%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+
+  --color-muted: hsl(217 33% 17%);
+  --color-muted-foreground: hsl(215 20% 65%);
+
+  --color-accent: hsl(217 33% 17%);
+  --color-accent-foreground: hsl(210 40% 98%);
+
+  --color-destructive: hsl(0 63% 31%);
+
+  --color-border: hsl(217 33% 17%);
+  --color-input: hsl(217 33% 17%);
+  --color-ring: #22d3ee;
+
+  /* Chart colors - dark mode */
+  --color-chart-1: #22d3ee;
+  --color-chart-2: #34d399;
+  --color-chart-3: #fb923c;
+  --color-chart-4: #a78bfa;
+  --color-chart-5: #f472b6;
 }
 
 /* Dark mode overrides */
@@ -149,6 +187,11 @@
 @keyframes gradient {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 /* ===== Base Styles ===== */

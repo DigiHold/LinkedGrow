@@ -34,6 +34,40 @@ export function detectBrowserLanguage(): LanguageCode {
   return supported ? supported.code : DEFAULT_LANGUAGE;
 }
 
+// Map country codes to language codes
+const COUNTRY_TO_LANGUAGE: Record<string, LanguageCode> = {
+  // French-speaking
+  FR: "fr", BE: "fr", CH: "fr", LU: "fr", MC: "fr",
+  CA: "fr", // Canada - defaulting to French, could be EN
+  // German-speaking
+  DE: "de", AT: "de", LI: "de",
+  // Spanish-speaking
+  ES: "es", MX: "es", AR: "es", CO: "es", PE: "es", CL: "es", VE: "es", EC: "es",
+  GT: "es", CU: "es", BO: "es", DO: "es", HN: "es", PY: "es", SV: "es", NI: "es",
+  CR: "es", PA: "es", UY: "es",
+  // Italian-speaking
+  IT: "it", SM: "it", VA: "it",
+  // Portuguese-speaking
+  PT: "pt", BR: "pt", AO: "pt", MZ: "pt",
+  // Dutch-speaking
+  NL: "nl", SR: "nl",
+  // Polish-speaking
+  PL: "pl",
+  // Japanese-speaking
+  JP: "ja",
+  // Korean-speaking
+  KR: "ko",
+  // Chinese-speaking
+  CN: "zh", TW: "zh", HK: "zh", SG: "zh",
+};
+
+/**
+ * Get language from country code (from geolocation)
+ */
+export function getLanguageFromCountry(countryCode: string): LanguageCode {
+  return COUNTRY_TO_LANGUAGE[countryCode.toUpperCase()] || DEFAULT_LANGUAGE;
+}
+
 export function getSavedLanguage(): LanguageCode | null {
   if (typeof window === "undefined") return null;
 

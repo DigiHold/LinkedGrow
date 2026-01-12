@@ -10,6 +10,7 @@ import {
   detectBrowserLanguage,
   getSavedLanguage,
   saveLanguage,
+  getLanguageFromCountry,
 } from "@/lib/i18n/languages";
 
 export function LanguageSelector() {
@@ -19,15 +20,38 @@ export function LanguageSelector() {
 
   useEffect(() => {
     setMounted(true);
-    // Check saved language first, then detect from browser
+
+    // Check saved language first
     const saved = getSavedLanguage();
     if (saved) {
       setCurrentLanguage(saved);
-    } else {
+      return;
+    }
+
+    // Try geolocation-based detection first, fall back to browser language
+    const detectLanguage = async () => {
+      try {
+        const response = await fetch("/api/geo");
+        if (response.ok) {
+          const geo = await response.json();
+          if (geo.countryCode) {
+            const geoLang = getLanguageFromCountry(geo.countryCode);
+            setCurrentLanguage(geoLang);
+            saveLanguage(geoLang);
+            return;
+          }
+        }
+      } catch {
+        // Geolocation failed, fall back to browser detection
+      }
+
+      // Fallback to browser language detection
       const detected = detectBrowserLanguage();
       setCurrentLanguage(detected);
       saveLanguage(detected);
-    }
+    };
+
+    detectLanguage();
   }, []);
 
   const handleSelectLanguage = (code: LanguageCode) => {
