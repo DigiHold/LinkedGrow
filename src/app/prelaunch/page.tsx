@@ -386,6 +386,9 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
             </p>
           </div>
         </motion.div>
+
+        {/* Video Section - Right under social proof */}
+        <HeroVideoSection />
       </div>
     </section>
   );
@@ -1478,7 +1481,7 @@ function TestimonialsCarousel() {
 // ============================================
 
 function PricingPreview() {
-  // Actual prices - then show 30% discount
+  // Original prices - then show 30% discount
   const plans = [
     {
       name: "Free",
@@ -1491,8 +1494,8 @@ function PricingPreview() {
     },
     {
       name: "Starter",
-      actualPrice: 27,
-      discountedPrice: 19, // 27 * 0.7 = 18.9 rounded to 19
+      actualPrice: 19,
+      discountedPrice: 13, // 19 * 0.7 = 13.3 rounded to 13
       period: "/month",
       description: "For regular creators",
       features: ["Unlimited posts", "10 scheduled posts", "Content calendar", "AI voice training"],
@@ -1500,8 +1503,8 @@ function PricingPreview() {
     },
     {
       name: "Pro",
-      actualPrice: 56,
-      discountedPrice: 39, // 56 * 0.7 = 39.2 rounded to 39
+      actualPrice: 39,
+      discountedPrice: 27, // 39 * 0.7 = 27.3 rounded to 27
       period: "/month",
       description: "For serious growth",
       features: ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Carousel creator", "Analytics dashboard"],
@@ -1510,8 +1513,8 @@ function PricingPreview() {
     },
     {
       name: "Business",
-      actualPrice: 113,
-      discountedPrice: 79, // 113 * 0.7 = 79.1 rounded to 79
+      actualPrice: 79,
+      discountedPrice: 55, // 79 * 0.7 = 55.3 rounded to 55
       period: "/month",
       description: "For teams & agencies",
       features: ["Everything in Pro", "A/B testing", "API access", "Priority support", "Team collaboration"],
@@ -1622,102 +1625,74 @@ function PricingPreview() {
 // ============================================
 
 // ============================================
-// VIDEO SECTION - Right after hero
+// HERO VIDEO SECTION - Embedded in Hero 2
 // ============================================
 
-function VideoSection() {
+function HeroVideoSection() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="relative z-10 py-12 md:py-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3">
-            See LinkedGrow in action
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Watch how founders create a week of content in under 5 minutes
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-          className="relative"
-        >
-          {/* Glow effect */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
-
-          {/* Video container */}
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
-            {/* Placeholder - Replace with actual video */}
-            {!isPlaying ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-                {/* Thumbnail with play button overlay */}
-                <div className="absolute inset-0 bg-[url('/video-thumbnail.jpg')] bg-cover bg-center opacity-50" />
-
-                {/* Play button */}
-                <button
-                  onClick={() => setIsPlaying(true)}
-                  className="relative z-10 group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
-                    <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
-                  </div>
-                </button>
-
-                {/* Duration badge */}
-                <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-                  2:34
-                </div>
-              </div>
-            ) : (
-              // Video iframe - Replace YOUR_VIDEO_ID with actual video
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-                <p className="text-white text-center">
-                  <span className="block text-lg font-medium mb-2">Video placeholder</span>
-                  <span className="text-sm text-slate-400">Add your video URL in the code</span>
-                </p>
-                {/* Uncomment and add your video:
-                <iframe
-                  src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1"
-                  className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-                */}
-              </div>
-            )}
-          </div>
-
-          {/* Video highlights */}
-          <div className="flex flex-wrap justify-center gap-4 mt-6">
-            {[
-              { time: "0:15", text: "AI voice training" },
-              { time: "0:45", text: "Content generation" },
-              { time: "1:30", text: "Smart scheduling" },
-              { time: "2:00", text: "Analytics preview" },
-            ].map((highlight) => (
-              <button
-                key={highlight.time}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-              >
-                <span className="font-mono text-cyan-600 dark:text-cyan-400">{highlight.time}</span>
-                <span>{highlight.text}</span>
-              </button>
-            ))}
-          </div>
-        </motion.div>
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8 }}
+      className="mt-16 max-w-4xl mx-auto"
+    >
+      <div className="text-center mb-6">
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          See LinkedGrow in action
+        </h3>
+        <p className="text-slate-600 dark:text-slate-400 text-sm">
+          Watch how founders create a week of content in under 5 minutes
+        </p>
       </div>
-    </section>
+
+      <div className="relative">
+        {/* Glow effect */}
+        <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
+
+        {/* Video container */}
+        <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
+          {!isPlaying ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+              {/* Thumbnail placeholder */}
+              <div className="absolute inset-0 bg-[url('/video-thumbnail.jpg')] bg-cover bg-center opacity-50" />
+
+              {/* Play button */}
+              <button
+                onClick={() => setIsPlaying(true)}
+                className="relative z-10 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                  <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
+                </div>
+              </button>
+
+              {/* Duration badge */}
+              <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
+                2:34
+              </div>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+              <p className="text-white text-center">
+                <span className="block text-lg font-medium mb-2">Video placeholder</span>
+                <span className="text-sm text-slate-400">Add your video URL in the code</span>
+              </p>
+              {/* Uncomment and add your video:
+              <iframe
+                src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1"
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+              */}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -2103,7 +2078,7 @@ export default function PreLaunchPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
   const [heroVariant, setHeroVariant] = useState<1 | 2 | 3 | 4>(2); // Hero 2 is the chosen one
-  const [ctaVariant, setCtaVariant] = useState<1 | 2 | 3 | 4>(1); // CTA variant selector
+  const [ctaVariant, setCtaVariant] = useState<1 | 2 | 3 | 4>(4); // CTA 4 is the chosen one
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -2247,9 +2222,6 @@ export default function PreLaunchPage() {
         {heroVariant === 3 && <HeroVariant3 {...heroProps} />}
         {heroVariant === 4 && <HeroVariant4 {...heroProps} />}
       </motion.div>
-
-      {/* Video Section - Right after hero */}
-      <VideoSection />
 
       {/* Pain Points Section */}
       <PainPointsSection />
