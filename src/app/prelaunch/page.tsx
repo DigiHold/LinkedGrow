@@ -145,66 +145,97 @@ function HeroVariant1({ email, setEmail, handleSubmit, isLoading, isSuccess, err
   );
 }
 
-// Hero Variant 2: Centered with Floating Elements
+// Hero Variant 2: Centered with Floating Elements - ENHANCED
 function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
-      {/* Floating Elements */}
+      {/* Floating Elements - Enhanced animations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-[10%] w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 opacity-20 blur-sm"
+          animate={{
+            y: [0, -30, 0],
+            rotate: [0, 10, 0],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-20 left-[10%] w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 opacity-30"
         />
         <motion.div
-          animate={{ y: [0, 20, 0], rotate: [0, -5, 0] }}
+          animate={{
+            y: [0, 25, 0],
+            rotate: [0, -8, 0],
+            x: [0, 10, 0]
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          className="absolute top-32 right-[12%] w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 opacity-25"
+        />
+        <motion.div
+          animate={{
+            y: [0, -20, 0],
+            scale: [1, 1.2, 1]
+          }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-40 right-[15%] w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 opacity-20 blur-sm"
+          className="absolute bottom-32 left-[15%] w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 opacity-30"
         />
         <motion.div
-          animate={{ y: [0, -15, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-40 left-[20%] w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 opacity-20 blur-sm"
+          animate={{
+            y: [0, 15, 0],
+            x: [0, -15, 0]
+          }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+          className="absolute top-1/2 right-[8%] w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 opacity-25"
         />
       </div>
 
       <div className="max-w-5xl mx-auto text-center">
-        {/* Announcement Badge */}
+        {/* Announcement Badge - Enhanced */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
           className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 mb-8"
         >
           <span className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Early Access Open</span>
+            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Early Access Open</span>
           </span>
           <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
-          <span className="text-sm text-slate-600 dark:text-slate-400">Only 153 spots left</span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">Only <span className="font-bold text-slate-900 dark:text-white">153</span> spots left</span>
         </motion.div>
 
-        {/* Main Headline */}
+        {/* Main Headline - Enhanced with staggered animation */}
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-6"
         >
-          LinkedIn content that
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            LinkedIn content that
+          </motion.span>
           <br />
-          <span className="relative">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
+          <span className="relative inline-block">
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 150 }}
+              className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500"
+            >
               actually converts
-            </span>
+            </motion.span>
             <motion.svg
               className="absolute -bottom-2 left-0 w-full"
               viewBox="0 0 300 12"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              transition={{ delay: 0.7, duration: 1, ease: "easeOut" }}
             >
               <motion.path
                 d="M2 10 Q75 2 150 6 T298 4"
@@ -216,6 +247,7 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
               <defs>
                 <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#06b6d4" />
+                  <stop offset="50%" stopColor="#3b82f6" />
                   <stop offset="100%" stopColor="#8b5cf6" />
                 </linearGradient>
               </defs>
@@ -223,42 +255,82 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
           </span>
         </motion.h1>
 
+        {/* IMPROVED Description - Clear, benefit-focused, converting */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10"
+          transition={{ delay: 0.3 }}
+          className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed"
         >
-          Use your own AI key. Write 10x faster. Spend{" "}
-          <span className="font-bold text-slate-900 dark:text-white">$3-5/month</span> instead of $50+.
+          <span className="font-semibold text-slate-900 dark:text-white">Stop wasting hours on content that gets ignored.</span>
           <br className="hidden sm:block" />
-          Join the founders who are growing on LinkedIn smarter, not harder.
+          LinkedGrow writes viral posts in your voice, schedules them at peak times, and costs{" "}
+          <span className="relative inline-block">
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">96% less</span>
+            <motion.span
+              className="absolute -bottom-1 left-0 w-full h-0.5 bg-emerald-500"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+            />
+          </span>
+          {" "}than competitors.
         </motion.p>
 
-        {/* CTA */}
+        {/* Value Props Row - NEW */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-4 mb-10"
+        >
+          {[
+            { icon: Zap, text: "10x faster writing" },
+            { icon: TrendingUp, text: "47% more engagement" },
+            { icon: CircleDollarSign, text: "$3-5/mo vs $50+" },
+          ].map((item, i) => (
+            <motion.div
+              key={item.text}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 + i * 0.1 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+            >
+              <item.icon className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span className="text-sm font-medium">{item.text}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* CTA - Enhanced with glow effect */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
           className="max-w-lg mx-auto"
         >
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="relative">
-              <div className="flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
+              <motion.div
+                className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-2xl opacity-20 blur-lg"
+                animate={{ opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <div className="relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <Input
                   type="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 px-4 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-base flex-1 focus:ring-2 focus:ring-cyan-500"
+                  className="h-14 px-5 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-base flex-1 focus:ring-2 focus:ring-cyan-500"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="h-12 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30"
+                  className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40"
                 >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Join Waitlist <Sparkles className="w-4 h-4 ml-2" /></>}
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get 30% Off <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
               </div>
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -266,28 +338,41 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
           ) : (
             <SuccessMessage />
           )}
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
-            <Check className="w-4 h-4 inline mr-1 text-emerald-500" />
-            30% off locked in for early supporters
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-sm text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-emerald-500" />
+              No credit card
+            </span>
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-emerald-500" />
+              30% locked in
+            </span>
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-emerald-500" />
+              Cancel anytime
+            </span>
+          </div>
         </motion.div>
 
-        {/* Social Proof Avatars */}
+        {/* Social Proof Avatars - Enhanced */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center justify-center gap-4 mt-10"
+          transition={{ delay: 0.6 }}
+          className="flex items-center justify-center gap-4 mt-12"
         >
           <div className="flex -space-x-3">
             {["S", "M", "E", "J", "P"].map((letter, i) => (
-              <div
+              <motion.div
                 key={letter}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-sm font-bold shadow-lg"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 + i * 0.1, type: "spring" }}
+                className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-sm font-bold shadow-lg"
                 style={{ zIndex: 5 - i }}
               >
                 {letter}
-              </div>
+              </motion.div>
             ))}
           </div>
           <div className="text-left">
@@ -297,7 +382,7 @@ function HeroVariant2({ email, setEmail, handleSubmit, isLoading, isSuccess, err
               ))}
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Loved by <span className="font-semibold text-slate-900 dark:text-white">179 founders</span>
+              Trusted by <span className="font-bold text-slate-900 dark:text-white">179+ founders</span>
             </p>
           </div>
         </motion.div>
@@ -894,20 +979,25 @@ function PainPointsSection() {
           ))}
         </div>
 
-        {/* Transition to Solution */}
+        {/* Transition to Solution - Now a button that scrolls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mt-16 text-center"
         >
-          <div className="inline-flex items-center gap-4 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
-            <Sparkles className="w-5 h-5 text-emerald-500" />
+          <button
+            onClick={() => {
+              document.getElementById("features-section")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="inline-flex items-center gap-4 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 hover:from-emerald-500/20 hover:to-cyan-500/20 hover:border-emerald-500/40 transition-all cursor-pointer group"
+          >
+            <Sparkles className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform" />
             <span className="text-lg font-semibold text-slate-700 dark:text-slate-300">
               There&apos;s a better way
             </span>
             <ChevronDown className="w-5 h-5 text-emerald-500 animate-bounce" />
-          </div>
+          </button>
         </motion.div>
       </div>
     </section>
@@ -1112,7 +1202,7 @@ function HowItWorks() {
                 </div>
               </motion.div>
 
-              <div className="text-center pt-8">
+              <div className="text-center pt-16">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium mb-3">
                   <Clock className="w-3 h-3" />
                   {step.time}
@@ -1388,10 +1478,12 @@ function TestimonialsCarousel() {
 // ============================================
 
 function PricingPreview() {
+  // Actual prices - then show 30% discount
   const plans = [
     {
       name: "Free",
-      price: "$0",
+      actualPrice: 0,
+      discountedPrice: 0,
       period: "forever",
       description: "Perfect to try it out",
       features: ["3 posts/month", "Basic editor", "BYOK support"],
@@ -1399,8 +1491,8 @@ function PricingPreview() {
     },
     {
       name: "Starter",
-      price: "$19",
-      originalPrice: "$27",
+      actualPrice: 27,
+      discountedPrice: 19, // 27 * 0.7 = 18.9 rounded to 19
       period: "/month",
       description: "For regular creators",
       features: ["Unlimited posts", "10 scheduled posts", "Content calendar", "AI voice training"],
@@ -1408,8 +1500,8 @@ function PricingPreview() {
     },
     {
       name: "Pro",
-      price: "$39",
-      originalPrice: "$56",
+      actualPrice: 56,
+      discountedPrice: 39, // 56 * 0.7 = 39.2 rounded to 39
       period: "/month",
       description: "For serious growth",
       features: ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Carousel creator", "Analytics dashboard"],
@@ -1418,8 +1510,8 @@ function PricingPreview() {
     },
     {
       name: "Business",
-      price: "$79",
-      originalPrice: "$113",
+      actualPrice: 113,
+      discountedPrice: 79, // 113 * 0.7 = 79.1 rounded to 79
       period: "/month",
       description: "For teams & agencies",
       features: ["Everything in Pro", "A/B testing", "API access", "Priority support", "Team collaboration"],
@@ -1472,12 +1564,28 @@ function PricingPreview() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{plan.name}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{plan.description}</p>
 
-              <div className="flex items-baseline gap-2 mb-6">
-                {plan.originalPrice && (
-                  <span className="text-lg text-slate-400 line-through">{plan.originalPrice}</span>
+              <div className="mb-6">
+                {plan.actualPrice > 0 ? (
+                  <>
+                    {/* Original price with strikethrough */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg text-slate-400 line-through">${plan.actualPrice}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-semibold">
+                        -30%
+                      </span>
+                    </div>
+                    {/* Discounted price */}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black text-slate-900 dark:text-white">${plan.discountedPrice}</span>
+                      <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">$0</span>
+                    <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+                  </div>
                 )}
-                <span className="text-4xl font-black text-slate-900 dark:text-white">{plan.price}</span>
-                <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
               </div>
 
               <ul className="space-y-3">
@@ -1506,6 +1614,110 @@ function PricingPreview() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+// ============================================
+// FAQ SECTION
+// ============================================
+
+// ============================================
+// VIDEO SECTION - Right after hero
+// ============================================
+
+function VideoSection() {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  return (
+    <section className="relative z-10 py-12 md:py-20 px-4">
+      <div className="max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3">
+            See LinkedGrow in action
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">
+            Watch how founders create a week of content in under 5 minutes
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="relative"
+        >
+          {/* Glow effect */}
+          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
+
+          {/* Video container */}
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
+            {/* Placeholder - Replace with actual video */}
+            {!isPlaying ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                {/* Thumbnail with play button overlay */}
+                <div className="absolute inset-0 bg-[url('/video-thumbnail.jpg')] bg-cover bg-center opacity-50" />
+
+                {/* Play button */}
+                <button
+                  onClick={() => setIsPlaying(true)}
+                  className="relative z-10 group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                    <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
+                  </div>
+                </button>
+
+                {/* Duration badge */}
+                <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
+                  2:34
+                </div>
+              </div>
+            ) : (
+              // Video iframe - Replace YOUR_VIDEO_ID with actual video
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                <p className="text-white text-center">
+                  <span className="block text-lg font-medium mb-2">Video placeholder</span>
+                  <span className="text-sm text-slate-400">Add your video URL in the code</span>
+                </p>
+                {/* Uncomment and add your video:
+                <iframe
+                  src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1"
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                */}
+              </div>
+            )}
+          </div>
+
+          {/* Video highlights */}
+          <div className="flex flex-wrap justify-center gap-4 mt-6">
+            {[
+              { time: "0:15", text: "AI voice training" },
+              { time: "0:45", text: "Content generation" },
+              { time: "1:30", text: "Smart scheduling" },
+              { time: "2:00", text: "Analytics preview" },
+            ].map((highlight) => (
+              <button
+                key={highlight.time}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <span className="font-mono text-cyan-600 dark:text-cyan-400">{highlight.time}</span>
+                <span>{highlight.text}</span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
@@ -1586,10 +1798,10 @@ function FAQSection() {
 }
 
 // ============================================
-// FINAL CTA SECTION - Redesigned
+// FINAL CTA SECTION - 4 VARIANTS
 // ============================================
 
-function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error }: {
+interface CTAProps {
   timeLeft: { days: number; hours: number; minutes: number; seconds: number };
   email: string;
   setEmail: (email: string) => void;
@@ -1597,7 +1809,60 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
   isLoading: boolean;
   isSuccess: boolean;
   error: string;
-}) {
+}
+
+// Shared form component for all CTA variants
+function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
+  const isDark = variant === "dark";
+
+  if (isSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`${isDark ? "bg-emerald-500/20 border-emerald-500/30" : "bg-emerald-50 border-emerald-200"} border rounded-2xl p-8 text-center`}
+      >
+        <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
+          <Check className="w-8 h-8 text-white" />
+        </div>
+        <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>You&apos;re on the list!</h3>
+        <p className={isDark ? "text-slate-300" : "text-slate-600"}>Your 30% discount is locked in. Check your inbox!</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="relative">
+        {isDark && <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
+        <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={`flex-1 h-12 md:h-14 px-5 rounded-xl border-0 text-base focus:ring-2 focus:ring-cyan-500 ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+          />
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="h-12 md:h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
+          >
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get 30% Off <ArrowRight className="w-5 h-5 ml-2" /></>}
+          </Button>
+        </div>
+      </div>
+      {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+      <p className={`text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+        Join 179 founders - No spam - Unsubscribe anytime
+      </p>
+    </form>
+  );
+}
+
+// CTA Variant 1: Dark card with floating orbs (Original)
+function CTAVariant1(props: CTAProps) {
   return (
     <section className="relative z-10 py-20 md:py-28 px-4">
       <div className="max-w-5xl mx-auto">
@@ -1607,193 +1872,224 @@ function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSucces
           viewport={{ once: true }}
           className="relative"
         >
-          {/* Animated background layers */}
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse" />
           <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-[2rem] opacity-50" />
 
           <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden">
-            {/* Animated grid background */}
             <div className="absolute inset-0 opacity-20">
-              <div className="absolute inset-0" style={{
-                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)`,
-                backgroundSize: "32px 32px",
-              }} />
+              <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)`, backgroundSize: "32px 32px" }} />
             </div>
-
-            {/* Floating orbs */}
             <div className="absolute top-0 left-1/4 w-64 h-64 bg-cyan-500/30 rounded-full blur-[100px]" />
             <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/30 rounded-full blur-[100px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[120px]" />
 
             <div className="relative z-10 p-8 md:p-12 lg:p-16">
-              {/* Top Badge */}
-              <div className="flex justify-center mb-8">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  whileInView={{ scale: 1, opacity: 1 }}
-                  viewport={{ once: true }}
-                  className="inline-flex items-center gap-4 px-5 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-50" />
-                      <Gift className="relative w-5 h-5 text-emerald-400" />
-                    </div>
-                    <span className="font-bold text-emerald-400 text-sm md:text-base">EARLY ACCESS</span>
-                  </div>
-                  <div className="w-px h-5 bg-white/20" />
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-white/60" />
-                    <span className="text-white/80 text-sm">Only <span className="font-bold text-white">153</span> spots left</span>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Headline */}
               <div className="text-center max-w-3xl mx-auto mb-10">
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight"
-                >
-                  Ready to 10x your
-                  <br />
-                  <span className="relative inline-block">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">
-                      LinkedIn growth?
-                    </span>
-                    <motion.div
-                      className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 to-violet-400/20 rounded-lg blur-xl -z-10"
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  </span>
+                <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight">
+                  Ready to 10x your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">LinkedIn growth?</span>
                 </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
-                  className="text-lg md:text-xl text-slate-300"
-                >
-                  Join the waitlist and lock in <span className="font-bold text-white">30% off</span> for your first year.
-                  <br className="hidden sm:block" />
-                  This deal disappears at launch.
-                </motion.p>
+                <p className="text-lg md:text-xl text-slate-300">Join the waitlist and lock in <span className="font-bold text-white">30% off</span> for your first year.</p>
               </div>
 
-              {/* Countdown */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="flex justify-center gap-3 sm:gap-4 mb-10"
-              >
-                {[
-                  { value: timeLeft.days, label: "Days" },
-                  { value: timeLeft.hours, label: "Hours" },
-                  { value: timeLeft.minutes, label: "Min" },
-                  { value: timeLeft.seconds, label: "Sec" },
-                ].map((item, i) => (
+              <div className="flex justify-center gap-3 sm:gap-4 mb-10">
+                {[{ value: props.timeLeft.days, label: "Days" }, { value: props.timeLeft.hours, label: "Hours" }, { value: props.timeLeft.minutes, label: "Min" }, { value: props.timeLeft.seconds, label: "Sec" }].map((item, i) => (
                   <div key={i} className="text-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-violet-500/20 rounded-2xl blur-lg" />
-                      <div className="relative w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                        <span className="text-2xl sm:text-3xl font-bold text-white font-mono">
-                          {String(item.value).padStart(2, "0")}
-                        </span>
-                      </div>
+                    <div className="relative w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-2xl sm:text-3xl font-bold text-white font-mono">{String(item.value).padStart(2, "0")}</span>
                     </div>
                     <p className="text-xs text-slate-400 mt-2 font-medium">{item.label}</p>
                   </div>
                 ))}
-              </motion.div>
+              </div>
 
-              {/* Form */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="max-w-lg mx-auto"
-              >
-                {!isSuccess ? (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="relative">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />
-                      <div className="relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                        <Input
-                          type="email"
-                          placeholder="Enter your email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          className="flex-1 h-12 md:h-14 px-5 rounded-xl bg-white/10 border-0 text-white placeholder:text-slate-400 text-base focus:ring-2 focus:ring-cyan-500"
-                        />
-                        <Button
-                          type="submit"
-                          disabled={isLoading}
-                          className="h-12 md:h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <>
-                              Get 30% Off
-                              <ArrowRight className="w-5 h-5 ml-2" />
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                    <p className="text-center text-sm text-slate-400">
-                      Join 179 founders - No spam - Unsubscribe anytime
-                    </p>
-                  </form>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-emerald-500/20 border border-emerald-500/30 rounded-2xl p-8 text-center backdrop-blur-sm"
-                  >
-                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
-                      <Check className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">You&apos;re on the list!</h3>
-                    <p className="text-slate-300">Your 30% discount is locked in. Check your inbox!</p>
-                  </motion.div>
-                )}
-              </motion.div>
-
-              {/* Trust Badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-wrap justify-center gap-6 mt-10 pt-10 border-t border-white/10"
-              >
-                {[
-                  { icon: Shield, text: "Bank-level security" },
-                  { icon: Key, text: "Your API, your data" },
-                  { icon: RefreshCw, text: "Cancel anytime" },
-                  { icon: Heart, text: "Made with love in Switzerland" },
-                ].map((badge) => (
-                  <div key={badge.text} className="flex items-center gap-2 text-slate-400 text-sm">
-                    <badge.icon className="w-4 h-4" />
-                    <span>{badge.text}</span>
-                  </div>
-                ))}
-              </motion.div>
+              <div className="max-w-lg mx-auto">
+                <CTAForm {...props} variant="dark" />
+              </div>
             </div>
           </div>
         </motion.div>
       </div>
     </section>
   );
+}
+
+// CTA Variant 2: Split layout with image/stats
+function CTAVariant2(props: CTAProps) {
+  return (
+    <section className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Content */}
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-6">
+              <Gift className="w-4 h-4" />
+              <span>Limited Time: 30% OFF</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6">
+              Stop leaving growth on the table
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
+              Join 179+ founders who are building their personal brands with AI that costs 96% less than competitors.
+            </p>
+            <div className="mb-8">
+              <CTAForm {...props} variant="light" />
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
+              {[{ icon: Shield, text: "Bank-level security" }, { icon: Key, text: "Your data, your control" }, { icon: RefreshCw, text: "Cancel anytime" }].map((b) => (
+                <span key={b.text} className="flex items-center gap-1.5"><b.icon className="w-4 h-4" />{b.text}</span>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Stats card */}
+          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
+              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">What you get with LinkedGrow</h3>
+                <div className="space-y-4">
+                  {[
+                    { stat: "10x", label: "Faster content creation" },
+                    { stat: "96%", label: "Cost savings vs competitors" },
+                    { stat: "47%", label: "More engagement on posts" },
+                    { stat: "$3-5", label: "Average monthly AI cost" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                        <span className="text-xl font-black text-white">{item.stat}</span>
+                      </div>
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// CTA Variant 3: Minimal with large countdown
+function CTAVariant3(props: CTAProps) {
+  return (
+    <section className="relative z-10 py-20 md:py-28 px-4">
+      <div className="max-w-4xl mx-auto text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-4">
+            Don&apos;t miss the <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">founder&apos;s discount</span>
+          </h2>
+          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-12">
+            Early access pricing ends when the timer hits zero
+          </p>
+        </motion.div>
+
+        {/* Large countdown */}
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="flex justify-center gap-4 sm:gap-6 mb-12">
+          {[{ value: props.timeLeft.days, label: "Days" }, { value: props.timeLeft.hours, label: "Hours" }, { value: props.timeLeft.minutes, label: "Minutes" }, { value: props.timeLeft.seconds, label: "Seconds" }].map((item, i) => (
+            <div key={i} className="text-center">
+              <div className="w-20 sm:w-28 h-20 sm:h-28 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-lg">
+                <span className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white font-mono">{String(item.value).padStart(2, "0")}</span>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 font-medium">{item.label}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-md mx-auto">
+          <CTAForm {...props} variant="light" />
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="mt-8 flex items-center justify-center gap-2">
+          <div className="flex -space-x-2">
+            {["S", "M", "E", "J"].map((l, i) => (
+              <div key={l} className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs font-bold" style={{ zIndex: 4 - i }}>{l}</div>
+            ))}
+          </div>
+          <span className="text-sm text-slate-600 dark:text-slate-400">+179 founders already joined</span>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// CTA Variant 4: Full-width gradient banner
+function CTAVariant4(props: CTAProps) {
+  return (
+    <section className="relative z-10 py-20 md:py-28 px-4 overflow-hidden">
+      {/* Full width gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-violet-600" />
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+
+      {/* Animated shapes */}
+      <motion.div animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-10 left-[10%] w-32 h-32 rounded-full bg-white/10" />
+      <motion.div animate={{ y: [0, 20, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="absolute bottom-10 right-[15%] w-40 h-40 rounded-full bg-white/10" />
+
+      <div className="relative max-w-4xl mx-auto text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium mb-6">
+            <Rocket className="w-4 h-4" />
+            <span>Launch Special - Ends in {props.timeLeft.days}d {props.timeLeft.hours}h</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6">
+            Your LinkedIn growth journey starts here
+          </h2>
+
+          <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+            Join the waitlist now and get <span className="font-bold text-white">30% off</span> your first year.
+            <br />Save up to $500/year compared to other tools.
+          </p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-lg mx-auto">
+          {!props.isSuccess ? (
+            <form onSubmit={props.handleSubmit} className="flex flex-col sm:flex-row gap-3">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={props.email}
+                onChange={(e) => props.setEmail(e.target.value)}
+                required
+                className="flex-1 h-14 px-5 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-base"
+              />
+              <Button type="submit" disabled={props.isLoading} className="h-14 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-base">
+                {props.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Join Now <ArrowRight className="w-5 h-5 ml-2" /></>}
+              </Button>
+            </form>
+          ) : (
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-white flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">You&apos;re on the list!</h3>
+              <p className="text-white/80">Your 30% discount is locked in. Check your inbox!</p>
+            </div>
+          )}
+          {props.error && <p className="text-red-200 text-sm mt-2">{props.error}</p>}
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="flex flex-wrap justify-center gap-6 mt-10 text-white/70 text-sm">
+          {[{ icon: Shield, text: "Bank-level security" }, { icon: Key, text: "Your API, your data" }, { icon: Heart, text: "Made in Switzerland" }].map((b) => (
+            <span key={b.text} className="flex items-center gap-2"><b.icon className="w-4 h-4" />{b.text}</span>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// Main CTA component that switches between variants
+function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error, variant = 1 }: CTAProps & { variant?: 1 | 2 | 3 | 4 }) {
+  const ctaProps = { timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error };
+
+  switch (variant) {
+    case 1: return <CTAVariant1 {...ctaProps} />;
+    case 2: return <CTAVariant2 {...ctaProps} />;
+    case 3: return <CTAVariant3 {...ctaProps} />;
+    case 4: return <CTAVariant4 {...ctaProps} />;
+    default: return <CTAVariant1 {...ctaProps} />;
+  }
 }
 
 // ============================================
@@ -1806,7 +2102,8 @@ export default function PreLaunchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [heroVariant, setHeroVariant] = useState<1 | 2 | 3 | 4>(1); // Change this to preview different heroes
+  const [heroVariant, setHeroVariant] = useState<1 | 2 | 3 | 4>(2); // Hero 2 is the chosen one
+  const [ctaVariant, setCtaVariant] = useState<1 | 2 | 3 | 4>(1); // CTA variant selector
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -1869,32 +2166,52 @@ export default function PreLaunchPage() {
     isMounted,
   };
 
-  // Hero selector for development - remove in production
-  const HeroSelector = () => (
-    <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4">
-      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Hero Variant:</p>
-      <div className="flex gap-2">
-        {[1, 2, 3, 4].map((v) => (
-          <button
-            key={v}
-            onClick={() => setHeroVariant(v as 1 | 2 | 3 | 4)}
-            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-              heroVariant === v
-                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
-                : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-            }`}
-          >
-            {v}
-          </button>
-        ))}
+  // Variant selector for development - remove in production
+  const VariantSelector = () => (
+    <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+      <div>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Hero Variant:</p>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((v) => (
+            <button
+              key={v}
+              onClick={() => setHeroVariant(v as 1 | 2 | 3 | 4)}
+              className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                heroVariant === v
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">CTA Variant:</p>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((v) => (
+            <button
+              key={v}
+              onClick={() => setCtaVariant(v as 1 | 2 | 3 | 4)}
+              className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                ctaVariant === v
+                  ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* Hero Selector - REMOVE THIS IN PRODUCTION */}
-      <HeroSelector />
+      {/* Variant Selector - REMOVE THIS IN PRODUCTION */}
+      <VariantSelector />
 
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -1931,11 +2248,14 @@ export default function PreLaunchPage() {
         {heroVariant === 4 && <HeroVariant4 {...heroProps} />}
       </motion.div>
 
+      {/* Video Section - Right after hero */}
+      <VideoSection />
+
       {/* Pain Points Section */}
       <PainPointsSection />
 
       {/* Features Bento Grid */}
-      <section className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
+      <section id="features-section" className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -2058,7 +2378,7 @@ export default function PreLaunchPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* Final CTA - With variant selector */}
       <FinalCTA
         timeLeft={timeLeft}
         email={email}
@@ -2067,6 +2387,7 @@ export default function PreLaunchPage() {
         isLoading={isLoading}
         isSuccess={isSuccess}
         error={error}
+        variant={ctaVariant}
       />
 
       {/* Footer */}

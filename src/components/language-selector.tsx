@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Globe } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Globe, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   SUPPORTED_LANGUAGES,
   LanguageCode,
   DEFAULT_LANGUAGE,
-  detectBrowserLanguage,
   getSavedLanguage,
   saveLanguage,
   getLanguageFromCountry,
@@ -17,6 +17,7 @@ export function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>(DEFAULT_LANGUAGE);
   const [mounted, setMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -28,31 +29,47 @@ export function LanguageSelector() {
       return;
     }
 
-    // Try geolocation-based detection first, fall back to browser language
+    // Use geolocation API to detect country and set language
     const detectLanguage = async () => {
       try {
         const response = await fetch("/api/geo");
         if (response.ok) {
           const geo = await response.json();
           if (geo.countryCode) {
-            const geoLang = getLanguageFromCountry(geo.countryCode);
-            setCurrentLanguage(geoLang);
-            saveLanguage(geoLang);
+            const langFromCountry = getLanguageFromCountry(geo.countryCode);
+            setCurrentLanguage(langFromCountry);
+            saveLanguage(langFromCountry);
             return;
           }
         }
       } catch {
-        // Geolocation failed, fall back to browser detection
+        // Geolocation failed, use default
       }
 
-      // Fallback to browser language detection
-      const detected = detectBrowserLanguage();
-      setCurrentLanguage(detected);
-      saveLanguage(detected);
+      // Fallback to default English
+      setCurrentLanguage(DEFAULT_LANGUAGE);
+      saveLanguage(DEFAULT_LANGUAGE);
     };
 
     detectLanguage();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleSelectLanguage = (code: LanguageCode) => {
     setCurrentLanguage(code);
@@ -66,53 +83,92 @@ export function LanguageSelector() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="w-9 h-9">
+      <Button variant="ghost" size="sm" className="h-9 px-3 gap-2">
         <Globe className="w-4 h-4" />
+        <span className="hidden sm:inline text-sm">EN</span>
       </Button>
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9"
+        className="h-9 px-3 gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
         title={`Language: ${currentLang?.name}`}
       >
-        <Globe className="w-4 h-4" />
+        <span className="text-lg">{getFlagEmoji(currentLang?.flag || "GB")}</span>
+        <span className="hidden sm:inline text-sm font-medium">{currentLang?.code.toUpperCase()}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </Button>
 
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop with higher z-index */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100]"
+              onClick={() => setIsOpen(false)}
+            />
 
-          {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 overflow-hidden">
-            <div className="max-h-[300px] overflow-y-auto">
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => handleSelectLanguage(lang.code)}
-                  className={`w-full px-4 py-2 text-left text-sm flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
-                    currentLanguage === lang.code
-                      ? "bg-slate-100 dark:bg-slate-700 text-cyan-600 dark:text-cyan-400"
-                      : "text-slate-700 dark:text-slate-300"
-                  }`}
-                >
-                  <span className="text-base">{getFlagEmoji(lang.flag)}</span>
-                  <span>{lang.nativeName}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+            {/* Dropdown with much higher z-index */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute right-0 top-full mt-2 z-[101] min-w-[220px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-200 dark:border-slate-700 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Select Language
+                </p>
+              </div>
+
+              {/* Language List */}
+              <div className="max-h-[320px] overflow-y-auto py-2">
+                {SUPPORTED_LANGUAGES.map((lang) => {
+                  const isSelected = currentLanguage === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleSelectLanguage(lang.code)}
+                      className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-all ${
+                        isSelected
+                          ? "bg-cyan-50 dark:bg-cyan-900/20"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className="text-xl">{getFlagEmoji(lang.flag)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${
+                          isSelected
+                            ? "text-cyan-700 dark:text-cyan-400"
+                            : "text-slate-700 dark:text-slate-300"
+                        }`}>
+                          {lang.nativeName}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          {lang.name}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
