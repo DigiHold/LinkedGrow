@@ -5,10 +5,22 @@ import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, LanguageCode } from "@/lib/i18n/
 // Import all message files statically
 import enMessages from "@/messages/en.json";
 import frMessages from "@/messages/fr.json";
+import deMessages from "@/messages/de.json";
+import esMessages from "@/messages/es.json";
+import itMessages from "@/messages/it.json";
+import ptMessages from "@/messages/pt.json";
+import nlMessages from "@/messages/nl.json";
+import plMessages from "@/messages/pl.json";
 
 const messagesMap: Record<string, typeof enMessages> = {
   en: enMessages,
   fr: frMessages,
+  de: deMessages,
+  es: esMessages,
+  it: itMessages,
+  pt: ptMessages,
+  nl: nlMessages,
+  pl: plMessages,
 };
 
 export default getRequestConfig(async () => {

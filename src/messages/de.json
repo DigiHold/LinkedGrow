@@ -1,0 +1,166 @@
+{
+  "hero": {
+    "badge": "Fruher Zugang Offen",
+    "spotsLeft": "Nur noch {count} Platze",
+    "headline1": "LinkedIn-Inhalte die",
+    "headline2": "wirklich konvertieren",
+    "description": "Horen Sie auf, Stunden mit ignorierten Inhalten zu verschwenden.",
+    "descriptionSub": "LinkedGrow schreibt virale Posts in Ihrer Stimme, plant sie zu Spitzenzeiten und kostet {savings} weniger als Konkurrenten.",
+    "savings": "96%",
+    "valueProp1": "10x schnelleres Schreiben",
+    "valueProp2": "47% mehr Engagement",
+    "valueProp3": "3-5$/Monat vs 50$+",
+    "emailPlaceholder": "Ihre E-Mail",
+    "cta": "30% Rabatt sichern",
+    "noCreditCard": "Keine Kreditkarte",
+    "lockedIn": "30% gesichert",
+    "cancelAnytime": "Jederzeit kundbar",
+    "trustedBy": "Vertraut von {count}+ Grundern"
+  },
+  "painPoints": {
+    "title": "Kommt Ihnen das bekannt vor?",
+    "description": "Sie wissen, dass LinkedIn Ihr Business transformieren kann. Aber Inhalte zu erstellen, die wirklich funktionieren? Das ist der schwere Teil.",
+    "pain1": {
+      "stat": "4+ Stunden/Woche",
+      "title": "Content erstellen ist erschopfend",
+      "description": "Uberzeugende Posts zu schreiben dauert Stunden. Recherche, Entwurf, Bearbeitung - es hort nie auf."
+    },
+    "pain2": {
+      "stat": "0 Aufrufe",
+      "title": "Der Algorithmus ignoriert Sie",
+      "description": "Sie posten regelmaig aber bekommen null Engagement. Ihr Content verschwindet im Nichts."
+    },
+    "pain3": {
+      "stat": "600$+/Jahr",
+      "title": "Uberteuerte KI-Tools",
+      "description": "Andere Tools verlangen 50$+/Monat mit strengen Limits. Sie zahlen auch wenn Sie es nicht nutzen."
+    },
+    "betterWay": "Es gibt einen besseren Weg"
+  },
+  "features": {
+    "title": "Ihre komplette LinkedIn-Wachstumsmaschine",
+    "description": "KI-gestutzte Content-Erstellung, die wie Sie schreibt, fast nichts kostet und wirklich Ergebnisse liefert.",
+    "byok": {
+      "title": "Bringen Sie Ihren eigenen KI-Key",
+      "description": "Verbinden Sie OpenAI, Claude oder Gemini direkt. Keine Aufpreise - zahlen Sie nur was Sie nutzen.",
+      "highlight": "96% gunstiger"
+    },
+    "voice": {
+      "title": "KI lernt Ihre Stimme",
+      "description": "Trainieren Sie die KI auf Ihren Schreibstil. Jeder Post klingt authentisch nach Ihnen.",
+      "stat": "95%",
+      "statLabel": "Genauigkeit"
+    },
+    "viral": {
+      "title": "Virale Content-Formel",
+      "description": "Datengestutzte Templates und Hooks, die nachweislich Engagement fordern.",
+      "stat": "47%",
+      "statLabel": "mehr Reichweite"
+    },
+    "schedule": {
+      "title": "Intelligente Planung",
+      "description": "Posten Sie zu optimalen Zeiten basierend auf der Aktivitat Ihrer Zielgruppe.",
+      "stat": "3x",
+      "statLabel": "Engagement"
+    },
+    "reddit": {
+      "title": "Reddit Ideen-Finder",
+      "description": "Verwandeln Sie trendende Reddit-Diskussionen in virale LinkedIn-Posts.",
+      "stat": "100+",
+      "statLabel": "Ideen/Tag"
+    },
+    "carousel": {
+      "title": "Karussell-Ersteller",
+      "description": "Gestalten Sie schone Karussells und Dokumente, die den Scroll stoppen."
+    }
+  },
+  "howItWorks": {
+    "title": "So funktioniert es",
+    "description": "Beginnen Sie in unter 5 Minuten mit der Erstellung viraler Inhalte",
+    "step1": {
+      "title": "Verbinden Sie Ihren KI-Key",
+      "description": "Fugen Sie Ihren OpenAI, Claude oder Gemini API-Key hinzu. Sie zahlen nur was Sie nutzen - typischerweise 3-5$/Monat."
+    },
+    "step2": {
+      "title": "Trainieren Sie Ihre Stimme",
+      "description": "Fugen Sie einige Ihrer besten Posts ein. Unsere KI lernt Ihren einzigartigen Schreibstil und Ton."
+    },
+    "step3": {
+      "title": "Erstellen und planen",
+      "description": "Generieren Sie eine Woche Content in Minuten. Planen Sie zu optimalen Zeiten und sehen Sie das Engagement wachsen."
+    }
+  },
+  "pricing": {
+    "title": "Einfache, transparente Preise",
+    "description": "Wahlen Sie Ihren Plan. Alle beinhalten BYOK - nutzen Sie Ihre eigenen KI-Keys.",
+    "discount": "-30%",
+    "founder": "Grunder-Rabatt",
+    "perMonth": "/Monat",
+    "free": {
+      "name": "Kostenlos",
+      "description": "Zum Ausprobieren",
+      "features": ["3 Posts/Monat", "Basis-Editor", "BYOK-Support"]
+    },
+    "starter": {
+      "name": "Starter",
+      "description": "Fur regulare Ersteller",
+      "features": ["Unbegrenzte Posts", "10 geplante Posts", "Content-Kalender", "KI-Stimmtraining"]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "Fur ernsthaftes Wachstum",
+      "features": ["Alles in Starter", "Unbegrenzte Planung", "KI-Bildgenerierung", "Karussell-Ersteller", "Analytics-Dashboard"]
+    },
+    "business": {
+      "name": "Business",
+      "description": "Fur Teams und Agenturen",
+      "features": ["Alles in Pro", "A/B-Tests", "API-Zugang", "Prioritats-Support", "Team-Zusammenarbeit"]
+    },
+    "cta": "{discount}% Rabatt sichern"
+  },
+  "faq": {
+    "title": "Haufig gestellte Fragen",
+    "q1": {
+      "question": "Was ist BYOK (Bring Your Own Key)?",
+      "answer": "BYOK bedeutet, dass Sie Ihren eigenen KI-API-Key verbinden (von OpenAI, Anthropic oder Google). So zahlen Sie nur fur Ihre tatsachliche Nutzung - typischerweise 3-5$/Monat - statt teurer Monatsabos."
+    },
+    "q2": {
+      "question": "Wie viel kostet die KI-Nutzung wirklich?",
+      "answer": "Die meisten Nutzer geben 3-5$/Monat fur KI-API-Kosten aus. Das ist 90-95% weniger als traditionelle KI-Content-Tools, die 50$+ monatlich verlangen."
+    },
+    "q3": {
+      "question": "Wird die KI wie ich klingen?",
+      "answer": "Ja! Unsere KI lernt von Ihren bisherigen Posts und Schreibproben. Nach dem Training erfasst sie Ihre einzigartige Stimme, Ton und Stil - Ihr Publikum wird den Unterschied nicht bemerken."
+    },
+    "q4": {
+      "question": "Kann ich vor einer Verpflichtung testen?",
+      "answer": "Absolut! Unser kostenloser Plan beinhaltet 3 Posts pro Monat mit vollem BYOK-Support. Keine Kreditkarte erforderlich."
+    },
+    "q5": {
+      "question": "Was ist der 30% Grunder-Rabatt?",
+      "answer": "Mitglieder mit fruhem Zugang sichern sich 30% Rabatt fur ihr gesamtes erstes Jahr. Dieser Rabatt gilt fur jeden bezahlten Plan und ist nur wahrend des Pre-Launch verfugbar."
+    }
+  },
+  "cta": {
+    "badge": "Launch-Special - Endet in {days}T {hours}Std",
+    "title": "Ihre LinkedIn-Wachstumsreise beginnt hier",
+    "description": "Treten Sie der Warteliste bei und erhalten Sie 30% Rabatt im ersten Jahr.",
+    "subDescription": "Sparen Sie bis zu 500$/Jahr im Vergleich zu anderen Tools.",
+    "button": "Jetzt beitreten",
+    "security": "Bank-Level Sicherheit",
+    "yourData": "Ihre API, Ihre Daten",
+    "madeIn": "Made in Switzerland"
+  },
+  "success": {
+    "title": "Sie sind auf der Liste!",
+    "description": "Ihr 30% Rabatt ist gesichert. Prufen Sie Ihren Posteingang!"
+  },
+  "footer": {
+    "copyright": "2026 LinkedGrow. Alle Rechte vorbehalten.",
+    "privacy": "Datenschutzrichtlinie",
+    "cookies": "Cookie-Richtlinie"
+  },
+  "language": {
+    "select": "Sprache wahlen"
+  }
+}

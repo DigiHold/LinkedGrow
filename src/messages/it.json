@@ -1,0 +1,166 @@
+{
+  "hero": {
+    "badge": "Accesso Anticipato Aperto",
+    "spotsLeft": "Solo {count} posti rimasti",
+    "headline1": "Contenuti LinkedIn che",
+    "headline2": "convertono davvero",
+    "description": "Smetti di sprecare ore su contenuti ignorati.",
+    "descriptionSub": "LinkedGrow scrive post virali con la tua voce, li programma negli orari di punta e costa {savings} meno dei concorrenti.",
+    "savings": "96%",
+    "valueProp1": "10x piu veloce",
+    "valueProp2": "47% piu engagement",
+    "valueProp3": "3-5$/mese vs 50$+",
+    "emailPlaceholder": "La tua email",
+    "cta": "Ottieni 30% di sconto",
+    "noCreditCard": "Senza carta",
+    "lockedIn": "30% garantito",
+    "cancelAnytime": "Cancella quando vuoi",
+    "trustedBy": "Scelto da {count}+ fondatori"
+  },
+  "painPoints": {
+    "title": "Ti suona familiare?",
+    "description": "Sai che LinkedIn puo trasformare il tuo business. Ma creare contenuti che funzionano davvero? Questa e la parte difficile.",
+    "pain1": {
+      "stat": "4+ ore/settimana",
+      "title": "Creare contenuti e estenuante",
+      "description": "Scrivere post convincenti richiede ore. Ricerca, bozza, editing - non finisce mai."
+    },
+    "pain2": {
+      "stat": "0 visualizzazioni",
+      "title": "L'algoritmo ti ignora",
+      "description": "Pubblichi costantemente ma non ottieni engagement. I tuoi contenuti scompaiono nel vuoto."
+    },
+    "pain3": {
+      "stat": "600$+/anno",
+      "title": "Strumenti IA troppo costosi",
+      "description": "Altri strumenti chiedono 50$+/mese con limiti rigidi. Paghi anche quando non lo usi."
+    },
+    "betterWay": "C'e un modo migliore"
+  },
+  "features": {
+    "title": "Il tuo motore completo di crescita LinkedIn",
+    "description": "Creazione contenuti con IA che scrive come te, costa quasi nulla e genera davvero risultati.",
+    "byok": {
+      "title": "Porta la Tua Chiave IA",
+      "description": "Collega OpenAI, Claude o Gemini direttamente. Nessun sovrapprezzo - paga solo quello che usi.",
+      "highlight": "96% piu economico"
+    },
+    "voice": {
+      "title": "L'IA Impara la Tua Voce",
+      "description": "Addestra l'IA sul tuo stile di scrittura. Ogni post suona autenticamente come te.",
+      "stat": "95%",
+      "statLabel": "precisione"
+    },
+    "viral": {
+      "title": "Formula Contenuti Virali",
+      "description": "Template e hook basati sui dati provati per generare engagement.",
+      "stat": "47%",
+      "statLabel": "piu reach"
+    },
+    "schedule": {
+      "title": "Programmazione Intelligente",
+      "description": "Pubblica negli orari ottimali basati sull'attivita del tuo pubblico.",
+      "stat": "3x",
+      "statLabel": "engagement"
+    },
+    "reddit": {
+      "title": "Trova Idee da Reddit",
+      "description": "Trasforma discussioni trending di Reddit in post virali LinkedIn.",
+      "stat": "100+",
+      "statLabel": "idee/giorno"
+    },
+    "carousel": {
+      "title": "Creatore di Caroselli",
+      "description": "Progetta bellissimi caroselli e documenti che fermano lo scroll."
+    }
+  },
+  "howItWorks": {
+    "title": "Come funziona",
+    "description": "Inizia a creare contenuti virali in meno di 5 minuti",
+    "step1": {
+      "title": "Collega la tua chiave IA",
+      "description": "Aggiungi la tua chiave API OpenAI, Claude o Gemini. Paghi solo quello che usi - tipicamente 3-5$/mese."
+    },
+    "step2": {
+      "title": "Addestra la tua voce",
+      "description": "Incolla alcuni dei tuoi migliori post. La nostra IA impara il tuo stile e tono di scrittura unici."
+    },
+    "step3": {
+      "title": "Crea e programma",
+      "description": "Genera una settimana di contenuti in minuti. Programma negli orari ottimali e guarda crescere l'engagement."
+    }
+  },
+  "pricing": {
+    "title": "Prezzi semplici e trasparenti",
+    "description": "Scegli il tuo piano. Tutti includono BYOK - usa le tue chiavi IA.",
+    "discount": "-30%",
+    "founder": "Sconto Fondatore",
+    "perMonth": "/mese",
+    "free": {
+      "name": "Gratis",
+      "description": "Per provare",
+      "features": ["3 post/mese", "Editor base", "Supporto BYOK"]
+    },
+    "starter": {
+      "name": "Starter",
+      "description": "Per creatori regolari",
+      "features": ["Post illimitati", "10 post programmati", "Calendario contenuti", "Training voce IA"]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "Per crescita seria",
+      "features": ["Tutto in Starter", "Programmazione illimitata", "Generazione immagini IA", "Creatore caroselli", "Dashboard analytics"]
+    },
+    "business": {
+      "name": "Business",
+      "description": "Per team e agenzie",
+      "features": ["Tutto in Pro", "Test A/B", "Accesso API", "Supporto prioritario", "Collaborazione team"]
+    },
+    "cta": "Ottieni {discount}% di sconto"
+  },
+  "faq": {
+    "title": "Domande frequenti",
+    "q1": {
+      "question": "Cos'e BYOK (Porta la Tua Chiave)?",
+      "answer": "BYOK significa che colleghi la tua chiave API IA (da OpenAI, Anthropic o Google). Cosi paghi solo per il tuo uso effettivo - tipicamente 3-5$/mese - invece di costosi abbonamenti mensili."
+    },
+    "q2": {
+      "question": "Quanto costa davvero l'uso dell'IA?",
+      "answer": "La maggior parte degli utenti spende 3-5$/mese in costi API IA. E il 90-95% in meno rispetto agli strumenti tradizionali di contenuti IA che chiedono oltre 50$/mese."
+    },
+    "q3": {
+      "question": "L'IA suonera come me?",
+      "answer": "Si! La nostra IA impara dai tuoi post precedenti e campioni di scrittura. Dopo il training, cattura la tua voce, tono e stile unici - il tuo pubblico non notera la differenza."
+    },
+    "q4": {
+      "question": "Posso provare prima di impegnarmi?",
+      "answer": "Assolutamente! Il nostro piano Gratis include 3 post al mese con supporto BYOK completo. Nessuna carta di credito richiesta."
+    },
+    "q5": {
+      "question": "Cos'e lo sconto fondatore del 30%?",
+      "answer": "I membri con accesso anticipato ottengono il 30% di sconto per tutto il primo anno. Questo sconto si applica a qualsiasi piano a pagamento ed e disponibile solo durante il pre-lancio."
+    }
+  },
+  "cta": {
+    "badge": "Speciale Lancio - Finisce tra {days}g {hours}h",
+    "title": "Il tuo viaggio di crescita LinkedIn inizia qui",
+    "description": "Unisciti alla lista d'attesa e ottieni 30% di sconto nel primo anno.",
+    "subDescription": "Risparmia fino a 500$/anno rispetto ad altri strumenti.",
+    "button": "Unisciti Ora",
+    "security": "Sicurezza bancaria",
+    "yourData": "La tua API, i tuoi dati",
+    "madeIn": "Made in Switzerland"
+  },
+  "success": {
+    "title": "Sei nella lista!",
+    "description": "Il tuo sconto del 30% e garantito. Controlla la tua inbox!"
+  },
+  "footer": {
+    "copyright": "2026 LinkedGrow. Tutti i diritti riservati.",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy"
+  },
+  "language": {
+    "select": "Seleziona Lingua"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "hero": {
+    "badge": "Vroege Toegang Open",
+    "spotsLeft": "Nog maar {count} plekken",
+    "headline1": "LinkedIn content die",
+    "headline2": "echt converteert",
+    "description": "Stop met uren verspillen aan content die wordt genegeerd.",
+    "descriptionSub": "LinkedGrow schrijft virale posts in jouw stem, plant ze op piekmomenten en kost {savings} minder dan concurrenten.",
+    "savings": "96%",
+    "valueProp1": "10x sneller schrijven",
+    "valueProp2": "47% meer engagement",
+    "valueProp3": "3-5$/maand vs 50$+",
+    "emailPlaceholder": "Je e-mail",
+    "cta": "Krijg 30% korting",
+    "noCreditCard": "Geen creditcard",
+    "lockedIn": "30% verzekerd",
+    "cancelAnytime": "Altijd opzegbaar",
+    "trustedBy": "Vertrouwd door {count}+ oprichters"
+  },
+  "painPoints": {
+    "title": "Klinkt dit bekend?",
+    "description": "Je weet dat LinkedIn je bedrijf kan transformeren. Maar content maken die echt werkt? Dat is het moeilijke deel.",
+    "pain1": {
+      "stat": "4+ uur/week",
+      "title": "Content maken is uitputtend",
+      "description": "Overtuigende posts schrijven kost uren. Onderzoek, concepten, bewerken - het stopt nooit."
+    },
+    "pain2": {
+      "stat": "0 weergaven",
+      "title": "Het algoritme negeert je",
+      "description": "Je post regelmatig maar krijgt geen engagement. Je content verdwijnt in het niets."
+    },
+    "pain3": {
+      "stat": "600$+/jaar",
+      "title": "Te dure AI-tools",
+      "description": "Andere tools vragen 50$+/maand met strikte limieten. Je betaalt zelfs als je het niet gebruikt."
+    },
+    "betterWay": "Er is een betere manier"
+  },
+  "features": {
+    "title": "Je complete LinkedIn groeimotor",
+    "description": "AI-aangedreven contentcreatie die schrijft zoals jij, bijna niets kost en echt resultaten oplevert.",
+    "byok": {
+      "title": "Breng Je Eigen AI-Key",
+      "description": "Verbind OpenAI, Claude of Gemini direct. Geen toeslag - betaal alleen wat je gebruikt.",
+      "highlight": "96% goedkoper"
+    },
+    "voice": {
+      "title": "AI Leert Jouw Stem",
+      "description": "Train de AI op jouw schrijfstijl. Elke post klinkt authentiek als jij.",
+      "stat": "95%",
+      "statLabel": "nauwkeurigheid"
+    },
+    "viral": {
+      "title": "Virale Content Formule",
+      "description": "Data-gedreven templates en hooks bewezen om engagement te genereren.",
+      "stat": "47%",
+      "statLabel": "meer bereik"
+    },
+    "schedule": {
+      "title": "Slimme Planning",
+      "description": "Post op optimale tijden gebaseerd op de activiteit van je publiek.",
+      "stat": "3x",
+      "statLabel": "engagement"
+    },
+    "reddit": {
+      "title": "Reddit Ideeenvinder",
+      "description": "Verander trending Reddit-discussies in virale LinkedIn-posts.",
+      "stat": "100+",
+      "statLabel": "ideeen/dag"
+    },
+    "carousel": {
+      "title": "Carrousel Maker",
+      "description": "Ontwerp mooie carrousels en documenten die scrollen stoppen."
+    }
+  },
+  "howItWorks": {
+    "title": "Hoe het werkt",
+    "description": "Begin in minder dan 5 minuten met het maken van virale content",
+    "step1": {
+      "title": "Verbind je AI-key",
+      "description": "Voeg je OpenAI, Claude of Gemini API-key toe. Je betaalt alleen wat je gebruikt - meestal 3-5$/maand."
+    },
+    "step2": {
+      "title": "Train je stem",
+      "description": "Plak een paar van je beste posts. Onze AI leert je unieke schrijfstijl en toon."
+    },
+    "step3": {
+      "title": "Maak en plan",
+      "description": "Genereer een week content in minuten. Plan op optimale tijden en zie engagement groeien."
+    }
+  },
+  "pricing": {
+    "title": "Eenvoudige, transparante prijzen",
+    "description": "Kies je plan. Allemaal inclusief BYOK - gebruik je eigen AI-keys.",
+    "discount": "-30%",
+    "founder": "Oprichterskorting",
+    "perMonth": "/maand",
+    "free": {
+      "name": "Gratis",
+      "description": "Om te proberen",
+      "features": ["3 posts/maand", "Basis editor", "BYOK support"]
+    },
+    "starter": {
+      "name": "Starter",
+      "description": "Voor regelmatige creators",
+      "features": ["Onbeperkte posts", "10 geplande posts", "Content kalender", "AI stemtraining"]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "Voor serieuze groei",
+      "features": ["Alles in Starter", "Onbeperkt plannen", "AI beeldgeneratie", "Carrousel maker", "Analytics dashboard"]
+    },
+    "business": {
+      "name": "Business",
+      "description": "Voor teams en bureaus",
+      "features": ["Alles in Pro", "A/B testen", "API toegang", "Prioriteit support", "Team samenwerking"]
+    },
+    "cta": "Krijg {discount}% korting"
+  },
+  "faq": {
+    "title": "Veelgestelde vragen",
+    "q1": {
+      "question": "Wat is BYOK (Breng Je Eigen Key)?",
+      "answer": "BYOK betekent dat je je eigen AI API-key verbindt (van OpenAI, Anthropic of Google). Zo betaal je alleen voor je daadwerkelijke gebruik - meestal 3-5$/maand - in plaats van dure maandabonnementen."
+    },
+    "q2": {
+      "question": "Hoeveel kost AI-gebruik echt?",
+      "answer": "De meeste gebruikers besteden 3-5$/maand aan AI API-kosten. Dat is 90-95% minder dan traditionele AI content tools die meer dan 50$/maand vragen."
+    },
+    "q3": {
+      "question": "Klinkt de AI zoals ik?",
+      "answer": "Ja! Onze AI leert van je eerdere posts en schrijfvoorbeelden. Na training vangt het je unieke stem, toon en stijl - je publiek zal het verschil niet merken."
+    },
+    "q4": {
+      "question": "Kan ik proberen voor ik me vastleg?",
+      "answer": "Absoluut! Ons Gratis plan bevat 3 posts per maand met volledige BYOK support. Geen creditcard nodig."
+    },
+    "q5": {
+      "question": "Wat is de 30% oprichterskorting?",
+      "answer": "Leden met vroege toegang verzekeren 30% korting voor hun hele eerste jaar. Deze korting geldt voor elk betaald plan en is alleen beschikbaar tijdens de pre-launch."
+    }
+  },
+  "cta": {
+    "badge": "Launch Special - Eindigt over {days}d {hours}u",
+    "title": "Je LinkedIn groeireis begint hier",
+    "description": "Schrijf je in voor de wachtlijst en krijg 30% korting in je eerste jaar.",
+    "subDescription": "Bespaar tot 500$/jaar vergeleken met andere tools.",
+    "button": "Nu Aanmelden",
+    "security": "Bankbeveiliging",
+    "yourData": "Jouw API, jouw data",
+    "madeIn": "Gemaakt in Zwitserland"
+  },
+  "success": {
+    "title": "Je staat op de lijst!",
+    "description": "Je 30% korting is verzekerd. Check je inbox!"
+  },
+  "footer": {
+    "copyright": "2026 LinkedGrow. Alle rechten voorbehouden.",
+    "privacy": "Privacybeleid",
+    "cookies": "Cookiebeleid"
+  },
+  "language": {
+    "select": "Taal Selecteren"
+  }
+}

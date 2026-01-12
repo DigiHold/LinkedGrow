@@ -49,7 +49,7 @@ import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
-      {/* Floating Elements with AI Icons - Lower opacity for subtle background effect */}
+      {/* Floating Elements with Real AI Brand Logos - Lower opacity for subtle background effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* LinkedIn Icon */}
         <motion.div
@@ -65,96 +65,110 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
           </svg>
         </motion.div>
 
-        {/* OpenAI / ChatGPT Icon */}
+        {/* ChatGPT / OpenAI Icon */}
         <motion.div
           animate={{
             y: [0, 18, 0],
             x: [0, -8, 0]
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          className="absolute top-28 right-[10%] w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg opacity-35"
+          className="absolute top-28 right-[10%] w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#10A37F] flex items-center justify-center shadow-lg opacity-50"
         >
-          <svg className="w-6 h-6 md:w-7 md:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+          {/* ChatGPT logo */}
+          <svg className="w-7 h-7 md:w-8 md:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
           </svg>
         </motion.div>
 
-        {/* Claude / Anthropic Icon */}
+        {/* Claude / Anthropic Icon - Official Claude logo */}
         <motion.div
           animate={{
             y: [0, -15, 0],
             rotate: [0, -3, 0]
           }}
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-[40%] left-[5%] w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-[#D97706] to-[#B45309] flex items-center justify-center shadow-lg opacity-35"
+          className="absolute top-[40%] left-[5%] w-12 h-12 md:w-14 md:h-14 rounded-xl bg-[#D4A574] flex items-center justify-center shadow-lg opacity-50"
         >
-          {/* Claude/Anthropic logo - simplified */}
-          <svg className="w-6 h-6 md:w-7 md:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          {/* Claude logo - the recognizable "C" shape */}
+          <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 24 24" fill="none">
+            <path d="M16.5 3H7.5C5.01 3 3 5.01 3 7.5v9C3 18.99 5.01 21 7.5 21h9c2.49 0 4.5-2.01 4.5-4.5v-9C21 5.01 18.99 3 16.5 3z" fill="#1A1A1A"/>
+            <path d="M12 6.5c-3.038 0-5.5 2.462-5.5 5.5s2.462 5.5 5.5 5.5c1.657 0 3.14-.734 4.148-1.893" stroke="#D4A574" strokeWidth="2.5" strokeLinecap="round"/>
           </svg>
         </motion.div>
 
-        {/* Google Gemini Icon */}
+        {/* Google Gemini Icon - Official Gemini star */}
         <motion.div
           animate={{
             y: [0, 22, 0],
             x: [0, 12, 0]
           }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="absolute bottom-36 left-[12%] w-11 h-11 md:w-13 md:h-13 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg opacity-30"
+          className="absolute bottom-36 left-[12%] w-11 h-11 md:w-13 md:h-13 rounded-full bg-gradient-to-br from-[#4285F4] via-[#9B72CB] to-[#D96570] flex items-center justify-center shadow-lg opacity-45"
         >
-          <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
+          {/* Gemini star icon */}
+          <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
+          </svg>
         </motion.div>
 
-        {/* Grok / xAI Icon */}
+        {/* Grok / xAI Icon - X logo */}
         <motion.div
           animate={{
             y: [0, -18, 0],
             rotate: [0, 8, 0]
           }}
           transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute top-1/3 right-[6%] w-11 h-11 md:w-13 md:h-13 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg border border-slate-600 opacity-35"
+          className="absolute top-1/3 right-[6%] w-11 h-11 md:w-13 md:h-13 rounded-xl bg-black flex items-center justify-center shadow-lg border border-slate-600 opacity-45"
         >
-          {/* Grok X logo */}
+          {/* X/Grok logo */}
           <svg className="w-5 h-5 md:w-6 md:h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
         </motion.div>
 
-        {/* Llama / Meta Icon */}
+        {/* Perplexity Icon - Official logo style */}
         <motion.div
           animate={{
             y: [0, 16, 0],
             x: [0, -10, 0]
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
-          className="absolute bottom-28 right-[15%] w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg opacity-30"
+          className="absolute bottom-28 right-[15%] w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#20808D] flex items-center justify-center shadow-lg opacity-45"
         >
-          <Brain className="w-5 h-5 md:w-6 md:h-6 text-white" />
+          {/* Perplexity logo - simplified abstract shape */}
+          <svg className="w-5 h-5 md:w-6 md:h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </motion.div>
 
-        {/* Mistral AI Icon */}
+        {/* Mistral AI Icon - Official Mistral colors */}
         <motion.div
           animate={{
             y: [0, -12, 0],
             scale: [1, 1.05, 1]
           }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          className="absolute top-[55%] right-[3%] w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg opacity-25"
+          className="absolute top-[55%] right-[3%] w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-[#F7931A] to-[#F15A24] flex items-center justify-center shadow-lg opacity-40"
         >
-          <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
+          {/* Mistral M logo */}
+          <svg className="w-5 h-5 md:w-6 md:h-6 text-white font-bold" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 5h4v14H3V5zm7 0h4v14h-4V5zm7 0h4v14h-4V5z"/>
+          </svg>
         </motion.div>
 
-        {/* Perplexity / Search Icon */}
+        {/* Meta Llama Icon */}
         <motion.div
           animate={{
             y: [0, 14, 0],
             rotate: [0, -6, 0]
           }}
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 3.5 }}
-          className="absolute bottom-[45%] left-[3%] w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-lg opacity-25"
+          className="absolute bottom-[45%] left-[3%] w-9 h-9 md:w-11 md:h-11 rounded-full bg-[#0668E1] flex items-center justify-center shadow-lg opacity-40"
         >
-          <Globe className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          {/* Meta infinity logo */}
+          <svg className="w-5 h-5 md:w-6 md:h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 10.9c-.61-1.82-1.92-4.41-3.37-5.27C7.38 4.87 6.14 5.19 5.35 6c-1.84 1.86-1.77 5.37.33 8.58 1.02 1.56 2.32 2.86 3.67 3.63.78.44 1.58.75 2.3.81.72-.06 1.52-.37 2.3-.81 1.35-.77 2.65-2.07 3.67-3.63 2.1-3.21 2.17-6.72.33-8.58-.79-.81-2.03-1.13-3.28-.37-1.45.86-2.76 3.45-3.37 5.27z"/>
+          </svg>
         </motion.div>
       </div>
 

@@ -7,9 +7,6 @@ export const SUPPORTED_LANGUAGES = [
   { code: "pt", name: "Portuguese", nativeName: "Portugues", flag: "PT" },
   { code: "nl", name: "Dutch", nativeName: "Nederlands", flag: "NL" },
   { code: "pl", name: "Polish", nativeName: "Polski", flag: "PL" },
-  { code: "ja", name: "Japanese", nativeName: "Nihongo", flag: "JP" },
-  { code: "ko", name: "Korean", nativeName: "Hangugeo", flag: "KR" },
-  { code: "zh", name: "Chinese", nativeName: "Zhongwen", flag: "CN" },
 ] as const;
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -53,12 +50,6 @@ const COUNTRY_TO_LANGUAGE: Record<string, LanguageCode> = {
   NL: "nl", SR: "nl",
   // Polish-speaking
   PL: "pl",
-  // Japanese-speaking
-  JP: "ja",
-  // Korean-speaking
-  KR: "ko",
-  // Chinese-speaking
-  CN: "zh", TW: "zh", HK: "zh", SG: "zh",
 };
 
 /**
