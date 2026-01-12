@@ -170,9 +170,16 @@ RESEND_API_KEY=re_...
 ## Important Notes
 
 1. **useSearchParams Hook**: Must be wrapped in `<Suspense>` boundary (Next.js 16 requirement)
-2. **Middleware**: Next.js 16 shows deprecation warning for middleware → proxy migration pending
+2. **Middleware**: Next.js 16 shows deprecation warning for middleware -> proxy migration pending
 3. **Static Generation**: Pages using dynamic data need proper handling for SSG
 4. **Stripe Price IDs**: Must be set in Vercel env vars for production checkout to work
+
+## Code Style Rules
+
+1. **No em dashes**: Never use em dashes (—) in any text or code. Use regular dashes with spaces ` - ` instead.
+   - Wrong: `"no hidden costs—just results"`
+   - Correct: `"no hidden costs - just results"`
+2. **Contact email**: Use only `contact@linkedgrow.ai` for all contact references
 
 ## Founders
 

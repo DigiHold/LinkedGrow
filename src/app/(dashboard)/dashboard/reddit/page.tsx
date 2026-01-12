@@ -106,7 +106,7 @@ Here's the uncomfortable truth no one talks about:
 
 Most successful people in tech got lucky.
 
-But here's the thing—
+But here's the thing -
 
 They positioned themselves to BE lucky.
 

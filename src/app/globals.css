@@ -27,41 +27,41 @@
   --color-success: #10b981;
   --color-success-light: #34d399;
 
-  /* Semantic colors using light-dark() for auto theming */
-  --color-background: light-dark(hsl(0 0% 100%), hsl(222 47% 6%));
-  --color-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
+  /* Semantic colors - Light mode defaults */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222 47% 11%);
 
-  --color-card: light-dark(hsl(0 0% 100%), hsl(222 47% 8%));
-  --color-card-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
 
-  --color-popover: light-dark(hsl(0 0% 100%), hsl(222 47% 8%));
-  --color-popover-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
 
-  --color-primary: light-dark(#0891b2, #22d3ee);
-  --color-primary-foreground: light-dark(hsl(210 40% 98%), hsl(222 47% 11%));
+  --color-primary: #0891b2;
+  --color-primary-foreground: hsl(210 40% 98%);
 
-  --color-secondary: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
-  --color-secondary-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222 47% 11%);
 
-  --color-muted: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
-  --color-muted-foreground: light-dark(hsl(215 16% 47%), hsl(215 20% 65%));
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215 16% 47%);
 
-  --color-accent: light-dark(hsl(210 40% 96.1%), hsl(217 33% 17%));
-  --color-accent-foreground: light-dark(hsl(222 47% 11%), hsl(210 40% 98%));
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222 47% 11%);
 
-  --color-destructive: light-dark(hsl(0 84% 60%), hsl(0 63% 31%));
+  --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(210 40% 98%);
 
-  --color-border: light-dark(hsl(214 32% 91%), hsl(217 33% 17%));
-  --color-input: light-dark(hsl(214 32% 91%), hsl(217 33% 17%));
-  --color-ring: light-dark(#0891b2, #22d3ee);
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: #0891b2;
 
   /* Chart colors */
-  --color-chart-1: light-dark(#0891b2, #22d3ee);
-  --color-chart-2: light-dark(#10b981, #34d399);
-  --color-chart-3: light-dark(#f97316, #fb923c);
-  --color-chart-4: light-dark(#8b5cf6, #a78bfa);
-  --color-chart-5: light-dark(#ec4899, #f472b6);
+  --color-chart-1: #0891b2;
+  --color-chart-2: #10b981;
+  --color-chart-3: #f97316;
+  --color-chart-4: #8b5cf6;
+  --color-chart-5: #ec4899;
 
   /* Animations */
   --animate-fade-in: fade-in 0.6s ease-out;
@@ -72,6 +72,43 @@
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-scale-in: scale-in 0.3s ease-out;
   --animate-gradient: gradient 8s linear infinite;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: hsl(222 47% 6%);
+  --color-foreground: hsl(210 40% 98%);
+
+  --color-card: hsl(222 47% 8%);
+  --color-card-foreground: hsl(210 40% 98%);
+
+  --color-popover: hsl(222 47% 8%);
+  --color-popover-foreground: hsl(210 40% 98%);
+
+  --color-primary: #22d3ee;
+  --color-primary-foreground: hsl(222 47% 11%);
+
+  --color-secondary: hsl(217 33% 17%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+
+  --color-muted: hsl(217 33% 17%);
+  --color-muted-foreground: hsl(215 20% 65%);
+
+  --color-accent: hsl(217 33% 17%);
+  --color-accent-foreground: hsl(210 40% 98%);
+
+  --color-destructive: hsl(0 63% 31%);
+
+  --color-border: hsl(217 33% 17%);
+  --color-input: hsl(217 33% 17%);
+  --color-ring: #22d3ee;
+
+  /* Chart colors - dark mode */
+  --color-chart-1: #22d3ee;
+  --color-chart-2: #34d399;
+  --color-chart-3: #fb923c;
+  --color-chart-4: #a78bfa;
+  --color-chart-5: #f472b6;
 }
 
 /* Keyframes */
@@ -118,18 +155,56 @@
 *,
 *::before,
 *::after {
-  border-color: transparent;
-}
-
-/* Only apply border color to elements with explicit borders */
-[class*="border"] {
   border-color: var(--color-border);
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Headings use display font */
+h1, h2, h3, h4, h5, h6,
+.font-display {
+  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+h2 {
+  font-weight: 700;
+}
+
+h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+/* Interactive elements cursor and transitions */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+.clickable {
+  cursor: pointer;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  transition: all 0.2s ease;
 }
 
 /* ===== Custom Utilities ===== */

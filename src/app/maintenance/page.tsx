@@ -75,8 +75,8 @@ export default function MaintenancePage() {
         {/* Contact */}
         <p className="mt-6 text-sm text-muted-foreground">
           Questions? Contact us at{" "}
-          <a href="mailto:support@linkedgrow.ai" className="text-linkedin hover:underline">
-            support@linkedgrow.ai
+          <a href="mailto:contact@linkedgrow.ai" className="text-linkedin hover:underline">
+            contact@linkedgrow.ai
           </a>
         </p>
       </div>

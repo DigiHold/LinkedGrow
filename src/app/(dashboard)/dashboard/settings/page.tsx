@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,9 @@ import {
   Sparkles,
   Shield,
   Save,
+  Moon,
+  Sun,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +57,8 @@ const aiProviders = [
 ];
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [selectedProvider, setSelectedProvider] = useState("openai");
@@ -68,6 +74,10 @@ export default function SettingsPage() {
     doNotMention: "",
     context: "",
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -380,6 +390,93 @@ export default function SettingsPage() {
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? "Saving..." : "Save Business Profile"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Appearance Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Moon className="w-5 h-5 text-purple-500" />
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Customize how LinkedGrow looks for you
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-3 block">Theme Preference</label>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose your preferred theme. System follows your device&apos;s dark/light mode setting automatically.
+            </p>
+            {mounted && (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => setTheme("system")}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-xl border-2 transition-all min-w-[140px]",
+                    theme === "system"
+                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    theme === "system" ? "bg-cyan-500 text-white" : "bg-slate-100 dark:bg-slate-800"
+                  )}>
+                    <Monitor className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm">System</p>
+                    <p className="text-xs text-muted-foreground">Auto</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTheme("light")}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-xl border-2 transition-all min-w-[140px]",
+                    theme === "light"
+                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    theme === "light" ? "bg-cyan-500 text-white" : "bg-slate-100 dark:bg-slate-800"
+                  )}>
+                    <Sun className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm">Light</p>
+                    <p className="text-xs text-muted-foreground">Always</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTheme("dark")}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-xl border-2 transition-all min-w-[140px]",
+                    theme === "dark"
+                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    theme === "dark" ? "bg-cyan-500 text-white" : "bg-slate-100 dark:bg-slate-800"
+                  )}>
+                    <Moon className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm">Dark</p>
+                    <p className="text-xs text-muted-foreground">Always</p>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

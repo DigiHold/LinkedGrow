@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CookieBanner } from "@/components/cookie-consent";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/cookie-consent";
 import {
@@ -12,7 +13,13 @@ import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-inter",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 // Google Tag Manager ID - Replace with your actual GTM ID
@@ -72,11 +79,13 @@ export default function RootLayout({
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
         {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
 
-        <SessionProvider>{children}</SessionProvider>
+        <ThemeProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </ThemeProvider>
 
         {/* Cookie Consent Banner */}
         <CookieBanner />
