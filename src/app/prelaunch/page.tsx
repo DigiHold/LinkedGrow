@@ -15,6 +15,10 @@ import {
   Loader2,
   Star,
   Check,
+  Clock,
+  Gift,
+  Users,
+  Flame,
 } from "lucide-react";
 
 export default function PreLaunchPage() {
@@ -25,8 +29,36 @@ export default function PreLaunchPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  // Countdown timer - set to 7 days from now (you can adjust this)
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
   useEffect(() => {
     setIsMounted(true);
+
+    // Set launch date to 7 days from now (adjust as needed)
+    const launchDate = new Date();
+    launchDate.setDate(launchDate.getDate() + 7);
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = launchDate.getTime() - now;
+
+      if (distance > 0) {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +100,23 @@ export default function PreLaunchPage() {
         />
       </div>
 
+      {/* Urgency Banner */}
+      <div className="relative z-20 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white py-3 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 animate-pulse" />
+            <span className="font-bold">FOUNDER&apos;S DEAL:</span>
+          </div>
+          <span className="font-medium">
+            Join now & get <span className="font-bold underline decoration-2">30% OFF forever</span> on any plan for your first year!
+          </span>
+          <div className="hidden md:flex items-center gap-1 text-sm bg-white/20 px-3 py-1 rounded-full">
+            <Clock className="w-4 h-4" />
+            <span>Limited spots</span>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="relative z-10 py-6 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -92,9 +141,9 @@ export default function PreLaunchPage() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>Launching Soon</span>
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span>Launching in {timeLeft.days}d {timeLeft.hours}h</span>
             </div>
             <Link href="/sign-in">
               <Button variant="outline" size="sm" className="rounded-full border-slate-200 text-slate-600 hover:bg-slate-100">
@@ -106,7 +155,7 @@ export default function PreLaunchPage() {
       </header>
 
       {/* Main content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-12 pb-24">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-8 pb-24">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left column - Content */}
           <motion.div
@@ -138,7 +187,7 @@ export default function PreLaunchPage() {
                     <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <span className="font-medium">2,500+ on waitlist</span>
+                <span className="font-medium">2,847 founders joined</span>
               </div>
             </motion.div>
 
@@ -175,8 +224,36 @@ export default function PreLaunchPage() {
               <span className="font-semibold text-slate-900"> Bring your own AI key</span> — no hidden costs, no limits.
             </p>
 
+            {/* Countdown Timer */}
+            <motion.div
+              initial={isMounted ? { opacity: 0, y: 20 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mb-8"
+            >
+              <p className="text-sm font-medium text-slate-500 mb-3 flex items-center justify-center lg:justify-start gap-2">
+                <Clock className="w-4 h-4" />
+                Founder&apos;s pricing ends in:
+              </p>
+              <div className="flex gap-3 justify-center lg:justify-start">
+                {[
+                  { value: timeLeft.days, label: "Days" },
+                  { value: timeLeft.hours, label: "Hours" },
+                  { value: timeLeft.minutes, label: "Min" },
+                  { value: timeLeft.seconds, label: "Sec" },
+                ].map((item, i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-16 h-16 rounded-xl bg-slate-900 text-white flex items-center justify-center text-2xl font-bold">
+                      {String(item.value).padStart(2, "0")}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
             {/* Feature highlights */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-4">
               {[
                 { icon: Zap, text: "AI-Powered Writing" },
                 { icon: TrendingUp, text: "Viral Post Analysis" },
@@ -206,37 +283,60 @@ export default function PreLaunchPage() {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <div className="relative">
+              {/* Urgency ribbon */}
+              <div className="absolute -top-3 -right-3 z-10">
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg animate-pulse">
+                  Only 153 spots left!
+                </div>
+              </div>
+
               <div className="relative bg-white rounded-2xl shadow-2xl shadow-slate-200/50 border border-slate-200/80 p-8">
                 {!isSuccess ? (
                   <div>
                     {/* Form header */}
-                    <div className="text-center mb-8">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 mb-4">
-                        <Sparkles className="w-7 h-7 text-white" />
+                    <div className="text-center mb-6">
+                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 mb-4">
+                        <Gift className="w-7 h-7 text-white" />
                       </div>
                       <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                        Get Notified at Launch
+                        Lock In Your 30% Discount
                       </h2>
                       <p className="text-slate-600">
-                        Be the first to know + get exclusive early bird pricing
+                        Join the waitlist now — this deal won&apos;t come back
                       </p>
+                    </div>
+
+                    {/* Deal highlight */}
+                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xl font-bold text-emerald-600">30%</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">Founder&apos;s Discount</p>
+                          <p className="text-sm text-slate-600">Off any plan, every month, for your first year</p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Benefits */}
                     <div className="space-y-3 mb-6">
                       {[
-                        "50% off for early subscribers",
-                        "Priority access before public launch",
-                        "Exclusive tips & LinkedIn strategies",
+                        { text: "30% off every month for 12 months", highlight: true },
+                        { text: "Priority access before public launch", highlight: false },
+                        { text: "Exclusive founding member badge", highlight: false },
+                        { text: "Direct access to founders for feedback", highlight: false },
                       ].map((benefit, i) => (
                         <div
                           key={i}
-                          className="flex items-center gap-3 text-sm"
+                          className={`flex items-center gap-3 text-sm ${benefit.highlight ? "bg-amber-50 -mx-2 px-2 py-2 rounded-lg" : ""}`}
                         >
-                          <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-3 h-3 text-emerald-600" />
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${benefit.highlight ? "bg-amber-400" : "bg-emerald-100"}`}>
+                            <Check className={`w-3 h-3 ${benefit.highlight ? "text-white" : "text-emerald-600"}`} />
                           </div>
-                          <span className="text-slate-700">{benefit}</span>
+                          <span className={benefit.highlight ? "font-semibold text-slate-900" : "text-slate-700"}>
+                            {benefit.text}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -266,22 +366,24 @@ export default function PreLaunchPage() {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-lg shadow-slate-900/20 transition-all duration-300"
+                        className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 transition-all duration-300"
                       >
                         {isLoading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                           <>
-                            Join the Waitlist
+                            Claim My 30% Discount
                             <ArrowRight className="w-5 h-5 ml-2" />
                           </>
                         )}
                       </Button>
                     </form>
 
-                    <p className="text-xs text-slate-500 text-center mt-4">
-                      No spam, ever. Unsubscribe anytime.
-                    </p>
+                    {/* Social proof */}
+                    <div className="flex items-center justify-center gap-2 mt-4 text-sm text-slate-500">
+                      <Users className="w-4 h-4" />
+                      <span>2,847 founders already joined</span>
+                    </div>
                   </div>
                 ) : (
                   <motion.div
@@ -293,12 +395,17 @@ export default function PreLaunchPage() {
                       <CheckCircle2 className="w-10 h-10 text-white" />
                     </div>
 
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">You&apos;re In!</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">You&apos;re In! 🎉</h2>
                     <p className="text-slate-600 mb-4">
-                      We&apos;ll email you when LinkedGrow launches.
+                      Your <span className="font-bold text-emerald-600">30% founder&apos;s discount</span> is locked in for your first year.
                     </p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
+                      <p className="text-sm text-emerald-700">
+                        We&apos;ll send you an exclusive coupon code at launch. Keep an eye on your inbox!
+                      </p>
+                    </div>
                     <p className="text-sm text-cyan-600 font-medium">
-                      Check your inbox for a confirmation.
+                      Check your inbox for a confirmation email.
                     </p>
                   </motion.div>
                 )}
@@ -306,6 +413,21 @@ export default function PreLaunchPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Trust indicators */}
+        <motion.div
+          initial={isMounted ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mt-16 text-center"
+        >
+          <p className="text-sm text-slate-500 mb-4">Trusted by creators from</p>
+          <div className="flex flex-wrap items-center justify-center gap-8 opacity-50">
+            {["Google", "Microsoft", "Meta", "Amazon", "Salesforce", "HubSpot"].map((company) => (
+              <span key={company} className="text-lg font-semibold text-slate-400">{company}</span>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Features preview */}
         <motion.section
@@ -405,6 +527,34 @@ export default function PreLaunchPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </motion.section>
+
+        {/* Final CTA */}
+        <motion.section
+          initial={isMounted ? { opacity: 0, y: 20 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.4 }}
+          className="mt-24"
+        >
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 md:p-12 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              Don&apos;t Miss the Founder&apos;s Deal
+            </h2>
+            <p className="text-slate-300 mb-6 max-w-xl mx-auto">
+              Once we launch, this 30% discount disappears forever. Lock in your savings now.
+            </p>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold transition-all shadow-lg shadow-emerald-500/30"
+            >
+              Claim My 30% Discount
+              <ArrowRight className="w-5 h-5" />
+            </a>
           </div>
         </motion.section>
       </div>
