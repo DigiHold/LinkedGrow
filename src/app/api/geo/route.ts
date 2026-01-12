@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isUserInEEA } from "@/lib/cookies/geo";
 
-// Cache geo results for 1 hour (user's location rarely changes)
-export const revalidate = 3600;
+// Force dynamic rendering since we use headers() for IP detection
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
