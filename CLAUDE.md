@@ -311,6 +311,108 @@ Based in Montreux, Switzerland. LinkedGrow is a product of DigiHold.
 - [ ] Analytics dashboard
 - [ ] Weekly report toggle in settings
 
+### API Access Feature (Business Plan Only)
+
+**Overview:** Allow Business plan users to access LinkedGrow functionality via REST API.
+
+#### Implementation Steps
+
+1. **API Key Management**
+   - [ ] Add `api_keys` table to database schema:
+     ```typescript
+     api_keys: {
+       id: uuid,
+       user_id: uuid (FK),
+       key_hash: string (bcrypt hashed),
+       key_prefix: string (first 8 chars for display),
+       name: string,
+       permissions: string[] (scopes),
+       last_used_at: timestamp,
+       expires_at: timestamp (optional),
+       created_at: timestamp
+     }
+     ```
+   - [ ] Create API key generation UI in dashboard settings
+   - [ ] Implement key rotation (revoke old, create new)
+   - [ ] Display last used timestamp
+
+2. **API Routes to Expose**
+   - [ ] `POST /api/v1/posts` - Create post
+   - [ ] `GET /api/v1/posts` - List posts
+   - [ ] `GET /api/v1/posts/:id` - Get single post
+   - [ ] `PUT /api/v1/posts/:id` - Update post
+   - [ ] `DELETE /api/v1/posts/:id` - Delete post
+   - [ ] `POST /api/v1/posts/:id/publish` - Publish to LinkedIn
+   - [ ] `POST /api/v1/generate` - AI content generation (uses user's BYOK keys)
+   - [ ] `GET /api/v1/analytics` - Get engagement stats
+
+3. **Authentication Middleware**
+   - [ ] Create `/api/v1/*` route handler with API key auth
+   - [ ] Validate: `Authorization: Bearer lgw_xxxxx`
+   - [ ] Check plan = Business
+   - [ ] Log all API requests for analytics
+
+#### Security Measures (CRITICAL)
+
+1. **Rate Limiting** (Prevents abuse and controls costs)
+   - [ ] Install `@upstash/ratelimit` with Redis (Upstash free tier: 10k requests/day)
+   - [ ] Limits per endpoint:
+     - `/api/v1/posts` - 100 requests/minute
+     - `/api/v1/generate` - 20 requests/minute (AI is expensive)
+     - `/api/v1/analytics` - 60 requests/minute
+   - [ ] Return `429 Too Many Requests` with `Retry-After` header
+
+2. **API Key Security**
+   - [ ] Never store raw keys - hash with bcrypt
+   - [ ] Generate secure keys: `lgw_` prefix + 32 random bytes (base64)
+   - [ ] Allow max 5 keys per user
+   - [ ] Automatic expiration option (30/60/90 days)
+
+3. **Request Validation**
+   - [ ] Validate all inputs with Zod schemas
+   - [ ] Sanitize text content (prevent XSS in post content)
+   - [ ] Max payload size: 1MB
+   - [ ] CORS: Only allow configured domains (user can set in settings)
+
+4. **Audit Logging**
+   - [ ] Log: user_id, endpoint, method, status, ip, timestamp
+   - [ ] Store in `api_logs` table (rotate monthly)
+   - [ ] Show usage dashboard in settings
+
+5. **Scope-Based Permissions**
+   - [ ] `posts:read` - Read posts only
+   - [ ] `posts:write` - Create/update posts
+   - [ ] `posts:publish` - Publish to LinkedIn
+   - [ ] `generate` - AI generation
+   - [ ] `analytics:read` - Read analytics
+
+#### Cost Management (Keeps Server Costs Low)
+
+1. **Why Costs Stay Low:**
+   - AI generation uses USER's BYOK keys (no cost to us)
+   - Database queries are lightweight (Turso is usage-based)
+   - No heavy processing on our servers
+   - Rate limiting prevents abuse
+
+2. **Cost Estimates:**
+   - **Upstash Redis** (rate limiting): Free tier = 10k/day, then ~$0.20/10k
+   - **Vercel API Routes**: Included in Pro plan
+   - **Turso Database**: ~$0.001 per 1M rows read
+   - **Estimated per Business user**: ~$0.50-2/month extra
+
+3. **If Costs Become an Issue:**
+   - [ ] Implement usage quotas per plan tier
+   - [ ] Add caching layer (Upstash Redis) for frequent reads
+   - [ ] Consider moving to dedicated API server (only if >1000 Business users)
+
+#### Environment Variables
+
+```env
+# Rate Limiting (Upstash)
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxxxx
+```
+
 ## Claude Code Configuration
 
 ### GitHub SSH Access
