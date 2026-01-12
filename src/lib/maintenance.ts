@@ -1,6 +1,6 @@
 // Maintenance mode configuration
 // Set to true to enable maintenance mode for non-admin users
-export const MAINTENANCE_MODE = true;
+export const MAINTENANCE_MODE = false;
 
 // Routes that should always be accessible (even in maintenance mode)
 export const MAINTENANCE_ALLOWED_ROUTES = [
