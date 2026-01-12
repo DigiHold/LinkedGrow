@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSelector } from "@/components/language-selector";
 
 interface PrelaunchHeaderProps {
@@ -45,7 +44,6 @@ export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHe
             </div>
           )}
           <LanguageSelector />
-          <ThemeToggle />
           <Link href="/sign-in">
             <Button variant="outline" size="sm" className="rounded-full border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
               Sign In

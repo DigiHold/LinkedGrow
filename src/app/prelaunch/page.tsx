@@ -15,7 +15,7 @@ import {
   Play,
   Pause,
   ChevronRight,
-  Quote,
+  ChevronDown,
   Zap,
   Target,
   Brain,
@@ -24,19 +24,27 @@ import {
   BarChart3,
   MessageSquare,
   X,
+  Star,
+  Calendar,
+  FileText,
+  Globe,
+  Key,
+  Mic,
+  Shield,
+  RefreshCw,
 } from "lucide-react";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 
-// Animated typing effect for hero
-function TypewriterText({ texts, className }: { texts: string[]; className?: string }) {
+// Slower typewriter effect - always on second line
+function TypewriterText({ texts }: { texts: string[] }) {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const currentFullText = texts[currentTextIndex];
-    const typeSpeed = isDeleting ? 30 : 80;
-    const pauseTime = 2000;
+    const typeSpeed = isDeleting ? 40 : 100; // Slower typing
+    const pauseTime = 3000; // Longer pause to read
 
     if (!isDeleting && displayText === currentFullText) {
       setTimeout(() => setIsDeleting(true), pauseTime);
@@ -59,60 +67,52 @@ function TypewriterText({ texts, className }: { texts: string[]; className?: str
   }, [displayText, isDeleting, currentTextIndex, texts]);
 
   return (
-    <span className={className}>
+    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
       {displayText}
-      <span className="animate-pulse">|</span>
+      <span className="animate-pulse text-cyan-500">|</span>
     </span>
   );
 }
 
-// Pain point card with hover effect
-function PainCard({ pain, index }: { pain: { title: string; description: string; stat: string }; index: number }) {
+// Logo marquee component
+function LogoMarquee() {
+  const logos = [
+    { name: "TechCrunch", icon: "TC" },
+    { name: "Forbes", icon: "F" },
+    { name: "Entrepreneur", icon: "E" },
+    { name: "Inc.", icon: "Inc" },
+    { name: "Fast Company", icon: "FC" },
+    { name: "Wired", icon: "W" },
+    { name: "Bloomberg", icon: "B" },
+    { name: "Business Insider", icon: "BI" },
+  ];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
-      className="group relative"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-hover:opacity-100" />
-      <div className="relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:border-red-300 dark:hover:border-red-700 transition-all">
-        <div className="text-4xl font-black text-red-500/20 dark:text-red-400/20 mb-2">{pain.stat}</div>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{pain.title}</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{pain.description}</p>
-      </div>
-    </motion.div>
+    <div className="relative overflow-hidden py-8">
+      <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <motion.div
+        animate={{ x: [0, -1920] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        className="flex gap-16 items-center"
+      >
+        {[...logos, ...logos, ...logos, ...logos].map((logo, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-2 text-slate-400 dark:text-slate-600 whitespace-nowrap"
+          >
+            <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-sm">
+              {logo.icon}
+            </div>
+            <span className="text-lg font-semibold">{logo.name}</span>
+          </div>
+        ))}
+      </motion.div>
+    </div>
   );
 }
 
-// Solution card with icon
-function SolutionCard({ solution, index }: { solution: { icon: React.ElementType; title: string; description: string; highlight: string }; index: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.15, duration: 0.5 }}
-      className="group relative"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all" />
-      <div className="relative h-full bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-          <solution.icon className="w-6 h-6 text-white" />
-        </div>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{solution.title}</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{solution.description}</p>
-        <div className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/30 px-2 py-1 rounded-full">
-          <Sparkles className="w-3 h-3" />
-          {solution.highlight}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// Interactive demo mockup
+// Interactive demo mockup - improved content
 function DemoPreview() {
   const [activeTab, setActiveTab] = useState<"write" | "analyze" | "schedule">("write");
   const [isPlaying, setIsPlaying] = useState(true);
@@ -125,53 +125,92 @@ function DemoPreview() {
         if (prev === "analyze") return "schedule";
         return "write";
       });
-    }, 3000);
+    }, 5000); // Slower to let users absorb
     return () => clearInterval(interval);
   }, [isPlaying]);
 
   const demos = {
     write: {
       title: "AI Writing Assistant",
+      subtitle: "Generate viral posts in seconds",
       content: (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Brain className="w-4 h-4" />
-            <span>Generating hook...</span>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Your topic</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">Building a SaaS in public</p>
+            </div>
           </div>
-          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-lg p-4 border-l-4 border-cyan-500">
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-semibold">Stop scrolling.</span><br /><br />
-              I spent 6 months posting daily on LinkedIn.<br />
-              Zero engagement. Zero leads.<br /><br />
-              Then I discovered something that changed everything...
-            </p>
+          <div className="relative">
+            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+            <div className="pl-4 space-y-2">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                I quit my $200K job to build a SaaS.
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Everyone thought I was crazy.<br />
+                6 months later, here&apos;s what happened:
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                → $0 to $10K MRR<br />
+                → 2,000+ users<br />
+                → 0 regrets
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                The 5 lessons that changed everything 🧵
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <span className="text-xs px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full">Hook Score: 94</span>
-            <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">Engagement: High</span>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex gap-2">
+              <span className="text-xs px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full font-medium">Score: 94/100</span>
+              <span className="text-xs px-2 py-1 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded-full font-medium">Viral potential</span>
+            </div>
+            <button className="text-xs text-cyan-600 dark:text-cyan-400 font-medium flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" /> Regenerate
+            </button>
           </div>
         </div>
       ),
     },
     analyze: {
       title: "Viral Post Analyzer",
+      subtitle: "Learn from what works",
       content: (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <TrendingUp className="w-4 h-4" />
-            <span>Analyzing top posts...</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Avg. Engagement", value: "12.4K", change: "+340%" },
-              { label: "Best Time", value: "9:00 AM", change: "Tue" },
-              { label: "Hook Type", value: "Story", change: "Top 5%" },
-              { label: "CTA Style", value: "Question", change: "+89%" },
+              { label: "Hook Score", value: "94", max: "100", color: "emerald" },
+              { label: "Readability", value: "A+", max: "", color: "cyan" },
+              { label: "Engagement Prediction", value: "High", max: "", color: "violet" },
+              { label: "Best Time to Post", value: "9 AM", max: "Tue", color: "blue" },
             ].map((stat) => (
-              <div key={stat.label} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">{stat.value}</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">{stat.change}</p>
+              <div key={stat.label} className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.value}</span>
+                  {stat.max && <span className="text-xs text-slate-400">/{stat.max}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-slate-700 dark:text-slate-300">AI Suggestions</p>
+            {[
+              { check: true, text: "Strong opening hook" },
+              { check: true, text: "Clear value proposition" },
+              { check: false, text: "Add a question at the end" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                {item.check ? (
+                  <Check className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <div className="w-4 h-4 rounded-full border-2 border-amber-500" />
+                )}
+                <span className={item.check ? "text-slate-600 dark:text-slate-400" : "text-amber-600 dark:text-amber-400"}>{item.text}</span>
               </div>
             ))}
           </div>
@@ -180,28 +219,53 @@ function DemoPreview() {
     },
     schedule: {
       title: "Smart Scheduler",
+      subtitle: "Post at optimal times",
       content: (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <BarChart3 className="w-4 h-4" />
-            <span>Optimal times calculated</span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="text-slate-500 dark:text-slate-400">Your optimal week</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-medium">AI-optimized</span>
           </div>
-          <div className="relative h-32 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
-            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-1">
-              {[40, 65, 85, 95, 70, 50, 30].map((h, i) => (
+          <div className="relative h-28 bg-slate-100 dark:bg-slate-700/30 rounded-lg p-3">
+            <div className="absolute bottom-6 left-3 right-3 flex items-end justify-between gap-2">
+              {[
+                { day: "Mon", h: 60, posts: 1 },
+                { day: "Tue", h: 90, posts: 2 },
+                { day: "Wed", h: 45, posts: 0 },
+                { day: "Thu", h: 100, posts: 2 },
+                { day: "Fri", h: 70, posts: 1 },
+                { day: "Sat", h: 30, posts: 0 },
+                { day: "Sun", h: 20, posts: 0 },
+              ].map((d, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className={`w-full rounded-t transition-all ${i === 3 ? "bg-gradient-to-t from-cyan-500 to-blue-500" : "bg-slate-200 dark:bg-slate-700"}`}
-                    style={{ height: `${h}%` }}
-                  />
-                  <span className="text-[10px] text-slate-400">{["M", "T", "W", "T", "F", "S", "S"][i]}</span>
+                  <div className="relative w-full">
+                    <div
+                      className={`w-full rounded-t transition-all ${
+                        d.h === 100
+                          ? "bg-gradient-to-t from-cyan-500 to-blue-500"
+                          : d.h > 60
+                          ? "bg-cyan-400/60 dark:bg-cyan-600/60"
+                          : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                      style={{ height: `${d.h}%`, minHeight: "8px" }}
+                    />
+                    {d.posts > 0 && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-cyan-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {d.posts}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{d.day}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400">Best day: <span className="font-semibold text-cyan-600 dark:text-cyan-400">Thursday 9AM</span></span>
-            <span className="text-emerald-600 dark:text-emerald-400">+47% reach</span>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span className="text-sm text-cyan-700 dark:text-cyan-300">Next post: Tuesday 9:00 AM</span>
+            </div>
+            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">+47% reach</span>
           </div>
         </div>
       ),
@@ -211,8 +275,8 @@ function DemoPreview() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.8 }}
       className="relative"
     >
       {/* Glow effect */}
@@ -251,12 +315,15 @@ function DemoPreview() {
                   setActiveTab(tab);
                   setIsPlaying(false);
                 }}
-                className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                className={`flex-1 px-3 py-2.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 ${
                   activeTab === tab
                     ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
+                {tab === "write" && <Sparkles className="w-3.5 h-3.5" />}
+                {tab === "analyze" && <BarChart3 className="w-3.5 h-3.5" />}
+                {tab === "schedule" && <Calendar className="w-3.5 h-3.5" />}
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
@@ -270,11 +337,14 @@ function DemoPreview() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white dark:bg-slate-800 rounded-xl p-4 min-h-[200px]"
+              className="bg-white dark:bg-slate-800 rounded-xl p-5"
             >
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
-                {demos[activeTab].title}
-              </h4>
+              <div className="mb-4">
+                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                  {demos[activeTab].title}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{demos[activeTab].subtitle}</p>
+              </div>
               {demos[activeTab].content}
             </motion.div>
           </AnimatePresence>
@@ -284,37 +354,258 @@ function DemoPreview() {
   );
 }
 
-// Testimonial with video-like appearance
-function TestimonialCard({ testimonial, index }: { testimonial: { quote: string; author: string; role: string; company: string; metric: string; avatar: string }; index: number }) {
+// Bento grid for features
+function BentoFeatures() {
+  const features = [
+    {
+      icon: Key,
+      title: "Bring Your Own AI",
+      description: "Use OpenAI, Claude, or Gemini. No markup fees - pay only what you use.",
+      stat: "~$3/mo",
+      statLabel: "avg cost",
+      size: "large",
+      gradient: "from-amber-500 to-orange-500",
+    },
+    {
+      icon: Brain,
+      title: "AI That Learns You",
+      description: "Train on your voice. Every post sounds like you wrote it.",
+      stat: "95%",
+      statLabel: "voice match",
+      size: "medium",
+      gradient: "from-cyan-500 to-blue-500",
+    },
+    {
+      icon: TrendingUp,
+      title: "Viral Analytics",
+      description: "Real-time scoring predicts post performance before you publish.",
+      stat: "91%",
+      statLabel: "accuracy",
+      size: "medium",
+      gradient: "from-emerald-500 to-green-500",
+    },
+    {
+      icon: FileText,
+      title: "Carousel Generator",
+      description: "Turn ideas into beautiful PDF carousels in minutes.",
+      size: "small",
+      gradient: "from-violet-500 to-purple-500",
+    },
+    {
+      icon: Globe,
+      title: "40+ Languages",
+      description: "Create content in any language with native quality.",
+      size: "small",
+      gradient: "from-blue-500 to-indigo-500",
+    },
+    {
+      icon: Mic,
+      title: "Voice to Post",
+      description: "Record a memo, get a polished post.",
+      size: "small",
+      gradient: "from-pink-500 to-rose-500",
+    },
+    {
+      icon: Calendar,
+      title: "Smart Scheduling",
+      description: "AI finds your audience's peak hours. Auto-schedule weeks ahead.",
+      stat: "+47%",
+      statLabel: "more reach",
+      size: "medium",
+      gradient: "from-cyan-500 to-teal-500",
+    },
+    {
+      icon: MessageSquare,
+      title: "First Comment Magic",
+      description: "Auto-post strategic first comments with CTAs.",
+      stat: "+50%",
+      statLabel: "engagement",
+      size: "medium",
+      gradient: "from-orange-500 to-red-500",
+    },
+  ];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      className="relative group"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all" />
-      <div className="relative bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 h-full">
-        <Quote className="w-8 h-8 text-cyan-500/20 mb-4" />
-        <p className="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">&ldquo;{testimonial.quote}&rdquo;</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
-              {testimonial.avatar}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {features.map((feature, i) => (
+        <motion.div
+          key={feature.title}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.05 }}
+          className={`group relative rounded-2xl overflow-hidden ${
+            feature.size === "large" ? "col-span-2 row-span-2" : feature.size === "medium" ? "col-span-2 md:col-span-1" : ""
+          }`}
+        >
+          <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity`} />
+          <div className="relative h-full bg-white dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl p-5 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+              <feature.icon className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <p className="font-semibold text-slate-900 dark:text-white">{testimonial.author}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{testimonial.role}, {testimonial.company}</p>
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">{feature.title}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{feature.description}</p>
+            {feature.stat && (
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">{feature.stat}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{feature.statLabel}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// Auto-scrolling testimonials
+function TestimonialsCarousel() {
+  const testimonials = [
+    { quote: "I went from 200 to 15K followers in 3 months. The viral analysis feature is insane.", author: "Sarah M.", role: "Marketing Director", metric: "+7,400%", avatar: "SM" },
+    { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings", avatar: "MC" },
+    { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%", avatar: "ER" },
+    { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%", avatar: "JL" },
+    { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%", avatar: "PS" },
+    { quote: "The scheduling AI is scary accurate. My posts now always hit peak engagement.", author: "David K.", role: "Consultant", metric: "+210%", avatar: "DK" },
+  ];
+
+  return (
+    <div className="relative overflow-hidden py-4">
+      {/* Gradient masks */}
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
+
+      {/* First row - scrolling left */}
+      <motion.div
+        animate={{ x: [0, -1500] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        className="flex gap-4 mb-4"
+      >
+        {[...testimonials, ...testimonials].map((t, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 w-[350px] bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200/50 dark:border-slate-700/50"
+          >
+            <div className="flex items-center gap-1 mb-3">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">&ldquo;{t.quote}&rdquo;</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                  {t.avatar}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{t.metric}</p>
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{testimonial.metric}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">growth</p>
+        ))}
+      </motion.div>
+
+      {/* Second row - scrolling right */}
+      <motion.div
+        animate={{ x: [-1500, 0] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        className="flex gap-4"
+      >
+        {[...testimonials.slice(3), ...testimonials.slice(0, 3), ...testimonials.slice(3), ...testimonials.slice(0, 3)].map((t, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 w-[350px] bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200/50 dark:border-slate-700/50"
+          >
+            <div className="flex items-center gap-1 mb-3">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">&ldquo;{t.quote}&rdquo;</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                  {t.avatar}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{t.metric}</p>
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+// How it works section
+function HowItWorks() {
+  const steps = [
+    {
+      number: "01",
+      title: "Connect Your AI",
+      description: "Add your OpenAI, Claude, or Gemini API key. Takes 30 seconds.",
+      icon: Key,
+    },
+    {
+      number: "02",
+      title: "Tell Us About You",
+      description: "Share your niche, audience, and writing style. AI learns your voice.",
+      icon: Target,
+    },
+    {
+      number: "03",
+      title: "Generate & Schedule",
+      description: "Create weeks of content in minutes. AI schedules at optimal times.",
+      icon: Calendar,
+    },
+    {
+      number: "04",
+      title: "Watch It Grow",
+      description: "Track analytics, iterate on what works, and scale your presence.",
+      icon: TrendingUp,
+    },
+  ];
+
+  return (
+    <div className="relative">
+      {/* Connection line */}
+      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 hidden lg:block" style={{ transform: "translateY(-50%)" }} />
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {steps.map((step, i) => (
+          <motion.div
+            key={step.number}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            className="relative"
+          >
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                  <step.icon className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-4xl font-black text-slate-200 dark:text-slate-700">{step.number}</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">{step.description}</p>
+            </div>
+          </motion.div>
+        ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -327,6 +618,7 @@ function ComparisonSection() {
     { feature: "Viral Post Analysis", linkedgrow: true, others: false },
     { feature: "Carousel Generator", linkedgrow: true, others: "Extra $29/mo" },
     { feature: "Smart Scheduling", linkedgrow: true, others: true },
+    { feature: "Voice to Post", linkedgrow: true, others: false },
     { feature: "Your Data Privacy", linkedgrow: "100% yours", others: "Used for training" },
   ];
 
@@ -359,7 +651,7 @@ function ComparisonSection() {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.03 }}
               className="grid grid-cols-3 gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
             >
               <div className="text-sm text-slate-700 dark:text-slate-300">{row.feature}</div>
@@ -393,10 +685,234 @@ function ComparisonSection() {
   );
 }
 
+// FAQ Section
+function FAQSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqs = [
+    {
+      q: "What does \"Bring Your Own AI Key\" mean?",
+      a: "Instead of paying us $50+/month for AI, you use your own API key from OpenAI, Anthropic (Claude), or Google (Gemini). You pay the AI provider directly - usually $3-5/month for typical usage. No middleman markup.",
+    },
+    {
+      q: "How is this different from other LinkedIn tools?",
+      a: "Most tools lock you into expensive subscriptions with limited generations. We charge a flat platform fee, and you pay only what you use for AI. Plus, we analyze viral content to help you write posts that actually perform.",
+    },
+    {
+      q: "Will posts sound like me or like AI?",
+      a: "Like you. Our AI learns your writing style, tone, and vocabulary. We analyze your best-performing content to understand what makes YOUR voice unique. The result? Posts that sound authentically you.",
+    },
+    {
+      q: "What's included in the founder's discount?",
+      a: "Early supporters get 30% off for their entire first year. This includes all features: AI writing, carousel generator, scheduling, analytics, and unlimited content generation (you just pay your API costs).",
+    },
+    {
+      q: "When does LinkedGrow launch?",
+      a: "We're launching January 26, 2026. Join the waitlist now to lock in your founder's discount and get early access before the public launch.",
+    },
+  ];
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="space-y-3">
+        {faqs.map((faq, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <button
+              onClick={() => setOpenIndex(openIndex === i ? null : i)}
+              className="w-full text-left bg-white dark:bg-slate-800/80 rounded-xl p-5 border border-slate-200/50 dark:border-slate-700/50 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-900 dark:text-white pr-4">{faq.q}</h3>
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${openIndex === i ? "rotate-180" : ""}`} />
+              </div>
+              <AnimatePresence>
+                {openIndex === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                      {faq.a}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Final CTA Section
+function FinalCTA({ timeLeft, email, setEmail, handleSubmit, isLoading, isSuccess, error }: {
+  timeLeft: { days: number; hours: number; minutes: number; seconds: number };
+  email: string;
+  setEmail: (email: string) => void;
+  handleSubmit: (e: React.FormEvent) => void;
+  isLoading: boolean;
+  isSuccess: boolean;
+  error: string;
+}) {
+  return (
+    <section className="relative z-10 py-24 px-4">
+      <div className="max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative"
+        >
+          {/* Multi-layer glow */}
+          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-violet-500/30 rounded-[2.5rem] blur-2xl" />
+          <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-[2rem] blur-xl" />
+
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden">
+            {/* Animated background */}
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                  backgroundSize: "40px 40px",
+                }} />
+              </div>
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+            </div>
+
+            <div className="relative z-10 p-8 md:p-16">
+              {/* Badge */}
+              <div className="flex justify-center mb-8">
+                <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+                  <div className="flex items-center gap-1">
+                    <Flame className="w-5 h-5 text-orange-400" />
+                    <span className="font-bold text-orange-400">FOUNDER&apos;S DEAL</span>
+                  </div>
+                  <div className="w-px h-4 bg-white/20" />
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-white/60" />
+                    <span className="text-white/80 text-sm">Only 153 spots left</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Headline */}
+              <div className="text-center max-w-2xl mx-auto mb-10">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4">
+                  Ready to 10x your
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">
+                    LinkedIn growth?
+                  </span>
+                </h2>
+                <p className="text-lg text-slate-300">
+                  Join now and lock in <span className="font-bold text-white">30% off</span> for your entire first year.
+                  <br />
+                  This deal disappears at launch.
+                </p>
+              </div>
+
+              {/* Countdown */}
+              <div className="flex justify-center gap-3 sm:gap-4 mb-10">
+                {[
+                  { value: timeLeft.days, label: "Days" },
+                  { value: timeLeft.hours, label: "Hours" },
+                  { value: timeLeft.minutes, label: "Min" },
+                  { value: timeLeft.seconds, label: "Sec" },
+                ].map((item, i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                      <span className="text-2xl sm:text-3xl font-bold text-white font-mono">
+                        {String(item.value).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Form */}
+              <div className="max-w-lg mx-auto">
+                {!isSuccess ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="flex-1 h-14 px-5 rounded-xl bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-base focus:bg-white/20"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            Claim 30% Off
+                            <ArrowRight className="w-5 h-5 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                    <p className="text-center text-sm text-slate-400">
+                      Join 179 founders • No spam, ever • Unsubscribe anytime
+                    </p>
+                  </form>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-emerald-500/20 border border-emerald-500/30 rounded-2xl p-8 text-center"
+                  >
+                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center mb-4">
+                      <Check className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">You&apos;re on the list!</h3>
+                    <p className="text-slate-300">Your 30% founder discount is locked in. Check your inbox!</p>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Trust badges */}
+              <div className="flex flex-wrap justify-center gap-6 mt-10 pt-10 border-t border-white/10">
+                {[
+                  { icon: Shield, text: "Bank-level security" },
+                  { icon: Key, text: "Your API, your data" },
+                  { icon: RefreshCw, text: "Cancel anytime" },
+                ].map((badge) => (
+                  <div key={badge.text} className="flex items-center gap-2 text-slate-400 text-sm">
+                    <badge.icon className="w-4 h-4" />
+                    <span>{badge.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 export default function PreLaunchPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -441,7 +957,7 @@ export default function PreLaunchPage() {
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({ email }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -452,25 +968,6 @@ export default function PreLaunchPage() {
       setIsLoading(false);
     }
   };
-
-  const pains = [
-    { title: "Hours wasted writing", description: "Staring at a blank screen, trying to write something that doesn't sound generic.", stat: "3h+" },
-    { title: "No engagement", description: "You post consistently but the algorithm ignores you. Zero likes, zero comments.", stat: "0%" },
-    { title: "Expensive tools", description: "AI writing tools cost $50+/month with strict limits. You pay even when you don't use it.", stat: "$600/yr" },
-  ];
-
-  const solutions = [
-    { icon: Brain, title: "AI That Knows Your Voice", description: "Train the AI on your style. Every post sounds authentically you, not like a robot.", highlight: "Zero generic content" },
-    { icon: Target, title: "Viral Post DNA", description: "Analyze what makes top posts go viral. Copy proven frameworks, not guesswork.", highlight: "Data-driven hooks" },
-    { icon: Zap, title: "10x Faster Creation", description: "From idea to published post in under 5 minutes. Batch create a week's content in one session.", highlight: "15 min vs 3 hours" },
-    { icon: MessageSquare, title: "BYOK = Unlimited", description: "Bring your own AI key. No monthly limits, no per-post fees. Pay only what you use.", highlight: "~$3/month average" },
-  ];
-
-  const testimonials = [
-    { quote: "I went from 200 to 15K followers in 3 months. The viral analysis feature is insane - it's like having a growth strategist on demand.", author: "Sarah Mitchell", role: "Marketing Director", company: "TechCorp", metric: "+7,400%", avatar: "SM" },
-    { quote: "Finally, an AI tool that doesn't break the bank. I'm spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus Chen", role: "Founder", company: "StartupX", metric: "96% savings", avatar: "MC" },
-    { quote: "The carousel generator alone is worth it. I went from struggling with Canva to creating professional carousels in minutes.", author: "Elena Rodriguez", role: "Content Creator", company: "Self-employed", metric: "+340%", avatar: "ER" },
-  ];
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
@@ -505,7 +1002,7 @@ export default function PreLaunchPage() {
       <motion.section
         ref={heroRef}
         style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative z-10 pt-8 pb-20 px-4"
+        className="relative z-10 pt-8 pb-16 px-4"
       >
         <div className="max-w-6xl mx-auto">
           {/* Social proof badge */}
@@ -529,15 +1026,13 @@ export default function PreLaunchPage() {
               <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
             </div>
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline - fixed structure */}
           <div className="text-center max-w-4xl mx-auto mb-12">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -545,15 +1040,14 @@ export default function PreLaunchPage() {
               transition={{ delay: 0.1 }}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-6"
             >
-              Stop struggling to{" "}
-              <span className="relative inline-block">
-                <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">
-                  {isMounted ? (
-                    <TypewriterText texts={["write posts", "get engagement", "go viral", "grow your brand"]} />
-                  ) : (
-                    "write posts"
-                  )}
-                </span>
+              Stop struggling to
+              <br />
+              <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+                {isMounted ? (
+                  <TypewriterText texts={["write LinkedIn posts", "get real engagement", "go viral consistently", "grow your audience"]} />
+                ) : (
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500">write LinkedIn posts</span>
+                )}
               </span>
             </motion.h1>
 
@@ -565,15 +1059,15 @@ export default function PreLaunchPage() {
             >
               LinkedGrow analyzes viral content, generates posts in your voice, and costs{" "}
               <span className="font-bold text-slate-900 dark:text-white">96% less</span> than other AI tools.
-              No subscriptions limits. Just results.
+              No subscription limits. Just results.
             </motion.p>
 
-            {/* CTA inline form */}
+            {/* CTA inline form - fixed sizing */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="max-w-md mx-auto"
+              className="max-w-xl mx-auto"
             >
               {!isSuccess ? (
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -583,12 +1077,12 @@ export default function PreLaunchPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="flex-1 h-14 px-6 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-lg"
+                    className="h-14 px-5 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-base sm:flex-1"
                   />
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold text-lg shadow-lg shadow-cyan-500/30"
+                    className="h-14 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ChevronRight className="w-5 h-5 ml-1" /></>}
                   </Button>
@@ -620,6 +1114,14 @@ export default function PreLaunchPage() {
         </div>
       </motion.section>
 
+      {/* Logo Marquee */}
+      <section className="relative z-10 py-8 border-y border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">Trusted by creators featured in</p>
+          <LogoMarquee />
+        </div>
+      </section>
+
       {/* Pain Points Section */}
       <section className="relative z-10 py-24 px-4">
         <div className="max-w-6xl mx-auto">
@@ -642,14 +1144,32 @@ export default function PreLaunchPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {pains.map((pain, i) => (
-              <PainCard key={pain.title} pain={pain} index={i} />
+            {[
+              { title: "Hours wasted writing", description: "Staring at a blank screen, trying to write something that doesn't sound generic.", stat: "3h+" },
+              { title: "No engagement", description: "You post consistently but the algorithm ignores you. Zero likes, zero comments.", stat: "0%" },
+              { title: "Expensive tools", description: "AI writing tools cost $50+/month with strict limits. You pay even when you don't use it.", stat: "$600/yr" },
+            ].map((pain, i) => (
+              <motion.div
+                key={pain.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-hover:opacity-100" />
+                <div className="relative bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:border-red-300 dark:hover:border-red-700 transition-all">
+                  <div className="text-4xl font-black text-red-500/20 dark:text-red-400/20 mb-2">{pain.stat}</div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{pain.title}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{pain.description}</p>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Solution Section */}
+      {/* Features Bento Grid */}
       <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -663,23 +1183,40 @@ export default function PreLaunchPage() {
               Introducing LinkedGrow
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-              There&apos;s a better way
+              Everything you need to dominate LinkedIn
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
               An AI-powered content engine that writes like you, costs almost nothing, and actually gets results.
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {solutions.map((solution, i) => (
-              <SolutionCard key={solution.title} solution={solution} index={i} />
-            ))}
-          </div>
+          <BentoFeatures />
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="relative z-10 py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              How it works
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              From zero to viral in 4 simple steps
+            </p>
+          </motion.div>
+
+          <HowItWorks />
         </div>
       </section>
 
       {/* Comparison Section */}
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -699,14 +1236,14 @@ export default function PreLaunchPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
-        <div className="max-w-6xl mx-auto">
+      {/* Testimonials Carousel */}
+      <section className="relative z-10 py-24 px-4">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
               Real results from real founders
@@ -716,96 +1253,41 @@ export default function PreLaunchPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, i) => (
-              <TestimonialCard key={testimonial.author} testimonial={testimonial} index={i} />
-            ))}
-          </div>
+          <TestimonialsCarousel />
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="relative z-10 py-24 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+              Frequently asked questions
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              Everything you need to know about LinkedGrow
+            </p>
+          </motion.div>
+
+          <FAQSection />
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="relative z-10 py-24 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative"
-          >
-            {/* Glow */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-violet-500/30 rounded-3xl blur-2xl" />
-
-            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 md:p-12 text-center overflow-hidden">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-                  backgroundSize: "32px 32px",
-                }} />
-              </div>
-
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-sm font-medium mb-6">
-                  <Users className="w-4 h-4" />
-                  Only 153 spots left at this price
-                </div>
-
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
-                  Ready to 10x your LinkedIn?
-                </h2>
-                <p className="text-lg text-slate-300 mb-8 max-w-xl mx-auto">
-                  Join now and lock in 30% off for your entire first year. This deal disappears at launch.
-                </p>
-
-                {/* Countdown */}
-                <div className="flex justify-center gap-4 mb-8">
-                  {[
-                    { value: timeLeft.days, label: "Days" },
-                    { value: timeLeft.hours, label: "Hours" },
-                    { value: timeLeft.minutes, label: "Min" },
-                    { value: timeLeft.seconds, label: "Sec" },
-                  ].map((item, i) => (
-                    <div key={i} className="text-center">
-                      <div className="w-16 h-16 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-2xl font-bold text-white font-mono">
-                        {String(item.value).padStart(2, "0")}
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Form */}
-                {!isSuccess ? (
-                  <form onSubmit={handleSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="flex-1 h-14 px-6 rounded-xl bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-lg"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="h-14 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold text-lg"
-                    >
-                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Claim 30% Off <ArrowRight className="w-5 h-5 ml-1" /></>}
-                    </Button>
-                  </form>
-                ) : (
-                  <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-6 max-w-md mx-auto">
-                    <Check className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                    <p className="text-white font-semibold">You&apos;re in! Check your inbox.</p>
-                  </div>
-                )}
-                {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <FinalCTA
+        timeLeft={timeLeft}
+        email={email}
+        setEmail={setEmail}
+        handleSubmit={handleSubmit}
+        isLoading={isLoading}
+        isSuccess={isSuccess}
+        error={error}
+      />
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-200 dark:border-slate-800 py-8 px-4 bg-white dark:bg-slate-900">
