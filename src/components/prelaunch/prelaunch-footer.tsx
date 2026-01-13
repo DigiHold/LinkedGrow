@@ -91,18 +91,16 @@ export function PrelaunchFooter() {
     <footer className="relative z-10 py-6 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Copyright - Left */}
-          <p className="text-sm text-slate-500 dark:text-slate-500 order-3 sm:order-1">
-            &copy; {new Date().getFullYear()} LinkedGrow
-          </p>
-
-          {/* Appearance Button - Center */}
-          <div className="order-1 sm:order-2">
+          {/* Copyright + Appearance - Left */}
+          <div className="flex items-center gap-4 order-2 sm:order-1">
+            <p className="text-sm text-slate-500 dark:text-slate-500">
+              &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <span className="inline-block align-middle">🇨🇭</span>
+            </p>
             <AppearanceButton />
           </div>
 
           {/* Navigation - Right */}
-          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 order-2 sm:order-3">
+          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 order-1 sm:order-2">
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Privacy
             </Link>
