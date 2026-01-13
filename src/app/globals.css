@@ -197,17 +197,19 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Headings use display font - Space Grotesk */
+/* Headings use display font - Sora */
 h1, h2, h3, h4, h5, h6,
 .font-display {
   font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 h1 {
+  font-size: 5rem;
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
 h2 {

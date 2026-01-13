@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import { Sora, DM_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { SessionProvider } from "@/components/providers/session-provider";
@@ -13,17 +13,17 @@ import {
 } from "@/components/seo/json-ld";
 import "./globals.css";
 
-// Modern body font - clean, sleek, excellent readability
+// Sora - premium geometric sans-serif, bold and futuristic for headings
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+// DM Sans - clean, modern body font
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
-  weight: ["400", "500", "600", "700"],
-});
-
-// Modern display font - bold, tech-forward, geometric
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
   weight: ["400", "500", "600", "700"],
 });
 
@@ -104,7 +104,7 @@ export default async function RootLayout({
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
       </head>
-      <body className={`${dmSans.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
+      <body className={`${sora.variable} ${dmSans.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
         {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
 
