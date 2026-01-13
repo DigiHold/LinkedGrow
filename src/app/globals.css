@@ -44,7 +44,7 @@
   --color-secondary-foreground: hsl(222 47% 11%);
 
   --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215 16% 47%);
+  --color-muted-foreground: hsl(215 25% 35%);
 
   --color-accent: hsl(210 40% 96.1%);
   --color-accent-foreground: hsl(222 47% 11%);
@@ -75,41 +75,27 @@
   --animate-blink: blink 1s step-end infinite;
 }
 
-/* Dark mode overrides */
-.dark {
-  --color-background: hsl(222 47% 6%);
-  --color-foreground: hsl(210 40% 98%);
-
-  --color-card: hsl(222 47% 8%);
-  --color-card-foreground: hsl(210 40% 98%);
-
-  --color-popover: hsl(222 47% 8%);
-  --color-popover-foreground: hsl(210 40% 98%);
-
-  --color-primary: #22d3ee;
-  --color-primary-foreground: hsl(222 47% 11%);
-
-  --color-secondary: hsl(217 33% 17%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-
-  --color-muted: hsl(217 33% 17%);
-  --color-muted-foreground: hsl(215 20% 65%);
-
-  --color-accent: hsl(217 33% 17%);
-  --color-accent-foreground: hsl(210 40% 98%);
-
-  --color-destructive: hsl(0 63% 31%);
-
-  --color-border: hsl(217 33% 17%);
-  --color-input: hsl(217 33% 17%);
-  --color-ring: #22d3ee;
-
-  /* Chart colors - dark mode */
-  --color-chart-1: #22d3ee;
-  --color-chart-2: #34d399;
-  --color-chart-3: #fb923c;
-  --color-chart-4: #a78bfa;
-  --color-chart-5: #f472b6;
+/* Light mode - explicit values for :root to ensure proper defaults */
+:root {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222 47% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
+  --color-primary: #0891b2;
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222 47% 11%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215 25% 35%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222 47% 11%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: #0891b2;
 }
 
 /* Dark mode overrides */
@@ -204,30 +190,30 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Headings use display font - extra bold */
+/* Headings use display font - Space Grotesk */
 h1, h2, h3, h4, h5, h6,
 .font-display {
-  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-weight: 900;
-  letter-spacing: -0.03em;
-}
-
-h2 {
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.025em;
 }
 
-h3, h4, h5, h6 {
+h2 {
   font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h3, h4, h5, h6 {
+  font-weight: 600;
 }
 
 /* Better body text */
@@ -309,6 +295,47 @@ textarea {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gradient 8s linear infinite;
+}
+
+/* Shimmer text effect - modern eye-catching animation */
+.text-shimmer {
+  background: linear-gradient(
+    110deg,
+    #06b6d4 0%,
+    #06b6d4 35%,
+    #ffffff 50%,
+    #8b5cf6 65%,
+    #8b5cf6 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-shimmer 3s ease-in-out infinite;
+}
+
+.dark .text-shimmer {
+  background: linear-gradient(
+    110deg,
+    #22d3ee 0%,
+    #22d3ee 35%,
+    #ffffff 50%,
+    #a78bfa 65%,
+    #a78bfa 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
 }
 
 /* Glass effect */

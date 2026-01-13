@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Sans, Space_Grotesk } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { SessionProvider } from "@/components/providers/session-provider";
@@ -13,15 +13,18 @@ import {
 } from "@/components/seo/json-ld";
 import "./globals.css";
 
-const inter = Inter({
+// Modern body font - clean, sleek, excellent readability
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700"],
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+// Modern display font - bold, tech-forward, geometric
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 // Google Tag Manager ID - Replace with your actual GTM ID
@@ -84,7 +87,7 @@ export default async function RootLayout({
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
       </head>
-      <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased`}>
+      <body className={`${dmSans.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
         {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
 
