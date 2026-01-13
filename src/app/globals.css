@@ -5,6 +5,10 @@
 
 /* ===== Tailwind v4 Theme Configuration ===== */
 @theme {
+  /* Font sizes - Override text-5xl to be 5rem instead of default 3rem */
+  --text-5xl: 5rem;
+  --text-5xl--line-height: 1.1;
+
   /* Border radius */
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
