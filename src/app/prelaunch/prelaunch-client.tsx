@@ -1788,7 +1788,6 @@ function CTASection(props: CTAProps) {
     <section className="relative z-10 py-20 md:py-28 px-4 overflow-hidden">
       {/* Full width gradient background */}
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-violet-600" />
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
       {/* Animated shapes */}
       <motion.div animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-10 left-[10%] w-32 h-32 rounded-full bg-white/10" />
