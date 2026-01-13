@@ -52,8 +52,8 @@
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(210 40% 98%);
 
-  --color-border: hsl(214 32% 85%);
-  --color-input: hsl(214 32% 85%);
+  --color-border: hsl(214 20% 93%);
+  --color-input: hsl(214 20% 93%);
   --color-ring: #0891b2;
 
   /* Chart colors */
@@ -93,8 +93,8 @@
   --color-accent-foreground: hsl(222 47% 11%);
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214 32% 85%);
-  --color-input: hsl(214 32% 85%);
+  --color-border: hsl(214 20% 93%);
+  --color-input: hsl(214 20% 93%);
   --color-ring: #0891b2;
 }
 
