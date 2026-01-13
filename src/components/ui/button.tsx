@@ -22,6 +22,9 @@ const buttonVariants = cva(
           "bg-linkedin text-white shadow hover:bg-linkedin-dark",
         gradient:
           "bg-gradient-to-r from-linkedin to-primary text-white shadow-lg hover:shadow-xl hover:scale-[1.02]",
+        // Primary gradient button - matches prelaunch page style (cyan to blue)
+        primary:
+          "bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-[1.02]",
       },
       size: {
         default: "h-10 px-4 py-2",

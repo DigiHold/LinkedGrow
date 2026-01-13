@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Main gradient: Cyan to Blue -->
+    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4"/>
+      <stop offset="50%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    <!-- Leaf gradient -->
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e0f2fe"/>
+    </linearGradient>
+    <!-- Drop shadow -->
+    <filter id="shadow3" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#0891b2" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#grad3)" filter="url(#shadow3)"/>
+
+  <!-- Stylized "LG" monogram with organic growth element -->
+
+  <!-- L vertical stem -->
+  <rect x="120" y="128" width="56" height="256" rx="28" fill="white"/>
+
+  <!-- L horizontal base -->
+  <rect x="120" y="328" width="160" height="56" rx="28" fill="white"/>
+
+  <!-- G as growing leaf/sprout emerging from L -->
+  <!-- Main leaf shape -->
+  <path d="M240 280
+           Q280 200, 360 160
+           Q400 200, 380 280
+           Q360 340, 280 360
+           Q240 340, 240 280 Z"
+        fill="url(#leafGrad)" opacity="0.95"/>
+
+  <!-- Leaf vein / stem -->
+  <path d="M260 320 Q300 280, 340 200"
+        fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Small growth dots suggesting upward momentum -->
+  <circle cx="360" cy="152" r="12" fill="white" opacity="0.9"/>
+  <circle cx="388" cy="128" r="8" fill="white" opacity="0.7"/>
+  <circle cx="408" cy="108" r="5" fill="white" opacity="0.5"/>
+
+  <!-- Connection dot at base of growth -->
+  <circle cx="240" cy="300" r="16" fill="#22d3ee"/>
+</svg>
