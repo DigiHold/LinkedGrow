@@ -17,16 +17,20 @@ function ThemeSelector() {
     return <div className="flex items-center gap-1 h-8" />;
   }
 
+  const isSystem = theme === "system";
+  const isLight = theme === "light";
+  const isDark = theme === "dark";
+
   return (
     <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
       <button
         onClick={() => setTheme("system")}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          theme === "system"
+          isSystem
             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
             : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
         }`}
-        title="System theme"
+        title="Auto (system)"
       >
         <Monitor className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Auto</span>
@@ -34,7 +38,7 @@ function ThemeSelector() {
       <button
         onClick={() => setTheme("light")}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          theme === "light"
+          isLight
             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
             : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
         }`}
@@ -46,7 +50,7 @@ function ThemeSelector() {
       <button
         onClick={() => setTheme("dark")}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          theme === "dark"
+          isDark
             ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
             : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
         }`}
