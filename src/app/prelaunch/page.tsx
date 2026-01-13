@@ -176,6 +176,34 @@ export default async function PrelaunchPage() {
         question: tFaq("q5.question"),
         answer: tFaq("q5.answer"),
       },
+      q6: {
+        question: tFaq("q6.question"),
+        answer: tFaq("q6.answer"),
+      },
+      q7: {
+        question: tFaq("q7.question"),
+        answer: tFaq("q7.answer"),
+      },
+      q8: {
+        question: tFaq("q8.question"),
+        answer: tFaq("q8.answer"),
+      },
+      q9: {
+        question: tFaq("q9.question"),
+        answer: tFaq("q9.answer"),
+      },
+      q10: {
+        question: tFaq("q10.question"),
+        answer: tFaq("q10.answer"),
+      },
+      q11: {
+        question: tFaq("q11.question"),
+        answer: tFaq("q11.answer"),
+      },
+      q12: {
+        question: tFaq("q12.question"),
+        answer: tFaq("q12.answer"),
+      },
     },
     cta: {
       title: tCta("title"),

@@ -9,7 +9,7 @@
     "savings": "96%",
     "valueProp1": "10x faster writing",
     "valueProp2": "47% more engagement",
-    "valueProp3": "$3-5/mo vs $50+",
+    "valueProp3": "$3-5/mo AI cost",
     "emailPlaceholder": "Enter your email",
     "cta": "Get 30% Off",
     "noCreditCard": "No credit card",
@@ -139,6 +139,34 @@
     "q5": {
       "question": "What's the 30% founder's discount?",
       "answer": "Early access members lock in 30% off for their entire first year. This discount applies to any paid plan and is only available during pre-launch."
+    },
+    "q6": {
+      "question": "Which AI models can I use?",
+      "answer": "LinkedGrow supports GPT-4, GPT-4o, Claude 3.5, Gemini Pro, and many more. You choose which model to use based on your needs and budget. Different models have different strengths and costs."
+    },
+    "q7": {
+      "question": "Is my API key secure?",
+      "answer": "Your API key is stored encrypted in your browser's local storage and is never sent to our servers. All AI requests are made directly from your browser to the AI provider. We never see or store your key."
+    },
+    "q8": {
+      "question": "Can I schedule posts to LinkedIn?",
+      "answer": "Yes! Our Starter plan and above include scheduling features. You can queue posts for optimal times based on your audience's activity patterns, ensuring maximum engagement."
+    },
+    "q9": {
+      "question": "Do you offer refunds?",
+      "answer": "Yes, we offer a 14-day money-back guarantee on all paid plans. If you're not satisfied with LinkedGrow, contact us within 14 days of purchase for a full refund."
+    },
+    "q10": {
+      "question": "What happens after the 30% discount period?",
+      "answer": "The 30% discount is locked in for your first year. After that, you'll be charged the regular price. You can cancel anytime before renewal - we'll send you a reminder email."
+    },
+    "q11": {
+      "question": "Can I use LinkedGrow for multiple LinkedIn accounts?",
+      "answer": "Currently, each LinkedGrow account supports one LinkedIn profile. If you need to manage multiple profiles, our Business plan is designed for teams and agencies with collaboration features."
+    },
+    "q12": {
+      "question": "How is LinkedGrow different from other AI tools?",
+      "answer": "Most AI content tools charge $50+/month with strict generation limits and lock you into their AI models. With LinkedGrow's BYOK approach, you use your own API keys - saving 90%+ on AI costs with unlimited generations."
     }
   },
   "cta": {

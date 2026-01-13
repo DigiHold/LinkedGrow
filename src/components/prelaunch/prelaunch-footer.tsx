@@ -90,9 +90,37 @@ export function PrelaunchFooter() {
   return (
     <footer className="relative z-10 py-6 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Mobile layout: stacked */}
+        <div className="flex flex-col items-center gap-4 sm:hidden">
+          {/* Navigation */}
+          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Privacy
+            </Link>
+            <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Cookies
+            </Link>
+            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              About
+            </Link>
+            <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Contact
+            </a>
+          </nav>
+
+          {/* Copyright */}
+          <p className="text-sm text-slate-500 dark:text-slate-500">
+            &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <span className="inline-block align-middle">🇨🇭</span>
+          </p>
+
+          {/* Appearance button */}
+          <AppearanceButton />
+        </div>
+
+        {/* Desktop layout: horizontal */}
+        <div className="hidden sm:flex items-center justify-between gap-4">
           {/* Copyright + Appearance - Left */}
-          <div className="flex items-center gap-4 order-2 sm:order-1">
+          <div className="flex items-center gap-4">
             <p className="text-sm text-slate-500 dark:text-slate-500">
               &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <span className="inline-block align-middle">🇨🇭</span>
             </p>
@@ -100,12 +128,15 @@ export function PrelaunchFooter() {
           </div>
 
           {/* Navigation - Right */}
-          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 order-1 sm:order-2">
+          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Privacy
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Cookies
+            </Link>
+            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              About
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
