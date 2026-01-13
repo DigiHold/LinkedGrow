@@ -113,6 +113,8 @@ export function clearConsent(): void {
 }
 
 // Initialize Google Consent Mode V2 with default denied state
+// IMPORTANT: This function updates consent AFTER geo-detection
+// The initial defaults are set in GoogleTagManager.tsx with all denied
 export function initGoogleConsentMode(isEEA: boolean): void {
   if (typeof window === 'undefined') return;
 
@@ -122,30 +124,23 @@ export function initGoogleConsentMode(isEEA: boolean): void {
     window.dataLayer.push(args);
   }
 
-  // Set default consent state
-  // For EEA: all denied by default (opt-in required)
-  // For non-EEA: analytics/marketing granted by default (opt-out available)
-  gtag('consent', 'default', {
-    'analytics_storage': isEEA ? 'denied' : 'granted',
-    'ad_storage': isEEA ? 'denied' : 'granted',
-    'ad_user_data': isEEA ? 'denied' : 'granted',
-    'ad_personalization': isEEA ? 'denied' : 'granted',
-    'functionality_storage': isEEA ? 'denied' : 'granted',
-    'personalization_storage': isEEA ? 'denied' : 'granted',
-    'security_storage': 'granted', // Always granted for security
-    'wait_for_update': 500, // Wait for user consent
-  });
-
-  // Set region-specific defaults
-  if (isEEA) {
-    gtag('consent', 'default', {
-      'analytics_storage': 'denied',
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied',
-      'region': EEA_COUNTRIES,
+  // GDPR Compliance:
+  // - EEA: Keep everything denied until explicit opt-in
+  // - Non-EEA: Update to granted (opt-out model) - they can reject later
+  if (!isEEA) {
+    // Non-EEA: Update consent to granted (opt-out model)
+    // User can still reject via cookie banner
+    gtag('consent', 'update', {
+      'analytics_storage': 'granted',
+      'ad_storage': 'granted',
+      'ad_user_data': 'granted',
+      'ad_personalization': 'granted',
+      'functionality_storage': 'granted',
+      'personalization_storage': 'granted',
     });
   }
+  // For EEA: consent remains denied (as set in initial defaults)
+  // Will only be updated when user explicitly accepts via cookie banner
 }
 
 // Update Google Consent Mode based on user preferences
