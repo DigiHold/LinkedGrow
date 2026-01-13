@@ -26,6 +26,7 @@ const prelaunchAllowedRoutes = [
   "/privacy",
   "/cookies",
   "/terms",
+  "/about",
   "/api",
 ];
 
