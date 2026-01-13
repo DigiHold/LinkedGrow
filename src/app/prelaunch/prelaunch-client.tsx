@@ -40,6 +40,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
+import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
 
 // Translations type
 export interface PrelaunchTranslations {
@@ -1936,19 +1937,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       />
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-200 dark:border-slate-800 py-8 px-4 bg-white dark:bg-slate-900">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
-          <div>&copy; {translations.footer.copyright}</div>
-          <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              {translations.footer.privacy}
-            </Link>
-            <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              {translations.footer.cookies}
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <PrelaunchFooter />
     </main>
   );
 }
