@@ -276,34 +276,15 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
           <span className="text-sm text-slate-600 dark:text-slate-400">{translations.hero.spotsLeft}</span>
         </motion.div>
 
-        {/* Main Headline - Flex column layout with shimmer effect */}
+        {/* Main Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.6 }}
-          className="flex flex-col items-center font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight"
+          className="flex flex-col items-center tracking-tight text-slate-900 dark:text-white mb-6 text-5xl leading-[1.4]"
         >
-          <motion.span
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {translations.hero.headline1}
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, type: "spring", stiffness: 150 }}
-            className="text-shimmer relative"
-          >
-            {translations.hero.headline2}
-            <motion.span
-              className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-full origin-left"
-              initial={{ scaleX: 0, opacity: 0 }}
-              animate={{ scaleX: 1, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
-            />
-          </motion.span>
+          <span>{translations.hero.headline1}</span>
+          <span className="text-shimmer">{translations.hero.headline2}</span>
         </motion.h1>
 
         {/* IMPROVED Description - Clear, benefit-focused, converting */}

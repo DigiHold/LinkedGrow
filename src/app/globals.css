@@ -203,7 +203,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 h1 {
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.025em;
 }
 
@@ -297,37 +297,33 @@ textarea {
   animation: gradient 8s linear infinite;
 }
 
-/* Shimmer text effect - modern eye-catching animation */
+/* Shimmer text effect */
 .text-shimmer {
   background: linear-gradient(
-    120deg,
+    90deg,
     #0891b2 0%,
-    #0891b2 20%,
-    #06b6d4 35%,
-    #ffffff 50%,
-    #8b5cf6 65%,
-    #7c3aed 80%,
-    #7c3aed 100%
+    #06b6d4 25%,
+    #22d3ee 50%,
+    #06b6d4 75%,
+    #0891b2 100%
   );
-  background-size: 300% 100%;
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: text-shimmer 4s ease-in-out infinite;
+  animation: text-shimmer 3s linear infinite;
 }
 
 .dark .text-shimmer {
   background: linear-gradient(
-    120deg,
+    90deg,
     #22d3ee 0%,
-    #22d3ee 20%,
-    #67e8f9 35%,
-    #ffffff 50%,
-    #c4b5fd 65%,
-    #a78bfa 80%,
-    #a78bfa 100%
+    #67e8f9 25%,
+    #a5f3fc 50%,
+    #67e8f9 75%,
+    #22d3ee 100%
   );
-  background-size: 300% 100%;
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -335,13 +331,10 @@ textarea {
 
 @keyframes text-shimmer {
   0% {
-    background-position: 100% 50%;
-  }
-  50% {
-    background-position: 0% 50%;
+    background-position: 0% center;
   }
   100% {
-    background-position: -100% 50%;
+    background-position: 200% center;
   }
 }
 
