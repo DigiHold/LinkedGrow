@@ -349,13 +349,13 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
                 transition={{ duration: 2, repeat: Infinity }}
               />
               <div className="relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
-                <Input
+                <input
                   type="email"
                   placeholder={translations.hero.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-16 px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 focus:ring-2 focus:ring-cyan-500"
+                  className="h-16 px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                 />
                 <Button
                   type="submit"
@@ -1757,13 +1757,13 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
       <div className="relative">
         {isDark && <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
         <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
-          <Input
+          <input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className={`flex-1 h-14 md:h-16 px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+            className={`flex-1 h-14 md:h-16 px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
           />
           <Button
             type="submit"
@@ -1813,13 +1813,13 @@ function CTASection(props: CTAProps) {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-lg mx-auto">
           {!props.isSuccess ? (
             <form onSubmit={props.handleSubmit} className="flex flex-col sm:flex-row gap-3">
-              <Input
+              <input
                 type="email"
                 placeholder={props.translations.hero.emailPlaceholder}
                 value={props.email}
                 onChange={(e) => props.setEmail(e.target.value)}
                 required
-                className="flex-1 h-16 px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg"
+                className="flex-1 h-16 px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
               <Button type="submit" disabled={props.isLoading} className="h-16 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg">
                 {props.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{props.translations.cta.button} <ArrowRight className="w-5 h-5 ml-2" /></>}
