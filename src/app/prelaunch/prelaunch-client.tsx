@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
+import { ActivityToast } from "@/components/prelaunch/activity-toast";
+import { ExitIntentPopup } from "@/components/prelaunch/exit-intent-popup";
 
 // Translations type
 export interface PrelaunchTranslations {
@@ -1358,6 +1360,8 @@ function TestimonialsCarousel() {
 // ============================================
 
 function PricingPreview({ translations }: { translations: PrelaunchTranslations }) {
+  const [showAllPlans, setShowAllPlans] = useState(false);
+
   // Original prices - then show 30% discount
   const plans = [
     {
@@ -1417,69 +1421,118 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {plans.map((plan, i) => (
-          <motion.div
-            key={plan.name}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-            whileHover={{ y: -5 }}
-            className={`relative ${plan.highlight ? "lg:-mt-4 lg:mb-4" : ""}`}
+      {/* Progressive Disclosure - Show teaser first */}
+      {!showAllPlans ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-2xl mx-auto"
+        >
+          <button
+            onClick={() => setShowAllPlans(true)}
+            className="w-full group"
           >
-            {plan.badge && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            <div className="relative bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 rounded-2xl p-8 border-2 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20 hover:shadow-2xl hover:shadow-violet-500/30 transition-all">
+              {/* Badge */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <div className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
-                  {plan.badge}
+                  Early Access Pricing
                 </div>
               </div>
-            )}
 
-            <div className={`relative h-full rounded-2xl p-6 border-2 transition-all ${
-              plan.highlight
-                ? "bg-gradient-to-b from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-            }`}>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{plan.name}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{plan.description}</p>
+              <div className="text-center">
+                <p className="text-slate-600 dark:text-slate-400 mb-4">Plans starting at</p>
 
-              <div className="mb-6">
-                {plan.actualPrice > 0 ? (
-                  <>
-                    {/* Original price with strikethrough */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg text-slate-400 line-through">${plan.actualPrice}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-semibold">
-                        -30%
-                      </span>
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <span className="text-2xl text-slate-400 line-through">$19</span>
+                  <span className="text-6xl font-black text-slate-900 dark:text-white">$13</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xl">/mo</span>
+                </div>
+
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-6">
+                  <Sparkles className="w-4 h-4" />
+                  Save 30% with early access
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-cyan-600 dark:text-cyan-400 font-medium group-hover:gap-3 transition-all">
+                  <span>View all plans</span>
+                  <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {plans.map((plan, i) => (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -5 }}
+                className={`relative ${plan.highlight ? "lg:-mt-4 lg:mb-4" : ""}`}
+              >
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                    <div className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
+                      {plan.badge}
                     </div>
-                    {/* Discounted price */}
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-slate-900 dark:text-white">${plan.discountedPrice}</span>
-                      <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-slate-900 dark:text-white">$0</span>
-                    <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
                   </div>
                 )}
-              </div>
 
-              <ul className="space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.highlight ? "text-violet-500" : "text-emerald-500"}`} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                <div className={`relative h-full rounded-2xl p-6 border-2 transition-all ${
+                  plan.highlight
+                    ? "bg-gradient-to-b from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                }`}>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{plan.name}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{plan.description}</p>
+
+                  <div className="mb-6">
+                    {plan.actualPrice > 0 ? (
+                      <>
+                        {/* Original price with strikethrough */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg text-slate-400 line-through">${plan.actualPrice}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-semibold">
+                            -30%
+                          </span>
+                        </div>
+                        {/* Discounted price */}
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-black text-slate-900 dark:text-white">${plan.discountedPrice}</span>
+                          <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black text-slate-900 dark:text-white">$0</span>
+                        <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <ul className="space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.highlight ? "text-violet-500" : "text-emerald-500"}`} />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -1717,7 +1770,7 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
             disabled={isLoading}
             className="h-12 md:h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
           >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get 30% Off <ArrowRight className="w-5 h-5 ml-2" /></>}
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
         </div>
       </div>
@@ -1858,6 +1911,16 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
+  const handleExitIntentSubmit = async (exitEmail: string) => {
+    const response = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: exitEmail }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Failed to subscribe");
+  };
+
   const heroProps: HeroProps = {
     email,
     setEmail,
@@ -1892,7 +1955,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
           <div className="hidden md:flex items-center gap-2 text-sm">
             <span className="text-slate-400">|</span>
             <Clock className="w-4 h-4 text-cyan-400" />
-            <span className="text-cyan-400 font-mono">{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m</span>
+            <span className="text-cyan-400 font-mono">{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s</span>
           </div>
         </div>
       </div>
@@ -2042,6 +2105,12 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
 
       {/* Footer */}
       <PrelaunchFooter />
+
+      {/* Activity Toast Notifications */}
+      <ActivityToast />
+
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup onSubmit={handleExitIntentSubmit} />
     </main>
   );
 }

@@ -9,6 +9,8 @@ interface PrelaunchHeaderProps {
   timeLeft?: {
     days: number;
     hours: number;
+    minutes: number;
+    seconds: number;
   };
 }
 
@@ -38,9 +40,9 @@ export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHe
         </Link>
         <div className="flex items-center gap-4">
           {showCountdown && timeLeft && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium font-mono">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              <span>Launching in {timeLeft.days}d {timeLeft.hours}h</span>
+              <span>{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s</span>
             </div>
           )}
           <LanguageSelector />
