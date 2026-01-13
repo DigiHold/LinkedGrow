@@ -2,114 +2,117 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { Moon, Sun, Monitor } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Moon, Sun, Monitor, ChevronDown, Check } from "lucide-react";
 
-function ThemeSelector() {
-  const { theme, setTheme } = useTheme();
+function AppearanceButton() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!mounted) {
-    return <div className="flex items-center gap-1 h-8" />;
+    return (
+      <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800">
+        <div className="w-4 h-4" />
+        <span>Appearance</span>
+        <ChevronDown className="w-4 h-4" />
+      </button>
+    );
   }
 
-  const isSystem = theme === "system";
-  const isLight = theme === "light";
-  const isDark = theme === "dark";
+  const currentIcon = resolvedTheme === "dark" ? Moon : Sun;
+  const CurrentIcon = currentIcon;
+
+  const options = [
+    { value: "system", label: "Auto", icon: Monitor, description: "Follow system" },
+    { value: "light", label: "Light", icon: Sun, description: "Always light" },
+    { value: "dark", label: "Dark", icon: Moon, description: "Always dark" },
+  ];
 
   return (
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+    <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setTheme("system")}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          isSystem
-            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-        }`}
-        title="Auto (system)"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
       >
-        <Monitor className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Auto</span>
+        <CurrentIcon className="w-4 h-4" />
+        <span>Appearance</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      <button
-        onClick={() => setTheme("light")}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          isLight
-            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-        }`}
-        title="Light theme"
-      >
-        <Sun className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Light</span>
-      </button>
-      <button
-        onClick={() => setTheme("dark")}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-          isDark
-            ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-        }`}
-        title="Dark theme"
-      >
-        <Moon className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Dark</span>
-      </button>
+
+      {isOpen && (
+        <div className="absolute bottom-full left-0 mb-2 w-48 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 animate-scale-in origin-bottom-left">
+          {options.map((option) => {
+            const Icon = option.icon;
+            const isSelected = theme === option.value;
+            return (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setTheme(option.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
+                  isSelected ? "text-cyan-600 dark:text-cyan-400" : "text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{option.label}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-500">{option.description}</div>
+                </div>
+                {isSelected && <Check className="w-4 h-4" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 export function PrelaunchFooter() {
   return (
-    <footer className="relative z-10 py-8 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <footer className="relative z-10 py-6 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/prelaunch" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
-              Linked<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Grow</span>
-            </span>
-          </Link>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Copyright - Left */}
+          <p className="text-sm text-slate-500 dark:text-slate-500 order-3 sm:order-1">
+            &copy; {new Date().getFullYear()} LinkedGrow
+          </p>
 
-          {/* Links */}
-          <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+          {/* Appearance Button - Center */}
+          <div className="order-1 sm:order-2">
+            <AppearanceButton />
+          </div>
+
+          {/* Navigation - Right */}
+          <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 order-2 sm:order-3">
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Privacy Policy
+              Privacy
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Cookie Policy
+              Cookies
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
             </a>
-          </div>
-
-          {/* Theme Selector + Copyright */}
-          <div className="flex items-center gap-4">
-            <ThemeSelector />
-            <p className="text-sm text-slate-500 dark:text-slate-500">
-              &copy; {new Date().getFullYear()} LinkedGrow
-            </p>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>
