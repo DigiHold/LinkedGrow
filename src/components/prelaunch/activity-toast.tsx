@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users } from "lucide-react";
 
-// Fake user data for social proof
+// Fake user data for social proof - realistic international names
 const fakeUsers = [
+  // Europe - Western
   { name: "Nicolas", city: "Zurich" },
   { name: "Marie", city: "Geneva" },
   { name: "Thomas", city: "Berlin" },
@@ -16,16 +17,78 @@ const fakeUsers = [
   { name: "Anna", city: "Vienna" },
   { name: "David", city: "Barcelona" },
   { name: "Julia", city: "Munich" },
-  { name: "Michael", city: "New York" },
-  { name: "Sarah", city: "San Francisco" },
-  { name: "Alex", city: "Toronto" },
-  { name: "Laura", city: "Sydney" },
   { name: "Peter", city: "Stockholm" },
   { name: "Elena", city: "Madrid" },
   { name: "James", city: "Dublin" },
   { name: "Lisa", city: "Copenhagen" },
   { name: "Oliver", city: "Brussels" },
   { name: "Camille", city: "Lyon" },
+  { name: "Henrik", city: "Oslo" },
+  { name: "Giulia", city: "Rome" },
+  { name: "Hans", city: "Frankfurt" },
+  { name: "Charlotte", city: "Manchester" },
+  { name: "Pierre", city: "Marseille" },
+  { name: "Lucia", city: "Valencia" },
+  { name: "Matteo", city: "Turin" },
+  { name: "Freya", city: "Edinburgh" },
+  { name: "Lars", city: "Gothenburg" },
+  { name: "Isabelle", city: "Bordeaux" },
+  { name: "Felix", city: "Hamburg" },
+  { name: "Martina", city: "Prague" },
+  { name: "Sebastian", city: "Warsaw" },
+  { name: "Natalia", city: "Lisbon" },
+  // North America
+  { name: "Michael", city: "New York" },
+  { name: "Sarah", city: "San Francisco" },
+  { name: "Alex", city: "Toronto" },
+  { name: "Jennifer", city: "Los Angeles" },
+  { name: "Chris", city: "Chicago" },
+  { name: "Emily", city: "Boston" },
+  { name: "Daniel", city: "Seattle" },
+  { name: "Ashley", city: "Miami" },
+  { name: "Ryan", city: "Austin" },
+  { name: "Megan", city: "Denver" },
+  { name: "Kevin", city: "Vancouver" },
+  { name: "Rachel", city: "Montreal" },
+  { name: "Brandon", city: "Atlanta" },
+  { name: "Nicole", city: "Dallas" },
+  { name: "Tyler", city: "Phoenix" },
+  { name: "Amanda", city: "Portland" },
+  { name: "Justin", city: "San Diego" },
+  { name: "Stephanie", city: "Minneapolis" },
+  { name: "Andrew", city: "Washington DC" },
+  { name: "Lauren", city: "Nashville" },
+  // Asia Pacific
+  { name: "Laura", city: "Sydney" },
+  { name: "Jack", city: "Melbourne" },
+  { name: "Yuki", city: "Tokyo" },
+  { name: "Wei", city: "Singapore" },
+  { name: "Min-jun", city: "Seoul" },
+  { name: "Priya", city: "Mumbai" },
+  { name: "Raj", city: "Bangalore" },
+  { name: "Sakura", city: "Osaka" },
+  { name: "Chen", city: "Hong Kong" },
+  { name: "Aisha", city: "Dubai" },
+  { name: "Mohammed", city: "Abu Dhabi" },
+  { name: "Ling", city: "Shanghai" },
+  { name: "Hiroshi", city: "Kyoto" },
+  { name: "Mei", city: "Taipei" },
+  { name: "Arjun", city: "Delhi" },
+  { name: "Liam", city: "Auckland" },
+  { name: "Olivia", city: "Brisbane" },
+  { name: "Noah", city: "Perth" },
+  // South America
+  { name: "Carlos", city: "Sao Paulo" },
+  { name: "Ana", city: "Buenos Aires" },
+  { name: "Diego", city: "Mexico City" },
+  { name: "Valentina", city: "Bogota" },
+  { name: "Gabriel", city: "Santiago" },
+  { name: "Isabella", city: "Lima" },
+  // Africa
+  { name: "Thabo", city: "Johannesburg" },
+  { name: "Amara", city: "Lagos" },
+  { name: "Kwame", city: "Accra" },
+  { name: "Fatima", city: "Cairo" },
 ];
 
 // Generate random time ago text
@@ -40,7 +103,11 @@ function getTimeAgo(): string {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-export function ActivityToast() {
+interface ActivityToastProps {
+  actionText?: string; // e.g., "joined the waitlist" or "started free trial"
+}
+
+export function ActivityToast({ actionText = "joined the waitlist" }: ActivityToastProps) {
   const [visible, setVisible] = useState(false);
   const [currentUser, setCurrentUser] = useState(fakeUsers[0]);
   const [timeAgo, setTimeAgo] = useState("just now");
@@ -96,7 +163,7 @@ export function ActivityToast() {
               </p>
               <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <Users className="w-3.5 h-3.5" />
-                joined the waitlist
+                {actionText}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                 {timeAgo}

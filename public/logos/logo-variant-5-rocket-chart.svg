@@ -1,86 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Main gradient: Cyan to Blue -->
     <linearGradient id="grad5" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#06b6d4"/>
-      <stop offset="50%" style="stop-color:#0ea5e9"/>
       <stop offset="100%" style="stop-color:#2563eb"/>
     </linearGradient>
-    <!-- Chart bar gradient -->
-    <linearGradient id="barGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.95"/>
-    </linearGradient>
-    <!-- Rocket trail gradient -->
-    <linearGradient id="trailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0"/>
-      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-    </linearGradient>
-    <!-- Drop shadow -->
-    <filter id="shadow5" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#0891b2" flood-opacity="0.35"/>
-    </filter>
-    <!-- Glow -->
-    <filter id="glow5">
-      <feGaussianBlur stdDeviation="2" result="glow"/>
-      <feMerge>
-        <feMergeNode in="glow"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- Background rounded square -->
-  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#grad5)" filter="url(#shadow5)"/>
+  <!-- Background -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#grad5)"/>
 
   <!-- Growth chart bars -->
-  <g fill="url(#barGrad)">
-    <rect x="96" y="304" width="56" height="96" rx="12"/>
-    <rect x="168" y="256" width="56" height="144" rx="12"/>
-    <rect x="240" y="200" width="56" height="200" rx="12"/>
-    <rect x="312" y="144" width="56" height="256" rx="12" fill="white"/>
-  </g>
+  <rect x="104" y="312" width="56" height="80" rx="12" fill="white" opacity="0.5"/>
+  <rect x="176" y="264" width="56" height="128" rx="12" fill="white" opacity="0.7"/>
+  <rect x="248" y="208" width="56" height="184" rx="12" fill="white" opacity="0.85"/>
+  <rect x="320" y="144" width="56" height="248" rx="12" fill="white"/>
 
-  <!-- Ascending line connecting bars -->
-  <path d="M124 280 L196 232 L268 176 L340 120"
-        fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <!-- Trend line -->
+  <path d="M132 296 L204 248 L276 192 L348 128"
+        fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
 
-  <!-- Rocket/Arrow at peak (symbolizing growth acceleration) -->
-  <g filter="url(#glow5)">
-    <!-- Rocket body -->
-    <path d="M384 64
-             Q408 80, 416 112
-             L416 160
-             L384 192
-             L352 160
-             L352 112
-             Q360 80, 384 64 Z"
-          fill="white"/>
+  <!-- Data points -->
+  <circle cx="132" cy="296" r="12" fill="white"/>
+  <circle cx="204" cy="248" r="12" fill="white"/>
+  <circle cx="276" cy="192" r="12" fill="white"/>
+  <circle cx="348" cy="128" r="16" fill="white"/>
 
-    <!-- Rocket window -->
-    <circle cx="384" cy="120" r="16" fill="url(#grad5)"/>
-
-    <!-- Rocket fins -->
-    <path d="M352 152 L328 176 L344 176 L352 160 Z" fill="white" opacity="0.9"/>
-    <path d="M416 152 L440 176 L424 176 L416 160 Z" fill="white" opacity="0.9"/>
-
-    <!-- Rocket exhaust trail -->
-    <path d="M384 192 L368 240 L384 224 L400 240 Z" fill="url(#trailGrad)"/>
-  </g>
-
-  <!-- Small accent dots (data points) -->
-  <g fill="white" opacity="0.8">
-    <circle cx="124" cy="280" r="8"/>
-    <circle cx="196" cy="232" r="8"/>
-    <circle cx="268" cy="176" r="8"/>
-    <circle cx="340" cy="120" r="10"/>
-  </g>
-
-  <!-- Subtle grid lines -->
-  <g stroke="white" stroke-width="1" opacity="0.15">
-    <line x1="80" y1="200" x2="432" y2="200"/>
-    <line x1="80" y1="256" x2="432" y2="256"/>
-    <line x1="80" y1="312" x2="432" y2="312"/>
-    <line x1="80" y1="368" x2="432" y2="368"/>
-  </g>
+  <!-- Arrow tip at peak -->
+  <path d="M396 100 L348 128 L372 152"
+        fill="none" stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
