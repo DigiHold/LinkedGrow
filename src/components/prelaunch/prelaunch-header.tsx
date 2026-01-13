@@ -34,7 +34,7 @@ export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHe
               />
             </svg>
           </div>
-          <span className="text-xl font-bold text-slate-900 dark:text-white">
+          <span className="text-xl font-bold font-display flex gap-[0.07rem] text-slate-900 dark:text-white">
             Linked<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Grow</span>
           </span>
         </Link>

@@ -413,9 +413,10 @@ textarea {
   }
 }
 
-/* Smooth scroll */
+/* Smooth scroll & prevent horizontal overflow */
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 /* Selection color */

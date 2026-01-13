@@ -68,8 +68,8 @@ function SignInForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">
-              Linked<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">Grow</span>
+            <span className="text-2xl font-bold font-display flex gap-[0.07rem] text-slate-900 dark:text-white">
+              Linked<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Grow</span>
             </span>
           </Link>
           <h1 className="text-[2rem] font-bold text-slate-900 dark:text-white mb-2">Welcome back</h1>
