@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Configure dark mode to use .dark class selector instead of media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ===== Tailwind v4 Theme Configuration ===== */
 @theme {
   /* Border radius */
