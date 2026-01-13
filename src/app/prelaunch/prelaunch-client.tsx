@@ -355,12 +355,12 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-14 px-5 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-base flex-1 focus:ring-2 focus:ring-cyan-500"
+                  className="h-16 px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 focus:ring-2 focus:ring-cyan-500"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40"
+                  className="h-16 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{translations.hero.cta} <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
@@ -1763,12 +1763,12 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className={`flex-1 h-12 md:h-14 px-5 rounded-xl border-0 text-base focus:ring-2 focus:ring-cyan-500 ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+            className={`flex-1 h-14 md:h-16 px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
           />
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-12 md:h-14 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-cyan-500/30 whitespace-nowrap"
+            className="h-14 md:h-16 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
@@ -1819,9 +1819,9 @@ function CTASection(props: CTAProps) {
                 value={props.email}
                 onChange={(e) => props.setEmail(e.target.value)}
                 required
-                className="flex-1 h-14 px-5 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-base"
+                className="flex-1 h-16 px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg"
               />
-              <Button type="submit" disabled={props.isLoading} className="h-14 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-base">
+              <Button type="submit" disabled={props.isLoading} className="h-16 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg">
                 {props.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{props.translations.cta.button} <ArrowRight className="w-5 h-5 ml-2" /></>}
               </Button>
             </form>
