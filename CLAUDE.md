@@ -262,6 +262,16 @@ Main landing page at `/` with full marketing sections
 
 4. **Middleware**: Next.js 16 shows deprecation warning for middleware - proxy migration pending
 
+5. **NEVER USE INLINE STYLES**: This project uses Tailwind CSS exclusively. NEVER use `style={{ }}` attributes or inline styles. Always use Tailwind classes.
+   - Wrong: `style={{ fontSize: "clamp(2.5rem, 8vw, 5rem)", lineHeight: 1.2 }}`
+   - Correct: `className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight"`
+   - Wrong: `style={{ transformOrigin: "left" }}`
+   - Correct: `className="origin-left"`
+   - If a Tailwind class doesn't exist, add it to `tailwind.config.ts` or `globals.css` as a custom utility
+
+6. **Font weights**: Use Tailwind's font weight classes
+   - `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` (700), `font-extrabold` (800), `font-black` (900)
+
 ## Founders
 
 - **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)

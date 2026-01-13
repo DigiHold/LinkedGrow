@@ -52,8 +52,8 @@
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(210 40% 98%);
 
-  --color-border: hsl(214 32% 91%);
-  --color-input: hsl(214 32% 91%);
+  --color-border: hsl(214 32% 85%);
+  --color-input: hsl(214 32% 85%);
   --color-ring: #0891b2;
 
   /* Chart colors */
@@ -93,8 +93,8 @@
   --color-accent-foreground: hsl(222 47% 11%);
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214 32% 91%);
-  --color-input: hsl(214 32% 91%);
+  --color-border: hsl(214 32% 85%);
+  --color-input: hsl(214 32% 85%);
   --color-ring: #0891b2;
 }
 
@@ -300,30 +300,34 @@ textarea {
 /* Shimmer text effect - modern eye-catching animation */
 .text-shimmer {
   background: linear-gradient(
-    110deg,
-    #06b6d4 0%,
+    120deg,
+    #0891b2 0%,
+    #0891b2 20%,
     #06b6d4 35%,
     #ffffff 50%,
     #8b5cf6 65%,
-    #8b5cf6 100%
+    #7c3aed 80%,
+    #7c3aed 100%
   );
-  background-size: 200% 100%;
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: text-shimmer 3s ease-in-out infinite;
+  animation: text-shimmer 4s ease-in-out infinite;
 }
 
 .dark .text-shimmer {
   background: linear-gradient(
-    110deg,
+    120deg,
     #22d3ee 0%,
-    #22d3ee 35%,
+    #22d3ee 20%,
+    #67e8f9 35%,
     #ffffff 50%,
-    #a78bfa 65%,
+    #c4b5fd 65%,
+    #a78bfa 80%,
     #a78bfa 100%
   );
-  background-size: 200% 100%;
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -332,6 +336,9 @@ textarea {
 @keyframes text-shimmer {
   0% {
     background-position: 100% 50%;
+  }
+  50% {
+    background-position: 0% 50%;
   }
   100% {
     background-position: -100% 50%;
