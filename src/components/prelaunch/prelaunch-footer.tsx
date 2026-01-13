@@ -94,14 +94,17 @@ export function PrelaunchFooter() {
         <div className="flex flex-col items-center gap-4 sm:hidden">
           {/* Navigation */}
           <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              About Us
+            </Link>
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Privacy
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Terms of Service
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Cookies
-            </Link>
-            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              About
+              Cookie Policy
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
@@ -129,14 +132,17 @@ export function PrelaunchFooter() {
 
           {/* Navigation - Right */}
           <nav className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              About Us
+            </Link>
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Privacy
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Terms of Service
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Cookies
-            </Link>
-            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              About
+              Cookie Policy
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
