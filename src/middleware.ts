@@ -22,8 +22,10 @@ const prelaunchAllowedRoutes = [
   "/prelaunch",
   "/sign-in",
   "/sign-up",
+  "/forgot-password",
   "/privacy",
   "/cookies",
+  "/terms",
   "/api",
 ];
 
