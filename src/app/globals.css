@@ -392,9 +392,10 @@ textarea {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* Mobile touch targets - minimum 44px height only */
+/* Mobile touch targets - minimum 44px height and width */
 .touch-target {
   min-height: 44px;
+  min-width: 44px;
 }
 
 /* Safe area insets for mobile devices */

@@ -142,7 +142,7 @@
     },
     "q6": {
       "question": "Welche KI-Modelle kann ich nutzen?",
-      "answer": "LinkedGrow unterstutzt GPT-4, GPT-4o, Claude 3.5, Gemini Pro und viele mehr. Sie wahlen, welches Modell Sie basierend auf Ihren Bedurfnissen und Budget nutzen mochten. Verschiedene Modelle haben unterschiedliche Starken und Kosten."
+      "answer": "LinkedGrow unterstutzt die neuesten Modelle von GPT, Claude, Gemini und mehr. Sie wahlen, welches Modell Sie basierend auf Ihren Bedurfnissen und Budget nutzen mochten. Verschiedene Modelle haben unterschiedliche Starken und Kosten."
     },
     "q7": {
       "question": "Ist mein API-Key sicher?",

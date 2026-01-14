@@ -142,7 +142,7 @@
     },
     "q6": {
       "question": "Quels modeles IA puis-je utiliser ?",
-      "answer": "LinkedGrow prend en charge GPT-4, GPT-4o, Claude 3.5, Gemini Pro et bien d'autres. Vous choisissez quel modele utiliser selon vos besoins et votre budget. Differents modeles ont differentes forces et couts."
+      "answer": "LinkedGrow prend en charge les derniers modeles de GPT, Claude, Gemini et plus encore. Vous choisissez quel modele utiliser selon vos besoins et votre budget. Differents modeles ont differentes forces et couts."
     },
     "q7": {
       "question": "Ma cle API est-elle securisee ?",

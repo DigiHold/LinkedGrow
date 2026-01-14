@@ -113,7 +113,7 @@ export function PrelaunchFooter() {
 
           {/* Copyright */}
           <p className="text-sm text-slate-500 dark:text-slate-500">
-            &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <span className="inline-block align-middle">🇨🇭</span>
+            &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-4 h-4" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#db2516" r="256"/><path d="m389.565 211.479h-89.043v-89.044h-89.044v89.044h-89.043v89.043h89.043v89.043h89.044v-89.043h89.043z" fill="#f0f0f0"/></svg>
           </p>
 
           {/* Appearance button */}
@@ -125,7 +125,7 @@ export function PrelaunchFooter() {
           {/* Copyright + Appearance - Left */}
           <div className="flex items-center gap-4">
             <p className="text-sm text-slate-500 dark:text-slate-500">
-              &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <span className="inline-block align-middle">🇨🇭</span>
+              &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-4 h-4" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#db2516" r="256"/><path d="m389.565 211.479h-89.043v-89.044h-89.044v89.044h-89.043v89.043h89.043v89.043h89.044v-89.043h89.043z" fill="#f0f0f0"/></svg>
             </p>
             <AppearanceButton />
           </div>

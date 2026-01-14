@@ -142,7 +142,7 @@
     },
     "q6": {
       "question": "Que modelos de IA puedo usar?",
-      "answer": "LinkedGrow soporta GPT-4, GPT-4o, Claude 3.5, Gemini Pro y muchos mas. Tu eliges que modelo usar segun tus necesidades y presupuesto. Diferentes modelos tienen diferentes fortalezas y costos."
+      "answer": "LinkedGrow soporta los ultimos modelos de GPT, Claude, Gemini y mas. Tu eliges que modelo usar segun tus necesidades y presupuesto. Diferentes modelos tienen diferentes fortalezas y costos."
     },
     "q7": {
       "question": "Mi clave API esta segura?",
