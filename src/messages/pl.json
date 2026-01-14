@@ -94,7 +94,7 @@
     "title": "Proste, przejrzyste ceny",
     "description": "Wybierz swoj plan. Wszystkie zawieraja BYOK - uzyj swoich kluczy AI.",
     "discount": "-30%",
-    "founder": "Znizka Zalozyciela",
+    "founder": "Znizka Wczesnego Dostepu",
     "perMonth": "/miesiac",
     "free": {
       "name": "Darmowy",
@@ -137,8 +137,16 @@
       "answer": "Absolutnie! Nasz Darmowy plan zawiera 3 posty miesiecznie z pelnym wsparciem BYOK. Karta kredytowa nie jest wymagana."
     },
     "q5": {
-      "question": "Co to jest 30% znizka zalozyciela?",
+      "question": "Co to jest 30% znizka wczesnego dostepu?",
       "answer": "Czlonkowie z wczesnym dostepem uzyskuja 30% znizki na caly pierwszy rok. Ta znizka dotyczy kazdego platnego planu i jest dostepna tylko podczas pre-launchu."
+    },
+    "q6": {
+      "question": "Jakich modeli AI moge uzywac?",
+      "answer": "LinkedGrow obsluguje GPT-4, GPT-4o, Claude 3.5, Gemini Pro i wiele innych. Sam wybierasz, ktorego modelu uzywac w zaleznosci od swoich potrzeb i budzetu. Rozne modele maja rozne mocne strony i koszty."
+    },
+    "q7": {
+      "question": "Czy moj klucz API jest bezpieczny?",
+      "answer": "Twoj klucz API jest bezpiecznie przechowywany w formie zaszyfrowanej na naszych serwerach z uzyciem szyfrowania na poziomie bankowym. Pozwala to na dostep do LinkedGrow z kazdego urzadzenia bez ponownego wprowadzania klucza. Wszystkie zapytania AI sa przetwarzane przez bezpieczne, zaszyfrowane polaczenia."
     }
   },
   "cta": {

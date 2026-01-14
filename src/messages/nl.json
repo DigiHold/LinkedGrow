@@ -94,7 +94,7 @@
     "title": "Eenvoudige, transparante prijzen",
     "description": "Kies je plan. Allemaal inclusief BYOK - gebruik je eigen AI-keys.",
     "discount": "-30%",
-    "founder": "Oprichterskorting",
+    "founder": "Vroege Toegang Korting",
     "perMonth": "/maand",
     "free": {
       "name": "Gratis",
@@ -137,8 +137,16 @@
       "answer": "Absoluut! Ons Gratis plan bevat 3 posts per maand met volledige BYOK support. Geen creditcard nodig."
     },
     "q5": {
-      "question": "Wat is de 30% oprichterskorting?",
+      "question": "Wat is de 30% vroege toegang korting?",
       "answer": "Leden met vroege toegang verzekeren 30% korting voor hun hele eerste jaar. Deze korting geldt voor elk betaald plan en is alleen beschikbaar tijdens de pre-launch."
+    },
+    "q6": {
+      "question": "Welke AI-modellen kan ik gebruiken?",
+      "answer": "LinkedGrow ondersteunt GPT-4, GPT-4o, Claude 3.5, Gemini Pro en nog veel meer. Jij kiest welk model je wilt gebruiken op basis van je behoeften en budget. Verschillende modellen hebben verschillende sterktes en kosten."
+    },
+    "q7": {
+      "question": "Is mijn API-key veilig?",
+      "answer": "Je API-key wordt veilig versleuteld opgeslagen op onze servers met bankbeveiliging. Hierdoor kun je LinkedGrow vanaf elk apparaat gebruiken zonder je key opnieuw in te voeren. Alle AI-verzoeken worden verwerkt via beveiligde, versleutelde verbindingen."
     }
   },
   "cta": {

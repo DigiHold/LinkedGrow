@@ -94,7 +94,7 @@
     "title": "Einfache, transparente Preise",
     "description": "Wahlen Sie Ihren Plan. Alle beinhalten BYOK - nutzen Sie Ihre eigenen KI-Keys.",
     "discount": "-30%",
-    "founder": "Grunder-Rabatt",
+    "founder": "Fruher Zugang Rabatt",
     "perMonth": "/Monat",
     "free": {
       "name": "Kostenlos",
@@ -137,8 +137,16 @@
       "answer": "Absolut! Unser kostenloser Plan beinhaltet 3 Posts pro Monat mit vollem BYOK-Support. Keine Kreditkarte erforderlich."
     },
     "q5": {
-      "question": "Was ist der 30% Grunder-Rabatt?",
+      "question": "Was ist der 30% Fruher Zugang Rabatt?",
       "answer": "Mitglieder mit fruhem Zugang sichern sich 30% Rabatt fur ihr gesamtes erstes Jahr. Dieser Rabatt gilt fur jeden bezahlten Plan und ist nur wahrend des Pre-Launch verfugbar."
+    },
+    "q6": {
+      "question": "Welche KI-Modelle kann ich nutzen?",
+      "answer": "LinkedGrow unterstutzt GPT-4, GPT-4o, Claude 3.5, Gemini Pro und viele mehr. Sie wahlen, welches Modell Sie basierend auf Ihren Bedurfnissen und Budget nutzen mochten. Verschiedene Modelle haben unterschiedliche Starken und Kosten."
+    },
+    "q7": {
+      "question": "Ist mein API-Key sicher?",
+      "answer": "Ihr API-Key wird sicher verschlusselt auf unseren Servern mit Bankniveau-Verschlusselung gespeichert. So konnen Sie von jedem Gerat auf LinkedGrow zugreifen, ohne Ihren Key erneut eingeben zu mussen. Alle KI-Anfragen werden uber sichere, verschlusselte Verbindungen verarbeitet."
     }
   },
   "cta": {

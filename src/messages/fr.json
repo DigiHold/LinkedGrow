@@ -94,7 +94,7 @@
     "title": "Tarification simple et transparente",
     "description": "Choisissez votre plan. Tous incluent BYOK - utilisez vos propres cles IA.",
     "discount": "-30%",
-    "founder": "Reduction Fondateur",
+    "founder": "Reduction Acces Anticipe",
     "perMonth": "/mois",
     "free": {
       "name": "Gratuit",
@@ -137,8 +137,16 @@
       "answer": "Absolument ! Notre plan Gratuit inclut 3 posts par mois avec support BYOK complet. Aucune carte bancaire requise pour commencer."
     },
     "q5": {
-      "question": "C'est quoi la reduction fondateur de 30% ?",
+      "question": "C'est quoi la reduction acces anticipe de 30% ?",
       "answer": "Les membres en acces anticipe beneficient de 30% de reduction pour toute leur premiere annee. Cette reduction s'applique a tout plan payant et n'est disponible que pendant le pre-lancement."
+    },
+    "q6": {
+      "question": "Quels modeles IA puis-je utiliser ?",
+      "answer": "LinkedGrow prend en charge GPT-4, GPT-4o, Claude 3.5, Gemini Pro et bien d'autres. Vous choisissez quel modele utiliser selon vos besoins et votre budget. Differents modeles ont differentes forces et couts."
+    },
+    "q7": {
+      "question": "Ma cle API est-elle securisee ?",
+      "answer": "Votre cle API est stockee de maniere securisee et chiffree sur nos serveurs avec un chiffrement de niveau bancaire. Cela vous permet d'acceder a LinkedGrow depuis n'importe quel appareil sans ressaisir votre cle. Toutes les requetes IA sont traitees via des connexions securisees et chiffrees."
     }
   },
   "cta": {

@@ -94,7 +94,7 @@
     "title": "Simple, transparent pricing",
     "description": "Choose your plan. All include BYOK - use your own AI keys.",
     "discount": "-30%",
-    "founder": "Founder's Discount",
+    "founder": "Early Access Discount",
     "perMonth": "/month",
     "free": {
       "name": "Free",
@@ -137,7 +137,7 @@
       "answer": "Absolutely! Our Free plan includes 3 posts per month with full BYOK support. No credit card required to start."
     },
     "q5": {
-      "question": "What's the 30% founder's discount?",
+      "question": "What's the 30% early access discount?",
       "answer": "Early access members lock in 30% off for their entire first year. This discount applies to any paid plan and is only available during pre-launch."
     },
     "q6": {
@@ -146,7 +146,7 @@
     },
     "q7": {
       "question": "Is my API key secure?",
-      "answer": "Your API key is stored encrypted in your browser's local storage and is never sent to our servers. All AI requests are made directly from your browser to the AI provider. We never see or store your key."
+      "answer": "Your API key is stored securely encrypted on our servers using bank-level encryption. This allows you to access LinkedGrow from any device without re-entering your key. All AI requests are processed through secure, encrypted connections."
     },
     "q8": {
       "question": "Can I schedule posts to LinkedIn?",
