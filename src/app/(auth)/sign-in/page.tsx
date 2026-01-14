@@ -37,12 +37,19 @@ function SignInForm() {
       });
 
       if (result?.error) {
-        if (result.error === "2FA_REQUIRED") {
+        // NextAuth v5 returns the error code in result.code or result.error
+        const errorCode = result.code || result.error;
+        if (errorCode === "2FA_REQUIRED") {
           setRequires2FA(true);
           setIsLoading(false);
           return;
         }
-        setErrorMessage(result.error);
+        // Map error codes to user-friendly messages
+        if (errorCode === "CredentialsSignin" || errorCode === "Configuration") {
+          setErrorMessage("Invalid email or password");
+        } else {
+          setErrorMessage(errorCode);
+        }
       } else if (result?.ok) {
         router.push(callbackUrl);
       }

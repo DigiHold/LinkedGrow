@@ -1,10 +1,23 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
+
+// Custom error classes for better error messages
+class InvalidCredentialsError extends CredentialsSignin {
+  code = "Invalid email or password";
+}
+
+class TwoFactorRequiredError extends CredentialsSignin {
+  code = "2FA_REQUIRED";
+}
+
+class InvalidTwoFactorError extends CredentialsSignin {
+  code = "Invalid 2FA code";
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db),
@@ -25,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+          throw new InvalidCredentialsError();
         }
 
         const email = credentials.email as string;
@@ -38,26 +51,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user || !user.password) {
-          throw new Error("Invalid email or password");
+          throw new InvalidCredentialsError();
         }
 
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
-          throw new Error("Invalid email or password");
+          throw new InvalidCredentialsError();
         }
 
         // Check 2FA if enabled
         if (user.twoFactorEnabled && user.twoFactorSecret) {
           if (!totpCode) {
             // Return special error to trigger 2FA input
-            throw new Error("2FA_REQUIRED");
+            throw new TwoFactorRequiredError();
           }
 
           const isValidToken = verifyTOTP(totpCode, user.twoFactorSecret);
 
           if (!isValidToken) {
-            throw new Error("Invalid 2FA code");
+            throw new InvalidTwoFactorError();
           }
         }
 
@@ -72,6 +85,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      // Allow sign in if user exists
+      return !!user;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
