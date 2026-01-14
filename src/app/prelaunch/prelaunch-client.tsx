@@ -1902,11 +1902,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
-      if (data.isExisting) {
-        setError("You're already on the waitlist!");
-      } else {
-        setIsSuccess(true);
-      }
+      setIsSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
