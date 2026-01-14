@@ -32,6 +32,10 @@ export const users = sqliteTable("users", {
   aiProvider: text("ai_provider"),
   aiApiKey: text("ai_api_key"), // Should be encrypted in production
 
+  // Image generation API keys (encrypted, BYOK)
+  imageProvider: text("image_provider"), // "gemini-image", "openai-dalle"
+  imageApiKey: text("image_api_key"), // User's own API key, encrypted
+
   // Timestamps
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),

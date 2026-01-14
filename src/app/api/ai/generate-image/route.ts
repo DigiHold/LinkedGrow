@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { decryptApiKey } from "@/lib/encryption";
 import sharp from "sharp";
+import { GoogleGenAI } from "@google/genai";
 
 // Maximum image size for LinkedIn (5MB)
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -132,10 +134,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has AI API key configured
-    if (!user.aiApiKey || !user.aiProvider) {
+    // Check if user has Image API key configured
+    if (!user.imageApiKey || !user.imageProvider) {
       return NextResponse.json(
-        { error: "No AI API key configured. Please add your API key in Settings." },
+        { error: "No Image API key configured. Please add your API key in Settings." },
+        { status: 400 }
+      );
+    }
+
+    // Decrypt the image API key
+    const apiKey = decryptApiKey(user.imageApiKey);
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Failed to decrypt API key. Please re-add your API key in Settings." },
         { status: 400 }
       );
     }
@@ -152,16 +163,16 @@ export async function POST(request: NextRequest) {
     let base64Image: string;
 
     // Generate image based on provider
-    switch (user.aiProvider) {
-      case "openai":
-        base64Image = await generateWithOpenAI(user.aiApiKey, prompt);
+    switch (user.imageProvider) {
+      case "gemini-image":
+        base64Image = await generateWithGemini3ProImage(apiKey, prompt);
         break;
-      case "google":
-        base64Image = await generateWithGoogle(user.aiApiKey, prompt);
+      case "openai-dalle":
+        base64Image = await generateWithOpenAI(apiKey, prompt);
         break;
       default:
         return NextResponse.json(
-          { error: `Image generation not supported for provider: ${user.aiProvider}. Please use OpenAI or Google.` },
+          { error: `Image generation not supported for provider: ${user.imageProvider}. Please use Gemini 3 Pro Image or DALL-E 3.` },
           { status: 400 }
         );
     }
@@ -175,7 +186,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now().toString(36); // Short unique identifier
     const filename = `${keywords}-${timestamp}.webp`;
 
-    console.log(`Image optimized: ${optimized.sizeKB}KB, filename: ${filename}`);
+    console.log(`Image optimized: ${optimized.sizeKB}KB, filename: ${filename}, provider: ${user.imageProvider}`);
 
     return NextResponse.json({
       success: true,
@@ -193,7 +204,74 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Generate image with OpenAI DALL-E (returns raw base64)
+/**
+ * Generate image with Gemini 3 Pro Image (gemini-3-pro-image-preview)
+ * Uses the new @google/genai SDK - same as Blog agent
+ * Cost: ~$0.13 per image, billed to user's Google account
+ */
+async function generateWithGemini3ProImage(apiKey: string, prompt: string): Promise<string> {
+  // Initialize Google GenAI client with user's API key
+  const ai = new GoogleGenAI({ apiKey });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-image-preview",
+      contents: prompt,
+      config: {
+        responseModalities: ["image", "text"],
+        imageConfig: {
+          aspectRatio: "16:9",
+          imageSize: "1K", // ~1376x768px
+        },
+      },
+    });
+
+    // Extract base64 image from response with error handling
+    if (!response.candidates || !response.candidates[0]) {
+      console.error("Gemini API Response:", JSON.stringify(response, null, 2));
+      throw new Error("No candidates in response - image may have been blocked by safety filters");
+    }
+
+    const candidate = response.candidates[0];
+
+    // Check for blocked content
+    const finishReason = String(candidate.finishReason || "");
+    if (finishReason.includes("SAFETY") || finishReason.includes("BLOCKED")) {
+      throw new Error(`Image blocked by safety filter: ${finishReason}. Try a different prompt.`);
+    }
+
+    if (!candidate.content || !candidate.content.parts) {
+      console.error("Gemini Candidate:", JSON.stringify(candidate, null, 2));
+      throw new Error(`No content parts in response. Finish reason: ${candidate.finishReason || "unknown"}`);
+    }
+
+    // Find the image part in the response
+    for (const part of candidate.content.parts) {
+      if (part.inlineData && part.inlineData.data) {
+        return part.inlineData.data; // Already base64
+      }
+    }
+
+    throw new Error("No image data found in Gemini response");
+  } catch (error) {
+    if (error instanceof Error) {
+      // Add more context to common errors
+      if (error.message.includes("API key")) {
+        throw new Error("Invalid Google API key. Please check your API key in Settings.");
+      }
+      if (error.message.includes("quota") || error.message.includes("rate")) {
+        throw new Error("API quota exceeded. Please check your Google Cloud billing.");
+      }
+      throw new Error(`Gemini 3 Pro Image failed: ${error.message}`);
+    }
+    throw new Error("Gemini 3 Pro Image generation failed");
+  }
+}
+
+/**
+ * Generate image with OpenAI DALL-E 3 (returns raw base64)
+ * Cost: ~$0.04-0.08 per image depending on resolution
+ */
 async function generateWithOpenAI(apiKey: string, prompt: string): Promise<string> {
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -218,37 +296,4 @@ async function generateWithOpenAI(apiKey: string, prompt: string): Promise<strin
 
   const data = await response.json();
   return data.data[0].b64_json;
-}
-
-// Generate image with Google Imagen (returns raw base64)
-async function generateWithGoogle(apiKey: string, prompt: string): Promise<string> {
-  // Using Google's Imagen 3 via Generative AI API
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        sampleCount: 1,
-        aspectRatio: "16:9",
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Google image generation failed");
-  }
-
-  const data = await response.json();
-  const base64 = data.images?.[0]?.bytesBase64Encoded;
-
-  if (!base64) {
-    throw new Error("No image generated");
-  }
-
-  return base64;
 }

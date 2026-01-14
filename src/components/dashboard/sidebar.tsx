@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Sparkles,
@@ -16,9 +16,19 @@ import {
   ChevronRight,
   LogOut,
   User,
+  ChevronDown,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const navigation = [
   {
@@ -63,16 +73,19 @@ const navigation = [
     icon: BarChart3,
     description: "Track performance",
   },
-  {
-    name: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    description: "API keys & profile",
-  },
 ];
+
+const planNames: Record<string, string> = {
+  free: "Free Plan",
+  starter: "Starter Plan",
+  pro: "Pro Plan",
+  business: "Business Plan",
+};
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -91,6 +104,19 @@ export function Sidebar() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
+  const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "User";
+  const userPlan = planNames[session?.user?.plan || "free"] || "Free Plan";
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <>
@@ -128,14 +154,14 @@ export function Sidebar() {
               isCollapsed && "lg:justify-center"
             )}
           >
-            <div className="w-9 h-9 rounded-lg bg-linkedin-gradient flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 379 230" className="w-5 h-5 text-white" fill="currentColor">
                 <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
               </svg>
             </div>
             {!isCollapsed && (
               <span className="text-lg font-bold">
-                Linked<span className="text-linkedin">Grow</span>
+                Linked<span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Grow</span>
               </span>
             )}
           </Link>
@@ -174,7 +200,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                   isActive
-                    ? "bg-linkedin/10 text-linkedin font-medium"
+                    ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   isCollapsed && "lg:justify-center lg:px-2"
                 )}
@@ -183,7 +209,7 @@ export function Sidebar() {
                 <item.icon
                   className={cn(
                     "w-5 h-5 shrink-0",
-                    isActive && "text-linkedin"
+                    isActive && "text-cyan-600 dark:text-cyan-400"
                   )}
                 />
                 {!isCollapsed && (
@@ -199,37 +225,61 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Section */}
+        {/* User Section with Dropdown */}
         <div className="p-3 border-t border-border">
-          <div
-            className={cn(
-              "flex items-center gap-3 p-3 rounded-lg bg-accent/50",
-              isCollapsed && "lg:justify-center lg:p-2"
-            )}
-          >
-            <div className="w-9 h-9 rounded-full bg-linkedin/20 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5 text-linkedin" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  Creator Plan
-                </p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
+                  isCollapsed && "lg:justify-center lg:p-2"
+                )}
+              >
+                <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+                  {userInitials}
+                </div>
+                {!isCollapsed && (
+                  <>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium truncate">{userName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {userPlan}
+                      </p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{userName}</p>
+                <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
               </div>
-            )}
-          </div>
-
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full mt-2 justify-start text-muted-foreground hover:text-destructive",
-              isCollapsed && "lg:justify-center"
-            )}
-          >
-            <LogOut className="w-4 h-4" />
-            {!isCollapsed && <span className="ml-2">Sign Out</span>}
-          </Button>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings#account")}>
+                <User className="w-4 h-4 mr-2" />
+                Account
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <Globe className="w-4 h-4 mr-2" />
+                Language
+                <span className="ml-auto text-xs text-muted-foreground">Soon</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
     </>

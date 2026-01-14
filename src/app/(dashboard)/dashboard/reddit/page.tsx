@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,16 +20,17 @@ import {
   Save,
   Pencil,
   X,
+  Key,
+  Settings,
+  Loader2,
+  AlertCircle,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId, canAccessFeature } from "@/lib/plans";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
-
-// TODO: Get this from user's actual subscription via auth session
-const userPlan: PlanId = "free";
-// TODO: Get this from user settings
-const hasImageApiKey = true; // Demo mode - would check user.aiApiKey in production
+import Link from "next/link";
 
 const steps = [
   { num: 1, label: "Paste URL" },
@@ -37,7 +39,12 @@ const steps = [
   { num: 4, label: "Edit & Publish" },
 ];
 
-function RedditImportContent() {
+interface SettingsResponse {
+  hasApiKey: boolean;
+  aiProvider: string | null;
+}
+
+function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +53,12 @@ function RedditImportContent() {
   const [posts, setPosts] = useState<string[]>([]);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // API key state
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+  const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
+  const [hasImageApiKey, setHasImageApiKey] = useState(false);
 
   // Step 4: Editing and Image Generation State
   const [isEditing, setIsEditing] = useState(false);
@@ -56,102 +69,86 @@ function RedditImportContent() {
   // Check if user has access to image generation
   const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
 
+  // Check if user has API key configured
+  useEffect(() => {
+    const checkApiKey = async () => {
+      try {
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data: SettingsResponse = await response.json();
+          setHasApiKey(data.hasApiKey);
+          // For now, we use the same API key for images
+          // TODO: Add separate image API key check when implemented
+          setHasImageApiKey(data.hasApiKey);
+        } else {
+          setHasApiKey(false);
+        }
+      } catch {
+        setHasApiKey(false);
+      } finally {
+        setIsCheckingApiKey(false);
+      }
+    };
+
+    checkApiKey();
+  }, []);
+
   const handleFetchReddit = async () => {
-    if (!url.includes("reddit.com")) return;
+    if (!url.includes("reddit.com") || !hasApiKey) return;
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setHooks([
-      "I spent 10 years in tech and here's what nobody tells you...",
-      "The harsh truth about working at FAANG companies:",
-      "Why I turned down a $300K offer (and what I learned)",
-      "After interviewing 500+ developers, this is the #1 red flag:",
-      "My manager's advice that changed my entire career:",
-    ]);
-    setIsLoading(false);
-    setStep(2);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/reddit/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to analyze Reddit post");
+      }
+
+      const data = await response.json();
+      setHooks(data.hooks || []);
+      setStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze Reddit post");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGeneratePosts = async () => {
-    if (selectedHook === null) return;
+    if (selectedHook === null || !hasApiKey) return;
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setPosts([
-      `${hooks[selectedHook]}
+    setError(null);
 
-After 10 years in tech, here are the 5 things I wish someone told me on day one:
+    try {
+      const response = await fetch("/api/reddit/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hook: hooks[selectedHook],
+          url,
+          count: 3,
+        }),
+      });
 
-𝟏. 𝐘𝐨𝐮𝐫 𝐧𝐞𝐭𝐰𝐨𝐫𝐤 > 𝐲𝐨𝐮𝐫 𝐬𝐤𝐢𝐥𝐥𝐬
-The best opportunities came through people, not job boards.
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to generate posts");
+      }
 
-𝟐. 𝐓𝐢𝐭𝐥𝐞𝐬 𝐝𝐨𝐧'𝐭 𝐦𝐚𝐭𝐭𝐞𝐫, 𝐢𝐦𝐩𝐚𝐜𝐭 𝐝𝐨𝐞𝐬
-Nobody remembers your title. They remember what you shipped.
-
-𝟑. 𝐒𝐚𝐲 𝐧𝐨 𝐦𝐨𝐫𝐞 𝐨𝐟𝐭𝐞𝐧
-Every yes is a no to something else.
-
-𝟒. 𝐃𝐨𝐜𝐮𝐦𝐞𝐧𝐭 𝐞𝐯𝐞𝐫𝐲𝐭𝐡𝐢𝐧𝐠
-Your memory is not as good as you think.
-
-𝟓. 𝐓𝐚𝐤𝐞 𝐜𝐚𝐫𝐞 𝐨𝐟 𝐲𝐨𝐮𝐫 𝐡𝐞𝐚𝐥𝐭𝐡
-No job is worth destroying your body.
-
-What would you add to this list?
-
-♻️ Repost if this helps someone
-📩 Follow for more career insights`,
-      `${hooks[selectedHook]}
-
-Here's the uncomfortable truth no one talks about:
-
-Most successful people in tech got lucky.
-
-But here's the thing -
-
-They positioned themselves to BE lucky.
-
-They showed up consistently.
-They built in public.
-They helped others without expecting returns.
-They took calculated risks.
-
-You can't control luck.
-But you can control your inputs.
-
-The formula is simple:
-Skill + Network + Showing Up = "Luck"
-
-What's your take on luck vs. skill?`,
-      `${hooks[selectedHook]}
-
-Let me tell you a story.
-
-3 years ago, I was burned out.
-Working 70-hour weeks.
-Missing my kid's events.
-For what? A 3% raise.
-
-Then I made ONE decision that changed everything:
-
-I stopped trading time for money.
-
-Instead, I started:
-→ Building assets (courses, content, tools)
-→ Saying no to toxic clients
-→ Prioritizing deep work over busy work
-
-Result?
-• 2x income
-• 50% less hours
-• Actually present for my family
-
-The game isn't about working harder.
-It's about working smarter.
-
-What's one change that transformed your work life?`,
-    ]);
-    setIsLoading(false);
-    setStep(3);
+      const data = await response.json();
+      setPosts(data.posts || []);
+      setStep(3);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate posts");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCopy = () => {
@@ -161,6 +158,87 @@ What's one change that transformed your work life?`,
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Loading state while checking API key
+  if (isCheckingApiKey) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No API key configured - show setup prompt
+  if (!hasApiKey) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <MessageSquareText className="w-8 h-8 text-orange-500" />
+            Reddit Import
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Transform viral Reddit posts into LinkedIn content
+          </p>
+        </div>
+
+        {/* API Key Required Card */}
+        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
+          <CardContent className="py-12 px-8">
+            <div className="text-center max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-orange-500/20 to-red-600/20 flex items-center justify-center">
+                <Key className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
+              <p className="text-muted-foreground mb-6">
+                To analyze Reddit posts and generate LinkedIn content, you need to configure your AI API key in settings.
+                LinkedGrow uses your own API key (BYOK) for unlimited generations.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/dashboard/settings">
+                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure API Key
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-xs text-muted-foreground mt-6">
+                We support OpenAI, Anthropic, Google AI, and Groq. Your key is encrypted and stored securely.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preview of the workflow */}
+        <Card className="opacity-60">
+          <CardHeader>
+            <CardTitle className="text-base">How it works</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 flex-wrap">
+              {steps.map((s, i) => (
+                <div key={s.num} className="flex items-center">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
+                      {s.num}
+                    </span>
+                    <span>{s.label}</span>
+                  </div>
+                  {i < 3 && (
+                    <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -183,7 +261,7 @@ What's one change that transformed your work life?`,
               className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
                 step >= s.num
-                  ? "bg-orange-500 text-white"
+                  ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"
               )}
             >
@@ -206,6 +284,14 @@ What's one change that transformed your work life?`,
         ))}
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Step 1: Paste URL */}
       {step === 1 && (
         <Card>
@@ -226,12 +312,12 @@ What's one change that transformed your work life?`,
               <Button
                 onClick={handleFetchReddit}
                 disabled={!url.includes("reddit.com") || isLoading}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isLoading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Fetching...
+                    Analyzing...
                   </>
                 ) : (
                   <>
@@ -247,10 +333,10 @@ What's one change that transformed your work life?`,
                 Tips for finding viral Reddit posts:
               </h4>
               <ul className="mt-2 text-sm text-orange-700 dark:text-orange-300 space-y-1">
-                <li>• Check r/technology, r/startups, r/entrepreneur</li>
-                <li>• Sort by "Top" posts of the week/month</li>
-                <li>• Look for posts with high engagement</li>
-                <li>• Personal stories often convert well</li>
+                <li>- Check r/technology, r/startups, r/entrepreneur</li>
+                <li>- Sort by "Top" posts of the week/month</li>
+                <li>- Look for posts with high engagement</li>
+                <li>- Personal stories often convert well</li>
               </ul>
             </div>
           </CardContent>
@@ -258,11 +344,11 @@ What's one change that transformed your work life?`,
       )}
 
       {/* Step 2: Select Hook */}
-      {step === 2 && (
+      {step === 2 && hooks.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-orange-500" />
+              <Sparkles className="w-5 h-5 text-cyan-500" />
               Choose Your Hook
             </CardTitle>
             <CardDescription>
@@ -278,8 +364,8 @@ What's one change that transformed your work life?`,
                   className={cn(
                     "w-full p-4 rounded-xl border-2 text-left transition-all",
                     selectedHook === index
-                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/10"
-                      : "border-border hover:border-orange-300"
+                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/10"
+                      : "border-border hover:border-cyan-300"
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -287,7 +373,7 @@ What's one change that transformed your work life?`,
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                         selectedHook === index
-                          ? "bg-orange-500 text-white"
+                          ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                           : "bg-gray-100 dark:bg-gray-800"
                       )}
                     >
@@ -306,7 +392,7 @@ What's one change that transformed your work life?`,
               <Button
                 onClick={handleGeneratePosts}
                 disabled={selectedHook === null || isLoading}
-                className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white"
+                className="flex-1 sm:flex-none bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isLoading ? (
                   <>
@@ -326,7 +412,7 @@ What's one change that transformed your work life?`,
       )}
 
       {/* Step 3: Choose Post */}
-      {step === 3 && (
+      {step === 3 && posts.length > 0 && (
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -344,18 +430,18 @@ What's one change that transformed your work life?`,
                 className={cn(
                   "cursor-pointer transition-all hover:-translate-y-1",
                   selectedPost === index
-                    ? "border-orange-500 shadow-lg"
-                    : "hover:border-orange-300"
+                    ? "border-cyan-500 shadow-lg"
+                    : "hover:border-cyan-300"
                 )}
                 onClick={() => setSelectedPost(index)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-orange-600">
+                    <span className="text-sm font-medium text-cyan-600 dark:text-cyan-400">
                       Version {index + 1}
                     </span>
                     {selectedPost === index && (
-                      <Check className="w-5 h-5 text-orange-500" />
+                      <Check className="w-5 h-5 text-cyan-500" />
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground line-clamp-[12] whitespace-pre-wrap">
@@ -373,7 +459,7 @@ What's one change that transformed your work life?`,
             <Button
               disabled={selectedPost === null}
               onClick={() => setStep(4)}
-              className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white"
+              className="flex-1 sm:flex-none bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               Continue to Edit
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -496,10 +582,10 @@ What's one change that transformed your work life?`,
             </Card>
 
             {/* AI Edit Options */}
-            <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20">
+            <Card className="border-cyan-200 bg-cyan-50/50 dark:border-cyan-800 dark:bg-cyan-950/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Wand2 className="w-4 h-4 text-orange-500" />
+                  <Wand2 className="w-4 h-4 text-cyan-500" />
                   AI Quick Edit
                 </CardTitle>
               </CardHeader>
@@ -510,7 +596,7 @@ What's one change that transformed your work life?`,
                       key={action}
                       variant="outline"
                       size="sm"
-                      className="bg-white dark:bg-gray-900 hover:bg-orange-100 hover:border-orange-300"
+                      className="bg-white dark:bg-gray-900 hover:bg-cyan-100 hover:border-cyan-300"
                     >
                       {action}
                     </Button>
@@ -528,7 +614,7 @@ What's one change that transformed your work life?`,
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start bg-orange-500 hover:bg-orange-600" size="lg">
+                <Button className="w-full justify-start bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700" size="lg">
                   <Send className="w-4 h-4 mr-2" />
                   Publish to LinkedIn
                 </Button>
@@ -559,7 +645,10 @@ What's one change that transformed your work life?`,
                     <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
                     Generate AI Image
                     {!hasImageAccess && (
-                      <span className="ml-auto text-xs text-amber-600">Pro</span>
+                      <span className="ml-auto text-xs text-amber-600 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        Pro
+                      </span>
                     )}
                   </Button>
                 )}
@@ -589,9 +678,9 @@ What's one change that transformed your work life?`,
                   Pro Tips
                 </h4>
                 <ul className="text-sm text-green-700 dark:text-green-300 space-y-1.5">
-                  <li>• Posts with images get 2x more engagement</li>
-                  <li>• Best time to post: 8-10 AM or 5-6 PM</li>
-                  <li>• Add a question at the end for comments</li>
+                  <li>- Posts with images get 2x more engagement</li>
+                  <li>- Best time to post: 8-10 AM or 5-6 PM</li>
+                  <li>- Add a question at the end for comments</li>
                 </ul>
               </CardContent>
             </Card>
@@ -616,9 +705,12 @@ What's one change that transformed your work life?`,
 }
 
 export default function RedditImportPage() {
+  const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+
   return (
     <FeatureGate feature="redditIdeas" userPlan={userPlan}>
-      <RedditImportContent />
+      <RedditImportContent userPlan={userPlan} />
     </FeatureGate>
   );
 }
