@@ -1,12 +1,9 @@
 export const SUPPORTED_LANGUAGES = [
   { code: "en", name: "English", nativeName: "English", flag: "GB" },
-  { code: "fr", name: "French", nativeName: "Francais", flag: "FR" },
-  { code: "de", name: "German", nativeName: "Deutsch", flag: "DE" },
-  { code: "es", name: "Spanish", nativeName: "Espanol", flag: "ES" },
-  { code: "it", name: "Italian", nativeName: "Italiano", flag: "IT" },
-  { code: "pt", name: "Portuguese", nativeName: "Portugues", flag: "PT" },
-  { code: "nl", name: "Dutch", nativeName: "Nederlands", flag: "NL" },
-  { code: "pl", name: "Polish", nativeName: "Polski", flag: "PL" },
+  { code: "fr", name: "French", nativeName: "French", flag: "FR" },
+  { code: "de", name: "Deutsch", nativeName: "Deutsch", flag: "DE" },
+  { code: "es", name: "Espanol", nativeName: "Espanol", flag: "ES" },
+  { code: "it", name: "Italian", nativeName: "Italian", flag: "IT" },
 ] as const;
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -44,12 +41,6 @@ const COUNTRY_TO_LANGUAGE: Record<string, LanguageCode> = {
   CR: "es", PA: "es", UY: "es",
   // Italian-speaking
   IT: "it", SM: "it", VA: "it",
-  // Portuguese-speaking
-  PT: "pt", BR: "pt", AO: "pt", MZ: "pt",
-  // Dutch-speaking
-  NL: "nl", SR: "nl",
-  // Polish-speaking
-  PL: "pl",
 };
 
 /**

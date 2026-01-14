@@ -8,9 +8,6 @@ import frMessages from "@/messages/fr.json";
 import deMessages from "@/messages/de.json";
 import esMessages from "@/messages/es.json";
 import itMessages from "@/messages/it.json";
-import ptMessages from "@/messages/pt.json";
-import nlMessages from "@/messages/nl.json";
-import plMessages from "@/messages/pl.json";
 
 // Use a more flexible type since not all languages have all sections (e.g., legal texts only in EN/FR)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,9 +17,6 @@ const messagesMap: Record<string, any> = {
   de: { ...deMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
   es: { ...esMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
   it: { ...itMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
-  pt: { ...ptMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
-  nl: { ...nlMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
-  pl: { ...plMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
 };
 
 export default getRequestConfig(async () => {
