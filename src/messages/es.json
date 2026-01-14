@@ -157,11 +157,11 @@
     "button": "Unirse Ahora",
     "security": "Seguridad bancaria",
     "yourData": "Tu API, tus datos",
-    "madeIn": "Hecho en Suiza"
+    "madeIn": "Hecho en Francia"
   },
   "success": {
-    "title": "Estas en la lista!",
-    "description": "Tu descuento del 30% esta asegurado. Revisa tu bandeja de entrada!"
+    "title": "Casi listo!",
+    "description": "Revisa tu bandeja de entrada y confirma tu email para asegurar tu 30% de descuento."
   },
   "footer": {
     "copyright": "2026 LinkedGrow. Todos los derechos reservados.",

@@ -160,8 +160,8 @@
     "madeIn": "Fabriqué en France"
   },
   "success": {
-    "title": "Vous etes sur la liste !",
-    "description": "Votre reduction de 30% est garantie. Verifiez votre boite mail !"
+    "title": "Presque termine !",
+    "description": "Verifiez votre boite mail et confirmez votre email pour obtenir vos 30% de reduction."
   },
   "footer": {
     "copyright": "2026 LinkedGrow. Tous droits reserves.",
