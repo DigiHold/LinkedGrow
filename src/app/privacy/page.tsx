@@ -148,6 +148,9 @@ export default async function PrivacyPage() {
               <p className="text-muted-foreground mt-2">
                 {t("section12.email")} <a href="mailto:contact@linkedgrow.ai" className="text-cyan-600 hover:underline">contact@linkedgrow.ai</a>
               </p>
+              <p className="text-muted-foreground mt-2">
+                {t("section12.company")}
+              </p>
             </section>
           </div>
         </div>

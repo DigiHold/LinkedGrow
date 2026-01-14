@@ -106,6 +106,9 @@ export function PrelaunchFooter() {
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Cookie
             </Link>
+            <Link href="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Legal
+            </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
             </a>
@@ -113,7 +116,7 @@ export function PrelaunchFooter() {
 
           {/* Copyright */}
           <p className="text-sm text-slate-500 dark:text-slate-500">
-            &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-4 h-4" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#db2516" r="256"/><path d="m389.565 211.479h-89.043v-89.044h-89.044v89.044h-89.043v89.043h89.043v89.043h89.044v-89.043h89.043z" fill="#f0f0f0"/></svg>
+            &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-3 h-3" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#fff" r="256"/><path d="m512 256c0-110.071-69.472-203.906-166.957-240.077v480.155c97.485-36.172 166.957-130.007 166.957-240.078z" fill="#d80027"/><path d="m0 256c0 110.071 69.473 203.906 166.957 240.077v-480.154c-97.484 36.171-166.957 130.006-166.957 240.077z" fill="#0052b4"/></svg>
           </p>
 
           {/* Appearance button */}
@@ -125,7 +128,7 @@ export function PrelaunchFooter() {
           {/* Copyright + Appearance - Left */}
           <div className="flex items-center gap-4">
             <p className="text-sm text-slate-500 dark:text-slate-500">
-              &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-4 h-4" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#db2516" r="256"/><path d="m389.565 211.479h-89.043v-89.044h-89.044v89.044h-89.043v89.043h89.043v89.043h89.044v-89.043h89.043z" fill="#f0f0f0"/></svg>
+              &copy; {new Date().getFullYear()} LinkedGrow - Made with love in <svg className="inline-block align-middle w-3 h-3" viewBox="0 0 512 512"><circle cx="256" cy="256" fill="#fff" r="256"/><path d="m512 256c0-110.071-69.472-203.906-166.957-240.077v480.155c97.485-36.172 166.957-130.007 166.957-240.078z" fill="#d80027"/><path d="m0 256c0 110.071 69.473 203.906 166.957 240.077v-480.154c-97.484 36.171-166.957 130.006-166.957 240.077z" fill="#0052b4"/></svg>
             </p>
             <AppearanceButton />
           </div>
@@ -143,6 +146,9 @@ export function PrelaunchFooter() {
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Cookie
+            </Link>
+            <Link href="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Legal
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
