@@ -9,16 +9,16 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 
 ## Tech Stack (ACTUAL)
 
-- **Framework:** Next.js 16.1.1 (App Router, Turbopack)
-- **Language:** TypeScript 5.9.3
-- **Styling:** Tailwind CSS 4.1.8 + shadcn/ui components
-- **Authentication:** NextAuth.js v5 (beta) with Credentials Provider + 2FA/TOTP
-- **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM
-- **Payments:** Stripe (subscriptions)
-- **File Storage:** Cloudflare R2 (S3-compatible)
-- **Email:** NOT YET IMPLEMENTED (TODO: Resend for transactional, MailerLite for marketing)
-- **Hosting:** Vercel
-- **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI
+-   **Framework:** Next.js 16.1.1 (App Router, Turbopack)
+-   **Language:** TypeScript 5.9.3
+-   **Styling:** Tailwind CSS 4.1.8 + shadcn/ui components
+-   **Authentication:** NextAuth.js v5 (beta) with Credentials Provider + 2FA/TOTP
+-   **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM
+-   **Payments:** Stripe (subscriptions)
+-   **File Storage:** Cloudflare R2 (S3-compatible)
+-   **Email:** NOT YET IMPLEMENTED (TODO: Resend for transactional, MailerLite for marketing)
+-   **Hosting:** Vercel
+-   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI
 
 ## Project Structure
 
@@ -83,30 +83,31 @@ src/
 
 ```typescript
 // Main tables in src/lib/db/schema.ts
-- users          // Auth, subscription, LinkedIn tokens, AI keys
-- sessions       // NextAuth sessions
-- accounts       // OAuth providers
-- verification_tokens
-- posts          // LinkedIn posts (draft/scheduled/published/failed)
-- media          // Images/carousels stored in R2
-- ideas          // Content ideas (Reddit-sourced or manual)
-- waitlist       // Pre-launch email collection
+-users - // Auth, subscription, LinkedIn tokens, AI keys
+    sessions - // NextAuth sessions
+    accounts - // OAuth providers
+    verification_tokens -
+    posts - // LinkedIn posts (draft/scheduled/published/failed)
+    media - // Images/carousels stored in R2
+    ideas - // Content ideas (Reddit-sourced or manual)
+    waitlist; // Pre-launch email collection
 ```
 
 ## Authentication System
 
 **Using NextAuth.js v5 (beta) - NOT Clerk**
 
-- Email/Password authentication (credentials provider)
-- 2FA/TOTP support (QR code generation with `qrcode`, verification with `otplib`)
-- Password hashing: bcryptjs
-- Session strategy: JWT
-- DrizzleAdapter for database integration
+-   Email/Password authentication (credentials provider)
+-   2FA/TOTP support (QR code generation with `qrcode`, verification with `otplib`)
+-   Password hashing: bcryptjs
+-   Session strategy: JWT
+-   DrizzleAdapter for database integration
 
 Key files:
-- `src/lib/auth.ts` - NextAuth configuration
-- `src/app/api/auth/register/route.ts` - User registration
-- `src/app/api/auth/2fa/*` - 2FA setup/verify/disable
+
+-   `src/lib/auth.ts` - NextAuth configuration
+-   `src/app/api/auth/register/route.ts` - User registration
+-   `src/app/api/auth/2fa/*` - 2FA setup/verify/disable
 
 ## Pricing Plans
 
@@ -128,12 +129,14 @@ STRIPE_BUSINESS_PRICE_ID=price_1SoL0rDZ5QtFd12c7kcCeiyu
 ```
 
 ### Coupon System
-- **PRELAUNCH30**: 30% off for 12 months (founder's discount)
-- Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
+
+-   **PRELAUNCH30**: 30% off for 12 months (founder's discount)
+-   Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
 
 ## LinkedIn Integration
 
 Uses TWO separate LinkedIn apps:
+
 1. **Poster App**: For publishing posts (`w_member_social` scope)
 2. **Community App**: For engagement features (`r_organization_social` scope)
 
@@ -226,35 +229,41 @@ NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
 ## Current State: Pre-Launch
 
 ### Active Page
+
 `/prelaunch` - Waitlist collection with:
-- Countdown timer
-- 30% Founder's Discount offer
-- Email collection (stored in database - NO email sending yet)
-- Language detection from geolocation
+
+-   Countdown timer
+-   30% Founder's Discount offer
+-   Email collection (stored in database - NO email sending yet)
+-   Language detection from geolocation
 
 ### Post-Launch
+
 Main landing page at `/` with full marketing sections
 
 ## Design System
 
 ### Theme: Light & Modern
-- **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
-- **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
-- **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
-- **Accents:** Emerald (success), Amber (warnings/BYOK), Violet (Pro plan)
+
+-   **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
+-   **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
+-   **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
+-   **Accents:** Emerald (success), Amber (warnings/BYOK), Violet (Pro plan)
 
 ### Key Design Patterns
-- Rounded corners: `rounded-2xl` for cards
-- Subtle shadows: `shadow-lg shadow-slate-200/50`
-- Gradient text: `text-transparent bg-clip-text bg-gradient-to-r`
-- Animations: Framer Motion for scroll animations
-- Dark mode: Supported via `next-themes`
+
+-   Rounded corners: `rounded-2xl` for cards
+-   Subtle shadows: `shadow-lg shadow-slate-200/50`
+-   Gradient text: `text-transparent bg-clip-text bg-gradient-to-r`
+-   Animations: Framer Motion for scroll animations
+-   Dark mode: Supported via `next-themes`
 
 ## Code Style Rules
 
-1. **No em dashes**: Never use em dashes in any text or code. Use regular dashes with spaces ` - ` instead.
-   - Wrong: `"no hidden costs—just results"`
-   - Correct: `"no hidden costs - just results"`
+1. **No em dashes**: Never use em dashes in any text or code. Use regular dashes with spaces `-` instead.
+
+    - Wrong: `"no hidden costs—just results"`
+    - Correct: `"no hidden costs - just results"`
 
 2. **Contact email**: Use only `contact@linkedgrow.ai` for all contact references
 
@@ -263,63 +272,36 @@ Main landing page at `/` with full marketing sections
 4. **Middleware**: Next.js 16 shows deprecation warning for middleware - proxy migration pending
 
 5. **NEVER USE INLINE STYLES**: This project uses Tailwind CSS exclusively. NEVER use `style={{ }}` attributes or inline styles. Always use Tailwind classes.
-   - Wrong: `style={{ fontSize: "clamp(2.5rem, 8vw, 5rem)", lineHeight: 1.2 }}`
-   - Correct: `className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight"`
-   - Wrong: `style={{ transformOrigin: "left" }}`
-   - Correct: `className="origin-left"`
-   - If a Tailwind class doesn't exist, add it to `tailwind.config.ts` or `globals.css` as a custom utility
+
+    - Wrong: `style={{ fontSize: "clamp(2.5rem, 8vw, 5rem)", lineHeight: 1.2 }}`
+    - Correct: `className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight"`
+    - Wrong: `style={{ transformOrigin: "left" }}`
+    - Correct: `className="origin-left"`
+    - If a Tailwind class doesn't exist, add it to `tailwind.config.ts` or `globals.css` as a custom utility
 
 6. **Font weights**: Use Tailwind's font weight classes
-   - `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` (700), `font-extrabold` (800), `font-black` (900)
+    - `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` (700), `font-extrabold` (800), `font-black` (900)
 
 ## Founders
 
-- **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
-- **Maria Lecocq** - Operations & Community
+-   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
+-   **Maria Lecocq** - Operations & Community
 
 Based in Paris, France. LinkedGrow is a product of Vayalis.
 
 ## Related Projects
 
-- **DigiHold** (https://digihold.me) - Parent company
+-   **DigiHold** (https://digihold.me) - Parent company
 
 ---
 
 ## TODO / Next Steps
 
-### Email Integration (Priority)
-
-1. **Professional Email Setup**
-   - [ ] Configure Zoho Mail Lite ($1/mo) or Cloudflare Email Routing (free)
-   - [ ] Create contact@linkedgrow.ai mailbox
-   - [ ] Add DNS records (MX, SPF, DKIM)
-
-2. **Transactional Emails (Resend)**
-   - [ ] Sign up at resend.com
-   - [ ] Verify linkedgrow.ai domain
-   - [ ] Add `RESEND_API_KEY` to Vercel env vars
-   - [ ] Implement welcome email on user registration
-   - [ ] Implement password reset flow
-   - [ ] Implement weekly report emails (user opt-in in settings)
-
-3. **Marketing Emails (MailerLite)**
-   - [ ] Create MailerLite account with contact@linkedgrow.ai
-   - [ ] Set up waitlist automation
-   - [ ] Configure welcome sequence for waitlist subscribers
-   - [ ] Add `MAILERLITE_API_KEY` to env vars
-   - [ ] Update `/api/waitlist` to sync with MailerLite
-
-### Pages to Create
-
-- [ ] `/about` - About Us page (founders, mission, trust signals)
-- [ ] Remove About section from homepage once `/about` exists
-
 ### Dashboard Features (In Progress)
 
-- [ ] AI voice training interface
-- [ ] Content calendar view
-- [ ] Analytics dashboard
-- [ ] Weekly report toggle in settings
+-   [ ] Content calendar view
+-   [ ] Analytics dashboard
+-   [ ] Weekly report toggle in settings
 
 ### API Access Feature (Business Plan Only)
 
@@ -328,92 +310,100 @@ Based in Paris, France. LinkedGrow is a product of Vayalis.
 #### Implementation Steps
 
 1. **API Key Management**
-   - [ ] Add `api_keys` table to database schema:
-     ```typescript
-     api_keys: {
-       id: uuid,
-       user_id: uuid (FK),
-       key_hash: string (bcrypt hashed),
-       key_prefix: string (first 8 chars for display),
-       name: string,
-       permissions: string[] (scopes),
-       last_used_at: timestamp,
-       expires_at: timestamp (optional),
-       created_at: timestamp
-     }
-     ```
-   - [ ] Create API key generation UI in dashboard settings
-   - [ ] Implement key rotation (revoke old, create new)
-   - [ ] Display last used timestamp
+
+    - [ ] Add `api_keys` table to database schema:
+        ```typescript
+        api_keys: {
+          id: uuid,
+          user_id: uuid (FK),
+          key_hash: string (bcrypt hashed),
+          key_prefix: string (first 8 chars for display),
+          name: string,
+          permissions: string[] (scopes),
+          last_used_at: timestamp,
+          expires_at: timestamp (optional),
+          created_at: timestamp
+        }
+        ```
+    - [ ] Create API key generation UI in dashboard settings
+    - [ ] Implement key rotation (revoke old, create new)
+    - [ ] Display last used timestamp
 
 2. **API Routes to Expose**
-   - [ ] `POST /api/v1/posts` - Create post
-   - [ ] `GET /api/v1/posts` - List posts
-   - [ ] `GET /api/v1/posts/:id` - Get single post
-   - [ ] `PUT /api/v1/posts/:id` - Update post
-   - [ ] `DELETE /api/v1/posts/:id` - Delete post
-   - [ ] `POST /api/v1/posts/:id/publish` - Publish to LinkedIn
-   - [ ] `POST /api/v1/generate` - AI content generation (uses user's BYOK keys)
-   - [ ] `GET /api/v1/analytics` - Get engagement stats
+
+    - [ ] `POST /api/v1/posts` - Create post
+    - [ ] `GET /api/v1/posts` - List posts
+    - [ ] `GET /api/v1/posts/:id` - Get single post
+    - [ ] `PUT /api/v1/posts/:id` - Update post
+    - [ ] `DELETE /api/v1/posts/:id` - Delete post
+    - [ ] `POST /api/v1/posts/:id/publish` - Publish to LinkedIn
+    - [ ] `POST /api/v1/generate` - AI content generation (uses user's BYOK keys)
+    - [ ] `GET /api/v1/analytics` - Get engagement stats
 
 3. **Authentication Middleware**
-   - [ ] Create `/api/v1/*` route handler with API key auth
-   - [ ] Validate: `Authorization: Bearer lgw_xxxxx`
-   - [ ] Check plan = Business
-   - [ ] Log all API requests for analytics
+    - [ ] Create `/api/v1/*` route handler with API key auth
+    - [ ] Validate: `Authorization: Bearer lgw_xxxxx`
+    - [ ] Check plan = Business
+    - [ ] Log all API requests for analytics
 
 #### Security Measures (CRITICAL)
 
 1. **Rate Limiting** (Prevents abuse and controls costs)
-   - [ ] Install `@upstash/ratelimit` with Redis (Upstash free tier: 10k requests/day)
-   - [ ] Limits per endpoint:
-     - `/api/v1/posts` - 100 requests/minute
-     - `/api/v1/generate` - 20 requests/minute (AI is expensive)
-     - `/api/v1/analytics` - 60 requests/minute
-   - [ ] Return `429 Too Many Requests` with `Retry-After` header
+
+    - [ ] Install `@upstash/ratelimit` with Redis (Upstash free tier: 10k requests/day)
+    - [ ] Limits per endpoint:
+        - `/api/v1/posts` - 100 requests/minute
+        - `/api/v1/generate` - 20 requests/minute (AI is expensive)
+        - `/api/v1/analytics` - 60 requests/minute
+    - [ ] Return `429 Too Many Requests` with `Retry-After` header
 
 2. **API Key Security**
-   - [ ] Never store raw keys - hash with bcrypt
-   - [ ] Generate secure keys: `lgw_` prefix + 32 random bytes (base64)
-   - [ ] Allow max 5 keys per user
-   - [ ] Automatic expiration option (30/60/90 days)
+
+    - [ ] Never store raw keys - hash with bcrypt
+    - [ ] Generate secure keys: `lgw_` prefix + 32 random bytes (base64)
+    - [ ] Allow max 5 keys per user
+    - [ ] Automatic expiration option (30/60/90 days)
 
 3. **Request Validation**
-   - [ ] Validate all inputs with Zod schemas
-   - [ ] Sanitize text content (prevent XSS in post content)
-   - [ ] Max payload size: 1MB
-   - [ ] CORS: Only allow configured domains (user can set in settings)
+
+    - [ ] Validate all inputs with Zod schemas
+    - [ ] Sanitize text content (prevent XSS in post content)
+    - [ ] Max payload size: 1MB
+    - [ ] CORS: Only allow configured domains (user can set in settings)
 
 4. **Audit Logging**
-   - [ ] Log: user_id, endpoint, method, status, ip, timestamp
-   - [ ] Store in `api_logs` table (rotate monthly)
-   - [ ] Show usage dashboard in settings
+
+    - [ ] Log: user_id, endpoint, method, status, ip, timestamp
+    - [ ] Store in `api_logs` table (rotate monthly)
+    - [ ] Show usage dashboard in settings
 
 5. **Scope-Based Permissions**
-   - [ ] `posts:read` - Read posts only
-   - [ ] `posts:write` - Create/update posts
-   - [ ] `posts:publish` - Publish to LinkedIn
-   - [ ] `generate` - AI generation
-   - [ ] `analytics:read` - Read analytics
+    - [ ] `posts:read` - Read posts only
+    - [ ] `posts:write` - Create/update posts
+    - [ ] `posts:publish` - Publish to LinkedIn
+    - [ ] `generate` - AI generation
+    - [ ] `analytics:read` - Read analytics
 
 #### Cost Management (Keeps Server Costs Low)
 
 1. **Why Costs Stay Low:**
-   - AI generation uses USER's BYOK keys (no cost to us)
-   - Database queries are lightweight (Turso is usage-based)
-   - No heavy processing on our servers
-   - Rate limiting prevents abuse
+
+    - AI generation uses USER's BYOK keys (no cost to us)
+    - Database queries are lightweight (Turso is usage-based)
+    - No heavy processing on our servers
+    - Rate limiting prevents abuse
 
 2. **Cost Estimates:**
-   - **Upstash Redis** (rate limiting): Free tier = 10k/day, then ~$0.20/10k
-   - **Vercel API Routes**: Included in Pro plan
-   - **Turso Database**: ~$0.001 per 1M rows read
-   - **Estimated per Business user**: ~$0.50-2/month extra
+
+    - **Upstash Redis** (rate limiting): Free tier = 10k/day, then ~$0.20/10k
+    - **Vercel API Routes**: Included in Pro plan
+    - **Turso Database**: ~$0.001 per 1M rows read
+    - **Estimated per Business user**: ~$0.50-2/month extra
 
 3. **If Costs Become an Issue:**
-   - [ ] Implement usage quotas per plan tier
-   - [ ] Add caching layer (Upstash Redis) for frequent reads
-   - [ ] Consider moving to dedicated API server (only if >1000 Business users)
+    - [ ] Implement usage quotas per plan tier
+    - [ ] Add caching layer (Upstash Redis) for frequent reads
+    - [ ] Consider moving to dedicated API server (only if >1000 Business users)
 
 #### Environment Variables
 
