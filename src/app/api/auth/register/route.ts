@@ -4,9 +4,31 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { sendWelcomeEmail } from "@/lib/email";
+import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 3 registrations per hour per IP
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(
+      `register:${clientIP}`,
+      AUTH_RATE_LIMITS.register
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { name, email, password } = body;
 

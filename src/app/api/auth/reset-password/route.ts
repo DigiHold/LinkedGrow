@@ -4,9 +4,37 @@ import { db } from "@/lib/db";
 import { users, passwordResetTokens } from "@/lib/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
+import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
+
+// Helper to hash token with SHA-256 (same as forgot-password)
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 5 requests per 15 minutes per IP
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(
+      `reset-password:${clientIP}`,
+      AUTH_RATE_LIMITS.resetPassword
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { token, password } = body;
 
@@ -25,10 +53,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash the incoming token to compare with stored hash
+    const tokenHash = hashToken(token);
+
     // Find valid, unused token that hasn't expired
     const resetToken = await db.query.passwordResetTokens.findFirst({
       where: and(
-        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.tokenHash, tokenHash),
         eq(passwordResetTokens.used, false),
         gt(passwordResetTokens.expires, new Date())
       ),
@@ -61,7 +92,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Password has been reset successfully. You can now sign in with your new password.",
+      message:
+        "Password has been reset successfully. You can now sign in with your new password.",
     });
   } catch (error) {
     console.error("Reset password error:", error);
@@ -85,10 +117,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Hash the incoming token to compare with stored hash
+    const tokenHash = hashToken(token);
+
     // Find valid, unused token that hasn't expired
     const resetToken = await db.query.passwordResetTokens.findFirst({
       where: and(
-        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.tokenHash, tokenHash),
         eq(passwordResetTokens.used, false),
         gt(passwordResetTokens.expires, new Date())
       ),

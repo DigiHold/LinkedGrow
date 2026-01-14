@@ -3,14 +3,41 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, passwordResetTokens } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 // Token expiry time (1 hour)
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000;
 
+// Helper to hash token with SHA-256
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 3 requests per hour per IP
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(
+      `forgot-password:${clientIP}`,
+      AUTH_RATE_LIMITS.forgotPassword
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { email } = body;
 
@@ -34,28 +61,36 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({
         success: true,
-        message: "If an account exists with this email, you will receive a password reset link.",
+        message:
+          "If an account exists with this email, you will receive a password reset link.",
       });
     }
 
+    // Invalidate all previous unused tokens for this user
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.userId, user.id));
+
     // Generate secure random token
     const token = randomBytes(32).toString("hex");
+    const tokenHash = hashToken(token);
     const expires = new Date(Date.now() + TOKEN_EXPIRY_MS);
 
-    // Store token in database
+    // Store hashed token in database
     await db.insert(passwordResetTokens).values({
       id: randomBytes(16).toString("hex"),
       userId: user.id,
-      token,
+      tokenHash, // Store hash, not plain token
       expires,
     });
 
-    // Send password reset email
+    // Send password reset email with plain token (user needs it to reset)
     try {
       await sendPasswordResetEmail({
         to: normalizedEmail,
         name: user.name || undefined,
-        resetToken: token,
+        resetToken: token, // Send plain token in email
       });
     } catch (emailError) {
       console.error("Failed to send password reset email:", emailError);
@@ -64,7 +99,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "If an account exists with this email, you will receive a password reset link.",
+      message:
+        "If an account exists with this email, you will receive a password reset link.",
     });
   } catch (error) {
     console.error("Forgot password error:", error);

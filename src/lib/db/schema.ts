@@ -155,12 +155,14 @@ export const waitlist = sqliteTable("waitlist", {
 });
 
 // Password reset tokens table
+// Note: We store a hash of the token, not the token itself
+// This way if the DB is breached, tokens can't be used directly
 export const passwordResetTokens = sqliteTable("password_reset_tokens", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  token: text("token").notNull().unique(),
+  tokenHash: text("token_hash").notNull().unique(), // SHA-256 hash of the token
   expires: integer("expires", { mode: "timestamp" }).notNull(),
   used: integer("used", { mode: "boolean" }).default(false),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
