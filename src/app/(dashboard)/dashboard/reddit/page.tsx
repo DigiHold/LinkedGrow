@@ -200,7 +200,7 @@ What's one change that transformed your work life?`,
               <span className="hidden sm:inline">{s.label}</span>
             </div>
             {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground flex-shrink-0" />
+              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
             )}
           </div>
         ))}
@@ -285,7 +285,7 @@ What's one change that transformed your work life?`,
                   <div className="flex items-start gap-3">
                     <span
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0",
+                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                         selectedHook === index
                           ? "bg-orange-500 text-white"
                           : "bg-gray-100 dark:bg-gray-800"

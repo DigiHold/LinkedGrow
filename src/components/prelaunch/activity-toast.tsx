@@ -150,7 +150,7 @@ export function ActivityToast({ actionText = "joined the waitlist" }: ActivityTo
         >
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-start gap-3">
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
               {currentUser.name.charAt(0)}
             </div>
 
@@ -182,7 +182,7 @@ export function ActivityToast({ actionText = "joined the waitlist" }: ActivityTo
           </div>
 
           {/* Subtle pulse effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl blur-sm -z-10" />
+          <div className="absolute -inset-1 bg-linear-to-r from-cyan-500/20 to-blue-500/20 rounded-xl blur-sm -z-10" />
         </motion.div>
       )}
     </AnimatePresence>

@@ -119,7 +119,7 @@ function UsageLimitBanner({
                 size="sm"
                 className={cn(
                   isLimitReached
-                    ? "bg-gradient-to-r from-linkedin to-purple-600 hover:from-linkedin/90 hover:to-purple-600/90"
+                    ? "bg-linear-to-r from-linkedin to-purple-600 hover:from-linkedin/90 hover:to-purple-600/90"
                     : "bg-amber-600 hover:bg-amber-700"
                 )}
               >
@@ -139,7 +139,7 @@ function LimitReachedOverlay() {
   return (
     <div className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm flex items-center justify-center z-30 rounded-xl">
       <div className="text-center p-8 max-w-md">
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-xl">
+        <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-xl">
           <Lock className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-2xl font-bold mb-3">Monthly Limit Reached</h2>
@@ -399,7 +399,7 @@ What's holding you back from launching?
               <span className="hidden sm:inline">{s.label}</span>
             </div>
             {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground flex-shrink-0" />
+              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
             )}
           </div>
         ))}
@@ -560,7 +560,7 @@ What's holding you back from launching?
                   <div className="flex items-start gap-3">
                     <span
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0",
+                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                         selectedIdea === index
                           ? "bg-linkedin text-white"
                           : "bg-gray-100 dark:bg-gray-800"

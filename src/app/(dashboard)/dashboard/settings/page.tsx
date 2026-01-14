@@ -187,7 +187,7 @@ export default function SettingsPage() {
               ))}
 
             <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">
-              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <p className="text-sm text-blue-700 dark:text-blue-300">
                 Your API keys are encrypted and never shared. You only pay for
                 what you use directly to the provider.

@@ -170,7 +170,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex flex-col">
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-linkedin/10 rounded-full blur-3xl" />
@@ -320,7 +320,7 @@ export default function OnboardingPage() {
               </CardHeader>
               <CardContent className="p-6 sm:p-8">
                 {/* BYOK Benefits Banner */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl p-4 mb-6 border border-green-200/50 dark:border-green-800/50">
+                <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl p-4 mb-6 border border-green-200/50 dark:border-green-800/50">
                   <h4 className="font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center gap-2">
                     <Infinity className="w-4 h-4" />
                     Why Bring Your Own Key?
@@ -418,7 +418,7 @@ export default function OnboardingPage() {
               </CardHeader>
               <CardContent className="p-6 sm:p-8">
                 {/* Image AI Benefits Banner */}
-                <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-xl p-4 mb-6 border border-pink-200/50 dark:border-pink-800/50">
+                <div className="bg-linear-to-r from-pink-50 to-purple-50 dark:from-pink-950/30 dark:to-purple-950/30 rounded-xl p-4 mb-6 border border-pink-200/50 dark:border-pink-800/50">
                   <h4 className="font-semibold text-pink-800 dark:text-pink-300 mb-2 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" />
                     Why Add Image AI?

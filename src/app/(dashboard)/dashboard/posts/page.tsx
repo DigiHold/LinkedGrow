@@ -207,7 +207,7 @@ export default function PostsPage() {
                     <p className="font-medium line-clamp-2">{post.content}</p>
                     <button
                       onClick={() => handleCopy(post.id, post.content)}
-                      className="p-1.5 rounded-md hover:bg-accent flex-shrink-0"
+                      className="p-1.5 rounded-md hover:bg-accent shrink-0"
                     >
                       {copiedId === post.id ? (
                         <Check className="w-4 h-4 text-green-500" />

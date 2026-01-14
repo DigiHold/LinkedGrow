@@ -72,7 +72,7 @@ export function UpgradePrompt({
     return (
       <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-center z-20 rounded-xl">
         <div className="text-center p-8 max-w-md">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-linkedin to-purple-600 flex items-center justify-center mb-6 shadow-lg">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-linkedin to-purple-600 flex items-center justify-center mb-6 shadow-lg">
             <Icon className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2">{featureInfo?.name || "Premium Feature"}</h3>
@@ -92,8 +92,8 @@ export function UpgradePrompt({
 
   if (variant === "inline") {
     return (
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50">
-        <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50">
+        <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
           <Lock className="w-5 h-5 text-amber-600" />
         </div>
         <div className="flex-1">
@@ -120,7 +120,7 @@ export function UpgradePrompt({
       <div className="min-h-[60vh] flex items-center justify-center p-8">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-linkedin via-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-xl">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-linkedin via-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-xl">
               <Crown className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-3xl font-bold mb-3">
@@ -153,7 +153,7 @@ export function UpgradePrompt({
                   key={featureKey}
                   className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-border/50 hover:border-linkedin/30 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center shrink-0">
                     <Icon className="w-5 h-5 text-linkedin" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -235,9 +235,9 @@ export function UpgradePrompt({
   // Card variant (default)
   const Icon = feature ? featureIcons[feature] : Lock;
   return (
-    <div className="bg-gradient-to-br from-linkedin/5 via-purple-500/5 to-pink-500/5 rounded-2xl p-6 border border-linkedin/10 shadow-sm">
+    <div className="bg-linear-to-br from-linkedin/5 via-purple-500/5 to-pink-500/5 rounded-2xl p-6 border border-linkedin/10 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-linkedin to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+        <div className="w-14 h-14 rounded-xl bg-linear-to-br from-linkedin to-purple-600 flex items-center justify-center shrink-0 shadow-lg">
           <Icon className="w-7 h-7 text-white" />
         </div>
         <div className="flex-1">

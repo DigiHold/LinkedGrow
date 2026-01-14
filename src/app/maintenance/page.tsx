@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function MaintenancePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 flex items-center justify-center p-4">
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-linkedin/10 rounded-full blur-3xl" />

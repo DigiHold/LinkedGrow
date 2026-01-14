@@ -309,7 +309,7 @@ export function ImageGeneratorModal({
         {/* Generating Step */}
         {step === "generating" && (
           <div className="text-center py-12">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 animate-pulse">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 animate-pulse">
               <Image className="w-10 h-10 text-white" />
             </div>
             <div className="flex items-center justify-center gap-2 mb-3">

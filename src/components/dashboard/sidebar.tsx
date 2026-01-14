@@ -128,7 +128,7 @@ export function Sidebar() {
               isCollapsed && "lg:justify-center"
             )}
           >
-            <div className="w-9 h-9 rounded-lg bg-linkedin-gradient flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-linkedin-gradient flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 379 230" className="w-5 h-5 text-white" fill="currentColor">
                 <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
               </svg>
@@ -182,7 +182,7 @@ export function Sidebar() {
               >
                 <item.icon
                   className={cn(
-                    "w-5 h-5 flex-shrink-0",
+                    "w-5 h-5 shrink-0",
                     isActive && "text-linkedin"
                   )}
                 />
@@ -207,7 +207,7 @@ export function Sidebar() {
               isCollapsed && "lg:justify-center lg:p-2"
             )}
           >
-            <div className="w-9 h-9 rounded-full bg-linkedin/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-linkedin/20 flex items-center justify-center shrink-0">
               <User className="w-5 h-5 text-linkedin" />
             </div>
             {!isCollapsed && (

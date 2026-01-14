@@ -70,13 +70,13 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
       {/* Background matching prelaunch page */}
-      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-cyan-50/30 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+      <div className="fixed inset-0 bg-linear-to-br from-slate-50 via-cyan-50/30 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
 
       {/* Animated gradient orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-gradient-to-r from-cyan-400/30 to-blue-400/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-gradient-to-r from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cyan-300/10 to-blue-300/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-linear-to-r from-cyan-400/30 to-blue-400/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-linear-to-r from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-linear-to-r from-cyan-300/10 to-blue-300/10 rounded-full blur-3xl" />
       </div>
 
       {/* Grid pattern overlay */}
@@ -91,18 +91,18 @@ export default function SignUpPage() {
         {/* Glassmorphism Card */}
         <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
           {/* Top gradient accent */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-cyan-500 to-blue-600" />
 
           {/* Header */}
           <div className="p-8 pb-6 text-center">
             <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6 group">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-xl group-hover:shadow-cyan-500/40 transition-all group-hover:scale-105">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-xl group-hover:shadow-cyan-500/40 transition-all group-hover:scale-105">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 379 230" className="w-7 h-7 text-white" fill="currentColor">
                   <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
                 </svg>
               </div>
               <span className="text-2xl font-bold font-display flex gap-[0.07rem] text-slate-900 dark:text-white">
-                Linked<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Grow</span>
+                Linked<span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Grow</span>
               </span>
             </Link>
             <h1 className="text-[2rem] font-bold text-slate-900 dark:text-white mb-2">Create your account</h1>
@@ -215,7 +215,7 @@ export default function SignUpPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-14 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 mt-2"
+                className="w-full h-14 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-base shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 mt-2"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

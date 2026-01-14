@@ -72,7 +72,7 @@ export function FeatureGate({
     <div className="min-h-[70vh] flex items-center justify-center p-6">
       <div className="max-w-xl w-full">
         {/* Main CTA Card */}
-        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-200/50 dark:border-gray-700/50 text-center relative overflow-hidden">
+        <div className="bg-linear-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-200/50 dark:border-gray-700/50 text-center relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-linkedin/10 rounded-full blur-3xl" />
@@ -81,7 +81,7 @@ export function FeatureGate({
 
           <div className="relative z-10">
             {/* Icon */}
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-linkedin via-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-xl">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-linkedin via-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-xl">
               <Icon className="w-10 h-10 text-white" />
             </div>
 
@@ -116,7 +116,7 @@ export function FeatureGate({
                       key={featureKey}
                       className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400"
                     >
-                      <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                      <Check className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate">{FEATURE_INFO[featureKey].name}</span>
                     </div>
                   ))}
@@ -141,7 +141,7 @@ export function FeatureGate({
 
         {/* Feature Preview (blurred) */}
         <div className="mt-8 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent z-10 rounded-xl" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent z-10 rounded-xl" />
           <div className="blur-sm opacity-50 pointer-events-none bg-accent/30 rounded-xl p-6 h-48">
             {/* Placeholder preview content */}
             <div className="space-y-3">

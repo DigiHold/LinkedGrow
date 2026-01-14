@@ -255,7 +255,7 @@ function CalendarContent() {
                     key={post.id}
                     className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-linkedin" />
                     </div>
                     <div className="flex-1 min-w-0">

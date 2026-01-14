@@ -113,7 +113,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">11. Governing Law</h2>
               <p className="text-muted-foreground mb-4">
-                These Terms shall be governed by and construed in accordance with the laws of Switzerland, without regard to its conflict of law provisions.
+                These Terms shall be governed by and construed in accordance with the laws of France, without regard to its conflict of law provisions.
               </p>
             </section>
 

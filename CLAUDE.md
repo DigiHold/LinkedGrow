@@ -277,7 +277,7 @@ Main landing page at `/` with full marketing sections
 - **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
 - **Maria Lecocq** - Operations & Community
 
-Based in Montreux, Switzerland. LinkedGrow is a product of DigiHold.
+Based in Paris, France. LinkedGrow is a product of Vayalis.
 
 ## Related Projects
 

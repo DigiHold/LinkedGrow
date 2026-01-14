@@ -152,7 +152,7 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
             rotate: [0, 5, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-[8%] w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#0A66C2] to-[#004182] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
+          className="absolute top-20 left-[8%] w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-linear-to-br from-[#0A66C2] to-[#004182] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
         >
           <svg className="w-7 h-7 md:w-8 md:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
@@ -194,7 +194,7 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
             x: [0, 12, 0]
           }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="absolute bottom-36 left-[12%] w-11 h-11 md:w-13 md:h-13 rounded-full bg-gradient-to-br from-[#4285F4] via-[#9B72CB] to-[#D96570] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
+          className="absolute bottom-36 left-[12%] w-11 h-11 md:w-13 md:h-13 rounded-full bg-linear-to-br from-[#4285F4] via-[#9B72CB] to-[#D96570] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
         >
           <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 65 65" fill="white">
             <path d="M32.447 0c.68 0 1.273.465 1.439 1.125a38.904 38.904 0 001.999 5.905c2.152 5 5.105 9.376 8.854 13.125 3.751 3.75 8.126 6.703 13.125 8.855a38.98 38.98 0 005.906 1.999c.66.166 1.124.758 1.124 1.438 0 .68-.464 1.273-1.125 1.439a38.902 38.902 0 00-5.905 1.999c-5 2.152-9.375 5.105-13.125 8.854-3.749 3.751-6.702 8.126-8.854 13.125a38.973 38.973 0 00-2 5.906 1.485 1.485 0 01-1.438 1.124c-.68 0-1.272-.464-1.438-1.125a38.913 38.913 0 00-2-5.905c-2.151-5-5.103-9.375-8.854-13.125-3.75-3.749-8.125-6.702-13.125-8.854a38.973 38.973 0 00-5.905-2A1.485 1.485 0 010 32.448c0-.68.465-1.272 1.125-1.438a38.903 38.903 0 005.905-2c5-2.151 9.376-5.104 13.125-8.854 3.75-3.749 6.703-8.125 8.855-13.125a38.972 38.972 0 001.999-5.905A1.485 1.485 0 0132.447 0z"/>
@@ -344,7 +344,7 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="relative">
               <motion.div
-                className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-2xl opacity-20 blur-lg"
+                className="absolute -inset-1 bg-linear-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-2xl opacity-20 blur-lg"
                 animate={{ opacity: [0.2, 0.4, 0.2] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
@@ -360,7 +360,7 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="h-16 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 shrink-0"
+                  className="h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 shrink-0"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{translations.hero.cta} <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
@@ -400,7 +400,7 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + i * 0.1, type: "spring" }}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-sm font-bold shadow-lg"
+                className="w-11 h-11 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-sm font-bold shadow-lg"
                 style={{ zIndex: 5 - i }}
               >
                 {letter}
@@ -481,7 +481,7 @@ function DemoPreview() {
       content: (
         <div className="space-y-4">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
@@ -490,7 +490,7 @@ function DemoPreview() {
             </div>
           </div>
           <div className="relative">
-            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-linear-to-b from-cyan-500 to-blue-600 rounded-full" />
             <div className="pl-4 space-y-2">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
                 I quit my $200K job to build a SaaS.
@@ -584,7 +584,7 @@ function DemoPreview() {
                     <div
                       className={`w-full rounded-t transition-all ${
                         d.h === 100
-                          ? "bg-gradient-to-t from-cyan-500 to-blue-500"
+                          ? "bg-linear-to-t from-cyan-500 to-blue-500"
                           : d.h > 60
                           ? "bg-cyan-400/60 dark:bg-cyan-600/60"
                           : "bg-slate-300 dark:bg-slate-600"
@@ -621,7 +621,7 @@ function DemoPreview() {
       transition={{ delay: 0.4, duration: 0.8 }}
       className="relative"
     >
-      <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
+      <div className="absolute -inset-4 bg-linear-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
 
       <div className="relative bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
         <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
@@ -654,7 +654,7 @@ function DemoPreview() {
                 }}
                 className={`flex-1 px-3 py-2.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 ${
                   activeTab === tab
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                    ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -733,7 +733,7 @@ function PainPointsSection({ translations }: { translations: PrelaunchTranslatio
             initial={{ scale: 0 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 mb-6"
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-red-500 to-orange-500 mb-6"
           >
             <X className="w-8 h-8 text-white" />
           </motion.div>
@@ -757,23 +757,23 @@ function PainPointsSection({ translations }: { translations: PrelaunchTranslatio
               className="group relative"
             >
               {/* Animated background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${pain.color} opacity-0 group-hover:opacity-10 rounded-3xl blur-xl transition-all duration-500`} />
+              <div className={`absolute inset-0 bg-linear-to-br ${pain.color} opacity-0 group-hover:opacity-10 rounded-3xl blur-xl transition-all duration-500`} />
 
               {/* Card */}
               <div className="relative h-full bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden group-hover:border-red-300 dark:group-hover:border-red-800 transition-all">
                 {/* Large stat in background */}
-                <div className={`absolute -top-4 -right-4 text-8xl font-black bg-gradient-to-br ${pain.color} bg-clip-text text-transparent opacity-10`}>
+                <div className={`absolute -top-4 -right-4 text-8xl font-black bg-linear-to-br ${pain.color} bg-clip-text text-transparent opacity-10`}>
                   {pain.stat.replace("+", "").replace("/year", "").replace(" hours", "h")}
                 </div>
 
                 {/* Icon */}
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${pain.color} flex items-center justify-center mb-6 transform group-hover:scale-110 group-hover:rotate-3 transition-all`}>
+                <div className={`w-14 h-14 rounded-2xl bg-linear-to-br ${pain.color} flex items-center justify-center mb-6 transform group-hover:scale-110 group-hover:rotate-3 transition-all`}>
                   <pain.icon className="w-7 h-7 text-white" />
                 </div>
 
                 {/* Stat Badge */}
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r ${pain.color} bg-opacity-10 mb-4`}>
-                  <span className={`text-sm font-bold bg-gradient-to-r ${pain.color} bg-clip-text text-transparent`}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-linear-to-r ${pain.color} bg-opacity-10 mb-4`}>
+                  <span className={`text-sm font-bold bg-linear-to-r ${pain.color} bg-clip-text text-transparent`}>
                     {pain.stat}
                   </span>
                 </div>
@@ -801,7 +801,7 @@ function PainPointsSection({ translations }: { translations: PrelaunchTranslatio
             onClick={() => {
               document.getElementById("features-section")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="inline-flex items-center gap-4 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 hover:from-emerald-500/20 hover:to-cyan-500/20 hover:border-emerald-500/40 transition-all cursor-pointer group"
+            className="inline-flex items-center gap-4 px-6 py-3 rounded-full bg-linear-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 hover:from-emerald-500/20 hover:to-cyan-500/20 hover:border-emerald-500/40 transition-all cursor-pointer group"
           >
             <Sparkles className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform" />
             <span className="text-lg font-semibold text-slate-700 dark:text-slate-300">
@@ -877,7 +877,7 @@ function BentoFeatures({ translations }: { translations: PrelaunchTranslations }
   return (
     <div className="relative">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-linear-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -891,14 +891,14 @@ function BentoFeatures({ translations }: { translations: PrelaunchTranslations }
             whileHover={{ y: -8, scale: 1.02 }}
             className="group relative"
           >
-            <div className={`absolute -inset-0.5 bg-gradient-to-r ${feature.iconBg} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500`} />
+            <div className={`absolute -inset-0.5 bg-linear-to-r ${feature.iconBg} rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-500`} />
 
             <div className="relative h-full bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden">
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.iconBg} opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-150 transition-transform duration-500`} />
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${feature.iconBg} opacity-5 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-150 transition-transform duration-500`} />
 
               <div className="relative mb-5">
-                <div className={`absolute inset-0 w-14 h-14 rounded-xl bg-gradient-to-br ${feature.iconBg} opacity-20 blur-lg group-hover:blur-xl transition-all`} />
-                <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${feature.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                <div className={`absolute inset-0 w-14 h-14 rounded-xl bg-linear-to-br ${feature.iconBg} opacity-20 blur-lg group-hover:blur-xl transition-all`} />
+                <div className={`relative w-14 h-14 rounded-xl bg-linear-to-br ${feature.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
                   <feature.icon className="w-7 h-7 text-white" />
                 </div>
               </div>
@@ -912,14 +912,14 @@ function BentoFeatures({ translations }: { translations: PrelaunchTranslations }
 
               {feature.stat && (
                 <div className="flex items-baseline gap-2">
-                  <span className={`text-3xl font-black bg-gradient-to-r ${feature.iconBg} bg-clip-text text-transparent`}>
+                  <span className={`text-3xl font-black bg-linear-to-r ${feature.iconBg} bg-clip-text text-transparent`}>
                     {feature.stat}
                   </span>
                   <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{feature.statLabel}</span>
                 </div>
               )}
               {feature.highlight && (
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r ${feature.iconBg} text-white text-sm font-semibold shadow-lg`}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-linear-to-r ${feature.iconBg} text-white text-sm font-semibold shadow-lg`}>
                   <Zap className="w-4 h-4" />
                   {feature.highlight}
                 </div>
@@ -978,7 +978,7 @@ function HowItWorks({ translations }: { translations: PrelaunchTranslations }) {
       <div className="hidden lg:block">
         <div className="absolute top-[60px] left-0 right-0 h-1 bg-slate-200 dark:bg-slate-800">
           <motion.div
-            className="h-full bg-gradient-to-r from-amber-500 via-cyan-500 via-violet-500 to-emerald-500"
+            className="h-full bg-linear-to-r from-amber-500 via-cyan-500 via-violet-500 to-emerald-500"
             initial={{ width: "0%" }}
             whileInView={{ width: "100%" }}
             viewport={{ once: true }}
@@ -1003,14 +1003,14 @@ function HowItWorks({ translations }: { translations: PrelaunchTranslations }) {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2 + 0.3, type: "spring", stiffness: 200 }}
               >
-                <div className={`relative w-[120px] h-[120px] rounded-full bg-gradient-to-br ${step.color} p-1 shadow-xl`}>
+                <div className={`relative w-[120px] h-[120px] rounded-full bg-linear-to-br ${step.color} p-1 shadow-xl`}>
                   <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center">
-                    <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                    <div className={`w-20 h-20 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center`}>
                       <step.icon className="w-10 h-10 text-white" />
                     </div>
                   </div>
                 </div>
-                <div className={`absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+                <div className={`absolute -top-2 -right-2 w-10 h-10 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
                   {step.number}
                 </div>
               </motion.div>
@@ -1030,7 +1030,7 @@ function HowItWorks({ translations }: { translations: PrelaunchTranslations }) {
 
       {/* Mobile: Vertical timeline */}
       <div className="lg:hidden relative">
-        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-500 via-cyan-500 via-violet-500 to-emerald-500" />
+        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-amber-500 via-cyan-500 via-violet-500 to-emerald-500" />
 
         <div className="space-y-8">
           {steps.map((step, i) => (
@@ -1042,13 +1042,13 @@ function HowItWorks({ translations }: { translations: PrelaunchTranslations }) {
               transition={{ delay: i * 0.1, duration: 0.5 }}
               className="relative pl-20"
             >
-              <div className={`absolute left-0 top-0 w-16 h-16 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}>
+              <div className={`absolute left-0 top-0 w-16 h-16 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center shadow-lg`}>
                 <step.icon className="w-8 h-8 text-white" />
               </div>
 
               <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <span className={`text-2xl font-black bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
+                  <span className={`text-2xl font-black bg-linear-to-r ${step.color} bg-clip-text text-transparent`}>
                     {step.number}
                   </span>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">{step.title}</h3>
@@ -1071,7 +1071,7 @@ function HowItWorks({ translations }: { translations: PrelaunchTranslations }) {
         transition={{ delay: 0.8 }}
         className="mt-12 flex justify-center"
       >
-        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xl shadow-cyan-500/30">
+        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-xl shadow-cyan-500/30">
           <Rocket className="w-5 h-5" />
           <span className="font-bold">Total setup time: ~10 minutes</span>
         </div>
@@ -1096,7 +1096,7 @@ function ComparisonSection() {
   ];
 
   return (
-    <section className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
+    <section className="relative z-10 py-20 md:py-28 px-4 bg-linear-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <motion.div
@@ -1109,7 +1109,7 @@ function ComparisonSection() {
             initial={{ scale: 0 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 mb-6"
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 mb-6"
           >
             <Award className="w-8 h-8 text-white" />
           </motion.div>
@@ -1129,7 +1129,7 @@ function ComparisonSection() {
           className="relative"
         >
           {/* Background glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-transparent to-red-500/10 rounded-3xl blur-3xl" />
+          <div className="absolute inset-0 bg-linear-to-r from-cyan-500/10 via-transparent to-red-500/10 rounded-3xl blur-3xl" />
 
           <div className="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
             {/* Desktop: Table layout */}
@@ -1138,7 +1138,7 @@ function ComparisonSection() {
               <div className="grid grid-cols-3 gap-4 p-6 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                 <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">Feature</div>
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold shadow-lg">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold shadow-lg">
                     <Crown className="w-4 h-4" />
                     LinkedGrow
                   </div>
@@ -1199,7 +1199,7 @@ function ComparisonSection() {
               {/* Header */}
               <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold shadow-lg">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold shadow-lg">
                     <Crown className="w-3 h-3" />
                     LinkedGrow
                   </div>
@@ -1261,12 +1261,12 @@ function ComparisonSection() {
             </div>
 
             {/* Bottom CTA */}
-            <div className="p-6 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border-t border-slate-200 dark:border-slate-700">
+            <div className="p-6 bg-linear-to-r from-cyan-500/5 to-blue-500/5 border-t border-slate-200 dark:border-slate-700">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
                     {["A", "B", "C"].map((l) => (
-                      <div key={l} className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs font-bold">
+                      <div key={l} className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs font-bold">
                         {l}
                       </div>
                     ))}
@@ -1306,8 +1306,8 @@ function TestimonialsCarousel() {
 
   return (
     <div className="relative overflow-hidden py-4">
-      <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-linear-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-linear-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
 
       {[0, 1, 2].map((rowIndex) => (
         <motion.div
@@ -1319,7 +1319,7 @@ function TestimonialsCarousel() {
           {[...testimonials, ...testimonials, ...testimonials].map((t, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[380px] bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50"
+              className="shrink-0 w-[280px] sm:w-[320px] md:w-[380px] bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50"
             >
               <div className="flex items-center gap-1 mb-3">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -1329,7 +1329,7 @@ function TestimonialsCarousel() {
               <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
+                  <div className={`w-10 h-10 rounded-full bg-linear-to-br ${
                     rowIndex === 0 ? "from-cyan-500 to-blue-600" :
                     rowIndex === 1 ? "from-violet-500 to-purple-600" :
                     "from-emerald-500 to-teal-600"
@@ -1406,7 +1406,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
   return (
     <div className="relative">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-cyan-500/10 via-violet-500/10 to-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-linear-to-r from-cyan-500/10 via-violet-500/10 to-emerald-500/10 rounded-full blur-3xl" />
       </div>
 
       <motion.div
@@ -1433,10 +1433,10 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
             onClick={() => setShowAllPlans(true)}
             className="w-full group"
           >
-            <div className="relative bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 rounded-2xl p-8 border-2 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20 hover:shadow-2xl hover:shadow-violet-500/30 transition-all">
+            <div className="relative bg-linear-to-br from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 rounded-2xl p-8 border-2 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20 hover:shadow-2xl hover:shadow-violet-500/30 transition-all">
               {/* Badge */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <div className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
+                <div className="px-4 py-1 rounded-full bg-linear-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
                   Early Access Pricing
                 </div>
               </div>
@@ -1481,7 +1481,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
               >
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                    <div className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
+                    <div className="px-4 py-1 rounded-full bg-linear-to-r from-violet-500 to-purple-600 text-white text-xs font-bold shadow-lg">
                       {plan.badge}
                     </div>
                   </div>
@@ -1489,7 +1489,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
 
                 <div className={`relative h-full rounded-2xl p-6 border-2 transition-all ${
                   plan.highlight
-                    ? "bg-gradient-to-b from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20"
+                    ? "bg-linear-to-b from-violet-50 to-white dark:from-violet-950/50 dark:to-slate-900 border-violet-300 dark:border-violet-700 shadow-xl shadow-violet-500/20"
                     : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                 }`}>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{plan.name}</h3>
@@ -1522,7 +1522,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-                        <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.highlight ? "text-violet-500" : "text-emerald-500"}`} />
+                        <Check className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlight ? "text-violet-500" : "text-emerald-500"}`} />
                         {feature}
                       </li>
                     ))}
@@ -1570,12 +1570,12 @@ function HeroVideoSection() {
     >
       <div className="relative">
         {/* Glow effect */}
-        <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
+        <div className="absolute -inset-4 bg-linear-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
 
         {/* Video container */}
         <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
           {!isPlaying ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-slate-800 to-slate-900">
               {/* Thumbnail placeholder */}
               <div className="absolute inset-0 bg-[url('/video-thumbnail.jpg')] bg-cover bg-center opacity-50" />
 
@@ -1584,8 +1584,8 @@ function HeroVideoSection() {
                 onClick={() => setIsPlaying(true)}
                 className="relative z-10 group"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
                   <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
                 </div>
               </button>
@@ -1692,7 +1692,7 @@ function FAQSection({ translations }: { translations: PrelaunchTranslations }) {
             >
               <div className="flex items-center justify-between gap-4">
                 <h3 className="font-semibold text-slate-900 dark:text-white text-left">{faq.q}</h3>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform flex-shrink-0 ${openIndex === i ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform shrink-0 ${openIndex === i ? "rotate-180" : ""}`} />
               </div>
               <AnimatePresence>
                 {openIndex === i && (
@@ -1755,7 +1755,7 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="relative">
-        {isDark && <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
+        {isDark && <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
         <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
           <input
             type="email"
@@ -1768,7 +1768,7 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-14 md:h-16 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0"
+            className="h-14 md:h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
@@ -1787,7 +1787,7 @@ function CTASection(props: CTAProps) {
   return (
     <section className="relative z-10 py-20 md:py-28 px-4 overflow-hidden">
       {/* Full width gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-violet-600" />
+      <div className="absolute inset-0 bg-linear-to-r from-cyan-600 via-blue-600 to-violet-600" />
 
       {/* Animated shapes */}
       <motion.div animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-10 left-[10%] w-32 h-32 rounded-full bg-white/10" />
@@ -1937,12 +1937,12 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-100/30 dark:from-cyan-900/10 via-transparent to-transparent" />
-        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-linear-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-linear-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Urgency Banner */}
-      <div className="relative z-20 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-3 px-4 border-b border-slate-700">
+      <div className="relative z-20 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-3 px-4 border-b border-slate-700">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
           <div className="flex items-center gap-2">
             <Gift className="w-5 h-5 text-cyan-400" />
@@ -1970,7 +1970,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       <PainPointsSection translations={translations} />
 
       {/* Features Bento Grid */}
-      <section id="features-section" className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
+      <section id="features-section" className="relative z-10 py-20 md:py-28 px-4 bg-linear-to-b from-transparent via-cyan-50/50 dark:via-cyan-950/20 to-transparent">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1982,7 +1982,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-6"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500 to-teal-500 mb-6"
             >
               <Sparkles className="w-8 h-8 text-white" />
             </motion.div>
@@ -2056,7 +2056,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 mb-6"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-violet-500 to-purple-500 mb-6"
             >
               <Gift className="w-8 h-8 text-white" />
             </motion.div>
@@ -2073,7 +2073,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       </section>
 
       {/* FAQ Section */}
-      <section className="relative z-10 py-20 md:py-28 px-4 bg-gradient-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
+      <section className="relative z-10 py-20 md:py-28 px-4 bg-linear-to-b from-transparent via-slate-100/50 dark:via-slate-900/50 to-transparent">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

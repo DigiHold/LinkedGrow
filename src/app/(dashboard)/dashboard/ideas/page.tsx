@@ -242,7 +242,7 @@ export default function IdeasPage() {
       </div>
 
       {/* Trending Section */}
-      <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border-yellow-200 dark:border-yellow-800">
+      <Card className="bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border-yellow-200 dark:border-yellow-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
             <TrendingUp className="w-5 h-5" />

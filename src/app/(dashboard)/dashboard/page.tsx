@@ -138,7 +138,7 @@ export default function DashboardPage() {
                   key={i}
                   className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                   key={i}
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center shrink-0">
                     <Calendar className="w-5 h-5 text-linkedin" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                       {item.day} at {item.time}
                     </p>
                   </div>
-                  <TrendingUp className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <TrendingUp className="w-4 h-4 text-green-500 shrink-0" />
                 </div>
               ))}
             </div>
@@ -216,7 +216,7 @@ export default function DashboardPage() {
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-linkedin/10 flex items-center justify-center shrink-0">
                 <Zap className="w-5 h-5 text-linkedin" />
               </div>
               <div>

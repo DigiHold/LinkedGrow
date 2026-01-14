@@ -93,7 +93,7 @@ export default function CookiesClient({ translations }: { translations: CookiesT
                   <div className="space-y-2">
                     {category.cookies.map((cookie, i) => (
                       <div key={i} className="flex items-start gap-3 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-2 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-2 shrink-0" />
                         <div>
                           <span className="font-medium">{cookie.name}:</span>{" "}
                           <span className="text-muted-foreground">{cookie.purpose}</span>

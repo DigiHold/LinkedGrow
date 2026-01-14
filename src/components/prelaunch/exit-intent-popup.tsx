@@ -92,7 +92,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
           >
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
               {/* Header gradient */}
-              <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-6 text-white relative overflow-hidden">
+              <div className="bg-linear-to-r from-cyan-500 to-blue-600 p-6 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.2),transparent)]" />
 
                 <button
@@ -157,7 +157,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-cyan-500/30 transition-all"
+                        className="w-full py-3 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-cyan-500/30 transition-all"
                       >
                         {isLoading ? (
                           <span className="flex items-center gap-2">
