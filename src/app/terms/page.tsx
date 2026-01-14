@@ -3,8 +3,33 @@ import Link from "next/link";
 import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | LinkedGrow",
-  description: "Terms of Service for LinkedGrow - AI-powered LinkedIn content platform",
+  title: "Terms of Service - LinkedGrow",
+  description:
+    "Read the Terms of Service for LinkedGrow, the AI-powered LinkedIn content platform. Understand your rights and responsibilities.",
+  keywords: [
+    "LinkedGrow",
+    "terms of service",
+    "terms and conditions",
+    "user agreement",
+    "legal",
+  ],
+  openGraph: {
+    title: "Terms of Service - LinkedGrow",
+    description:
+      "Read the Terms of Service for LinkedGrow, the AI-powered LinkedIn content platform.",
+    url: "https://linkedgrow.ai/terms",
+    siteName: "LinkedGrow",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Terms of Service - LinkedGrow",
+    description:
+      "Read the Terms of Service for LinkedGrow, the AI-powered LinkedIn content platform.",
+  },
+  alternates: {
+    canonical: "https://linkedgrow.ai/terms",
+  },
 };
 
 export default function TermsPage() {

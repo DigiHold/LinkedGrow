@@ -303,6 +303,10 @@ Based in Paris, France. LinkedGrow is a product of Vayalis.
 -   [ ] Analytics dashboard
 -   [ ] Weekly report toggle in settings
 
+### Transactional Emails (AWS SES)
+
+-   [ ] Weekly report email - automated email sent to users with their LinkedIn performance stats
+
 ### API Access Feature (Business Plan Only)
 
 **Overview:** Allow Business plan users to access LinkedGrow functionality via REST API.

@@ -3,6 +3,7 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,11 @@ export async function POST(request: NextRequest) {
       twoFactorEnabled: false,
       createdAt: new Date(),
       updatedAt: new Date(),
+    });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail({ to: email, name: name || undefined }).catch((err) => {
+      console.error("Failed to send welcome email:", err);
     });
 
     return NextResponse.json({

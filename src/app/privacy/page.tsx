@@ -4,8 +4,33 @@ import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | LinkedGrow",
-  description: "Learn how LinkedGrow collects, uses, and protects your personal information.",
+  title: "Privacy Policy - LinkedGrow",
+  description:
+    "Learn how LinkedGrow collects, uses, and protects your personal information. Read our comprehensive privacy policy.",
+  keywords: [
+    "LinkedGrow",
+    "privacy policy",
+    "data protection",
+    "GDPR",
+    "personal information",
+  ],
+  openGraph: {
+    title: "Privacy Policy - LinkedGrow",
+    description:
+      "Learn how LinkedGrow collects, uses, and protects your personal information.",
+    url: "https://linkedgrow.ai/privacy",
+    siteName: "LinkedGrow",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Privacy Policy - LinkedGrow",
+    description:
+      "Learn how LinkedGrow collects, uses, and protects your personal information.",
+  },
+  alternates: {
+    canonical: "https://linkedgrow.ai/privacy",
+  },
 };
 
 export default async function PrivacyPage() {
