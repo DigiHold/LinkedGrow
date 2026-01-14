@@ -95,8 +95,7 @@ function SignInForm() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {!requires2FA ? (
               <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+                <div>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
                     <input
@@ -110,13 +109,7 @@ function SignInForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-                    <Link href="/forgot-password" className="text-sm text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-medium">
-                      Forgot password?
-                    </Link>
-                  </div>
+                <div>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
                     <input
@@ -134,6 +127,11 @@ function SignInForm() {
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
+                  </div>
+                  <div className="text-right mt-2">
+                    <Link href="/forgot-password" className="text-sm text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-medium">
+                      Forgot password?
+                    </Link>
                   </div>
                 </div>
               </>
