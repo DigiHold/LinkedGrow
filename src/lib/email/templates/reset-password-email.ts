@@ -11,7 +11,6 @@ export function resetPasswordEmailTemplate({
   expiresIn = "1 hour",
 }: ResetPasswordEmailParams): string {
   const greeting = name ? `Hey ${name}!` : "Hey there!";
-  const title = `${greeting} Reset your password`;
 
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -107,7 +106,7 @@ export function resetPasswordEmailTemplate({
                                     </tr>
                                     <tr>
                                         <td class="row" style="padding: 0 50px;">
-                                            <h1 style="font-family: 'Inter', sans-serif; color: #0F172B; font-size: 36px; line-height: 125%; font-weight: bold; margin-bottom: 0;">${title}</h1>
+                                            <h1 style="font-family: 'Inter', sans-serif; color: #0F172B; font-size: 36px; line-height: 125%; font-weight: bold; margin-bottom: 0;">${greeting}</h1>
                                         </td>
                                     </tr>
                                 </table>
@@ -340,9 +339,8 @@ export function resetPasswordEmailText({
   expiresIn = "1 hour",
 }: ResetPasswordEmailParams): string {
   const greeting = name ? `Hey ${name}!` : "Hey there!";
-  const title = `${greeting} Reset your password`;
 
-  return `${title}
+  return `${greeting}
 
 We received a request to reset the password for your LinkedGrow account.
 
