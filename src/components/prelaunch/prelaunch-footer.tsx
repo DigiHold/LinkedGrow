@@ -106,9 +106,6 @@ export function PrelaunchFooter() {
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Cookie
             </Link>
-            <Link href="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Legal
-            </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
             </a>
@@ -146,9 +143,6 @@ export function PrelaunchFooter() {
             </Link>
             <Link href="/cookies" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Cookie
-            </Link>
-            <Link href="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-              Legal
             </Link>
             <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               Contact
