@@ -200,11 +200,11 @@ export function welcomeEmailTemplate({ name }: WelcomeEmailParams): string {
                                     </tr>
                                 </table>
 
-                                <!-- Signature - Nicolas & Maria -->
+                                <!-- Photos -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="180" style="display: block;">
+                                            <img src="https://linkedgrow.ai/images/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -212,11 +212,11 @@ export function welcomeEmailTemplate({ name }: WelcomeEmailParams): string {
                                     </tr>
                                 </table>
 
-                                <!-- Photos -->
+                                <!-- Signature - Nicolas & Maria -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="280" style="display: block;">
+                                            <img src="https://linkedgrow.ai/images/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
                                         </td>
                                     </tr>
                                     <tr>
