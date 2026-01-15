@@ -323,13 +323,27 @@ export default function SettingsPage() {
     }, 500);
   };
 
-  const handleDisconnectLinkedIn = () => {
-    // Clear LinkedIn cookies
-    document.cookie = "linkedin_connected=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie = "linkedin_profile_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    setLinkedInConnected(false);
-    setLinkedInName("");
-    setLinkedInMessage({ type: "success", text: "LinkedIn disconnected successfully" });
+  const handleDisconnectLinkedIn = async () => {
+    try {
+      const response = await fetch("/api/linkedin/disconnect", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to disconnect");
+      }
+
+      // Clear local state
+      setLinkedInConnected(false);
+      setLinkedInName("");
+      setLinkedInMessage({ type: "success", text: "LinkedIn disconnected successfully" });
+    } catch (error) {
+      setLinkedInMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to disconnect LinkedIn",
+      });
+    }
   };
 
   return (
@@ -399,9 +413,8 @@ export default function SettingsPage() {
                 </div>
               </div>
               <Button
-                variant="outline"
                 onClick={handleDisconnectLinkedIn}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                className="bg-red-600 hover:bg-red-700 text-white border-0"
               >
                 Disconnect
               </Button>
