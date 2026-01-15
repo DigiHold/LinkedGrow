@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { decrypt } from "@/lib/encryption";
+import { auth } from "@/lib/auth";
+import { db, users } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import { decryptApiKey } from "@/lib/encryption";
 
 // Generate hooks using AI
 async function generateHooks(
@@ -103,7 +103,7 @@ Return ONLY a JSON array of 5 strings, no other text. Example:
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -117,13 +117,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's AI settings
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        aiApiKey: true,
-        aiProvider: true,
-        aiModel: true,
-      },
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
     });
 
     if (!user?.aiApiKey) {
@@ -131,7 +126,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Decrypt the API key
-    const apiKey = decrypt(user.aiApiKey);
+    const apiKey = decryptApiKey(user.aiApiKey);
+    if (!apiKey) {
+      return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
+    }
 
     // Generate hooks using AI
     const hooks = await generateHooks(
