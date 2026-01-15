@@ -15,17 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 
 const navigation = [
@@ -86,6 +78,8 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -103,7 +97,19 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleSignOut = async () => {
+    setIsUserMenuOpen(false);
     await signOut({ callbackUrl: "/" });
   };
 
@@ -223,52 +229,61 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Section with Dropdown */}
-        <div className="p-3 border-t border-border">
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
-                  isCollapsed && "lg:justify-center lg:p-2"
-                )}
-              >
-                <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
-                  {userInitials}
-                </div>
-                {!isCollapsed && (
-                  <>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-medium truncate">{userName}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {userPlan}
-                      </p>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                  </>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{userName}</p>
-                <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+        {/* User Section with Custom Menu */}
+        <div className="p-3 border-t border-border relative" ref={userMenuRef}>
+          {/* Menu popup - appears above the button */}
+          {isUserMenuOpen && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-gray-900 rounded-lg border border-border shadow-lg overflow-hidden z-50">
+              <div className="px-3 py-2 border-b border-border">
+                <p className="text-sm font-medium truncate">{userName}</p>
+                <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleSignOut}
-                className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  router.push("/dashboard/settings");
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
                 Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </button>
+            </div>
+          )}
+
+          {/* User button */}
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className={cn(
+              "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
+              isCollapsed && "lg:justify-center lg:p-2"
+            )}
+          >
+            <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+              {userInitials}
+            </div>
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {userPlan}
+                  </p>
+                </div>
+                <ChevronUp className={cn(
+                  "w-4 h-4 text-muted-foreground shrink-0 transition-transform",
+                  isUserMenuOpen && "rotate-180"
+                )} />
+              </>
+            )}
+          </button>
         </div>
       </aside>
     </>
