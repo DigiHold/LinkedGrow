@@ -149,17 +149,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Generate posts using AI
+    // Get default model based on provider
+    const provider = user.aiProvider || "openai";
+    const defaultModel = provider === "openai" ? "gpt-4o" :
+                         provider === "anthropic" ? "claude-3-5-sonnet-20241022" :
+                         provider === "google" ? "gemini-2.0-flash" : "gpt-4o";
+
+    // Generate posts using AI (voice settings not stored in DB yet)
     const posts = await generatePosts(
       hook,
       title || "",
       content || "",
       count,
       apiKey,
-      user.aiProvider || "openai",
-      user.aiModel || "gpt-4o",
-      user.samplePosts as string[] | undefined,
-      user.neverMention || undefined
+      provider,
+      defaultModel
     );
 
     return NextResponse.json({ posts });
