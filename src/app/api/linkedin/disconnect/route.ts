@@ -12,7 +12,7 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Clear LinkedIn tokens from database
+    // Clear LinkedIn tokens and profile data from database
     await db
       .update(users)
       .set({
@@ -21,6 +21,7 @@ export async function POST() {
         linkedinTokenExpiry: null,
         linkedinProfileId: null,
         linkedinProfileName: null,
+        image: null, // Clear profile picture that came from LinkedIn
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
