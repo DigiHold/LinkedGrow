@@ -1,10 +1,6 @@
-// MaxMind GeoLite2 - Free local database with 99.8% accuracy
-// No API calls, runs entirely on server
-// Used by major SaaS companies for GDPR geo-detection
+// Geo detection using Vercel's built-in geo headers
+// Fast and reliable - no external database needed
 
-import { open, Reader, CountryResponse } from "maxmind";
-import * as geolite2 from "geolite2-redist";
-import { GeoIpDbName } from "geolite2-redist";
 import { headers } from "next/headers";
 
 // EEA country codes (EU + EEA + Switzerland + UK for GDPR)
@@ -21,19 +17,18 @@ const EEA_COUNTRIES = new Set([
   "GB",
 ]);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let readerPromise: Promise<any> | null = null;
-
-// Initialize MaxMind reader (singleton pattern with auto-updates)
-async function getReader(): Promise<Reader<CountryResponse>> {
-  if (!readerPromise) {
-    readerPromise = geolite2.open(GeoIpDbName.Country, (path) => {
-      return open<CountryResponse>(path);
-    });
-  }
-  const wrapped = await readerPromise;
-  return wrapped as Reader<CountryResponse>;
-}
+// Country names for common codes
+const COUNTRY_NAMES: Record<string, string> = {
+  AT: "Austria", BE: "Belgium", BG: "Bulgaria", HR: "Croatia", CY: "Cyprus",
+  CZ: "Czech Republic", DK: "Denmark", EE: "Estonia", FI: "Finland", FR: "France",
+  DE: "Germany", GR: "Greece", HU: "Hungary", IE: "Ireland", IT: "Italy",
+  LV: "Latvia", LT: "Lithuania", LU: "Luxembourg", MT: "Malta", NL: "Netherlands",
+  PL: "Poland", PT: "Portugal", RO: "Romania", SK: "Slovakia", SI: "Slovenia",
+  ES: "Spain", SE: "Sweden", IS: "Iceland", LI: "Liechtenstein", NO: "Norway",
+  CH: "Switzerland", GB: "United Kingdom", US: "United States", CA: "Canada",
+  AU: "Australia", NZ: "New Zealand", JP: "Japan", KR: "South Korea",
+  SG: "Singapore", HK: "Hong Kong", IN: "India", BR: "Brazil", MX: "Mexico",
+};
 
 export interface GeoResult {
   isEEA: boolean;
@@ -42,15 +37,17 @@ export interface GeoResult {
 }
 
 /**
- * Get user's country from their IP address using MaxMind GeoLite2
- * Server-side only - call from API routes, middleware, or server components
+ * Server-side function to check if user is in EEA
+ * Uses Vercel's built-in geo headers for fast, reliable detection
  */
-export async function getGeoFromIP(ip: string): Promise<GeoResult> {
+export async function isUserInEEA(): Promise<GeoResult> {
   try {
-    const maxmind = await getReader();
-    const result = maxmind.get(ip);
+    const headersList = await headers();
 
-    if (!result?.country?.iso_code) {
+    // Vercel provides geo headers automatically
+    const countryCode = headersList.get("x-vercel-ip-country") || "";
+
+    if (!countryCode) {
       // Default to EEA if we can't determine location (privacy-safe default)
       return {
         isEEA: true,
@@ -59,15 +56,13 @@ export async function getGeoFromIP(ip: string): Promise<GeoResult> {
       };
     }
 
-    const countryCode = result.country.iso_code;
-
     return {
       isEEA: EEA_COUNTRIES.has(countryCode),
       countryCode,
-      countryName: result.country.names?.en || "Unknown",
+      countryName: COUNTRY_NAMES[countryCode] || countryCode,
     };
   } catch (error) {
-    console.error("MaxMind geo lookup error:", error);
+    console.error("Geo detection error:", error);
     // Default to EEA for safety
     return {
       isEEA: true,
@@ -75,39 +70,4 @@ export async function getGeoFromIP(ip: string): Promise<GeoResult> {
       countryName: "Unknown",
     };
   }
-}
-
-/**
- * Get user's IP from request headers
- * Works with Vercel, Cloudflare, and most proxies
- */
-export async function getClientIP(): Promise<string> {
-  const headersList = await headers();
-
-  // Vercel
-  const vercelIP = headersList.get("x-real-ip");
-  if (vercelIP) return vercelIP;
-
-  // Cloudflare
-  const cfIP = headersList.get("cf-connecting-ip");
-  if (cfIP) return cfIP;
-
-  // Standard proxy header
-  const forwardedFor = headersList.get("x-forwarded-for");
-  if (forwardedFor) {
-    // Get first IP in the chain
-    return forwardedFor.split(",")[0].trim();
-  }
-
-  // Fallback
-  return "127.0.0.1";
-}
-
-/**
- * Server-side function to check if user is in EEA
- * Use in API routes, middleware, or server components
- */
-export async function isUserInEEA(): Promise<GeoResult> {
-  const ip = await getClientIP();
-  return getGeoFromIP(ip);
 }
