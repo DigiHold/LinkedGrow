@@ -242,7 +242,7 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
-                  router.push("/dashboard/settings#ai-api-keys");
+                  router.push("/dashboard/settings/ai-api");
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
               >
