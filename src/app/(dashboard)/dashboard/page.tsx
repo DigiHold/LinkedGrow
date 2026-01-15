@@ -393,9 +393,9 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <Link href="/dashboard/settings">
+              <Link href="/dashboard/settings/ai-api">
                 <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
-                  <Settings className="w-4 h-4 mr-2" />
+                  <Key className="w-4 h-4 mr-2" />
                   Add API Key
                 </Button>
               </Link>

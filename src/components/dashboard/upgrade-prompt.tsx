@@ -74,7 +74,7 @@ export function UpgradePrompt({
   if (variant === "overlay") {
     const Icon = feature ? featureIcons[feature] : Lock;
     return (
-      <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-center z-20 rounded-xl">
+      <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="text-center p-8 max-w-md">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-linkedin to-purple-600 flex items-center justify-center mb-6 shadow-lg">
             <Icon className="w-8 h-8 text-white" />
@@ -86,7 +86,7 @@ export function UpgradePrompt({
           <Button
             variant="linkedin"
             size="lg"
-            className="shadow-lg"
+            className="shadow-lg text-white"
             onClick={() => redirectToCheckout(requiredPlan, userEmail)}
           >
             <Crown className="w-4 h-4 mr-2" />

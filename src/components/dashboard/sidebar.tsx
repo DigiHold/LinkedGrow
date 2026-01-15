@@ -166,7 +166,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
+          "fixed lg:sticky top-0 left-0 z-100 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
           isCollapsed ? "lg:w-20" : "lg:w-64",
           isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         )}

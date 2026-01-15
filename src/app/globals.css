@@ -442,3 +442,9 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* Fix Radix UI scroll lock margin-right issue */
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}

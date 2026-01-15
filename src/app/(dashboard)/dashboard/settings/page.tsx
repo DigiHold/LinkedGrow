@@ -264,11 +264,34 @@ export default function SettingsPage() {
     }
   };
 
+  const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const handleSaveBusinessProfile = async () => {
     setIsSavingProfile(true);
-    // TODO: Implement business profile API
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSavingProfile(false);
+    setProfileMessage(null);
+
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessDescription: `${businessProfile.name ? `Business: ${businessProfile.name}. ` : ""}${businessProfile.description}${businessProfile.products ? ` Products/Services: ${businessProfile.products}` : ""}${businessProfile.niche ? ` Industry: ${businessProfile.niche}` : ""}${businessProfile.context ? ` Additional context: ${businessProfile.context}` : ""}`,
+          targetAudience: businessProfile.audience,
+          neverMention: businessProfile.doNotMention,
+        }),
+      });
+
+      if (response.ok) {
+        setProfileMessage({ type: "success", text: "Business profile saved successfully" });
+      } else {
+        const data = await response.json();
+        setProfileMessage({ type: "error", text: data.error || "Failed to save profile" });
+      }
+    } catch {
+      setProfileMessage({ type: "error", text: "Failed to save profile" });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -772,6 +795,24 @@ export default function SettingsPage() {
               className="min-h-[100px]"
             />
           </div>
+
+          {profileMessage && (
+            <div
+              className={cn(
+                "flex items-center gap-2 p-3 rounded-lg text-sm",
+                profileMessage.type === "success"
+                  ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                  : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+              )}
+            >
+              {profileMessage.type === "success" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {profileMessage.text}
+            </div>
+          )}
 
           <Button
             onClick={handleSaveBusinessProfile}

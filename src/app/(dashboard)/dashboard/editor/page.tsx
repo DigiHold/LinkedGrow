@@ -22,11 +22,9 @@ import {
   Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId } from "@/lib/plans";
-
-// TODO: Get this from user's actual subscription
-const userPlan: PlanId = "free";
+import { useSession } from "next-auth/react";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -39,8 +37,9 @@ interface AlgorithmScore {
 }
 
 export default function EditorPage() {
-  // Advanced Editor requires Starter plan
-  const hasAccess = userPlan !== "free";
+  const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+  const userEmail = session?.user?.email || "";
 
   const [content, setContent] = useState("");
   const [charCount, setCharCount] = useState(0);
@@ -133,12 +132,8 @@ export default function EditorPage() {
   };
 
   return (
-    <div className="space-y-6 relative">
-      {/* Upgrade overlay for users without access */}
-      {!hasAccess && (
-        <UpgradePrompt feature="advancedEditor" currentPlan={userPlan} variant="overlay" />
-      )}
-
+    <FeatureGate feature="advancedEditor" userPlan={userPlan} userEmail={userEmail}>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -410,6 +405,7 @@ Tips for viral posts:
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </FeatureGate>
   );
 }
