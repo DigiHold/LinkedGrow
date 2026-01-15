@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { redirectToCheckout } from "@/lib/checkout";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import Link from "next/link";
 import { ImageIcon, Sparkles, Crown } from "lucide-react";
 
 // SVG icons for AI providers
@@ -685,12 +685,13 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 AI Image Generation is available on the Pro plan and above
               </p>
-              <Link href="/pricing">
-                <Button className="bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-              </Link>
+              <Button
+                className="bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
+                onClick={() => redirectToCheckout("pro", session?.user?.email || "")}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Upgrade to Pro
+              </Button>
             </div>
           </div>
         )}

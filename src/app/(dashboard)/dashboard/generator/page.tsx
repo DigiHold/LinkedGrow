@@ -30,9 +30,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
-import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
+import { redirectToCheckout } from "@/lib/checkout";
 
 const postTypes = [
   { id: "actionable", label: "Actionable", description: "Tips and how-tos" },
@@ -54,11 +54,13 @@ const postCategories = [
 function UsageLimitBanner({
   postsUsed,
   postsLimit,
-  userPlan
+  userPlan,
+  userEmail,
 }: {
   postsUsed: number;
   postsLimit: number;
   userPlan: PlanId;
+  userEmail: string;
 }) {
   const isUnlimited = postsLimit === -1;
   const percentUsed = isUnlimited ? 0 : (postsUsed / postsLimit) * 100;
@@ -111,19 +113,19 @@ function UsageLimitBanner({
             )}
           </div>
           {(isLimitReached || isNearLimit) && (
-            <Link href="/#pricing">
-              <Button
-                size="sm"
-                className={cn(
-                  isLimitReached
-                    ? "bg-linear-to-r from-linkedin to-purple-600 hover:from-linkedin/90 hover:to-purple-600/90"
-                    : "bg-amber-600 hover:bg-amber-700"
-                )}
-              >
-                <Crown className="w-4 h-4 mr-2" />
-                {isLimitReached ? "Upgrade Now" : "Upgrade"}
-              </Button>
-            </Link>
+            <Button
+              size="sm"
+              onClick={() => redirectToCheckout("starter", userEmail)}
+              className={cn(
+                "text-white",
+                isLimitReached
+                  ? "bg-linear-to-r from-linkedin to-purple-600 hover:from-linkedin/90 hover:to-purple-600/90"
+                  : "bg-amber-600 hover:bg-amber-700"
+              )}
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              {isLimitReached ? "Upgrade Now" : "Upgrade"}
+            </Button>
           )}
         </div>
       </CardContent>
@@ -132,7 +134,7 @@ function UsageLimitBanner({
 }
 
 // Limit Reached Overlay Component
-function LimitReachedOverlay() {
+function LimitReachedOverlay({ userEmail }: { userEmail: string }) {
   return (
     <div className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm flex items-center justify-center z-30 rounded-xl">
       <div className="text-center p-8 max-w-md">
@@ -168,12 +170,15 @@ function LimitReachedOverlay() {
           </ul>
         </div>
 
-        <Link href="/#pricing">
-          <Button variant="linkedin" size="lg" className="shadow-lg w-full">
-            <Crown className="w-5 h-5 mr-2" />
-            Upgrade to Starter - $19/mo
-          </Button>
-        </Link>
+        <Button
+          variant="linkedin"
+          size="lg"
+          className="shadow-lg w-full"
+          onClick={() => redirectToCheckout("starter", userEmail)}
+        >
+          <Crown className="w-5 h-5 mr-2" />
+          Upgrade to Starter - $19/mo
+        </Button>
         <p className="text-xs text-muted-foreground mt-4">
           Use your own AI API key • Only pay for what you use
         </p>
@@ -406,10 +411,12 @@ What's holding you back from launching?
     );
   }
 
+  const userEmail = session?.user?.email || "";
+
   return (
     <div className="space-y-6 relative">
       {/* Limit Reached Overlay */}
-      {isLimitReached && <LimitReachedOverlay />}
+      {isLimitReached && <LimitReachedOverlay userEmail={userEmail} />}
 
       {/* Header */}
       <div>
@@ -424,6 +431,7 @@ What's holding you back from launching?
         postsUsed={postsUsedThisMonth}
         postsLimit={postsLimit}
         userPlan={userPlan}
+        userEmail={userEmail}
       />
 
       {/* Progress Steps */}
