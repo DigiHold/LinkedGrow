@@ -4,6 +4,7 @@ export interface PlanFeatures {
   postGeneration: boolean;
   imageGeneration: boolean;
   carouselGenerator: boolean;
+  hooksGenerator: boolean;
   advancedEditor: boolean;
   calendar: boolean;
   scheduling: boolean;
@@ -48,6 +49,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         postGeneration: true,
         imageGeneration: false,
         carouselGenerator: false,
+        hooksGenerator: false,
         advancedEditor: false,
         calendar: false,
         scheduling: false,
@@ -75,6 +77,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         postGeneration: true,
         imageGeneration: false,
         carouselGenerator: false,
+        hooksGenerator: false,
         advancedEditor: true,
         calendar: true,
         scheduling: true,
@@ -103,6 +106,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         postGeneration: true,
         imageGeneration: true,
         carouselGenerator: true,
+        hooksGenerator: true,
         advancedEditor: true,
         calendar: true,
         scheduling: true,
@@ -130,6 +134,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         postGeneration: true,
         imageGeneration: true,
         carouselGenerator: true,
+        hooksGenerator: true,
         advancedEditor: true,
         calendar: true,
         scheduling: true,
@@ -161,6 +166,11 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     name: "Carousel Generator",
     description: "Create engaging carousel posts that go viral",
     icon: "layers",
+  },
+  hooksGenerator: {
+    name: "Hooks Generator",
+    description: "Generate attention-grabbing hooks for your posts",
+    icon: "anchor",
   },
   advancedEditor: {
     name: "Advanced Editor",

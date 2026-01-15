@@ -19,6 +19,7 @@ import {
   Key,
   Layers,
   Users,
+  Anchor,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -53,6 +54,12 @@ const navigation = [
     href: "/dashboard/carousel",
     icon: Layers,
     description: "Create slide carousels",
+  },
+  {
+    name: "Hooks",
+    href: "/dashboard/hooks",
+    icon: Anchor,
+    description: "Generate scroll-stopping hooks",
   },
   {
     name: "My Posts",
