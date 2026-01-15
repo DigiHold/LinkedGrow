@@ -3,6 +3,45 @@ import { exchangeCodeForToken, getLinkedInProfile, type LinkedInAppType } from '
 import { auth } from '@/lib/auth';
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
+import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
+
+/**
+ * Download image from URL and upload to R2
+ */
+async function downloadAndStoreProfilePicture(
+  imageUrl: string,
+  userId: string
+): Promise<string | null> {
+  try {
+    if (!isR2Configured()) {
+      console.warn('R2 not configured, using original LinkedIn URL');
+      return imageUrl;
+    }
+
+    // Download the image from LinkedIn
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error('Failed to download LinkedIn profile picture:', response.status);
+      return null;
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Upload to R2
+    const result = await uploadToR2(buffer, {
+      fileName: `profile-picture.${contentType.split('/')[1] || 'jpg'}`,
+      contentType,
+      userId,
+    });
+
+    return result.url;
+  } catch (error) {
+    console.error('Failed to store profile picture:', error);
+    return null;
+  }
+}
 
 function createPopupResponse(success: boolean, data: { name?: string; error?: string }) {
   const message = success
@@ -78,13 +117,19 @@ export async function GET(request: NextRequest) {
     // Get user profile
     const profile = await getLinkedInProfile(tokenData.access_token);
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
-    const profilePictureUrl = profile.profilePicture?.displayImage || null;
+    const linkedInPictureUrl = profile.profilePicture?.displayImage || null;
 
     // Get the current user session
     const session = await auth();
 
     // Store tokens and profile data in database if user is logged in
     if (session?.user?.id) {
+      // Download and store profile picture in R2
+      let storedPictureUrl: string | null = null;
+      if (linkedInPictureUrl) {
+        storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
+      }
+
       await db
         .update(users)
         .set({
@@ -95,8 +140,8 @@ export async function GET(request: NextRequest) {
             : null,
           linkedinProfileId: profile.id,
           linkedinProfileName: fullName,
-          // Update user's profile picture from LinkedIn
-          image: profilePictureUrl,
+          // Store our own copy of the profile picture (from R2)
+          image: storedPictureUrl,
           // Update name if not already set
           name: fullName,
           updatedAt: new Date(),
@@ -107,7 +152,6 @@ export async function GET(request: NextRequest) {
     console.log('LinkedIn connected successfully:', {
       userId: profile.id,
       name: fullName,
-      pictureUrl: profilePictureUrl,
       appType,
     });
 
