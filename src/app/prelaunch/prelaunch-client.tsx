@@ -1525,29 +1525,6 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
         </motion.div>
       )}
 
-      {/* Try for Free Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.4 }}
-        className="text-center mt-10 p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-w-2xl mx-auto"
-      >
-        <p className="text-slate-600 dark:text-slate-400 mb-4">
-          Not ready to commit? <span className="font-semibold text-slate-900 dark:text-white">Try LinkedGrow for free</span> with 3 posts per month, basic editor, and bring your own AI key.
-        </p>
-        <Link href="/sign-up">
-          <Button
-            variant="outline"
-            size="lg"
-            className="group border-slate-300 dark:border-slate-600 hover:border-cyan-400 dark:hover:border-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-950/30"
-          >
-            Start Free - No Credit Card Required
-            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </Link>
-      </motion.div>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
