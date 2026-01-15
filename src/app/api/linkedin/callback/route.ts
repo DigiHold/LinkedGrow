@@ -124,29 +124,45 @@ export async function GET(request: NextRequest) {
 
     // Store tokens and profile data in database if user is logged in
     if (session?.user?.id) {
-      // Download and store profile picture in R2
-      let storedPictureUrl: string | null = null;
-      if (linkedInPictureUrl) {
-        storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
-      }
+      if (appType === 'community') {
+        // Community app - only store community tokens (for engagement features)
+        await db
+          .update(users)
+          .set({
+            linkedinCommunityAccessToken: tokenData.access_token,
+            linkedinCommunityRefreshToken: tokenData.refresh_token || null,
+            linkedinCommunityTokenExpiry: tokenData.expires_in
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, session.user.id));
+      } else {
+        // Poster app - store main tokens and profile data
+        // Download and store profile picture in R2
+        let storedPictureUrl: string | null = null;
+        if (linkedInPictureUrl) {
+          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
+        }
 
-      await db
-        .update(users)
-        .set({
-          linkedinAccessToken: tokenData.access_token,
-          linkedinRefreshToken: tokenData.refresh_token || null,
-          linkedinTokenExpiry: tokenData.expires_in
-            ? new Date(Date.now() + tokenData.expires_in * 1000)
-            : null,
-          linkedinProfileId: profile.id,
-          linkedinProfileName: fullName,
-          // Store our own copy of the profile picture (from R2)
-          image: storedPictureUrl,
-          // Update name if not already set
-          name: fullName,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, session.user.id));
+        await db
+          .update(users)
+          .set({
+            linkedinAccessToken: tokenData.access_token,
+            linkedinRefreshToken: tokenData.refresh_token || null,
+            linkedinTokenExpiry: tokenData.expires_in
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null,
+            linkedinProfileId: profile.id,
+            linkedinProfileName: fullName,
+            // Store our own copy of the profile picture (from R2)
+            image: storedPictureUrl,
+            // Update name if not already set
+            name: fullName,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, session.user.id));
+      }
     }
 
     console.log('LinkedIn connected successfully:', {
