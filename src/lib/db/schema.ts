@@ -20,6 +20,7 @@ export const users = sqliteTable("users", {
   plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  couponCode: text("coupon_code"), // Stored coupon code (e.g., "WELCOME10" for 10% off 3 months)
 
   // LinkedIn connection
   linkedinAccessToken: text("linkedin_access_token"),
