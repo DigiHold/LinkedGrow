@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   ChevronUp,
+  Key,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -241,12 +242,22 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
+                  router.push("/dashboard/settings#ai-api-keys");
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <Key className="w-4 h-4" />
+                AI API Keys
+              </button>
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
                   router.push("/dashboard/settings");
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
               >
                 <Settings className="w-4 h-4" />
-                Settings
+                Account Settings
               </button>
               <button
                 onClick={handleSignOut}

@@ -192,6 +192,16 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setMounted(true);
+    // Scroll to hash section if present
+    if (typeof window !== "undefined" && window.location.hash) {
+      const id = window.location.hash.slice(1);
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
   }, []);
 
   // Load user data
@@ -553,7 +563,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* AI API Keys */}
-      <Card>
+      <Card id="ai-api-keys">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="w-5 h-5 text-cyan-600" />
