@@ -328,6 +328,34 @@ export function Sidebar() {
           )}
         </nav>
 
+        {/* Upgrade / Plans Button */}
+        <div className="p-3 pt-0">
+          <Link
+            href="/dashboard/upgrade"
+            prefetch={true}
+            className={cn(
+              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all",
+              session?.user?.plan === "business"
+                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                : "bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02]",
+              isCollapsed && "lg:justify-center lg:px-2"
+            )}
+            title={isCollapsed ? (session?.user?.plan === "business" ? "Our Plans" : "Upgrade") : undefined}
+          >
+            <Crown
+              className={cn(
+                "w-5 h-5 shrink-0",
+                session?.user?.plan === "business" ? "text-amber-500" : "text-white"
+              )}
+            />
+            {(!isCollapsed || isMobileOpen) && (
+              <span className="font-semibold">
+                {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
+              </span>
+            )}
+          </Link>
+        </div>
+
         {/* User Section with Custom Menu */}
         <div className="p-3 border-t border-border relative" ref={userMenuRef}>
           {/* Menu popup - appears above the button */}
