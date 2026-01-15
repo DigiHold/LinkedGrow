@@ -328,34 +328,6 @@ export function Sidebar() {
           )}
         </nav>
 
-        {/* Upgrade / Plans Button */}
-        <div className="p-3 pt-0">
-          <Link
-            href="/dashboard/upgrade"
-            prefetch={true}
-            className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all",
-              session?.user?.plan === "business"
-                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                : "bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02]",
-              isCollapsed && "lg:justify-center lg:px-2"
-            )}
-            title={isCollapsed ? (session?.user?.plan === "business" ? "Our Plans" : "Upgrade") : undefined}
-          >
-            <Crown
-              className={cn(
-                "w-5 h-5 shrink-0",
-                session?.user?.plan === "business" ? "text-amber-500" : "text-white"
-              )}
-            />
-            {(!isCollapsed || isMobileOpen) && (
-              <span className="font-semibold">
-                {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
-              </span>
-            )}
-          </Link>
-        </div>
-
         {/* User Section with Custom Menu */}
         <div className="p-3 border-t border-border relative" ref={userMenuRef}>
           {/* Menu popup - appears above the button */}
@@ -365,6 +337,21 @@ export function Sidebar() {
                 <p className="text-sm font-medium truncate">{userName}</p>
                 <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
               </div>
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  router.push("/dashboard/upgrade");
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors",
+                  session?.user?.plan === "business"
+                    ? "hover:bg-accent"
+                    : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                )}
+              >
+                <Crown className="w-4 h-4" />
+                {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
+              </button>
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);

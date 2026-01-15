@@ -29,7 +29,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLANS, PlanId, PlanFeatures, FEATURE_INFO } from "@/lib/plans";
 
-const PLAN_ORDER: PlanId[] = ["free", "starter", "pro", "business"];
+// Only show paid plans - Free plan is shown via "Current plan" badge
+const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
@@ -92,7 +93,9 @@ export default function UpgradePage() {
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const currentPlanIndex = PLAN_ORDER.indexOf(userPlan);
+  // Full plan hierarchy for comparison (including free)
+  const FULL_PLAN_HIERARCHY: PlanId[] = ["free", "starter", "pro", "business"];
+  const currentPlanIndex = FULL_PLAN_HIERARCHY.indexOf(userPlan);
   const isOnHighestPlan = userPlan === "business";
 
   const handleCheckout = async (planId: PlanId) => {
@@ -148,7 +151,7 @@ export default function UpgradePage() {
   };
 
   const getPlanAction = (planId: PlanId) => {
-    const planIndex = PLAN_ORDER.indexOf(planId);
+    const planIndex = FULL_PLAN_HIERARCHY.indexOf(planId);
 
     if (planId === userPlan) {
       return { type: "current", label: "Current Plan" };
@@ -193,7 +196,7 @@ export default function UpgradePage() {
       </div>
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10">
+      <div className="grid md:grid-cols-3 gap-4 lg:gap-6 mb-10 max-w-4xl mx-auto">
         {PLAN_ORDER.map((planId) => {
           const plan = PLANS[planId];
           const action = getPlanAction(planId);
