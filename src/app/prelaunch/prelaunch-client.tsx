@@ -1362,17 +1362,8 @@ function TestimonialsCarousel() {
 function PricingPreview({ translations }: { translations: PrelaunchTranslations }) {
   const [showAllPlans, setShowAllPlans] = useState(false);
 
-  // Original prices - then show 30% discount
+  // Original prices - then show 30% discount (3 paid plans only)
   const plans = [
-    {
-      name: translations.pricing.free.name,
-      actualPrice: 0,
-      discountedPrice: 0,
-      period: "forever",
-      description: translations.pricing.free.description,
-      features: translations.pricing.free.features,
-      highlight: false,
-    },
     {
       name: translations.pricing.starter.name,
       actualPrice: 19,
@@ -1469,7 +1460,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
           animate={{ opacity: 1, height: "auto" }}
           transition={{ duration: 0.3 }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {plans.map((plan, i) => (
               <motion.div
                 key={plan.name}

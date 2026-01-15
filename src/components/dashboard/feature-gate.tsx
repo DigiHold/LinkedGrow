@@ -10,6 +10,7 @@ import {
   Calendar,
   BarChart3,
   Users,
+  UsersRound,
   GitBranch,
   Code,
   Zap,
@@ -17,6 +18,8 @@ import {
   Anchor,
   PenLine,
   Headphones,
+  Palette,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +46,9 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   engagement: Users,
   algorithmOptimizer: Zap,
   abTesting: GitBranch,
+  teamCollaboration: UsersRound,
+  customBranding: Palette,
+  advancedAnalytics: TrendingUp,
   apiAccess: Code,
   prioritySupport: Headphones,
 };

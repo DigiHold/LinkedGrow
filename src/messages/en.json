@@ -114,7 +114,7 @@
     "business": {
       "name": "Business",
       "description": "For teams & agencies",
-      "features": ["Everything in Pro", "A/B testing", "API access", "Priority support", "Team collaboration"]
+      "features": ["Everything in Pro", "A/B testing", "Team collaboration", "Custom branding", "Advanced analytics", "API access", "Priority support"]
     },
     "cta": "Get {discount}% Off"
   },

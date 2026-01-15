@@ -12,7 +12,11 @@ export interface PlanFeatures {
   redditIdeas: boolean;
   engagement: boolean;
   algorithmOptimizer: boolean;
+  // Business-only features
   abTesting: boolean;
+  teamCollaboration: boolean;
+  customBranding: boolean;
+  advancedAnalytics: boolean;
   apiAccess: boolean;
   prioritySupport: boolean;
 }
@@ -58,6 +62,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
+        teamCollaboration: false,
+        customBranding: false,
+        advancedAnalytics: false,
         apiAccess: false,
         prioritySupport: false,
       },
@@ -86,6 +93,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
+        teamCollaboration: false,
+        customBranding: false,
+        advancedAnalytics: false,
         apiAccess: false,
         prioritySupport: false,
       },
@@ -115,6 +125,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         engagement: true,
         algorithmOptimizer: true,
         abTesting: false,
+        teamCollaboration: false,
+        customBranding: false,
+        advancedAnalytics: false,
         apiAccess: false,
         prioritySupport: false,
       },
@@ -143,6 +156,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         engagement: true,
         algorithmOptimizer: true,
         abTesting: true,
+        teamCollaboration: true,
+        customBranding: true,
+        advancedAnalytics: true,
         apiAccess: true,
         prioritySupport: true,
       },
@@ -212,9 +228,24 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     description: "Test different versions of your content",
     icon: "split",
   },
+  teamCollaboration: {
+    name: "Team Collaboration",
+    description: "Invite team members and collaborate on content",
+    icon: "users-round",
+  },
+  customBranding: {
+    name: "Custom Branding",
+    description: "Add your logo and brand colors to exports",
+    icon: "palette",
+  },
+  advancedAnalytics: {
+    name: "Advanced Analytics",
+    description: "Deep insights with trends, heatmaps, and exports",
+    icon: "trending-up",
+  },
   apiAccess: {
     name: "API Access",
-    description: "Integrate LinkedGrow with your tools",
+    description: "Secure REST API for integrations and automation",
     icon: "code",
   },
   prioritySupport: {

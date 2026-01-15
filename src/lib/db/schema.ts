@@ -47,6 +47,12 @@ export const users = sqliteTable("users", {
   // Timestamps
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+
+  // Custom branding (Business plan)
+  brandLogoUrl: text("brand_logo_url"),
+  brandPrimaryColor: text("brand_primary_color"), // hex color
+  brandSecondaryColor: text("brand_secondary_color"), // hex color
+  brandFontFamily: text("brand_font_family"),
 });
 
 // Sessions table for NextAuth
@@ -180,6 +186,112 @@ export const passwordResetTokens = sqliteTable("password_reset_tokens", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
+// ============================================
+// BUSINESS PLAN FEATURES
+// ============================================
+
+// A/B Testing table
+export const abTests = sqliteTable("ab_tests", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status", { enum: ["draft", "running", "paused", "completed"] }).default("draft"),
+  variantAContent: text("variant_a_content").notNull(),
+  variantBContent: text("variant_b_content").notNull(),
+  variantAPostId: text("variant_a_post_id").references(() => posts.id),
+  variantBPostId: text("variant_b_post_id").references(() => posts.id),
+  winningVariant: text("winning_variant", { enum: ["a", "b"] }),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Teams table
+export const teams = sqliteTable("teams", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Team members table
+export const teamMembers = sqliteTable("team_members", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id")
+    .notNull()
+    .references(() => teams.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  role: text("role", { enum: ["owner", "admin", "member"] }).default("member"),
+  invitedAt: integer("invited_at", { mode: "timestamp" }).default(new Date()),
+  acceptedAt: integer("accepted_at", { mode: "timestamp" }),
+});
+
+// Team invites table
+export const teamInvites = sqliteTable("team_invites", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id")
+    .notNull()
+    .references(() => teams.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role", { enum: ["admin", "member"] }).default("member"),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// API keys table
+export const apiKeys = sqliteTable("api_keys", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  keyHash: text("key_hash").notNull().unique(), // SHA-256 of the key
+  keyPrefix: text("key_prefix").notNull(), // First 8 chars for identification
+  scopes: text("scopes"), // JSON array: ["posts:read", "posts:write", etc.]
+  lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// API logs table
+export const apiLogs = sqliteTable("api_logs", {
+  id: text("id").primaryKey(),
+  apiKeyId: text("api_key_id").references(() => apiKeys.id, { onDelete: "set null" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  method: text("method").notNull(),
+  statusCode: integer("status_code"),
+  responseTime: integer("response_time"), // ms
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Post analytics table (for advanced analytics)
+export const postAnalytics = sqliteTable("post_analytics", {
+  id: text("id").primaryKey(),
+  postId: text("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  date: integer("date", { mode: "timestamp" }).notNull(),
+  impressions: integer("impressions").default(0),
+  reactions: integer("reactions").default(0),
+  comments: integer("comments").default(0),
+  shares: integer("shares").default(0),
+  clicks: integer("clicks").default(0),
+  engagementRate: text("engagement_rate"), // stored as decimal string
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
+// TYPE EXPORTS
+// ============================================
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Post = typeof posts.$inferSelect;
@@ -192,3 +304,17 @@ export type Waitlist = typeof waitlist.$inferSelect;
 export type NewWaitlist = typeof waitlist.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+export type AbTest = typeof abTests.$inferSelect;
+export type NewAbTest = typeof abTests.$inferInsert;
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+export type TeamInvite = typeof teamInvites.$inferSelect;
+export type NewTeamInvite = typeof teamInvites.$inferInsert;
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
+export type ApiLog = typeof apiLogs.$inferSelect;
+export type NewApiLog = typeof apiLogs.$inferInsert;
+export type PostAnalytics = typeof postAnalytics.$inferSelect;
+export type NewPostAnalytics = typeof postAnalytics.$inferInsert;

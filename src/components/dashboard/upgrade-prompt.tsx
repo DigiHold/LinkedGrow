@@ -19,6 +19,9 @@ import {
   Check,
   Crown,
   Anchor,
+  UsersRound,
+  Palette,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +57,9 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   abTesting: GitBranch,
   apiAccess: Code,
   prioritySupport: Headphones,
+  teamCollaboration: UsersRound,
+  customBranding: Palette,
+  advancedAnalytics: TrendingUp,
 };
 
 export function UpgradePrompt({
