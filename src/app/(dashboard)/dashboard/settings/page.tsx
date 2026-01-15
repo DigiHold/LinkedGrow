@@ -253,6 +253,34 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* LinkedIn Connection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Linkedin className="w-5 h-5 text-[#0A66C2]" />
+            LinkedIn Connection
+          </CardTitle>
+          <CardDescription>
+            Connect your LinkedIn account for direct publishing
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#0A66C2]/10 flex items-center justify-center mb-4">
+              <Linkedin className="w-8 h-8 text-[#0A66C2]" />
+            </div>
+            <h4 className="font-medium mb-2">Connect LinkedIn</h4>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+              Publish posts directly from LinkedGrow to your LinkedIn profile
+            </p>
+            <Button className="bg-[#0A66C2] hover:bg-[#004182]">
+              <Linkedin className="w-4 h-4 mr-2" />
+              Coming Soon
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Account Settings */}
       <Card id="account">
         <CardHeader>
@@ -363,34 +391,6 @@ export default function SettingsPage() {
                 Change Password
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* LinkedIn Connection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Linkedin className="w-5 h-5 text-[#0A66C2]" />
-            LinkedIn Connection
-          </CardTitle>
-          <CardDescription>
-            Connect your LinkedIn account for direct publishing
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#0A66C2]/10 flex items-center justify-center mb-4">
-              <Linkedin className="w-8 h-8 text-[#0A66C2]" />
-            </div>
-            <h4 className="font-medium mb-2">Connect LinkedIn</h4>
-            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-              Publish posts directly from LinkedGrow to your LinkedIn profile
-            </p>
-            <Button className="bg-[#0A66C2] hover:bg-[#004182]">
-              <Linkedin className="w-4 h-4 mr-2" />
-              Coming Soon
-            </Button>
           </div>
         </CardContent>
       </Card>
