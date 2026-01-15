@@ -32,15 +32,31 @@ export async function GET() {
       ? `${decryptedImageApiKey.slice(0, 8)}${"*".repeat(20)}${decryptedImageApiKey.slice(-4)}`
       : null;
 
+    // Parse sample posts from JSON
+    let samplePosts: string[] = [];
+    if (user.samplePosts) {
+      try {
+        samplePosts = JSON.parse(user.samplePosts);
+      } catch {
+        samplePosts = [];
+      }
+    }
+
     return NextResponse.json({
       aiProvider: user.aiProvider,
-      aiApiKey: maskedApiKey, // Return masked key only
-      hasApiKey: !!user.aiApiKey, // Boolean to indicate if key exists
+      aiModel: user.aiModel,
+      aiApiKey: maskedApiKey,
+      hasApiKey: !!user.aiApiKey,
       imageProvider: user.imageProvider,
-      imageApiKey: maskedImageApiKey, // Return masked key only
-      hasImageApiKey: !!user.imageApiKey, // Boolean to indicate if image key exists
+      imageApiKey: maskedImageApiKey,
+      hasImageApiKey: !!user.imageApiKey,
       linkedinConnected: !!user.linkedinAccessToken,
       linkedinProfileName: user.linkedinProfileName,
+      samplePosts,
+      neverMention: user.neverMention,
+      businessDescription: user.businessDescription,
+      targetAudience: user.targetAudience,
+      writingTone: user.writingTone,
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
@@ -60,43 +76,69 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { aiProvider, aiApiKey, imageProvider, imageApiKey } = body;
+    const {
+      aiProvider,
+      aiApiKey,
+      aiModel,
+      imageProvider,
+      imageApiKey,
+      samplePosts,
+      neverMention,
+      businessDescription,
+      targetAudience,
+      writingTone,
+    } = body;
 
-    // Build update object
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
-    // Update AI provider if provided
     if (aiProvider !== undefined) {
       updateData.aiProvider = aiProvider;
     }
 
-    // Update AI API key if provided (encrypt it)
+    if (aiModel !== undefined) {
+      updateData.aiModel = aiModel || null;
+    }
+
     if (aiApiKey !== undefined) {
-      // If empty string or null, remove the key
       if (!aiApiKey) {
         updateData.aiApiKey = null;
       } else {
-        // Encrypt the new API key
         updateData.aiApiKey = encryptApiKey(aiApiKey);
       }
     }
 
-    // Update image provider if provided
     if (imageProvider !== undefined) {
       updateData.imageProvider = imageProvider;
     }
 
-    // Update image API key if provided (encrypt it)
     if (imageApiKey !== undefined) {
-      // If empty string or null, remove the key
       if (!imageApiKey) {
         updateData.imageApiKey = null;
       } else {
-        // Encrypt the new image API key
         updateData.imageApiKey = encryptApiKey(imageApiKey);
       }
+    }
+
+    if (samplePosts !== undefined) {
+      updateData.samplePosts = Array.isArray(samplePosts) ? JSON.stringify(samplePosts) : null;
+    }
+
+    if (neverMention !== undefined) {
+      updateData.neverMention = neverMention || null;
+    }
+
+    if (businessDescription !== undefined) {
+      updateData.businessDescription = businessDescription || null;
+    }
+
+    if (targetAudience !== undefined) {
+      updateData.targetAudience = targetAudience || null;
+    }
+
+    if (writingTone !== undefined) {
+      updateData.writingTone = writingTone || null;
     }
 
     await db

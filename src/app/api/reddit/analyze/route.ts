@@ -131,19 +131,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get default model based on provider
     const provider = user.aiProvider || "openai";
     const defaultModel = provider === "openai" ? "gpt-4o" :
                          provider === "anthropic" ? "claude-3-5-sonnet-20241022" :
                          provider === "google" ? "gemini-2.0-flash" : "gpt-4o";
+    const model = user.aiModel || defaultModel;
 
-    // Generate hooks using AI
     const hooks = await generateHooks(
       title || "",
       content || "",
       apiKey,
       provider,
-      defaultModel
+      model
     );
 
     return NextResponse.json({ hooks });

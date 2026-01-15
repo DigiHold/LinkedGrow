@@ -31,6 +31,14 @@ export const users = sqliteTable("users", {
   // AI API keys (encrypted)
   aiProvider: text("ai_provider"),
   aiApiKey: text("ai_api_key"), // Should be encrypted in production
+  aiModel: text("ai_model"), // User's selected AI model
+
+  // Voice/style settings for AI content generation
+  samplePosts: text("sample_posts"), // JSON array of sample posts for voice matching
+  neverMention: text("never_mention"), // Topics/words AI should never mention
+  businessDescription: text("business_description"), // User's business/role description
+  targetAudience: text("target_audience"), // Who they're writing for
+  writingTone: text("writing_tone"), // e.g., "professional", "casual", "witty"
 
   // Image generation API keys (encrypted, BYOK)
   imageProvider: text("image_provider"), // "gemini-image", "openai-dalle"

@@ -4,7 +4,6 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
-// Generate LinkedIn posts using AI
 async function generatePosts(
   hook: string,
   redditTitle: string,
@@ -14,11 +13,25 @@ async function generatePosts(
   provider: string,
   model: string,
   samplePosts?: string[],
-  neverMention?: string
+  neverMention?: string,
+  businessDescription?: string,
+  targetAudience?: string,
+  writingTone?: string
 ): Promise<string[]> {
   let voiceInstructions = "";
   if (samplePosts && samplePosts.length > 0) {
     voiceInstructions = `\n\nIMPORTANT - Match the writing style from these sample posts:\n${samplePosts.map((p, i) => `Sample ${i + 1}: ${p.substring(0, 500)}`).join("\n\n")}`;
+  }
+
+  let contextInstructions = "";
+  if (businessDescription) {
+    contextInstructions += `\n\nAbout the author: ${businessDescription}`;
+  }
+  if (targetAudience) {
+    contextInstructions += `\nTarget audience: ${targetAudience}`;
+  }
+  if (writingTone) {
+    contextInstructions += `\nWriting tone: ${writingTone}`;
   }
 
   let avoidInstructions = "";
@@ -32,7 +45,7 @@ Hook to use: "${hook}"
 
 Reddit Post Title: ${redditTitle}
 
-Reddit Post Content: ${redditContent.substring(0, 2000)}
+Reddit Post Content: ${redditContent.substring(0, 2000)}${contextInstructions}
 
 Requirements for each post:
 1. Start with the exact hook provided
@@ -149,13 +162,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get default model based on provider
+    // Get model based on provider (user's selected or default)
     const provider = user.aiProvider || "openai";
     const defaultModel = provider === "openai" ? "gpt-4o" :
                          provider === "anthropic" ? "claude-3-5-sonnet-20241022" :
                          provider === "google" ? "gemini-2.0-flash" : "gpt-4o";
+    const model = user.aiModel || defaultModel;
 
-    // Generate posts using AI (voice settings not stored in DB yet)
+    // Parse sample posts from JSON if stored
+    let samplePosts: string[] | undefined;
+    if (user.samplePosts) {
+      try {
+        samplePosts = JSON.parse(user.samplePosts);
+      } catch {
+        samplePosts = undefined;
+      }
+    }
+
+    // Generate posts using AI with voice settings
     const posts = await generatePosts(
       hook,
       title || "",
@@ -163,7 +187,12 @@ export async function POST(request: NextRequest) {
       count,
       apiKey,
       provider,
-      defaultModel
+      model,
+      samplePosts,
+      user.neverMention || undefined,
+      user.businessDescription || undefined,
+      user.targetAudience || undefined,
+      user.writingTone || undefined
     );
 
     return NextResponse.json({ posts });
