@@ -17,7 +17,6 @@
     "@libsql/client": "^0.14.0",
     "@radix-ui/react-avatar": "^1.1.6",
     "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.2.5",
