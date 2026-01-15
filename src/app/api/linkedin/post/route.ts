@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createLinkedInPost, createLinkedInPostWithImage } from '@/lib/linkedin';
+import { auth } from '@/lib/auth';
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'You must be logged in to post' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { text, imageUrl, imageTitle, visibility = 'PUBLIC' } = body;
 
@@ -20,23 +32,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Get user's LinkedIn access token and person URN from database
-    // For now, we'll return an error if not connected
-    const linkedInConnected = request.cookies.get('linkedin_connected')?.value;
-    if (!linkedInConnected) {
+    // Get user's LinkedIn credentials from database
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        linkedinAccessToken: true,
+        linkedinProfileId: true,
+        linkedinTokenExpiry: true,
+      },
+    });
+
+    if (!user?.linkedinAccessToken || !user?.linkedinProfileId) {
       return NextResponse.json(
         { error: 'LinkedIn account not connected. Please connect in Settings.' },
         { status: 401 }
       );
     }
 
-    // TODO: In production, retrieve these from your database
-    const accessToken = ''; // Get from database
-    const personUrn = ''; // Get from database
-
-    if (!accessToken || !personUrn) {
+    // Check if token has expired
+    if (user.linkedinTokenExpiry && new Date(user.linkedinTokenExpiry) < new Date()) {
       return NextResponse.json(
-        { error: 'LinkedIn credentials not found. Please reconnect your account.' },
+        { error: 'LinkedIn token has expired. Please reconnect your account in Settings.' },
         { status: 401 }
       );
     }
@@ -45,8 +61,8 @@ export async function POST(request: NextRequest) {
 
     if (imageUrl) {
       result = await createLinkedInPostWithImage(
-        accessToken,
-        personUrn,
+        user.linkedinAccessToken,
+        user.linkedinProfileId,
         text,
         imageUrl,
         imageTitle,
@@ -54,8 +70,8 @@ export async function POST(request: NextRequest) {
       );
     } else {
       result = await createLinkedInPost(
-        accessToken,
-        personUrn,
+        user.linkedinAccessToken,
+        user.linkedinProfileId,
         text,
         visibility
       );
