@@ -149,10 +149,10 @@ export function Sidebar() {
       {/* Mobile Sidebar Toggle */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed bottom-4 left-4 z-50 w-14 h-14 rounded-full bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
+        className="lg:hidden fixed top-4 left-0 z-50 w-7.5 h-7.5 rounded-r-xl bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
         aria-label="Open menu"
       >
-        <Sparkles className="w-6 h-6" />
+        <ChevronRight className="w-4 h-4" />
       </button>
 
       {/* Mobile Overlay */}
@@ -175,6 +175,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between h-16 px-4 border-b border-border">
           <Link
             href="/dashboard"
+            prefetch={true}
             className={cn(
               "flex items-center gap-2",
               isCollapsed && "lg:justify-center"
@@ -185,8 +186,8 @@ export function Sidebar() {
                 <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
               </svg>
             </div>
-            {!isCollapsed && (
-              <span className="text-lg font-bold">
+            {(!isCollapsed || isMobileOpen) && (
+              <span className="text-xl font-bold font-display flex gap-[0.07rem] text-slate-900 dark:text-white">
                 Linked<span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Grow</span>
               </span>
             )}
@@ -223,6 +224,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                   isActive
@@ -238,7 +240,7 @@ export function Sidebar() {
                     isActive && "text-cyan-600 dark:text-cyan-400"
                   )}
                 />
-                {!isCollapsed && (
+                {(!isCollapsed || isMobileOpen) && (
                   <div className="flex-1 min-w-0">
                     <span className="block truncate">{item.name}</span>
                     <span className="block text-xs text-muted-foreground truncate">
@@ -301,7 +303,7 @@ export function Sidebar() {
             <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
               {userInitials}
             </div>
-            {!isCollapsed && (
+            {(!isCollapsed || isMobileOpen) && (
               <>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="text-sm font-medium truncate">{userName}</p>

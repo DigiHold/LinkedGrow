@@ -4,9 +4,18 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  // Enable edge runtime for Cloudflare Workers
+  // Performance optimizations
   experimental: {
-    // runtime: "edge",
+    // Optimize package imports for smaller bundles
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-toast",
+      "@radix-ui/react-tooltip",
+      "framer-motion",
+    ],
   },
   images: {
     remotePatterns: [
@@ -20,6 +29,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Compress responses
+  compress: true,
+  // Enable React strict mode for better development experience
+  reactStrictMode: true,
+  // Reduce powered-by header for security
+  poweredByHeader: false,
 };
 
 export default withNextIntl(nextConfig);
