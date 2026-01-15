@@ -7,7 +7,6 @@ import { Features } from "@/components/marketing/features";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
-import { CTASection } from "@/components/marketing/cta-section";
 import { Footer } from "@/components/marketing/footer";
 import { FAQJsonLd, linkedGrowFAQs } from "@/components/seo/json-ld";
 import { ConversionElements } from "@/components/marketing/conversion-elements";
@@ -30,7 +29,6 @@ export default function HomePage() {
       <HowItWorks />
       <Pricing />
       <FAQ />
-      <CTASection />
       <Footer />
 
       {/* Conversion optimization elements */}
