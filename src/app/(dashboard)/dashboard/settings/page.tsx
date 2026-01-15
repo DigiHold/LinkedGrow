@@ -310,9 +310,12 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
               Publish posts directly from LinkedGrow to your LinkedIn profile
             </p>
-            <Button className="bg-[#0A66C2] hover:bg-[#004182]">
+            <Button
+              className="bg-[#0A66C2] hover:bg-[#004182]"
+              onClick={() => window.location.href = "/api/linkedin/auth"}
+            >
               <Linkedin className="w-4 h-4 mr-2" />
-              Coming Soon
+              Connect LinkedIn
             </Button>
           </div>
         </CardContent>

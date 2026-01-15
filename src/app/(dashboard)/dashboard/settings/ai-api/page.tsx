@@ -68,7 +68,7 @@ const GrokIcon = () => (
 
 const PerplexityIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M12 0L3 6v12l9 6 9-6V6l-9-6zm0 2.25l6.75 4.5v9l-6.75 4.5-6.75-4.5v-9L12 2.25zM12 6a6 6 0 100 12 6 6 0 000-12zm0 2a4 4 0 110 8 4 4 0 010-8z"/>
+    <path d="M19.785 0v7.272H22.5V17.62h-2.935V24l-7.037-6.194v6.145h-1.091v-6.152L4.392 24v-6.465H1.5V7.188h2.884V0l7.053 6.494V.19h1.09v6.49L19.786 0zm-7.257 9.044v7.319l5.946 5.234V14.44l-5.946-5.397zm-1.099-.08l-5.946 5.398v7.235l5.946-5.234V8.965zm8.136 7.58h1.844V8.349H13.46l6.105 5.54v2.655zm-8.982-8.28H2.59v8.195h1.8v-2.576l6.192-5.62zM5.475 2.476v4.71h5.115l-5.115-4.71zm13.219 0l-5.115 4.71h5.115v-4.71z"/>
   </svg>
 );
 
@@ -76,61 +76,62 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-4o, GPT-4, GPT-3.5",
+    description: "GPT-4.5, GPT-4o, o3",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     models: [
-      { id: "gpt-4o", name: "GPT-4o (Recommended)" },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini (Faster)" },
-      { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo (Cheapest)" },
+      { id: "gpt-4.5-preview", name: "GPT-4.5 Preview", tag: "Most Capable", price: "$0.15/post", monthly: "~$4.50/mo" },
+      { id: "gpt-4o", name: "GPT-4o", tag: "Recommended", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "gpt-4o-mini", name: "GPT-4o Mini", tag: "Faster", price: "$0.002/post", monthly: "~$0.06/mo" },
+      { id: "o3-mini", name: "o3-mini", tag: "Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
     ],
   },
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude 3.5, Claude 3",
+    description: "Claude 4.5, Claude 4",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     models: [
-      { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet (Recommended)" },
-      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku (Faster)" },
-      { id: "claude-3-opus-20240229", name: "Claude 3 Opus (Most Capable)" },
+      { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
+      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", tag: "Faster", price: "$0.003/post", monthly: "~$0.09/mo" },
     ],
   },
   {
     id: "google",
     name: "Gemini",
-    description: "Gemini 2.0, Gemini 1.5",
+    description: "Gemini 2.5, Gemini 2.0",
     placeholder: "AIza...",
     icon: GeminiIcon,
     models: [
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Recommended)" },
-      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
-      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Faster)" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Recommended", price: "$0.001/post", monthly: "~$0.03/mo" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tag: "Faster", price: "$0.0005/post", monthly: "~$0.02/mo" },
     ],
   },
   {
     id: "grok",
     name: "Grok",
-    description: "Grok 2, Grok 1",
+    description: "Grok 3, Grok 2",
     placeholder: "xai-...",
     icon: GrokIcon,
     models: [
-      { id: "grok-2", name: "Grok 2 (Recommended)" },
-      { id: "grok-2-mini", name: "Grok 2 Mini (Faster)" },
+      { id: "grok-3", name: "Grok 3", tag: "Most Capable", price: "$0.10/post", monthly: "~$3.00/mo" },
+      { id: "grok-3-mini", name: "Grok 3 Mini", tag: "Recommended", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "grok-2", name: "Grok 2", tag: "Faster", price: "$0.01/post", monthly: "~$0.30/mo" },
     ],
   },
   {
     id: "perplexity",
     name: "Perplexity",
-    description: "Sonar Pro, Sonar",
+    description: "Sonar Pro, Sonar Reasoning",
     placeholder: "pplx-...",
     icon: PerplexityIcon,
     models: [
-      { id: "sonar-pro", name: "Sonar Pro (Recommended)" },
-      { id: "sonar", name: "Sonar (Faster)" },
-      { id: "sonar-reasoning", name: "Sonar Reasoning" },
+      { id: "sonar-pro", name: "Sonar Pro", tag: "Recommended", price: "$0.01/post", monthly: "~$0.30/mo" },
+      { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", tag: "Deep Research", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "sonar", name: "Sonar", tag: "Faster", price: "$0.005/post", monthly: "~$0.15/mo" },
     ],
   },
 ];
@@ -139,18 +140,22 @@ const imageProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Gemini 2.0 Flash (Image Generation)",
+    description: "Imagen 3 (Image Generation)",
     placeholder: "AIza...",
     icon: GeminiIcon,
-    note: "Uses your Google AI API key for Gemini image generation",
+    note: "Uses your Google AI API key for Imagen 3 image generation",
+    price: "$0.02/image",
+    monthly: "~$0.60/mo (30 images)",
   },
   {
     id: "openai",
     name: "OpenAI",
-    description: "DALL-E 3",
+    description: "DALL-E 3, GPT-Image",
     placeholder: "sk-...",
     icon: OpenAIIcon,
-    note: "Uses your OpenAI API key for DALL-E image generation",
+    note: "Uses your OpenAI API key for DALL-E/GPT image generation",
+    price: "$0.04/image",
+    monthly: "~$1.20/mo (30 images)",
   },
 ];
 
@@ -462,11 +467,23 @@ export default function AIAPISettingsPage() {
                     <SelectContent>
                       {currentProvider.models.map((model) => (
                         <SelectItem key={model.id} value={model.id}>
-                          {model.name}
+                          <div className="flex items-center justify-between w-full gap-3">
+                            <span>{model.name}</span>
+                            <span className="text-xs text-muted-foreground">{model.tag}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {/* Pricing info for selected model */}
+                  {currentProvider.models.find(m => m.id === selectedModel) && (
+                    <div className="mt-2 p-2 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
+                      <p className="text-xs text-cyan-700 dark:text-cyan-300">
+                        <span className="font-medium">Estimated cost:</span>{" "}
+                        {currentProvider.models.find(m => m.id === selectedModel)?.price} = {currentProvider.models.find(m => m.id === selectedModel)?.monthly} for 30 posts
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {hasApiKey ? (
@@ -715,10 +732,17 @@ export default function AIAPISettingsPage() {
                     </div>
 
                     {provider.note && (
-                      <p className="text-xs text-muted-foreground mb-3 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
+                      <p className="text-xs text-muted-foreground mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
                         {provider.note}
                       </p>
                     )}
+
+                    {/* Pricing info */}
+                    <div className="mb-3 p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                      <p className="text-xs text-purple-700 dark:text-purple-300">
+                        <span className="font-medium">Estimated cost:</span> {provider.price} = {provider.monthly}
+                      </p>
+                    </div>
 
                     {hasImageApiKey ? (
                       <div className="flex items-center gap-2">

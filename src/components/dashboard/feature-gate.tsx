@@ -14,6 +14,9 @@ import {
   Code,
   Zap,
   Check,
+  Anchor,
+  PenLine,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +34,8 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
   imageGeneration: ImageIcon,
   carouselGenerator: Layers,
-  advancedEditor: Sparkles,
+  hooksGenerator: Anchor,
+  advancedEditor: PenLine,
   calendar: Calendar,
   scheduling: Calendar,
   analytics: BarChart3,
@@ -40,7 +44,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   algorithmOptimizer: Zap,
   abTesting: GitBranch,
   apiAccess: Code,
-  prioritySupport: Users,
+  prioritySupport: Headphones,
 };
 
 interface FeatureGateProps {
@@ -113,7 +117,7 @@ export function FeatureGate({
                   What you&apos;ll unlock with {planInfo.name}:
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {unlockedFeatures.slice(0, 6).map((featureKey) => (
+                  {unlockedFeatures.map((featureKey) => (
                     <div
                       key={featureKey}
                       className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400"
