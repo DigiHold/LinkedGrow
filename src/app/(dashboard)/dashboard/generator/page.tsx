@@ -136,8 +136,12 @@ function UsageLimitBanner({
 // Limit Reached Overlay Component
 function LimitReachedOverlay({ userEmail }: { userEmail: string }) {
   return (
-    <div className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm flex items-center justify-center z-30 rounded-xl">
-      <div className="text-center p-8 max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Modal Card */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
         <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-xl">
           <Lock className="w-10 h-10 text-white" />
         </div>
@@ -173,7 +177,7 @@ function LimitReachedOverlay({ userEmail }: { userEmail: string }) {
         <Button
           variant="linkedin"
           size="lg"
-          className="shadow-lg w-full"
+          className="shadow-lg w-full text-white"
           onClick={() => redirectToCheckout("starter", userEmail)}
         >
           <Crown className="w-5 h-5 mr-2" />
@@ -414,7 +418,7 @@ What's holding you back from launching?
   const userEmail = session?.user?.email || "";
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6">
       {/* Limit Reached Overlay */}
       {isLimitReached && <LimitReachedOverlay userEmail={userEmail} />}
 
@@ -850,6 +854,7 @@ What's holding you back from launching?
               userPlan={userPlan}
               hasImageApiKey={hasImageApiKey}
               hasTextApiKey={hasApiKey}
+              userEmail={userEmail}
               onImageGenerated={(imageData) => {
                 setAttachedImage(imageData);
               }}

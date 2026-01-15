@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Lock,
   Sparkles,
@@ -30,10 +29,12 @@ import {
   getMissingFeatures,
   getUpgradePath,
 } from "@/lib/plans";
+import { redirectToCheckout } from "@/lib/checkout";
 
 interface UpgradePromptProps {
   feature?: keyof PlanFeatures;
   currentPlan?: PlanId;
+  userEmail?: string;
   variant?: "card" | "inline" | "overlay" | "fullPage";
 }
 
@@ -56,6 +57,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 export function UpgradePrompt({
   feature,
   currentPlan = "free",
+  userEmail = "",
   variant = "card",
 }: UpgradePromptProps) {
   const nextPlan = getUpgradePath(currentPlan);
@@ -79,12 +81,15 @@ export function UpgradePrompt({
           <p className="text-muted-foreground mb-6">
             {featureInfo?.description || `This feature requires the ${planInfo.name} plan or higher.`}
           </p>
-          <Link href="/#pricing">
-            <Button variant="linkedin" size="lg" className="shadow-lg">
-              <Crown className="w-4 h-4 mr-2" />
-              Upgrade to {planInfo.name} - ${planInfo.price}/mo
-            </Button>
-          </Link>
+          <Button
+            variant="linkedin"
+            size="lg"
+            className="shadow-lg"
+            onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+          >
+            <Crown className="w-4 h-4 mr-2" />
+            Upgrade to {planInfo.name} - ${planInfo.price}/mo
+          </Button>
         </div>
       </div>
     );
@@ -104,12 +109,14 @@ export function UpgradePrompt({
             Available on {planInfo.name} plan
           </p>
         </div>
-        <Link href="/#pricing">
-          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
-            Upgrade
-            <ArrowRight className="w-3 h-3 ml-1" />
-          </Button>
-        </Link>
+        <Button
+          size="sm"
+          className="bg-amber-600 hover:bg-amber-700 text-white"
+          onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+        >
+          Upgrade
+          <ArrowRight className="w-3 h-3 ml-1" />
+        </Button>
       </div>
     );
   }
@@ -168,44 +175,46 @@ export function UpgradePrompt({
           {/* Upgrade Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {nextPlan && nextPlan !== "business" && (
-              <Link href={`/#pricing`} className="block">
-                <div className="p-5 rounded-xl border-2 border-border hover:border-linkedin/50 transition-all bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold">{PLANS[nextPlan].name}</h3>
-                    <span className="text-lg font-bold text-linkedin">
-                      ${PLANS[nextPlan].price}/mo
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {PLANS[nextPlan].description}
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    Upgrade to {PLANS[nextPlan].name}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </Link>
-            )}
-            <Link href={`/#pricing`} className="block">
-              <div className="p-5 rounded-xl border-2 border-linkedin bg-linkedin/5 hover:bg-linkedin/10 transition-all relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-linkedin text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
-                  POPULAR
-                </div>
+              <div
+                className="p-5 rounded-xl border-2 border-border hover:border-linkedin/50 transition-all bg-white dark:bg-gray-800 cursor-pointer"
+                onClick={() => redirectToCheckout(nextPlan, userEmail)}
+              >
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold">{PLANS.pro.name}</h3>
+                  <h3 className="font-bold">{PLANS[nextPlan].name}</h3>
                   <span className="text-lg font-bold text-linkedin">
-                    ${PLANS.pro.price}/mo
+                    ${PLANS[nextPlan].price}/mo
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {PLANS.pro.description}
+                  {PLANS[nextPlan].description}
                 </p>
-                <Button variant="linkedin" className="w-full">
-                  <Crown className="w-4 h-4 mr-2" />
-                  Go Pro
+                <Button variant="outline" className="w-full">
+                  Upgrade to {PLANS[nextPlan].name}
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
-            </Link>
+            )}
+            <div
+              className="p-5 rounded-xl border-2 border-linkedin bg-linkedin/5 hover:bg-linkedin/10 transition-all relative overflow-hidden cursor-pointer"
+              onClick={() => redirectToCheckout("pro", userEmail)}
+            >
+              <div className="absolute top-0 right-0 bg-linkedin text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
+                POPULAR
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold">{PLANS.pro.name}</h3>
+                <span className="text-lg font-bold text-linkedin">
+                  ${PLANS.pro.price}/mo
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {PLANS.pro.description}
+              </p>
+              <Button variant="linkedin" className="w-full text-white">
+                <Crown className="w-4 h-4 mr-2" />
+                Go Pro
+              </Button>
+            </div>
           </div>
 
           {/* What you get */}
@@ -248,12 +257,15 @@ export function UpgradePrompt({
             {featureInfo?.description || `Upgrade to ${planInfo.name} to unlock this feature and more.`}
           </p>
           <div className="flex items-center gap-3">
-            <Link href="/#pricing">
-              <Button variant="linkedin" size="sm" className="shadow-md">
-                <Crown className="w-4 h-4 mr-2" />
-                Upgrade to {planInfo.name}
-              </Button>
-            </Link>
+            <Button
+              variant="linkedin"
+              size="sm"
+              className="shadow-md text-white"
+              onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to {planInfo.name}
+            </Button>
             <span className="text-sm text-muted-foreground">
               ${planInfo.price}/mo
             </span>

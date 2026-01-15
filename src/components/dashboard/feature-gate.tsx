@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Lock,
   Crown,
@@ -26,6 +25,7 @@ import {
   getRequiredPlanForFeature,
   getMissingFeatures,
 } from "@/lib/plans";
+import { redirectToCheckout } from "@/lib/checkout";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
@@ -46,12 +46,14 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 interface FeatureGateProps {
   feature: keyof PlanFeatures;
   userPlan?: PlanId;
+  userEmail?: string;
   children: React.ReactNode;
 }
 
 export function FeatureGate({
   feature,
   userPlan = "free",
+  userEmail = "",
   children,
 }: FeatureGateProps) {
   const hasAccess = canAccessFeature(userPlan, feature);
@@ -125,12 +127,15 @@ export function FeatureGate({
             )}
 
             {/* CTA Button */}
-            <Link href="/#pricing">
-              <Button variant="linkedin" size="xl" className="shadow-lg w-full sm:w-auto">
-                <Crown className="w-5 h-5 mr-2" />
-                Upgrade to {planInfo.name} - ${planInfo.price}/mo
-              </Button>
-            </Link>
+            <Button
+              variant="linkedin"
+              size="xl"
+              className="shadow-lg w-full sm:w-auto text-white"
+              onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+            >
+              <Crown className="w-5 h-5 mr-2" />
+              Upgrade to {planInfo.name} - ${planInfo.price}/mo
+            </Button>
 
             {/* Current plan info */}
             <p className="text-xs text-muted-foreground mt-4">
@@ -158,13 +163,13 @@ export function FeatureGate({
 
         {/* All Plans Link */}
         <div className="text-center mt-6">
-          <Link
-            href="/#pricing"
+          <button
+            onClick={() => window.location.href = "/#pricing"}
             className="text-sm text-linkedin hover:underline inline-flex items-center gap-1"
           >
             Compare all plans
             <ArrowRight className="w-3 h-3" />
-          </Link>
+          </button>
         </div>
       </div>
     </div>
@@ -175,6 +180,7 @@ export function FeatureGate({
 export function FeatureGateInline({
   feature,
   userPlan = "free",
+  userEmail = "",
   children,
 }: FeatureGateProps) {
   const hasAccess = canAccessFeature(userPlan, feature);
@@ -197,12 +203,14 @@ export function FeatureGateInline({
         <p className="text-sm text-muted-foreground mb-4">
           Available on {planInfo.name} plan
         </p>
-        <Link href="/#pricing">
-          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
-            <Crown className="w-4 h-4 mr-1" />
-            Upgrade to unlock
-          </Button>
-        </Link>
+        <Button
+          size="sm"
+          className="bg-amber-600 hover:bg-amber-700 text-white"
+          onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+        >
+          <Crown className="w-4 h-4 mr-1" />
+          Upgrade to unlock
+        </Button>
       </div>
     </div>
   );

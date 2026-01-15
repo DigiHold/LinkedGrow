@@ -676,7 +676,7 @@ export default function SettingsPage() {
       {/* AI Image API Keys - Plan Gated */}
       <Card className={cn(!hasImageAccess && "relative overflow-hidden")}>
         {!hasImageAccess && (
-          <div className="absolute inset-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="absolute inset-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center justify-center">
             <div className="text-center p-6 max-w-sm">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-r from-purple-500/20 to-pink-600/20 flex items-center justify-center">
                 <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400" />

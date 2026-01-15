@@ -1,15 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { Crown, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PlanId, PLANS, isWithinLimit, getUpgradePath } from "@/lib/plans";
+import { redirectToCheckout } from "@/lib/checkout";
 
 interface UsageLimitProps {
   userPlan: PlanId;
   currentUsage: number;
   limitType: "postsPerMonth" | "scheduledPosts" | "savedIdeas" | "imagesPerMonth";
+  userEmail?: string;
   onLimitReached?: () => void;
 }
 
@@ -24,6 +25,7 @@ export function UsageLimit({
   userPlan,
   currentUsage,
   limitType,
+  userEmail = "",
   onLimitReached,
 }: UsageLimitProps) {
   const limit = PLANS[userPlan].limits[limitType];
@@ -90,12 +92,14 @@ export function UsageLimit({
             You&apos;ve reached your monthly limit. Upgrade to continue creating content.
           </p>
           {nextPlan && (
-            <Link href="/#pricing">
-              <Button size="sm" className="w-full bg-red-600 hover:bg-red-700 text-white">
-                <Crown className="w-4 h-4 mr-2" />
-                Upgrade to {PLANS[nextPlan].name}
-              </Button>
-            </Link>
+            <Button
+              size="sm"
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => redirectToCheckout(nextPlan, userEmail)}
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to {PLANS[nextPlan].name}
+            </Button>
           )}
         </div>
       ) : isNearLimit ? (
@@ -115,14 +119,19 @@ export function UsageLimit({
 interface LimitReachedOverlayProps {
   userPlan: PlanId;
   limitType: "postsPerMonth" | "scheduledPosts" | "savedIdeas" | "imagesPerMonth";
+  userEmail?: string;
 }
 
-export function LimitReachedOverlay({ userPlan, limitType }: LimitReachedOverlayProps) {
+export function LimitReachedOverlay({ userPlan, limitType, userEmail = "" }: LimitReachedOverlayProps) {
   const nextPlan = getUpgradePath(userPlan);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Modal Card */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
         <div className="w-16 h-16 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-6">
           <AlertTriangle className="w-8 h-8 text-red-600" />
         </div>
@@ -135,19 +144,24 @@ export function LimitReachedOverlay({ userPlan, limitType }: LimitReachedOverlay
 
         <div className="space-y-3">
           {nextPlan && (
-            <Link href="/#pricing" className="block">
-              <Button variant="linkedin" size="lg" className="w-full">
-                <Crown className="w-5 h-5 mr-2" />
-                Upgrade to {PLANS[nextPlan].name} - ${PLANS[nextPlan].price}/mo
-              </Button>
-            </Link>
+            <Button
+              variant="linkedin"
+              size="lg"
+              className="w-full text-white"
+              onClick={() => redirectToCheckout(nextPlan, userEmail)}
+            >
+              <Crown className="w-5 h-5 mr-2" />
+              Upgrade to {PLANS[nextPlan].name} - ${PLANS[nextPlan].price}/mo
+            </Button>
           )}
 
-          <Link href="/dashboard" className="block">
-            <Button variant="ghost" className="w-full">
-              Back to Dashboard
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => window.location.href = "/dashboard"}
+          >
+            Back to Dashboard
+          </Button>
         </div>
 
         {/* What you'll get */}
@@ -184,8 +198,10 @@ export function UsageBadge({
   userPlan,
   currentUsage,
   limitType,
+  userEmail = "",
 }: Omit<UsageLimitProps, "onLimitReached">) {
   const limit = PLANS[userPlan].limits[limitType];
+  const nextPlan = getUpgradePath(userPlan);
   if (limit === -1) return null;
 
   const remaining = Math.max(limit - currentUsage, 0);
@@ -200,10 +216,13 @@ export function UsageBadge({
       }`}
     >
       {remaining}/{limit} left
-      {isAtLimit && (
-        <Link href="/#pricing" className="text-red-600 hover:underline">
+      {isAtLimit && nextPlan && (
+        <button
+          onClick={() => redirectToCheckout(nextPlan, userEmail)}
+          className="text-red-600 hover:underline"
+        >
           <ArrowRight className="w-3 h-3" />
-        </Link>
+        </button>
       )}
     </span>
   );

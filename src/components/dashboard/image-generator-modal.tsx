@@ -21,7 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PlanId, canAccessFeature } from "@/lib/plans";
-import Link from "next/link";
+import { redirectToCheckout } from "@/lib/checkout";
 
 interface ImageGeneratorModalProps {
   open: boolean;
@@ -31,6 +31,7 @@ interface ImageGeneratorModalProps {
   userPlan?: PlanId;
   hasImageApiKey?: boolean;
   hasTextApiKey?: boolean;
+  userEmail?: string;
   onImageGenerated?: (imageData: { base64: string; mimeType: string; filename: string }) => void;
 }
 
@@ -41,6 +42,7 @@ export function ImageGeneratorModal({
   userPlan = "free",
   hasImageApiKey = false,
   hasTextApiKey = false,
+  userEmail = "",
   onImageGenerated,
 }: ImageGeneratorModalProps) {
   const [step, setStep] = useState<"loading" | "prompt" | "generating" | "result">("loading");
@@ -178,12 +180,10 @@ export function ImageGeneratorModal({
             <p className="text-sm text-muted-foreground mb-4">
               To generate AI images, please add your Google AI (Gemini 3 Pro Image) or OpenAI (DALL-E 3) API key in Settings.
             </p>
-            <Link href="/dashboard/settings">
-              <Button>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Go to Settings
-              </Button>
-            </Link>
+            <Button onClick={() => window.location.href = "/dashboard/settings"}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Go to Settings
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -209,11 +209,12 @@ export function ImageGeneratorModal({
             <p className="text-sm text-muted-foreground mb-4">
               AI image generation is available on the Pro plan and above. Upgrade to create stunning visuals for your LinkedIn posts.
             </p>
-            <Link href="/#pricing">
-              <Button variant="linkedin">
-                Upgrade to Pro - $39/mo
-              </Button>
-            </Link>
+            <Button
+              variant="linkedin"
+              onClick={() => redirectToCheckout("pro", userEmail)}
+            >
+              Upgrade to Pro - $39/mo
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
