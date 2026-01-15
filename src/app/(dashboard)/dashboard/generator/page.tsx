@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +24,9 @@ import {
   Smile,
   Zap,
   MessageSquare,
-  Trash2,
   ExternalLink,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
@@ -48,10 +49,6 @@ const postCategories = [
   { id: "resources", label: "Resources" },
   { id: "auto", label: "Let AI Decide" },
 ];
-
-// TODO: Get this from user's actual subscription and usage data
-const userPlan: PlanId = "free";
-const postsUsedThisMonth = 2; // This would come from the database
 
 // Usage Limit Banner Component
 function UsageLimitBanner({
@@ -196,9 +193,22 @@ const aiQuickActions = [
 ];
 
 export default function GeneratorPage() {
+  const { data: session } = useSession();
+
+  // Get user's plan from session
+  const userPlan: PlanId = (session?.user?.plan as PlanId) || "free";
   const postsLimit = PLANS[userPlan].limits.postsPerMonth;
+
+  // State for real usage data
+  const [postsUsedThisMonth, setPostsUsedThisMonth] = useState(0);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [hasImageApiKey, setHasImageApiKey] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+
   const canGenerate = isWithinLimit(userPlan, "postsPerMonth", postsUsedThisMonth);
   const isLimitReached = !canGenerate;
+  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -219,9 +229,44 @@ export default function GeneratorPage() {
   const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string } | null>(null);
   const [showScheduler, setShowScheduler] = useState(false);
 
-  // TODO: Get from user settings
-  const hasImageApiKey = true; // Demo mode
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  // Load settings and usage data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Fetch settings and posts count in parallel
+        const [settingsRes, postsRes] = await Promise.all([
+          fetch("/api/user/settings"),
+          fetch("/api/posts?limit=100"), // Get posts to count this month's usage
+        ]);
+
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          setHasApiKey(settings.hasApiKey || false);
+          setHasImageApiKey(settings.hasImageApiKey || false);
+        }
+
+        if (postsRes.ok) {
+          const postsData = await postsRes.json();
+          const posts = postsData.posts || [];
+
+          // Count posts created this month
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const thisMonthPosts = posts.filter((post: { createdAt: string }) => {
+            const createdAt = new Date(post.createdAt);
+            return createdAt >= startOfMonth;
+          });
+          setPostsUsedThisMonth(thisMonthPosts.length);
+        }
+      } catch (error) {
+        console.error("Failed to load generator data:", error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleGenerateIdeas = async () => {
     setIsGenerating(true);
@@ -348,6 +393,18 @@ What's holding you back from launching?
 
   // Get current post content
   const currentPost = isEditing ? editedPost : generatedPost;
+
+  // Show loading state while fetching settings
+  if (isLoadingSettings) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading generator...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 relative">
@@ -784,6 +841,7 @@ What's holding you back from launching?
               postTopic={topic}
               userPlan={userPlan}
               hasImageApiKey={hasImageApiKey}
+              hasTextApiKey={hasApiKey}
               onImageGenerated={(imageData) => {
                 setAttachedImage(imageData);
               }}

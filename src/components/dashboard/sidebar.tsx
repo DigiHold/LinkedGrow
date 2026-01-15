@@ -15,9 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User,
   ChevronDown,
-  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -227,7 +225,7 @@ export function Sidebar() {
 
         {/* User Section with Dropdown */}
         <div className="p-3 border-t border-border">
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
@@ -251,7 +249,7 @@ export function Sidebar() {
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-56">
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium">{userName}</p>
                 <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
@@ -260,15 +258,6 @@ export function Sidebar() {
               <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/dashboard/settings#account")}>
-                <User className="w-4 h-4 mr-2" />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <Globe className="w-4 h-4 mr-2" />
-                Language
-                <span className="ml-auto text-xs text-muted-foreground">Soon</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
