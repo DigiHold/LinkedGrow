@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -17,7 +19,18 @@ const pageTitles: Record<string, string> = {
 
 export function MobileHeader() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const title = pageTitles[pathname] || "Dashboard";
+
+  // User display info
+  const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "User";
+  const userImage = session?.user?.image;
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <header className="lg:hidden sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-b border-border">
@@ -34,10 +47,27 @@ export function MobileHeader() {
           </span>
         </Link>
 
-        {/* Page Title */}
-        <h1 className="text-sm font-medium text-muted-foreground">
-          {title}
-        </h1>
+        {/* Page Title + User Avatar */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-sm font-medium text-muted-foreground">
+            {title}
+          </h1>
+          <Link href="/dashboard/settings">
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full object-cover border border-border"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
+                {userInitials}
+              </div>
+            )}
+          </Link>
+        </div>
       </div>
     </header>
   );

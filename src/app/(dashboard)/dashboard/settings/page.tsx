@@ -47,7 +47,6 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSavingAccount, setIsSavingAccount] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [accountMessage, setAccountMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // 2FA
@@ -176,43 +175,6 @@ export default function SettingsPage() {
       setAccountMessage({ type: "error", text: "Failed to update account" });
     } finally {
       setIsSavingAccount(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      setAccountMessage({ type: "error", text: "Passwords do not match" });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setAccountMessage({ type: "error", text: "Password must be at least 8 characters" });
-      return;
-    }
-
-    setIsChangingPassword(true);
-    setAccountMessage(null);
-
-    try {
-      const response = await fetch("/api/user/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      if (response.ok) {
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setAccountMessage({ type: "success", text: "Password changed successfully" });
-      } else {
-        const data = await response.json();
-        setAccountMessage({ type: "error", text: data.error || "Failed to change password" });
-      }
-    } catch (error) {
-      setAccountMessage({ type: "error", text: "Failed to change password" });
-    } finally {
-      setIsChangingPassword(false);
     }
   };
 

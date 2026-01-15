@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -163,7 +164,9 @@ export function Sidebar() {
     await signOut({ callbackUrl: "/" });
   };
 
+  // User display info
   const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "User";
+  const userImage = session?.user?.image;
   const userPlan = planNames[session?.user?.plan || "free"] || "Free Plan";
   const userInitials = userName
     .split(" ")
@@ -333,9 +336,24 @@ export function Sidebar() {
           {/* Menu popup - appears above the button */}
           {isUserMenuOpen && (
             <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-gray-900 rounded-lg border border-border shadow-lg overflow-hidden z-50">
-              <div className="px-3 py-2 border-b border-border">
-                <p className="text-sm font-medium truncate">{userName}</p>
-                <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
+              <div className="px-3 py-3 border-b border-border flex items-center gap-3">
+                {userImage ? (
+                  <Image
+                    src={userImage}
+                    alt={userName}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+                    {userInitials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
+                </div>
               </div>
               <button
                 onClick={() => {
@@ -414,9 +432,19 @@ export function Sidebar() {
               isCollapsed && "lg:justify-center lg:p-2"
             )}
           >
-            <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
-              {userInitials}
-            </div>
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName}
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+                {userInitials}
+              </div>
+            )}
             {(!isCollapsed || isMobileOpen) && (
               <>
                 <div className="flex-1 min-w-0 text-left">

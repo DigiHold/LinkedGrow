@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLinkedInProfile, type LinkedInAppType } from '@/lib/linkedin';
+import { auth } from '@/lib/auth';
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 function createPopupResponse(success: boolean, data: { name?: string; error?: string }) {
   const message = success
@@ -75,17 +78,36 @@ export async function GET(request: NextRequest) {
     // Get user profile
     const profile = await getLinkedInProfile(tokenData.access_token);
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
+    const profilePictureUrl = profile.profilePicture?.displayImage || null;
 
-    // TODO: Store tokens securely in database associated with user
-    // For now, we'll pass success status via URL params
-    // In production, you should:
-    // 1. Store access_token and refresh_token in database
-    // 2. Associate with the current logged-in user
-    // 3. Encrypt tokens before storage
+    // Get the current user session
+    const session = await auth();
+
+    // Store tokens and profile data in database if user is logged in
+    if (session?.user?.id) {
+      await db
+        .update(users)
+        .set({
+          linkedinAccessToken: tokenData.access_token,
+          linkedinRefreshToken: tokenData.refresh_token || null,
+          linkedinTokenExpiry: tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : null,
+          linkedinProfileId: profile.id,
+          linkedinProfileName: fullName,
+          // Update user's profile picture from LinkedIn
+          image: profilePictureUrl,
+          // Update name if not already set
+          name: fullName,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, session.user.id));
+    }
 
     console.log('LinkedIn connected successfully:', {
       userId: profile.id,
       name: fullName,
+      pictureUrl: profilePictureUrl,
       appType,
     });
 

@@ -101,6 +101,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (dbUser) {
+          token.name = dbUser.name;
+          token.image = dbUser.image;
           token.plan = dbUser.plan;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isAdmin = dbUser.isAdmin;
@@ -112,6 +114,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.name = token.name as string | null;
+        session.user.image = token.image as string | null;
         session.user.plan = token.plan as string;
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
         session.user.isAdmin = token.isAdmin as boolean;
@@ -141,4 +145,3 @@ declare module "next-auth" {
     isAdmin?: boolean;
   }
 }
-
