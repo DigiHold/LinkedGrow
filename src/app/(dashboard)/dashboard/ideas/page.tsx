@@ -142,7 +142,7 @@ export default function IdeasPage() {
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/dashboard/settings">
+                <Link href="/dashboard/settings/ai-api">
                   <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
                     <Settings className="w-4 h-4 mr-2" />
                     Configure API Key

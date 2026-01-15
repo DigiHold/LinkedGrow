@@ -5,6 +5,15 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { redirectToCheckout } from "@/lib/checkout";
 import {
   Key,
@@ -15,12 +24,14 @@ import {
   Save,
   Trash2,
   Loader2,
-  ArrowLeft,
+  Plus,
+  X,
+  MessageSquare,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { ImageIcon, Sparkles, Crown } from "lucide-react";
-import Link from "next/link";
 
 // SVG icons for AI providers
 const OpenAIIcon = () => (
@@ -30,23 +41,34 @@ const OpenAIIcon = () => (
 );
 
 const AnthropicIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M13.827 3.52h3.603L24 20.48h-3.603l-6.57-16.96zm-7.257 0h3.603l6.57 16.96h-3.603L6.57 3.52zM0 20.48h3.603L6.57 3.52H3.603L0 20.48z"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+    <path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"/>
   </svg>
 );
 
-const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+const GeminiIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 65 65" className="w-5 h-5">
+    <defs>
+      <linearGradient id="gemini-gradient" x1="18.447" y1="43.42" x2="52.153" y2="15.004" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4893FC"/>
+        <stop offset=".27" stopColor="#4893FC"/>
+        <stop offset=".777" stopColor="#969DFF"/>
+        <stop offset="1" stopColor="#BD99FE"/>
+      </linearGradient>
+    </defs>
+    <path fill="url(#gemini-gradient)" d="M32.447 0c.68 0 1.273.465 1.439 1.125a38.904 38.904 0 001.999 5.905c2.152 5 5.105 9.376 8.854 13.125 3.751 3.75 8.126 6.703 13.125 8.855a38.98 38.98 0 005.906 1.999c.66.166 1.124.758 1.124 1.438 0 .68-.464 1.273-1.125 1.439a38.902 38.902 0 00-5.905 1.999c-5 2.152-9.375 5.105-13.125 8.854-3.749 3.751-6.702 8.126-8.854 13.125a38.973 38.973 0 00-2 5.906 1.485 1.485 0 01-1.438 1.124c-.68 0-1.272-.464-1.438-1.125a38.913 38.913 0 00-2-5.905c-2.151-5-5.103-9.375-8.854-13.125-3.75-3.749-8.125-6.702-13.125-8.854a38.973 38.973 0 00-5.905-2A1.485 1.485 0 010 32.448c0-.68.465-1.272 1.125-1.438a38.903 38.903 0 005.905-2c5-2.151 9.376-5.104 13.125-8.854 3.75-3.749 6.703-8.125 8.855-13.125a38.972 38.972 0 001.999-5.905A1.485 1.485 0 0132.447 0z"/>
   </svg>
 );
 
-const GroqIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+const GrokIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 492" className="w-5 h-5" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M197.76 315.52l170.197-125.803c8.342-6.186 20.267-3.776 24.256 5.803 20.907 50.539 11.563 111.253-30.08 152.939-41.621 41.685-99.562 50.816-152.512 29.994l-57.834 26.816c82.965 56.768 183.701 42.731 246.656-20.33 49.941-50.006 65.408-118.166 50.944-179.627l.128.149c-20.971-90.282 5.162-126.378 58.666-200.17 1.28-1.75 2.56-3.499 3.819-5.291l-70.421 70.507v-.214l-243.883 245.27m-35.072 30.528c-59.563-56.96-49.28-145.088 1.515-195.926 37.568-37.61 99.136-52.97 152.874-30.4l57.707-26.666a166.554 166.554 0 00-39.019-21.334 191.467 191.467 0 00-208.042 41.942c-54.038 54.101-71.04 137.301-41.856 208.298 21.802 53.056-13.931 90.582-49.92 128.47C23.104 463.915 10.304 477.333 0 491.541l162.56-145.386"/>
+  </svg>
+);
+
+const PerplexityIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+    <path d="M12 0L3 6v12l9 6 9-6V6l-9-6zm0 2.25l6.75 4.5v9l-6.75 4.5-6.75-4.5v-9L12 2.25zM12 6a6 6 0 100 12 6 6 0 000-12zm0 2a4 4 0 110 8 4 4 0 010-8z"/>
   </svg>
 );
 
@@ -54,9 +76,15 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-4, GPT-4o, GPT-3.5",
+    description: "GPT-4o, GPT-4, GPT-3.5",
     placeholder: "sk-...",
     icon: OpenAIIcon,
+    models: [
+      { id: "gpt-4o", name: "GPT-4o (Recommended)" },
+      { id: "gpt-4o-mini", name: "GPT-4o Mini (Faster)" },
+      { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo (Cheapest)" },
+    ],
   },
   {
     id: "anthropic",
@@ -64,20 +92,46 @@ const aiProviders = [
     description: "Claude 3.5, Claude 3",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
+    models: [
+      { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet (Recommended)" },
+      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku (Faster)" },
+      { id: "claude-3-opus-20240229", name: "Claude 3 Opus (Most Capable)" },
+    ],
   },
   {
     id: "google",
-    name: "Google AI",
-    description: "Gemini Pro, Gemini Flash",
+    name: "Gemini",
+    description: "Gemini 2.0, Gemini 1.5",
     placeholder: "AIza...",
-    icon: GoogleIcon,
+    icon: GeminiIcon,
+    models: [
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Recommended)" },
+      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Faster)" },
+    ],
   },
   {
-    id: "groq",
-    name: "Groq",
-    description: "Llama 3, Mixtral (Fast)",
-    placeholder: "gsk_...",
-    icon: GroqIcon,
+    id: "grok",
+    name: "Grok",
+    description: "Grok 2, Grok 1",
+    placeholder: "xai-...",
+    icon: GrokIcon,
+    models: [
+      { id: "grok-2", name: "Grok 2 (Recommended)" },
+      { id: "grok-2-mini", name: "Grok 2 Mini (Faster)" },
+    ],
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    description: "Sonar Pro, Sonar",
+    placeholder: "pplx-...",
+    icon: PerplexityIcon,
+    models: [
+      { id: "sonar-pro", name: "Sonar Pro (Recommended)" },
+      { id: "sonar", name: "Sonar (Faster)" },
+      { id: "sonar-reasoning", name: "Sonar Reasoning" },
+    ],
   },
 ];
 
@@ -87,7 +141,7 @@ const imageProviders = [
     name: "Google AI",
     description: "Gemini 2.0 Flash (Image Generation)",
     placeholder: "AIza...",
-    icon: GoogleIcon,
+    icon: GeminiIcon,
     note: "Uses your Google AI API key for Gemini image generation",
   },
   {
@@ -107,6 +161,7 @@ export default function AIAPISettingsPage() {
 
   // Text AI API state
   const [selectedProvider, setSelectedProvider] = useState("openai");
+  const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
@@ -121,9 +176,15 @@ export default function AIAPISettingsPage() {
   const [isSavingImageApiKey, setIsSavingImageApiKey] = useState(false);
   const [isDeletingImageApiKey, setIsDeletingImageApiKey] = useState(false);
 
+  // Voice & Style Settings
+  const [samplePosts, setSamplePosts] = useState<string[]>([""]);
+  const [neverMention, setNeverMention] = useState("");
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
+
   // Messages
   const [textApiMessage, setTextApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [imageApiMessage, setImageApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Load settings from API
   useEffect(() => {
@@ -136,9 +197,19 @@ export default function AIAPISettingsPage() {
           if (data.aiProvider) {
             setSelectedProvider(data.aiProvider);
           }
+          if (data.aiModel) {
+            setSelectedModel(data.aiModel);
+          }
           setHasImageApiKey(data.hasImageApiKey || false);
           if (data.imageProvider) {
             setSelectedImageProvider(data.imageProvider);
+          }
+          // Load voice settings
+          if (data.samplePosts && data.samplePosts.length > 0) {
+            setSamplePosts(data.samplePosts);
+          }
+          if (data.neverMention) {
+            setNeverMention(data.neverMention);
           }
         }
       } catch (error) {
@@ -147,6 +218,14 @@ export default function AIAPISettingsPage() {
     };
     loadSettings();
   }, []);
+
+  // Update model when provider changes
+  useEffect(() => {
+    const provider = aiProviders.find(p => p.id === selectedProvider);
+    if (provider && provider.models.length > 0) {
+      setSelectedModel(provider.models[0].id);
+    }
+  }, [selectedProvider]);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) return;
@@ -158,6 +237,7 @@ export default function AIAPISettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           aiProvider: selectedProvider,
+          aiModel: selectedModel,
           aiApiKey: apiKey,
         }),
       });
@@ -244,17 +324,53 @@ export default function AIAPISettingsPage() {
     }
   };
 
+  const handleSaveVoiceSettings = async () => {
+    setIsSavingVoice(true);
+    setVoiceMessage(null);
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          samplePosts: samplePosts.filter(p => p.trim()),
+          neverMention: neverMention,
+        }),
+      });
+      if (response.ok) {
+        setVoiceMessage({ type: "success", text: "Voice settings saved successfully!" });
+      } else {
+        setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
+      }
+    } catch (error) {
+      console.error("Failed to save voice settings:", error);
+      setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
+    } finally {
+      setIsSavingVoice(false);
+    }
+  };
+
+  const addSamplePost = () => {
+    if (samplePosts.length < 4) {
+      setSamplePosts([...samplePosts, ""]);
+    }
+  };
+
+  const removeSamplePost = (index: number) => {
+    setSamplePosts(samplePosts.filter((_, i) => i !== index));
+  };
+
+  const updateSamplePost = (index: number, value: string) => {
+    const newPosts = [...samplePosts];
+    newPosts[index] = value;
+    setSamplePosts(newPosts);
+  };
+
+  const currentProvider = aiProviders.find(p => p.id === selectedProvider);
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <Link
-          href="/dashboard/settings"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Settings
-        </Link>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
             <Key className="w-5 h-5 text-white" />
@@ -313,82 +429,94 @@ export default function AIAPISettingsPage() {
           </div>
 
           {/* Active Provider Config */}
-          {aiProviders
-            .filter((p) => p.id === selectedProvider)
-            .map((provider) => {
-              const Icon = provider.icon;
-              return (
-                <div key={provider.id} className="space-y-3">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                          <Icon />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{provider.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {provider.description}
-                          </p>
-                        </div>
-                      </div>
-                      {hasApiKey && (
-                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
-                          <Check className="w-3 h-3" />
-                          Connected
-                        </span>
-                      )}
+          {currentProvider && (
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                      <currentProvider.icon />
                     </div>
-
-                    {hasApiKey ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="password"
-                          value="••••••••••••••••••••••••"
-                          disabled
-                          className="flex-1 bg-white dark:bg-slate-800"
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={handleDeleteApiKey}
-                          disabled={isDeletingApiKey}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Input
-                            type={showApiKey ? "text" : "password"}
-                            placeholder={provider.placeholder}
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            className="pr-10 bg-white dark:bg-slate-800"
-                          />
-                          <button
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        <Button
-                          onClick={handleSaveApiKey}
-                          disabled={isSavingApiKey || !apiKey.trim()}
-                          className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-                        >
-                          {isSavingApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                          Save API Key
-                        </Button>
-                      </div>
-                    )}
+                    <div>
+                      <h4 className="font-medium">{currentProvider.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {currentProvider.description}
+                      </p>
+                    </div>
                   </div>
+                  {hasApiKey && (
+                    <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+                      <Check className="w-3 h-3" />
+                      Connected
+                    </span>
+                  )}
                 </div>
-              );
-            })}
+
+                {/* Model Selector */}
+                <div className="mb-4">
+                  <Label className="mb-2 block text-sm">Model</Label>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger className="bg-white dark:bg-slate-800">
+                      <SelectValue placeholder="Select a model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentProvider.models.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {hasApiKey ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="password"
+                      value="••••••••••••••••••••••••"
+                      disabled
+                      className="flex-1 bg-white dark:bg-slate-800"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleDeleteApiKey}
+                      disabled={isDeletingApiKey}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Input
+                        type={showApiKey ? "text" : "password"}
+                        placeholder={currentProvider.placeholder}
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="pr-10 bg-white dark:bg-slate-800"
+                      />
+                      <button
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <Button
+                      onClick={handleSaveApiKey}
+                      disabled={isSavingApiKey || !apiKey.trim()}
+                      className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                    >
+                      {isSavingApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save API Key
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-start gap-2 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800">
             <Key className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
@@ -396,6 +524,92 @@ export default function AIAPISettingsPage() {
               Your API keys are encrypted with AES-256 and never shared. You only pay for what you use directly to the provider.
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Voice & Style Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-cyan-600" />
+            Voice & Style Settings
+          </CardTitle>
+          <CardDescription>
+            Help AI replicate your writing style by providing sample posts. This is optional but highly recommended.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {voiceMessage && (
+            <div className={cn(
+              "p-3 rounded-lg text-sm flex items-center gap-2",
+              voiceMessage.type === "success"
+                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+            )}>
+              {voiceMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {voiceMessage.text}
+            </div>
+          )}
+
+          {/* Sample Posts */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              Sample Posts (Max 4)
+              <span className="text-xs text-muted-foreground font-normal">- AI will match your writing style</span>
+            </Label>
+            {samplePosts.map((post, index) => (
+              <div key={index} className="flex gap-2">
+                <Textarea
+                  placeholder={`Paste one of your best LinkedIn posts here... (Post ${index + 1})`}
+                  value={post}
+                  onChange={(e) => updateSamplePost(index, e.target.value)}
+                  className="min-h-[100px] flex-1"
+                />
+                {samplePosts.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeSamplePost(index)}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            {samplePosts.length < 4 && (
+              <Button variant="outline" onClick={addSamplePost} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Another Sample Post
+              </Button>
+            )}
+          </div>
+
+          {/* Never Mention */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-red-500" />
+              Things AI Should NEVER Mention
+            </Label>
+            <Textarea
+              placeholder="Competitors, sensitive topics, incorrect claims about your business..."
+              value={neverMention}
+              onChange={(e) => setNeverMention(e.target.value)}
+              className="min-h-[80px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              AI will avoid these topics in all generated content.
+            </p>
+          </div>
+
+          <Button
+            onClick={handleSaveVoiceSettings}
+            disabled={isSavingVoice}
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+          >
+            {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Voice Settings
+          </Button>
         </CardContent>
       </Card>
 

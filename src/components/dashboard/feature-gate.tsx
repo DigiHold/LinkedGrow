@@ -137,17 +137,28 @@ export function FeatureGate({
               Upgrade to {planInfo.name} - ${planInfo.price}/mo
             </Button>
 
+            {/* All Plans Link - right after upgrade button */}
+            <div className="mt-4">
+              <button
+                onClick={() => window.location.href = "/#pricing"}
+                className="text-sm text-linkedin hover:underline inline-flex items-center gap-1"
+              >
+                Compare all plans
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
             {/* Current plan info */}
-            <p className="text-xs text-muted-foreground mt-4">
+            <p className="text-xs text-muted-foreground mt-3">
               Current plan: <span className="font-medium">{PLANS[userPlan].name}</span>
             </p>
           </div>
         </div>
 
-        {/* Feature Preview (blurred) */}
+        {/* Feature Preview (blurred) - less blur to show preview */}
         <div className="mt-8 relative">
-          <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent z-10 rounded-xl" />
-          <div className="blur-sm opacity-50 pointer-events-none bg-accent/30 rounded-xl p-6 h-48">
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent z-10 rounded-xl" />
+          <div className="blur-[2px] opacity-70 pointer-events-none bg-accent/30 rounded-xl p-6 h-48">
             {/* Placeholder preview content */}
             <div className="space-y-3">
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -159,17 +170,6 @@ export function FeatureGate({
               </div>
             </div>
           </div>
-        </div>
-
-        {/* All Plans Link */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => window.location.href = "/#pricing"}
-            className="text-sm text-linkedin hover:underline inline-flex items-center gap-1"
-          >
-            Compare all plans
-            <ArrowRight className="w-3 h-3" />
-          </button>
         </div>
       </div>
     </div>

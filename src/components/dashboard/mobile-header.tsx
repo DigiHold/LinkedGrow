@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -36,21 +34,10 @@ export function MobileHeader() {
           </span>
         </Link>
 
-        {/* Page Title (visible on smaller screens) */}
-        <h1 className="text-sm font-medium text-muted-foreground sm:hidden">
+        {/* Page Title */}
+        <h1 className="text-sm font-medium text-muted-foreground">
           {title}
         </h1>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
-            <Search className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="text-muted-foreground relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-linkedin rounded-full" />
-          </Button>
-        </div>
       </div>
     </header>
   );

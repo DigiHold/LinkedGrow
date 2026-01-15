@@ -56,6 +56,7 @@ export default function EditorPage() {
     engagement: 0,
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   // Update character count and algorithm score
   useEffect(() => {
@@ -204,7 +205,16 @@ export default function EditorPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowAIPanel(!showAIPanel)}
+                  onClick={() => {
+                    const newState = !showAIPanel;
+                    setShowAIPanel(newState);
+                    if (newState) {
+                      // Scroll to AI panel after it renders
+                      setTimeout(() => {
+                        aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }, 100);
+                    }
+                  }}
                   className={cn(showAIPanel && "bg-linkedin/10 text-linkedin")}
                 >
                   <Sparkles className="w-4 h-4 mr-1" />
@@ -250,7 +260,7 @@ Tips for viral posts:
 
           {/* AI Panel */}
           {showAIPanel && (
-            <Card className="border-linkedin/20 bg-linkedin/5">
+            <Card ref={aiPanelRef} className="border-linkedin/20 bg-linkedin/5">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -267,11 +277,18 @@ Tips for viral posts:
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Describe exactly what you want AI to change in your post above. Be specific about the tone, style, or structure.
+                </p>
                 <Textarea
                   value={aiInstruction}
                   onChange={(e) => setAIInstruction(e.target.value)}
-                  placeholder="Tell AI what to change... e.g., 'Make it more engaging', 'Add a stronger hook', 'Make it shorter'"
-                  className="min-h-[80px]"
+                  placeholder="Examples:
+• Rewrite the first sentence to be more attention-grabbing
+• Add 3 bullet points summarizing the key takeaways
+• Make it sound more professional and less casual
+• Shorten to 500 characters while keeping the main message"
+                  className="min-h-[100px]"
                 />
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[

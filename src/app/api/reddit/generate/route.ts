@@ -1,0 +1,177 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { decrypt } from "@/lib/encryption";
+
+// Generate LinkedIn posts using AI
+async function generatePosts(
+  hook: string,
+  redditTitle: string,
+  redditContent: string,
+  count: number,
+  apiKey: string,
+  provider: string,
+  model: string,
+  samplePosts?: string[],
+  neverMention?: string
+): Promise<string[]> {
+  let voiceInstructions = "";
+  if (samplePosts && samplePosts.length > 0) {
+    voiceInstructions = `\n\nIMPORTANT - Match the writing style from these sample posts:\n${samplePosts.map((p, i) => `Sample ${i + 1}: ${p.substring(0, 500)}`).join("\n\n")}`;
+  }
+
+  let avoidInstructions = "";
+  if (neverMention) {
+    avoidInstructions = `\n\nNEVER mention or reference: ${neverMention}`;
+  }
+
+  const prompt = `You are an expert LinkedIn content creator. Generate ${count} different LinkedIn posts based on this viral Reddit content, using the provided hook as the opening.
+
+Hook to use: "${hook}"
+
+Reddit Post Title: ${redditTitle}
+
+Reddit Post Content: ${redditContent.substring(0, 2000)}
+
+Requirements for each post:
+1. Start with the exact hook provided
+2. Expand into a full LinkedIn post (800-1500 characters)
+3. Use short paragraphs and line breaks for readability
+4. Include a call-to-action at the end (ask a question or encourage engagement)
+5. Make it professional but conversational
+6. Do NOT use hashtags
+7. Limit emoji usage - maximum 1-2 per post if any
+8. Focus on actionable insights and lessons learned${voiceInstructions}${avoidInstructions}
+
+Return ONLY a JSON array of ${count} complete post strings. Example:
+["Full post 1 text here...", "Full post 2 text here...", "Full post 3 text here..."]`;
+
+  let response;
+  let posts: string[] = [];
+
+  if (provider === "openai") {
+    response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate posts with OpenAI");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    posts = JSON.parse(content);
+  } else if (provider === "anthropic") {
+    response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: model || "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate posts with Anthropic");
+    }
+
+    const data = await response.json();
+    const content = data.content[0]?.text || "[]";
+    posts = JSON.parse(content);
+  } else if (provider === "google") {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate posts with Google AI");
+    }
+
+    const data = await response.json();
+    const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    posts = JSON.parse(cleanContent);
+  } else {
+    throw new Error(`Unsupported AI provider: ${provider}`);
+  }
+
+  return posts;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Accept content directly (fetched client-side to bypass Reddit IP blocking)
+    const { hook, title, content, count = 3 } = await request.json();
+
+    if (!hook) {
+      return NextResponse.json({ error: "Hook is required" }, { status: 400 });
+    }
+
+    // Get user's AI settings
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        aiApiKey: true,
+        aiProvider: true,
+        aiModel: true,
+        samplePosts: true,
+        neverMention: true,
+      },
+    });
+
+    if (!user?.aiApiKey) {
+      return NextResponse.json({ error: "No AI API key configured" }, { status: 400 });
+    }
+
+    // Decrypt the API key
+    const apiKey = decrypt(user.aiApiKey);
+
+    // Generate posts using AI
+    const posts = await generatePosts(
+      hook,
+      title || "",
+      content || "",
+      count,
+      apiKey,
+      user.aiProvider || "openai",
+      user.aiModel || "gpt-4o",
+      user.samplePosts as string[] | undefined,
+      user.neverMention || undefined
+    );
+
+    return NextResponse.json({ posts });
+  } catch (error) {
+    console.error("Reddit generate error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to generate posts" },
+      { status: 500 }
+    );
+  }
+}

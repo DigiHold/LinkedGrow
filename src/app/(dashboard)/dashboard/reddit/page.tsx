@@ -44,6 +44,53 @@ interface SettingsResponse {
   aiProvider: string | null;
 }
 
+interface RedditPostData {
+  title: string;
+  selftext: string;
+  subreddit: string;
+  score: number;
+  num_comments: number;
+}
+
+// Fetch Reddit post data client-side (works from user's browser IP)
+async function fetchRedditPostClientSide(url: string): Promise<RedditPostData> {
+  // Convert regular Reddit URL to JSON API URL
+  let jsonUrl = url.trim();
+
+  // Remove query parameters and trailing slashes
+  jsonUrl = jsonUrl.split("?")[0].replace(/\/+$/, "");
+
+  // Add .json extension
+  jsonUrl = jsonUrl + ".json";
+
+  const response = await fetch(jsonUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; LinkedGrow/1.0)",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch Reddit post. Make sure the URL is correct and the post is public.");
+  }
+
+  const data = await response.json();
+
+  // Reddit JSON structure: [post data, comments data]
+  const postData = data[0]?.data?.children?.[0]?.data;
+
+  if (!postData) {
+    throw new Error("Could not parse Reddit post data");
+  }
+
+  return {
+    title: postData.title || "",
+    selftext: postData.selftext || "",
+    subreddit: postData.subreddit || "",
+    score: postData.score || 0,
+    num_comments: postData.num_comments || 0,
+  };
+}
+
 function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState("");
@@ -54,6 +101,7 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redditPost, setRedditPost] = useState<RedditPostData | null>(null);
 
   // API key state
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
@@ -99,10 +147,18 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
     setError(null);
 
     try {
+      // Step 1: Fetch Reddit data client-side (bypasses IP blocking)
+      const postData = await fetchRedditPostClientSide(url);
+      setRedditPost(postData);
+
+      // Step 2: Send to our API to generate hooks with AI
       const response = await fetch("/api/reddit/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({
+          title: postData.title,
+          content: postData.selftext,
+        }),
       });
 
       if (!response.ok) {
@@ -121,7 +177,7 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
   };
 
   const handleGeneratePosts = async () => {
-    if (selectedHook === null || !hasApiKey) return;
+    if (selectedHook === null || !hasApiKey || !redditPost) return;
     setIsLoading(true);
     setError(null);
 
@@ -131,7 +187,8 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hook: hooks[selectedHook],
-          url,
+          title: redditPost.title,
+          content: redditPost.selftext,
           count: 3,
         }),
       });
@@ -199,7 +256,7 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/dashboard/settings">
+                <Link href="/dashboard/settings/ai-api">
                   <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
                     <Settings className="w-4 h-4 mr-2" />
                     Configure API Key

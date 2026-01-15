@@ -17,6 +17,8 @@ import {
   LogOut,
   ChevronUp,
   Key,
+  Layers,
+  Users,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -47,6 +49,12 @@ const navigation = [
     description: "Get content ideas",
   },
   {
+    name: "Carousel",
+    href: "/dashboard/carousel",
+    icon: Layers,
+    description: "Create slide carousels",
+  },
+  {
     name: "My Posts",
     href: "/dashboard/posts",
     icon: FileText,
@@ -57,6 +65,12 @@ const navigation = [
     href: "/dashboard/calendar",
     icon: Calendar,
     description: "Schedule content",
+  },
+  {
+    name: "Engagement",
+    href: "/dashboard/engagement",
+    icon: Users,
+    description: "Grow your network",
   },
   {
     name: "Analytics",

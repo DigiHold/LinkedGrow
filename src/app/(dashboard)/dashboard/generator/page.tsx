@@ -417,6 +417,80 @@ What's holding you back from launching?
 
   const userEmail = session?.user?.email || "";
 
+  // No API key configured - show setup prompt
+  if (!hasApiKey) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <Sparkles className="w-8 h-8 text-linkedin" />
+            Post Generator
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Create viral LinkedIn posts with AI in seconds
+          </p>
+        </div>
+
+        {/* API Key Required Card */}
+        <Card className="border-cyan-200 dark:border-cyan-800 bg-cyan-50/50 dark:bg-cyan-900/10">
+          <CardContent className="py-12 px-8">
+            <div className="text-center max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
+                <Wand2 className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
+              <p className="text-muted-foreground mb-6">
+                To generate LinkedIn posts with AI, you need to configure your AI API key.
+                LinkedGrow uses your own API key (BYOK) for unlimited generations.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/dashboard/settings/ai-api">
+                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Configure API Key
+                  </Button>
+                </a>
+              </div>
+              <p className="text-xs text-muted-foreground mt-6">
+                We support OpenAI, Anthropic, Google AI, and Groq. Your key is encrypted and stored securely.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preview of the workflow */}
+        <Card className="opacity-60">
+          <CardHeader>
+            <CardTitle className="text-base">How it works</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { num: 1, label: "Type" },
+                { num: 2, label: "Topic" },
+                { num: 3, label: "Ideas" },
+                { num: 4, label: "Post" },
+              ].map((s, i) => (
+                <div key={s.num} className="flex items-center">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
+                      {s.num}
+                    </span>
+                    <span>{s.label}</span>
+                  </div>
+                  {i < 3 && (
+                    <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Limit Reached Overlay */}

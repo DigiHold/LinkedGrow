@@ -87,22 +87,59 @@ export default function SettingsPage() {
   }, [session]);
 
   const handleSaveAccount = async () => {
+    // If password fields are filled, validate them first
+    const isChangingPassword = currentPassword && newPassword;
+
+    if (isChangingPassword) {
+      if (newPassword !== confirmPassword) {
+        setAccountMessage({ type: "error", text: "Passwords do not match" });
+        return;
+      }
+      if (newPassword.length < 8) {
+        setAccountMessage({ type: "error", text: "Password must be at least 8 characters" });
+        return;
+      }
+    }
+
     setIsSavingAccount(true);
     setAccountMessage(null);
 
     try {
+      // Update account info
       const response = await fetch("/api/user/account", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
 
-      if (response.ok) {
-        await updateSession();
-        setAccountMessage({ type: "success", text: "Account updated successfully" });
-      } else {
+      if (!response.ok) {
         const data = await response.json();
         setAccountMessage({ type: "error", text: data.error || "Failed to update account" });
+        setIsSavingAccount(false);
+        return;
+      }
+
+      await updateSession();
+
+      // If password fields are filled, also change password
+      if (isChangingPassword) {
+        const pwResponse = await fetch("/api/user/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+
+        if (pwResponse.ok) {
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setAccountMessage({ type: "success", text: "Account and password updated successfully" });
+        } else {
+          const data = await pwResponse.json();
+          setAccountMessage({ type: "error", text: data.error || "Account updated, but failed to change password" });
+        }
+      } else {
+        setAccountMessage({ type: "success", text: "Account updated successfully" });
       }
     } catch (error) {
       setAccountMessage({ type: "error", text: "Failed to update account" });
@@ -309,7 +346,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   id="name"
                   value={name}
@@ -322,7 +359,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   id="email"
                   value={email}
@@ -334,20 +371,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <Button
-            onClick={handleSaveAccount}
-            disabled={isSavingAccount}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-          >
-            {isSavingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Changes
-          </Button>
-
-          {/* Password Change */}
+          {/* Password Change - Inline */}
           <div className="pt-4 border-t">
             <h4 className="font-medium mb-4 flex items-center gap-2">
               <Lock className="w-4 h-4" />
               Change Password
+              <span className="text-xs text-muted-foreground font-normal">(leave empty for no changes)</span>
             </h4>
             <div className="space-y-3">
               <div className="space-y-2">
@@ -382,16 +411,17 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-              <Button
-                variant="outline"
-                onClick={handleChangePassword}
-                disabled={isChangingPassword || !currentPassword || !newPassword}
-              >
-                {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Lock className="w-4 h-4 mr-2" />}
-                Change Password
-              </Button>
             </div>
           </div>
+
+          <Button
+            onClick={handleSaveAccount}
+            disabled={isSavingAccount}
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+          >
+            {isSavingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Changes
+          </Button>
         </CardContent>
       </Card>
 
