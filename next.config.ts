@@ -29,6 +29,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Rewrite IndexNow key files to the API route
+  async rewrites() {
+    return [
+      {
+        source: "/:key.txt",
+        destination: "/api/indexnow?key=:key",
+      },
+    ];
+  },
   // Compress responses
   compress: true,
   // Enable React strict mode for better development experience

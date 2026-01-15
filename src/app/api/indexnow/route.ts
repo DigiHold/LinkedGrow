@@ -98,8 +98,29 @@ export async function POST(request: NextRequest) {
 /**
  * Get IndexNow status and key info
  * GET /api/indexnow
+ *
+ * Also handles key verification when ?key=xxx is passed (via rewrite from /:key.txt)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const keyParam = searchParams.get("key");
+
+  // If key param is present, this is a key verification request (rewritten from /:key.txt)
+  if (keyParam !== null) {
+    // Only respond for the correct key
+    if (!INDEXNOW_KEY || keyParam !== INDEXNOW_KEY) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+
+    // Return the key as plain text
+    return new NextResponse(INDEXNOW_KEY, {
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
+
+  // Default: return status info
   return NextResponse.json({
     configured: !!INDEXNOW_KEY,
     keyLocation: INDEXNOW_KEY ? `${BASE_URL}/${INDEXNOW_KEY}.txt` : null,
