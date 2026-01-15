@@ -186,7 +186,7 @@ export default function EngagementPage() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">Connect LinkedIn for Engagement</h3>
                   <p className="text-muted-foreground">
-                    Track comments, reactions, and grow your network with engagement analytics
+                    Like, comment, and interact with your LinkedIn feed directly from LinkedGrow
                   </p>
                 </div>
 
@@ -199,9 +199,9 @@ export default function EngagementPage() {
                         Why do I need to connect again?
                       </h4>
                       <p className="text-sm text-amber-700 dark:text-amber-300">
-                        LinkedIn requires separate permissions for reading engagement data (comments, reactions, followers)
-                        versus posting content. This is a separate LinkedIn app that only requests read access to your
-                        engagement metrics - it cannot post on your behalf.
+                        LinkedIn requires separate permissions for engagement actions (liking, commenting, replying)
+                        versus publishing posts. This uses LinkedIn&apos;s Community Management API which enables
+                        you to interact with your feed directly from LinkedGrow.
                       </p>
                     </div>
                   </div>
@@ -209,23 +209,23 @@ export default function EngagementPage() {
 
                 {/* Permissions list */}
                 <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 mb-6">
-                  <h4 className="font-medium mb-3">This connection will allow LinkedGrow to:</h4>
+                  <h4 className="font-medium mb-3">This connection will allow you to:</h4>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2 text-muted-foreground">
                       <Check className="w-4 h-4 text-green-600" />
-                      Read comments on your posts
+                      View your LinkedIn feed posts
                     </li>
                     <li className="flex items-center gap-2 text-muted-foreground">
                       <Check className="w-4 h-4 text-green-600" />
-                      View reactions and engagement metrics
+                      Like and react to posts from LinkedGrow
                     </li>
                     <li className="flex items-center gap-2 text-muted-foreground">
                       <Check className="w-4 h-4 text-green-600" />
-                      Track follower growth
+                      Comment and reply to posts
                     </li>
                     <li className="flex items-center gap-2 text-muted-foreground">
                       <Check className="w-4 h-4 text-green-600" />
-                      Analyze your post performance
+                      Manage comments on your own posts
                     </li>
                   </ul>
                 </div>
