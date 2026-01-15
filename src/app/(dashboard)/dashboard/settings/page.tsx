@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -375,9 +376,19 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-slate-900 p-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
-                  {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                </div>
+                {session?.user?.image ? (
+                  <Image
+                    src={session.user.image}
+                    alt={linkedInName}
+                    width={64}
+                    height={64}
+                    className="w-16 h-16 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
+                    {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
+                )}
                 <div>
                   <p className="font-semibold text-lg">{linkedInName}</p>
                   <p className="text-sm text-muted-foreground">LinkedIn Profile</p>
