@@ -1,18 +1,7 @@
-// AWS SES SMTP Client for transactional emails
-import nodemailer from "nodemailer";
+// Brevo API Client for transactional emails
 
-// Create SMTP transporter using your existing SES SMTP credentials
-const transporter = nodemailer.createTransport({
-  host: process.env.SES_SMTP_HOST || "email-smtp.us-east-1.amazonaws.com",
-  port: parseInt(process.env.SES_SMTP_PORT || "587"),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SES_SMTP_USER,
-    pass: process.env.SES_SMTP_PASSWORD,
-  },
-});
-
-const FROM_EMAIL = process.env.SES_FROM_EMAIL || "noreply@linkedgrow.ai";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@linkedgrow.ai";
 const FROM_NAME = "LinkedGrow";
 
 interface SendEmailParams {
@@ -23,21 +12,41 @@ interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
+  if (!BREVO_API_KEY) {
+    throw new Error("BREVO_API_KEY is not configured");
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to,
-      subject,
-      html,
-      text,
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "api-key": BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        sender: {
+          name: FROM_NAME,
+          email: FROM_EMAIL,
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
     });
 
-    console.log("Email sent successfully:", info.messageId);
-    return { success: true, messageId: info.messageId };
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log("Email sent successfully:", data.messageId);
+      return { success: true, messageId: data.messageId };
+    }
+
+    console.error("Brevo API error:", data);
+    throw new Error(data.message || "Failed to send email");
   } catch (error) {
     console.error("Failed to send email:", error);
     throw error;
   }
 }
-
-export { transporter };

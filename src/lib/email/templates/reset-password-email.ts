@@ -1,4 +1,4 @@
-// Password reset email template - matching MailerLite design
+// Password reset email template - transactional email sent via Brevo
 interface ResetPasswordEmailParams {
   name?: string;
   resetUrl: string;

@@ -1,4 +1,4 @@
-// Welcome email template - matching MailerLite design
+// Welcome email template - transactional email sent via Brevo
 interface WelcomeEmailParams {
   name?: string;
   email: string;

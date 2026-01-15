@@ -6,7 +6,7 @@ import { X, Gift, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExitIntentPopupProps {
-  onSubmit: (email: string) => Promise<void>;
+  onSubmit: (email: string, formLoadTime: number) => Promise<void>;
 }
 
 export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
@@ -16,6 +16,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [formLoadTime, setFormLoadTime] = useState(0);
 
   useEffect(() => {
     // Check if already shown in this session
@@ -30,6 +31,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
       if (e.clientY <= 0 && !hasShown) {
         setIsVisible(true);
         setHasShown(true);
+        setFormLoadTime(Date.now()); // Record when popup is shown for bot protection
         sessionStorage.setItem("exitIntentShown", "true");
       }
     };
@@ -53,7 +55,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
     setError("");
 
     try {
-      await onSubmit(email);
+      await onSubmit(email, formLoadTime);
       setIsSuccess(true);
       setTimeout(() => {
         setIsVisible(false);

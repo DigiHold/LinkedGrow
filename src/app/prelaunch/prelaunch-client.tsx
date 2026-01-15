@@ -1848,6 +1848,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [formLoadTime] = useState(() => Date.now()); // For bot protection
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -1889,7 +1890,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, _ts: formLoadTime.toString() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1901,11 +1902,11 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
-  const handleExitIntentSubmit = async (exitEmail: string) => {
+  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number) => {
     const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: exitEmail }),
+      body: JSON.stringify({ email: exitEmail, _ts: exitFormLoadTime.toString() }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to subscribe");
