@@ -32,11 +32,11 @@ const EEA_COUNTRIES = [
 const CONSENT_STORAGE_KEY = 'linkedgrow_consent';
 const CONSENT_VERSION = '2.0';
 
-// Detect if user is in EEA region using MaxMind GeoLite2 database
+// Detect if user is in EEA region using Vercel's geo headers
 export async function detectUserRegion(): Promise<GeoLocation> {
   try {
-    // Use our internal API that uses MaxMind GeoLite2 database
-    // 99.8% accuracy, no external API calls, completely free
+    // Use our internal API that uses Vercel's built-in geo headers
+    // 99%+ country accuracy, zero cold start, completely free
     const response = await fetch('/api/geo', {
       cache: 'no-store',
     });

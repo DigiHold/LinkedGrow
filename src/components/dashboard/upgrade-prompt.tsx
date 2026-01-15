@@ -18,6 +18,7 @@ import {
   Headphones,
   Check,
   Crown,
+  Anchor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
   imageGeneration: ImageIcon,
   carouselGenerator: Layers,
+  hooksGenerator: Anchor,
   advancedEditor: Edit3,
   calendar: Calendar,
   scheduling: Clock,

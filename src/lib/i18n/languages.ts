@@ -1,9 +1,9 @@
 export const SUPPORTED_LANGUAGES = [
   { code: "en", name: "English", nativeName: "English", flag: "GB" },
-  { code: "fr", name: "French", nativeName: "French", flag: "FR" },
-  { code: "de", name: "Deutsch", nativeName: "Deutsch", flag: "DE" },
-  { code: "es", name: "Espanol", nativeName: "Espanol", flag: "ES" },
-  { code: "it", name: "Italian", nativeName: "Italian", flag: "IT" },
+  { code: "fr", name: "French", nativeName: "Francais", flag: "FR" },
+  { code: "de", name: "German", nativeName: "Deutsch", flag: "DE" },
+  { code: "es", name: "Spanish", nativeName: "Espanol", flag: "ES" },
+  { code: "it", name: "Italian", nativeName: "Italiano", flag: "IT" },
 ] as const;
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
