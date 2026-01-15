@@ -69,12 +69,43 @@ export default function SettingsPage() {
     niche: "",
     audience: "",
     topics: "",
-    doNotMention: "",
     context: "",
   });
 
+  // LinkedIn connection
+  const [linkedInConnected, setLinkedInConnected] = useState(false);
+  const [linkedInName, setLinkedInName] = useState("");
+  const [linkedInMessage, setLinkedInMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isConnectingLinkedIn, setIsConnectingLinkedIn] = useState(false);
+
   useEffect(() => {
     setMounted(true);
+
+    // Check if LinkedIn is connected via cookie
+    const linkedInProfileName = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("linkedin_profile_name="))
+      ?.split("=")[1];
+    if (linkedInProfileName) {
+      setLinkedInConnected(true);
+      setLinkedInName(decodeURIComponent(linkedInProfileName));
+    }
+
+    // Listen for popup messages
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "linkedin-success") {
+        setLinkedInConnected(true);
+        setLinkedInName(event.data.name || "");
+        setLinkedInMessage({ type: "success", text: "LinkedIn connected successfully!" });
+        setIsConnectingLinkedIn(false);
+      } else if (event.data?.type === "linkedin-error") {
+        setLinkedInMessage({ type: "error", text: event.data.error || "Failed to connect LinkedIn" });
+        setIsConnectingLinkedIn(false);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   // Load user data
@@ -277,7 +308,6 @@ export default function SettingsPage() {
         body: JSON.stringify({
           businessDescription: `${businessProfile.name ? `Business: ${businessProfile.name}. ` : ""}${businessProfile.description}${businessProfile.products ? ` Products/Services: ${businessProfile.products}` : ""}${businessProfile.niche ? ` Industry: ${businessProfile.niche}` : ""}${businessProfile.context ? ` Additional context: ${businessProfile.context}` : ""}`,
           targetAudience: businessProfile.audience,
-          neverMention: businessProfile.doNotMention,
         }),
       });
 
@@ -298,6 +328,47 @@ export default function SettingsPage() {
     navigator.clipboard.writeText(text);
   };
 
+  const handleConnectLinkedIn = () => {
+    setIsConnectingLinkedIn(true);
+    setLinkedInMessage(null);
+
+    // Open centered popup window
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      "/api/linkedin/auth?popup=true",
+      "linkedin-auth",
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    );
+
+    // Check if popup was blocked
+    if (!popup) {
+      setLinkedInMessage({ type: "error", text: "Popup was blocked. Please allow popups and try again." });
+      setIsConnectingLinkedIn(false);
+      return;
+    }
+
+    // Monitor popup close (in case user closes it manually)
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        setIsConnectingLinkedIn(false);
+      }
+    }, 500);
+  };
+
+  const handleDisconnectLinkedIn = () => {
+    // Clear LinkedIn cookies
+    document.cookie = "linkedin_connected=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "linkedin_profile_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setLinkedInConnected(false);
+    setLinkedInName("");
+    setLinkedInMessage({ type: "success", text: "LinkedIn disconnected successfully" });
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Header */}
@@ -314,35 +385,83 @@ export default function SettingsPage() {
       </div>
 
       {/* LinkedIn Connection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Linkedin className="w-5 h-5 text-[#0A66C2]" />
-            LinkedIn Connection
-          </CardTitle>
-          <CardDescription>
-            Connect your LinkedIn account for direct publishing
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#0A66C2]/10 flex items-center justify-center mb-4">
-              <Linkedin className="w-8 h-8 text-[#0A66C2]" />
+      {linkedInMessage && (
+        <div className={cn(
+          "p-3 rounded-lg text-sm flex items-center gap-2",
+          linkedInMessage.type === "success"
+            ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+            : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+        )}>
+          {linkedInMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {linkedInMessage.text}
+        </div>
+      )}
+
+      {linkedInConnected ? (
+        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
+          {/* Header with LinkedIn blue */}
+          <div className="bg-linkedin px-5 py-4">
+            <div className="flex items-center gap-3">
+              <Linkedin className="w-6 h-6 text-white" />
+              <div>
+                <h3 className="text-white font-semibold">LinkedIn Connected</h3>
+                <p className="text-white/80 text-sm">Your account is linked for direct publishing</p>
+              </div>
             </div>
-            <h4 className="font-medium mb-2">Connect LinkedIn</h4>
-            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-              Publish posts directly from LinkedGrow to your LinkedIn profile
-            </p>
+          </div>
+          {/* Profile info */}
+          <div className="bg-white dark:bg-slate-900 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
+                  {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                </div>
+                <div>
+                  <p className="font-semibold text-lg">{linkedInName}</p>
+                  <p className="text-sm text-muted-foreground">LinkedIn Profile</p>
+                  <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span>Ready to publish</span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleDisconnectLinkedIn}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+              >
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg bg-linkedin">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Linkedin className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-white font-semibold text-lg">Connect LinkedIn</h3>
+                <p className="text-white/80 text-sm">Publish posts directly to your LinkedIn profile</p>
+              </div>
+            </div>
             <Button
-              className="bg-[#0A66C2] hover:bg-[#004182]"
-              onClick={() => window.location.href = "/api/linkedin/auth"}
+              onClick={handleConnectLinkedIn}
+              disabled={isConnectingLinkedIn}
+              className="bg-white hover:bg-slate-100 text-linkedin font-semibold px-6 shrink-0"
             >
-              <Linkedin className="w-4 h-4 mr-2" />
-              Connect LinkedIn
+              {isConnectingLinkedIn ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Linkedin className="w-4 h-4 mr-2" />
+              )}
+              {isConnectingLinkedIn ? "Connecting..." : "Connect"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       {/* Account Settings */}
       <Card id="account">
@@ -761,24 +880,6 @@ export default function SettingsPage() {
                 }
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-red-500" />
-              Things AI Should NEVER Mention
-            </Label>
-            <Textarea
-              placeholder="Competitors, sensitive topics, incorrect claims about your business..."
-              value={businessProfile.doNotMention}
-              onChange={(e) =>
-                setBusinessProfile({
-                  ...businessProfile,
-                  doNotMention: e.target.value,
-                })
-              }
-              className="min-h-[80px]"
-            />
           </div>
 
           <div className="space-y-2">

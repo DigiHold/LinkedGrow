@@ -5,6 +5,39 @@ import { randomBytes } from 'crypto';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const appType = (searchParams.get('app') || 'poster') as LinkedInAppType;
+  const popup = searchParams.get('popup') === 'true';
+
+  // Check if LinkedIn credentials are configured
+  const clientId = appType === 'poster'
+    ? process.env.LINKEDIN_POSTER_CLIENT_ID
+    : process.env.LINKEDIN_COMMUNITY_CLIENT_ID;
+
+  if (!clientId) {
+    const errorMessage = 'LinkedIn API credentials are not configured. Please contact support.';
+    if (popup) {
+      // Return HTML that closes the popup and notifies the parent
+      return new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><title>LinkedIn Connection Error</title></head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'linkedin-error', error: '${errorMessage}' }, '*');
+                window.close();
+              } else {
+                document.body.innerHTML = '<p>${errorMessage}</p>';
+              }
+            </script>
+          </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+    }
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?error=${encodeURIComponent(errorMessage)}`
+    );
+  }
 
   // Generate a random state to prevent CSRF attacks
   const state = randomBytes(16).toString('hex');
@@ -32,6 +65,17 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 10, // 10 minutes
     path: '/',
   });
+
+  // Store popup flag for callback
+  if (popup) {
+    response.cookies.set('linkedin_popup', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+      path: '/',
+    });
+  }
 
   return response;
 }

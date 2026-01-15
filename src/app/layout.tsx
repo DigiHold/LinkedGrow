@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ScrollLockFix } from "@/components/providers/scroll-lock-fix";
 import { CookieBanner } from "@/components/cookie-consent";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/cookie-consent";
 import {
@@ -110,7 +111,10 @@ export default async function RootLayout({
 
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
-            <SessionProvider>{children}</SessionProvider>
+            <SessionProvider>
+              <ScrollLockFix />
+              {children}
+            </SessionProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
 
