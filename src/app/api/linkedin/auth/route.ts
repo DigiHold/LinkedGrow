@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   // Check if LinkedIn credentials are configured
   const clientId = appType === 'poster'
-    ? process.env.LINKEDIN_POSTER_CLIENT_ID
+    ? process.env.LINKEDIN_CLIENT_ID
     : process.env.LINKEDIN_COMMUNITY_CLIENT_ID;
 
   if (!clientId) {

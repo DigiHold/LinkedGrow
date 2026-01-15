@@ -62,8 +62,8 @@ export type LinkedInAppType = 'poster' | 'community';
 function getLinkedInConfig(appType: LinkedInAppType) {
   if (appType === 'poster') {
     return {
-      clientId: process.env.LINKEDIN_POSTER_CLIENT_ID!,
-      clientSecret: process.env.LINKEDIN_POSTER_CLIENT_SECRET!,
+      clientId: process.env.LINKEDIN_CLIENT_ID!,
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
       scopes: POSTER_SCOPES,
     };
   }
