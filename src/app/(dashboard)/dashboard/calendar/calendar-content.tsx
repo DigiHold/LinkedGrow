@@ -27,6 +27,12 @@ import {
   Info,
   Save,
   Trash2,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -85,6 +91,9 @@ export function CalendarContent() {
   // Create post state
   const [newPostContent, setNewPostContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiInstruction, setAIInstruction] = useState("");
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
 
   // Schedule post state
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,6 +120,7 @@ export function CalendarContent() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dayDropdownRef = useRef<HTMLDivElement>(null);
   const postMenuRef = useRef<HTMLDivElement>(null);
+  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -425,6 +435,50 @@ export function CalendarContent() {
     setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
+  const insertFormatting = (format: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = newPostContent.substring(start, end);
+
+    let newText = "";
+    switch (format) {
+      case "bold":
+        newText = selectedText || "bold text";
+        break;
+      case "italic":
+        newText = selectedText || "italic text";
+        break;
+      case "bullet":
+        newText = selectedText ? `• ${selectedText}` : "• ";
+        break;
+      case "number":
+        newText = selectedText ? `1. ${selectedText}` : "1. ";
+        break;
+      default:
+        return;
+    }
+
+    const updatedContent = newPostContent.substring(0, start) + newText + newPostContent.substring(end);
+    setNewPostContent(updatedContent);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + newText.length, start + newText.length);
+    }, 0);
+  };
+
+  const handleAIEdit = async () => {
+    if (!aiInstruction.trim()) return;
+    setIsProcessingAI(true);
+    // TODO: Implement actual AI editing
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setIsProcessingAI(false);
+    setShowAIPanel(false);
+    setAIInstruction("");
+  };
+
   const handleDeletePost = async () => {
     if (!selectedPost) return;
     setIsDeleting(true);
@@ -710,11 +764,9 @@ export function CalendarContent() {
               <Button onClick={handleCreateFromIdea} disabled={!newIdeaText.trim()} className="w-full">
                 <Plus className="w-4 h-4 mr-2" /> Create a post from this idea
               </Button>
-              {!selectedIdeaForModal && (
-                <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
-                  <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
-                </Button>
-              )}
+              <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
+                <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
+              </Button>
               {selectedIdeaForModal && (
                 <Button variant="outline" onClick={handleDeleteIdea} disabled={isDeleting} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
                   <Trash2 className="w-4 h-4 mr-2" /> {isDeleting ? "Deleting..." : "Delete this idea"}
@@ -929,6 +981,66 @@ export function CalendarContent() {
                   <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-white dark:bg-gray-900">
                     <Card>
                       <CardContent className="p-4">
+                        {/* Formatting Toolbar */}
+                        <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-border">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => insertFormatting("bold")}
+                            title="Bold"
+                          >
+                            <Bold className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => insertFormatting("italic")}
+                            title="Italic"
+                          >
+                            <Italic className="w-4 h-4" />
+                          </Button>
+                          <div className="w-px h-6 bg-border mx-1" />
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => insertFormatting("bullet")}
+                            title="Bullet List"
+                          >
+                            <List className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => insertFormatting("number")}
+                            title="Numbered List"
+                          >
+                            <ListOrdered className="w-4 h-4" />
+                          </Button>
+                          <div className="w-px h-6 bg-border mx-1" />
+                          <Button variant="ghost" size="icon-sm" title="Add Image">
+                            <ImageIcon className="w-4 h-4" />
+                          </Button>
+                          <div className="flex-1" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newState = !showAIPanel;
+                              setShowAIPanel(newState);
+                              if (newState) {
+                                setTimeout(() => {
+                                  aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }, 100);
+                              }
+                            }}
+                            className={cn(showAIPanel && "bg-linkedin/10 text-linkedin")}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1" />
+                            <span className="hidden sm:inline">AI Assist</span>
+                          </Button>
+                        </div>
+
+                        {/* Main Textarea */}
                         <Textarea
                           ref={textareaRef}
                           value={newPostContent}
@@ -940,8 +1052,10 @@ Tips for viral posts:
 • Use short paragraphs and line breaks
 • Add bullet points for readability
 • End with a question or CTA"
-                          className="min-h-100 sm:min-h-125 border-0 focus-visible:ring-0 resize-none text-base"
+                          className="min-h-80 sm:min-h-100 border-0 focus-visible:ring-0 resize-none text-base"
                         />
+
+                        {/* Character Counter */}
                         <div className="flex items-center justify-between pt-3 border-t border-border">
                           <span className={cn(
                             "text-sm",
@@ -955,10 +1069,86 @@ Tips for viral posts:
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* AI Panel */}
+                    {showAIPanel && (
+                      <Card ref={aiPanelRef} className="mt-4 border-linkedin/20 bg-linkedin/5">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                              <Wand2 className="w-4 h-4 text-linkedin" />
+                              AI Edit
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => setShowAIPanel(false)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Describe exactly what you want AI to change in your post above. Be specific about the tone, style, or structure.
+                          </p>
+                          <Textarea
+                            value={aiInstruction}
+                            onChange={(e) => setAIInstruction(e.target.value)}
+                            placeholder="Examples:
+• Rewrite the first sentence to be more attention-grabbing
+• Add 3 bullet points summarizing the key takeaways
+• Make it sound more professional and less casual
+• Shorten to 500 characters while keeping the main message"
+                            className="min-h-24"
+                          />
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {[
+                              "Make it shorter",
+                              "Add emojis",
+                              "Stronger hook",
+                              "Add CTA",
+                            ].map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                onClick={() => setAIInstruction(suggestion)}
+                                className="px-3 py-1 text-xs rounded-full bg-white dark:bg-gray-900 border border-border hover:border-linkedin/50 transition-colors"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                          <Button
+                            variant="linkedin"
+                            className="mt-4 w-full"
+                            onClick={handleAIEdit}
+                            disabled={!aiInstruction.trim() || isProcessingAI}
+                          >
+                            {isProcessingAI ? "Processing..." : "Apply Changes"}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
 
                   {/* RIGHT SIDE - Settings */}
                   <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                    {/* To be planned status box */}
+                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                          <span className="text-xs font-medium text-muted-foreground">To be planned</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 pt-2">
+                        <p className="text-sm text-muted-foreground">Schedule this post on</p>
+                        <p className="text-base font-bold">
+                          {getFormattedScheduleDate()} - {getFormattedScheduleTime()}
+                        </p>
+                      </div>
+                    </div>
+
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
