@@ -31,12 +31,6 @@ import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId } from "@/lib/plans";
 import Link from "next/link";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -99,8 +93,12 @@ function CalendarContent() {
   const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
   const [scheduleHour, setScheduleHour] = useState("12");
   const [scheduleMinute, setScheduleMinute] = useState("00");
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dayDropdownRef = useRef<HTMLDivElement>(null);
+  const postMenuRef = useRef<HTMLDivElement>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -163,6 +161,21 @@ function CalendarContent() {
       setScheduleMinute(String(Math.ceil(now.getMinutes() / 5) * 5).padStart(2, "0"));
     }
   }, [selectedDay]);
+
+  // Click outside handler to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dayDropdownRef.current && !dayDropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+        setSelectedDay(null);
+      }
+      if (postMenuRef.current && !postMenuRef.current.contains(event.target as Node)) {
+        setPostMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -406,96 +419,101 @@ function CalendarContent() {
               const isSelected = selectedDay?.day === item.day && selectedDay?.month === item.month && selectedDay?.year === item.year;
 
               return (
-                <DropdownMenu
-                  key={index}
-                  open={isSelected && dropdownOpen}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setDropdownOpen(false);
-                      setSelectedDay(null);
-                    }
-                  }}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <div
-                      onClick={() => handleDayClick(item)}
-                      className={cn(
-                        "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
-                        !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
-                        isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
-                        dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20",
-                        isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
-                        index % 7 === 6 && "border-r-0"
-                      )}
-                    >
-                      {/* Day Number */}
-                      <div className="w-full sm:w-fit flex justify-center sm:justify-start">
-                        <span className={cn(
-                          "text-xs flex h-6 w-6 items-center justify-center rounded-sm",
-                          dayIsToday && "bg-primary text-white",
-                          !dayIsToday && item.isCurrentMonth && !dayIsPast && "text-foreground",
-                          !dayIsToday && item.isCurrentMonth && dayIsPast && "text-muted-foreground",
-                          !item.isCurrentMonth && "text-muted-foreground/50"
-                        )}>
-                          {item.day}
-                        </span>
-                      </div>
-
-                      {/* Posts for this day */}
-                      {hasPost && (
-                        <div className="mt-2 space-y-1">
-                          {postsForDay.slice(0, 2).map((post) => (
-                            <button
-                              key={post.id}
-                              onClick={(e) => handlePostClick(post, e)}
-                              className={cn(
-                                "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
-                                post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
-                                post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
-                                post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
-                              )}
-                            >
-                              <div className="flex items-center gap-1.5 px-1.5 py-1">
-                                <div className={cn(
-                                  "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
-                                  post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
-                                  post.status === "published" && "bg-green-100 dark:bg-green-800/40"
-                                )}>
-                                  {post.postType === "image" ? (
-                                    <ImageIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                                  ) : (
-                                    <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                                  )}
-                                </div>
-                                <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
-                                  {getPostPreview(post.content, 30)}
-                                </p>
-                              </div>
-                              <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
-                                <Calendar className="w-2.5 h-2.5" />
-                                <span className="font-medium">{formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}</span>
-                              </div>
-                            </button>
-                          ))}
-                          {postsForDay.length > 2 && (
-                            <span className="text-[10px] text-muted-foreground px-1.5 block">+{postsForDay.length - 2} more</span>
-                          )}
-                        </div>
-                      )}
+                <div key={index} className="relative">
+                  <div
+                    onClick={() => handleDayClick(item)}
+                    className={cn(
+                      "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
+                      !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
+                      isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
+                      dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20",
+                      isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
+                      index % 7 === 6 && "border-r-0"
+                    )}
+                  >
+                    {/* Day Number */}
+                    <div className="w-full sm:w-fit flex justify-center sm:justify-start">
+                      <span className={cn(
+                        "text-xs flex h-6 w-6 items-center justify-center rounded-sm",
+                        dayIsToday && "bg-primary text-white",
+                        !dayIsToday && item.isCurrentMonth && !dayIsPast && "text-foreground",
+                        !dayIsToday && item.isCurrentMonth && dayIsPast && "text-muted-foreground",
+                        !item.isCurrentMonth && "text-muted-foreground/50"
+                      )}>
+                        {item.day}
+                      </span>
                     </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" className="p-3 flex flex-col gap-2 shadow-lg z-99">
-                    <DropdownMenuItem onClick={() => openDrawer("create-post")} className="cursor-pointer flex items-center gap-2 px-2 py-2">
-                      <Plus className="w-4 h-4" /> Create a post
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openDrawer("schedule-post")} className="cursor-pointer flex items-center gap-2 px-2 py-2">
-                      <CalendarPlus className="w-4 h-4" /> Schedule a post
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => openDrawer("insert-idea")} className="cursor-pointer flex items-center gap-2 px-2 py-2">
-                      <Lightbulb className="w-4 h-4" /> Insert an idea
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
+                    {/* Posts for this day */}
+                    {hasPost && (
+                      <div className="mt-2 space-y-1">
+                        {postsForDay.slice(0, 2).map((post) => (
+                          <button
+                            key={post.id}
+                            onClick={(e) => handlePostClick(post, e)}
+                            className={cn(
+                              "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
+                              post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
+                              post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
+                              post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
+                            )}
+                          >
+                            <div className="flex items-center gap-1.5 px-1.5 py-1">
+                              <div className={cn(
+                                "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
+                                post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
+                                post.status === "published" && "bg-green-100 dark:bg-green-800/40"
+                              )}>
+                                {post.postType === "image" ? (
+                                  <ImageIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                                ) : (
+                                  <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                                )}
+                              </div>
+                              <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                                {getPostPreview(post.content, 30)}
+                              </p>
+                            </div>
+                            <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
+                              <Calendar className="w-2.5 h-2.5" />
+                              <span className="font-medium">{formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}</span>
+                            </div>
+                          </button>
+                        ))}
+                        {postsForDay.length > 2 && (
+                          <span className="text-[10px] text-muted-foreground px-1.5 block">+{postsForDay.length - 2} more</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Day Actions Dropdown */}
+                  {isSelected && dropdownOpen && (
+                    <div
+                      ref={dayDropdownRef}
+                      className="absolute left-full top-0 ml-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 min-w-44"
+                    >
+                      <button
+                        onClick={() => openDrawer("create-post")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" /> Create a post
+                      </button>
+                      <button
+                        onClick={() => openDrawer("schedule-post")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <CalendarPlus className="w-4 h-4" /> Schedule a post
+                      </button>
+                      <button
+                        onClick={() => openDrawer("insert-idea")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Lightbulb className="w-4 h-4" /> Insert an idea
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -540,18 +558,24 @@ function CalendarContent() {
                                 </p>
                               </div>
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
-                                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/dashboard/editor?id=${selectedPost.id}`}>Edit post</Link>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="relative" ref={postMenuRef}>
+                              <button
+                                onClick={() => setPostMenuOpen(!postMenuOpen)}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm"
+                              >
+                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                              {postMenuOpen && (
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-32">
+                                  <Link
+                                    href={`/dashboard/editor?id=${selectedPost.id}`}
+                                    className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                  >
+                                    Edit post
+                                  </Link>
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div className="mb-4">
                             <p className="text-sm whitespace-pre-line">{selectedPost.content}</p>
