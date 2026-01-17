@@ -3,6 +3,7 @@
 
 export interface TrackingConfig {
   gtmId?: string;
+  ga4MeasurementId?: string; // G-XXXXXXX - for direct cookie creation on consent
   metaPixelId?: string;
   hotjarId?: string;
   hotjarVersion?: number;
@@ -57,14 +58,85 @@ function gtag(...args: unknown[]): void {
 }
 
 /**
- * Trigger a page view event to activate GA4
- * This is critical for mid-session consent - GA4 needs a page_view event to fire
+ * GA4 Measurement ID - extracted from GTM or set directly
+ * This is needed to create GA4 cookies immediately on consent
+ */
+let ga4MeasurementId: string | null = null;
+
+/**
+ * Set GA4 Measurement ID for direct cookie creation
+ */
+export function setGA4MeasurementId(measurementId: string): void {
+  ga4MeasurementId = measurementId;
+}
+
+/**
+ * Check if GA4 cookies already exist (meaning GTM already initialized GA4)
+ */
+function hasGA4Cookies(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.includes('_ga=') || document.cookie.includes('_ga_');
+}
+
+/**
+ * Inject GA4 gtag.js directly to create cookies immediately
+ * This bypasses GTM's trigger system which doesn't fire on mid-session consent
+ * Only injects if GA4 cookies don't already exist (to avoid conflict with GTM)
+ */
+function injectGA4Direct(measurementId: string): void {
+  if (typeof window === 'undefined' || !measurementId) return;
+
+  // Skip if GA4 cookies already exist (GTM already handled it on page load)
+  if (hasGA4Cookies()) {
+    console.log('[GA4] Cookies already exist, skipping direct injection');
+    return;
+  }
+
+  const scriptId = `ga4-${measurementId}`;
+  if (document.getElementById(scriptId)) return;
+
+  console.log('[GA4] Injecting gtag.js directly for immediate cookie creation');
+
+  // Create gtag script
+  const script = document.createElement('script');
+  script.id = scriptId;
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+
+  script.onload = () => {
+    // Initialize gtag
+    window.dataLayer = window.dataLayer || [];
+    function gtag(...args: unknown[]) {
+      window.dataLayer.push(args);
+    }
+    window.gtag = gtag;
+
+    gtag('js', new Date());
+    gtag('config', measurementId, {
+      page_path: window.location.pathname,
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+    console.log('[GA4] Direct injection complete, cookies should be created');
+  };
+
+  document.head.appendChild(script);
+}
+
+/**
+ * Trigger events to activate GA4 after mid-session consent
+ * Fires multiple event types to ensure GA4 picks up the consent and starts tracking
  */
 function triggerPageView(): void {
   if (typeof window === 'undefined') return;
   initDataLayer();
 
-  // Push page_view event for GA4
+  // 1. Push consent_granted event - GTM can use this as a trigger
+  window.dataLayer.push({
+    event: 'consent_granted',
+  });
+
+  // 2. Push page_view event for GA4
   window.dataLayer.push({
     event: 'page_view',
     page_path: window.location.pathname,
@@ -72,16 +144,15 @@ function triggerPageView(): void {
     page_location: window.location.href,
   });
 
-  // Also trigger gtag page_view for direct GA4 integration
-  if (typeof window.gtag === 'function') {
-    window.gtag('event', 'page_view', {
-      page_path: window.location.pathname,
-      page_title: document.title,
-      page_location: window.location.href,
-    });
-  }
+  // 3. Push gtm.init and gtm.dom events that GTM normally fires on page load
+  window.dataLayer.push({ event: 'gtm.dom' });
+  window.dataLayer.push({ event: 'gtm.load' });
 
-  console.log('[GTM] Page view event triggered');
+  // 4. If we have a GA4 measurement ID, inject gtag.js directly
+  // This creates _ga and _gid cookies immediately
+  if (ga4MeasurementId) {
+    injectGA4Direct(ga4MeasurementId);
+  }
 }
 
 /**
@@ -365,6 +436,11 @@ export function activateTracking(config: TrackingConfig, preferences: ConsentPre
 
   // First update Google Consent Mode
   updateGoogleConsent(preferences);
+
+  // Store GA4 measurement ID for direct injection
+  if (config.ga4MeasurementId) {
+    setGA4MeasurementId(config.ga4MeasurementId);
+  }
 
   // Load GTM if analytics or marketing is enabled
   if ((preferences.analytics || preferences.marketing) && config.gtmId) {

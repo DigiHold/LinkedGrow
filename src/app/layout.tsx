@@ -28,10 +28,8 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-// Tracking IDs from environment variables
+// Google Tag Manager ID from environment
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
-const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "";
-const HOTJAR_ID = process.env.NEXT_PUBLIC_HOTJAR_ID || "";
 
 export const metadata: Metadata = {
   title: "LinkedGrow - Grow Your LinkedIn Presence with AI",
@@ -100,14 +98,8 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Tracking Scripts with Consent Mode V2 */}
-        {GTM_ID && (
-          <GoogleTagManager
-            gtmId={GTM_ID}
-            metaPixelId={META_PIXEL_ID}
-            hotjarId={HOTJAR_ID}
-          />
-        )}
+        {/* Google Tag Manager with Consent Mode V2 */}
+        {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
         {/* JSON-LD Structured Data for SEO */}
         <OrganizationJsonLd />
         <WebsiteJsonLd />
