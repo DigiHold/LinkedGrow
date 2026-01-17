@@ -58,29 +58,10 @@ const flags: Record<string, React.ReactNode> = {
   ),
 };
 
-// Cookie helpers
-function isFunctionalConsentGranted(): boolean {
-  if (typeof localStorage === 'undefined') return false;
-  try {
-    const stored = localStorage.getItem('linkedgrow_consent');
-    if (stored) {
-      const prefs = JSON.parse(stored);
-      return prefs.functional === true;
-    }
-  } catch {
-    // No consent stored yet
-  }
-  return false;
-}
-
+// Cookie helpers - Language preference is a "strictly necessary" cookie
+// as it's essential for the website to function properly for the user
+// and doesn't track users across sites
 function setLocaleCookie(locale: string) {
-  // Always store in sessionStorage for current session (no consent needed)
-  sessionStorage.setItem('temp_locale', locale);
-
-  // Only set persistent cookie if functional consent is granted
-  if (!isFunctionalConsentGranted()) {
-    return;
-  }
   const expires = new Date();
   expires.setFullYear(expires.getFullYear() + 1);
   document.cookie = `NEXT_LOCALE=${locale}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
@@ -88,12 +69,6 @@ function setLocaleCookie(locale: string) {
 
 function getLocaleCookie(): string | null {
   if (typeof document === "undefined") return null;
-
-  // First check session storage (works without consent)
-  const tempLocale = sessionStorage.getItem('temp_locale');
-  if (tempLocale) return tempLocale;
-
-  // Then check cookie (only exists if consent was granted)
   const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
   return match ? match[1] : null;
 }

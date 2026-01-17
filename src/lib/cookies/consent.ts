@@ -1,11 +1,10 @@
 // Cookie Consent Management with Google Consent Mode V2
 // Supports EU/EEA opt-in and rest-of-world opt-out
 
-export type ConsentCategory = 'necessary' | 'functional' | 'analytics' | 'marketing';
+export type ConsentCategory = 'necessary' | 'analytics' | 'marketing';
 
 export interface ConsentPreferences {
-  necessary: boolean; // Always true, required for site functionality
-  functional: boolean;
+  necessary: boolean; // Always true, includes language/theme preferences (strictly necessary)
   analytics: boolean;
   marketing: boolean;
   timestamp: string;
@@ -157,8 +156,8 @@ export function updateGoogleConsent(preferences: ConsentPreferences): void {
     'ad_storage': preferences.marketing ? 'granted' : 'denied',
     'ad_user_data': preferences.marketing ? 'granted' : 'denied',
     'ad_personalization': preferences.marketing ? 'granted' : 'denied',
-    'functionality_storage': preferences.functional ? 'granted' : 'denied',
-    'personalization_storage': preferences.functional ? 'granted' : 'denied',
+    'functionality_storage': 'granted', // Always granted - language/theme are strictly necessary
+    'personalization_storage': 'granted', // Always granted - language/theme are strictly necessary
   });
 }
 
@@ -166,7 +165,6 @@ export function updateGoogleConsent(preferences: ConsentPreferences): void {
 export function acceptAllCookies(isEEA: boolean): void {
   saveConsent({
     necessary: true,
-    functional: true,
     analytics: true,
     marketing: true,
     isEEA,
@@ -177,7 +175,6 @@ export function acceptAllCookies(isEEA: boolean): void {
 export function rejectAllCookies(isEEA: boolean): void {
   saveConsent({
     necessary: true,
-    functional: false,
     analytics: false,
     marketing: false,
     isEEA,
@@ -189,23 +186,14 @@ export const COOKIE_CATEGORIES = {
   necessary: {
     id: 'necessary',
     name: 'Essential',
-    description: 'Required for the website to function. These cannot be disabled.',
+    description: 'Required for the website to function properly. These cannot be disabled.',
     required: true,
     cookies: [
       { name: 'Session cookies', purpose: 'Keep you logged in securely' },
       { name: 'Security tokens', purpose: 'Protect against fraud and attacks' },
       { name: 'Consent preferences', purpose: 'Remember your cookie choices' },
-    ],
-  },
-  functional: {
-    id: 'functional',
-    name: 'Functional',
-    description: 'Remember your preferences like language and display settings.',
-    required: false,
-    cookies: [
-      { name: 'Theme preference', purpose: 'Remember dark/light mode' },
-      { name: 'Language settings', purpose: 'Display content in your language' },
-      { name: 'UI preferences', purpose: 'Remember sidebar and layout choices' },
+      { name: 'Language settings', purpose: 'Display content in your preferred language' },
+      { name: 'Theme preference', purpose: 'Remember your dark/light mode choice' },
     ],
   },
   analytics: {
