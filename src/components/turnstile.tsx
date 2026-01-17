@@ -37,8 +37,7 @@ export function Turnstile({ onVerify, onError, onExpire, className }: TurnstileP
       onExpire={onExpire}
       options={{
         theme: "auto",
-        size: "flexible",
-        appearance: "interaction-only",
+        size: "invisible",
       }}
       className={className}
     />
