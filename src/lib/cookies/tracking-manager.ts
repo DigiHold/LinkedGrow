@@ -58,16 +58,30 @@ function gtag(...args: unknown[]): void {
 
 /**
  * Trigger a page view event to activate GA4
+ * This is critical for mid-session consent - GA4 needs a page_view event to fire
  */
 function triggerPageView(): void {
   if (typeof window === 'undefined') return;
   initDataLayer();
+
+  // Push page_view event for GA4
   window.dataLayer.push({
     event: 'page_view',
     page_path: window.location.pathname,
     page_title: document.title,
     page_location: window.location.href,
   });
+
+  // Also trigger gtag page_view for direct GA4 integration
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'page_view', {
+      page_path: window.location.pathname,
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }
+
+  console.log('[GTM] Page view event triggered');
 }
 
 /**
@@ -122,8 +136,9 @@ export function injectGTM(gtmId: string): void {
   script.onload = () => {
     loadedScripts.add(scriptId);
     console.log('[GTM] Script loaded successfully');
-    // Give GTM a moment to initialize, then trigger page view
-    setTimeout(triggerPageView, 100);
+    // Give GTM more time to fully initialize before triggering page view
+    // This ensures GA4 tag is ready to receive events
+    setTimeout(triggerPageView, 500);
   };
 
   script.onerror = () => {
