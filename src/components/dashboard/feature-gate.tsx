@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Lock,
   Crown,
@@ -18,6 +20,7 @@ import {
   Headphones,
   Palette,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 import {
   PlanId,
@@ -28,7 +31,7 @@ import {
   getRequiredPlanForFeature,
   getMissingFeatures,
 } from "@/lib/plans";
-import { auth } from "@/lib/auth";
+import { useSession } from "next-auth/react";
 import { UpgradeButton } from "./upgrade-button";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
@@ -56,12 +59,20 @@ interface FeatureGateProps {
   children: React.ReactNode;
 }
 
-// Server Component - no loading state needed, data is available immediately
-export async function FeatureGate({
+export function FeatureGate({
   feature,
   children,
 }: FeatureGateProps) {
-  const session = await auth();
+  const { data: session, status } = useSession();
+
+  // Show loading state while session is being fetched
+  if (status === "loading") {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-linkedin" />
+      </div>
+    );
+  }
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const userEmail = session?.user?.email || "";
@@ -135,7 +146,7 @@ export async function FeatureGate({
               </div>
             )}
 
-            {/* CTA Button - Client Component for interactivity */}
+            {/* CTA Button */}
             <UpgradeButton
               requiredPlan={requiredPlan}
               userEmail={userEmail}
@@ -181,12 +192,20 @@ export async function FeatureGate({
   );
 }
 
-// Server Component - Simpler inline version for partial page gating
-export async function FeatureGateInline({
+// Simpler inline version for partial page gating
+export function FeatureGateInline({
   feature,
   children,
 }: FeatureGateProps) {
-  const session = await auth();
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-linkedin" />
+      </div>
+    );
+  }
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const userEmail = session?.user?.email || "";
