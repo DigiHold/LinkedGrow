@@ -130,19 +130,19 @@ function SignInForm() {
           {/* Social Login Buttons */}
           {!requires2FA && (
             <>
-              <div className="space-y-3 mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
                   type="button"
                   onClick={() => handleSocialLogin("linkedin")}
                   disabled={socialLoading !== null}
-                  className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-12 flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {socialLoading === "linkedin" ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
                       <LinkedInIcon className="w-5 h-5 text-linkedin" />
-                      Continue with LinkedIn
+                      LinkedIn
                     </>
                   )}
                 </button>
@@ -150,14 +150,14 @@ function SignInForm() {
                   type="button"
                   onClick={() => handleSocialLogin("google")}
                   disabled={socialLoading !== null}
-                  className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-12 flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {socialLoading === "google" ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
                       <GoogleIcon className="w-5 h-5" />
-                      Continue with Google
+                      Google
                     </>
                   )}
                 </button>

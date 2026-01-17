@@ -183,24 +183,24 @@ function SignUpContent() {
             </label>
 
             {/* Social Login Buttons */}
-            <div className="space-y-3 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleLinkedInSignUp}
-                className="w-full h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium transition-all"
+                className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium transition-all"
               >
-                <LinkedInIcon className="w-5 h-5 mr-3 text-linkedin" />
-                Continue with LinkedIn
+                <LinkedInIcon className="w-5 h-5 mr-2 text-linkedin" />
+                LinkedIn
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleGoogleSignUp}
-                className="w-full h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium transition-all"
+                className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium transition-all"
               >
-                <GoogleIcon className="w-5 h-5 mr-3" />
-                Continue with Google
+                <GoogleIcon className="w-5 h-5 mr-2" />
+                Google
               </Button>
             </div>
 
