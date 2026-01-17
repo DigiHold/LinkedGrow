@@ -25,6 +25,7 @@ import {
   Send,
   ArrowLeft,
   Info,
+  Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -37,6 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -60,7 +63,7 @@ interface Post {
 interface Idea {
   id: string;
   title: string;
-  description: string | null;
+  content: string | null;
   source: string;
   createdAt: string;
 }
@@ -196,6 +199,24 @@ function CalendarContent() {
       const postDateStr = new Date(postDate).toISOString().split("T")[0];
       return postDateStr === dateStr;
     });
+  };
+
+  const getIdeasForDate = (day: number, m: number, y: number) => {
+    const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return ideas.filter((idea) => {
+      if (!idea.createdAt) return false;
+      const ideaDateStr = new Date(idea.createdAt).toISOString().split("T")[0];
+      return ideaDateStr === dateStr;
+    });
+  };
+
+  const handleIdeaClick = (idea: Idea, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Open create post drawer with idea content pre-filled
+    setNewPostContent(idea.content || idea.title);
+    setDrawerView("create-post");
+    setDrawerOpen(true);
+    setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
   const isToday = (day: number, m: number, y: number) => {
@@ -379,7 +400,7 @@ function CalendarContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newIdeaText.substring(0, 100),
-          description: newIdeaText,
+          content: newIdeaText,
           source: "manual",
         }),
       });
@@ -396,12 +417,15 @@ function CalendarContent() {
     }
   };
 
-  // Create post from idea
+  // Create post from idea - opens the create post drawer with content pre-filled
   const handleCreateFromIdea = () => {
     if (!newIdeaText.trim()) return;
     setIdeaModalOpen(false);
-    // Navigate to generator with idea text
-    window.location.href = `/dashboard/generator?idea_text=${encodeURIComponent(newIdeaText)}&schedule=${selectedDay?.year}-${String((selectedDay?.month ?? 0) + 1).padStart(2, '0')}-${String(selectedDay?.day ?? 1).padStart(2, '0')}`;
+    // Open create post drawer with the idea text pre-filled
+    setNewPostContent(newIdeaText);
+    setDrawerView("create-post");
+    setDrawerOpen(true);
+    setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
   // Filter posts for schedule drawer
@@ -478,7 +502,9 @@ function CalendarContent() {
           <div className="grid grid-cols-7">
             {days.map((item, index) => {
               const postsForDay = getPostsForDate(item.day, item.month, item.year);
+              const ideasForDay = getIdeasForDate(item.day, item.month, item.year);
               const hasPost = postsForDay.length > 0;
+              const hasIdea = ideasForDay.length > 0;
               const dayIsToday = isToday(item.day, item.month, item.year);
               const dayIsPast = isPast(item.day, item.month, item.year);
               const isClickable = item.isCurrentMonth && !dayIsPast;
@@ -510,9 +536,10 @@ function CalendarContent() {
                     </span>
                   </div>
 
-                  {/* Posts for this day */}
-                  {hasPost && (
+                  {/* Posts and Ideas for this day */}
+                  {(hasPost || hasIdea) && (
                     <div className="mt-2 space-y-1">
+                      {/* Posts */}
                       {postsForDay.slice(0, 2).map((post) => (
                         <button
                           key={post.id}
@@ -546,8 +573,29 @@ function CalendarContent() {
                           </div>
                         </button>
                       ))}
-                      {postsForDay.length > 2 && (
-                        <span className="text-[10px] text-muted-foreground px-1.5 block">+{postsForDay.length - 2} more</span>
+                      {/* Ideas */}
+                      {ideasForDay.slice(0, hasPost ? 1 : 2).map((idea) => (
+                        <button
+                          key={idea.id}
+                          onClick={(e) => handleIdeaClick(idea, e)}
+                          className="w-full p-1 rounded-sm overflow-hidden border border-gray-300 bg-gray-100 dark:bg-gray-800 transition-opacity hover:opacity-80 text-left"
+                        >
+                          <div className="flex items-center gap-1.5 px-1.5 py-1">
+                            <div className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0 bg-gray-200 dark:bg-gray-700">
+                              <Lightbulb className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                            </div>
+                            <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                              {getPostPreview(idea.title, 30)}
+                            </p>
+                          </div>
+                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
+                            <Lightbulb className="w-2.5 h-2.5" />
+                            <span className="font-medium">Idea</span>
+                          </div>
+                        </button>
+                      ))}
+                      {(postsForDay.length + ideasForDay.length) > 2 && (
+                        <span className="text-[10px] text-muted-foreground px-1.5 block">+{(postsForDay.length + ideasForDay.length) - 2} more</span>
                       )}
                     </div>
                   )}
@@ -783,7 +831,7 @@ function CalendarContent() {
               </>
             )}
 
-            {/* CREATE POST VIEW */}
+            {/* CREATE POST VIEW - With Posts List Panel */}
             {drawerView === "create-post" && (
               <>
                 <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
@@ -800,112 +848,172 @@ function CalendarContent() {
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
-                    <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
-                      <Link href="/dashboard/posts" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
-                        <ArrowLeft className="w-4 h-4" /> See all posts
-                      </Link>
-                      <div className="md:w-102.5 w-full bg-white dark:bg-gray-900 rounded-xl border shadow-sm flex-1 flex flex-col mb-10">
-                        <div className="flex justify-between items-center px-4 pt-4 pb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-primary font-semibold">{session?.user?.name?.charAt(0) || "U"}</span>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">{session?.user?.name || "Your Name"}</h3>
-                              <span className="text-muted-foreground text-sm">Your headline here</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex-1 p-4 pt-4">
-                          <textarea
-                            ref={textareaRef}
-                            value={newPostContent}
-                            onChange={(e) => setNewPostContent(e.target.value)}
-                            placeholder="Write your post here..."
-                            className="w-full h-full min-h-60 resize-none outline-none text-sm leading-relaxed bg-transparent"
+                  {/* Left Panel - Posts List */}
+                  <div className="relative flex flex-col min-h-fit md:w-[460px] lg:w-[540px] xl:w-[620px]">
+                    <div className="flex flex-col h-full">
+                      {/* Search and Filters */}
+                      <div className="flex w-full justify-between items-center gap-4 flex-wrap md:p-6 p-4 border-b">
+                        <div className="relative w-full">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10 h-4 w-4" />
+                          <input
+                            type="text"
+                            placeholder="Search for a post"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border rounded-md text-sm bg-white dark:bg-gray-900"
                           />
                         </div>
-                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t rounded-b-xl">
-                          <div className="text-sm text-muted-foreground">
-                            {newPostContent.length} / 3000
+                        <div className="flex gap-2">
+                          <Select value={filterType} onValueChange={setFilterType}>
+                            <SelectTrigger className="w-40 bg-white dark:bg-gray-900">
+                              <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All types</SelectItem>
+                              <SelectItem value="draft">Drafts</SelectItem>
+                              <SelectItem value="published">Published</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {/* Posts List */}
+                      <div className="overflow-y-auto overflow-x-hidden flex-1">
+                        <div className="flex-1 md:p-6 p-2">
+                          <div className="space-y-3">
+                            {filteredPosts.length === 0 ? (
+                              <div className="text-center py-12 text-muted-foreground">
+                                <p>No posts found</p>
+                              </div>
+                            ) : (
+                              filteredPosts.map((post) => (
+                                <div
+                                  key={post.id}
+                                  onClick={() => {
+                                    setNewPostContent(post.content);
+                                    setSelectedPostToSchedule(post);
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors bg-white dark:bg-gray-900",
+                                    selectedPostToSchedule?.id === post.id ? "border-primary" : "border-gray-300 hover:border-gray-400"
+                                  )}
+                                >
+                                  <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+                                    <h3 className="font-bold md:max-w-[440px] max-w-[340px] truncate line-clamp-1">
+                                      {getPostPreview(post.content, 80)}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 flex items-center gap-2">
+                                      <span>
+                                        {post.status === "published" ? "✅ Published" : post.status === "draft" ? "📋 Created" : "📅 Scheduled"} on {formatShortDate(post.createdAt)}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                          <span className="text-xs font-medium text-muted-foreground">To be planned</span>
-                        </div>
+                  {/* Right Panel - Editor */}
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                    <div className="space-y-4">
+                      {/* Editor Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <Textarea
+                            ref={textareaRef}
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            placeholder="Write your post content here..."
+                            className="min-h-60 border-0 focus-visible:ring-0 resize-none text-sm"
+                          />
+                          <div className="flex items-center justify-between pt-3 border-t border-border">
+                            <span className={cn(
+                              "text-sm",
+                              newPostContent.length > 3000 ? "text-destructive font-medium" : "text-muted-foreground"
+                            )}>
+                              {newPostContent.length} / 3000
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Schedule Card */}
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Schedule
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Date</label>
+                            <input
+                              type="date"
+                              value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
+                              onChange={(e) => {
+                                const date = new Date(e.target.value);
+                                setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
+                              }}
+                              min={new Date().toISOString().split('T')[0]}
+                              className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Time</label>
+                            <div className="flex gap-2 items-center">
+                              <Select value={scheduleHour} onValueChange={setScheduleHour}>
+                                <SelectTrigger className="w-16">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                                    <SelectItem key={h} value={h}>{h}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span>:</span>
+                              <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
+                                <SelectTrigger className="w-16">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
+                                <SelectTrigger className="w-16">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="AM">AM</SelectItem>
+                                  <SelectItem value="PM">PM</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Actions */}
+                      <div className="space-y-3">
+                        <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isSaving ? "Saving..." : "Save as Draft"}
+                        </Button>
+                        <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                          <Calendar className="w-4 h-4 mr-2" />
+                          {isSaving ? "Scheduling..." : "Schedule Post"}
+                        </Button>
+                        <Button className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
+                          <Send className="w-4 h-4 mr-2" />
+                          Publish Now
+                        </Button>
                       </div>
-                      <div className="flex flex-col gap-1 pt-2">
-                        <p className="text-sm text-muted-foreground">Schedule this post on</p>
-                        <p className="text-base font-bold">
-                          {getFormattedScheduleDate()} - {getFormattedScheduleTime()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Date</label>
-                        <input
-                          type="date"
-                          value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
-                          onChange={(e) => {
-                            const date = new Date(e.target.value);
-                            setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full h-10 px-3 border rounded-md bg-background text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Time</label>
-                        <div className="flex gap-2 items-center">
-                          <Select value={scheduleHour} onValueChange={setScheduleHour}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
-                                <SelectItem key={h} value={h}>{h}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <span className="text-lg">:</span>
-                          <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="AM">AM</SelectItem>
-                              <SelectItem value="PM">PM</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <Button onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving} className="w-full">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {isSaving ? "Scheduling..." : "Schedule the post"}
-                      </Button>
-                      <Button variant="outline" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving} className="w-full">
-                        <Send className="w-3.5 h-3.5 mr-2" />
-                        Publish now
-                      </Button>
                     </div>
                   </div>
                 </div>
