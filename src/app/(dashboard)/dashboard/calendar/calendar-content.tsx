@@ -26,6 +26,7 @@ import {
   ArrowLeft,
   Info,
   Save,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -101,6 +102,11 @@ export function CalendarContent() {
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [newIdeaText, setNewIdeaText] = useState("");
   const [savingIdea, setSavingIdea] = useState(false);
+  const [selectedIdeaForModal, setSelectedIdeaForModal] = useState<Idea | null>(null);
+
+  // Delete state
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dayDropdownRef = useRef<HTMLDivElement>(null);
@@ -210,6 +216,7 @@ export function CalendarContent() {
 
   const handleIdeaClick = (idea: Idea, e: React.MouseEvent) => {
     e.stopPropagation();
+    setSelectedIdeaForModal(idea);
     setNewIdeaText(idea.content || idea.title);
     setIdeaModalOpen(true);
   };
@@ -291,6 +298,7 @@ export function CalendarContent() {
 
   const openIdeaModal = () => {
     setDropdownOpen(false);
+    setSelectedIdeaForModal(null);
     setIdeaModalOpen(true);
     setNewIdeaText("");
   };
@@ -410,10 +418,50 @@ export function CalendarContent() {
   const handleCreateFromIdea = () => {
     if (!newIdeaText.trim()) return;
     setIdeaModalOpen(false);
+    setSelectedIdeaForModal(null);
     setNewPostContent(newIdeaText);
     setDrawerView("create-post");
     setDrawerOpen(true);
     setTimeout(() => textareaRef.current?.focus(), 100);
+  };
+
+  const handleDeletePost = async () => {
+    if (!selectedPost) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/posts/${selectedPost.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete post");
+      await fetchPosts();
+      await fetchAllPosts();
+      setDrawerOpen(false);
+      setSelectedPost(null);
+      setShowDeleteConfirm(false);
+    } catch {
+      // Silent fail
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteIdea = async () => {
+    if (!selectedIdeaForModal) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/ideas/${selectedIdeaForModal.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete idea");
+      await fetchIdeas();
+      setIdeaModalOpen(false);
+      setSelectedIdeaForModal(null);
+      setNewIdeaText("");
+    } catch {
+      // Silent fail
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const filteredPosts = allPosts.filter(post => {
@@ -636,11 +684,11 @@ export function CalendarContent() {
       {/* Insert Idea Modal */}
       {ideaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setIdeaModalOpen(false)} />
+          <div className="fixed inset-0 bg-black/40" onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 z-10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Insert an idea</h2>
-              <button onClick={() => setIdeaModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+              <h2 className="text-xl font-semibold">{selectedIdeaForModal ? "Your idea" : "Insert an idea"}</h2>
+              <button onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} className="text-gray-500 hover:text-gray-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -652,16 +700,51 @@ export function CalendarContent() {
                 className="w-full h-40 p-4 border rounded-lg resize-none outline-none text-base leading-relaxed bg-transparent focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 autoFocus
               />
-              <p className="text-sm text-muted-foreground mt-2">
-                This idea will be saved for {getFormattedScheduleDate()}
-              </p>
+              {!selectedIdeaForModal && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  This idea will be saved for {getFormattedScheduleDate()}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Button onClick={handleCreateFromIdea} disabled={!newIdeaText.trim()} className="w-full">
                 <Plus className="w-4 h-4 mr-2" /> Create a post from this idea
               </Button>
-              <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
-                <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
+              {!selectedIdeaForModal && (
+                <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
+                  <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
+                </Button>
+              )}
+              {selectedIdeaForModal && (
+                <Button variant="outline" onClick={handleDeleteIdea} disabled={isDeleting} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                  <Trash2 className="w-4 h-4 mr-2" /> {isDeleting ? "Deleting..." : "Delete this idea"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Post Confirmation Modal */}
+      {showDeleteConfirm && selectedPost && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Delete post</h2>
+              <button onClick={() => setShowDeleteConfirm(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to delete this post? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeletePost} disabled={isDeleting} className="flex-1">
+                <Trash2 className="w-4 h-4 mr-2" /> {isDeleting ? "Deleting..." : "Delete"}
               </Button>
             </div>
           </div>
@@ -725,6 +808,15 @@ export function CalendarContent() {
                                     >
                                       Edit post
                                     </Link>
+                                    <button
+                                      onClick={() => {
+                                        setPostMenuOpen(false);
+                                        setShowDeleteConfirm(true);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                    >
+                                      Delete post
+                                    </button>
                                   </div>
                                 )}
                               </div>
