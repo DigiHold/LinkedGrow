@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId } from "@/lib/plans";
-
-// TODO: Get this from user's actual subscription
-const userPlan: PlanId = "free";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -299,6 +297,9 @@ function CalendarContent() {
 }
 
 export default function CalendarPage() {
+  const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+
   return (
     <FeatureGate feature="calendar" userPlan={userPlan}>
       <CalendarContent />
