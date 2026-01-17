@@ -162,26 +162,6 @@ function SignUpContent() {
               </div>
             )}
 
-            {/* Newsletter Checkbox - shown above all signup methods */}
-            <label className="flex items-start gap-3 cursor-pointer group mb-6">
-              <div className="relative flex items-center justify-center mt-0.5">
-                <input
-                  type="checkbox"
-                  checked={subscribeNewsletter}
-                  onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded-md peer-checked:border-cyan-500 peer-checked:bg-cyan-500 transition-all group-hover:border-cyan-400">
-                  {subscribeNewsletter && (
-                    <Check className="w-full h-full text-white p-0.5" />
-                  )}
-                </div>
-              </div>
-              <span className="text-sm text-slate-600 dark:text-slate-400 leading-tight">
-                Get LinkedIn growth tips, new features, and exclusive offers. Join 10,000+ professionals leveling up their presence.
-              </span>
-            </label>
-
             {/* Social Login Buttons */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Button
@@ -304,6 +284,26 @@ function SignUpContent() {
                   <p className="text-xs text-red-500">Passwords do not match</p>
                 )}
               </div>
+
+              {/* Newsletter Checkbox */}
+              <label className="flex items-center gap-3 cursor-pointer group mb-3">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={subscribeNewsletter}
+                    onChange={(e) => setSubscribeNewsletter(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded-md peer-checked:border-cyan-500 peer-checked:bg-cyan-500 transition-all group-hover:border-cyan-400">
+                    {subscribeNewsletter && (
+                      <Check className="w-full h-full text-white p-0.5" />
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-slate-600 dark:text-slate-400 leading-tight">
+                  Get growth tips, new features, and exclusive offers.
+                </span>
+              </label>
 
               <Button
                 type="submit"
