@@ -43,6 +43,7 @@ import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
 import { ActivityToast } from "@/components/prelaunch/activity-toast";
 import { ExitIntentPopup } from "@/components/prelaunch/exit-intent-popup";
+import { Turnstile } from "@/components/turnstile";
 
 // Translations type
 export interface PrelaunchTranslations {
@@ -140,7 +141,7 @@ export interface PrelaunchTranslations {
 // ============================================
 
 // Hero Section with Floating Elements
-function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
+function HeroSection({ email, setEmail, honeypot, setHoneypot, turnstileToken, setTurnstileToken, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
       {/* Floating Elements with Official AI Brand Logos */}
@@ -343,6 +344,17 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
         >
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="relative">
+              {/* Honeypot field - hidden from humans, bots will fill it */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="absolute -left-[9999px] opacity-0 h-0 w-0"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
               <motion.div
                 className="absolute -inset-1 bg-linear-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-2xl opacity-20 blur-lg"
                 animate={{ opacity: [0.2, 0.4, 0.2] }}
@@ -359,11 +371,14 @@ function HeroSection({ email, setEmail, handleSubmit, isLoading, isSuccess, erro
                 />
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !turnstileToken}
                   className="h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 shrink-0"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{translations.hero.cta} <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
+              </div>
+              <div className="flex justify-center mt-4">
+                <Turnstile onVerify={setTurnstileToken} />
               </div>
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             </form>
@@ -446,6 +461,10 @@ function SuccessMessage({ translations }: { translations: PrelaunchTranslations 
 interface HeroProps {
   email: string;
   setEmail: (email: string) => void;
+  honeypot: string;
+  setHoneypot: (honeypot: string) => void;
+  turnstileToken: string;
+  setTurnstileToken: (token: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   isSuccess: boolean;
@@ -1408,7 +1427,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
       >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
           <Key className="w-4 h-4" />
-          <span>All plans + ~$3-5/month in AI API costs (you pay the AI provider directly)</span>
+          <span>All plans + ~$2-4/month in AI API costs (you pay the AI provider directly)</span>
         </div>
       </motion.div>
 
@@ -1716,6 +1735,10 @@ interface CTAProps {
   timeLeft: { days: number; hours: number; minutes: number; seconds: number };
   email: string;
   setEmail: (email: string) => void;
+  honeypot: string;
+  setHoneypot: (honeypot: string) => void;
+  turnstileToken: string;
+  setTurnstileToken: (token: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   isSuccess: boolean;
@@ -1724,7 +1747,7 @@ interface CTAProps {
 }
 
 // Shared form component for all CTA variants
-function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
+function CTAForm({ email, setEmail, honeypot, setHoneypot, turnstileToken, setTurnstileToken, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
   const isDark = variant === "dark";
 
   if (isSuccess) {
@@ -1745,6 +1768,17 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Honeypot field - hidden from humans, bots will fill it */}
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        className="absolute -left-[9999px] opacity-0 h-0 w-0"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
       <div className="relative">
         {isDark && <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
         <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
@@ -1758,13 +1792,14 @@ function CTAForm({ email, setEmail, handleSubmit, isLoading, isSuccess, error, v
           />
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !turnstileToken}
             className="h-14 md:h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
         </div>
       </div>
+      <Turnstile onVerify={setTurnstileToken} className="flex justify-center" />
       {error && <p className="text-red-400 text-sm text-center">{error}</p>}
       <p className={`text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
         Join 179 founders - No spam - Unsubscribe anytime
@@ -1802,7 +1837,18 @@ function CTASection(props: CTAProps) {
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-3xl mx-auto">
           {!props.isSuccess ? (
-            <form onSubmit={props.handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={props.handleSubmit} className="flex flex-col sm:flex-row gap-3 relative">
+              {/* Honeypot field - hidden from humans, bots will fill it */}
+              <input
+                type="text"
+                name="website"
+                value={props.honeypot}
+                onChange={(e) => props.setHoneypot(e.target.value)}
+                className="absolute -left-[9999px] opacity-0 h-0 w-0"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
               <input
                 type="email"
                 placeholder={props.translations.hero.emailPlaceholder}
@@ -1845,6 +1891,8 @@ function CTASection(props: CTAProps) {
 export default function PreLaunchPage({ translations }: { translations: PrelaunchTranslations }) {
   const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // Bot trap - should stay empty
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -1884,13 +1932,17 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!turnstileToken) {
+      setError("Please complete the verification");
+      return;
+    }
     setIsLoading(true);
     setError("");
     try {
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, _ts: formLoadTime.toString() }),
+        body: JSON.stringify({ email, _hp: honeypot, _ts: formLoadTime.toString(), _turnstile: turnstileToken }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1902,11 +1954,11 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
-  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number) => {
+  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string, exitTurnstileToken: string) => {
     const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: exitEmail, _ts: exitFormLoadTime.toString() }),
+      body: JSON.stringify({ email: exitEmail, _hp: exitHoneypot, _ts: exitFormLoadTime.toString(), _turnstile: exitTurnstileToken }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1915,6 +1967,10 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
   const heroProps: HeroProps = {
     email,
     setEmail,
+    honeypot,
+    setHoneypot,
+    turnstileToken,
+    setTurnstileToken,
     handleSubmit,
     isLoading,
     isSuccess,
@@ -2087,6 +2143,10 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
         timeLeft={timeLeft}
         email={email}
         setEmail={setEmail}
+        honeypot={honeypot}
+        setHoneypot={setHoneypot}
+        turnstileToken={turnstileToken}
+        setTurnstileToken={setTurnstileToken}
         handleSubmit={handleSubmit}
         isLoading={isLoading}
         isSuccess={isSuccess}

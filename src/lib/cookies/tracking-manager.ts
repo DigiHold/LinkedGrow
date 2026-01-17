@@ -91,14 +91,22 @@ function updateGoogleConsent(preferences: ConsentPreferences): void {
  * Inject Google Tag Manager script
  */
 export function injectGTM(gtmId: string): void {
-  if (typeof window === 'undefined' || !gtmId) return;
+  if (typeof window === 'undefined') return;
+
+  if (!gtmId) {
+    console.warn('[GTM] No GTM ID provided, skipping injection');
+    return;
+  }
 
   const scriptId = `gtm-${gtmId}`;
   if (loadedScripts.has(scriptId)) {
     // Already loaded, just trigger page view
+    console.log('[GTM] Already loaded, triggering page view');
     triggerPageView();
     return;
   }
+
+  console.log('[GTM] Injecting GTM script:', gtmId);
 
   initDataLayer();
   window.dataLayer.push({
@@ -113,8 +121,13 @@ export function injectGTM(gtmId: string): void {
 
   script.onload = () => {
     loadedScripts.add(scriptId);
+    console.log('[GTM] Script loaded successfully');
     // Give GTM a moment to initialize, then trigger page view
     setTimeout(triggerPageView, 100);
+  };
+
+  script.onerror = () => {
+    console.error('[GTM] Failed to load GTM script');
   };
 
   document.head.appendChild(script);
@@ -332,12 +345,18 @@ export function removeAllTrackingScripts(): void {
 export function activateTracking(config: TrackingConfig, preferences: ConsentPreferences): void {
   if (typeof window === 'undefined') return;
 
+  console.log('[Tracking] Activating tracking with config:', config);
+  console.log('[Tracking] Preferences:', preferences);
+
   // First update Google Consent Mode
   updateGoogleConsent(preferences);
 
   // Load GTM if analytics or marketing is enabled
   if ((preferences.analytics || preferences.marketing) && config.gtmId) {
+    console.log('[Tracking] Loading GTM...');
     injectGTM(config.gtmId);
+  } else {
+    console.log('[Tracking] Skipping GTM - analytics:', preferences.analytics, 'marketing:', preferences.marketing, 'gtmId:', config.gtmId);
   }
 
   // Load Meta Pixel if marketing is enabled
@@ -375,9 +394,13 @@ export function handleConsentChange(
   preferences: ConsentPreferences,
   accepted: boolean
 ): void {
+  console.log('[Consent] handleConsentChange called - accepted:', accepted, 'preferences:', preferences);
+
   if (accepted && (preferences.analytics || preferences.marketing)) {
+    console.log('[Consent] Activating tracking...');
     activateTracking(config, preferences);
   } else {
+    console.log('[Consent] Deactivating tracking...');
     deactivateTracking();
   }
 }

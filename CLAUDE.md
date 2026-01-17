@@ -16,7 +16,7 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 -   **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM
 -   **Payments:** Stripe (subscriptions)
 -   **File Storage:** Cloudflare R2 (S3-compatible)
--   **Email:** NOT YET IMPLEMENTED (TODO: Resend for transactional)
+-   **Email:** Brevo (marketing + transactional)
 -   **Hosting:** Vercel
 -   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI
 
@@ -185,8 +185,8 @@ R2_ACCESS_KEY_ID=xxxxx
 R2_SECRET_ACCESS_KEY=xxxxx
 R2_BUCKET_NAME=linkedgrow-media
 
-# Email (TODO)
-RESEND_API_KEY=re_xxxxx
+# Email (Brevo)
+BREVO_API_KEY=xkeysib-xxxxx
 
 # Analytics
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
@@ -341,15 +341,98 @@ src/
 -   "$2-4/month" - Typical AI API costs
 -   "96% less" - Savings vs competitors ($19 + $2 API vs $49 competitors)
 
+## LinkedGrow Features (Complete List)
+
+### Content Creation
+- **Post Editor** - Rich text editor with formatting, emoji support, character count (3000 char limit)
+- **AI Post Generator** - Generate posts from topics/ideas using user's AI API key (BYOK)
+- **Ideas Generator** - AI-powered content ideas based on user's niche/industry
+- **Hooks Generator** - Generate viral opening hooks to boost engagement
+- **Carousel Generator** - Create multi-slide carousels for LinkedIn (Pro+)
+- **Reddit Importer** - Turn any viral Reddit post URL into LinkedIn content ideas
+
+### Voice & Personalization
+- **Voice Training** - Analyze user's sample posts to match their writing style
+- **Business Description** - Context about user's business for more relevant content
+- **Target Audience** - Define ideal reader persona
+- **Writing Tone** - Set preferred tone (professional, casual, inspirational, etc.)
+- **Never Mention** - List of topics/competitors to avoid in generated content
+
+### LinkedIn Integration
+- **OAuth Connection** - Connect LinkedIn account securely
+- **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
+- **Company Page Publishing** - Post to company pages user manages
+- **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
+- **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
+- **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
+
+### Scheduling & Calendar
+- **Post Scheduling** - Schedule posts for future dates/times
+- **Content Calendar** - Visual calendar view of all scheduled posts
+- **Optimal Time Suggestions** - AI-recommended posting times based on audience
+- **Timezone Support** - Schedule in user's local timezone
+
+### Analytics
+- **Basic Analytics** - Post performance metrics (Pro+)
+- **Advanced Analytics** - Detailed engagement trends, charts, best times (Business)
+- **Engagement Rate** - Track likes, comments, shares, impressions
+- **Export Reports** - Export analytics data to CSV/PDF (Business)
+
+### Business Plan Features
+- **A/B Testing** - Test different post versions to find best performers
+- **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
+- **Custom Branding** - Upload logo, set colors, choose fonts for exports
+- **API Access** - REST API for integrations with custom applications
+- **API Key Management** - Create/revoke API keys with scopes
+- **Priority Support** - Dedicated support channel
+
+### Account & Settings
+- **Email/Password Auth** - Traditional registration with password
+- **Social Login** - Sign in with LinkedIn or Google
+- **Two-Factor Authentication (2FA)** - TOTP-based security with QR code setup
+- **Password Reset** - Secure password recovery flow
+- **Plan Management** - Upgrade/downgrade via Stripe Customer Portal
+- **BYOK Configuration** - Configure AI provider and API keys
+
+## LinkedIn API Requirements
+
+LinkedGrow requires the following LinkedIn Developer products:
+
+### 1. Sign In with LinkedIn using OpenID Connect
+- **Purpose:** Social login (Sign in with LinkedIn button)
+- **Scopes:** `openid`, `profile`, `email`
+- **Usage:** Authentication only, get user's name/email/picture
+
+### 2. Share on LinkedIn
+- **Purpose:** Publish posts to LinkedIn
+- **Scopes:** `w_member_social`
+- **Usage:** Create posts on user's personal profile and company pages they manage
+- **Critical for:** Core posting functionality
+
+### 3. Community Management API
+- **Purpose:** Engagement features (feed viewing, liking, commenting)
+- **Scopes:** `r_organization_social`, `w_organization_social`
+- **Usage:** View feed, like posts, comment on posts from dashboard
+- **Required for:** Pro/Business engagement tools
+
+### LinkedIn App Configuration
+LinkedGrow uses TWO separate LinkedIn apps:
+1. **Poster App** (`LINKEDIN_CLIENT_ID`) - Sign In + Share on LinkedIn
+2. **Community App** (`LINKEDIN_COMMUNITY_CLIENT_ID`) - Community Management API
+
+This separation is required because Community Management API has stricter approval requirements.
+
 ## Feature Implementation Status
 
 ### Implemented
 
 -   [x] User authentication (email/password + 2FA)
+-   [x] Social login (Google + LinkedIn OAuth)
 -   [x] BYOK key management (text + image AI)
 -   [x] Post editor with AI generation
 -   [x] Post scheduling
 -   [x] LinkedIn OAuth integration
+-   [x] LinkedIn post publishing
 -   [x] File upload (R2 storage)
 -   [x] Voice training settings
 -   [x] Pricing page with Stripe checkout
@@ -361,17 +444,19 @@ src/
 -   [x] API key management pages (Business)
 -   [x] REST API endpoints (Business)
 -   [x] Database schema for all features
+-   [x] Transactional emails (Brevo)
+-   [x] Welcome emails on registration
 
 ### TODO
 
--   [ ] Transactional emails (Resend)
 -   [ ] Weekly report emails
--   [ ] LinkedIn analytics sync
+-   [ ] LinkedIn analytics sync (requires Advertising API or manual input)
 -   [ ] Content calendar improvements
+-   [ ] Company page management UI
 
 ## Founders
 
 -   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
 -   **Maria Lecocq** - Operations & Community
 
-Based in Paris, France. LinkedGrow is a product of Vayalis.
+Based in Paris, France. LinkedGrow is a product of DigiHold.

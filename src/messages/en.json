@@ -79,7 +79,7 @@
     "description": "Start creating viral content in under 5 minutes",
     "step1": {
       "title": "Connect your AI key",
-      "description": "Add your OpenAI, Claude, or Gemini API key. You only pay for what you use - typically $3-5/month."
+      "description": "Add your OpenAI, Claude, or Gemini API key. You only pay for what you use - typically $2-4/month."
     },
     "step2": {
       "title": "Train your voice",
@@ -122,11 +122,11 @@
     "title": "Frequently asked questions",
     "q1": {
       "question": "What is BYOK (Bring Your Own Key)?",
-      "answer": "BYOK means you connect your own AI API key (from OpenAI, Anthropic, or Google). This way, you pay only for your actual usage - typically $3-5/month - instead of expensive monthly subscriptions."
+      "answer": "BYOK means you connect your own AI API key (from OpenAI, Anthropic, or Google). This way, you pay only for your actual usage - typically $2-4/month - instead of expensive monthly subscriptions."
     },
     "q2": {
       "question": "How much does AI usage actually cost?",
-      "answer": "Most users spend $3-5/month on AI API costs. That's 90-95% less than traditional AI content tools that charge $50+ monthly subscriptions."
+      "answer": "Most users spend $2-4/month on AI API costs. That's 90-95% less than traditional AI content tools that charge $50+ monthly subscriptions."
     },
     "q3": {
       "question": "Will the AI sound like me?",
