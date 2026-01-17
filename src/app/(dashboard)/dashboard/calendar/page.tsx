@@ -29,7 +29,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import Link from "next/link";
 import {
   Select,
@@ -1220,11 +1219,8 @@ function CalendarContent() {
 }
 
 export default function CalendarPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan as PlanId) || "free";
-
   return (
-    <FeatureGate feature="calendar" userPlan={userPlan}>
+    <FeatureGate feature="calendar">
       <CalendarContent />
     </FeatureGate>
   );

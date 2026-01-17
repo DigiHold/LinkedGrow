@@ -20,6 +20,7 @@ import {
   Headphones,
   Palette,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ import {
   getMissingFeatures,
 } from "@/lib/plans";
 import { redirectToCheckout } from "@/lib/checkout";
+import { useSession } from "next-auth/react";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
@@ -62,10 +64,24 @@ interface FeatureGateProps {
 
 export function FeatureGate({
   feature,
-  userPlan = "free",
-  userEmail = "",
   children,
 }: FeatureGateProps) {
+  const { data: session, status } = useSession();
+
+  // Wait for session to load before showing anything - prevents flash of upgrade gate
+  if (status === "loading") {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+  const userEmail = session?.user?.email || "";
   const hasAccess = canAccessFeature(userPlan, feature);
 
   if (hasAccess) {
@@ -189,10 +205,21 @@ export function FeatureGate({
 // Simpler inline version for partial page gating
 export function FeatureGateInline({
   feature,
-  userPlan = "free",
-  userEmail = "",
   children,
 }: FeatureGateProps) {
+  const { data: session, status } = useSession();
+
+  // Show nothing while loading to prevent flash
+  if (status === "loading") {
+    return (
+      <div className="relative rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+        <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded" />
+      </div>
+    );
+  }
+
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+  const userEmail = session?.user?.email || "";
   const hasAccess = canAccessFeature(userPlan, feature);
 
   if (hasAccess) {
