@@ -27,8 +27,6 @@ const TRACKING_COOKIES = [
   '_hjAbsoluteSessionInProgress', '_hjTLDTest', '_hjIncludedInPageviewSample',
   // Bing/Microsoft
   '_uetmsclkid', '_uetsid', '_uetvid', 'MUID',
-  // LinkedIn
-  'li_fat_id', '_li_ss', 'li_sugr', 'bcookie', 'bscookie', 'lang', 'lidc',
   // TikTok
   '_ttp', '_tt_enable_cookie', 'tt_webid', 'tt_webid_v2',
   // Twitter/X
@@ -371,7 +369,6 @@ export function clearAllTrackingCookies(): void {
       name.startsWith('_fb') ||
       name.startsWith('_hj') ||
       name.startsWith('_tt') ||
-      name.startsWith('_li') ||
       name.startsWith('__utm')
     ) {
       clearCookie(name);
