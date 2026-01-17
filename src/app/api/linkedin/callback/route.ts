@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLinkedInProfile, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
-import { db, users } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { db, users, accounts } from '@/lib/db';
+import { eq, and } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
+import { randomUUID } from 'crypto';
+import { encode } from 'next-auth/jwt';
+import { sendWelcomeEmail } from '@/lib/email';
+import { subscribeToNewsletter } from '@/lib/newsletter';
 
 /**
  * Download image from URL and upload to R2
@@ -74,12 +78,19 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
   const errorDescription = searchParams.get('error_description');
   const isPopup = request.cookies.get('linkedin_popup')?.value === 'true';
+  const mode = request.cookies.get('linkedin_oauth_mode')?.value || 'connect';
+  const subscribeNewsletterCookie = request.cookies.get('linkedin_newsletter')?.value === 'true';
 
   // Check for OAuth errors
   if (error) {
     console.error('LinkedIn OAuth error:', error, errorDescription);
     if (isPopup) {
       return createPopupResponse(false, { error: errorDescription || error });
+    }
+    if (mode === 'login' || mode === 'register') {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorDescription || error)}`
+      );
     }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?error=${encodeURIComponent(errorDescription || error)}`
@@ -93,6 +104,11 @@ export async function GET(request: NextRequest) {
     if (isPopup) {
       return createPopupResponse(false, { error: 'Invalid state - please try again' });
     }
+    if (mode === 'login' || mode === 'register') {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=Invalid%20state`
+      );
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?error=Invalid%20state`
     );
@@ -101,6 +117,11 @@ export async function GET(request: NextRequest) {
   if (!code) {
     if (isPopup) {
       return createPopupResponse(false, { error: 'No authorization code received' });
+    }
+    if (mode === 'login' || mode === 'register') {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=No%20authorization%20code`
+      );
     }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?error=No%20authorization%20code`
@@ -118,7 +139,206 @@ export async function GET(request: NextRequest) {
     const profile = await getLinkedInProfile(tokenData.access_token);
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
     const linkedInPictureUrl = profile.profilePicture?.displayImage || null;
+    const linkedInEmail = profile.email;
 
+    // Handle social login flow (login or register mode)
+    if (mode === 'login' || mode === 'register') {
+      if (!linkedInEmail) {
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Could not retrieve email from LinkedIn')}`
+        );
+      }
+
+      // Check if user exists by email
+      let user = await db.query.users.findFirst({
+        where: eq(users.email, linkedInEmail),
+      });
+
+      // Check if LinkedIn account is already linked
+      const existingAccount = await db.query.accounts.findFirst({
+        where: and(
+          eq(accounts.provider, 'linkedin'),
+          eq(accounts.providerAccountId, profile.id)
+        ),
+      });
+
+      if (mode === 'register') {
+        // Registration flow
+        if (user) {
+          // User already exists - redirect to login
+          return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
+          );
+        }
+
+        // Create new user
+        const userId = randomUUID();
+
+        // Store profile picture in R2
+        let storedPictureUrl: string | null = null;
+        if (linkedInPictureUrl) {
+          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, userId);
+        }
+
+        await db.insert(users).values({
+          id: userId,
+          email: linkedInEmail,
+          name: fullName,
+          image: storedPictureUrl,
+          emailVerified: new Date(), // LinkedIn emails are verified
+          plan: 'free',
+          twoFactorEnabled: false,
+          // Auto-connect LinkedIn for posting
+          linkedinAccessToken: tokenData.access_token,
+          linkedinRefreshToken: tokenData.refresh_token || null,
+          linkedinTokenExpiry: tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : null,
+          linkedinProfileId: profile.id,
+          linkedinProfileName: fullName,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        // Link LinkedIn account
+        await db.insert(accounts).values({
+          userId: userId,
+          type: 'oauth',
+          provider: 'linkedin',
+          providerAccountId: profile.id,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token || null,
+          expires_at: tokenData.expires_in
+            ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+            : null,
+          token_type: 'Bearer',
+          scope: tokenData.scope,
+        });
+
+        user = await db.query.users.findFirst({
+          where: eq(users.id, userId),
+        });
+
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail({ to: linkedInEmail, name: profile.localizedFirstName || undefined }).catch((err) => {
+          console.error('Failed to send welcome email:', err);
+        });
+
+        // Subscribe to newsletter if opted in (non-blocking)
+        if (subscribeNewsletterCookie) {
+          subscribeToNewsletter({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch((err) => {
+            console.error('Failed to subscribe to newsletter:', err);
+          });
+        }
+
+      } else {
+        // Login flow
+        if (!user) {
+          // User doesn't exist - redirect to register
+          return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/sign-up?error=${encodeURIComponent('No account found with this email. Please create an account first.')}`
+          );
+        }
+
+        // Link LinkedIn account if not already linked
+        if (!existingAccount) {
+          await db.insert(accounts).values({
+            userId: user.id,
+            type: 'oauth',
+            provider: 'linkedin',
+            providerAccountId: profile.id,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token || null,
+            expires_at: tokenData.expires_in
+              ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+              : null,
+            token_type: 'Bearer',
+            scope: tokenData.scope,
+          });
+        } else {
+          // Update existing account tokens
+          await db
+            .update(accounts)
+            .set({
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token || undefined,
+              expires_at: tokenData.expires_in
+                ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+                : undefined,
+            })
+            .where(
+              and(
+                eq(accounts.provider, 'linkedin'),
+                eq(accounts.providerAccountId, profile.id)
+              )
+            );
+        }
+
+        // Also update the user's LinkedIn posting tokens (auto-connect)
+        let storedPictureUrl: string | null = user.image;
+        if (!user.image && linkedInPictureUrl) {
+          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, user.id);
+        }
+
+        await db
+          .update(users)
+          .set({
+            linkedinAccessToken: tokenData.access_token,
+            linkedinRefreshToken: tokenData.refresh_token || null,
+            linkedinTokenExpiry: tokenData.expires_in
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null,
+            linkedinProfileId: profile.id,
+            linkedinProfileName: fullName,
+            image: storedPictureUrl,
+            name: user.name || fullName,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id));
+      }
+
+      if (!user) {
+        throw new Error('Failed to create or find user');
+      }
+
+      // Create session token using NextAuth JWT
+      const token = await encode({
+        token: {
+          id: user.id,
+          email: user.email,
+          name: user.name || fullName,
+          image: user.image,
+          plan: user.plan,
+          twoFactorEnabled: user.twoFactorEnabled,
+          isAdmin: user.isAdmin,
+        },
+        secret: process.env.AUTH_SECRET!,
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      });
+
+      // Redirect to dashboard with session cookie
+      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+
+      // Set the session cookie (NextAuth v5 uses authjs.session-token)
+      response.cookies.set('authjs.session-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+
+      // Clear OAuth cookies
+      response.cookies.delete('linkedin_oauth_state');
+      response.cookies.delete('linkedin_app_type');
+      response.cookies.delete('linkedin_oauth_mode');
+      response.cookies.delete('linkedin_popup');
+      response.cookies.delete('linkedin_newsletter');
+
+      return response;
+    }
+
+    // Original connect flow (for dashboard settings)
     // Get the current user session
     const session = await auth();
 
@@ -177,6 +397,7 @@ export async function GET(request: NextRequest) {
       // Set cookies on the popup response too
       response.cookies.delete('linkedin_oauth_state');
       response.cookies.delete('linkedin_app_type');
+      response.cookies.delete('linkedin_oauth_mode');
       response.cookies.delete('linkedin_popup');
       response.cookies.set('linkedin_connected', 'true', {
         httpOnly: true,
@@ -202,6 +423,7 @@ export async function GET(request: NextRequest) {
     // Clear OAuth cookies
     response.cookies.delete('linkedin_oauth_state');
     response.cookies.delete('linkedin_app_type');
+    response.cookies.delete('linkedin_oauth_mode');
 
     // Store connection status temporarily (in production, use database)
     response.cookies.set('linkedin_connected', 'true', {
@@ -226,6 +448,11 @@ export async function GET(request: NextRequest) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to connect LinkedIn';
     if (isPopup) {
       return createPopupResponse(false, { error: errorMessage });
+    }
+    if (mode === 'login' || mode === 'register') {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorMessage)}`
+      );
     }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?error=${encodeURIComponent(errorMessage)}`

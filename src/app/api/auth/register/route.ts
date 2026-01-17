@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { sendWelcomeEmail } from "@/lib/email";
+import { subscribeToNewsletter } from "@/lib/newsletter";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password, subscribeNewsletter } = body;
 
     // Validate input
     if (!email || !password) {
@@ -79,6 +80,13 @@ export async function POST(request: NextRequest) {
     sendWelcomeEmail({ to: email, name: name || undefined }).catch((err) => {
       console.error("Failed to send welcome email:", err);
     });
+
+    // Subscribe to newsletter if opted in (non-blocking)
+    if (subscribeNewsletter) {
+      subscribeToNewsletter({ email, name, source: "email_signup" }).catch((err) => {
+        console.error("Failed to subscribe to newsletter:", err);
+      });
+    }
 
     return NextResponse.json({
       success: true,

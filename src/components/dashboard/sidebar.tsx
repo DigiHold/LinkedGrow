@@ -66,7 +66,7 @@ const navigation = [
     name: "Hooks",
     href: "/dashboard/hooks",
     icon: Anchor,
-    description: "Generate scroll-stopping hooks",
+    description: "Create catchy hooks",
   },
   {
     name: "My Posts",

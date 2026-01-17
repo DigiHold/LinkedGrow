@@ -25,6 +25,7 @@ interface LinkedInTokenResponse {
 
 interface LinkedInProfile {
   id: string;
+  email?: string;
   localizedFirstName: string;
   localizedLastName: string;
   profilePicture?: {
@@ -145,10 +146,18 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
 
   return {
     id: data.sub,
+    email: data.email,
     localizedFirstName: data.given_name || '',
     localizedLastName: data.family_name || '',
     profilePicture: data.picture ? { displayImage: data.picture } : undefined,
   };
+}
+
+/**
+ * Check if LinkedIn OAuth is configured
+ */
+export function isLinkedInConfigured(): boolean {
+  return !!(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET);
 }
 
 /**
