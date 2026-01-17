@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,14 @@ import {
   Lightbulb,
   Loader2,
   CalendarDays,
+  X,
+  Eye,
+  Heart,
+  MessageCircle,
+  ExternalLink,
+  RefreshCw,
+  MoreVertical,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -22,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Drawer } from "vaul";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -36,6 +45,7 @@ interface Post {
   postType: "text" | "image" | "carousel" | "video";
   scheduledAt: string | null;
   publishedAt: string | null;
+  linkedinPostUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +56,8 @@ function CalendarContent() {
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<{ day: number; month: number; year: number } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -151,6 +163,14 @@ function CalendarContent() {
     });
   };
 
+  const formatFullDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   const getPostPreview = (content: string, maxLength = 30) => {
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength).trim() + "...";
@@ -160,6 +180,38 @@ function CalendarContent() {
     if (item.isCurrentMonth && !isPast(item.day, item.month, item.year)) {
       setSelectedDay({ day: item.day, month: item.month, year: item.year });
       setDropdownOpen(true);
+    }
+  };
+
+  const handlePostClick = (post: Post, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedPost(post);
+    setDrawerOpen(true);
+  };
+
+  const getStatusLabel = (status: Post["status"]) => {
+    switch (status) {
+      case "scheduled":
+        return "Scheduled";
+      case "published":
+        return "Published";
+      case "failed":
+        return "Failed";
+      default:
+        return "Draft";
+    }
+  };
+
+  const getStatusColor = (status: Post["status"]) => {
+    switch (status) {
+      case "scheduled":
+        return "bg-blue-500";
+      case "published":
+        return "bg-green-500";
+      case "failed":
+        return "bg-red-500";
+      default:
+        return "bg-gray-400";
     }
   };
 
@@ -257,9 +309,8 @@ function CalendarContent() {
                   }}
                 >
                   <DropdownMenuTrigger asChild>
-                    <button
+                    <div
                       onClick={() => handleDayClick(item)}
-                      disabled={!isClickable}
                       className={cn(
                         "min-h-32 p-2 border-b border-r border-border transition-all text-left flex flex-col relative",
                         !item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/30",
@@ -283,19 +334,18 @@ function CalendarContent() {
                       {hasPost && (
                         <div className="flex flex-col gap-1 mt-1 overflow-hidden flex-1">
                           {postsForDay.slice(0, 3).map((post) => (
-                            <Link
+                            <button
                               key={post.id}
-                              href={`/dashboard/editor?id=${post.id}`}
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => handlePostClick(post, e)}
                               className={cn(
-                                "text-xs px-2 py-1 rounded truncate block hover:opacity-80 transition-opacity",
+                                "text-xs px-2 py-1 rounded truncate block hover:opacity-80 transition-opacity text-left",
                                 post.status === "scheduled" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
                                 post.status === "published" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
                                 post.status === "failed" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                               )}
                             >
                               {formatTime(post.scheduledAt || post.publishedAt || post.createdAt)} - {getPostPreview(post.content)}
-                            </Link>
+                            </button>
                           ))}
                           {postsForDay.length > 3 && (
                             <span className="text-xs text-muted-foreground px-2">
@@ -304,7 +354,7 @@ function CalendarContent() {
                           )}
                         </div>
                       )}
-                    </button>
+                    </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     side="right"
@@ -339,6 +389,178 @@ function CalendarContent() {
           </div>
         </div>
       </div>
+
+      {/* Post Detail Drawer */}
+      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-lg border-l shadow-xl outline-none">
+            {selectedPost && (
+              <>
+                {/* Drawer Header */}
+                <div className="py-4 px-6 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">
+                      {selectedPost.status === "published" ? "Your post published" : "Scheduled post"}
+                    </h2>
+                    <button
+                      onClick={() => setDrawerOpen(false)}
+                      className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Drawer Body */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex flex-col md:flex-row h-full">
+                    {/* Post Preview */}
+                    <div className="flex-1 bg-[#f4f2ee] dark:bg-gray-800 p-6">
+                      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow-sm max-w-md mx-auto">
+                        <div className="p-4">
+                          {/* Post Header */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-linkedin/20 flex items-center justify-center">
+                                <span className="text-linkedin font-semibold text-sm">LG</span>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">Your LinkedIn Profile</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/dashboard/editor?id=${selectedPost.id}`}>
+                                    Edit post
+                                  </Link>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Post Content */}
+                          <div className="mb-4">
+                            <p className="text-sm whitespace-pre-line line-clamp-6">
+                              {selectedPost.content}
+                            </p>
+                            {selectedPost.content.length > 300 && (
+                              <button className="text-sm text-muted-foreground hover:text-foreground mt-1">
+                                ... See more
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sidebar */}
+                    <div className="w-full md:w-80 border-t md:border-t-0 md:border-l p-6 flex flex-col gap-5 bg-white dark:bg-gray-900">
+                      {/* Status Card */}
+                      <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                        <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {getStatusLabel(selectedPost.status)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 pt-2">
+                          <p className="text-sm text-muted-foreground">
+                            {selectedPost.status === "published" ? "Post published" : "Scheduled for"}
+                          </p>
+                          <p className="text-base font-bold">
+                            {formatFullDate(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)} - {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Performances Card */}
+                      {selectedPost.status === "published" && (
+                        <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                          <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-violet-500" />
+                              <span className="text-sm font-semibold">Performances</span>
+                            </div>
+                            <button className="p-2 -my-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm">
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 bg-green-50 dark:bg-green-900/30 rounded-md">
+                                  <Eye className="w-4 h-4 text-green-600" />
+                                </div>
+                                <span className="text-sm text-muted-foreground">Impressions</span>
+                              </div>
+                              <span className="text-sm font-semibold">-</span>
+                            </div>
+                            <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md">
+                                  <Heart className="w-4 h-4 text-red-500" />
+                                </div>
+                                <span className="text-sm text-muted-foreground">Likes</span>
+                              </div>
+                              <span className="text-sm font-semibold">-</span>
+                            </div>
+                            <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+                                  <MessageCircle className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <span className="text-sm text-muted-foreground">Comments</span>
+                              </div>
+                              <span className="text-sm font-semibold">-</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      {selectedPost.linkedinPostUrl && (
+                        <a
+                          href={selectedPost.linkedinPostUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          View on LinkedIn
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      <div className="flex flex-col gap-3">
+                        <Link href={`/dashboard/generator?duplicate=${selectedPost.id}`}>
+                          <Button variant="linkedin" className="w-full">
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Reuse this post
+                          </Button>
+                        </Link>
+                        <p className="text-xs text-muted-foreground text-center">
+                          The current post will be duplicated
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </div>
   );
 }
