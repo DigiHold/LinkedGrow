@@ -61,16 +61,25 @@ const flags: Record<string, React.ReactNode> = {
 // Cookie helpers - Language preference is a "strictly necessary" cookie
 // as it's essential for the website to function properly for the user
 // and doesn't track users across sites
-function setLocaleCookie(locale: string) {
+function setLocaleCookie(locale: string, isManualSelection: boolean = false) {
   const expires = new Date();
   expires.setFullYear(expires.getFullYear() + 1);
   document.cookie = `NEXT_LOCALE=${locale}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+  // Track if user manually selected a language (so we don't override with geo)
+  if (isManualSelection) {
+    document.cookie = `LOCALE_MANUAL=1; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+  }
 }
 
 function getLocaleCookie(): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
   return match ? match[1] : null;
+}
+
+function isManualLocaleSelection(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.includes("LOCALE_MANUAL=1");
 }
 
 export function LanguageSelector() {
@@ -85,11 +94,15 @@ export function LanguageSelector() {
     setMounted(true);
 
     const savedLocale = getLocaleCookie();
-    if (savedLocale && SUPPORTED_LANGUAGES.some(lang => lang.code === savedLocale)) {
+    const isManual = isManualLocaleSelection();
+
+    // Only skip geo detection if user MANUALLY selected a language
+    if (isManual && savedLocale && SUPPORTED_LANGUAGES.some(lang => lang.code === savedLocale)) {
       setCurrentLanguage(savedLocale as LanguageCode);
       return;
     }
 
+    // Always detect geo if not a manual selection
     const detectLanguage = async () => {
       try {
         const response = await fetch("/api/geo");
@@ -97,20 +110,31 @@ export function LanguageSelector() {
           const geo = await response.json();
           if (geo.countryCode) {
             const langFromCountry = getLanguageFromCountry(geo.countryCode);
-            setCurrentLanguage(langFromCountry);
-            setLocaleCookie(langFromCountry);
-            startTransition(() => {
-              router.refresh();
-            });
+            // Only update if language is different
+            if (langFromCountry !== savedLocale) {
+              setCurrentLanguage(langFromCountry);
+              setLocaleCookie(langFromCountry);
+              startTransition(() => {
+                router.refresh();
+              });
+            } else {
+              setCurrentLanguage(langFromCountry);
+            }
             return;
           }
         }
       } catch {
-        // Geolocation failed, use default
+        // Geolocation failed, use default or saved
       }
 
-      setCurrentLanguage(DEFAULT_LANGUAGE);
-      setLocaleCookie(DEFAULT_LANGUAGE);
+      // Use saved locale if available, otherwise default
+      const fallbackLocale = savedLocale && SUPPORTED_LANGUAGES.some(lang => lang.code === savedLocale)
+        ? savedLocale as LanguageCode
+        : DEFAULT_LANGUAGE;
+      setCurrentLanguage(fallbackLocale);
+      if (!savedLocale) {
+        setLocaleCookie(fallbackLocale);
+      }
     };
 
     detectLanguage();
@@ -134,7 +158,7 @@ export function LanguageSelector() {
 
   const handleSelectLanguage = (code: LanguageCode) => {
     setCurrentLanguage(code);
-    setLocaleCookie(code);
+    setLocaleCookie(code, true); // Mark as manual selection
     setIsOpen(false);
 
     startTransition(() => {

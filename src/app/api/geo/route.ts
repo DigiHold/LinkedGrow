@@ -10,8 +10,8 @@ export async function GET() {
 
     return NextResponse.json(geo, {
       headers: {
-        // Cache for 1 hour client-side, 24 hours on CDN
-        "Cache-Control": "public, s-maxage=86400, max-age=3600",
+        // Don't cache - user's location can change (VPN, travel)
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (error) {

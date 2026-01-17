@@ -88,14 +88,11 @@ function injectGA4Direct(measurementId: string): void {
 
   // Skip if GA4 cookies already exist (GTM already handled it on page load)
   if (hasGA4Cookies()) {
-    console.log('[GA4] Cookies already exist, skipping direct injection');
     return;
   }
 
   const scriptId = `ga4-${measurementId}`;
   if (document.getElementById(scriptId)) return;
-
-  console.log('[GA4] Injecting gtag.js directly for immediate cookie creation');
 
   // Create gtag script
   const script = document.createElement('script');
@@ -117,7 +114,6 @@ function injectGA4Direct(measurementId: string): void {
       page_title: document.title,
       page_location: window.location.href,
     });
-    console.log('[GA4] Direct injection complete, cookies should be created');
   };
 
   document.head.appendChild(script);
@@ -186,12 +182,9 @@ export function injectGTM(gtmId: string): void {
   const scriptId = `gtm-${gtmId}`;
   if (loadedScripts.has(scriptId)) {
     // Already loaded, just trigger page view
-    console.log('[GTM] Already loaded, triggering page view');
     triggerPageView();
     return;
   }
-
-  console.log('[GTM] Injecting GTM script:', gtmId);
 
   initDataLayer();
   window.dataLayer.push({
@@ -206,14 +199,13 @@ export function injectGTM(gtmId: string): void {
 
   script.onload = () => {
     loadedScripts.add(scriptId);
-    console.log('[GTM] Script loaded successfully');
     // Give GTM more time to fully initialize before triggering page view
     // This ensures GA4 tag is ready to receive events
     setTimeout(triggerPageView, 500);
   };
 
   script.onerror = () => {
-    console.error('[GTM] Failed to load GTM script');
+    // GTM failed to load
   };
 
   document.head.appendChild(script);
@@ -431,9 +423,6 @@ export function removeAllTrackingScripts(): void {
 export function activateTracking(config: TrackingConfig, preferences: ConsentPreferences): void {
   if (typeof window === 'undefined') return;
 
-  console.log('[Tracking] Activating tracking with config:', config);
-  console.log('[Tracking] Preferences:', preferences);
-
   // First update Google Consent Mode
   updateGoogleConsent(preferences);
 
@@ -444,10 +433,7 @@ export function activateTracking(config: TrackingConfig, preferences: ConsentPre
 
   // Load GTM if analytics or marketing is enabled
   if ((preferences.analytics || preferences.marketing) && config.gtmId) {
-    console.log('[Tracking] Loading GTM...');
     injectGTM(config.gtmId);
-  } else {
-    console.log('[Tracking] Skipping GTM - analytics:', preferences.analytics, 'marketing:', preferences.marketing, 'gtmId:', config.gtmId);
   }
 
   // Load Meta Pixel if marketing is enabled
@@ -485,13 +471,9 @@ export function handleConsentChange(
   preferences: ConsentPreferences,
   accepted: boolean
 ): void {
-  console.log('[Consent] handleConsentChange called - accepted:', accepted, 'preferences:', preferences);
-
   if (accepted && (preferences.analytics || preferences.marketing)) {
-    console.log('[Consent] Activating tracking...');
     activateTracking(config, preferences);
   } else {
-    console.log('[Consent] Deactivating tracking...');
     deactivateTracking();
   }
 }
