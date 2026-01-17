@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Lock,
   Crown,
@@ -20,9 +18,7 @@ import {
   Headphones,
   Palette,
   TrendingUp,
-  Loader2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   PlanId,
   PlanFeatures,
@@ -32,8 +28,8 @@ import {
   getRequiredPlanForFeature,
   getMissingFeatures,
 } from "@/lib/plans";
-import { redirectToCheckout } from "@/lib/checkout";
-import { useSession } from "next-auth/react";
+import { auth } from "@/lib/auth";
+import { UpgradeButton } from "./upgrade-button";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
@@ -57,28 +53,18 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 
 interface FeatureGateProps {
   feature: keyof PlanFeatures;
+  children: React.ReactNode;
+  // Deprecated props - kept for backward compatibility, ignored
   userPlan?: PlanId;
   userEmail?: string;
-  children: React.ReactNode;
 }
 
-export function FeatureGate({
+// Server Component - no loading state needed, data is available immediately
+export async function FeatureGate({
   feature,
   children,
 }: FeatureGateProps) {
-  const { data: session, status } = useSession();
-
-  // Wait for session to load before showing anything - prevents flash of upgrade gate
-  if (status === "loading") {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const session = await auth();
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const userEmail = session?.user?.email || "";
@@ -152,26 +138,23 @@ export function FeatureGate({
               </div>
             )}
 
-            {/* CTA Button */}
-            <Button
-              variant="linkedin"
-              size="xl"
-              className="shadow-lg w-full sm:w-auto text-white"
-              onClick={() => redirectToCheckout(requiredPlan, userEmail)}
-            >
-              <Crown className="w-5 h-5 mr-2" />
-              Upgrade to {planInfo.name} - ${planInfo.price}/mo
-            </Button>
+            {/* CTA Button - Client Component for interactivity */}
+            <UpgradeButton
+              requiredPlan={requiredPlan}
+              userEmail={userEmail}
+              planName={planInfo.name}
+              planPrice={planInfo.price}
+            />
 
-            {/* All Plans Link - right after upgrade button */}
+            {/* All Plans Link */}
             <div className="mt-4">
-              <button
-                onClick={() => window.location.href = "/#pricing"}
+              <a
+                href="/#pricing"
                 className="text-sm text-linkedin hover:underline inline-flex items-center gap-1"
               >
                 Compare all plans
                 <ArrowRight className="w-3 h-3" />
-              </button>
+              </a>
             </div>
 
             {/* Current plan info */}
@@ -181,11 +164,10 @@ export function FeatureGate({
           </div>
         </div>
 
-        {/* Feature Preview (blurred) - less blur to show preview */}
+        {/* Feature Preview (blurred) */}
         <div className="mt-8 relative">
           <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent z-10 rounded-xl" />
           <div className="blur-[2px] opacity-70 pointer-events-none bg-accent/30 rounded-xl p-6 h-48">
-            {/* Placeholder preview content */}
             <div className="space-y-3">
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
@@ -202,21 +184,12 @@ export function FeatureGate({
   );
 }
 
-// Simpler inline version for partial page gating
-export function FeatureGateInline({
+// Server Component - Simpler inline version for partial page gating
+export async function FeatureGateInline({
   feature,
   children,
 }: FeatureGateProps) {
-  const { data: session, status } = useSession();
-
-  // Show nothing while loading to prevent flash
-  if (status === "loading") {
-    return (
-      <div className="relative rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-6 animate-pulse">
-        <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded" />
-      </div>
-    );
-  }
+  const session = await auth();
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const userEmail = session?.user?.email || "";
@@ -240,14 +213,13 @@ export function FeatureGateInline({
         <p className="text-sm text-muted-foreground mb-4">
           Available on {planInfo.name} plan
         </p>
-        <Button
-          size="sm"
-          className="bg-amber-600 hover:bg-amber-700 text-white"
-          onClick={() => redirectToCheckout(requiredPlan, userEmail)}
-        >
-          <Crown className="w-4 h-4 mr-1" />
-          Upgrade to unlock
-        </Button>
+        <UpgradeButton
+          requiredPlan={requiredPlan}
+          userEmail={userEmail}
+          planName={planInfo.name}
+          planPrice={planInfo.price}
+          variant="inline"
+        />
       </div>
     </div>
   );
