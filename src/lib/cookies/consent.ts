@@ -85,6 +85,51 @@ export function getStoredConsent(): ConsentPreferences | null {
   }
 }
 
+// Get or create a visitor ID for consent tracking
+function getVisitorId(): string {
+  if (typeof window === 'undefined') return '';
+
+  const VISITOR_ID_KEY = 'linkedgrow_visitor_id';
+  let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+
+  if (!visitorId) {
+    visitorId = `v_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    localStorage.setItem(VISITOR_ID_KEY, visitorId);
+  }
+
+  return visitorId;
+}
+
+// Track consent to server for analytics
+async function trackConsentToServer(preferences: ConsentPreferences): Promise<void> {
+  try {
+    const visitorId = getVisitorId();
+    if (!visitorId) return;
+
+    // Determine status
+    let status: 'accepted_all' | 'rejected_all' | 'customized' = 'customized';
+    if (preferences.analytics && preferences.marketing) {
+      status = 'accepted_all';
+    } else if (!preferences.analytics && !preferences.marketing) {
+      status = 'rejected_all';
+    }
+
+    await fetch('/api/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        visitorId,
+        analytics: preferences.analytics,
+        marketing: preferences.marketing,
+        status,
+      }),
+    });
+  } catch (error) {
+    // Silent fail - don't break the user experience
+    console.warn('Failed to track consent:', error);
+  }
+}
+
 // Save consent preferences
 export function saveConsent(preferences: Omit<ConsentPreferences, 'timestamp' | 'version'>): void {
   if (typeof window === 'undefined') return;
@@ -100,6 +145,9 @@ export function saveConsent(preferences: Omit<ConsentPreferences, 'timestamp' | 
 
   // Update Google Consent Mode
   updateGoogleConsent(fullPreferences);
+
+  // Track consent to server for analytics (non-blocking)
+  trackConsentToServer(fullPreferences);
 
   // Dispatch event for other components
   window.dispatchEvent(new CustomEvent('consentUpdated', { detail: fullPreferences }));

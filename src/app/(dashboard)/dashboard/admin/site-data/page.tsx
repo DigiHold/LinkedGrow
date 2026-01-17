@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import {
   Database,
   Cookie,
-  Trash2,
   CheckCircle2,
   XCircle,
-  Clock,
-  AlertCircle,
+  Settings2,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  Globe,
+  Monitor,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,39 +25,44 @@ interface ConsentStats {
   marketingAccepted: number;
 }
 
-interface DataRemovalRequest {
+interface ConsentRecord {
   id: string;
-  email: string;
-  userId: string | null;
-  status: "pending" | "processing" | "completed" | "rejected";
-  reason: string | null;
-  adminNotes: string | null;
+  visitorId: string;
+  status: "accepted_all" | "rejected_all" | "customized";
+  analytics: boolean;
+  marketing: boolean;
+  ipAddress: string | null;
+  country: string | null;
+  userAgent: string | null;
   createdAt: string;
-  processedAt: string | null;
 }
 
 interface SiteDataResponse {
   consentStats: ConsentStats;
-  removalRequests: {
-    items: DataRemovalRequest[];
+  consentRecords: {
+    items: ConsentRecord[];
     total: number;
     page: number;
     totalPages: number;
   };
 }
 
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  processing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
-
-const statusIcons: Record<string, typeof Clock> = {
-  pending: Clock,
-  processing: RefreshCw,
-  completed: CheckCircle2,
-  rejected: XCircle,
+const statusConfig = {
+  accepted_all: {
+    label: "Accepted All",
+    color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    icon: CheckCircle2,
+  },
+  rejected_all: {
+    label: "Rejected All",
+    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    icon: XCircle,
+  },
+  customized: {
+    label: "Customized",
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    icon: Settings2,
+  },
 };
 
 export default function AdminSiteDataPage() {
@@ -69,55 +75,30 @@ export default function AdminSiteDataPage() {
     analyticsAccepted: 0,
     marketingAccepted: 0,
   });
-  const [removalRequests, setRemovalRequests] = useState<DataRemovalRequest[]>([]);
-  const [removalPage, setRemovalPage] = useState(1);
-  const [removalTotalPages, setRemovalTotalPages] = useState(1);
-  const [removalTotal, setRemovalTotal] = useState(0);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [consentRecords, setConsentRecords] = useState<ConsentRecord[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetchSiteData();
-  }, [removalPage]);
+  }, [page]);
 
   const fetchSiteData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/site-data?page=${removalPage}`);
+      const response = await fetch(`/api/admin/site-data?page=${page}`);
       if (!response.ok) throw new Error("Failed to fetch site data");
 
       const data: SiteDataResponse = await response.json();
       setConsentStats(data.consentStats);
-      setRemovalRequests(data.removalRequests.items);
-      setRemovalTotalPages(data.removalRequests.totalPages);
-      setRemovalTotal(data.removalRequests.total);
+      setConsentRecords(data.consentRecords.items);
+      setTotalPages(data.consentRecords.totalPages);
+      setTotal(data.consentRecords.total);
     } catch (error) {
       console.error("Error fetching site data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updateRequestStatus = async (
-    id: string,
-    status: "processing" | "completed" | "rejected",
-    adminNotes?: string
-  ) => {
-    try {
-      setProcessingId(id);
-      const response = await fetch(`/api/admin/site-data/removal-requests/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, adminNotes }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update request");
-
-      // Refresh data
-      await fetchSiteData();
-    } catch (error) {
-      console.error("Error updating request:", error);
-    } finally {
-      setProcessingId(null);
     }
   };
 
@@ -136,7 +117,17 @@ export default function AdminSiteDataPage() {
     return Math.round((value / total) * 100);
   };
 
-  if (loading) {
+  const getBrowserFromUA = (ua: string | null): string => {
+    if (!ua) return "Unknown";
+    if (ua.includes("Chrome") && !ua.includes("Edg")) return "Chrome";
+    if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+    if (ua.includes("Firefox")) return "Firefox";
+    if (ua.includes("Edg")) return "Edge";
+    if (ua.includes("Opera") || ua.includes("OPR")) return "Opera";
+    return "Other";
+  };
+
+  if (loading && consentRecords.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
@@ -155,7 +146,7 @@ export default function AdminSiteDataPage() {
           <h1 className="text-2xl font-bold">Site Data</h1>
         </div>
         <p className="text-muted-foreground">
-          Monitor cookie consent choices and manage data removal requests
+          Monitor cookie consent choices and visitor analytics
         </p>
       </div>
 
@@ -209,23 +200,35 @@ export default function AdminSiteDataPage() {
         </div>
       </div>
 
-      {/* Data Removal Requests */}
+      {/* Consent Log */}
       <div>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Trash2 className="w-5 h-5 text-red-500" />
-          Data Removal Requests
-          {removalTotal > 0 && (
-            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              {removalTotal}
-            </span>
-          )}
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-500" />
+            Consent Log
+            {total > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
+                {total}
+              </span>
+            )}
+          </h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchSiteData()}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-hidden">
-          {removalRequests.length === 0 ? (
+          {consentRecords.length === 0 ? (
             <div className="px-4 py-12 text-center text-muted-foreground">
-              <AlertCircle className="w-8 h-8 mx-auto mb-3 opacity-50" />
-              <p>No data removal requests yet</p>
+              <Cookie className="w-8 h-8 mx-auto mb-3 opacity-50" />
+              <p>No consent records yet</p>
+              <p className="text-sm mt-1">Records will appear as visitors interact with the cookie banner</p>
             </div>
           ) : (
             <>
@@ -234,104 +237,85 @@ export default function AdminSiteDataPage() {
                   <thead>
                     <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                        Email
+                        Action
                       </th>
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                        Status
+                        Choices
                       </th>
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                        Reason
+                        IP Address
                       </th>
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                        Requested
+                        Country
                       </th>
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                        Actions
+                        Browser
+                      </th>
+                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                        Date
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {removalRequests.map((request) => {
-                      const StatusIcon = statusIcons[request.status];
+                    {consentRecords.map((record) => {
+                      const config = statusConfig[record.status];
+                      const StatusIcon = config.icon;
                       return (
                         <tr
-                          key={request.id}
+                          key={record.id}
                           className="border-b border-border last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
                           <td className="px-4 py-3">
-                            <div>
-                              <span className="text-sm font-medium">{request.email}</span>
-                              {request.userId && (
-                                <span className="block text-xs text-muted-foreground font-mono">
-                                  User: {request.userId.slice(0, 8)}...
-                                </span>
-                              )}
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}
+                            >
+                              <StatusIcon className="w-3 h-3" />
+                              {config.label}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <span
+                                className={`text-xs px-1.5 py-0.5 rounded ${
+                                  record.analytics
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                }`}
+                              >
+                                Analytics: {record.analytics ? "Yes" : "No"}
+                              </span>
+                              <span
+                                className={`text-xs px-1.5 py-0.5 rounded ${
+                                  record.marketing
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                }`}
+                              >
+                                Marketing: {record.marketing ? "Yes" : "No"}
+                              </span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                                statusColors[request.status]
-                              }`}
-                            >
-                              <StatusIcon className="w-3 h-3" />
-                              {request.status}
+                            <div className="flex items-center gap-2 text-sm font-mono">
+                              <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                              {record.ipAddress || "unknown"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                              {record.country || "unknown"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-muted-foreground">
+                              {getBrowserFromUA(record.userAgent)}
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-sm text-muted-foreground">
-                              {request.reason || "-"}
+                              {formatDate(record.createdAt)}
                             </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-muted-foreground">
-                              {formatDate(request.createdAt)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {request.status === "pending" && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => updateRequestStatus(request.id, "processing")}
-                                  disabled={processingId === request.id}
-                                >
-                                  {processingId === request.id ? (
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    "Process"
-                                  )}
-                                </Button>
-                              </div>
-                            )}
-                            {request.status === "processing" && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => updateRequestStatus(request.id, "completed")}
-                                  disabled={processingId === request.id}
-                                >
-                                  Complete
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 border-red-200 hover:bg-red-50"
-                                  onClick={() => updateRequestStatus(request.id, "rejected")}
-                                  disabled={processingId === request.id}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
-                            {(request.status === "completed" || request.status === "rejected") && (
-                              <span className="text-xs text-muted-foreground">
-                                {request.processedAt && formatDate(request.processedAt)}
-                              </span>
-                            )}
                           </td>
                         </tr>
                       );
@@ -341,25 +325,25 @@ export default function AdminSiteDataPage() {
               </div>
 
               {/* Pagination */}
-              {removalTotalPages > 1 && (
+              {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                   <div className="text-sm text-muted-foreground">
-                    Page {removalPage} of {removalTotalPages}
+                    Page {page} of {totalPages}
                   </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setRemovalPage((p) => Math.max(1, p - 1))}
-                      disabled={removalPage === 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setRemovalPage((p) => Math.min(removalTotalPages, p + 1))}
-                      disabled={removalPage === removalTotalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>

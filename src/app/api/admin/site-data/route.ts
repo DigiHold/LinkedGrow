@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { cookieConsents, dataRemovalRequests } from "@/lib/db/schema";
+import { cookieConsents } from "@/lib/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = 10;
+    const limit = 20;
     const offset = (page - 1) * limit;
 
     // Get cookie consent stats
@@ -48,38 +48,40 @@ export async function GET(request: NextRequest) {
       .from(cookieConsents)
       .where(eq(cookieConsents.marketing, true));
 
-    // Get data removal requests
-    const totalRequests = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(dataRemovalRequests);
+    // Get consent records with pagination
+    const totalRecords = totalConsents[0]?.count || 0;
 
-    const requests = await db
+    const records = await db
       .select()
-      .from(dataRemovalRequests)
-      .orderBy(desc(dataRemovalRequests.createdAt))
+      .from(cookieConsents)
+      .orderBy(desc(cookieConsents.createdAt))
       .limit(limit)
       .offset(offset);
 
-    const total = totalRequests[0]?.count || 0;
-
     return NextResponse.json({
       consentStats: {
-        total: totalConsents[0]?.count || 0,
+        total: totalRecords,
         acceptedAll: acceptedAll[0]?.count || 0,
         rejectedAll: rejectedAll[0]?.count || 0,
         customized: customized[0]?.count || 0,
         analyticsAccepted: analyticsAccepted[0]?.count || 0,
         marketingAccepted: marketingAccepted[0]?.count || 0,
       },
-      removalRequests: {
-        items: requests.map((r) => ({
-          ...r,
+      consentRecords: {
+        items: records.map((r) => ({
+          id: r.id,
+          visitorId: r.visitorId,
+          status: r.status,
+          analytics: r.analytics,
+          marketing: r.marketing,
+          ipAddress: r.ipAddress,
+          country: r.country,
+          userAgent: r.userAgent,
           createdAt: r.createdAt?.toISOString() || new Date().toISOString(),
-          processedAt: r.processedAt?.toISOString() || null,
         })),
-        total,
+        total: totalRecords,
         page,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(totalRecords / limit),
       },
     });
   } catch (error) {
