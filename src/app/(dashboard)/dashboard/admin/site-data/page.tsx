@@ -95,8 +95,8 @@ export default function AdminSiteDataPage() {
       setConsentRecords(data.consentRecords.items);
       setTotalPages(data.consentRecords.totalPages);
       setTotal(data.consentRecords.total);
-    } catch (error) {
-      console.error("Error fetching site data:", error);
+    } catch {
+      // Silent fail
     } finally {
       setLoading(false);
     }

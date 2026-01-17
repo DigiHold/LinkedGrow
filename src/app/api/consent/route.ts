@@ -36,8 +36,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error saving consent:", error);
+  } catch {
     return NextResponse.json({ error: "Failed to save consent" }, { status: 500 });
   }
 }

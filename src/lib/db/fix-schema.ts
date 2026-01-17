@@ -11,10 +11,31 @@ const client = createClient({
 async function fixSchema() {
   console.log("Checking and fixing schema...\n");
 
+  // Create cookie_consents table if it doesn't exist
+  console.log("Creating cookie_consents table if not exists...");
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS cookie_consents (
+      id TEXT PRIMARY KEY NOT NULL,
+      visitor_id TEXT NOT NULL,
+      user_id TEXT,
+      necessary INTEGER DEFAULT 1,
+      analytics INTEGER DEFAULT 0,
+      marketing INTEGER DEFAULT 0,
+      status TEXT NOT NULL,
+      ip_address TEXT,
+      user_agent TEXT,
+      country TEXT,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  console.log("cookie_consents table ready.");
+
   // Get current columns in users table
   const columns = await client.execute("PRAGMA table_info(users)");
   const existingColumns = columns.rows.map(r => r.name as string);
-  console.log("Existing columns:", existingColumns.join(", "));
+  console.log("\nExisting user columns:", existingColumns.join(", "));
 
   // Columns that should exist
   const requiredColumns = [

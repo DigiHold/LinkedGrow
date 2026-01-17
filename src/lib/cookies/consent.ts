@@ -51,8 +51,7 @@ export async function detectUserRegion(): Promise<GeoLocation> {
       country: data.countryName || 'Unknown',
       countryCode: data.countryCode || '',
     };
-  } catch (error) {
-    console.warn('Geo-detection failed, defaulting to EEA (strict mode):', error);
+  } catch {
     // Default to EEA for privacy safety
     return {
       isEEA: true,
@@ -124,9 +123,8 @@ async function trackConsentToServer(preferences: ConsentPreferences): Promise<vo
         status,
       }),
     });
-  } catch (error) {
+  } catch {
     // Silent fail - don't break the user experience
-    console.warn('Failed to track consent:', error);
   }
 }
 

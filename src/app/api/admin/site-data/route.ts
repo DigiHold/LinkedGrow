@@ -84,8 +84,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(totalRecords / limit),
       },
     });
-  } catch (error) {
-    console.error("Error fetching site data:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch site data" },
       { status: 500 }
