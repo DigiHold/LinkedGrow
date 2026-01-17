@@ -23,8 +23,8 @@ import {
   Calendar,
   Search,
   Send,
-  ChevronDown,
   ArrowLeft,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -65,7 +65,7 @@ interface Idea {
   createdAt: string;
 }
 
-type DrawerView = "post-detail" | "create-post" | "schedule-post" | "insert-idea" | null;
+type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-post-preview" | null;
 
 function CalendarContent() {
   const { data: session } = useSession();
@@ -93,8 +93,13 @@ function CalendarContent() {
   const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
   const [scheduleHour, setScheduleHour] = useState("12");
   const [scheduleMinute, setScheduleMinute] = useState("00");
+  const [scheduleAmPm, setScheduleAmPm] = useState<"AM" | "PM">("PM");
   const [postMenuOpen, setPostMenuOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // Insert idea modal state
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
+  const [newIdeaText, setNewIdeaText] = useState("");
+  const [savingIdea, setSavingIdea] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dayDropdownRef = useRef<HTMLDivElement>(null);
@@ -157,8 +162,10 @@ function CalendarContent() {
       const now = new Date();
       newDate.setHours(now.getHours(), now.getMinutes());
       setScheduleDate(newDate);
-      setScheduleHour(String(now.getHours()).padStart(2, "0"));
-      setScheduleMinute(String(Math.ceil(now.getMinutes() / 5) * 5).padStart(2, "0"));
+      const hours = now.getHours();
+      setScheduleHour(String(hours % 12 || 12));
+      setScheduleAmPm(hours >= 12 ? "PM" : "AM");
+      setScheduleMinute(String(Math.ceil(now.getMinutes() / 5) * 5 % 60).padStart(2, "0"));
     }
   }, [selectedDay]);
 
@@ -239,8 +246,9 @@ function CalendarContent() {
     return content.substring(0, maxLength).trim() + "...";
   };
 
-  const handleDayClick = (item: typeof days[0]) => {
+  const handleDayClick = (item: typeof days[0], e: React.MouseEvent) => {
     if (item.isCurrentMonth && !isPast(item.day, item.month, item.year)) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       setSelectedDay({ day: item.day, month: item.month, year: item.year });
       setDropdownOpen(true);
     }
@@ -261,6 +269,15 @@ function CalendarContent() {
       setNewPostContent("");
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
+    if (view === "schedule-post") {
+      setSelectedPostToSchedule(null);
+    }
+  };
+
+  const openIdeaModal = () => {
+    setDropdownOpen(false);
+    setIdeaModalOpen(true);
+    setNewIdeaText("");
   };
 
   const getStatusLabel = (status: Post["status"]) => {
@@ -281,6 +298,14 @@ function CalendarContent() {
     }
   };
 
+  // Convert 12h to 24h
+  const get24Hour = () => {
+    let hour = parseInt(scheduleHour);
+    if (scheduleAmPm === "PM" && hour !== 12) hour += 12;
+    if (scheduleAmPm === "AM" && hour === 12) hour = 0;
+    return hour;
+  };
+
   // Create new post
   const handleCreatePost = async (publish: boolean = false) => {
     if (!newPostContent.trim()) return;
@@ -288,7 +313,7 @@ function CalendarContent() {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(parseInt(scheduleHour), parseInt(scheduleMinute));
+      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute));
 
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -319,7 +344,7 @@ function CalendarContent() {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(parseInt(scheduleHour), parseInt(scheduleMinute));
+      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute));
 
       const response = await fetch(`/api/posts/${selectedPostToSchedule.id}`, {
         method: "PATCH",
@@ -343,12 +368,59 @@ function CalendarContent() {
     }
   };
 
+  // Save idea
+  const handleSaveIdea = async () => {
+    if (!newIdeaText.trim()) return;
+
+    setSavingIdea(true);
+    try {
+      const response = await fetch("/api/ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newIdeaText.substring(0, 100),
+          description: newIdeaText,
+          source: "manual",
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save idea");
+
+      await fetchIdeas();
+      setIdeaModalOpen(false);
+      setNewIdeaText("");
+    } catch {
+      // Silent fail
+    } finally {
+      setSavingIdea(false);
+    }
+  };
+
+  // Create post from idea
+  const handleCreateFromIdea = () => {
+    if (!newIdeaText.trim()) return;
+    setIdeaModalOpen(false);
+    // Navigate to generator with idea text
+    window.location.href = `/dashboard/generator?idea_text=${encodeURIComponent(newIdeaText)}&schedule=${selectedDay?.year}-${String((selectedDay?.month ?? 0) + 1).padStart(2, '0')}-${String(selectedDay?.day ?? 1).padStart(2, '0')}`;
+  };
+
   // Filter posts for schedule drawer
   const filteredPosts = allPosts.filter(post => {
     const matchesSearch = post.content.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === "all" || post.status === filterType;
     return matchesSearch && matchesType;
   });
+
+  // Get formatted schedule time for display
+  const getFormattedScheduleTime = () => {
+    return `${scheduleHour}:${scheduleMinute} ${scheduleAmPm}`;
+  };
+
+  // Get formatted schedule date for display
+  const getFormattedScheduleDate = () => {
+    if (!selectedDay) return "Select a date";
+    return `${selectedDay.day} ${MONTHS[selectedDay.month]} ${selectedDay.year}`;
+  };
 
   if (loading) {
     return (
@@ -377,17 +449,11 @@ function CalendarContent() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
-            <Link href="/dashboard/generator">
-              <Button variant="default">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Post
-              </Button>
-            </Link>
           </div>
         </div>
 
         {/* Calendar */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-border shadow-sm">
           {/* Calendar Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <h2 className="text-xl font-semibold">{MONTHS[month]} {year}</h2>
@@ -419,98 +485,70 @@ function CalendarContent() {
               const isSelected = selectedDay?.day === item.day && selectedDay?.month === item.month && selectedDay?.year === item.year;
 
               return (
-                <div key={index} className="relative">
-                  <div
-                    onClick={() => handleDayClick(item)}
-                    className={cn(
-                      "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
-                      !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
-                      isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
-                      dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20",
-                      isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
-                      index % 7 === 6 && "border-r-0"
-                    )}
-                  >
-                    {/* Day Number */}
-                    <div className="w-full sm:w-fit flex justify-center sm:justify-start">
-                      <span className={cn(
-                        "text-xs flex h-6 w-6 items-center justify-center rounded-sm",
-                        dayIsToday && "bg-primary text-white",
-                        !dayIsToday && item.isCurrentMonth && !dayIsPast && "text-foreground",
-                        !dayIsToday && item.isCurrentMonth && dayIsPast && "text-muted-foreground",
-                        !item.isCurrentMonth && "text-muted-foreground/50"
-                      )}>
-                        {item.day}
-                      </span>
-                    </div>
-
-                    {/* Posts for this day */}
-                    {hasPost && (
-                      <div className="mt-2 space-y-1">
-                        {postsForDay.slice(0, 2).map((post) => (
-                          <button
-                            key={post.id}
-                            onClick={(e) => handlePostClick(post, e)}
-                            className={cn(
-                              "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
-                              post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
-                              post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
-                              post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
-                            )}
-                          >
-                            <div className="flex items-center gap-1.5 px-1.5 py-1">
-                              <div className={cn(
-                                "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
-                                post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
-                                post.status === "published" && "bg-green-100 dark:bg-green-800/40"
-                              )}>
-                                {post.postType === "image" ? (
-                                  <ImageIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                                ) : (
-                                  <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                                )}
-                              </div>
-                              <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
-                                {getPostPreview(post.content, 30)}
-                              </p>
-                            </div>
-                            <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
-                              <Calendar className="w-2.5 h-2.5" />
-                              <span className="font-medium">{formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}</span>
-                            </div>
-                          </button>
-                        ))}
-                        {postsForDay.length > 2 && (
-                          <span className="text-[10px] text-muted-foreground px-1.5 block">+{postsForDay.length - 2} more</span>
-                        )}
-                      </div>
-                    )}
+                <div
+                  key={index}
+                  onClick={(e) => handleDayClick(item, e)}
+                  className={cn(
+                    "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
+                    !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
+                    isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
+                    dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20",
+                    isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
+                    index % 7 === 6 && "border-r-0"
+                  )}
+                >
+                  {/* Day Number */}
+                  <div className="w-full sm:w-fit flex justify-center sm:justify-start">
+                    <span className={cn(
+                      "text-xs flex h-6 w-6 items-center justify-center rounded-sm",
+                      dayIsToday && "bg-primary text-white",
+                      !dayIsToday && item.isCurrentMonth && !dayIsPast && "text-foreground",
+                      !dayIsToday && item.isCurrentMonth && dayIsPast && "text-muted-foreground",
+                      !item.isCurrentMonth && "text-muted-foreground/50"
+                    )}>
+                      {item.day}
+                    </span>
                   </div>
 
-                  {/* Day Actions Dropdown */}
-                  {isSelected && dropdownOpen && (
-                    <div
-                      ref={dayDropdownRef}
-                      className="absolute left-full top-0 ml-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 min-w-44"
-                    >
-                      <button
-                        onClick={() => openDrawer("create-post")}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" /> Create a post
-                      </button>
-                      <button
-                        onClick={() => openDrawer("schedule-post")}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <CalendarPlus className="w-4 h-4" /> Schedule a post
-                      </button>
-                      <button
-                        onClick={() => openDrawer("insert-idea")}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <Lightbulb className="w-4 h-4" /> Insert an idea
-                      </button>
+                  {/* Posts for this day */}
+                  {hasPost && (
+                    <div className="mt-2 space-y-1">
+                      {postsForDay.slice(0, 2).map((post) => (
+                        <button
+                          key={post.id}
+                          onClick={(e) => handlePostClick(post, e)}
+                          className={cn(
+                            "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
+                            post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
+                            post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
+                            post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5 px-1.5 py-1">
+                            <div className={cn(
+                              "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
+                              post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
+                              post.status === "published" && "bg-green-100 dark:bg-green-800/40"
+                            )}>
+                              {post.postType === "image" ? (
+                                <ImageIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                              ) : (
+                                <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                              )}
+                            </div>
+                            <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                              {getPostPreview(post.content, 30)}
+                            </p>
+                          </div>
+                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
+                            <Calendar className="w-2.5 h-2.5" />
+                            <span className="font-medium">{formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {postsForDay.length > 2 && (
+                        <span className="text-[10px] text-muted-foreground px-1.5 block">+{postsForDay.length - 2} more</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -520,137 +558,224 @@ function CalendarContent() {
         </div>
       </div>
 
+      {/* Day Actions Dropdown - Rendered outside calendar to avoid overflow issues */}
+      {dropdownOpen && selectedDay && (
+        <div
+          ref={dayDropdownRef}
+          className="fixed z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 min-w-44"
+          style={{
+            top: (() => {
+              const dayIndex = days.findIndex(d => d.day === selectedDay.day && d.month === selectedDay.month && d.year === selectedDay.year);
+              const row = Math.floor(dayIndex / 7);
+              const calendarTop = 280; // Approximate header + calendar header height
+              return calendarTop + (row * 128) + 20;
+            })(),
+            left: (() => {
+              const dayIndex = days.findIndex(d => d.day === selectedDay.day && d.month === selectedDay.month && d.year === selectedDay.year);
+              const col = dayIndex % 7;
+              const cellWidth = window.innerWidth > 640 ? (Math.min(1152, window.innerWidth - 48) / 7) : (window.innerWidth / 7);
+              const calendarLeft = (window.innerWidth - Math.min(1152, window.innerWidth - 48)) / 2;
+              return calendarLeft + (col * cellWidth) + cellWidth + 4;
+            })(),
+          }}
+        >
+          <button
+            onClick={() => openDrawer("create-post")}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Create a post
+          </button>
+          <button
+            onClick={() => openDrawer("schedule-post")}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <CalendarPlus className="w-4 h-4" /> Schedule a post
+          </button>
+          <button
+            onClick={openIdeaModal}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Lightbulb className="w-4 h-4" /> Insert an idea
+          </button>
+        </div>
+      )}
+
+      {/* Insert Idea Modal */}
+      {ideaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setIdeaModalOpen(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 z-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Insert an idea</h2>
+              <button onClick={() => setIdeaModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <textarea
+                value={newIdeaText}
+                onChange={(e) => setNewIdeaText(e.target.value)}
+                placeholder="Write your idea here..."
+                className="w-full h-40 p-4 border rounded-lg resize-none outline-none text-base leading-relaxed bg-transparent focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                autoFocus
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                This idea will be saved for {getFormattedScheduleDate()}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button onClick={handleCreateFromIdea} disabled={!newIdeaText.trim()} className="w-full">
+                <Plus className="w-4 h-4 mr-2" /> Create a post from this idea
+              </Button>
+              <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
+                <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Multi-purpose Drawer */}
       <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-99 flex flex-col bg-background w-full max-w-3xl border-l shadow-xl outline-none">
+          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-3xl border-l shadow-xl outline-none">
 
             {/* POST DETAIL VIEW */}
             {drawerView === "post-detail" && selectedPost && (
               <>
-                <div className="py-4 px-6 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">
-                      {selectedPost.status === "published" ? "Your post published" : "Scheduled post"}
-                    </h2>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer">
-                      <X className="h-5 w-5" />
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <h2 className="sm:text-2xl text-xl font-semibold">
+                        {selectedPost.status === "published" ? "Your post published" : "Scheduled post"}
+                      </h2>
+                    </div>
+                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                  <div className="flex flex-col md:flex-row h-full">
-                    <div className="flex-1 bg-[#f4f2ee] dark:bg-gray-800 p-6">
-                      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow-sm max-w-md mx-auto">
-                        <div className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                                <span className="text-primary font-semibold text-sm">
-                                  {session?.user?.name?.charAt(0) || "U"}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm">{session?.user?.name || "Your LinkedIn Profile"}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="relative" ref={postMenuRef}>
-                              <button
-                                onClick={() => setPostMenuOpen(!postMenuOpen)}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm"
-                              >
-                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                              </button>
-                              {postMenuOpen && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-32">
-                                  <Link
-                                    href={`/dashboard/editor?id=${selectedPost.id}`}
-                                    className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                  >
-                                    Edit post
-                                  </Link>
+                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                    <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
+                      <div className="w-full transition-opacity duration-200">
+                        <div className="md:w-102.5 m-auto bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                          <div className="px-4 pt-4 pb-0">
+                            <div className="flex w-full justify-between items-start">
+                              <div className="flex max-w-[90%] items-start">
+                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                  <span className="text-primary font-semibold text-sm">
+                                    {session?.user?.name?.charAt(0) || "U"}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="flex flex-col ml-2.5">
+                                  <h3 className="font-semibold">{session?.user?.name || "Your LinkedIn Profile"}</h3>
+                                  <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
+                                </div>
+                              </div>
+                              <div className="relative" ref={postMenuRef}>
+                                <button
+                                  onClick={() => setPostMenuOpen(!postMenuOpen)}
+                                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm"
+                                >
+                                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                                {postMenuOpen && (
+                                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-32">
+                                    <Link
+                                      href={`/dashboard/editor?id=${selectedPost.id}`}
+                                      className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    >
+                                      Edit post
+                                    </Link>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div className="mb-4">
-                            <p className="text-sm whitespace-pre-line">{selectedPost.content}</p>
+                          <div className="p-4 pt-4">
+                            <div className="mb-4 relative">
+                              <div className="whitespace-pre-line text-sm leading-5">{selectedPost.content}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="w-full md:w-80 border-t md:border-t-0 md:border-l p-6 flex flex-col gap-5 bg-white dark:bg-gray-900">
-                      <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                        <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
-                            <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1 pt-2">
-                          <p className="text-sm text-muted-foreground">
-                            {selectedPost.status === "published" ? "Post published" : "Scheduled for"}
-                          </p>
-                          <p className="text-base font-bold">
-                            {formatFullDate(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)} - {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
-                          </p>
+                  </div>
+                  <div className="md:border-l flex flex-col gap-5 transition-all w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-hidden h-full bg-white dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
+                          <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
                         </div>
                       </div>
-                      {selectedPost.status === "published" && (
-                        <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                          <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b">
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-violet-500" />
-                              <span className="text-sm font-semibold">Performances</span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between -mx-2 px-2 py-1.5 rounded-md">
-                              <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 bg-green-50 dark:bg-green-900/30 rounded-md">
-                                  <Eye className="w-4 h-4 text-green-600" />
-                                </div>
-                                <span className="text-sm text-muted-foreground">Impressions</span>
-                              </div>
-                              <span className="text-sm font-semibold">-</span>
-                            </div>
-                            <div className="flex items-center justify-between -mx-2 px-2 py-1.5 rounded-md">
-                              <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md">
-                                  <Heart className="w-4 h-4 text-red-500" />
-                                </div>
-                                <span className="text-sm text-muted-foreground">Likes</span>
-                              </div>
-                              <span className="text-sm font-semibold">-</span>
-                            </div>
-                            <div className="flex items-center justify-between -mx-2 px-2 py-1.5 rounded-md">
-                              <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md">
-                                  <MessageCircle className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <span className="text-sm text-muted-foreground">Comments</span>
-                              </div>
-                              <span className="text-sm font-semibold">-</span>
-                            </div>
+                      <div className="flex flex-col gap-1 pt-2">
+                        <p className="text-sm text-muted-foreground">
+                          {selectedPost.status === "published" ? "Post published" : "Scheduled for"}
+                        </p>
+                        <p className="text-base font-bold">
+                          {formatFullDate(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)} - {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedPost.status === "published" && (
+                      <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                        <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-violet-500" />
+                            <span className="text-sm font-semibold">Performances</span>
                           </div>
                         </div>
-                      )}
-                      {selectedPost.linkedinPostUrl && (
-                        <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                          View on LinkedIn <ExternalLink className="w-4 h-4" />
-                        </a>
-                      )}
-                      <div className="flex flex-col gap-3">
-                        <Link href={`/dashboard/generator?duplicate=${selectedPost.id}`}>
-                          <Button variant="default" className="w-full">
-                            <RefreshCw className="w-4 h-4 mr-2" /> Reuse this post
-                          </Button>
-                        </Link>
-                        <p className="text-xs text-muted-foreground text-center">The current post will be duplicated</p>
+                        <div className="flex flex-col gap-2.5">
+                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-1.5 bg-green-50 dark:bg-green-900/30 rounded-md">
+                                <Eye className="w-4 h-4 text-green-600" />
+                              </div>
+                              <span className="text-sm text-muted-foreground">Impressions</span>
+                            </div>
+                            <span className="text-sm font-semibold">-</span>
+                          </div>
+                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md">
+                                <Heart className="w-4 h-4 text-red-500" />
+                              </div>
+                              <span className="text-sm text-muted-foreground">Likes</span>
+                            </div>
+                            <span className="text-sm font-semibold">-</span>
+                          </div>
+                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+                                <MessageCircle className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <span className="text-sm text-muted-foreground">Comments</span>
+                            </div>
+                            <span className="text-sm font-semibold">-</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedPost.linkedinPostUrl && (
+                      <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        View on LinkedIn <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                    <div className="flex flex-col mt-3 gap-3 justify-center items-center">
+                      <Link href={`/dashboard/generator?duplicate=${selectedPost.id}`} className="w-full">
+                        <Button variant="default" className="w-full">
+                          <RefreshCw className="w-4 h-4 mr-2" /> Reuse this post
+                        </Button>
+                      </Link>
+                      <div className="flex text-sm text-muted-foreground gap-1.5 items-center">
+                        <Info className="w-4 h-4" />
+                        <span>The current post will be duplicated</span>
                       </div>
                     </div>
                   </div>
@@ -661,7 +786,7 @@ function CalendarContent() {
             {/* CREATE POST VIEW */}
             {drawerView === "create-post" && (
               <>
-                <div className="py-4 px-6 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -675,41 +800,41 @@ function CalendarContent() {
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col min-h-fit md:w-115 lg:w-135 flex-1">
-                    <div className="pt-6 px-6 flex flex-col h-full min-h-0 flex-1 overflow-y-auto w-full">
+                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                    <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <Link href="/dashboard/posts" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
                         <ArrowLeft className="w-4 h-4" /> See all posts
                       </Link>
-                      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow-sm flex-1 flex flex-col">
-                        <div className="flex justify-between items-center px-5 pt-4 pb-2">
+                      <div className="md:w-102.5 w-full bg-white dark:bg-gray-900 rounded-xl border shadow-sm flex-1 flex flex-col mb-10">
+                        <div className="flex justify-between items-center px-4 pt-4 pb-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                               <span className="text-primary font-semibold">{session?.user?.name?.charAt(0) || "U"}</span>
                             </div>
                             <div>
-                              <h3 className="text-lg font-bold leading-tight">{session?.user?.name || "Your Name"}</h3>
+                              <h3 className="font-semibold">{session?.user?.name || "Your Name"}</h3>
                               <span className="text-muted-foreground text-sm">Your headline here</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex-1 px-5 py-3 border-t">
+                        <div className="flex-1 p-4 pt-4">
                           <textarea
                             ref={textareaRef}
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
                             placeholder="Write your post here..."
-                            className="w-full h-full min-h-75 resize-none outline-none text-base leading-relaxed bg-transparent"
+                            className="w-full h-full min-h-60 resize-none outline-none text-sm leading-relaxed bg-transparent"
                           />
                         </div>
-                        <div className="flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-gray-800/50 border-t">
+                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t rounded-b-xl">
                           <div className="text-sm text-muted-foreground">
-                            {newPostContent.length} / 3000 characters
+                            {newPostContent.length} / 3000
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-72 lg:w-80 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-y-auto bg-white dark:bg-gray-900">
                     <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
                       <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
@@ -720,11 +845,24 @@ function CalendarContent() {
                       <div className="flex flex-col gap-1 pt-2">
                         <p className="text-sm text-muted-foreground">Schedule this post on</p>
                         <p className="text-base font-bold">
-                          {selectedDay ? `${selectedDay.day} ${MONTHS[selectedDay.month]} ${selectedDay.year}` : "Select a date"} - {scheduleHour}:{scheduleMinute}
+                          {getFormattedScheduleDate()} - {getFormattedScheduleTime()}
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Date</label>
+                        <input
+                          type="date"
+                          value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                        />
+                      </div>
                       <div>
                         <label className="text-sm font-medium mb-2 block">Time</label>
                         <div className="flex gap-2 items-center">
@@ -733,7 +871,7 @@ function CalendarContent() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
                                 <SelectItem key={h} value={h}>{h}</SelectItem>
                               ))}
                             </SelectContent>
@@ -747,6 +885,15 @@ function CalendarContent() {
                               {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
                                 <SelectItem key={m} value={m}>{m}</SelectItem>
                               ))}
+                            </SelectContent>
+                          </Select>
+                          <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
+                            <SelectTrigger className="w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AM">AM</SelectItem>
+                              <SelectItem value="PM">PM</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -765,10 +912,10 @@ function CalendarContent() {
               </>
             )}
 
-            {/* SCHEDULE POST VIEW */}
-            {drawerView === "schedule-post" && (
+            {/* SCHEDULE POST VIEW - Post List */}
+            {drawerView === "schedule-post" && !selectedPostToSchedule && (
               <>
-                <div className="py-4 px-6 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -781,61 +928,109 @@ function CalendarContent() {
                     </button>
                   </div>
                 </div>
-                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col flex-1 md:w-115 lg:w-135">
-                    <div className="flex w-full justify-between items-center gap-4 flex-wrap p-4 border-b">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <input
-                          type="text"
-                          placeholder="Search for a post"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border rounded-md text-sm bg-white dark:bg-gray-900"
-                        />
-                      </div>
-                      <Select value={filterType} onValueChange={setFilterType}>
-                        <SelectTrigger className="w-36">
-                          <SelectValue placeholder="All types" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All types</SelectItem>
-                          <SelectItem value="draft">Drafts</SelectItem>
-                          <SelectItem value="published">Published</SelectItem>
-                        </SelectContent>
-                      </Select>
+                <div className="flex flex-col w-full h-full min-h-0">
+                  <div className="flex w-full justify-between items-center gap-4 flex-wrap p-4 border-b">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <input
+                        type="text"
+                        placeholder="Search for a post"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-md text-sm bg-white dark:bg-gray-900"
+                      />
                     </div>
-                    <div className="overflow-y-auto flex-1 p-4">
-                      <div className="space-y-3">
-                        {filteredPosts.length === 0 ? (
-                          <div className="text-center py-12 text-muted-foreground">
-                            <p>No posts found</p>
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-36">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="draft">Drafts</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="overflow-y-auto flex-1 p-4">
+                    <div className="space-y-3">
+                      {filteredPosts.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <p>No posts found</p>
+                        </div>
+                      ) : (
+                        filteredPosts.map((post) => (
+                          <div
+                            key={post.id}
+                            onClick={() => setSelectedPostToSchedule(post)}
+                            className="flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors bg-white dark:bg-gray-900 border-gray-200 hover:border-primary"
+                          >
+                            <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+                              <h3 className="font-bold truncate">{getPostPreview(post.content, 80)}</h3>
+                              <p className="text-sm text-gray-500 flex items-center gap-2">
+                                <span>
+                                  {post.status === "published" ? "Published" : post.status === "draft" ? "Draft" : "Scheduled"} on {formatShortDate(post.createdAt)}
+                                </span>
+                              </p>
+                            </div>
                           </div>
-                        ) : (
-                          filteredPosts.map((post) => (
-                            <div
-                              key={post.id}
-                              onClick={() => setSelectedPostToSchedule(post)}
-                              className={cn(
-                                "flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors bg-white dark:bg-gray-900",
-                                selectedPostToSchedule?.id === post.id ? "border-primary ring-2 ring-primary/20" : "border-gray-200 hover:border-gray-300"
-                              )}
-                            >
-                              <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
-                                <h3 className="font-bold truncate">{getPostPreview(post.content, 80)}</h3>
-                                <p className="text-sm text-gray-500 flex items-center gap-2">
-                                  <span>
-                                    {post.status === "published" ? "Published" : post.status === "draft" ? "Draft" : "Scheduled"} on {formatShortDate(post.createdAt)}
-                                  </span>
-                                </p>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* SCHEDULE POST VIEW - Post Preview (after selecting a post) */}
+            {drawerView === "schedule-post" && selectedPostToSchedule && (
+              <>
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setSelectedPostToSchedule(null)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <h2 className="sm:text-2xl text-xl font-semibold">Schedule this post</h2>
+                    </div>
+                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                    <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
+                      <button
+                        onClick={() => setSelectedPostToSchedule(null)}
+                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back to selection
+                      </button>
+                      <div className="md:w-102.5 w-full bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                        <div className="px-4 pt-4 pb-0">
+                          <div className="flex w-full justify-between items-start">
+                            <div className="flex max-w-[90%] items-start">
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                <span className="text-primary font-semibold text-sm">
+                                  {session?.user?.name?.charAt(0) || "U"}
+                                </span>
+                              </div>
+                              <div className="flex flex-col ml-2.5">
+                                <h3 className="font-semibold">{session?.user?.name || "Your LinkedIn Profile"}</h3>
+                                <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
                               </div>
                             </div>
-                          ))
-                        )}
+                          </div>
+                        </div>
+                        <div className="p-4 pt-4">
+                          <div className="mb-4 relative">
+                            <div className="whitespace-pre-line text-sm leading-5">{selectedPostToSchedule.content}</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-72 lg:w-80 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-y-auto bg-white dark:bg-gray-900">
                     <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
                       <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
@@ -846,11 +1041,24 @@ function CalendarContent() {
                       <div className="flex flex-col gap-1 pt-2">
                         <p className="text-sm text-muted-foreground">Schedule for</p>
                         <p className="text-base font-bold">
-                          {selectedDay ? `${selectedDay.day} ${MONTHS[selectedDay.month]} ${selectedDay.year}` : "Select a date"} - {scheduleHour}:{scheduleMinute}
+                          {getFormattedScheduleDate()} - {getFormattedScheduleTime()}
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Date</label>
+                        <input
+                          type="date"
+                          value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                        />
+                      </div>
                       <div>
                         <label className="text-sm font-medium mb-2 block">Time</label>
                         <div className="flex gap-2 items-center">
@@ -859,7 +1067,7 @@ function CalendarContent() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
                                 <SelectItem key={h} value={h}>{h}</SelectItem>
                               ))}
                             </SelectContent>
@@ -875,64 +1083,23 @@ function CalendarContent() {
                               ))}
                             </SelectContent>
                           </Select>
+                          <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
+                            <SelectTrigger className="w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AM">AM</SelectItem>
+                              <SelectItem value="PM">PM</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                      <Button onClick={handleSchedulePost} disabled={!selectedPostToSchedule || isSaving} className="w-full">
+                      <Button onClick={handleSchedulePost} disabled={isSaving} className="w-full">
                         <Calendar className="w-4 h-4 mr-2" />
                         {isSaving ? "Scheduling..." : "Schedule the post"}
                       </Button>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* INSERT IDEA VIEW */}
-            {drawerView === "insert-idea" && (
-              <>
-                <div className="py-4 px-6 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-                      <h2 className="sm:text-2xl text-xl font-semibold">Insert an idea</h2>
-                    </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6">
-                  {ideas.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Lightbulb className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground mb-4">No ideas saved yet</p>
-                      <Link href="/dashboard/ideas">
-                        <Button variant="outline">Go to Ideas</Button>
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {ideas.map((idea) => (
-                        <Link
-                          key={idea.id}
-                          href={`/dashboard/generator?idea=${idea.id}&schedule=${selectedDay?.year}-${String((selectedDay?.month ?? 0) + 1).padStart(2, '0')}-${String(selectedDay?.day ?? 1).padStart(2, '0')}`}
-                          className="block"
-                        >
-                          <div className="p-4 rounded-lg border bg-white dark:bg-gray-900 hover:border-primary transition-colors cursor-pointer">
-                            <h3 className="font-bold mb-1">{idea.title}</h3>
-                            {idea.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">{idea.description}</p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-muted-foreground">Source: {idea.source}</span>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </>
             )}
