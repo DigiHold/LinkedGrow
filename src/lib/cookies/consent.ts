@@ -227,7 +227,6 @@ export const COOKIE_CATEGORIES = {
       { name: 'Google Ads', purpose: 'Show personalized ads on Google' },
       { name: 'Facebook Pixel', purpose: 'Show personalized ads on Facebook/Instagram' },
       { name: 'LinkedIn Insight', purpose: 'Show personalized ads on LinkedIn' },
-      { name: 'TikTok Pixel', purpose: 'Show personalized ads on TikTok' },
     ],
   },
 };
