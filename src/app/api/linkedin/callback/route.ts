@@ -302,6 +302,11 @@ export async function GET(request: NextRequest) {
       }
 
       // Create session token using NextAuth JWT
+      // Salt is the cookie name used by NextAuth
+      const cookieName = process.env.NODE_ENV === 'production'
+        ? '__Secure-authjs.session-token'
+        : 'authjs.session-token';
+
       const token = await encode({
         token: {
           id: user.id,
@@ -313,6 +318,7 @@ export async function GET(request: NextRequest) {
           isAdmin: user.isAdmin,
         },
         secret: process.env.AUTH_SECRET!,
+        salt: cookieName,
         maxAge: 30 * 24 * 60 * 60, // 30 days
       });
 
@@ -320,7 +326,7 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
 
       // Set the session cookie (NextAuth v5 uses authjs.session-token)
-      response.cookies.set('authjs.session-token', token, {
+      response.cookies.set(cookieName, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
