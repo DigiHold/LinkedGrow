@@ -444,6 +444,8 @@ html {
 }
 
 /* Fix Radix UI scroll lock margin-right issue */
+body,
+html,
 body[data-scroll-locked],
 body[data-scroll-locked="1"],
 body[data-scroll-locked="true"],
@@ -451,12 +453,12 @@ html[data-scroll-locked],
 html[data-scroll-locked] body {
   margin-right: 0 !important;
   padding-right: 0 !important;
-  overflow: auto !important;
 }
 
-/* Also target the style attribute directly */
-body[style*="margin-right"],
-body[style*="padding-right"] {
+/* Force no scroll lock styles */
+body[style],
+html[style] {
   margin-right: 0 !important;
   padding-right: 0 !important;
+  overflow: unset !important;
 }
