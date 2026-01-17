@@ -210,10 +210,8 @@ export function CalendarContent() {
 
   const handleIdeaClick = (idea: Idea, e: React.MouseEvent) => {
     e.stopPropagation();
-    setNewPostContent(idea.content || idea.title);
-    setDrawerView("create-post");
-    setDrawerOpen(true);
-    setTimeout(() => textareaRef.current?.focus(), 100);
+    setNewIdeaText(idea.content || idea.title);
+    setIdeaModalOpen(true);
   };
 
   const isToday = (day: number, m: number, y: number) => {
@@ -835,165 +833,120 @@ export function CalendarContent() {
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col min-h-fit md:w-[460px] lg:w-[540px] xl:w-[620px]">
-                    <div className="flex flex-col h-full">
-                      <div className="flex w-full justify-between items-center gap-4 flex-wrap md:p-6 p-4 border-b">
-                        <div className="relative w-full">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10 h-4 w-4" />
-                          <input
-                            type="text"
-                            placeholder="Search for a post"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border rounded-md text-sm bg-white dark:bg-gray-900"
-                          />
+                  {/* LEFT SIDE - Editor */}
+                  <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-white dark:bg-gray-900">
+                    <Card>
+                      <CardContent className="p-4">
+                        <Textarea
+                          ref={textareaRef}
+                          value={newPostContent}
+                          onChange={(e) => setNewPostContent(e.target.value)}
+                          placeholder="Start writing your LinkedIn post...
+
+Tips for viral posts:
+• Start with a strong hook (first 2 lines are crucial)
+• Use short paragraphs and line breaks
+• Add bullet points for readability
+• End with a question or CTA"
+                          className="min-h-100 sm:min-h-125 border-0 focus-visible:ring-0 resize-none text-base"
+                        />
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
+                          <span className={cn(
+                            "text-sm",
+                            newPostContent.length > 3000 ? "text-destructive font-medium" : "text-muted-foreground"
+                          )}>
+                            {newPostContent.length} / 3000
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            ~{Math.ceil(newPostContent.length / 200)} min read
+                          </span>
                         </div>
-                        <div className="flex gap-2">
-                          <Select value={filterType} onValueChange={setFilterType}>
-                            <SelectTrigger className="w-40 bg-white dark:bg-gray-900">
-                              <SelectValue placeholder="All types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All types</SelectItem>
-                              <SelectItem value="draft">Drafts</SelectItem>
-                              <SelectItem value="published">Published</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="overflow-y-auto overflow-x-hidden flex-1">
-                        <div className="flex-1 md:p-6 p-2">
-                          <div className="space-y-3">
-                            {filteredPosts.length === 0 ? (
-                              <div className="text-center py-12 text-muted-foreground">
-                                <p>No posts found</p>
-                              </div>
-                            ) : (
-                              filteredPosts.map((post) => (
-                                <div
-                                  key={post.id}
-                                  onClick={() => {
-                                    setNewPostContent(post.content);
-                                    setSelectedPostToSchedule(post);
-                                  }}
-                                  className={cn(
-                                    "flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors bg-white dark:bg-gray-900",
-                                    selectedPostToSchedule?.id === post.id ? "border-primary" : "border-gray-300 hover:border-gray-400"
-                                  )}
-                                >
-                                  <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
-                                    <h3 className="font-bold md:max-w-[440px] max-w-[340px] truncate line-clamp-1">
-                                      {getPostPreview(post.content, 80)}
-                                    </h3>
-                                    <p className="text-sm text-gray-500 flex items-center gap-2">
-                                      <span>
-                                        {post.status === "published" ? "Published" : post.status === "draft" ? "Draft" : "Scheduled"} on {formatShortDate(post.createdAt)}
-                                      </span>
-                                    </p>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="space-y-4">
-                      <Card>
-                        <CardContent className="p-4">
-                          <Textarea
-                            ref={textareaRef}
-                            value={newPostContent}
-                            onChange={(e) => setNewPostContent(e.target.value)}
-                            placeholder="Write your post content here..."
-                            className="min-h-60 border-0 focus-visible:ring-0 resize-none text-sm"
-                          />
-                          <div className="flex items-center justify-between pt-3 border-t border-border">
-                            <span className={cn(
-                              "text-sm",
-                              newPostContent.length > 3000 ? "text-destructive font-medium" : "text-muted-foreground"
-                            )}>
-                              {newPostContent.length} / 3000
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
 
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            Schedule
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Date</label>
-                            <input
-                              type="date"
-                              value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
-                              onChange={(e) => {
-                                const date = new Date(e.target.value);
+                  {/* RIGHT SIDE - Settings */}
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          Schedule
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Date</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'date';
+                              input.min = new Date().toISOString().split('T')[0];
+                              input.value = selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : '';
+                              input.onchange = (e) => {
+                                const date = new Date((e.target as HTMLInputElement).value);
                                 setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
-                              }}
-                              min={new Date().toISOString().split('T')[0]}
-                              className="w-full h-10 px-3 border rounded-md bg-background text-sm"
-                            />
+                              };
+                              input.showPicker();
+                            }}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm text-left flex items-center justify-between hover:bg-accent transition-colors"
+                          >
+                            <span>{getFormattedScheduleDate()}</span>
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Time</label>
+                          <div className="flex gap-2 items-center">
+                            <Select value={scheduleHour} onValueChange={setScheduleHour}>
+                              <SelectTrigger className="w-16">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                                  <SelectItem key={h} value={h}>{h}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span>:</span>
+                            <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
+                              <SelectTrigger className="w-16">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
+                              <SelectTrigger className="w-16">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="AM">AM</SelectItem>
+                                <SelectItem value="PM">PM</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Time</label>
-                            <div className="flex gap-2 items-center">
-                              <Select value={scheduleHour} onValueChange={setScheduleHour}>
-                                <SelectTrigger className="w-16">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
-                                    <SelectItem key={h} value={h}>{h}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <span>:</span>
-                              <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
-                                <SelectTrigger className="w-16">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
-                                <SelectTrigger className="w-16">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="AM">AM</SelectItem>
-                                  <SelectItem value="PM">PM</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                      <div className="space-y-3">
-                        <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
-                          <Save className="w-4 h-4 mr-2" />
-                          {isSaving ? "Saving..." : "Save as Draft"}
-                        </Button>
-                        <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {isSaving ? "Scheduling..." : "Schedule Post"}
-                        </Button>
-                        <Button className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
-                          <Send className="w-4 h-4 mr-2" />
-                          Publish Now
-                        </Button>
-                      </div>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSaving ? "Saving..." : "Save as Draft"}
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {isSaving ? "Scheduling..." : "Schedule Post"}
+                      </Button>
+                      <Button className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Publish Now
+                      </Button>
                     </div>
                   </div>
                 </div>
