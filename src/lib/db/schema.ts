@@ -29,6 +29,12 @@ export const users = sqliteTable("users", {
   linkedinProfileId: text("linkedin_profile_id"),
   linkedinProfileName: text("linkedin_profile_name"),
 
+  // LinkedIn posting target selection
+  linkedinPostingTarget: text("linkedin_posting_target", { enum: ["profile", "organization"] }).default("profile"),
+  linkedinSelectedOrgId: text("linkedin_selected_org_id"), // Organization URN ID if posting to company page
+  linkedinSelectedOrgName: text("linkedin_selected_org_name"), // Organization name for display
+  linkedinOrganizations: text("linkedin_organizations"), // JSON array of administered organizations [{id, name, logoUrl}]
+
   // LinkedIn Community App (Engagement features)
   linkedinCommunityAccessToken: text("linkedin_community_access_token"),
   linkedinCommunityRefreshToken: text("linkedin_community_refresh_token"),
@@ -295,6 +301,42 @@ export const postAnalytics = sqliteTable("post_analytics", {
 });
 
 // ============================================
+// ADMIN FEATURES
+// ============================================
+
+// Cookie consent tracking table
+export const cookieConsents = sqliteTable("cookie_consents", {
+  id: text("id").primaryKey(),
+  visitorId: text("visitor_id").notNull(), // Anonymous visitor identifier
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }), // Optional if user is logged in
+  // Consent choices
+  necessary: integer("necessary", { mode: "boolean" }).default(true), // Always true
+  analytics: integer("analytics", { mode: "boolean" }).default(false),
+  marketing: integer("marketing", { mode: "boolean" }).default(false),
+  // Status
+  status: text("status", { enum: ["accepted_all", "rejected_all", "customized"] }).notNull(),
+  // Metadata
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  country: text("country"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Data removal requests table
+export const dataRemovalRequests = sqliteTable("data_removal_requests", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  status: text("status", { enum: ["pending", "processing", "completed", "rejected"] }).default("pending"),
+  reason: text("reason"), // Optional reason from user
+  adminNotes: text("admin_notes"), // Admin notes about the request
+  processedAt: integer("processed_at", { mode: "timestamp" }),
+  processedBy: text("processed_by").references(() => users.id), // Admin who processed it
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -324,3 +366,7 @@ export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
 export type PostAnalytics = typeof postAnalytics.$inferSelect;
 export type NewPostAnalytics = typeof postAnalytics.$inferInsert;
+export type CookieConsent = typeof cookieConsents.$inferSelect;
+export type NewCookieConsent = typeof cookieConsents.$inferInsert;
+export type DataRemovalRequest = typeof dataRemovalRequests.$inferSelect;
+export type NewDataRemovalRequest = typeof dataRemovalRequests.$inferInsert;

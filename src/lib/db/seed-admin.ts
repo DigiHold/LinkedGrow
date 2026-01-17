@@ -1,43 +1,27 @@
 import { db, users } from "./index";
-import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
+import { eq } from "drizzle-orm";
 
-async function seedAdmin() {
-  const adminEmail = "nicolas@linkedgrow.ai";
-  const adminPassword = "at3xJJnK@uuR-o8";
-  const adminName = "Nicolas";
+// Set admin email - can be overridden via command line argument
+const adminEmail = process.argv[2] || "contact@linkedgrow.ai";
 
-  // Hash the password
-  const hashedPassword = await bcrypt.hash(adminPassword, 12);
-
-  // Create admin user
-  const adminUser = {
-    id: uuidv4(),
-    name: adminName,
-    email: adminEmail,
-    password: hashedPassword,
-    isAdmin: true,
-    plan: "business" as const,
-    twoFactorEnabled: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
+async function setAdmin() {
   try {
-    await db.insert(users).values(adminUser).onConflictDoUpdate({
-      target: users.email,
-      set: {
-        password: hashedPassword,
+    // Find user by email and set as admin
+    const result = await db
+      .update(users)
+      .set({
         isAdmin: true,
-        plan: "business",
         updatedAt: new Date(),
-      },
-    });
-    console.log("Admin user created/updated successfully!");
-    console.log(`Email: ${adminEmail}`);
+      })
+      .where(eq(users.email, adminEmail));
+
+    console.log(`Admin status set for: ${adminEmail}`);
+    console.log("Done!");
   } catch (error) {
-    console.error("Error creating admin user:", error);
+    console.error("Error setting admin:", error);
   }
+
+  process.exit(0);
 }
 
-seedAdmin();
+setAdmin();

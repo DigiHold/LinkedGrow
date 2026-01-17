@@ -48,7 +48,7 @@ export async function POST() {
       }
     }
 
-    // Clear LinkedIn tokens and profile data from database
+    // Clear LinkedIn tokens, profile data, and organization data from database
     await db
       .update(users)
       .set({
@@ -57,6 +57,10 @@ export async function POST() {
         linkedinTokenExpiry: null,
         linkedinProfileId: null,
         linkedinProfileName: null,
+        linkedinPostingTarget: null,
+        linkedinSelectedOrgId: null,
+        linkedinSelectedOrgName: null,
+        linkedinOrganizations: null,
         image: null,
         updatedAt: new Date(),
       })

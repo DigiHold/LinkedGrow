@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
         linkedinAccessToken: true,
         linkedinProfileId: true,
         linkedinTokenExpiry: true,
+        linkedinPostingTarget: true,
+        linkedinSelectedOrgId: true,
+        linkedinSelectedOrgName: true,
       },
     });
 
@@ -57,30 +60,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine posting target (profile or organization)
+    const isOrganization = user.linkedinPostingTarget === 'organization' && user.linkedinSelectedOrgId;
+    const authorId = isOrganization ? user.linkedinSelectedOrgId! : user.linkedinProfileId;
+    const authorType: 'person' | 'organization' = isOrganization ? 'organization' : 'person';
+
     let result;
 
     if (imageUrl) {
       result = await createLinkedInPostWithImage(
         user.linkedinAccessToken,
-        user.linkedinProfileId,
+        authorId,
         text,
         imageUrl,
         imageTitle,
-        visibility
+        visibility,
+        authorType
       );
     } else {
       result = await createLinkedInPost(
         user.linkedinAccessToken,
-        user.linkedinProfileId,
+        authorId,
         text,
-        visibility
+        visibility,
+        authorType
       );
     }
+
+    const targetName = isOrganization ? user.linkedinSelectedOrgName : 'your profile';
 
     return NextResponse.json({
       success: true,
       postId: result.id,
-      message: 'Post published successfully to LinkedIn',
+      message: `Post published successfully to ${targetName}`,
+      postedTo: isOrganization ? 'organization' : 'profile',
     });
   } catch (error) {
     console.error('LinkedIn post error:', error);

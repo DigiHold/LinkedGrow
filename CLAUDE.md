@@ -344,79 +344,91 @@ src/
 ## LinkedGrow Features (Complete List)
 
 ### Content Creation
-- **Post Editor** - Rich text editor with formatting, emoji support, character count (3000 char limit)
-- **AI Post Generator** - Generate posts from topics/ideas using user's AI API key (BYOK)
-- **Ideas Generator** - AI-powered content ideas based on user's niche/industry
-- **Hooks Generator** - Generate viral opening hooks to boost engagement
-- **Carousel Generator** - Create multi-slide carousels for LinkedIn (Pro+)
-- **Reddit Importer** - Turn any viral Reddit post URL into LinkedIn content ideas
+
+-   **Post Editor** - Rich text editor with formatting, emoji support, character count (3000 char limit)
+-   **AI Post Generator** - Generate posts from topics/ideas using user's AI API key (BYOK)
+-   **Ideas Generator** - AI-powered content ideas based on user's niche/industry
+-   **Hooks Generator** - Generate viral opening hooks to boost engagement
+-   **Carousel Generator** - Create multi-slide carousels for LinkedIn (Pro+)
+-   **Reddit Importer** - Turn any viral Reddit post URL into LinkedIn content ideas
 
 ### Voice & Personalization
-- **Voice Training** - Analyze user's sample posts to match their writing style
-- **Business Description** - Context about user's business for more relevant content
-- **Target Audience** - Define ideal reader persona
-- **Writing Tone** - Set preferred tone (professional, casual, inspirational, etc.)
-- **Never Mention** - List of topics/competitors to avoid in generated content
+
+-   **Voice Training** - Analyze user's sample posts to match their writing style
+-   **Business Description** - Context about user's business for more relevant content
+-   **Target Audience** - Define ideal reader persona
+-   **Writing Tone** - Set preferred tone (professional, casual, inspirational, etc.)
+-   **Never Mention** - List of topics/competitors to avoid in generated content
 
 ### LinkedIn Integration
-- **OAuth Connection** - Connect LinkedIn account securely
-- **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
-- **Company Page Publishing** - Post to company pages user manages
-- **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
-- **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
-- **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
+
+-   **OAuth Connection** - Connect LinkedIn account securely
+-   **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
+-   **Company Page Publishing** - Post to company pages user manages
+-   **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
+-   **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
+-   **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
 
 ### Scheduling & Calendar
-- **Post Scheduling** - Schedule posts for future dates/times
-- **Content Calendar** - Visual calendar view of all scheduled posts
-- **Optimal Time Suggestions** - AI-recommended posting times based on audience
-- **Timezone Support** - Schedule in user's local timezone
+
+-   **Post Scheduling** - Schedule posts for future dates/times
+-   **Content Calendar** - Visual calendar view of all scheduled posts
+-   **Optimal Time Suggestions** - AI-recommended posting times based on audience
+-   **Timezone Support** - Schedule in user's local timezone
 
 ### Analytics
-- **Basic Analytics** - Post performance metrics (Pro+)
-- **Advanced Analytics** - Detailed engagement trends, charts, best times (Business)
-- **Engagement Rate** - Track likes, comments, shares, impressions
-- **Export Reports** - Export analytics data to CSV/PDF (Business)
+
+-   **Basic Analytics** - Post performance metrics (Pro+)
+-   **Advanced Analytics** - Detailed engagement trends, charts, best times (Business)
+-   **Engagement Rate** - Track likes, comments, shares, impressions
+-   **Export Reports** - Export analytics data to CSV/PDF (Business)
 
 ### Business Plan Features
-- **A/B Testing** - Test different post versions to find best performers
-- **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
-- **Custom Branding** - Upload logo, set colors, choose fonts for exports
-- **API Access** - REST API for integrations with custom applications
-- **API Key Management** - Create/revoke API keys with scopes
-- **Priority Support** - Dedicated support channel
+
+-   **A/B Testing** - Test different post versions to find best performers
+-   **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
+-   **Custom Branding** - Upload logo, set colors, choose fonts for exports
+-   **API Access** - REST API for integrations with custom applications
+-   **API Key Management** - Create/revoke API keys with scopes
+-   **Priority Support** - Dedicated support channel
 
 ### Account & Settings
-- **Email/Password Auth** - Traditional registration with password
-- **Social Login** - Sign in with LinkedIn or Google
-- **Two-Factor Authentication (2FA)** - TOTP-based security with QR code setup
-- **Password Reset** - Secure password recovery flow
-- **Plan Management** - Upgrade/downgrade via Stripe Customer Portal
-- **BYOK Configuration** - Configure AI provider and API keys
+
+-   **Email/Password Auth** - Traditional registration with password
+-   **Social Login** - Sign in with LinkedIn or Google
+-   **Two-Factor Authentication (2FA)** - TOTP-based security with QR code setup
+-   **Password Reset** - Secure password recovery flow
+-   **Plan Management** - Upgrade/downgrade via Stripe Customer Portal
+-   **BYOK Configuration** - Configure AI provider and API keys
 
 ## LinkedIn API Requirements
 
 LinkedGrow requires the following LinkedIn Developer products:
 
 ### 1. Sign In with LinkedIn using OpenID Connect
-- **Purpose:** Social login (Sign in with LinkedIn button)
-- **Scopes:** `openid`, `profile`, `email`
-- **Usage:** Authentication only, get user's name/email/picture
+
+-   **Purpose:** Social login (Sign in with LinkedIn button)
+-   **Scopes:** `openid`, `profile`, `email`
+-   **Usage:** Authentication only, get user's name/email/picture
 
 ### 2. Share on LinkedIn
-- **Purpose:** Publish posts to LinkedIn
-- **Scopes:** `w_member_social`
-- **Usage:** Create posts on user's personal profile and company pages they manage
-- **Critical for:** Core posting functionality
+
+-   **Purpose:** Publish posts to LinkedIn
+-   **Scopes:** `w_member_social`
+-   **Usage:** Create posts on user's personal profile and company pages they manage
+-   **Critical for:** Core posting functionality
 
 ### 3. Community Management API
-- **Purpose:** Engagement features (feed viewing, liking, commenting)
-- **Scopes:** `r_organization_social`, `w_organization_social`
-- **Usage:** View feed, like posts, comment on posts from dashboard
-- **Required for:** Pro/Business engagement tools
+
+-   **Purpose:** Engagement features (feed viewing, liking, commenting)
+-   **Scopes:** `r_organization_social`, `w_organization_social`
+-   **Usage:** View feed, like posts, comment on posts from dashboard
+-   **Required for:** Pro/Business engagement tools
 
 ### LinkedIn App Configuration
+
 LinkedGrow uses TWO separate LinkedIn apps:
+
 1. **Poster App** (`LINKEDIN_CLIENT_ID`) - Sign In + Share on LinkedIn
 2. **Community App** (`LINKEDIN_COMMUNITY_CLIENT_ID`) - Community Management API
 
@@ -459,4 +471,4 @@ This separation is required because Community Management API has stricter approv
 -   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
 -   **Maria Lecocq** - Operations & Community
 
-Based in Paris, France. LinkedGrow is a product of DigiHold.
+Based in Paris, France.

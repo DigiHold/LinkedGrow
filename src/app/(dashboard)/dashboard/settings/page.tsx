@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +37,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function SettingsPage() {
+function SettingsContent() {
   const { theme, setTheme } = useTheme();
   const { data: session, update: updateSession } = useSession();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   // Account settings
@@ -77,27 +79,88 @@ export default function SettingsPage() {
   const [linkedInName, setLinkedInName] = useState("");
   const [linkedInMessage, setLinkedInMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isConnectingLinkedIn, setIsConnectingLinkedIn] = useState(false);
+  const [linkedInSettings, setLinkedInSettings] = useState<{
+    postingTarget: "profile" | "organization";
+    selectedOrgId?: string | null;
+    selectedOrgName?: string | null;
+    profileName?: string | null;
+    profileImage?: string | null;
+    organizations: Array<{ id: string; name: string; logoUrl?: string }>;
+    hasOrganizations: boolean;
+  } | null>(null);
+
+  // LinkedIn selection modal
+  const [showSelectionModal, setShowSelectionModal] = useState(false);
+  const [selectedType, setSelectedType] = useState<"profile" | "organization">("profile");
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [isSavingSelection, setIsSavingSelection] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // Check if LinkedIn is connected via cookie
-    const linkedInProfileName = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("linkedin_profile_name="))
-      ?.split("=")[1];
-    if (linkedInProfileName) {
-      setLinkedInConnected(true);
-      setLinkedInName(decodeURIComponent(linkedInProfileName));
-    }
+    // Fetch LinkedIn settings from API
+    const fetchLinkedInSettings = async () => {
+      try {
+        const response = await fetch("/api/linkedin/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.connected) {
+            setLinkedInConnected(true);
+            // Show organization name if posting to organization, otherwise profile name
+            if (data.postingTarget === "organization" && data.selectedOrgName) {
+              setLinkedInName(data.selectedOrgName);
+            } else {
+              setLinkedInName(data.profileName || "");
+            }
+            setLinkedInSettings({
+              postingTarget: data.postingTarget || "profile",
+              selectedOrgId: data.selectedOrgId,
+              selectedOrgName: data.selectedOrgName,
+              profileName: data.profileName,
+              profileImage: data.profileImage,
+              organizations: data.organizations || [],
+              hasOrganizations: data.hasOrganizations || false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch LinkedIn settings:", error);
+        // Fallback to cookie-based detection
+        const linkedInProfileName = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("linkedin_profile_name="))
+          ?.split("=")[1];
+        if (linkedInProfileName) {
+          setLinkedInConnected(true);
+          setLinkedInName(decodeURIComponent(linkedInProfileName));
+        }
+      }
+    };
+
+    fetchLinkedInSettings().then(() => {
+      // Check for showSelection URL parameter (non-popup mode)
+      if (searchParams.get("showSelection") === "true") {
+        setShowSelectionModal(true);
+        // Clean up URL
+        window.history.replaceState({}, "", "/dashboard/settings?linkedin=connected");
+      }
+    });
 
     // Listen for popup messages
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === "linkedin-success") {
         setLinkedInConnected(true);
         setLinkedInName(event.data.name || "");
-        setLinkedInMessage({ type: "success", text: "LinkedIn connected successfully!" });
         setIsConnectingLinkedIn(false);
+        // Refetch settings to get updated data
+        fetchLinkedInSettings().then(() => {
+          // Show selection modal if user has organizations and needs to choose
+          if (event.data.showSelection) {
+            setShowSelectionModal(true);
+          } else {
+            setLinkedInMessage({ type: "success", text: "LinkedIn connected successfully!" });
+          }
+        });
       } else if (event.data?.type === "linkedin-error") {
         setLinkedInMessage({ type: "error", text: event.data.error || "Failed to connect LinkedIn" });
         setIsConnectingLinkedIn(false);
@@ -106,7 +169,7 @@ export default function SettingsPage() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [searchParams]);
 
   // Load user data
   useEffect(() => {
@@ -323,6 +386,57 @@ export default function SettingsPage() {
     }, 500);
   };
 
+  const handleChangePostingTarget = () => {
+    // Initialize selection with current values
+    setSelectedType(linkedInSettings?.postingTarget || "profile");
+    setSelectedOrgId(linkedInSettings?.selectedOrgId || null);
+    setShowSelectionModal(true);
+  };
+
+  const handleSaveSelection = async () => {
+    if (selectedType === "organization" && !selectedOrgId) {
+      setLinkedInMessage({ type: "error", text: "Please select a company page" });
+      return;
+    }
+
+    setIsSavingSelection(true);
+
+    try {
+      const response = await fetch("/api/linkedin/select-target", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postingTarget: selectedType,
+          organizationId: selectedType === "organization" ? selectedOrgId : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to save selection");
+      }
+
+      const result = await response.json();
+
+      // Update local state
+      const newName = selectedType === "organization" ? result.organizationName : result.profileName;
+      setLinkedInName(newName || "");
+      setLinkedInSettings((prev) => prev ? {
+        ...prev,
+        postingTarget: selectedType,
+        selectedOrgId: selectedType === "organization" ? selectedOrgId : null,
+        selectedOrgName: result.organizationName,
+      } : null);
+
+      setShowSelectionModal(false);
+      setLinkedInMessage({ type: "success", text: `Now posting to ${newName}` });
+    } catch (err) {
+      setLinkedInMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save selection" });
+    } finally {
+      setIsSavingSelection(false);
+    }
+  };
+
   const handleDisconnectLinkedIn = async () => {
     try {
       const response = await fetch("/api/linkedin/disconnect", {
@@ -390,7 +504,11 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-slate-900 p-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                {session?.user?.image ? (
+                {linkedInSettings?.postingTarget === "organization" ? (
+                  <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                    <Building2 className="w-8 h-8 text-slate-500" />
+                  </div>
+                ) : session?.user?.image ? (
                   <Image
                     src={session.user.image}
                     alt={linkedInName}
@@ -405,19 +523,31 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <p className="font-semibold text-lg">{linkedInName}</p>
-                  <p className="text-sm text-muted-foreground">LinkedIn Profile</p>
+                  <p className="text-sm text-muted-foreground">
+                    {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
+                  </p>
                   <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
                     <Check className="w-4 h-4" />
                     <span>Ready to publish</span>
                   </div>
                 </div>
               </div>
-              <Button
-                onClick={handleDisconnectLinkedIn}
-                className="bg-red-600 hover:bg-red-700 text-white border-0"
-              >
-                Disconnect
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {linkedInSettings?.hasOrganizations && (
+                  <Button
+                    variant="outline"
+                    onClick={handleChangePostingTarget}
+                  >
+                    Change
+                  </Button>
+                )}
+                <Button
+                  onClick={handleDisconnectLinkedIn}
+                  className="bg-red-600 hover:bg-red-700 text-white border-0"
+                >
+                  Disconnect
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -690,6 +820,139 @@ export default function SettingsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* LinkedIn Posting Target Selection Dialog */}
+      <Dialog open={showSelectionModal} onOpenChange={setShowSelectionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Linkedin className="w-5 h-5 text-linkedin" />
+              Where do you want to post?
+            </DialogTitle>
+            <DialogDescription>
+              Choose whether to publish content to your personal profile or company page
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {/* Personal Profile Option */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedType("profile");
+                setSelectedOrgId(null);
+              }}
+              className={cn(
+                "w-full p-3 rounded-xl border-2 transition-all text-left",
+                selectedType === "profile"
+                  ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+                  : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {linkedInSettings?.profileImage ? (
+                  <Image
+                    src={linkedInSettings.profileImage}
+                    alt={linkedInSettings.profileName || "Profile"}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-linkedin flex items-center justify-center text-white font-bold">
+                    <User className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{linkedInSettings?.profileName || "Your Profile"}</span>
+                    {selectedType === "profile" && (
+                      <span className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Personal Profile</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Company Pages */}
+            {linkedInSettings?.organizations && linkedInSettings.organizations.length > 0 && (
+              <>
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-slate-950 px-2 text-muted-foreground">
+                      Company pages
+                    </span>
+                  </div>
+                </div>
+
+                {linkedInSettings.organizations.map((org) => (
+                  <button
+                    key={org.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedType("organization");
+                      setSelectedOrgId(org.id);
+                    }}
+                    className={cn(
+                      "w-full p-3 rounded-xl border-2 transition-all text-left",
+                      selectedType === "organization" && selectedOrgId === org.id
+                        ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      {org.logoUrl ? (
+                        <Image
+                          src={org.logoUrl}
+                          alt={org.name}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-slate-500" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{org.name}</span>
+                          {selectedType === "organization" && selectedOrgId === org.id && (
+                            <span className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center">
+                              <Check className="w-2.5 h-2.5 text-white" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Company Page</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowSelectionModal(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSelection}
+              disabled={isSavingSelection}
+              className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            >
+              {isSavingSelection ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              Confirm
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Appearance Settings */}
       <Card>
         <CardHeader>
@@ -912,5 +1175,17 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
+      </div>
+    }>
+      <SettingsContent />
+    </Suspense>
   );
 }

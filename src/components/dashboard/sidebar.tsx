@@ -26,6 +26,8 @@ import {
   Palette,
   Code,
   Crown,
+  Shield,
+  Database,
 } from "lucide-react";
 
 // Reddit icon component
@@ -425,6 +427,37 @@ export function Sidebar() {
                 <Settings className="w-4 h-4" />
                 Account Settings
               </button>
+              {session?.user?.isAdmin && (
+                <>
+                  <div className="border-t border-border my-1" />
+                  <div className="px-3 py-1.5">
+                    <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Shield className="w-3 h-3" />
+                      Admin
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/users");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <Users className="w-4 h-4" />
+                    Users
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/site-data");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <Database className="w-4 h-4" />
+                    Site Data
+                  </button>
+                </>
+              )}
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"

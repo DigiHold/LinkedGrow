@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForToken, getLinkedInProfile, type LinkedInAppType } from '@/lib/linkedin';
+import { exchangeCodeForToken, getLinkedInProfile, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { db, users, accounts } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
@@ -47,9 +47,9 @@ async function downloadAndStoreProfilePicture(
   }
 }
 
-function createPopupResponse(success: boolean, data: { name?: string; error?: string }) {
+function createPopupResponse(success: boolean, data: { name?: string; error?: string; showSelection?: boolean }) {
   const message = success
-    ? { type: 'linkedin-success', name: data.name }
+    ? { type: 'linkedin-success', name: data.name, showSelection: data.showSelection || false }
     : { type: 'linkedin-error', error: data.error };
 
   return new NextResponse(
@@ -62,7 +62,7 @@ function createPopupResponse(success: boolean, data: { name?: string; error?: st
             window.opener.postMessage(${JSON.stringify(message)}, '*');
             window.close();
           } else {
-            window.location.href = '/dashboard/settings${success ? `?linkedin=connected&name=${encodeURIComponent(data.name || '')}` : `?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+            window.location.href = '/dashboard/settings${success ? `?linkedin=connected&name=${encodeURIComponent(data.name || '')}${data.showSelection ? '&showSelection=true' : ''}` : `?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
           }
         </script>
       </body>
@@ -371,6 +371,10 @@ export async function GET(request: NextRequest) {
           storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
         }
 
+        // Fetch administered organizations (only for poster app)
+        const organizations = await getAdministeredOrganizations(tokenData.access_token);
+        const hasOrganizations = organizations.length > 0;
+
         await db
           .update(users)
           .set({
@@ -385,9 +389,41 @@ export async function GET(request: NextRequest) {
             image: storedPictureUrl,
             // Update name if not already set
             name: fullName,
+            // Store organizations for selection
+            linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
+            // Default to profile if no orgs, otherwise keep previous selection or null for selection page
+            linkedinPostingTarget: hasOrganizations ? null : 'profile',
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));
+
+        // If user has organizations, signal the parent to show selection modal
+        if (hasOrganizations) {
+          console.log('LinkedIn connected with organizations:', {
+            userId: profile.id,
+            name: fullName,
+            organizationCount: organizations.length,
+          });
+
+          // Handle popup mode with organizations - send message to show selection modal
+          if (isPopup) {
+            const response = createPopupResponse(true, { name: fullName, showSelection: true });
+            response.cookies.delete('linkedin_oauth_state');
+            response.cookies.delete('linkedin_app_type');
+            response.cookies.delete('linkedin_oauth_mode');
+            response.cookies.delete('linkedin_popup');
+            return response;
+          }
+
+          // Non-popup mode - redirect to settings with showSelection param
+          const response = NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?linkedin=connected&name=${encodeURIComponent(fullName)}&showSelection=true`
+          );
+          response.cookies.delete('linkedin_oauth_state');
+          response.cookies.delete('linkedin_app_type');
+          response.cookies.delete('linkedin_oauth_mode');
+          return response;
+        }
       }
     }
 
@@ -397,7 +433,7 @@ export async function GET(request: NextRequest) {
       appType,
     });
 
-    // Handle popup mode
+    // Handle popup mode (no organizations case)
     if (isPopup) {
       const response = createPopupResponse(true, { name: fullName });
       // Set cookies on the popup response too
