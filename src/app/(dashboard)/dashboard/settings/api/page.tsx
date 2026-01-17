@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import {
   Key,
   Plus,
@@ -20,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 
 // Simple date formatter to replace date-fns
 function formatDate(dateString: string): string {
@@ -50,9 +48,6 @@ const AVAILABLE_SCOPES = [
 ];
 
 export default function ApiKeysPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
-
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -155,11 +150,7 @@ export default function ApiKeysPage() {
   };
 
   return (
-    <FeatureGate
-      feature="apiAccess"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="apiAccess">
       <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

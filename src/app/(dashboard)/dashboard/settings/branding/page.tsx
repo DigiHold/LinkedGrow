@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import {
   Palette,
   Upload,
@@ -14,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 
 const FONT_OPTIONS = [
   { value: "inter", label: "Inter", style: "font-sans" },
@@ -26,9 +24,6 @@ const FONT_OPTIONS = [
 ];
 
 export default function BrandingPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
-
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -148,11 +143,7 @@ export default function BrandingPage() {
   };
 
   return (
-    <FeatureGate
-      feature="customBranding"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="customBranding">
       <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">

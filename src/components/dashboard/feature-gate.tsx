@@ -54,9 +54,6 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 interface FeatureGateProps {
   feature: keyof PlanFeatures;
   children: React.ReactNode;
-  // Deprecated props - kept for backward compatibility, ignored
-  userPlan?: PlanId;
-  userEmail?: string;
 }
 
 // Server Component - no loading state needed, data is available immediately

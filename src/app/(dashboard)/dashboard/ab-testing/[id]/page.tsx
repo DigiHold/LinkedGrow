@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -24,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 interface AbTest {
@@ -51,8 +49,6 @@ interface VariantStats {
 
 export default function ABTestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
   const router = useRouter();
 
   const [test, setTest] = useState<AbTest | null>(null);
@@ -202,11 +198,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
   const bIsWinning = parseFloat(variantBEngagement) > parseFloat(variantAEngagement);
 
   return (
-    <FeatureGate
-      feature="abTesting"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="abTesting">
       <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div>

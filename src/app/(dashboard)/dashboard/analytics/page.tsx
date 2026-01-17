@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,7 +95,6 @@ function formatNumber(num: number): string {
 }
 
 function AnalyticsContent() {
-  const { data: session } = useSession();
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -544,11 +542,8 @@ function AnalyticsContent() {
 }
 
 export default function AnalyticsPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user as { plan?: string } | undefined)?.plan || "free";
-
   return (
-    <FeatureGate feature="analytics" userPlan={userPlan as "free" | "starter" | "pro" | "business"}>
+    <FeatureGate feature="analytics">
       <AnalyticsContent />
     </FeatureGate>
   );

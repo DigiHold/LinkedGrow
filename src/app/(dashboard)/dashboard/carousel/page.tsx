@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,10 +41,6 @@ const templates = [
 ];
 
 export default function CarouselPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan as PlanId) || "free";
-  const userEmail = session?.user?.email || "";
-
   const [topic, setTopic] = useState("");
   const [slideCount, setSlideCount] = useState("5");
   const [template, setTemplate] = useState("minimal");
@@ -72,7 +66,7 @@ export default function CarouselPage() {
   const currentTemplate = templates.find(t => t.id === template) || templates[0];
 
   return (
-    <FeatureGate feature="carouselGenerator" userPlan={userPlan} userEmail={userEmail}>
+    <FeatureGate feature="carouselGenerator">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div>

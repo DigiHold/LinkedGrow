@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   GitBranch,
@@ -14,12 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import Link from "next/link";
 
 export default function NewABTestPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -81,11 +77,7 @@ export default function NewABTestPage() {
   };
 
   return (
-    <FeatureGate
-      feature="abTesting"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="abTesting">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
         {/* Header */}
         <div className="mb-8">

@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 interface TeamMember {
@@ -57,8 +56,6 @@ const roleConfig = {
 
 export default function TeamPage() {
   const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
-
   const [team, setTeam] = useState<Team | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
@@ -205,11 +202,7 @@ export default function TeamPage() {
   const isOwner = team && session?.user?.id === team.ownerId;
 
   return (
-    <FeatureGate
-      feature="teamCollaboration"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="teamCollaboration">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

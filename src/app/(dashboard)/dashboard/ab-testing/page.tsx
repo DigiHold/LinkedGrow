@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   GitBranch,
@@ -20,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 interface AbTest {
@@ -48,9 +46,6 @@ const statusConfig = {
 };
 
 export default function ABTestingPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan || "free") as PlanId;
-
   const [tests, setTests] = useState<AbTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -107,11 +102,7 @@ export default function ABTestingPage() {
   };
 
   return (
-    <FeatureGate
-      feature="abTesting"
-      userPlan={userPlan}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="abTesting">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

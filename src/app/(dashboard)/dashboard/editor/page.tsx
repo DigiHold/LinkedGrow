@@ -23,8 +23,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PlanId } from "@/lib/plans";
-import { useSession } from "next-auth/react";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -37,10 +35,6 @@ interface AlgorithmScore {
 }
 
 export default function EditorPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan as PlanId) || "free";
-  const userEmail = session?.user?.email || "";
-
   const [content, setContent] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -132,7 +126,7 @@ export default function EditorPage() {
   };
 
   return (
-    <FeatureGate feature="advancedEditor" userPlan={userPlan} userEmail={userEmail}>
+    <FeatureGate feature="advancedEditor">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -91,7 +91,9 @@ async function fetchRedditPostClientSide(url: string): Promise<RedditPostData> {
   };
 }
 
-function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
+function RedditImportContent() {
+  const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -762,12 +764,9 @@ function RedditImportContent({ userPlan }: { userPlan: PlanId }) {
 }
 
 export default function RedditImportPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user?.plan as PlanId) || "free";
-
   return (
-    <FeatureGate feature="redditIdeas" userPlan={userPlan}>
-      <RedditImportContent userPlan={userPlan} />
+    <FeatureGate feature="redditIdeas">
+      <RedditImportContent />
     </FeatureGate>
   );
 }

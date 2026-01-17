@@ -689,15 +689,8 @@ function AdvancedAnalyticsContent() {
 }
 
 export default function AdvancedAnalyticsPage() {
-  const { data: session } = useSession();
-  const userPlan = (session?.user as { plan?: string } | undefined)?.plan || "free";
-
   return (
-    <FeatureGate
-      feature="advancedAnalytics"
-      userPlan={userPlan as "free" | "starter" | "pro" | "business"}
-      userEmail={session?.user?.email || ""}
-    >
+    <FeatureGate feature="advancedAnalytics">
       <AdvancedAnalyticsContent />
     </FeatureGate>
   );

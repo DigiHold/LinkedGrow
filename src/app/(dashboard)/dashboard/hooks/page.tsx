@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,9 +17,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PlanId, canAccessFeature } from "@/lib/plans";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { redirectToCheckout } from "@/lib/checkout";
 
 interface HookPair {
   firstLine: string;
@@ -28,11 +25,6 @@ interface HookPair {
 }
 
 export default function HooksPage() {
-  const { data: session } = useSession();
-  const userPlan: PlanId = (session?.user?.plan as PlanId) || "free";
-  const userEmail = session?.user?.email || "";
-  const hasAccess = canAccessFeature(userPlan, "hooksGenerator");
-
   const [postIdea, setPostIdea] = useState("");
   const [hooks, setHooks] = useState<HookPair[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -108,7 +100,7 @@ export default function HooksPage() {
   }
 
   return (
-    <FeatureGate feature="hooksGenerator" userPlan={userPlan} userEmail={userEmail}>
+    <FeatureGate feature="hooksGenerator">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div>
