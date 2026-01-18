@@ -366,45 +366,93 @@ export default function GeneratorPage() {
 
   // Apply AI quick action
   const handleQuickAIAction = async (actionId: string) => {
+    const currentContent = isEditing ? editedPost : generatedPost;
+    if (!currentContent.trim()) return;
+
     setIsApplyingAI(true);
-    // Simulate AI processing - in real app, this calls the AI API
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Map action IDs to AI instructions
+      const actionInstructions: Record<string, string> = {
+        emojis: "Add relevant emojis throughout the post to make it more engaging. Use 3-5 emojis strategically placed.",
+        shorter: "Make this post more concise. Reduce the length by about 30% while keeping the main message and impact.",
+        hook: "Rewrite the first two lines to create a stronger, more attention-grabbing hook that makes people want to read more.",
+        cta: "Add or improve the call-to-action at the end to encourage more engagement (likes, comments, shares).",
+        professional: "Rewrite this post to sound more professional and polished while maintaining authenticity.",
+        casual: "Rewrite this post to sound more casual and conversational while staying professional.",
+      };
 
-    // Demo: Add sample modifications based on action
-    let modified = isEditing ? editedPost : generatedPost;
-    switch (actionId) {
-      case "emojis":
-        modified = modified.replace("productivity", "productivity 🚀")
-          .replace("mistakes", "mistakes ❌")
-          .replace("success", "success ✨");
-        break;
-      case "shorter":
-        // In real implementation, AI would shorten it
-        modified = modified.split("\n").filter(line => line.trim()).slice(0, -3).join("\n");
-        break;
-      default:
-        // Other actions would be handled by actual AI
-        break;
-    }
+      const instruction = actionInstructions[actionId] || `Apply the following style: ${actionId}`;
 
-    if (isEditing) {
-      setEditedPost(modified);
-    } else {
-      setGeneratedPost(modified);
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          content: currentContent,
+          instruction: instruction,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to apply AI action");
+      }
+
+      const data = await response.json();
+      if (data.content) {
+        if (isEditing) {
+          setEditedPost(data.content);
+        } else {
+          setGeneratedPost(data.content);
+        }
+      }
+    } catch (error) {
+      console.error("AI quick action error:", error);
+      alert(error instanceof Error ? error.message : "Failed to apply AI action");
+    } finally {
+      setIsApplyingAI(false);
     }
-    setIsApplyingAI(false);
   };
 
   // Apply custom AI instruction
   const handleApplyAIInstruction = async () => {
     if (!aiInstruction.trim()) return;
+    const currentContent = isEditing ? editedPost : generatedPost;
+    if (!currentContent.trim()) return;
+
     setIsApplyingAI(true);
-    // Simulate AI processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    // In real app, this would call AI API with the instruction
-    setShowAIPanel(false);
-    setAIInstruction("");
-    setIsApplyingAI(false);
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          content: currentContent,
+          instruction: aiInstruction,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to apply AI instruction");
+      }
+
+      const data = await response.json();
+      if (data.content) {
+        if (isEditing) {
+          setEditedPost(data.content);
+        } else {
+          setGeneratedPost(data.content);
+        }
+      }
+      setShowAIPanel(false);
+      setAIInstruction("");
+    } catch (error) {
+      console.error("AI instruction error:", error);
+      alert(error instanceof Error ? error.message : "Failed to apply AI instruction");
+    } finally {
+      setIsApplyingAI(false);
+    }
   };
 
   // Get current post content

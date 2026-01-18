@@ -507,13 +507,36 @@ export function CalendarContent() {
   };
 
   const handleAIEdit = async () => {
-    if (!aiInstruction.trim()) return;
+    if (!aiInstruction.trim() || !newPostContent.trim()) return;
     setIsProcessingAI(true);
-    // TODO: Implement actual AI editing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsProcessingAI(false);
-    setShowAIPanel(false);
-    setAIInstruction("");
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          content: newPostContent,
+          instruction: aiInstruction,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to edit post");
+      }
+
+      const data = await response.json();
+      if (data.content) {
+        setNewPostContent(data.content);
+      }
+      setShowAIPanel(false);
+      setAIInstruction("");
+    } catch (error) {
+      console.error("AI edit error:", error);
+      alert(error instanceof Error ? error.message : "Failed to edit post");
+    } finally {
+      setIsProcessingAI(false);
+    }
   };
 
   const handleDeletePost = async () => {

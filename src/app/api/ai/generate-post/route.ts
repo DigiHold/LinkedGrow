@@ -9,6 +9,8 @@ interface GeneratePostRequest {
   postType?: string;
   postCategory?: string;
   topic?: string;
+  content?: string;
+  instruction?: string;
 }
 
 async function generatePost(
@@ -356,6 +358,144 @@ Return ONLY a JSON array of 5 strings. Example:
   return ideas;
 }
 
+async function editPost(
+  content: string,
+  instruction: string,
+  apiKey: string,
+  provider: string,
+  model: string
+): Promise<string> {
+  const prompt = `You are an expert LinkedIn content editor. Edit the following LinkedIn post according to the user's instruction.
+
+Current post:
+"""
+${content}
+"""
+
+User instruction: "${instruction}"
+
+Requirements:
+1. Apply the user's requested changes while maintaining the post's core message
+2. Keep the post professional and suitable for LinkedIn
+3. Maintain good formatting with line breaks for readability
+4. Do NOT use hashtags
+5. Limit emoji usage - maximum 1-2 per post if any
+
+Return ONLY the edited post text, nothing else.`;
+
+  let response;
+  let editedPost = "";
+
+  if (provider === "openai") {
+    response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to edit post with OpenAI");
+    }
+
+    const data = await response.json();
+    editedPost = data.choices[0]?.message?.content || "";
+  } else if (provider === "anthropic") {
+    response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: model || "claude-3-5-sonnet-20241022",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to edit post with Anthropic");
+    }
+
+    const data = await response.json();
+    editedPost = data.content[0]?.text || "";
+  } else if (provider === "google") {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to edit post with Google AI");
+    }
+
+    const data = await response.json();
+    editedPost = data.candidates[0]?.content?.parts[0]?.text || "";
+  } else if (provider === "grok") {
+    response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "grok-3-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to edit post with Grok");
+    }
+
+    const data = await response.json();
+    editedPost = data.choices[0]?.message?.content || "";
+  } else if (provider === "perplexity") {
+    response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "sonar-pro",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to edit post with Perplexity");
+    }
+
+    const data = await response.json();
+    editedPost = data.choices[0]?.message?.content || "";
+  } else {
+    throw new Error(`Unsupported AI provider: ${provider}`);
+  }
+
+  return editedPost.trim();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -365,7 +505,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: GeneratePostRequest & { action?: string } = await request.json();
-    const { action = "generate", idea, postType, postCategory, topic } = body;
+    const { action = "generate", idea, postType, postCategory, topic, content, instruction } = body;
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id),
@@ -432,6 +572,14 @@ export async function POST(request: NextRequest) {
         user.targetAudience || undefined
       );
       return NextResponse.json({ ideas });
+    }
+
+    if (action === "edit") {
+      if (!content || !instruction) {
+        return NextResponse.json({ error: "Content and instruction are required for editing" }, { status: 400 });
+      }
+      const editedContent = await editPost(content, instruction, apiKey, provider, model);
+      return NextResponse.json({ content: editedContent });
     }
 
     if (!idea) {

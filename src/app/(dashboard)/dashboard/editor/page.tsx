@@ -115,14 +115,36 @@ export default function EditorPage() {
   };
 
   const handleAIEdit = async () => {
-    if (!aiInstruction.trim()) return;
+    if (!aiInstruction.trim() || !content.trim()) return;
     setIsProcessing(true);
-    // Simulate AI processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    // In real app, this would call the AI API
-    setIsProcessing(false);
-    setShowAIPanel(false);
-    setAIInstruction("");
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          content: content,
+          instruction: aiInstruction,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to edit post");
+      }
+
+      const data = await response.json();
+      if (data.content) {
+        setContent(data.content);
+      }
+      setShowAIPanel(false);
+      setAIInstruction("");
+    } catch (error) {
+      console.error("AI edit error:", error);
+      alert(error instanceof Error ? error.message : "Failed to edit post");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
