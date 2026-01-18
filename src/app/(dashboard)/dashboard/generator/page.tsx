@@ -279,57 +279,64 @@ export default function GeneratorPage() {
 
   const handleGenerateIdeas = async () => {
     setIsGenerating(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setGeneratedIdeas([
-      "5 unconventional productivity hacks I learned from building a startup",
-      "The biggest mistake I made in my career (and how you can avoid it)",
-      "Why I stopped chasing perfection and started shipping",
-      "3 frameworks that changed how I approach problem-solving",
-      "What nobody tells you about working with AI tools",
-    ]);
-    setIsGenerating(false);
-    setStep(3);
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ideas",
+          topic: topic || undefined,
+          postType: selectedType || "actionable",
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate ideas");
+      }
+
+      const data = await response.json();
+      setGeneratedIdeas(data.ideas || []);
+      setStep(3);
+    } catch (error) {
+      console.error("Failed to generate ideas:", error);
+      alert(error instanceof Error ? error.message : "Failed to generate ideas");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleGeneratePost = async () => {
+    if (selectedIdea === null) return;
+
     setIsGenerating(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setGeneratedPost(`I spent 3 years chasing perfection.
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          idea: generatedIdeas[selectedIdea],
+          postType: selectedType || "actionable",
+          postCategory: selectedCategory || "auto",
+        }),
+      });
 
-Here's what it cost me:
-• Missed opportunities
-• Burnout
-• Zero shipped products
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate post");
+      }
 
-Then I learned the 80/20 rule of execution:
-
-𝟖𝟎% 𝐨𝐟 𝐲𝐨𝐮𝐫 𝐫𝐞𝐬𝐮𝐥𝐭𝐬 𝐜𝐨𝐦𝐞 𝐟𝐫𝐨𝐦 𝟐𝟎% 𝐨𝐟 𝐲𝐨𝐮𝐫 𝐞𝐟𝐟𝐨𝐫𝐭.
-
-The remaining 20% of results?
-They eat 80% of your time and energy.
-
-Here's my new framework:
-
-1. Ship fast, iterate faster
-2. Good enough today beats perfect never
-3. Feedback is worth more than planning
-
-The result?
-• 3x more projects shipped
-• Better client relationships
-• Actually enjoying my work again
-
-Stop polishing. Start shipping.
-
-What's holding you back from launching?
-
-♻️ Repost if this resonates
-📩 Follow for more productivity insights`);
-    setIsGenerating(false);
-    setEditedPost("");
-    setStep(4);
+      const data = await response.json();
+      setGeneratedPost(data.post || "");
+      setEditedPost("");
+      setStep(4);
+    } catch (error) {
+      console.error("Failed to generate post:", error);
+      alert(error instanceof Error ? error.message : "Failed to generate post");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = () => {
