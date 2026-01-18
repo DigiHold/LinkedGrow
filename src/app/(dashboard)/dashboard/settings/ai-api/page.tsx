@@ -73,8 +73,8 @@ const PerplexityIcon = () => (
 );
 
 const ReplicateIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-    <path d="M1.5 3.5h9v2h-9zM1.5 8.5h9v2h-9zM1.5 13.5h9v2h-9zM1.5 18.5h5v2h-5zM13.5 3.5h9v2h-9zM13.5 8.5h9v2h-9zM13.5 13.5h5v2h-5z"/>
+  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" fillRule="evenodd" viewBox="0 0 24 24" className="w-5 h-5">
+    <path d="M22 10.552v2.26h-7.932V22H11.54V10.552H22zM22 2v2.264H4.528V22H2V2h20zm0 4.276V8.54H9.296V22H6.768V6.276H22z"/>
   </svg>
 );
 
@@ -86,8 +86,9 @@ const aiProviders = [
     placeholder: "sk-...",
     icon: OpenAIIcon,
     models: [
-      { id: "gpt-5.2", name: "GPT-5.2 Pro", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
-      { id: "gpt-5", name: "GPT-5", tag: "Recommended", price: "$0.10/post", monthly: "~$3.00/mo" },
+      { id: "gpt-5.2", name: "GPT-5.2", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
+      { id: "gpt-5.2-pro", name: "GPT-5.2 Pro", tag: "Best Quality", price: "$0.40/post", monthly: "~$12.00/mo" },
+      { id: "gpt-5-mini", name: "GPT-5 Mini", tag: "Recommended", price: "$0.05/post", monthly: "~$1.50/mo" },
       { id: "o4-mini", name: "o4-mini", tag: "Best Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
       { id: "o3-pro", name: "o3-pro", tag: "Reasoning", price: "$0.08/post", monthly: "~$2.40/mo" },
       { id: "o3-mini", name: "o3-mini", tag: "Fast Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
@@ -100,9 +101,9 @@ const aiProviders = [
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     models: [
-      { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
-      { id: "claude-sonnet-4-5-20251101", name: "Claude Sonnet 4.5", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
-      { id: "claude-haiku-4-5-20251101", name: "Claude Haiku 4.5", tag: "Faster", price: "$0.005/post", monthly: "~$0.15/mo" },
+      { id: "claude-opus-4-5-20250514", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
+      { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
+      { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tag: "Fastest", price: "$0.005/post", monthly: "~$0.15/mo" },
       { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "claude-opus-4-20250514", name: "Claude Opus 4", tag: "Powerful", price: "$0.15/post", monthly: "~$4.50/mo" },
     ],
