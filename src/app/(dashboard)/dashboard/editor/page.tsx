@@ -84,6 +84,44 @@ export default function EditorPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Unicode character mappings for bold text
+  const BOLD_MAP: Record<string, string> = {
+    a: "𝗮", b: "𝗯", c: "𝗰", d: "𝗱", e: "𝗲", f: "𝗳", g: "𝗴", h: "𝗵", i: "𝗶", j: "𝗷",
+    k: "𝗸", l: "𝗹", m: "𝗺", n: "𝗻", o: "𝗼", p: "𝗽", q: "𝗾", r: "𝗿", s: "𝘀", t: "𝘁",
+    u: "𝘂", v: "𝘃", w: "𝘄", x: "𝘅", y: "𝘆", z: "𝘇",
+    A: "𝗔", B: "𝗕", C: "𝗖", D: "𝗗", E: "𝗘", F: "𝗙", G: "𝗚", H: "𝗛", I: "𝗜", J: "𝗝",
+    K: "𝗞", L: "𝗟", M: "𝗠", N: "𝗡", O: "𝗢", P: "𝗣", Q: "𝗤", R: "𝗥", S: "𝗦", T: "𝗧",
+    U: "𝗨", V: "𝗩", W: "𝗪", X: "𝗫", Y: "𝗬", Z: "𝗭",
+    "0": "𝟬", "1": "𝟭", "2": "𝟮", "3": "𝟯", "4": "𝟰", "5": "𝟱", "6": "𝟲", "7": "𝟳", "8": "𝟴", "9": "𝟵",
+  };
+
+  const ITALIC_MAP: Record<string, string> = {
+    a: "𝘢", b: "𝘣", c: "𝘤", d: "𝘥", e: "𝘦", f: "𝘧", g: "𝘨", h: "𝘩", i: "𝘪", j: "𝘫",
+    k: "𝘬", l: "𝘭", m: "𝘮", n: "𝘯", o: "𝘰", p: "𝘱", q: "𝘲", r: "𝘳", s: "𝘴", t: "𝘵",
+    u: "𝘶", v: "𝘷", w: "𝘸", x: "𝘹", y: "𝘺", z: "𝘻",
+    A: "𝘈", B: "𝘉", C: "𝘊", D: "𝘋", E: "𝘌", F: "𝘍", G: "𝘎", H: "𝘏", I: "𝘐", J: "𝘑",
+    K: "𝘒", L: "𝘓", M: "𝘔", N: "𝘕", O: "𝘖", P: "𝘗", Q: "𝘘", R: "𝘙", S: "𝘚", T: "𝘛",
+    U: "𝘜", V: "𝘝", W: "𝘞", X: "𝘟", Y: "𝘠", Z: "𝘡",
+  };
+
+  // Reverse maps for detecting and removing formatting
+  const BOLD_REVERSE = Object.fromEntries(Object.entries(BOLD_MAP).map(([k, v]) => [v, k]));
+  const ITALIC_REVERSE = Object.fromEntries(Object.entries(ITALIC_MAP).map(([k, v]) => [v, k]));
+
+  const toBold = (text: string) => text.split("").map((c) => BOLD_MAP[c] || c).join("");
+  const toItalic = (text: string) => text.split("").map((c) => ITALIC_MAP[c] || c).join("");
+  const fromBold = (text: string) => text.split("").map((c) => BOLD_REVERSE[c] || c).join("");
+  const fromItalic = (text: string) => text.split("").map((c) => ITALIC_REVERSE[c] || c).join("");
+  const isBold = (text: string) => text.split("").some((c) => BOLD_REVERSE[c]);
+  const isItalic = (text: string) => text.split("").some((c) => ITALIC_REVERSE[c]);
+  const isBulletList = (text: string) => text.split("\n").every((l) => !l.trim() || l.trim().startsWith("• "));
+  const isNumberedList = (text: string) => {
+    const lines = text.split("\n").filter((l) => l.trim());
+    return lines.every((l, i) => l.trim().startsWith(`${i + 1}. `));
+  };
+  const fromBulletList = (text: string) => text.split("\n").map((l) => l.replace(/^• /, "")).join("\n");
+  const fromNumberedList = (text: string) => text.split("\n").map((l) => l.replace(/^\d+\. /, "")).join("\n");
+
   const insertFormatting = (format: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -91,27 +129,82 @@ export default function EditorPage() {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
+    const beforeSelection = content.substring(0, start);
+    const afterSelection = content.substring(end);
 
     let newText = "";
+    let cursorOffset = 0;
+
     switch (format) {
       case "bold":
-        newText = `𝗯𝗼𝗹𝗱`; // Would need actual unicode conversion
+        if (selectedText) {
+          // Toggle: if already bold, remove it; otherwise apply bold
+          if (isBold(selectedText)) {
+            newText = fromBold(fromItalic(selectedText));
+          } else {
+            newText = toBold(fromItalic(selectedText));
+          }
+        } else {
+          newText = toBold("bold text");
+          cursorOffset = newText.length;
+        }
         break;
       case "italic":
-        newText = `𝘪𝘵𝘢𝘭𝘪𝘤`;
+        if (selectedText) {
+          // Toggle: if already italic, remove it; otherwise apply italic
+          if (isItalic(selectedText)) {
+            newText = fromItalic(fromBold(selectedText));
+          } else {
+            newText = toItalic(fromBold(selectedText));
+          }
+        } else {
+          newText = toItalic("italic text");
+          cursorOffset = newText.length;
+        }
         break;
       case "bullet":
-        newText = selectedText ? `• ${selectedText}` : "• ";
+        if (selectedText) {
+          // Toggle: if already bullet list, remove it
+          if (isBulletList(selectedText)) {
+            newText = fromBulletList(selectedText);
+          } else {
+            const plainText = isNumberedList(selectedText) ? fromNumberedList(selectedText) : selectedText;
+            const lines = plainText.split("\n");
+            newText = lines.map((line) => (line.trim() ? `• ${line.trim()}` : "")).join("\n");
+          }
+        } else {
+          newText = "• ";
+          cursorOffset = 2;
+        }
         break;
       case "number":
-        newText = selectedText ? `1. ${selectedText}` : "1. ";
+        if (selectedText) {
+          // Toggle: if already numbered list, remove it
+          if (isNumberedList(selectedText)) {
+            newText = fromNumberedList(selectedText);
+          } else {
+            const plainText = isBulletList(selectedText) ? fromBulletList(selectedText) : selectedText;
+            const lines = plainText.split("\n");
+            newText = lines.map((line, i) => (line.trim() ? `${i + 1}. ${line.trim()}` : "")).join("\n");
+          }
+        } else {
+          newText = "1. ";
+          cursorOffset = 3;
+        }
         break;
       default:
         return;
     }
 
-    const newContent = content.substring(0, start) + newText + content.substring(end);
+    const newContent = beforeSelection + newText + afterSelection;
     setContent(newContent);
+
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + (selectedText ? newText.length : cursorOffset);
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
   };
 
   const handleAIEdit = async () => {

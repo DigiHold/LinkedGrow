@@ -4,6 +4,23 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
+// Sanitize AI output: remove wrapping quotes
+function sanitizeAIOutput(text: string): string {
+  let cleaned = text.trim();
+
+  // Remove wrapping triple quotes
+  if (cleaned.startsWith('"""') && cleaned.endsWith('"""')) {
+    cleaned = cleaned.slice(3, -3).trim();
+  }
+  // Remove wrapping single or double quotes
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
 interface GeneratePostRequest {
   idea: string;
   postType?: string;
@@ -70,21 +87,38 @@ async function generatePost(
     categoryInstructions = categoryDescriptions[postCategory] ? `\nFormat: ${categoryDescriptions[postCategory]}` : "";
   }
 
-  const prompt = `You are an expert LinkedIn content creator. Generate a compelling LinkedIn post based on the following idea.
+  const prompt = `You are an expert LinkedIn content creator specializing in viral posts. Generate a compelling LinkedIn post based on the following idea.
 
 Idea: "${idea}"${typeInstructions}${categoryInstructions}${contextInstructions}
 
-Requirements:
-1. Create a post between 800-1500 characters
-2. Start with a strong, attention-grabbing hook (first 2 lines are crucial)
-3. Use short paragraphs and line breaks for readability
-4. Include a call-to-action at the end (ask a question or encourage engagement)
-5. Make it professional but conversational
-6. Do NOT use hashtags
-7. Limit emoji usage - maximum 1-2 per post if any
-8. Focus on providing genuine value${voiceInstructions}${avoidInstructions}
+CRITICAL HOOK STRUCTURE (First 2 lines visible before "See more"):
+- Line 1: A POWERFUL one-liner hook (under 100 characters) that stops scrolling. Use pattern interrupts, bold statements, or curiosity gaps.
+- Line 2: A compelling second hook that creates urgency to click "See more". This should tease the value inside.
 
-Return ONLY the post text, nothing else.`;
+Examples of strong dual hooks:
+- "I turned down a $500k offer." / "Here's the counterintuitive reason why."
+- "Stop networking. Seriously." / "This 3-step system works 10x better."
+- "Most productivity advice is garbage." / "Here's what actually works (after 10 years of testing)."
+
+WRITING STYLE REQUIREMENTS:
+1. NEVER use em dashes (-). Use regular dashes with spaces ( - ) or commas instead.
+2. NEVER use en dashes. Always use regular hyphens or " - " with spaces.
+3. Keep sentences punchy and direct.
+4. Use short paragraphs (1-3 sentences max).
+5. Add strategic line breaks for readability.
+6. Use bullet points or numbered lists for key points.
+
+POST STRUCTURE:
+1. Create a post between 800-1500 characters
+2. Strong dual-line hook (see above)
+3. Valuable content in the body
+4. End with a clear call-to-action (ask a specific question or encourage engagement)
+5. Professional but conversational tone
+6. NO hashtags
+7. Maximum 1-2 emojis if any
+8. Focus on providing genuine, actionable value${voiceInstructions}${avoidInstructions}
+
+Return ONLY the post text, nothing else. Do not wrap in quotes.`;
 
   let response;
   let post = "";
@@ -198,7 +232,7 @@ Return ONLY the post text, nothing else.`;
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return post.trim();
+  return sanitizeAIOutput(post);
 }
 
 async function generateIdeas(
@@ -375,20 +409,25 @@ async function editPost(
   const prompt = `You are an expert LinkedIn content editor. Edit the following LinkedIn post according to the user's instruction.
 
 Current post:
-"""
 ${content}
-"""
 
 User instruction: "${instruction}"
 
-Requirements:
+CRITICAL RULES:
 1. Apply the user's requested changes while maintaining the post's core message
 2. Keep the post professional and suitable for LinkedIn
 3. Maintain good formatting with line breaks for readability
-4. Do NOT use hashtags
-5. Limit emoji usage - maximum 1-2 per post if any
+4. NEVER use em dashes (—) or en dashes (–). Use regular dashes with spaces ( - ) or commas instead.
+5. Do NOT use hashtags
+6. Limit emoji usage - maximum 1-2 per post if any
 
-Return ONLY the edited post text, nothing else.`;
+HOOK REQUIREMENT (if instruction mentions "hook" or "stronger hook"):
+- Create TWO powerful hooks, not just one
+- Line 1: A scroll-stopping statement (under 100 characters)
+- Line 2: A teaser that compels clicking "See more"
+- Example: "I failed 47 times before this worked." / "The pattern I finally discovered changes everything."
+
+Return ONLY the edited post text. Do NOT wrap in quotes or any other formatting.`;
 
   let response;
   let editedPost = "";
@@ -500,7 +539,7 @@ Return ONLY the edited post text, nothing else.`;
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return editedPost.trim();
+  return sanitizeAIOutput(editedPost);
 }
 
 export async function POST(request: NextRequest) {

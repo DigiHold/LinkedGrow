@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
+import { PostEditor } from "@/components/dashboard/post-editor";
 import { redirectToCheckout } from "@/lib/checkout";
 
 const postTypes = [
@@ -237,6 +239,15 @@ export default function GeneratorPage() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string } | null>(null);
   const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [linkPreviewUrl, setLinkPreviewUrl] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
+
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load settings and usage data
   useEffect(() => {
@@ -276,6 +287,67 @@ export default function GeneratorPage() {
 
     loadData();
   }, []);
+
+  // Persist state to localStorage
+  const STORAGE_KEY = "linkedgrow_generator_draft";
+
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    // Only save if we have meaningful data (step > 1 or have content)
+    if (step > 1 || generatedPost || topic || generatedIdeas.length > 0) {
+      const stateToSave = {
+        step,
+        selectedType,
+        selectedCategory,
+        topic,
+        generatedIdeas,
+        selectedIdea,
+        generatedPost,
+        editedPost,
+        attachedImage,
+        linkPreviewUrl,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    }
+  }, [step, selectedType, selectedCategory, topic, generatedIdeas, selectedIdea, generatedPost, editedPost, attachedImage, linkPreviewUrl]);
+
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const state = JSON.parse(saved);
+        // Only restore if saved within last 24 hours
+        const savedAt = new Date(state.savedAt);
+        const hoursSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSinceSave < 24) {
+          if (state.step) setStep(state.step);
+          if (state.selectedType) setSelectedType(state.selectedType);
+          if (state.selectedCategory) setSelectedCategory(state.selectedCategory);
+          if (state.topic) setTopic(state.topic);
+          if (state.generatedIdeas?.length > 0) setGeneratedIdeas(state.generatedIdeas);
+          if (state.selectedIdea !== null) setSelectedIdea(state.selectedIdea);
+          if (state.generatedPost) setGeneratedPost(state.generatedPost);
+          if (state.editedPost) setEditedPost(state.editedPost);
+          if (state.attachedImage) setAttachedImage(state.attachedImage);
+          if (state.linkPreviewUrl) setLinkPreviewUrl(state.linkPreviewUrl);
+        } else {
+          // Clear stale data
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to restore generator state:", error);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  // Clear draft after successful publish or save
+  const clearDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   const handleGenerateIdeas = async () => {
     setIsGenerating(true);
@@ -457,6 +529,188 @@ export default function GeneratorPage() {
 
   // Get current post content
   const currentPost = isEditing ? editedPost : generatedPost;
+
+  // Save as draft
+  const handleSaveAsDraft = async () => {
+    if (!currentPost.trim()) {
+      alert("No post content to save");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: currentPost,
+          status: "draft",
+          postType: attachedImage ? "image" : "text",
+          metadata: {
+            postType: selectedType,
+            postCategory: selectedCategory,
+            topic: topic,
+            idea: selectedIdea !== null ? generatedIdeas[selectedIdea] : null,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save draft");
+      }
+
+      clearDraft();
+      alert("Draft saved successfully!");
+      router.push("/dashboard/posts");
+    } catch (error) {
+      console.error("Save draft error:", error);
+      alert(error instanceof Error ? error.message : "Failed to save draft");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Publish to LinkedIn
+  const handlePublish = async () => {
+    if (!currentPost.trim()) {
+      alert("No post content to publish");
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      // First save the post
+      const saveResponse = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: currentPost,
+          status: "draft",
+          postType: attachedImage ? "image" : "text",
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error("Failed to save post before publishing");
+      }
+
+      const { post } = await saveResponse.json();
+
+      // Then publish to LinkedIn
+      const publishResponse = await fetch("/api/linkedin/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId: post.id,
+          content: currentPost,
+          imageBase64: attachedImage?.base64,
+          imageMimeType: attachedImage?.mimeType,
+        }),
+      });
+
+      if (!publishResponse.ok) {
+        const error = await publishResponse.json();
+        throw new Error(error.error || "Failed to publish to LinkedIn");
+      }
+
+      clearDraft();
+      alert("Post published to LinkedIn!");
+      router.push("/dashboard/posts");
+    } catch (error) {
+      console.error("Publish error:", error);
+      alert(error instanceof Error ? error.message : "Failed to publish");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // Schedule post
+  const handleSchedulePost = async () => {
+    if (!currentPost.trim()) {
+      alert("No post content to schedule");
+      return;
+    }
+    if (!scheduleDate || !scheduleTime) {
+      alert("Please select both date and time");
+      return;
+    }
+
+    const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
+    if (scheduledAt <= new Date()) {
+      alert("Please select a future date and time");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: currentPost,
+          status: "scheduled",
+          scheduledAt: scheduledAt.toISOString(),
+          postType: attachedImage ? "image" : "text",
+          metadata: {
+            postType: selectedType,
+            postCategory: selectedCategory,
+            topic: topic,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to schedule post");
+      }
+
+      clearDraft();
+      alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
+      router.push("/dashboard/calendar");
+    } catch (error) {
+      console.error("Schedule error:", error);
+      alert(error instanceof Error ? error.message : "Failed to schedule post");
+    } finally {
+      setIsSaving(false);
+      setShowScheduler(false);
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      alert("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
+      return;
+    }
+
+    // Validate file size (max 5MB - LinkedIn limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be less than 5MB (LinkedIn limit)");
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      setAttachedImage({
+        base64,
+        mimeType: file.type,
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   // Show loading state while fetching settings
   if (isLoadingSettings) {
@@ -848,26 +1102,29 @@ export default function GeneratorPage() {
               </CardHeader>
               <CardContent>
                 {isEditing ? (
-                  <Textarea
+                  <PostEditor
                     value={editedPost}
-                    onChange={(e) => setEditedPost(e.target.value)}
-                    className="min-h-[400px] text-base leading-relaxed"
+                    onChange={setEditedPost}
                     placeholder="Edit your post..."
+                    minHeight="min-h-100"
+                    showToolbar={true}
                   />
                 ) : (
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-border min-h-[300px]">
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-border min-h-75">
                     <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
                       {generatedPost}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-                  <span>{currentPost.length} / 3000 characters</span>
-                  <span className="text-green-600 font-medium">
-                    Algorithm Score: 92/100
-                  </span>
-                </div>
+                {!isEditing && (
+                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                    <span>{currentPost.length} / 3000 characters</span>
+                    <span className="text-green-600 font-medium">
+                      Algorithm Score: 92/100
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -998,9 +1255,19 @@ export default function GeneratorPage() {
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="linkedin" className="w-full justify-start" size="lg">
-                  <Send className="w-4 h-4 mr-2" />
-                  Publish to LinkedIn
+                <Button
+                  variant="linkedin"
+                  className="w-full justify-start"
+                  size="lg"
+                  onClick={handlePublish}
+                  disabled={isPublishing || !currentPost.trim()}
+                >
+                  {isPublishing ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
                 <Button variant="outline" className="w-full justify-start" onClick={() => setShowScheduler(!showScheduler)}>
                   <Calendar className="w-4 h-4 mr-2" />
@@ -1008,17 +1275,46 @@ export default function GeneratorPage() {
                 </Button>
                 {showScheduler && (
                   <div className="p-3 rounded-lg bg-accent/50 space-y-2">
-                    <Input type="date" className="w-full" />
-                    <Input type="time" className="w-full" />
-                    <Button size="sm" className="w-full">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Schedule Post
+                    <Input
+                      type="date"
+                      className="w-full"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                    <Input
+                      type="time"
+                      className="w-full"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={handleSchedulePost}
+                      disabled={isSaving || !scheduleDate || !scheduleTime}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Calendar className="w-4 h-4 mr-2" />
+                      )}
+                      {isSaving ? "Scheduling..." : "Schedule Post"}
                     </Button>
                   </div>
                 )}
-                <Button variant="outline" className="w-full justify-start">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save as Draft
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleSaveAsDraft}
+                  disabled={isSaving || !currentPost.trim()}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? "Saving..." : "Save as Draft"}
                 </Button>
               </CardContent>
             </Card>
@@ -1043,14 +1339,43 @@ export default function GeneratorPage() {
                     )}
                   </Button>
                 )}
-                <Button variant="outline" className="w-full justify-start">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Image className="w-4 h-4 mr-2" />
                   Upload Image
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setShowLinkInput(!showLinkInput)}
+                >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Add Link Preview
                 </Button>
+                {showLinkInput && (
+                  <div className="p-3 rounded-lg bg-accent/50 space-y-2">
+                    <Input
+                      type="url"
+                      placeholder="https://example.com"
+                      value={linkPreviewUrl}
+                      onChange={(e) => setLinkPreviewUrl(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste a URL to include in your post. LinkedIn will automatically generate a preview.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

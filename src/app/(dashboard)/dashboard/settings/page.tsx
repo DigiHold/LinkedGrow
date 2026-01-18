@@ -34,6 +34,9 @@ import {
   Loader2,
   Copy,
   Smartphone,
+  Mic,
+  Plus,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +76,16 @@ function SettingsContent() {
     topics: "",
     context: "",
   });
+
+  // Voice & Style settings
+  const [voiceSettings, setVoiceSettings] = useState({
+    samplePosts: [] as string[],
+    neverMention: "",
+    writingTone: "",
+  });
+  const [newSamplePost, setNewSamplePost] = useState("");
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
+  const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // LinkedIn connection
   const [linkedInConnected, setLinkedInConnected] = useState(false);
@@ -179,6 +192,34 @@ function SettingsContent() {
       setTwoFactorEnabled(session.user.twoFactorEnabled || false);
     }
   }, [session]);
+
+  // Load voice settings
+  useEffect(() => {
+    const fetchVoiceSettings = async () => {
+      try {
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data = await response.json();
+          setVoiceSettings({
+            samplePosts: data.samplePosts || [],
+            neverMention: data.neverMention || "",
+            writingTone: data.writingTone || "",
+          });
+          // Also load business profile fields if they exist
+          if (data.businessDescription || data.targetAudience) {
+            setBusinessProfile((prev) => ({
+              ...prev,
+              description: data.businessDescription || "",
+              audience: data.targetAudience || "",
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch voice settings:", error);
+      }
+    };
+    fetchVoiceSettings();
+  }, []);
 
   const handleSaveAccount = async () => {
     // If password fields are filled, validate them first
@@ -352,6 +393,55 @@ function SettingsContent() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  // Voice & Style functions
+  const handleAddSamplePost = () => {
+    if (!newSamplePost.trim()) return;
+    if (voiceSettings.samplePosts.length >= 5) {
+      setVoiceMessage({ type: "error", text: "Maximum 5 sample posts allowed" });
+      return;
+    }
+    setVoiceSettings({
+      ...voiceSettings,
+      samplePosts: [...voiceSettings.samplePosts, newSamplePost.trim()],
+    });
+    setNewSamplePost("");
+  };
+
+  const handleRemoveSamplePost = (index: number) => {
+    setVoiceSettings({
+      ...voiceSettings,
+      samplePosts: voiceSettings.samplePosts.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleSaveVoiceSettings = async () => {
+    setIsSavingVoice(true);
+    setVoiceMessage(null);
+
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          samplePosts: voiceSettings.samplePosts,
+          neverMention: voiceSettings.neverMention,
+          writingTone: voiceSettings.writingTone,
+        }),
+      });
+
+      if (response.ok) {
+        setVoiceMessage({ type: "success", text: "Voice settings saved successfully" });
+      } else {
+        const data = await response.json();
+        setVoiceMessage({ type: "error", text: data.error || "Failed to save voice settings" });
+      }
+    } catch {
+      setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
+    } finally {
+      setIsSavingVoice(false);
+    }
   };
 
   const handleConnectLinkedIn = () => {
@@ -1034,6 +1124,126 @@ function SettingsContent() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Voice & Style */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mic className="w-5 h-5 text-cyan-600" />
+            Voice & Style
+          </CardTitle>
+          <CardDescription>
+            Train the AI to write in your unique voice and style
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {voiceMessage && (
+            <div className={cn(
+              "p-3 rounded-lg text-sm flex items-center gap-2",
+              voiceMessage.type === "success"
+                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+            )}>
+              {voiceMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {voiceMessage.text}
+            </div>
+          )}
+
+          {/* Sample Posts */}
+          <div className="space-y-3">
+            <div>
+              <Label className="text-base font-medium">Sample Posts</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Paste 3-5 of your best LinkedIn posts so the AI can learn your writing style
+              </p>
+            </div>
+
+            {voiceSettings.samplePosts.length > 0 && (
+              <div className="space-y-2">
+                {voiceSettings.samplePosts.map((post, index) => (
+                  <div
+                    key={index}
+                    className="relative p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border group"
+                  >
+                    <p className="text-sm pr-8 line-clamp-3 whitespace-pre-wrap">{post}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSamplePost(index)}
+                      className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs text-muted-foreground mt-2 block">
+                      Sample {index + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {voiceSettings.samplePosts.length < 5 && (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Paste one of your LinkedIn posts here..."
+                  value={newSamplePost}
+                  onChange={(e) => setNewSamplePost(e.target.value)}
+                  className="min-h-25"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSamplePost}
+                  disabled={!newSamplePost.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Sample Post ({voiceSettings.samplePosts.length}/5)
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Writing Tone */}
+          <div className="space-y-2">
+            <Label>Writing Tone</Label>
+            <p className="text-sm text-muted-foreground">
+              Describe how you want your posts to sound
+            </p>
+            <Input
+              placeholder="e.g., Professional but friendly, conversational, inspiring, direct and bold"
+              value={voiceSettings.writingTone}
+              onChange={(e) =>
+                setVoiceSettings({ ...voiceSettings, writingTone: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Never Mention */}
+          <div className="space-y-2">
+            <Label>Never Mention</Label>
+            <p className="text-sm text-muted-foreground">
+              Topics, competitors, or words the AI should avoid
+            </p>
+            <Textarea
+              placeholder="e.g., Competitor names, sensitive topics, specific products..."
+              value={voiceSettings.neverMention}
+              onChange={(e) =>
+                setVoiceSettings({ ...voiceSettings, neverMention: e.target.value })
+              }
+              className="min-h-[80px]"
+            />
+          </div>
+
+          <Button
+            onClick={handleSaveVoiceSettings}
+            disabled={isSavingVoice}
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+          >
+            {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Voice Settings
+          </Button>
         </CardContent>
       </Card>
 
