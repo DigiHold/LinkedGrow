@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,7 @@ import {
   Check,
   X,
   Gauge,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -34,13 +36,36 @@ interface AlgorithmScore {
   engagement: number;
 }
 
+// Main editor component wrapped in Suspense for useSearchParams
 export default function EditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading editor...</p>
+        </div>
+      </div>
+    }>
+      <EditorContent />
+    </Suspense>
+  );
+}
+
+function EditorContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const editPostId = searchParams.get("edit");
+
   const [content, setContent] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiInstruction, setAIInstruction] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -50,6 +75,28 @@ export default function EditorPage() {
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
+
+  // Load post if edit parameter is present
+  useEffect(() => {
+    if (editPostId) {
+      const loadPost = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/posts/${editPostId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setContent(data.post.content || "");
+            setCurrentPostId(data.post.id);
+          }
+        } catch (error) {
+          console.error("Failed to load post:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadPost();
+    }
+  }, [editPostId]);
 
   // Update character count and algorithm score
   useEffect(() => {
@@ -239,6 +286,89 @@ export default function EditorPage() {
       setIsProcessing(false);
     }
   };
+
+  const handleSaveAsDraft = async () => {
+    if (!content.trim()) return;
+    setIsSaving(true);
+    try {
+      if (currentPostId) {
+        // Update existing post
+        const response = await fetch(`/api/posts/${currentPostId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, status: "draft" }),
+        });
+        if (!response.ok) throw new Error("Failed to update post");
+      } else {
+        // Create new post
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, status: "draft", postType: "text" }),
+        });
+        if (!response.ok) throw new Error("Failed to save draft");
+        const data = await response.json();
+        setCurrentPostId(data.post.id);
+      }
+      alert("Draft saved successfully!");
+      router.push("/dashboard/posts");
+    } catch (error) {
+      console.error("Save error:", error);
+      alert(error instanceof Error ? error.message : "Failed to save draft");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!content.trim()) return;
+    setIsSaving(true);
+    try {
+      // First save the post
+      let postId = currentPostId;
+      if (!postId) {
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, status: "draft", postType: "text" }),
+        });
+        if (!response.ok) throw new Error("Failed to save post");
+        const data = await response.json();
+        postId = data.post.id;
+      }
+
+      // Then publish
+      const publishResponse = await fetch("/api/linkedin/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, content }),
+      });
+
+      if (!publishResponse.ok) {
+        const error = await publishResponse.json();
+        throw new Error(error.error || "Failed to publish");
+      }
+
+      alert("Post published to LinkedIn!");
+      router.push("/dashboard/posts");
+    } catch (error) {
+      console.error("Publish error:", error);
+      alert(error instanceof Error ? error.message : "Failed to publish");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading post...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <FeatureGate feature="advancedEditor">
@@ -483,17 +613,27 @@ Tips for viral posts:
           {/* Actions */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              <Button variant="outline" className="w-full justify-start">
-                <Save className="w-4 h-4 mr-2" />
-                Save as Draft
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleSaveAsDraft}
+                disabled={isSaving || !content.trim()}
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {isSaving ? "Saving..." : "Save as Draft"}
               </Button>
               <Button variant="outline" className="w-full justify-start">
                 <Calendar className="w-4 h-4 mr-2" />
                 Schedule Post
               </Button>
-              <Button variant="linkedin" className="w-full justify-start">
-                <Send className="w-4 h-4 mr-2" />
-                Publish Now
+              <Button
+                variant="linkedin"
+                className="w-full justify-start"
+                onClick={handlePublish}
+                disabled={isSaving || !content.trim()}
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                {isSaving ? "Publishing..." : "Publish Now"}
               </Button>
             </CardContent>
           </Card>

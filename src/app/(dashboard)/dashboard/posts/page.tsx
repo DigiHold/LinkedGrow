@@ -19,6 +19,7 @@ import {
   Loader2,
   Plus,
   Sparkles,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -59,6 +60,7 @@ export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewPost, setPreviewPost] = useState<Post | null>(null);
 
   // Fetch posts from API
   useEffect(() => {
@@ -359,7 +361,12 @@ export default function PostsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <Button variant="ghost" size="icon-sm" title="View">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="View"
+                    onClick={() => setPreviewPost(post)}
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Link href={`/dashboard/editor?edit=${post.id}`}>
@@ -421,6 +428,101 @@ export default function PostsPage() {
           >
             Cancel
           </button>
+        </div>
+      )}
+
+      {/* Post Preview Modal */}
+      {previewPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setPreviewPost(null)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden z-10">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold">Post Preview</h2>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                    previewPost.status === "published"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : previewPost.status === "scheduled"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      : previewPost.status === "failed"
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                  )}
+                >
+                  {previewPost.status.charAt(0).toUpperCase() + previewPost.status.slice(1)}
+                </span>
+              </div>
+              <button
+                onClick={() => setPreviewPost(null)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* LinkedIn-style preview card */}
+              <div className="bg-white dark:bg-gray-800 border rounded-xl p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                    <span className="text-white font-semibold">U</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Your Name</p>
+                    <p className="text-sm text-muted-foreground">Your headline</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" />
+                      {previewPost.status === "scheduled" && previewPost.scheduledAt
+                        ? `Scheduled for ${formatDate(previewPost.scheduledAt)}`
+                        : previewPost.status === "published" && previewPost.publishedAt
+                        ? `Published ${formatDate(previewPost.publishedAt)}`
+                        : `Created ${formatDate(previewPost.createdAt)}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {previewPost.content}
+                </div>
+                {previewPost.media && previewPost.media.length > 0 && (
+                  <div className="mt-4 grid gap-2">
+                    {previewPost.media.map((media) => (
+                      <img
+                        key={media.id}
+                        src={media.storageUrl}
+                        alt="Post media"
+                        className="rounded-lg max-h-80 object-cover w-full"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Character count */}
+              <div className="mt-4 text-sm text-muted-foreground text-center">
+                {previewPost.content.length} characters
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50 dark:bg-gray-800/50">
+              <Button variant="outline" onClick={() => setPreviewPost(null)}>
+                Close
+              </Button>
+              <Link href={`/dashboard/editor?edit=${previewPost.id}`}>
+                <Button>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Post
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </div>

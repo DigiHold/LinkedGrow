@@ -136,7 +136,7 @@ export function CalendarContent() {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/posts?status=scheduled,published&limit=100");
+      const response = await fetch("/api/posts?status=draft,scheduled,published&limit=100");
       if (!response.ok) throw new Error("Failed to fetch posts");
       const data = await response.json();
       setPosts(data.posts || []);

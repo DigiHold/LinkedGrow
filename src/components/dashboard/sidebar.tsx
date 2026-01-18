@@ -348,7 +348,10 @@ export function Sidebar() {
         <div className="p-3 border-t border-border relative" ref={userMenuRef}>
           {/* Menu popup - appears above the button */}
           {isUserMenuOpen && (
-            <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-gray-900 rounded-lg border border-border shadow-lg overflow-hidden z-50">
+            <div className={cn(
+              "absolute bottom-full mb-2 bg-white dark:bg-gray-900 rounded-lg border border-border shadow-lg overflow-hidden z-50",
+              isCollapsed ? "left-0 right-0 lg:left-auto lg:right-auto lg:w-56" : "left-3 right-3"
+            )}>
               <div className="px-3 py-3 border-b border-border flex items-center gap-3">
                 {userImage ? (
                   <Image
@@ -473,8 +476,9 @@ export function Sidebar() {
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             className={cn(
               "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
-              isCollapsed && "lg:justify-center lg:p-2"
+              isCollapsed && !isMobileOpen && "lg:justify-center lg:p-2"
             )}
+            title={isCollapsed && !isMobileOpen ? userName : undefined}
           >
             {userImage ? (
               <Image
