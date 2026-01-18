@@ -46,6 +46,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
+import { PostEditor } from "@/components/dashboard/post-editor";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -73,7 +74,7 @@ interface Idea {
   createdAt: string;
 }
 
-type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-post-preview" | null;
+type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-post-preview" | "edit-post" | null;
 
 export function CalendarContent() {
   const { data: session } = useSession();
@@ -116,6 +117,21 @@ export function CalendarContent() {
   // Delete state
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Edit post state
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editScheduleTime, setEditScheduleTime] = useState("");
+  const [editScheduleDate, setEditScheduleDate] = useState("");
+
+  // Error toast state
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setShowErrorToast(true);
+    setTimeout(() => setShowErrorToast(false), 4000);
+  };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dayDropdownRef = useRef<HTMLDivElement>(null);
@@ -533,7 +549,7 @@ export function CalendarContent() {
       setAIInstruction("");
     } catch (error) {
       console.error("AI edit error:", error);
-      alert(error instanceof Error ? error.message : "Failed to edit post");
+      showError(error instanceof Error ? error.message : "Failed to edit post");
     } finally {
       setIsProcessingAI(false);
     }
@@ -556,6 +572,49 @@ export function CalendarContent() {
       // Silent fail
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const openEditPost = (post: Post) => {
+    setSelectedPost(post);
+    setEditPostContent(post.content);
+    // Parse the scheduled date and time
+    const scheduledDate = post.scheduledAt ? new Date(post.scheduledAt) : new Date();
+    setEditScheduleDate(scheduledDate.toISOString().split('T')[0]);
+    const hours = scheduledDate.getHours().toString().padStart(2, '0');
+    const minutes = scheduledDate.getMinutes().toString().padStart(2, '0');
+    setEditScheduleTime(`${hours}:${minutes}`);
+    setDrawerView("edit-post");
+    setPostMenuOpen(false);
+  };
+
+  const handleSaveEditedPost = async () => {
+    if (!selectedPost || !editPostContent.trim()) return;
+    setIsSaving(true);
+    try {
+      const [year, month, day] = editScheduleDate.split('-').map(Number);
+      const [hours, minutes] = editScheduleTime.split(':').map(Number);
+      const scheduledAt = new Date(year, month - 1, day, hours, minutes);
+
+      const response = await fetch(`/api/posts/${selectedPost.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: editPostContent,
+          scheduledAt: scheduledAt.toISOString(),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update post");
+
+      await fetchPosts();
+      await fetchAllPosts();
+      setDrawerOpen(false);
+      setSelectedPost(null);
+    } catch {
+      showError("Failed to save post");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -828,9 +887,9 @@ export function CalendarContent() {
 
       {/* Delete Post Confirmation Modal */}
       {showDeleteConfirm && selectedPost && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-101">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Delete post</h2>
               <button onClick={() => setShowDeleteConfirm(false)} className="text-gray-500 hover:text-gray-700">
@@ -877,10 +936,10 @@ export function CalendarContent() {
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <div className="w-full transition-opacity duration-200">
-                        <div className="md:w-102.5 m-auto bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                        <div className="w-full max-w-lg m-auto bg-white dark:bg-gray-900 rounded-xl border mb-10">
                           <div className="px-4 pt-4 pb-0">
                             <div className="flex w-full justify-between items-start">
                               <div className="flex max-w-[90%] items-start">
@@ -903,12 +962,12 @@ export function CalendarContent() {
                                 </button>
                                 {postMenuOpen && (
                                   <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-32">
-                                    <Link
-                                      href={`/dashboard/editor?id=${selectedPost.id}`}
-                                      className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    <button
+                                      onClick={() => openEditPost(selectedPost)}
+                                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                     >
                                       Edit post
-                                    </Link>
+                                    </button>
                                     <button
                                       onClick={() => {
                                         setPostMenuOpen(false);
@@ -1224,38 +1283,18 @@ Tips for viral posts:
                         </div>
                         <div>
                           <label className="text-sm font-medium mb-2 block">Time</label>
-                          <div className="flex gap-2 items-center">
-                            <Select value={scheduleHour} onValueChange={setScheduleHour}>
-                              <SelectTrigger className="w-16">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
-                                  <SelectItem key={h} value={h}>{h}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <span>:</span>
-                            <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
-                              <SelectTrigger className="w-16">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
-                              <SelectTrigger className="w-16">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="AM">AM</SelectItem>
-                                <SelectItem value="PM">PM</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          <input
+                            type="time"
+                            value={`${String(get24Hour()).padStart(2, '0')}:${scheduleMinute}`}
+                            onChange={(e) => {
+                              const [hours, mins] = e.target.value.split(':');
+                              const hour = parseInt(hours);
+                              setScheduleHour(String(hour % 12 || 12));
+                              setScheduleAmPm(hour >= 12 ? "PM" : "AM");
+                              setScheduleMinute(mins);
+                            }}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                          />
                         </div>
                       </CardContent>
                     </Card>
@@ -1265,13 +1304,9 @@ Tips for viral posts:
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "Saving..." : "Save as Draft"}
                       </Button>
-                      <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                      <Button className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
                         <Calendar className="w-4 h-4 mr-2" />
                         {isSaving ? "Scheduling..." : "Schedule Post"}
-                      </Button>
-                      <Button className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Publish Now
                       </Button>
                     </div>
                   </div>
@@ -1328,16 +1363,44 @@ Tips for viral posts:
                         filteredPosts.map((post) => (
                           <div
                             key={post.id}
-                            onClick={() => setSelectedPostToSchedule(post)}
-                            className="flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors bg-white dark:bg-gray-900 border-gray-200 hover:border-primary"
+                            className="flex items-center gap-4 p-4 rounded-lg border transition-colors bg-white dark:bg-gray-900 border-gray-200 hover:border-primary"
                           >
-                            <div className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+                            <div
+                              className="flex-1 flex flex-col gap-1.5 overflow-hidden cursor-pointer"
+                              onClick={() => setSelectedPostToSchedule(post)}
+                            >
                               <h3 className="font-bold truncate">{getPostPreview(post.content, 80)}</h3>
                               <p className="text-sm text-gray-500 flex items-center gap-2">
                                 <span>
                                   {post.status === "published" ? "Published" : post.status === "draft" ? "Draft" : "Scheduled"} on {formatShortDate(post.createdAt)}
                                 </span>
                               </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditPost(post);
+                                }}
+                                title="Edit post"
+                              >
+                                <Wand2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPost(post);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                title="Delete post"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
                         ))
@@ -1365,7 +1428,7 @@ Tips for viral posts:
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
-                  <div className="relative flex flex-col min-h-fit md:w-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <button
                         onClick={() => setSelectedPostToSchedule(null)}
@@ -1373,7 +1436,7 @@ Tips for viral posts:
                       >
                         <ArrowLeft className="w-4 h-4" /> Back to selection
                       </button>
-                      <div className="md:w-102.5 w-full bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl border mb-10">
                         <div className="px-4 pt-4 pb-0">
                           <div className="flex w-full justify-between items-start">
                             <div className="flex max-w-[90%] items-start">
@@ -1397,7 +1460,7 @@ Tips for viral posts:
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-y-auto bg-white dark:bg-gray-900">
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
                     <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
                       <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
@@ -1412,55 +1475,45 @@ Tips for viral posts:
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Date</label>
-                        <input
-                          type="date"
-                          value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
-                          onChange={(e) => {
-                            const date = new Date(e.target.value);
-                            setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full h-10 px-3 border rounded-md bg-background text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">Time</label>
-                        <div className="flex gap-2 items-center">
-                          <Select value={scheduleHour} onValueChange={setScheduleHour}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
-                                <SelectItem key={h} value={h}>{h}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <span className="text-lg">:</span>
-                          <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                                <SelectItem key={m} value={m}>{m}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="AM">AM</SelectItem>
-                              <SelectItem value="PM">PM</SelectItem>
-                            </SelectContent>
-                          </Select>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          Schedule
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Date</label>
+                          <input
+                            type="date"
+                            value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
+                            onChange={(e) => {
+                              const date = new Date(e.target.value);
+                              setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
+                            }}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                          />
                         </div>
-                      </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Time</label>
+                          <input
+                            type="time"
+                            value={`${String(get24Hour()).padStart(2, '0')}:${scheduleMinute}`}
+                            onChange={(e) => {
+                              const [hours, mins] = e.target.value.split(':');
+                              const hour = parseInt(hours);
+                              setScheduleHour(String(hour % 12 || 12));
+                              setScheduleAmPm(hour >= 12 ? "PM" : "AM");
+                              setScheduleMinute(mins);
+                            }}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <div className="space-y-3">
                       <Button onClick={handleSchedulePost} disabled={isSaving} className="w-full">
                         <Calendar className="w-4 h-4 mr-2" />
                         {isSaving ? "Scheduling..." : "Schedule the post"}
@@ -1471,9 +1524,116 @@ Tips for viral posts:
               </>
             )}
 
+            {/* EDIT POST VIEW */}
+            {drawerView === "edit-post" && selectedPost && (
+              <>
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setDrawerView("post-detail")} className="text-gray-500 hover:text-gray-700 cursor-pointer">
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <h2 className="sm:text-2xl text-xl font-semibold">Edit post</h2>
+                    </div>
+                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                  {/* LEFT SIDE - Editor */}
+                  <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-gray-800">
+                    <div className="w-full max-w-lg mx-auto">
+                      <PostEditor
+                        value={editPostContent}
+                        onChange={setEditPostContent}
+                        placeholder="Write your LinkedIn post..."
+                        minHeight="min-h-80"
+                      />
+                    </div>
+                  </div>
+
+                  {/* RIGHT SIDE - Settings */}
+                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
+                          <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 pt-2">
+                        <p className="text-sm text-muted-foreground">Scheduled for</p>
+                        <p className="text-base font-bold">
+                          {editScheduleDate && editScheduleTime ?
+                            `${new Date(editScheduleDate).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })} - ${new Date(`2000-01-01T${editScheduleTime}`).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`
+                            : "Select date and time"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          Schedule
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Date</label>
+                          <input
+                            type="date"
+                            value={editScheduleDate}
+                            onChange={(e) => setEditScheduleDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Time</label>
+                          <input
+                            type="time"
+                            value={editScheduleTime}
+                            onChange={(e) => setEditScheduleTime(e.target.value)}
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="space-y-3">
+                      <Button className="w-full" onClick={handleSaveEditedPost} disabled={!editPostContent.trim() || isSaving}>
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSaving ? "Saving..." : "Save changes"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete post
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
+
+      {/* Error Toast */}
+      {showErrorToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <X className="w-5 h-5" />
+            <span className="font-medium">{errorMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

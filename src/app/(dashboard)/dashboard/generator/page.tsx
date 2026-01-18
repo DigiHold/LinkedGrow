@@ -193,6 +193,70 @@ function LimitReachedOverlay({ userEmail }: { userEmail: string }) {
   );
 }
 
+// Calculate algorithm score for a post
+function calculateScore(content: string): number {
+  if (!content.trim()) return 0;
+
+  const lines = content.split("\n").filter((l) => l.trim());
+  const firstLine = lines[0] || "";
+
+  // Hook strength: first line should be compelling (10-100 chars ideal)
+  let hookStrength = 40;
+  if (firstLine.length >= 10 && firstLine.length <= 100) {
+    hookStrength = 85;
+  } else if (firstLine.length > 100 && firstLine.length <= 150) {
+    hookStrength = 70;
+  } else if (firstLine.length < 10 && firstLine.length > 0) {
+    hookStrength = 50;
+  }
+
+  // Length score: 800-1500 chars is optimal for LinkedIn
+  let lengthScore = 30;
+  if (content.length >= 800 && content.length <= 1500) {
+    lengthScore = 90;
+  } else if (content.length >= 500 && content.length < 800) {
+    lengthScore = 75;
+  } else if (content.length > 1500 && content.length <= 2500) {
+    lengthScore = 70;
+  } else if (content.length >= 200 && content.length < 500) {
+    lengthScore = 55;
+  }
+
+  // Formatting score: check for bullet points, line breaks, etc.
+  const hasBullets = content.includes("•") || content.includes("-");
+  const hasLineBreaks = (content.match(/\n\n/g) || []).length >= 2;
+  const hasSpecialChars = content.includes("→") || content.includes("✓") || content.includes("✔");
+  let formattingScore = 40;
+  if (hasBullets && hasLineBreaks) {
+    formattingScore = 85;
+  } else if (hasBullets || hasLineBreaks) {
+    formattingScore = 65;
+  } else if (hasSpecialChars) {
+    formattingScore = 55;
+  }
+
+  // Engagement score: questions and CTAs boost engagement
+  const hasQuestion = content.includes("?");
+  const hasCTA =
+    content.toLowerCase().includes("follow") ||
+    content.toLowerCase().includes("repost") ||
+    content.toLowerCase().includes("share") ||
+    content.toLowerCase().includes("comment") ||
+    content.toLowerCase().includes("let me know") ||
+    content.toLowerCase().includes("what do you think");
+  const hasEmoji = /[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{2600}-\u{26FF}]/u.test(content);
+
+  let engagementScore = 20;
+  if (hasQuestion) engagementScore += 35;
+  if (hasCTA) engagementScore += 35;
+  if (hasEmoji) engagementScore += 10;
+  engagementScore = Math.min(engagementScore, 100);
+
+  return Math.round(
+    (hookStrength + lengthScore + formattingScore + engagementScore) / 4
+  );
+}
+
 // AI Quick Edit Actions
 const aiQuickActions = [
   { id: "shorter", label: "Make Shorter", icon: Zap },
@@ -245,6 +309,14 @@ export default function GeneratorPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [linkPreviewUrl, setLinkPreviewUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -372,7 +444,7 @@ export default function GeneratorPage() {
       setStep(3);
     } catch (error) {
       console.error("Failed to generate ideas:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate ideas");
+      showToast(error instanceof Error ? error.message : "Failed to generate ideas");
     } finally {
       setIsGenerating(false);
     }
@@ -405,7 +477,7 @@ export default function GeneratorPage() {
       setStep(4);
     } catch (error) {
       console.error("Failed to generate post:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate post");
+      showToast(error instanceof Error ? error.message : "Failed to generate post");
     } finally {
       setIsGenerating(false);
     }
@@ -480,7 +552,7 @@ export default function GeneratorPage() {
       }
     } catch (error) {
       console.error("AI quick action error:", error);
-      alert(error instanceof Error ? error.message : "Failed to apply AI action");
+      showToast(error instanceof Error ? error.message : "Failed to apply AI action");
     } finally {
       setIsApplyingAI(false);
     }
@@ -521,7 +593,7 @@ export default function GeneratorPage() {
       setAIInstruction("");
     } catch (error) {
       console.error("AI instruction error:", error);
-      alert(error instanceof Error ? error.message : "Failed to apply AI instruction");
+      showToast(error instanceof Error ? error.message : "Failed to apply AI instruction");
     } finally {
       setIsApplyingAI(false);
     }
@@ -533,7 +605,7 @@ export default function GeneratorPage() {
   // Save as draft
   const handleSaveAsDraft = async () => {
     if (!currentPost.trim()) {
-      alert("No post content to save");
+      showToast("No post content to save");
       return;
     }
 
@@ -561,11 +633,11 @@ export default function GeneratorPage() {
       }
 
       clearDraft();
-      alert("Draft saved successfully!");
-      router.push("/dashboard/posts");
+      showToast("Draft saved successfully!", "success");
+      setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
       console.error("Save draft error:", error);
-      alert(error instanceof Error ? error.message : "Failed to save draft");
+      showToast(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
     }
@@ -574,7 +646,7 @@ export default function GeneratorPage() {
   // Publish to LinkedIn
   const handlePublish = async () => {
     if (!currentPost.trim()) {
-      alert("No post content to publish");
+      showToast("No post content to publish");
       return;
     }
 
@@ -615,11 +687,11 @@ export default function GeneratorPage() {
       }
 
       clearDraft();
-      alert("Post published to LinkedIn!");
-      router.push("/dashboard/posts");
+      showToast("Post published to LinkedIn!", "success");
+      setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
       console.error("Publish error:", error);
-      alert(error instanceof Error ? error.message : "Failed to publish");
+      showToast(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsPublishing(false);
     }
@@ -628,17 +700,17 @@ export default function GeneratorPage() {
   // Schedule post
   const handleSchedulePost = async () => {
     if (!currentPost.trim()) {
-      alert("No post content to schedule");
+      showToast("No post content to schedule");
       return;
     }
     if (!scheduleDate || !scheduleTime) {
-      alert("Please select both date and time");
+      showToast("Please select both date and time");
       return;
     }
 
     const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
     if (scheduledAt <= new Date()) {
-      alert("Please select a future date and time");
+      showToast("Please select a future date and time");
       return;
     }
 
@@ -666,11 +738,11 @@ export default function GeneratorPage() {
       }
 
       clearDraft();
-      alert(`Post scheduled for ${scheduledAt.toLocaleString()}`);
-      router.push("/dashboard/calendar");
+      showToast(`Post scheduled for ${scheduledAt.toLocaleString()}`, "success");
+      setTimeout(() => router.push("/dashboard/calendar"), 1500);
     } catch (error) {
       console.error("Schedule error:", error);
-      alert(error instanceof Error ? error.message : "Failed to schedule post");
+      showToast(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsSaving(false);
       setShowScheduler(false);
@@ -685,13 +757,13 @@ export default function GeneratorPage() {
     // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!validTypes.includes(file.type)) {
-      alert("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
+      showToast("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
       return;
     }
 
     // Validate file size (max 5MB - LinkedIn limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be less than 5MB (LinkedIn limit)");
+      showToast("Image must be less than 5MB (LinkedIn limit)");
       return;
     }
 
@@ -934,7 +1006,7 @@ export default function GeneratorPage() {
               placeholder="e.g., Lessons learned from launching my first product, Productivity tips for remote workers, Why I quit my 9-5 job..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="min-h-[120px]"
+              className="min-h-30"
             />
 
             <div className="flex flex-wrap gap-2 mt-4">
@@ -1120,8 +1192,13 @@ export default function GeneratorPage() {
                 {!isEditing && (
                   <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                     <span>{currentPost.length} / 3000 characters</span>
-                    <span className="text-green-600 font-medium">
-                      Algorithm Score: 92/100
+                    <span className={cn(
+                      "font-medium",
+                      calculateScore(currentPost) >= 80 ? "text-green-600" :
+                      calculateScore(currentPost) >= 60 ? "text-yellow-600" :
+                      calculateScore(currentPost) === 0 ? "text-gray-400" : "text-red-600"
+                    )}>
+                      Algorithm Score: {calculateScore(currentPost)}/100
                     </span>
                   </div>
                 )}
@@ -1175,7 +1252,7 @@ export default function GeneratorPage() {
                         value={aiInstruction}
                         onChange={(e) => setAIInstruction(e.target.value)}
                         placeholder="Tell AI exactly what to change... e.g., 'Add a personal story at the beginning', 'Make it more controversial', 'Add specific numbers and stats'"
-                        className="min-h-[80px]"
+                        className="min-h-20"
                       />
                       <Button
                         onClick={handleApplyAIInstruction}
@@ -1224,7 +1301,7 @@ export default function GeneratorPage() {
                     <img
                       src={`data:${attachedImage.mimeType};base64,${attachedImage.base64}`}
                       alt="Attached image"
-                      className="w-full h-auto max-h-[200px] object-contain"
+                      className="w-full h-auto max-h-50 object-contain"
                     />
                   </div>
                 </CardContent>
@@ -1415,6 +1492,23 @@ export default function GeneratorPage() {
                 </ul>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className={cn(
+            "px-6 py-3 rounded-lg shadow-lg flex items-center gap-3",
+            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+          )}>
+            {toast.type === "success" ? (
+              <Check className="w-5 h-5" />
+            ) : (
+              <X className="w-5 h-5" />
+            )}
+            <span className="font-medium">{toast.message}</span>
           </div>
         </div>
       )}

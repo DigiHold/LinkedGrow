@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,8 @@ import {
   ListOrdered,
   Undo,
   Redo,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -93,14 +95,24 @@ export interface PostEditorRef {
   setContent: (content: string) => void;
 }
 
+interface AttachedImage {
+  base64: string;
+  mimeType: string;
+  preview?: string;
+}
+
 interface PostEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   minHeight?: string;
   showToolbar?: boolean;
+  showImageButton?: boolean;
   className?: string;
   disabled?: boolean;
+  attachedImage?: AttachedImage | null;
+  onImageChange?: (image: AttachedImage | null) => void;
+  onError?: (message: string) => void;
 }
 
 export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
@@ -111,15 +123,57 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       placeholder = "Start writing your LinkedIn post...",
       minHeight = "min-h-100",
       showToolbar = true,
+      showImageButton = false,
       className,
       disabled = false,
+      attachedImage,
+      onImageChange,
+      onError,
     },
     ref
   ) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [history, setHistory] = useState<string[]>([value]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const charCount = value.length;
+
+    // Handle image upload
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!validTypes.includes(file.type)) {
+        onError?.("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
+        return;
+      }
+
+      // Validate file size (max 5MB - LinkedIn limit)
+      if (file.size > 5 * 1024 * 1024) {
+        onError?.("Image must be less than 5MB (LinkedIn limit)");
+        return;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        const base64 = result.split(",")[1];
+        onImageChange?.({
+          base64,
+          mimeType: file.type,
+          preview: result,
+        });
+      };
+      reader.readAsDataURL(file);
+
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    };
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -310,6 +364,29 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             >
               <ListOrdered className="w-4 h-4" />
             </Button>
+            {showImageButton && (
+              <>
+                <div className="w-px h-6 bg-border mx-1" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled}
+                  title="Add Image"
+                  type="button"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </>
+            )}
             <div className="w-px h-6 bg-border mx-1" />
             <Button
               variant="ghost"
@@ -360,6 +437,26 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             minHeight
           )}
         />
+
+        {/* Image Preview */}
+        {attachedImage?.preview && (
+          <div className="relative p-3 border-t bg-muted/20">
+            <div className="relative inline-block">
+              <img
+                src={attachedImage.preview}
+                alt="Attached"
+                className="max-h-32 rounded-lg border"
+              />
+              <button
+                type="button"
+                onClick={() => onImageChange?.(null)}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {!showToolbar && (
           <div className="px-3 py-2 border-t text-xs text-muted-foreground flex justify-between">

@@ -4,13 +4,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Image,
   Sparkles,
   Send,
   Calendar,
@@ -22,9 +16,12 @@ import {
   X,
   Gauge,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
+import { PostEditor } from "@/components/dashboard/post-editor";
+import { Textarea } from "@/components/ui/textarea";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -36,17 +33,100 @@ interface AlgorithmScore {
   engagement: number;
 }
 
+// Calculate algorithm score based on content
+function calculateAlgorithmScore(content: string): AlgorithmScore {
+  // Return zero scores if content is empty
+  if (!content.trim()) {
+    return {
+      total: 0,
+      hookStrength: 0,
+      length: 0,
+      formatting: 0,
+      engagement: 0,
+    };
+  }
+
+  const lines = content.split("\n").filter((l) => l.trim());
+  const firstLine = lines[0] || "";
+
+  // Hook strength: first line should be compelling (10-100 chars ideal)
+  let hookStrength = 40;
+  if (firstLine.length >= 10 && firstLine.length <= 100) {
+    hookStrength = 85;
+  } else if (firstLine.length > 100 && firstLine.length <= 150) {
+    hookStrength = 70;
+  } else if (firstLine.length < 10 && firstLine.length > 0) {
+    hookStrength = 50;
+  }
+
+  // Length score: 800-1500 chars is optimal for LinkedIn
+  let lengthScore = 30;
+  if (content.length >= 800 && content.length <= 1500) {
+    lengthScore = 90;
+  } else if (content.length >= 500 && content.length < 800) {
+    lengthScore = 75;
+  } else if (content.length > 1500 && content.length <= 2500) {
+    lengthScore = 70;
+  } else if (content.length >= 200 && content.length < 500) {
+    lengthScore = 55;
+  }
+
+  // Formatting score: check for bullet points, line breaks, etc.
+  const hasBullets = content.includes("•") || content.includes("-");
+  const hasLineBreaks = (content.match(/\n\n/g) || []).length >= 2;
+  const hasSpecialChars = content.includes("→") || content.includes("✓") || content.includes("✔");
+  let formattingScore = 40;
+  if (hasBullets && hasLineBreaks) {
+    formattingScore = 85;
+  } else if (hasBullets || hasLineBreaks) {
+    formattingScore = 65;
+  } else if (hasSpecialChars) {
+    formattingScore = 55;
+  }
+
+  // Engagement score: questions and CTAs boost engagement
+  const hasQuestion = content.includes("?");
+  const hasCTA =
+    content.toLowerCase().includes("follow") ||
+    content.toLowerCase().includes("repost") ||
+    content.toLowerCase().includes("share") ||
+    content.toLowerCase().includes("comment") ||
+    content.toLowerCase().includes("let me know") ||
+    content.toLowerCase().includes("what do you think");
+  const hasEmoji = /[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{2600}-\u{26FF}]/u.test(content);
+
+  let engagementScore = 20;
+  if (hasQuestion) engagementScore += 35;
+  if (hasCTA) engagementScore += 35;
+  if (hasEmoji) engagementScore += 10;
+  engagementScore = Math.min(engagementScore, 100);
+
+  const total = Math.round(
+    (hookStrength + lengthScore + formattingScore + engagementScore) / 4
+  );
+
+  return {
+    total,
+    hookStrength,
+    length: lengthScore,
+    formatting: formattingScore,
+    engagement: engagementScore,
+  };
+}
+
 // Main editor component wrapped in Suspense for useSearchParams
 export default function EditorPage() {
   return (
-    <Suspense fallback={
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading editor...</p>
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading editor...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <EditorContent />
     </Suspense>
   );
@@ -58,7 +138,6 @@ function EditorContent() {
   const editPostId = searchParams.get("edit");
 
   const [content, setContent] = useState("");
-  const [charCount, setCharCount] = useState(0);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiInstruction, setAIInstruction] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -68,10 +147,18 @@ function EditorContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [scheduleModal, setScheduleModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<{
+    base64: string;
+    mimeType: string;
+    preview?: string;
+  } | null>(null);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -79,8 +166,8 @@ function EditorContent() {
     formatting: 0,
     engagement: 0,
   });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Load post if edit parameter is present
   useEffect(() => {
@@ -104,32 +191,24 @@ function EditorContent() {
     }
   }, [editPostId]);
 
-  // Update character count and algorithm score
+  // Update algorithm score when content changes
   useEffect(() => {
-    setCharCount(content.length);
-
-    // Simple algorithm scoring (in real app, this would be more sophisticated)
-    const lines = content.split("\n").filter((l) => l.trim());
-    const firstLine = lines[0] || "";
-    const hasHook = firstLine.length > 10 && firstLine.length < 100;
-    const hasFormatting = content.includes("•") || content.includes("→") || content.includes("✓");
-    const hasQuestion = content.includes("?");
-    const hasCTA = content.toLowerCase().includes("follow") || content.toLowerCase().includes("repost");
-    const optimalLength = content.length >= 800 && content.length <= 1500;
-
-    const hookStrength = hasHook ? 85 : 40;
-    const lengthScore = optimalLength ? 90 : content.length < 200 ? 30 : 70;
-    const formattingScore = hasFormatting ? 80 : 50;
-    const engagementScore = (hasQuestion ? 40 : 0) + (hasCTA ? 50 : 0);
-
-    setAlgorithmScore({
-      hookStrength,
-      length: lengthScore,
-      formatting: formattingScore,
-      engagement: Math.min(engagementScore, 100),
-      total: Math.round((hookStrength + lengthScore + formattingScore + Math.min(engagementScore, 100)) / 4),
-    });
+    setAlgorithmScore(calculateAlgorithmScore(content));
   }, [content]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -137,127 +216,10 @@ function EditorContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Unicode character mappings for bold text
-  const BOLD_MAP: Record<string, string> = {
-    a: "𝗮", b: "𝗯", c: "𝗰", d: "𝗱", e: "𝗲", f: "𝗳", g: "𝗴", h: "𝗵", i: "𝗶", j: "𝗷",
-    k: "𝗸", l: "𝗹", m: "𝗺", n: "𝗻", o: "𝗼", p: "𝗽", q: "𝗾", r: "𝗿", s: "𝘀", t: "𝘁",
-    u: "𝘂", v: "𝘃", w: "𝘄", x: "𝘅", y: "𝘆", z: "𝘇",
-    A: "𝗔", B: "𝗕", C: "𝗖", D: "𝗗", E: "𝗘", F: "𝗙", G: "𝗚", H: "𝗛", I: "𝗜", J: "𝗝",
-    K: "𝗞", L: "𝗟", M: "𝗠", N: "𝗡", O: "𝗢", P: "𝗣", Q: "𝗤", R: "𝗥", S: "𝗦", T: "𝗧",
-    U: "𝗨", V: "𝗩", W: "𝗪", X: "𝗫", Y: "𝗬", Z: "𝗭",
-    "0": "𝟬", "1": "𝟭", "2": "𝟮", "3": "𝟯", "4": "𝟰", "5": "𝟱", "6": "𝟲", "7": "𝟳", "8": "𝟴", "9": "𝟵",
-  };
-
-  const ITALIC_MAP: Record<string, string> = {
-    a: "𝘢", b: "𝘣", c: "𝘤", d: "𝘥", e: "𝘦", f: "𝘧", g: "𝘨", h: "𝘩", i: "𝘪", j: "𝘫",
-    k: "𝘬", l: "𝘭", m: "𝘮", n: "𝘯", o: "𝘰", p: "𝘱", q: "𝘲", r: "𝘳", s: "𝘴", t: "𝘵",
-    u: "𝘶", v: "𝘷", w: "𝘸", x: "𝘹", y: "𝘺", z: "𝘻",
-    A: "𝘈", B: "𝘉", C: "𝘊", D: "𝘋", E: "𝘌", F: "𝘍", G: "𝘎", H: "𝘏", I: "𝘐", J: "𝘑",
-    K: "𝘒", L: "𝘓", M: "𝘔", N: "𝘕", O: "𝘖", P: "𝘗", Q: "𝘘", R: "𝘙", S: "𝘚", T: "𝘛",
-    U: "𝘜", V: "𝘝", W: "𝘞", X: "𝘟", Y: "𝘠", Z: "𝘡",
-  };
-
-  // Reverse maps for detecting and removing formatting
-  const BOLD_REVERSE = Object.fromEntries(Object.entries(BOLD_MAP).map(([k, v]) => [v, k]));
-  const ITALIC_REVERSE = Object.fromEntries(Object.entries(ITALIC_MAP).map(([k, v]) => [v, k]));
-
-  const toBold = (text: string) => text.split("").map((c) => BOLD_MAP[c] || c).join("");
-  const toItalic = (text: string) => text.split("").map((c) => ITALIC_MAP[c] || c).join("");
-  const fromBold = (text: string) => text.split("").map((c) => BOLD_REVERSE[c] || c).join("");
-  const fromItalic = (text: string) => text.split("").map((c) => ITALIC_REVERSE[c] || c).join("");
-  const isBold = (text: string) => text.split("").some((c) => BOLD_REVERSE[c]);
-  const isItalic = (text: string) => text.split("").some((c) => ITALIC_REVERSE[c]);
-  const isBulletList = (text: string) => text.split("\n").every((l) => !l.trim() || l.trim().startsWith("• "));
-  const isNumberedList = (text: string) => {
-    const lines = text.split("\n").filter((l) => l.trim());
-    return lines.every((l, i) => l.trim().startsWith(`${i + 1}. `));
-  };
-  const fromBulletList = (text: string) => text.split("\n").map((l) => l.replace(/^• /, "")).join("\n");
-  const fromNumberedList = (text: string) => text.split("\n").map((l) => l.replace(/^\d+\. /, "")).join("\n");
-
-  const insertFormatting = (format: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const beforeSelection = content.substring(0, start);
-    const afterSelection = content.substring(end);
-
-    let newText = "";
-    let cursorOffset = 0;
-
-    switch (format) {
-      case "bold":
-        if (selectedText) {
-          // Toggle: if already bold, remove it; otherwise apply bold
-          if (isBold(selectedText)) {
-            newText = fromBold(fromItalic(selectedText));
-          } else {
-            newText = toBold(fromItalic(selectedText));
-          }
-        } else {
-          newText = toBold("bold text");
-          cursorOffset = newText.length;
-        }
-        break;
-      case "italic":
-        if (selectedText) {
-          // Toggle: if already italic, remove it; otherwise apply italic
-          if (isItalic(selectedText)) {
-            newText = fromItalic(fromBold(selectedText));
-          } else {
-            newText = toItalic(fromBold(selectedText));
-          }
-        } else {
-          newText = toItalic("italic text");
-          cursorOffset = newText.length;
-        }
-        break;
-      case "bullet":
-        if (selectedText) {
-          // Toggle: if already bullet list, remove it
-          if (isBulletList(selectedText)) {
-            newText = fromBulletList(selectedText);
-          } else {
-            const plainText = isNumberedList(selectedText) ? fromNumberedList(selectedText) : selectedText;
-            const lines = plainText.split("\n");
-            newText = lines.map((line) => (line.trim() ? `• ${line.trim()}` : "")).join("\n");
-          }
-        } else {
-          newText = "• ";
-          cursorOffset = 2;
-        }
-        break;
-      case "number":
-        if (selectedText) {
-          // Toggle: if already numbered list, remove it
-          if (isNumberedList(selectedText)) {
-            newText = fromNumberedList(selectedText);
-          } else {
-            const plainText = isBulletList(selectedText) ? fromBulletList(selectedText) : selectedText;
-            const lines = plainText.split("\n");
-            newText = lines.map((line, i) => (line.trim() ? `${i + 1}. ${line.trim()}` : "")).join("\n");
-          }
-        } else {
-          newText = "1. ";
-          cursorOffset = 3;
-        }
-        break;
-      default:
-        return;
-    }
-
-    const newContent = beforeSelection + newText + afterSelection;
-    setContent(newContent);
-
-    // Restore cursor position
-    setTimeout(() => {
-      textarea.focus();
-      const newPosition = start + (selectedText ? newText.length : cursorOffset);
-      textarea.setSelectionRange(newPosition, newPosition);
-    }, 0);
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setShowErrorToast(true);
+    setTimeout(() => setShowErrorToast(false), 4000);
   };
 
   const handleAIEdit = async () => {
@@ -287,7 +249,7 @@ function EditorContent() {
       setAIInstruction("");
     } catch (error) {
       console.error("AI edit error:", error);
-      alert(error instanceof Error ? error.message : "Failed to edit post");
+      showError(error instanceof Error ? error.message : "Failed to edit post");
     } finally {
       setIsProcessing(false);
     }
@@ -298,7 +260,6 @@ function EditorContent() {
     setIsSaving(true);
     try {
       if (currentPostId) {
-        // Update existing post
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -306,7 +267,6 @@ function EditorContent() {
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
-        // Create new post
         const response = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -324,7 +284,7 @@ function EditorContent() {
       }, 1500);
     } catch (error) {
       console.error("Save error:", error);
-      alert(error instanceof Error ? error.message : "Failed to save draft");
+      showError(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
     }
@@ -334,7 +294,6 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
-      // First save the post
       let postId = currentPostId;
       if (!postId) {
         const response = await fetch("/api/posts", {
@@ -347,7 +306,6 @@ function EditorContent() {
         postId = data.post.id;
       }
 
-      // Then publish
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -367,14 +325,13 @@ function EditorContent() {
       }, 1500);
     } catch (error) {
       console.error("Publish error:", error);
-      alert(error instanceof Error ? error.message : "Failed to publish");
+      showError(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleOpenScheduleModal = () => {
-    // Set default date/time to tomorrow at 9 AM
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(9, 0, 0, 0);
@@ -391,7 +348,6 @@ function EditorContent() {
       const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
 
       if (currentPostId) {
-        // Update existing post to scheduled
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -399,11 +355,15 @@ function EditorContent() {
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
-        // Create new scheduled post
         const response = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", postType: "text", scheduledAt }),
+          body: JSON.stringify({
+            content,
+            status: "scheduled",
+            postType: "text",
+            scheduledAt,
+          }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       }
@@ -417,10 +377,16 @@ function EditorContent() {
       }, 1500);
     } catch (error) {
       console.error("Schedule error:", error);
-      alert(error instanceof Error ? error.message : "Failed to schedule post");
+      showError(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsScheduling(false);
     }
+  };
+
+  const handleClearContent = () => {
+    setContent("");
+    setAttachedImage(null);
+    setShowMoreMenu(false);
   };
 
   if (isLoading) {
@@ -437,371 +403,364 @@ function EditorContent() {
   return (
     <FeatureGate feature="advancedEditor">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Post Editor</h1>
-          <p className="text-muted-foreground mt-1">
-            Write and refine your LinkedIn post
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </Button>
-          <Button variant="outline" size="sm">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Editor */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              {/* Formatting Toolbar */}
-              <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-border">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => insertFormatting("bold")}
-                  title="Bold"
-                >
-                  <Bold className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => insertFormatting("italic")}
-                  title="Italic"
-                >
-                  <Italic className="w-4 h-4" />
-                </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => insertFormatting("bullet")}
-                  title="Bullet List"
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => insertFormatting("number")}
-                  title="Numbered List"
-                >
-                  <ListOrdered className="w-4 h-4" />
-                </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button variant="ghost" size="icon-sm" title="Add Image">
-                  <Image className="w-4 h-4" />
-                </Button>
-                <div className="flex-1" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const newState = !showAIPanel;
-                    setShowAIPanel(newState);
-                    if (newState) {
-                      // Scroll to AI panel after it renders
-                      setTimeout(() => {
-                        aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                      }, 100);
-                    }
-                  }}
-                  className={cn(showAIPanel && "bg-linkedin/10 text-linkedin")}
-                >
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">AI Assist</span>
-                </Button>
-              </div>
-
-              {/* Main Textarea */}
-              <Textarea
-                ref={textareaRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start writing your LinkedIn post...
-
-Tips for viral posts:
-• Start with a strong hook (first 2 lines are crucial)
-• Use short paragraphs and line breaks
-• Add bullet points for readability
-• End with a question or CTA"
-                className="min-h-[400px] sm:min-h-[500px] border-0 focus-visible:ring-0 resize-none text-base"
-              />
-
-              {/* Character Counter */}
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                <span
-                  className={cn(
-                    "text-sm",
-                    charCount > LINKEDIN_MAX_CHARS
-                      ? "text-destructive font-medium"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {charCount} / {LINKEDIN_MAX_CHARS}
-                </span>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-muted-foreground">
-                    ~{Math.ceil(charCount / 200)} min read
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* AI Panel */}
-          {showAIPanel && (
-            <Card ref={aiPanelRef} className="border-linkedin/20 bg-linkedin/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Wand2 className="w-4 h-4 text-linkedin" />
-                    AI Edit
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setShowAIPanel(false)}
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Post Editor</h1>
+            <p className="text-muted-foreground mt-1">
+              Write and refine your LinkedIn post
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              disabled={!content.trim()}
+              title="Copy to clipboard"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </Button>
+            <div className="relative" ref={moreMenuRef}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+              {showMoreMenu && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-40">
+                  <button
+                    onClick={handleClearContent}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
                   >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Describe exactly what you want AI to change in your post above. Be specific about the tone, style, or structure.
-                </p>
-                <Textarea
-                  value={aiInstruction}
-                  onChange={(e) => setAIInstruction(e.target.value)}
-                  placeholder="Examples:
-• Rewrite the first sentence to be more attention-grabbing
-• Add 3 bullet points summarizing the key takeaways
-• Make it sound more professional and less casual
-• Shorten to 500 characters while keeping the main message"
-                  className="min-h-[100px]"
-                />
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {[
-                    "Make it shorter",
-                    "Add emojis",
-                    "Stronger hook",
-                    "Add CTA",
-                  ].map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => setAIInstruction(suggestion)}
-                      className="px-3 py-1 text-xs rounded-full bg-white dark:bg-gray-900 border border-border hover:border-linkedin/50 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                    <Trash2 className="w-4 h-4" />
+                    Clear content
+                  </button>
                 </div>
-                <Button
-                  variant="linkedin"
-                  className="mt-4 w-full"
-                  onClick={handleAIEdit}
-                  disabled={!aiInstruction.trim() || isProcessing}
-                >
-                  {isProcessing ? "Processing..." : "Apply Changes"}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-4">
-          {/* Algorithm Score */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Gauge className="w-4 h-4" />
-                Algorithm Score
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center mb-4">
-                <div
-                  className={cn(
-                    "w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4",
-                    algorithmScore.total >= 80
-                      ? "border-green-500 text-green-600"
-                      : algorithmScore.total >= 60
-                      ? "border-yellow-500 text-yellow-600"
-                      : "border-red-500 text-red-600"
-                  )}
-                >
-                  {algorithmScore.total}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  { label: "Hook Strength", value: algorithmScore.hookStrength },
-                  { label: "Length", value: algorithmScore.length },
-                  { label: "Formatting", value: algorithmScore.formatting },
-                  { label: "Engagement", value: algorithmScore.engagement },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium">{item.value}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all",
-                          item.value >= 80
-                            ? "bg-green-500"
-                            : item.value >= 60
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                        )}
-                        style={{ width: `${item.value}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actions */}
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleSaveAsDraft}
-                disabled={isSaving || !content.trim()}
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                {isSaving ? "Saving..." : "Save as Draft"}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleOpenScheduleModal}
-                disabled={isSaving || !content.trim()}
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedule Post
-              </Button>
-              <Button
-                variant="linkedin"
-                className="w-full justify-start"
-                onClick={handlePublish}
-                disabled={isSaving || !content.trim()}
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                {isSaving ? "Publishing..." : "Publish Now"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Tips */}
-          <Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
-            <CardContent className="p-4">
-              <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                Quick Tips
-              </h4>
-              <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1.5">
-                <li>• First 2 lines = your hook (most important!)</li>
-                <li>• 800-1500 characters = sweet spot</li>
-                <li>• End with a question for comments</li>
-                <li>• Post between 8-10 AM or 5-6 PM</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Schedule Post Modal */}
-      {scheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50"
-            onClick={() => !isScheduling && setScheduleModal(false)}
-          />
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
-            <div className="p-6">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-lg font-semibold text-center mb-2">Schedule Post</h2>
-              <p className="text-muted-foreground text-center text-sm mb-6">
-                Choose when you want this post to be published.
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Date</label>
-                  <input
-                    type="date"
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Time</label>
-                  <input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setScheduleModal(false)}
-                  disabled={isScheduling}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-                  onClick={handleSchedulePost}
-                  disabled={isScheduling || !scheduleDate || !scheduleTime}
-                >
-                  {isScheduling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Scheduling...
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Schedule
-                    </>
-                  )}
-                </Button>
-              </div>
+              )}
             </div>
           </div>
         </div>
-      )}
 
-      {/* Success Toast */}
-      {showSuccessToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-          <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-            <Check className="w-5 h-5" />
-            <span className="font-medium">{successMessage}</span>
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Editor */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card>
+              <CardContent className="p-0">
+                <PostEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Start writing your LinkedIn post...
+
+Tips for viral posts:
+- Start with a strong hook (first 2 lines are crucial)
+- Use short paragraphs and line breaks
+- Add bullet points for readability
+- End with a question or CTA"
+                  minHeight="min-h-[400px] sm:min-h-[500px]"
+                  showImageButton
+                  attachedImage={attachedImage}
+                  onImageChange={setAttachedImage}
+                  onError={showError}
+                  className="border-0"
+                />
+              </CardContent>
+            </Card>
+
+            {/* AI Panel */}
+            {showAIPanel && (
+              <Card ref={aiPanelRef} className="border-linkedin/20 bg-linkedin/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-linkedin" />
+                      AI Edit
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setShowAIPanel(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Describe exactly what you want AI to change in your post above.
+                    Be specific about the tone, style, or structure.
+                  </p>
+                  <Textarea
+                    value={aiInstruction}
+                    onChange={(e) => setAIInstruction(e.target.value)}
+                    placeholder="Examples:
+- Rewrite the first sentence to be more attention-grabbing
+- Add 3 bullet points summarizing the key takeaways
+- Make it sound more professional and less casual
+- Shorten to 500 characters while keeping the main message"
+                    className="min-h-25"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {["Make it shorter", "Add emojis", "Stronger hook", "Add CTA"].map(
+                      (suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setAIInstruction(suggestion)}
+                          className="px-3 py-1 text-xs rounded-full bg-white dark:bg-gray-900 border border-border hover:border-linkedin/50 transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <Button
+                    variant="linkedin"
+                    className="mt-4 w-full"
+                    onClick={handleAIEdit}
+                    disabled={!aiInstruction.trim() || isProcessing}
+                  >
+                    {isProcessing ? "Processing..." : "Apply Changes"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="space-y-4">
+            {/* AI Assist Button */}
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start",
+                showAIPanel && "bg-linkedin/10 text-linkedin border-linkedin/30"
+              )}
+              onClick={() => {
+                const newState = !showAIPanel;
+                setShowAIPanel(newState);
+                if (newState) {
+                  setTimeout(() => {
+                    aiPanelRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }, 100);
+                }
+              }}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Assist
+            </Button>
+
+            {/* Algorithm Score */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Gauge className="w-4 h-4" />
+                  Algorithm Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center mb-4">
+                  <div
+                    className={cn(
+                      "w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4",
+                      algorithmScore.total >= 80
+                        ? "border-green-500 text-green-600"
+                        : algorithmScore.total >= 60
+                        ? "border-yellow-500 text-yellow-600"
+                        : algorithmScore.total === 0
+                        ? "border-gray-300 text-gray-400"
+                        : "border-red-500 text-red-600"
+                    )}
+                  >
+                    {algorithmScore.total}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    { label: "Hook Strength", value: algorithmScore.hookStrength },
+                    { label: "Length", value: algorithmScore.length },
+                    { label: "Formatting", value: algorithmScore.formatting },
+                    { label: "Engagement", value: algorithmScore.engagement },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="font-medium">{item.value}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            item.value >= 80
+                              ? "bg-green-500"
+                              : item.value >= 60
+                              ? "bg-yellow-500"
+                              : item.value === 0
+                              ? "bg-gray-300"
+                              : "bg-red-500"
+                          )}
+                          style={{ width: `${item.value}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleSaveAsDraft}
+                  disabled={isSaving || !content.trim()}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? "Saving..." : "Save as Draft"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleOpenScheduleModal}
+                  disabled={isSaving || !content.trim()}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Schedule Post
+                </Button>
+                <Button
+                  variant="linkedin"
+                  className="w-full justify-start"
+                  onClick={handlePublish}
+                  disabled={isSaving || !content.trim()}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? "Publishing..." : "Publish Now"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Tips */}
+            <Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
+              <CardContent className="p-4">
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                  Quick Tips
+                </h4>
+                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1.5">
+                  <li>- First 2 lines = your hook (most important!)</li>
+                  <li>- 800-1500 characters = sweet spot</li>
+                  <li>- End with a question for comments</li>
+                  <li>- Post between 8-10 AM or 5-6 PM</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      )}
+
+        {/* Schedule Post Modal */}
+        {scheduleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/50"
+              onClick={() => !isScheduling && setScheduleModal(false)}
+            />
+            <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+              <div className="p-6">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-center mb-2">
+                  Schedule Post
+                </h2>
+                <p className="text-muted-foreground text-center text-sm mb-6">
+                  Choose when you want this post to be published.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Time</label>
+                    <input
+                      type="time"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setScheduleModal(false)}
+                    disabled={isScheduling}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                    onClick={handleSchedulePost}
+                    disabled={isScheduling || !scheduleDate || !scheduleTime}
+                  >
+                    {isScheduling ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Scheduling...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Schedule
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Toast */}
+        {showSuccessToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <Check className="w-5 h-5" />
+              <span className="font-medium">{successMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error Toast */}
+        {showErrorToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <X className="w-5 h-5" />
+              <span className="font-medium">{errorMessage}</span>
+            </div>
+          </div>
+        )}
       </div>
     </FeatureGate>
   );

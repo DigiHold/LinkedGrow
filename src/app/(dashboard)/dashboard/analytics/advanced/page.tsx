@@ -24,6 +24,7 @@ import {
   UserCircle,
   AlertCircle,
   RefreshCw,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,12 @@ function AdvancedAnalyticsContent() {
   const [dateRange, setDateRange] = useState<DateRange>("30");
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf" | null>(null);
+  const [infoToast, setInfoToast] = useState<string | null>(null);
+
+  const showInfo = (message: string) => {
+    setInfoToast(message);
+    setTimeout(() => setInfoToast(null), 4000);
+  };
 
   const fetchAnalytics = async (refresh = false) => {
     try {
@@ -146,7 +153,7 @@ function AdvancedAnalyticsContent() {
         const csvContent = generateCSV(analytics);
         downloadFile(csvContent, `analytics-${dateRange}days.csv`, "text/csv");
       } else {
-        alert("PDF export coming soon. CSV export is available now.");
+        showInfo("PDF export coming soon. CSV export is available now.");
       }
     } catch (error) {
       console.error("Export failed:", error);
@@ -684,6 +691,16 @@ function AdvancedAnalyticsContent() {
           Back to Basic Analytics
         </Link>
       </div>
+
+      {/* Info Toast */}
+      {infoToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Info className="w-5 h-5" />
+            <span className="font-medium">{infoToast}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

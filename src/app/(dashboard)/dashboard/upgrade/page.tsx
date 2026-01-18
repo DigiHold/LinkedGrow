@@ -24,6 +24,7 @@ import {
   Palette,
   TrendingUp,
   ArrowDown,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,12 @@ export default function UpgradePage() {
   const userEmail = session?.user?.email || "";
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+
+  const showError = (message: string) => {
+    setErrorToast(message);
+    setTimeout(() => setErrorToast(null), 4000);
+  };
 
   // Full plan hierarchy for comparison (including free)
   const FULL_PLAN_HIERARCHY: PlanId[] = ["free", "starter", "pro", "business"];
@@ -120,7 +127,7 @@ export default function UpgradePage() {
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Something went wrong. Please try again.");
+      showError("Something went wrong. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
@@ -144,7 +151,7 @@ export default function UpgradePage() {
       }
     } catch (error) {
       console.error("Portal error:", error);
-      alert("Something went wrong. Please try again.");
+      showError("Something went wrong. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
@@ -375,6 +382,16 @@ export default function UpgradePage() {
           </div>
         </div>
       </div>
+
+      {/* Error Toast */}
+      {errorToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <X className="w-5 h-5" />
+            <span className="font-medium">{errorToast}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

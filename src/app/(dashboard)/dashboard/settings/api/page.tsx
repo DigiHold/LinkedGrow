@@ -15,6 +15,7 @@ import {
   Loader2,
   Code,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,12 @@ export default function ApiKeysPage() {
   const [copiedKey, setCopiedKey] = useState(false);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
   const [deleteKey, setDeleteKey] = useState<ApiKey | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+
+  const showError = (message: string) => {
+    setErrorToast(message);
+    setTimeout(() => setErrorToast(null), 4000);
+  };
 
   // Fetch API keys
   useEffect(() => {
@@ -98,11 +105,11 @@ export default function ApiKeysPage() {
         await fetchApiKeys();
       } else {
         const error = await response.json();
-        alert(error.error || "Failed to create API key");
+        showError(error.error || "Failed to create API key");
       }
     } catch (error) {
       console.error("Failed to create API key:", error);
-      alert("Failed to create API key");
+      showError("Failed to create API key");
     } finally {
       setIsCreating(false);
     }
@@ -121,10 +128,11 @@ export default function ApiKeysPage() {
         await fetchApiKeys();
         setDeleteKey(null);
       } else {
-        alert("Failed to delete API key");
+        showError("Failed to delete API key");
       }
     } catch (error) {
       console.error("Failed to delete API key:", error);
+      showError("Failed to delete API key");
     } finally {
       setDeletingKeyId(null);
     }
@@ -475,6 +483,16 @@ export default function ApiKeysPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Error Toast */}
+        {errorToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <X className="w-5 h-5" />
+              <span className="font-medium">{errorToast}</span>
             </div>
           </div>
         )}
