@@ -258,12 +258,14 @@ Return ONLY a JSON array of 5 strings. Example:
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate ideas with OpenAI");
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate ideas with OpenAI");
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    ideas = JSON.parse(content);
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -280,12 +282,14 @@ Return ONLY a JSON array of 5 strings. Example:
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate ideas with Anthropic");
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate ideas with Anthropic");
     }
 
     const data = await response.json();
     const content = data.content[0]?.text || "[]";
-    ideas = JSON.parse(content);
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
       method: "POST",
@@ -298,7 +302,8 @@ Return ONLY a JSON array of 5 strings. Example:
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate ideas with Google AI");
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate ideas with Google AI");
     }
 
     const data = await response.json();
@@ -321,7 +326,8 @@ Return ONLY a JSON array of 5 strings. Example:
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate ideas with Grok");
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate ideas with Grok");
     }
 
     const data = await response.json();
@@ -344,7 +350,8 @@ Return ONLY a JSON array of 5 strings. Example:
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate ideas with Perplexity");
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate ideas with Perplexity");
     }
 
     const data = await response.json();
