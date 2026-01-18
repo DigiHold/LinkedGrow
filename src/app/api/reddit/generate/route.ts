@@ -71,7 +71,7 @@ Return ONLY a JSON array of ${count} complete post strings. Example:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-4o",
+        model: model || "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
       }),
@@ -93,7 +93,7 @@ Return ONLY a JSON array of ${count} complete post strings. Example:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-3-5-sonnet-20241022",
+        model: model || "claude-sonnet-4-5-20250929",
         max_tokens: 4096,
         messages: [{ role: "user", content: prompt }],
       }),

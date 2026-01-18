@@ -97,7 +97,7 @@ Return ONLY the post text, nothing else.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-4o",
+        model: model || "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
       }),
@@ -119,7 +119,7 @@ Return ONLY the post text, nothing else.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-3-5-sonnet-20241022",
+        model: model || "claude-sonnet-4-5-20250929",
         max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -251,7 +251,7 @@ Return ONLY a JSON array of 5 strings. Example:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-4o",
+        model: model || "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -275,7 +275,7 @@ Return ONLY a JSON array of 5 strings. Example:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-3-5-sonnet-20241022",
+        model: model || "claude-sonnet-4-5-20250929",
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -401,7 +401,7 @@ Return ONLY the edited post text, nothing else.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-4o",
+        model: model || "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
@@ -423,7 +423,7 @@ Return ONLY the edited post text, nothing else.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-3-5-sonnet-20241022",
+        model: model || "claude-sonnet-4-5-20250929",
         max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       }),
