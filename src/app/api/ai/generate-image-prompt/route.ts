@@ -221,7 +221,7 @@ async function generateWithGrok(apiKey: string, postContent: string): Promise<st
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "grok-3-mini",
+      model: "grok-3-mini-beta",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },

@@ -135,7 +135,7 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini",
+        model: model || "grok-3-mini-beta",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -233,11 +233,11 @@ export async function POST(request: NextRequest) {
       perplexity: user.perplexityModel,
     };
 
-    const defaultModel = provider === "openai" ? "gpt-5" :
-                         provider === "anthropic" ? "claude-sonnet-4-5-20251101" :
-                         provider === "google" ? "gemini-3-flash" :
-                         provider === "grok" ? "grok-3-mini" :
-                         provider === "perplexity" ? "sonar-pro" : "gpt-5";
+    const defaultModel = provider === "openai" ? "gpt-5-mini" :
+                         provider === "anthropic" ? "claude-sonnet-4-5-20250929" :
+                         provider === "google" ? "gemini-3-flash-preview" :
+                         provider === "grok" ? "grok-3-mini-beta" :
+                         provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     const hooks = await generateHooks(
