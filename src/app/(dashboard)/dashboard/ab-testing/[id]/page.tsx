@@ -56,6 +56,9 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Winner modal
+  const [winnerModal, setWinnerModal] = useState<"a" | "b" | null>(null);
+
   // Manual stats input (since LinkedIn API doesn't provide real-time data)
   const [variantAStats, setVariantAStats] = useState<VariantStats>({
     impressions: 0,
@@ -139,10 +142,8 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  const handleDeclareWinner = async (winner: "a" | "b") => {
-    if (!confirm(`Are you sure you want to declare Variant ${winner.toUpperCase()} as the winner?`)) {
-      return;
-    }
+  const handleDeclareWinnerConfirm = async () => {
+    if (!winnerModal) return;
 
     setIsUpdating(true);
     try {
@@ -151,7 +152,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "completed",
-          winningVariant: winner,
+          winningVariant: winnerModal,
           variantAStats,
           variantBStats,
         }),
@@ -160,6 +161,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
       if (response.ok) {
         const updated = await response.json();
         setTest((prev) => (prev ? { ...prev, ...updated } : null));
+        setWinnerModal(null);
       }
     } catch (err) {
       console.error("Failed to declare winner:", err);
@@ -347,7 +349,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
               {test.status === "running" && !test.winningVariant && (
                 <Button
                   className="w-full bg-blue-500 hover:bg-blue-600"
-                  onClick={() => handleDeclareWinner("a")}
+                  onClick={() => setWinnerModal("a")}
                   disabled={isUpdating}
                 >
                   <Trophy className="w-4 h-4 mr-2" />
@@ -436,7 +438,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
               {test.status === "running" && !test.winningVariant && (
                 <Button
                   className="w-full bg-green-500 hover:bg-green-600"
-                  onClick={() => handleDeclareWinner("b")}
+                  onClick={() => setWinnerModal("b")}
                   disabled={isUpdating}
                 >
                   <Trophy className="w-4 h-4 mr-2" />
@@ -490,6 +492,58 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
               </ol>
             </CardContent>
           </Card>
+        )}
+
+        {/* Declare Winner Modal */}
+        {winnerModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/50"
+              onClick={() => !isUpdating && setWinnerModal(null)}
+            />
+            <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+              <div className="p-6">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-center mb-2">Declare Winner</h2>
+                <p className="text-muted-foreground text-center text-sm mb-6">
+                  Are you sure you want to declare <span className="font-semibold text-foreground">Variant {winnerModal.toUpperCase()}</span> as the winner?
+                  This will end the test.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setWinnerModal(null)}
+                    disabled={isUpdating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className={cn(
+                      "flex-1",
+                      winnerModal === "a" ? "bg-blue-500 hover:bg-blue-600" : "bg-green-500 hover:bg-green-600"
+                    )}
+                    onClick={handleDeclareWinnerConfirm}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Confirm Winner
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </FeatureGate>

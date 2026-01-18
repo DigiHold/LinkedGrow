@@ -69,6 +69,8 @@ export default function TeamPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [removeMember, setRemoveMember] = useState<TeamMember | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   useEffect(() => {
     fetchTeamData();
@@ -165,19 +167,23 @@ export default function TeamPage() {
     }
   };
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+  const handleRemoveMemberConfirm = async () => {
+    if (!removeMember) return;
+    setIsRemoving(true);
 
     try {
-      const response = await fetch(`/api/team/members/${memberId}`, {
+      const response = await fetch(`/api/team/members/${removeMember.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setMembers(members.filter((m) => m.id !== memberId));
+        setMembers(members.filter((m) => m.id !== removeMember.id));
+        setRemoveMember(null);
       }
     } catch (error) {
       console.error("Failed to remove member:", error);
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -437,7 +443,7 @@ export default function TeamPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRemoveMember(member.id)}
+                                onClick={() => setRemoveMember(member)}
                               >
                                 <Trash2 className="w-4 h-4 text-red-500" />
                               </Button>
@@ -492,6 +498,58 @@ export default function TeamPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Remove Member Modal */}
+            {removeMember && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => !isRemoving && setRemoveMember(null)}
+                />
+                <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+                  <div className="p-6">
+                    <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-center mb-2">Remove Team Member</h2>
+                    <p className="text-muted-foreground text-center text-sm mb-2">
+                      Are you sure you want to remove this team member?
+                    </p>
+                    <p className="text-sm font-medium text-center mb-6 text-foreground">
+                      {removeMember.name || removeMember.email}
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setRemoveMember(null)}
+                        disabled={isRemoving}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={handleRemoveMemberConfirm}
+                        disabled={isRemoving}
+                      >
+                        {isRemoving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Removing...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

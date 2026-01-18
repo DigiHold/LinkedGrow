@@ -61,6 +61,8 @@ export default function PostsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewPost, setPreviewPost] = useState<Post | null>(null);
+  const [deletePost, setDeletePost] = useState<Post | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch posts from API
   useEffect(() => {
@@ -114,18 +116,22 @@ export default function PostsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleDelete = async (postId: string) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
+  const handleDeleteConfirm = async () => {
+    if (!deletePost) return;
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/posts/${postId}`, {
+      const response = await fetch(`/api/posts/${deletePost.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setPosts(posts.filter((p) => p.id !== postId));
+        setPosts(posts.filter((p) => p.id !== deletePost.id));
+        setDeletePost(null);
       }
     } catch (err) {
       console.error("Failed to delete post:", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -384,7 +390,7 @@ export default function PostsPage() {
                     size="icon-sm"
                     title="Delete"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(post.id)}
+                    onClick={() => setDeletePost(post)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -428,6 +434,55 @@ export default function PostsPage() {
           >
             Cancel
           </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletePost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !isDeleting && setDeletePost(null)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+            <div className="p-6">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-center mb-2">Delete Post</h2>
+              <p className="text-muted-foreground text-center text-sm mb-6">
+                Are you sure you want to delete this post? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setDeletePost(null)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

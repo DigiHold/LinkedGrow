@@ -57,6 +57,7 @@ export default function ApiKeysPage() {
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
+  const [deleteKey, setDeleteKey] = useState<ApiKey | null>(null);
 
   // Fetch API keys
   useEffect(() => {
@@ -107,19 +108,18 @@ export default function ApiKeysPage() {
     }
   };
 
-  const handleDeleteKey = async (keyId: string) => {
-    if (!confirm("Are you sure you want to delete this API key? This cannot be undone.")) {
-      return;
-    }
+  const handleDeleteKeyConfirm = async () => {
+    if (!deleteKey) return;
 
-    setDeletingKeyId(keyId);
+    setDeletingKeyId(deleteKey.id);
     try {
-      const response = await fetch(`/api/keys/${keyId}`, {
+      const response = await fetch(`/api/keys/${deleteKey.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         await fetchApiKeys();
+        setDeleteKey(null);
       } else {
         alert("Failed to delete API key");
       }
@@ -235,15 +235,10 @@ export default function ApiKeysPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteKey(key.id)}
-                    disabled={deletingKeyId === key.id}
+                    onClick={() => setDeleteKey(key)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
                   >
-                    {deletingKeyId === key.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
 
@@ -301,6 +296,58 @@ export default function ApiKeysPage() {
             </div>
           </div>
         </div>
+
+        {/* Delete API Key Modal */}
+        {deleteKey && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/50"
+              onClick={() => !deletingKeyId && setDeleteKey(null)}
+            />
+            <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+              <div className="p-6">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-center mb-2">Delete API Key</h2>
+                <p className="text-muted-foreground text-center text-sm mb-2">
+                  Are you sure you want to delete this API key? This action cannot be undone.
+                </p>
+                <p className="text-sm font-medium text-center mb-6 text-foreground">
+                  "{deleteKey.name}"
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setDeleteKey(null)}
+                    disabled={!!deletingKeyId}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={handleDeleteKeyConfirm}
+                    disabled={!!deletingKeyId}
+                  >
+                    {deletingKeyId ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Create API Key Modal */}
         {showCreateModal && (
