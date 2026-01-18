@@ -121,6 +121,7 @@ export function CalendarContent() {
   const dayDropdownRef = useRef<HTMLDivElement>(null);
   const postMenuRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -403,20 +404,35 @@ export function CalendarContent() {
 
     setSavingIdea(true);
     try {
-      const response = await fetch("/api/ideas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newIdeaText.substring(0, 100),
-          content: newIdeaText,
-          source: "manual",
-        }),
-      });
+      // If editing existing idea, update it; otherwise create new
+      if (selectedIdeaForModal) {
+        const response = await fetch(`/api/ideas/${selectedIdeaForModal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newIdeaText.substring(0, 100),
+            content: newIdeaText,
+          }),
+        });
 
-      if (!response.ok) throw new Error("Failed to save idea");
+        if (!response.ok) throw new Error("Failed to update idea");
+      } else {
+        const response = await fetch("/api/ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newIdeaText.substring(0, 100),
+            content: newIdeaText,
+            source: "manual",
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to save idea");
+      }
 
       await fetchIdeas();
       setIdeaModalOpen(false);
+      setSelectedIdeaForModal(null);
       setNewIdeaText("");
     } catch {
       // Silent fail
@@ -765,7 +781,7 @@ export function CalendarContent() {
                 <Plus className="w-4 h-4 mr-2" /> Create a post from this idea
               </Button>
               <Button variant="outline" onClick={handleSaveIdea} disabled={!newIdeaText.trim() || savingIdea} className="w-full">
-                <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : "Save as idea only"}
+                <Lightbulb className="w-4 h-4 mr-2" /> {savingIdea ? "Saving..." : selectedIdeaForModal ? "Update idea" : "Save as idea only"}
               </Button>
               {selectedIdeaForModal && (
                 <Button variant="outline" onClick={handleDeleteIdea} disabled={isDeleting} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
@@ -807,7 +823,7 @@ export function CalendarContent() {
       <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-3xl border-l shadow-xl outline-none">
+          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none">
 
             {/* POST DETAIL VIEW */}
             {drawerView === "post-detail" && selectedPost && (
@@ -1159,24 +1175,19 @@ Tips for viral posts:
                       <CardContent className="space-y-4">
                         <div>
                           <label className="text-sm font-medium mb-2 block">Date</label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'date';
-                              input.min = new Date().toISOString().split('T')[0];
-                              input.value = selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : '';
-                              input.onchange = (e) => {
-                                const date = new Date((e.target as HTMLInputElement).value);
+                          <div className="relative">
+                            <input
+                              ref={dateInputRef}
+                              type="date"
+                              min={new Date().toISOString().split('T')[0]}
+                              value={selectedDay ? `${selectedDay.year}-${String(selectedDay.month + 1).padStart(2, '0')}-${String(selectedDay.day).padStart(2, '0')}` : ''}
+                              onChange={(e) => {
+                                const date = new Date(e.target.value);
                                 setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
-                              };
-                              input.showPicker();
-                            }}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm text-left flex items-center justify-between hover:bg-accent transition-colors"
-                          >
-                            <span>{getFormattedScheduleDate()}</span>
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                          </button>
+                              }}
+                              className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="text-sm font-medium mb-2 block">Time</label>
