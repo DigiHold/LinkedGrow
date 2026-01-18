@@ -321,12 +321,19 @@ src/
 
 ## AI Models Supported (BYOK)
 
--   **OpenAI**: GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo, DALL-E 3
--   **Anthropic**: Claude 4 Opus, Claude 3.5 Sonnet, Claude 3 Haiku
--   **Google**: Gemini 2.0 Flash, Gemini 1.5 Pro
--   **Groq**: Llama 3.3, Mixtral (ultra fast)
--   **Replicate**: Flux, Stable Diffusion 3
--   **Together AI**: DeepSeek, Qwen 2.5
+### Text Generation Models
+
+-   **OpenAI**: GPT-5.2 Pro, GPT-5, o4-mini, o3-pro, o3-mini
+-   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude 4.1, Claude 4
+-   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 3 Deep Think, Gemini 2.5 Pro, Gemini 2.5 Flash
+-   **Groq**: Llama 4 Maverick, Llama 4 Scout, Llama 3.3 70B, Llama 3.1 8B, Llama-3-Groq-70B-Tool-Use (ultra fast)
+-   **Together AI**: Qwen3-Coder-480B, Qwen3-235B-A22B-Thinking, DeepSeek-R1, Llama 4 Behemoth, DeepSeek-V3
+
+### Image Generation Models
+
+-   **OpenAI**: DALL-E 3, GPT-5 (native image generation)
+-   **Google**: Nano Banana Pro (Gemini 3 Pro Image), Nano Banana (Gemini 2.5 Flash Image), Imagen 3
+-   **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX Kontext Pro, FLUX Kontext Max
 
 ### Typical User API Costs
 

@@ -48,6 +48,11 @@ export async function GET() {
       aiApiKey: maskedApiKey,
       hasApiKey: !!user.aiApiKey,
       imageProvider: user.imageProvider,
+      imageModel: user.imageModel,
+      imageResolution: user.imageResolution,
+      imageAspectRatio: user.imageAspectRatio,
+      imageQuality: user.imageQuality,
+      imageStyle: user.imageStyle,
       imageApiKey: maskedImageApiKey,
       hasImageApiKey: !!user.imageApiKey,
       linkedinConnected: !!user.linkedinAccessToken,
@@ -81,6 +86,11 @@ export async function PUT(request: NextRequest) {
       aiApiKey,
       aiModel,
       imageProvider,
+      imageModel,
+      imageResolution,
+      imageAspectRatio,
+      imageQuality,
+      imageStyle,
       imageApiKey,
       samplePosts,
       neverMention,
@@ -111,6 +121,26 @@ export async function PUT(request: NextRequest) {
 
     if (imageProvider !== undefined) {
       updateData.imageProvider = imageProvider;
+    }
+
+    if (imageModel !== undefined) {
+      updateData.imageModel = imageModel || null;
+    }
+
+    if (imageResolution !== undefined) {
+      updateData.imageResolution = imageResolution || null;
+    }
+
+    if (imageAspectRatio !== undefined) {
+      updateData.imageAspectRatio = imageAspectRatio || null;
+    }
+
+    if (imageQuality !== undefined) {
+      updateData.imageQuality = imageQuality || null;
+    }
+
+    if (imageStyle !== undefined) {
+      updateData.imageStyle = imageStyle || null;
     }
 
     if (imageApiKey !== undefined) {

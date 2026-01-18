@@ -76,50 +76,55 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-4.5, GPT-4o, o3",
+    description: "GPT-5.2, GPT-5, o4-mini, o3",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     models: [
-      { id: "gpt-4.5-preview", name: "GPT-4.5 Preview", tag: "Most Capable", price: "$0.15/post", monthly: "~$4.50/mo" },
-      { id: "gpt-4o", name: "GPT-4o", tag: "Recommended", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini", tag: "Faster", price: "$0.002/post", monthly: "~$0.06/mo" },
-      { id: "o3-mini", name: "o3-mini", tag: "Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "gpt-5.2", name: "GPT-5.2 Pro", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
+      { id: "gpt-5", name: "GPT-5", tag: "Recommended", price: "$0.10/post", monthly: "~$3.00/mo" },
+      { id: "o4-mini", name: "o4-mini", tag: "Best Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "o3-pro", name: "o3-pro", tag: "Reasoning", price: "$0.08/post", monthly: "~$2.40/mo" },
+      { id: "o3-mini", name: "o3-mini", tag: "Fast Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
     ],
   },
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude 4.5, Claude 4",
+    description: "Claude Opus 4.5, Sonnet 4.5, Haiku 4.5",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     models: [
       { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
-      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku", tag: "Faster", price: "$0.003/post", monthly: "~$0.09/mo" },
+      { id: "claude-sonnet-4-5-20251101", name: "Claude Sonnet 4.5", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
+      { id: "claude-haiku-4-5-20251101", name: "Claude Haiku 4.5", tag: "Faster", price: "$0.005/post", monthly: "~$0.15/mo" },
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-opus-4-20250514", name: "Claude Opus 4", tag: "Powerful", price: "$0.15/post", monthly: "~$4.50/mo" },
     ],
   },
   {
     id: "google",
     name: "Gemini",
-    description: "Gemini 2.5, Gemini 2.0",
+    description: "Gemini 3 Pro, Flash, Deep Think",
     placeholder: "AIza...",
     icon: GeminiIcon,
     models: [
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Recommended", price: "$0.001/post", monthly: "~$0.03/mo" },
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tag: "Faster", price: "$0.0005/post", monthly: "~$0.02/mo" },
+      { id: "gemini-3-pro", name: "Gemini 3 Pro", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gemini-3-flash", name: "Gemini 3 Flash", tag: "Recommended", price: "$0.001/post", monthly: "~$0.03/mo" },
+      { id: "gemini-3-deep-think", name: "Gemini 3 Deep Think", tag: "Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Balanced", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Faster", price: "$0.0005/post", monthly: "~$0.02/mo" },
     ],
   },
   {
     id: "grok",
     name: "Grok",
-    description: "Grok 3, Grok 2",
+    description: "Grok 3, Grok 3 Mini",
     placeholder: "xai-...",
     icon: GrokIcon,
     models: [
       { id: "grok-3", name: "Grok 3", tag: "Most Capable", price: "$0.10/post", monthly: "~$3.00/mo" },
       { id: "grok-3-mini", name: "Grok 3 Mini", tag: "Recommended", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "grok-2", name: "Grok 2", tag: "Faster", price: "$0.01/post", monthly: "~$0.30/mo" },
+      { id: "grok-3-mini-fast", name: "Grok 3 Mini Fast", tag: "Faster", price: "$0.01/post", monthly: "~$0.30/mo" },
     ],
   },
   {
@@ -136,26 +141,103 @@ const aiProviders = [
   },
 ];
 
+// Resolution options for different providers/models
+const resolutionOptions = {
+  google: [
+    { id: "1K", name: "1K (~1376x768)", price: "$0.13" },
+    { id: "2K", name: "2K (~2752x1536)", price: "$0.13" },
+    { id: "4K", name: "4K (~4096x2304)", price: "$0.24" },
+  ],
+  openai: [
+    { id: "1024x1024", name: "Square (1024x1024)", price: "$0.04" },
+    { id: "1792x1024", name: "Landscape (1792x1024)", price: "$0.08" },
+    { id: "1024x1792", name: "Portrait (1024x1792)", price: "$0.08" },
+  ],
+  replicate: [
+    { id: "1024x1024", name: "Square (1024x1024)", price: "$0.015" },
+    { id: "1536x1024", name: "Landscape (1536x1024)", price: "$0.02" },
+    { id: "1024x1536", name: "Portrait (1024x1536)", price: "$0.02" },
+    { id: "2048x2048", name: "4MP Square (2048x2048)", price: "$0.03" },
+  ],
+};
+
+// Aspect ratio options for different providers
+const aspectRatioOptions = {
+  google: ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "21:9"],
+  replicate: ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "21:9", "9:21"],
+};
+
+// Quality options for OpenAI
+const qualityOptions = {
+  openai: [
+    { id: "high", name: "High Quality", description: "Best quality, slower" },
+    { id: "medium", name: "Medium Quality", description: "Balanced" },
+    { id: "low", name: "Low Quality", description: "Fastest" },
+  ],
+};
+
+// Style options for OpenAI
+const styleOptions = {
+  openai: [
+    { id: "vivid", name: "Vivid", description: "Hyper-real, dramatic" },
+    { id: "natural", name: "Natural", description: "More natural, less hyper-real" },
+  ],
+};
+
 const imageProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Imagen 3 (Image Generation)",
+    description: "Nano Banana Pro, Imagen 3",
     placeholder: "AIza...",
     icon: GeminiIcon,
-    note: "Uses your Google AI API key for Imagen 3 image generation",
-    price: "$0.02/image",
-    monthly: "~$0.60/mo (30 images)",
+    note: "Nano Banana Pro (Gemini 3 Pro Image) - state-of-the-art image generation up to 4K",
+    price: "$0.13/image (4K: $0.24)",
+    monthly: "~$4.00/mo (30 images)",
+    hasResolution: true,
+    hasAspectRatio: true,
+    models: [
+      { id: "gemini-3-pro-image-preview", name: "Nano Banana Pro", tag: "Best Quality" },
+      { id: "gemini-2.5-flash-image", name: "Nano Banana", tag: "Faster" },
+      { id: "imagen-3", name: "Imagen 3", tag: "Standard" },
+    ],
   },
   {
     id: "openai",
     name: "OpenAI",
-    description: "DALL-E 3, GPT-Image",
+    description: "GPT Image 1.5, DALL-E 3",
     placeholder: "sk-...",
     icon: OpenAIIcon,
-    note: "Uses your OpenAI API key for DALL-E/GPT image generation",
-    price: "$0.04/image",
+    note: "GPT Image models with transparency support - DALL-E 3 deprecated May 2026",
+    price: "$0.04-0.08/image",
     monthly: "~$1.20/mo (30 images)",
+    hasResolution: true,
+    hasQuality: true,
+    hasStyle: true,
+    models: [
+      { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Best Quality" },
+      { id: "gpt-image-1", name: "GPT Image 1", tag: "Standard" },
+      { id: "dall-e-3", name: "DALL-E 3", tag: "Legacy (until May 2026)" },
+    ],
+  },
+  {
+    id: "replicate",
+    name: "Replicate",
+    description: "FLUX.2 Pro, FLUX.2 Flex",
+    placeholder: "r8_...",
+    icon: OpenAIIcon,
+    note: "FLUX.2 - best open-source model, up to 4MP, multi-image references",
+    price: "$0.015-0.03/image",
+    monthly: "~$0.45/mo (30 images)",
+    hasResolution: true,
+    hasAspectRatio: true,
+    hasGuidanceScale: true,
+    models: [
+      { id: "flux-2-pro", name: "FLUX.2 Pro", tag: "Best Quality" },
+      { id: "flux-2-flex", name: "FLUX.2 Flex", tag: "High Quality + Control" },
+      { id: "flux-2-dev", name: "FLUX.2 Dev", tag: "Faster" },
+      { id: "flux-kontext-pro", name: "FLUX Kontext Pro", tag: "Text/Edit" },
+    ],
   },
 ];
 
@@ -175,6 +257,11 @@ export default function AIAPISettingsPage() {
 
   // Image AI API state
   const [selectedImageProvider, setSelectedImageProvider] = useState("google");
+  const [selectedImageModel, setSelectedImageModel] = useState("gemini-3-pro-image-preview");
+  const [selectedImageResolution, setSelectedImageResolution] = useState("1K");
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState("16:9");
+  const [selectedQuality, setSelectedQuality] = useState("high");
+  const [selectedStyle, setSelectedStyle] = useState("vivid");
   const [imageApiKey, setImageApiKey] = useState("");
   const [showImageApiKey, setShowImageApiKey] = useState(false);
   const [hasImageApiKey, setHasImageApiKey] = useState(false);
@@ -209,6 +296,21 @@ export default function AIAPISettingsPage() {
           if (data.imageProvider) {
             setSelectedImageProvider(data.imageProvider);
           }
+          if (data.imageModel) {
+            setSelectedImageModel(data.imageModel);
+          }
+          if (data.imageResolution) {
+            setSelectedImageResolution(data.imageResolution);
+          }
+          if (data.imageAspectRatio) {
+            setSelectedAspectRatio(data.imageAspectRatio);
+          }
+          if (data.imageQuality) {
+            setSelectedQuality(data.imageQuality);
+          }
+          if (data.imageStyle) {
+            setSelectedStyle(data.imageStyle);
+          }
           // Load voice settings
           if (data.samplePosts && data.samplePosts.length > 0) {
             setSamplePosts(data.samplePosts);
@@ -231,6 +333,14 @@ export default function AIAPISettingsPage() {
       setSelectedModel(provider.models[0].id);
     }
   }, [selectedProvider]);
+
+  // Update image model when image provider changes
+  useEffect(() => {
+    const provider = imageProviders.find(p => p.id === selectedImageProvider);
+    if (provider && provider.models && provider.models.length > 0) {
+      setSelectedImageModel(provider.models[0].id);
+    }
+  }, [selectedImageProvider]);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) return;
@@ -286,13 +396,30 @@ export default function AIAPISettingsPage() {
     setIsSavingImageApiKey(true);
     setImageApiMessage(null);
     try {
+      // Build image settings object based on provider
+      const imageSettings: Record<string, string> = {
+        imageProvider: selectedImageProvider,
+        imageModel: selectedImageModel,
+        imageResolution: selectedImageResolution,
+        imageApiKey: imageApiKey,
+      };
+
+      // Add provider-specific settings
+      const provider = imageProviders.find(p => p.id === selectedImageProvider);
+      if (provider?.hasAspectRatio) {
+        imageSettings.imageAspectRatio = selectedAspectRatio;
+      }
+      if (provider?.hasQuality) {
+        imageSettings.imageQuality = selectedQuality;
+      }
+      if (provider?.hasStyle) {
+        imageSettings.imageStyle = selectedStyle;
+      }
+
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageProvider: selectedImageProvider,
-          imageApiKey: imageApiKey,
-        }),
+        body: JSON.stringify(imageSettings),
       });
       if (response.ok) {
         setHasImageApiKey(true);
@@ -735,6 +862,113 @@ export default function AIAPISettingsPage() {
                       <p className="text-xs text-muted-foreground mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
                         {provider.note}
                       </p>
+                    )}
+
+                    {/* Model Selector */}
+                    {provider.models && provider.models.length > 0 && (
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Model</Label>
+                        <Select value={selectedImageModel} onValueChange={setSelectedImageModel} disabled={!hasImageAccess}>
+                          <SelectTrigger className="bg-white dark:bg-slate-800">
+                            <SelectValue placeholder="Select a model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {provider.models.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                <div className="flex items-center justify-between w-full gap-3">
+                                  <span>{model.name}</span>
+                                  <span className="text-xs text-muted-foreground">{model.tag}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Resolution/Size Selector */}
+                    {provider.hasResolution && resolutionOptions[provider.id as keyof typeof resolutionOptions] && (
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Resolution / Size</Label>
+                        <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
+                          <SelectTrigger className="bg-white dark:bg-slate-800">
+                            <SelectValue placeholder="Select resolution" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {resolutionOptions[provider.id as keyof typeof resolutionOptions].map((res) => (
+                              <SelectItem key={res.id} value={res.id}>
+                                <div className="flex items-center justify-between w-full gap-3">
+                                  <span>{res.name}</span>
+                                  <span className="text-xs text-muted-foreground">{res.price}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Aspect Ratio Selector (Google & Replicate) */}
+                    {provider.hasAspectRatio && aspectRatioOptions[provider.id as keyof typeof aspectRatioOptions] && (
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Aspect Ratio</Label>
+                        <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio} disabled={!hasImageAccess}>
+                          <SelectTrigger className="bg-white dark:bg-slate-800">
+                            <SelectValue placeholder="Select aspect ratio" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {aspectRatioOptions[provider.id as keyof typeof aspectRatioOptions].map((ratio) => (
+                              <SelectItem key={ratio} value={ratio}>
+                                {ratio}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Quality Selector (OpenAI) */}
+                    {provider.hasQuality && qualityOptions[provider.id as keyof typeof qualityOptions] && (
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Quality</Label>
+                        <Select value={selectedQuality} onValueChange={setSelectedQuality} disabled={!hasImageAccess}>
+                          <SelectTrigger className="bg-white dark:bg-slate-800">
+                            <SelectValue placeholder="Select quality" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {qualityOptions[provider.id as keyof typeof qualityOptions].map((q) => (
+                              <SelectItem key={q.id} value={q.id}>
+                                <div className="flex items-center justify-between w-full gap-3">
+                                  <span>{q.name}</span>
+                                  <span className="text-xs text-muted-foreground">{q.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Style Selector (OpenAI) */}
+                    {provider.hasStyle && styleOptions[provider.id as keyof typeof styleOptions] && (
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Style</Label>
+                        <Select value={selectedStyle} onValueChange={setSelectedStyle} disabled={!hasImageAccess}>
+                          <SelectTrigger className="bg-white dark:bg-slate-800">
+                            <SelectValue placeholder="Select style" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {styleOptions[provider.id as keyof typeof styleOptions].map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                <div className="flex items-center justify-between w-full gap-3">
+                                  <span>{s.name}</span>
+                                  <span className="text-xs text-muted-foreground">{s.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
 
                     {/* Pricing info */}

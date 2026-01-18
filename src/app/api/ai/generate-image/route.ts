@@ -162,17 +162,36 @@ export async function POST(request: NextRequest) {
 
     let base64Image: string;
 
+    // Get user's image settings with defaults
+    const imageSettings = {
+      model: user.imageModel || "gemini-3-pro-image-preview",
+      resolution: user.imageResolution || "1K",
+      aspectRatio: user.imageAspectRatio || "16:9",
+      quality: user.imageQuality || "high",
+      style: user.imageStyle || "vivid",
+    };
+
     // Generate image based on provider
     switch (user.imageProvider) {
+      case "google":
+        base64Image = await generateWithGoogle(apiKey, prompt, imageSettings);
+        break;
+      case "openai":
+        base64Image = await generateWithOpenAI(apiKey, prompt, imageSettings);
+        break;
+      case "replicate":
+        base64Image = await generateWithReplicate(apiKey, prompt, imageSettings);
+        break;
+      // Legacy provider names for backward compatibility
       case "gemini-image":
-        base64Image = await generateWithGemini3ProImage(apiKey, prompt);
+        base64Image = await generateWithGoogle(apiKey, prompt, imageSettings);
         break;
       case "openai-dalle":
-        base64Image = await generateWithOpenAI(apiKey, prompt);
+        base64Image = await generateWithOpenAI(apiKey, prompt, imageSettings);
         break;
       default:
         return NextResponse.json(
-          { error: `Image generation not supported for provider: ${user.imageProvider}. Please use Gemini 3 Pro Image or DALL-E 3.` },
+          { error: `Image generation not supported for provider: ${user.imageProvider}. Please select a provider in Settings.` },
           { status: 400 }
         );
     }
@@ -204,31 +223,39 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Image settings type
+interface ImageSettings {
+  model: string;
+  resolution: string;
+  aspectRatio: string;
+  quality: string;
+  style: string;
+}
+
 /**
- * Generate image with Gemini 3 Pro Image (gemini-3-pro-image-preview)
- * Uses the new @google/genai SDK - same as Blog agent
- * Cost: ~$0.13 per image, billed to user's Google account
+ * Generate image with Google AI (Nano Banana Pro, Nano Banana, Imagen 3)
+ * Uses the @google/genai SDK
+ * Cost: $0.13 per 1K/2K image, $0.24 per 4K image
  */
-async function generateWithGemini3ProImage(apiKey: string, prompt: string): Promise<string> {
-  // Initialize Google GenAI client with user's API key
+async function generateWithGoogle(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-image-preview",
+      model: settings.model || "gemini-3-pro-image-preview",
       contents: prompt,
       config: {
         responseModalities: ["image", "text"],
         imageConfig: {
-          aspectRatio: "16:9",
-          imageSize: "1K", // ~1376x768px
+          aspectRatio: settings.aspectRatio || "16:9",
+          imageSize: settings.resolution || "1K", // "1K", "2K", "4K"
         },
       },
     });
 
     // Extract base64 image from response with error handling
     if (!response.candidates || !response.candidates[0]) {
-      console.error("Gemini API Response:", JSON.stringify(response, null, 2));
+      console.error("Google AI Response:", JSON.stringify(response, null, 2));
       throw new Error("No candidates in response - image may have been blocked by safety filters");
     }
 
@@ -241,7 +268,7 @@ async function generateWithGemini3ProImage(apiKey: string, prompt: string): Prom
     }
 
     if (!candidate.content || !candidate.content.parts) {
-      console.error("Gemini Candidate:", JSON.stringify(candidate, null, 2));
+      console.error("Google AI Candidate:", JSON.stringify(candidate, null, 2));
       throw new Error(`No content parts in response. Finish reason: ${candidate.finishReason || "unknown"}`);
     }
 
@@ -252,41 +279,62 @@ async function generateWithGemini3ProImage(apiKey: string, prompt: string): Prom
       }
     }
 
-    throw new Error("No image data found in Gemini response");
+    throw new Error("No image data found in Google AI response");
   } catch (error) {
     if (error instanceof Error) {
-      // Add more context to common errors
       if (error.message.includes("API key")) {
         throw new Error("Invalid Google API key. Please check your API key in Settings.");
       }
       if (error.message.includes("quota") || error.message.includes("rate")) {
         throw new Error("API quota exceeded. Please check your Google Cloud billing.");
       }
-      throw new Error(`Gemini 3 Pro Image failed: ${error.message}`);
+      throw new Error(`Google AI image generation failed: ${error.message}`);
     }
-    throw new Error("Gemini 3 Pro Image generation failed");
+    throw new Error("Google AI image generation failed");
   }
 }
 
 /**
- * Generate image with OpenAI DALL-E 3 (returns raw base64)
- * Cost: ~$0.04-0.08 per image depending on resolution
+ * Generate image with OpenAI (GPT Image 1.5, DALL-E 3)
+ * Cost: $0.04-0.08 per image depending on resolution and quality
  */
-async function generateWithOpenAI(apiKey: string, prompt: string): Promise<string> {
+async function generateWithOpenAI(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
+  // Map resolution to OpenAI size format
+  const sizeMap: Record<string, string> = {
+    "1024x1024": "1024x1024",
+    "1792x1024": "1792x1024",
+    "1024x1792": "1024x1792",
+  };
+  const size = sizeMap[settings.resolution] || "1792x1024";
+
+  // Use GPT Image models or DALL-E 3
+  const isGptImage = settings.model.startsWith("gpt-image");
+  const model = settings.model || "gpt-image-1.5";
+
+  const requestBody: Record<string, unknown> = {
+    model: model,
+    prompt: prompt,
+    n: 1,
+    size: size,
+    response_format: "b64_json",
+  };
+
+  // Add quality and style for supported models
+  if (isGptImage) {
+    requestBody.quality = settings.quality || "high";
+  } else {
+    // DALL-E 3 uses "standard" or "hd"
+    requestBody.quality = settings.quality === "high" ? "hd" : "standard";
+    requestBody.style = settings.style || "vivid";
+  }
+
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1792x1024", // 16:9 aspect ratio
-      quality: "standard",
-      response_format: "b64_json",
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -296,4 +344,80 @@ async function generateWithOpenAI(apiKey: string, prompt: string): Promise<strin
 
   const data = await response.json();
   return data.data[0].b64_json;
+}
+
+/**
+ * Generate image with Replicate (FLUX.2 models)
+ * Cost: $0.015-0.03 per image depending on resolution
+ */
+async function generateWithReplicate(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
+  // Map model names to Replicate model versions
+  const modelMap: Record<string, string> = {
+    "flux-2-pro": "black-forest-labs/flux-2-pro",
+    "flux-2-flex": "black-forest-labs/flux-2-flex",
+    "flux-2-dev": "black-forest-labs/flux-2-dev",
+    "flux-kontext-pro": "black-forest-labs/flux-kontext-pro",
+  };
+
+  const modelName = modelMap[settings.model] || "black-forest-labs/flux-2-pro";
+
+  // Parse resolution to width/height
+  const resolutionMap: Record<string, { width: number; height: number }> = {
+    "1024x1024": { width: 1024, height: 1024 },
+    "1536x1024": { width: 1536, height: 1024 },
+    "1024x1536": { width: 1024, height: 1536 },
+    "2048x2048": { width: 2048, height: 2048 },
+  };
+  const dimensions = resolutionMap[settings.resolution] || { width: 1536, height: 1024 };
+
+  // Create prediction
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: modelName,
+      input: {
+        prompt: prompt,
+        width: dimensions.width,
+        height: dimensions.height,
+        num_inference_steps: 30,
+        guidance_scale: 7.5,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Replicate API error");
+  }
+
+  const prediction = await response.json();
+
+  // Poll for completion
+  let result = prediction;
+  while (result.status === "starting" || result.status === "processing") {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+      headers: { "Authorization": `Bearer ${apiKey}` },
+    });
+    result = await pollResponse.json();
+  }
+
+  if (result.status === "failed") {
+    throw new Error(result.error || "FLUX.2 generation failed");
+  }
+
+  // Get the output URL and fetch the image
+  const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+  if (!imageUrl) {
+    throw new Error("No image URL in Replicate response");
+  }
+
+  // Fetch and convert to base64
+  const imageResponse = await fetch(imageUrl);
+  const imageBuffer = await imageResponse.arrayBuffer();
+  return Buffer.from(imageBuffer).toString("base64");
 }

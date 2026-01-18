@@ -53,7 +53,12 @@ export const users = sqliteTable("users", {
   writingTone: text("writing_tone"), // e.g., "professional", "casual", "witty"
 
   // Image generation API keys (encrypted, BYOK)
-  imageProvider: text("image_provider"), // "gemini-image", "openai-dalle"
+  imageProvider: text("image_provider"), // "google", "openai", "replicate"
+  imageModel: text("image_model"), // "gemini-3-pro-image-preview", "dall-e-3", "flux-2-pro", etc.
+  imageResolution: text("image_resolution"), // "1K", "2K", "4K" or "1024x1024", etc.
+  imageAspectRatio: text("image_aspect_ratio"), // "16:9", "1:1", "9:16", etc.
+  imageQuality: text("image_quality"), // "high", "medium", "low" (OpenAI)
+  imageStyle: text("image_style"), // "vivid", "natural" (OpenAI)
   imageApiKey: text("image_api_key"), // User's own API key, encrypted
 
   // Timestamps

@@ -122,6 +122,8 @@ export function CalendarContent() {
   const postMenuRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const clickedDayRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -282,6 +284,25 @@ export function CalendarContent() {
 
   const handleDayClick = (item: typeof days[0], e: React.MouseEvent) => {
     if (item.isCurrentMonth && !isPast(item.day, item.month, item.year)) {
+      const target = e.currentTarget as HTMLDivElement;
+      const rect = target.getBoundingClientRect();
+
+      // Position dropdown to the right of the clicked day cell
+      // If there's not enough space on the right, position it to the left
+      const dropdownWidth = 180;
+      let left = rect.right + 8;
+      if (left + dropdownWidth > window.innerWidth - 16) {
+        left = rect.left - dropdownWidth - 8;
+      }
+
+      // Position vertically centered with the cell, but keep within viewport
+      let top = rect.top;
+      const dropdownHeight = 140;
+      if (top + dropdownHeight > window.innerHeight - 16) {
+        top = window.innerHeight - dropdownHeight - 16;
+      }
+
+      setDropdownPosition({ top, left });
       setSelectedDay({ day: item.day, month: item.month, year: item.year });
       setDropdownOpen(true);
     }
@@ -710,24 +731,13 @@ export function CalendarContent() {
       </div>
 
       {/* Day Actions Dropdown */}
-      {dropdownOpen && selectedDay && (
+      {dropdownOpen && selectedDay && dropdownPosition && (
         <div
           ref={dayDropdownRef}
           className="fixed z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 min-w-44"
           style={{
-            top: (() => {
-              const dayIndex = days.findIndex(d => d.day === selectedDay.day && d.month === selectedDay.month && d.year === selectedDay.year);
-              const row = Math.floor(dayIndex / 7);
-              const calendarTop = 280;
-              return calendarTop + (row * 128) + 20;
-            })(),
-            left: (() => {
-              const dayIndex = days.findIndex(d => d.day === selectedDay.day && d.month === selectedDay.month && d.year === selectedDay.year);
-              const col = dayIndex % 7;
-              const cellWidth = window.innerWidth > 640 ? (Math.min(1152, window.innerWidth - 48) / 7) : (window.innerWidth / 7);
-              const calendarLeft = (window.innerWidth - Math.min(1152, window.innerWidth - 48)) / 2;
-              return calendarLeft + (col * cellWidth) + cellWidth + 4;
-            })(),
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
           }}
         >
           <button
