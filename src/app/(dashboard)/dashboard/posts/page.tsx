@@ -63,6 +63,12 @@ export default function PostsPage() {
   const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [deletePost, setDeletePost] = useState<Post | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [schedulePost, setSchedulePost] = useState<Post | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Fetch posts from API
   useEffect(() => {
@@ -133,6 +139,61 @@ export default function PostsPage() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleScheduleConfirm = async () => {
+    if (!schedulePost || !scheduleDate || !scheduleTime) return;
+    setIsScheduling(true);
+
+    try {
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      const response = await fetch(`/api/posts/${schedulePost.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "scheduled", scheduledAt }),
+      });
+      if (response.ok) {
+        setPosts(posts.map((p) =>
+          p.id === schedulePost.id ? { ...p, status: "scheduled" as const, scheduledAt } : p
+        ));
+        setSchedulePost(null);
+        setScheduleDate("");
+        setScheduleTime("");
+      }
+    } catch (err) {
+      console.error("Failed to schedule post:", err);
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    setIsBulkDeleting(true);
+
+    try {
+      await Promise.all(
+        selectedPosts.map((postId) =>
+          fetch(`/api/posts/${postId}`, { method: "DELETE" })
+        )
+      );
+      setPosts(posts.filter((p) => !selectedPosts.includes(p.id)));
+      setSelectedPosts([]);
+      setBulkDeleteModal(false);
+    } catch (err) {
+      console.error("Failed to delete posts:", err);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleOpenScheduleModal = (post: Post) => {
+    // Set default date/time to tomorrow at 9 AM
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    setScheduleDate(tomorrow.toISOString().split("T")[0]);
+    setScheduleTime("09:00");
+    setSchedulePost(post);
   };
 
   const formatDate = (dateString: string) => {
@@ -381,7 +442,12 @@ export default function PostsPage() {
                     </Button>
                   </Link>
                   {post.status === "draft" && (
-                    <Button variant="ghost" size="icon-sm" title="Schedule">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Schedule"
+                      onClick={() => handleOpenScheduleModal(post)}
+                    >
                       <Calendar className="w-4 h-4" />
                     </Button>
                   )}
@@ -422,12 +488,18 @@ export default function PostsPage() {
             {selectedPosts.length} post{selectedPosts.length > 1 ? "s" : ""} selected
           </span>
           <div className="w-px h-4 bg-gray-700" />
-          <button className="text-sm hover:text-cyan-400 transition-colors">
+          <button
+            onClick={() => setBulkDeleteModal(true)}
+            className="text-sm hover:text-red-400 transition-colors"
+          >
             Delete
           </button>
-          <button className="text-sm hover:text-cyan-400 transition-colors">
-            Schedule
-          </button>
+          <Link
+            href="/dashboard/calendar"
+            className="text-sm hover:text-cyan-400 transition-colors"
+          >
+            View Calendar
+          </Link>
           <button
             onClick={() => setSelectedPosts([])}
             className="text-sm text-gray-400 hover:text-white transition-colors"
@@ -477,6 +549,124 @@ export default function PostsPage() {
                     <>
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Post Modal */}
+      {schedulePost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !isScheduling && setSchedulePost(null)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+            <div className="p-6">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-center mb-2">Schedule Post</h2>
+              <p className="text-muted-foreground text-center text-sm mb-6">
+                Choose when you want this post to be published.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setSchedulePost(null)}
+                  disabled={isScheduling}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                  onClick={handleScheduleConfirm}
+                  disabled={isScheduling || !scheduleDate || !scheduleTime}
+                >
+                  {isScheduling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Schedule
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Modal */}
+      {bulkDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !isBulkDeleting && setBulkDeleteModal(false)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+            <div className="p-6">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-center mb-2">Delete {selectedPosts.length} Post{selectedPosts.length > 1 ? "s" : ""}</h2>
+              <p className="text-muted-foreground text-center text-sm mb-6">
+                Are you sure you want to delete {selectedPosts.length} selected post{selectedPosts.length > 1 ? "s" : ""}? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setBulkDeleteModal(false)}
+                  disabled={isBulkDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleBulkDeleteConfirm}
+                  disabled={isBulkDeleting}
+                >
+                  {isBulkDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete All
                     </>
                   )}
                 </Button>
