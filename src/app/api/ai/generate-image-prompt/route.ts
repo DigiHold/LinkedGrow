@@ -136,7 +136,7 @@ async function generateWithOpenAI(apiKey: string, postContent: string): Promise<
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
@@ -164,7 +164,7 @@ async function generateWithAnthropic(apiKey: string, postContent: string): Promi
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-3-5-haiku-latest",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1500,
       system: SYSTEM_PROMPT,
       messages: [

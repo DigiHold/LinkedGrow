@@ -279,6 +279,7 @@ export default function AIAPISettingsPage() {
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [isDeletingApiKey, setIsDeletingApiKey] = useState(false);
   const [isSettingActive, setIsSettingActive] = useState(false);
+  const [isSavingModel, setIsSavingModel] = useState(false);
 
   // Image AI API state
   const [activeImageProvider, setActiveImageProvider] = useState("google"); // The provider used for generation
@@ -295,6 +296,7 @@ export default function AIAPISettingsPage() {
   const [isSavingImageApiKey, setIsSavingImageApiKey] = useState(false);
   const [isDeletingImageApiKey, setIsDeletingImageApiKey] = useState(false);
   const [isSettingActiveImage, setIsSettingActiveImage] = useState(false);
+  const [isSavingImageSettings, setIsSavingImageSettings] = useState(false);
 
   // Voice & Style Settings
   const [samplePosts, setSamplePosts] = useState<string[]>([""]);
@@ -547,6 +549,90 @@ export default function AIAPISettingsPage() {
     }
   };
 
+  // Save model only (when API key already exists)
+  const handleSaveModelOnly = async () => {
+    setIsSavingModel(true);
+    setTextApiMessage(null);
+    try {
+      const modelFieldName = `${viewingProvider}Model`;
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          [modelFieldName]: selectedModel,
+        }),
+      });
+      if (response.ok) {
+        setTextProviderSettings(prev => ({
+          ...prev,
+          [viewingProvider]: { ...prev[viewingProvider], model: selectedModel }
+        }));
+        setTextApiMessage({ type: "success", text: `Model updated to ${selectedModel}!` });
+      } else {
+        setTextApiMessage({ type: "error", text: "Failed to save model" });
+      }
+    } catch (error) {
+      console.error("Failed to save model:", error);
+      setTextApiMessage({ type: "error", text: "Failed to save model" });
+    } finally {
+      setIsSavingModel(false);
+    }
+  };
+
+  // Save image settings only (when API key already exists)
+  const handleSaveImageSettingsOnly = async () => {
+    setIsSavingImageSettings(true);
+    setImageApiMessage(null);
+    try {
+      const provider = imageProviders.find(p => p.id === viewingImageProvider);
+      const providerPrefix = viewingImageProvider;
+
+      const imageSettings: Record<string, string> = {
+        [`${providerPrefix}ImageModel`]: selectedImageModel,
+      };
+
+      if (provider?.hasResolution) {
+        imageSettings[`${providerPrefix}ImageResolution`] = selectedImageResolution;
+      }
+      if (provider?.hasAspectRatio) {
+        imageSettings[`${providerPrefix}ImageAspectRatio`] = selectedAspectRatio;
+      }
+      if (provider?.hasQuality) {
+        imageSettings[`${providerPrefix}ImageQuality`] = selectedQuality;
+      }
+      if (provider?.hasStyle) {
+        imageSettings[`${providerPrefix}ImageStyle`] = selectedStyle;
+      }
+
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(imageSettings),
+      });
+      if (response.ok) {
+        setImageProviderSettings(prev => ({
+          ...prev,
+          [viewingImageProvider]: {
+            ...prev[viewingImageProvider],
+            model: selectedImageModel,
+            resolution: selectedImageResolution,
+            aspectRatio: selectedAspectRatio,
+            quality: selectedQuality,
+            style: selectedStyle,
+          }
+        }));
+        setImageApiMessage({ type: "success", text: "Image settings saved!" });
+      } else {
+        setImageApiMessage({ type: "error", text: "Failed to save image settings" });
+      }
+    } catch (error) {
+      console.error("Failed to save image settings:", error);
+      setImageApiMessage({ type: "error", text: "Failed to save image settings" });
+    } finally {
+      setIsSavingImageSettings(false);
+    }
+  };
+
   const handleSaveImageApiKey = async () => {
     if (!imageApiKey.trim()) return;
     setIsSavingImageApiKey(true);
@@ -696,6 +782,20 @@ export default function AIAPISettingsPage() {
   // Get viewing provider details
   const viewingProviderDetails = aiProviders.find(p => p.id === viewingProvider);
   const viewingImageProviderDetails = imageProviders.find(p => p.id === viewingImageProvider);
+
+  // Check if model has changed from saved value (for showing Save button)
+  const savedTextModel = textProviderSettings[viewingProvider]?.model;
+  const textModelHasChanged = viewingProviderHasKey && selectedModel !== savedTextModel;
+
+  // Check if image settings have changed from saved values
+  const savedImageSettings = imageProviderSettings[viewingImageProvider];
+  const imageSettingsHaveChanged = viewingImageProviderHasKey && (
+    selectedImageModel !== savedImageSettings?.model ||
+    selectedImageResolution !== savedImageSettings?.resolution ||
+    selectedAspectRatio !== savedImageSettings?.aspectRatio ||
+    selectedQuality !== savedImageSettings?.quality ||
+    selectedStyle !== savedImageSettings?.style
+  );
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
@@ -875,6 +975,18 @@ export default function AIAPISettingsPage() {
                         {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
+                    {/* Save Model button - show when model changed */}
+                    {textModelHasChanged && (
+                      <Button
+                        type="button"
+                        onClick={handleSaveModelOnly}
+                        disabled={isSavingModel}
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                      >
+                        {isSavingModel ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Save Model
+                      </Button>
+                    )}
                     {/* Set as Active button - only show if this provider is not already active */}
                     {viewingProvider !== activeProvider && (
                       <Button
@@ -1300,6 +1412,18 @@ export default function AIAPISettingsPage() {
                         {isDeletingImageApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
+                    {/* Save Settings button - show when settings changed */}
+                    {imageSettingsHaveChanged && (
+                      <Button
+                        type="button"
+                        onClick={handleSaveImageSettingsOnly}
+                        disabled={isSavingImageSettings || !hasImageAccess}
+                        className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                      >
+                        {isSavingImageSettings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Save Settings
+                      </Button>
+                    )}
                     {/* Set as Active button - only show if this provider is not already active */}
                     {viewingImageProvider !== activeImageProvider && (
                       <Button
