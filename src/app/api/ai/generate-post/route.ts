@@ -43,82 +43,114 @@ async function generatePost(
   targetAudience?: string,
   writingTone?: string
 ): Promise<string> {
+  // Build voice instructions from sample posts
   let voiceInstructions = "";
   if (samplePosts && samplePosts.length > 0) {
-    voiceInstructions = `\n\nIMPORTANT - Match the writing style from these sample posts:\n${samplePosts.map((p, i) => `Sample ${i + 1}: ${p.substring(0, 500)}`).join("\n\n")}`;
+    voiceInstructions = `
+
+=== SAMPLE POSTS TO MATCH ===
+Match the structure, pacing, formatting, and voice of these posts. The ideas and wording must be NEW - do NOT copy phrases.
+${samplePosts.map((p, i) => `
+--- Sample ${i + 1} ---
+${p.substring(0, 800)}`).join("\n")}
+=== END SAMPLES ===`;
   }
 
-  let contextInstructions = "";
-  if (businessDescription) {
-    contextInstructions += `\n\nAbout the author: ${businessDescription}`;
-  }
-  if (targetAudience) {
-    contextInstructions += `\nTarget audience: ${targetAudience}`;
-  }
-  if (writingTone) {
-    contextInstructions += `\nWriting tone: ${writingTone}`;
+  // Build business context
+  let businessContext = "";
+  if (businessDescription || targetAudience || writingTone) {
+    businessContext = `
+
+=== AUTHOR PROFILE ===`;
+    if (businessDescription) {
+      businessContext += `
+What I do: ${businessDescription}`;
+    }
+    if (targetAudience) {
+      businessContext += `
+Target audience: ${targetAudience}`;
+    }
+    if (writingTone) {
+      businessContext += `
+Writing tone: ${writingTone}`;
+    }
+    businessContext += `
+=== END PROFILE ===`;
   }
 
+  // Build avoid instructions
   let avoidInstructions = "";
   if (neverMention) {
-    avoidInstructions = `\n\nNEVER mention or reference: ${neverMention}`;
+    avoidInstructions = `
+
+NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
+  // Build post type instructions
   let typeInstructions = "";
   if (postType) {
     const typeDescriptions: Record<string, string> = {
-      actionable: "Focus on practical tips, how-tos, and actionable advice readers can implement immediately",
-      inspiring: "Create an inspiring, motivational post with storytelling elements",
-      introspective: "Write a reflective, personal post sharing lessons learned and insights",
-      promotional: "Showcase work, achievements, or expertise in a humble, value-first way",
+      actionable: "Focus on practical tips, how-tos, and actionable advice readers can implement immediately. Include a clear framework or steps.",
+      inspiring: "Create an inspiring, motivational post with storytelling elements. Share a personal lesson or transformation.",
+      introspective: "Write a reflective, personal post sharing lessons learned and insights. Be vulnerable and authentic.",
+      promotional: "Showcase work, achievements, or expertise in a humble, value-first way. Lead with value, not the pitch.",
     };
     typeInstructions = typeDescriptions[postType] ? `\nPost style: ${typeDescriptions[postType]}` : "";
   }
 
+  // Build category instructions
   let categoryInstructions = "";
   if (postCategory && postCategory !== "auto") {
     const categoryDescriptions: Record<string, string> = {
-      explanation: "Explain a concept or process clearly",
-      "best-practices": "Share best practices and proven methods",
-      advice: "Give striking, memorable advice",
-      list: "Use a list format with numbered points or bullets",
+      explanation: "Explain a concept or process clearly with a simple framework",
+      "best-practices": "Share best practices and proven methods in a listicle format",
+      advice: "Give striking, memorable advice with one clear takeaway",
+      list: "Use a list format with numbered points or bullet points",
       resources: "Share valuable resources, tools, or recommendations",
     };
     categoryInstructions = categoryDescriptions[postCategory] ? `\nFormat: ${categoryDescriptions[postCategory]}` : "";
   }
 
-  const prompt = `You are an expert LinkedIn content creator specializing in viral posts. Generate a compelling LinkedIn post based on the following idea.
+  const prompt = `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
 
-Idea: "${idea}"${typeInstructions}${categoryInstructions}${contextInstructions}
+Goal: Create a compelling LinkedIn post on this topic.
 
-CRITICAL HOOK STRUCTURE (First 2 lines visible before "See more"):
-- Line 1: A POWERFUL one-liner hook (under 100 characters) that stops scrolling. Use pattern interrupts, bold statements, or curiosity gaps.
-- Line 2: A compelling second hook that creates urgency to click "See more". This should tease the value inside.
+Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext}
 
-Examples of strong dual hooks:
-- "I turned down a $500k offer." / "Here's the counterintuitive reason why."
-- "Stop networking. Seriously." / "This 3-step system works 10x better."
-- "Most productivity advice is garbage." / "Here's what actually works (after 10 years of testing)."
+=== CRITICAL RULES ===
 
-WRITING STYLE REQUIREMENTS:
-1. NEVER use em dashes (-). Use regular dashes with spaces ( - ) or commas instead.
-2. NEVER use en dashes. Always use regular hyphens or " - " with spaces.
-3. Keep sentences punchy and direct.
-4. Use short paragraphs (1-3 sentences max).
-5. Add strategic line breaks for readability.
-6. Use bullet points or numbered lists for key points.
+1. HOOK (First 2 lines - visible before "See more"):
+   - Line 1: A POWERFUL one-liner hook (under 100 characters) that stops scrolling
+   - Line 2: A compelling second hook that creates urgency to click "See more"
+   - Examples:
+     * "I mass applied for hundreds of jobs." / "Here's the strategy that actually got me hired."
+     * "Stop networking. Seriously." / "This 3-step system works 10x better."
+     * "Most productivity advice is garbage." / "Here's what actually works (after 10 years of testing)."
 
-POST STRUCTURE:
-1. Create a post between 800-1500 characters
-2. Strong dual-line hook (see above)
-3. Valuable content in the body
-4. End with a clear call-to-action (ask a specific question or encourage engagement)
-5. Professional but conversational tone
-6. NO hashtags
-7. Maximum 1-2 emojis if any
-8. Focus on providing genuine, actionable value${voiceInstructions}${avoidInstructions}
+2. FORMATTING (LinkedIn-native):
+   - NEVER use markdown formatting like **bold** or *italic* - LinkedIn doesn't support it
+   - USE Unicode bold characters for section headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
+   - USE emojis strategically: ✅ for list items, ✨ for highlights, 📌 for save CTA, ♻️ for repost CTA, 🔔 for follow CTA
+   - USE → arrows for bullet points when listing steps or features
+   - Keep lines SHORT (5-10 words max per line)
+   - Add whitespace between sections for skimmability
+   - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
 
-Return ONLY the post text, nothing else. Do not wrap in quotes.`;
+3. STRUCTURE:
+   - Start with strong 2-line hook
+   - Keep it skimmable with short lines and whitespace
+   - Include 1 clear takeaway + 1 framework (steps)
+   - End with a CTA like "📌 Save this for later" or "♻️ Repost if this helped"
+   - 800-1500 characters total
+   - NO hashtags
+
+4. CONTENT:
+   - No fluff, no generic advice
+   - Be specific and actionable
+   - Professional but conversational tone
+   - Focus on genuine value${voiceInstructions}${avoidInstructions}
+
+Return ONLY the post text. No quotes, no explanations.`;
 
   let response;
   let post = "";
@@ -406,28 +438,39 @@ async function editPost(
   provider: string,
   model: string
 ): Promise<string> {
-  const prompt = `You are an expert LinkedIn content editor. Edit the following LinkedIn post according to the user's instruction.
+  const prompt = `You are an expert LinkedIn content editor. Edit this post according to the instruction.
 
-Current post:
+=== CURRENT POST ===
 ${content}
+=== END POST ===
 
-User instruction: "${instruction}"
+Instruction: "${instruction}"
 
-CRITICAL RULES:
-1. Apply the user's requested changes while maintaining the post's core message
-2. Keep the post professional and suitable for LinkedIn
-3. Maintain good formatting with line breaks for readability
-4. NEVER use em dashes (—) or en dashes (–). Use regular dashes with spaces ( - ) or commas instead.
-5. Do NOT use hashtags
-6. Limit emoji usage - maximum 1-2 per post if any
+=== EDITING RULES ===
 
-HOOK REQUIREMENT (if instruction mentions "hook" or "stronger hook"):
-- Create TWO powerful hooks, not just one
-- Line 1: A scroll-stopping statement (under 100 characters)
-- Line 2: A teaser that compels clicking "See more"
-- Example: "I failed 47 times before this worked." / "The pattern I finally discovered changes everything."
+1. Apply the requested changes while keeping the core message
+2. Keep it professional and LinkedIn-appropriate
 
-Return ONLY the edited post text. Do NOT wrap in quotes or any other formatting.`;
+3. FORMATTING:
+   - NEVER use markdown (**bold** or *italic*) - LinkedIn doesn't support it
+   - USE Unicode bold for headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
+   - USE emojis strategically: ✅ for lists, 📌 for save CTA, ♻️ for repost CTA
+   - USE → arrows for bullet points
+   - Keep lines SHORT for skimmability
+   - NEVER use em dashes or en dashes. Use commas or " - " instead.
+   - NO hashtags
+
+4. IF IMPROVING HOOK:
+   - Create TWO powerful hooks (first 2 lines)
+   - Line 1: Scroll-stopping statement (under 100 characters)
+   - Line 2: Teaser that compels clicking "See more"
+   - Example: "I failed 47 times before this worked." / "The pattern I finally discovered changes everything."
+
+5. STRUCTURE:
+   - End with a CTA like "📌 Save this" or "♻️ Repost if helpful"
+   - Keep whitespace for skimmability
+
+Return ONLY the edited post. No quotes, no explanations.`;
 
   let response;
   let editedPost = "";
