@@ -778,8 +778,8 @@ export default function AIAPISettingsPage() {
                       "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 relative",
                       isViewing
                         ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
-                        : hasKey
-                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-green-500/50"
+                        : isActive
+                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-cyan-500/50"
                           : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
                     )}
                   >
@@ -787,9 +787,6 @@ export default function AIAPISettingsPage() {
                     {provider.name}
                     {hasKey && !isViewing && (
                       <Check className="w-3 h-3 text-green-500" />
-                    )}
-                    {isActive && !isViewing && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-500" />
                     )}
                   </button>
                 );
@@ -1114,8 +1111,8 @@ export default function AIAPISettingsPage() {
                       "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 relative",
                       isViewing
                         ? "bg-linear-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/25"
-                        : hasKey
-                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-green-500/50"
+                        : isActive
+                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-purple-500/50"
                           : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700",
                       !hasImageAccess && "opacity-50 cursor-not-allowed"
                     )}
@@ -1124,9 +1121,6 @@ export default function AIAPISettingsPage() {
                     {provider.name}
                     {hasKey && !isViewing && (
                       <Check className="w-3 h-3 text-green-500" />
-                    )}
-                    {isActive && !isViewing && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500" />
                     )}
                   </button>
                 );
