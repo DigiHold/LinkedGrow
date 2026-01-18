@@ -268,7 +268,8 @@ export default function AIAPISettingsPage() {
   const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
 
   // Text AI API state
-  const [selectedProvider, setSelectedProvider] = useState("openai");
+  const [activeProvider, setActiveProvider] = useState("openai"); // The provider used for generation
+  const [viewingProvider, setViewingProvider] = useState("openai"); // The provider being configured
   const [selectedModel, setSelectedModel] = useState("gpt-5");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -276,9 +277,11 @@ export default function AIAPISettingsPage() {
   const [textProviderSettings, setTextProviderSettings] = useState<Record<string, TextProviderSettings>>({});
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [isDeletingApiKey, setIsDeletingApiKey] = useState(false);
+  const [isSettingActive, setIsSettingActive] = useState(false);
 
   // Image AI API state
-  const [selectedImageProvider, setSelectedImageProvider] = useState("google");
+  const [activeImageProvider, setActiveImageProvider] = useState("google"); // The provider used for generation
+  const [viewingImageProvider, setViewingImageProvider] = useState("google"); // The provider being configured
   const [selectedImageModel, setSelectedImageModel] = useState("gemini-3-pro-image-preview");
   const [selectedImageResolution, setSelectedImageResolution] = useState("1K");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("16:9");
@@ -290,6 +293,7 @@ export default function AIAPISettingsPage() {
   const [imageProviderSettings, setImageProviderSettings] = useState<Record<string, ImageProviderSettings>>({});
   const [isSavingImageApiKey, setIsSavingImageApiKey] = useState(false);
   const [isDeletingImageApiKey, setIsDeletingImageApiKey] = useState(false);
+  const [isSettingActiveImage, setIsSettingActiveImage] = useState(false);
 
   // Voice & Style Settings
   const [samplePosts, setSamplePosts] = useState<string[]>([""]);
@@ -301,10 +305,13 @@ export default function AIAPISettingsPage() {
   const [imageApiMessage, setImageApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Check if current text provider has an API key
-  const currentProviderHasKey = textProviderSettings[selectedProvider]?.hasKey || false;
-  // Check if current image provider has an API key
-  const currentImageProviderHasKey = imageProviderSettings[selectedImageProvider]?.hasKey || false;
+  // Check if viewing text provider has an API key
+  const viewingProviderHasKey = textProviderSettings[viewingProvider]?.hasKey || false;
+  // Check if viewing image provider has an API key
+  const viewingImageProviderHasKey = imageProviderSettings[viewingImageProvider]?.hasKey || false;
+  // Check if active provider has an API key (for validation)
+  const activeProviderHasKey = textProviderSettings[activeProvider]?.hasKey || false;
+  const activeImageProviderHasKey = imageProviderSettings[activeImageProvider]?.hasKey || false;
 
   // Load settings from API
   useEffect(() => {
@@ -321,7 +328,8 @@ export default function AIAPISettingsPage() {
             setImageProviderSettings(data.imageProviderSettings);
           }
           if (data.aiProvider) {
-            setSelectedProvider(data.aiProvider);
+            setActiveProvider(data.aiProvider);
+            setViewingProvider(data.aiProvider);
             // Load saved model for this provider
             const providerSettings = data.textProviderSettings?.[data.aiProvider];
             if (providerSettings?.model) {
@@ -329,7 +337,8 @@ export default function AIAPISettingsPage() {
             }
           }
           if (data.imageProvider) {
-            setSelectedImageProvider(data.imageProvider);
+            setActiveImageProvider(data.imageProvider);
+            setViewingImageProvider(data.imageProvider);
             // Load saved settings for this provider
             const providerSettings = data.imageProviderSettings?.[data.imageProvider];
             if (providerSettings?.model) {
@@ -363,24 +372,24 @@ export default function AIAPISettingsPage() {
     loadSettings();
   }, []);
 
-  // When provider changes, load saved model for that provider
+  // When viewing provider changes, load saved model for that provider
   useEffect(() => {
-    const providerSettings = textProviderSettings[selectedProvider];
+    const providerSettings = textProviderSettings[viewingProvider];
     if (providerSettings?.model) {
       setSelectedModel(providerSettings.model);
     } else {
       // Default to first model if no saved model
-      const provider = aiProviders.find(p => p.id === selectedProvider);
+      const provider = aiProviders.find(p => p.id === viewingProvider);
       if (provider && provider.models.length > 0) {
         setSelectedModel(provider.models[0].id);
       }
     }
-  }, [selectedProvider, textProviderSettings]);
+  }, [viewingProvider, textProviderSettings]);
 
-  // When image provider changes, load saved settings for that provider
+  // When viewing image provider changes, load saved settings for that provider
   useEffect(() => {
-    const providerSettings = imageProviderSettings[selectedImageProvider];
-    const providerDef = imageProviders.find(p => p.id === selectedImageProvider);
+    const providerSettings = imageProviderSettings[viewingImageProvider];
+    const providerDef = imageProviders.find(p => p.id === viewingImageProvider);
 
     if (providerSettings?.model) {
       setSelectedImageModel(providerSettings.model);
@@ -392,7 +401,7 @@ export default function AIAPISettingsPage() {
       setSelectedImageResolution(providerSettings.resolution);
     } else {
       // Set default resolution based on provider
-      const defaultRes = selectedImageProvider === "google" ? "1K" : "1792x1024";
+      const defaultRes = viewingImageProvider === "google" ? "1K" : "1792x1024";
       setSelectedImageResolution(defaultRes);
     }
 
@@ -413,7 +422,7 @@ export default function AIAPISettingsPage() {
     } else {
       setSelectedStyle("vivid");
     }
-  }, [selectedImageProvider, imageProviderSettings]);
+  }, [viewingImageProvider, imageProviderSettings]);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) return;
@@ -421,27 +430,38 @@ export default function AIAPISettingsPage() {
     setTextApiMessage(null);
     try {
       // Build provider-specific field names
-      const keyFieldName = `${selectedProvider}ApiKey`;
-      const modelFieldName = `${selectedProvider}Model`;
+      const keyFieldName = `${viewingProvider}ApiKey`;
+      const modelFieldName = `${viewingProvider}Model`;
+
+      // Build settings object
+      const settings: Record<string, string> = {
+        [keyFieldName]: apiKey,
+        [modelFieldName]: selectedModel,
+      };
+
+      // If no active provider yet, set this one as active
+      if (!activeProvider || !textProviderSettings[activeProvider]?.hasKey) {
+        settings.aiProvider = viewingProvider;
+      }
 
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          aiProvider: selectedProvider,
-          [keyFieldName]: apiKey,
-          [modelFieldName]: selectedModel,
-        }),
+        body: JSON.stringify(settings),
       });
       if (response.ok) {
         // Update per-provider settings
         setTextProviderSettings(prev => ({
           ...prev,
-          [selectedProvider]: { hasKey: true, model: selectedModel }
+          [viewingProvider]: { hasKey: true, model: selectedModel }
         }));
+        // Set as active if it was set
+        if (!activeProvider || !textProviderSettings[activeProvider]?.hasKey) {
+          setActiveProvider(viewingProvider);
+        }
         setApiKey("");
         setShowApiKey(false);
-        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === selectedProvider)?.name} API key saved!` });
+        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === viewingProvider)?.name} API key saved!` });
       } else {
         setTextApiMessage({ type: "error", text: "Failed to save API key" });
       }
@@ -457,22 +477,72 @@ export default function AIAPISettingsPage() {
     setIsDeletingApiKey(true);
     setTextApiMessage(null);
     try {
-      const response = await fetch(`/api/user/settings?field=textApiKey&provider=${selectedProvider}`, {
+      const response = await fetch(`/api/user/settings?field=textApiKey&provider=${viewingProvider}`, {
         method: "DELETE",
       });
       if (response.ok) {
         // Update per-provider settings
         setTextProviderSettings(prev => ({
           ...prev,
-          [selectedProvider]: { hasKey: false, model: null }
+          [viewingProvider]: { hasKey: false, model: null }
         }));
         setApiKey("");
-        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === selectedProvider)?.name} API key deleted` });
+        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === viewingProvider)?.name} API key deleted` });
+        // If we deleted the active provider's key, clear the active provider
+        if (viewingProvider === activeProvider) {
+          setActiveProvider("");
+        }
       }
     } catch (error) {
       console.error("Failed to delete API key:", error);
     } finally {
       setIsDeletingApiKey(false);
+    }
+  };
+
+  // Set a provider as active for generation
+  const handleSetActiveProvider = async () => {
+    if (!viewingProviderHasKey) return;
+    setIsSettingActive(true);
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aiProvider: viewingProvider,
+        }),
+      });
+      if (response.ok) {
+        setActiveProvider(viewingProvider);
+        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === viewingProvider)?.name} is now your active AI provider!` });
+      }
+    } catch (error) {
+      console.error("Failed to set active provider:", error);
+    } finally {
+      setIsSettingActive(false);
+    }
+  };
+
+  // Set an image provider as active for generation
+  const handleSetActiveImageProvider = async () => {
+    if (!viewingImageProviderHasKey) return;
+    setIsSettingActiveImage(true);
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageProvider: viewingImageProvider,
+        }),
+      });
+      if (response.ok) {
+        setActiveImageProvider(viewingImageProvider);
+        setImageApiMessage({ type: "success", text: `${imageProviders.find(p => p.id === viewingImageProvider)?.name} is now your active image provider!` });
+      }
+    } catch (error) {
+      console.error("Failed to set active image provider:", error);
+    } finally {
+      setIsSettingActiveImage(false);
     }
   };
 
@@ -482,12 +552,11 @@ export default function AIAPISettingsPage() {
     setImageApiMessage(null);
     try {
       // Build provider-specific field names
-      const provider = imageProviders.find(p => p.id === selectedImageProvider);
-      const providerPrefix = selectedImageProvider;
+      const provider = imageProviders.find(p => p.id === viewingImageProvider);
+      const providerPrefix = viewingImageProvider;
 
       // Build settings object with provider-specific keys
       const imageSettings: Record<string, string> = {
-        imageProvider: selectedImageProvider,
         [`${providerPrefix}ImageApiKey`]: imageApiKey,
         [`${providerPrefix}ImageModel`]: selectedImageModel,
       };
@@ -506,6 +575,11 @@ export default function AIAPISettingsPage() {
         imageSettings[`${providerPrefix}ImageStyle`] = selectedStyle;
       }
 
+      // If no active image provider yet, set this one as active
+      if (!activeImageProvider || !imageProviderSettings[activeImageProvider]?.hasKey) {
+        imageSettings.imageProvider = viewingImageProvider;
+      }
+
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -515,7 +589,7 @@ export default function AIAPISettingsPage() {
         // Update per-provider settings
         setImageProviderSettings(prev => ({
           ...prev,
-          [selectedImageProvider]: {
+          [viewingImageProvider]: {
             hasKey: true,
             model: selectedImageModel,
             resolution: selectedImageResolution,
@@ -524,6 +598,10 @@ export default function AIAPISettingsPage() {
             style: selectedStyle,
           }
         }));
+        // Set as active if it was set
+        if (!activeImageProvider || !imageProviderSettings[activeImageProvider]?.hasKey) {
+          setActiveImageProvider(viewingImageProvider);
+        }
         setImageApiKey("");
         setShowImageApiKey(false);
         setImageApiMessage({ type: "success", text: `${provider?.name} API key saved!` });
@@ -542,14 +620,14 @@ export default function AIAPISettingsPage() {
     setIsDeletingImageApiKey(true);
     setImageApiMessage(null);
     try {
-      const response = await fetch(`/api/user/settings?field=imageApiKey&provider=${selectedImageProvider}`, {
+      const response = await fetch(`/api/user/settings?field=imageApiKey&provider=${viewingImageProvider}`, {
         method: "DELETE",
       });
       if (response.ok) {
         // Update per-provider settings
         setImageProviderSettings(prev => ({
           ...prev,
-          [selectedImageProvider]: {
+          [viewingImageProvider]: {
             hasKey: false,
             model: null,
             resolution: null,
@@ -559,8 +637,12 @@ export default function AIAPISettingsPage() {
           }
         }));
         setImageApiKey("");
-        const providerName = imageProviders.find(p => p.id === selectedImageProvider)?.name;
+        const providerName = imageProviders.find(p => p.id === viewingImageProvider)?.name;
         setImageApiMessage({ type: "success", text: `${providerName} API key deleted` });
+        // If we deleted the active provider's key, clear the active provider
+        if (viewingImageProvider === activeImageProvider) {
+          setActiveImageProvider("");
+        }
       }
     } catch (error) {
       console.error("Failed to delete image API key:", error);
@@ -610,7 +692,9 @@ export default function AIAPISettingsPage() {
     setSamplePosts(newPosts);
   };
 
-  const currentProvider = aiProviders.find(p => p.id === selectedProvider);
+  // Get viewing provider details
+  const viewingProviderDetails = aiProviders.find(p => p.id === viewingProvider);
+  const viewingImageProviderDetails = imageProviders.find(p => p.id === viewingImageProvider);
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
@@ -651,50 +735,98 @@ export default function AIAPISettingsPage() {
             </div>
           )}
 
-          {/* Provider Selector */}
-          <div className="flex flex-wrap gap-2">
-            {aiProviders.map((provider) => {
-              const Icon = provider.icon;
-              return (
-                <button
-                  key={provider.id}
-                  onClick={() => setSelectedProvider(provider.id)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2",
-                    selectedProvider === provider.id
-                      ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
-                      : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  )}
-                >
-                  <Icon />
-                  {provider.name}
-                </button>
-              );
-            })}
+          {/* Active Provider Banner */}
+          {activeProvider && textProviderSettings[activeProvider]?.hasKey && (
+            <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white">
+                  {(() => {
+                    const ActiveIcon = aiProviders.find(p => p.id === activeProvider)?.icon;
+                    return ActiveIcon ? <ActiveIcon /> : null;
+                  })()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
+                    Active Provider: {aiProviders.find(p => p.id === activeProvider)?.name}
+                  </p>
+                  <p className="text-xs text-cyan-700 dark:text-cyan-300">
+                    This provider will be used for all post generation
+                  </p>
+                </div>
+              </div>
+              <span className="flex items-center gap-1 text-xs text-cyan-700 dark:text-cyan-300 font-medium bg-cyan-100 dark:bg-cyan-800/50 px-2.5 py-1 rounded-full">
+                <Check className="w-3 h-3" />
+                Active
+              </span>
+            </div>
+          )}
+
+          {/* Provider Selector - for viewing/configuring */}
+          <div>
+            <Label className="mb-2 block text-sm text-muted-foreground">Select a provider to configure:</Label>
+            <div className="flex flex-wrap gap-2">
+              {aiProviders.map((provider) => {
+                const Icon = provider.icon;
+                const hasKey = textProviderSettings[provider.id]?.hasKey || false;
+                const isActive = provider.id === activeProvider;
+                const isViewing = provider.id === viewingProvider;
+                return (
+                  <button
+                    key={provider.id}
+                    onClick={() => setViewingProvider(provider.id)}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 relative",
+                      isViewing
+                        ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
+                        : hasKey
+                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-green-500/50"
+                          : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    <Icon />
+                    {provider.name}
+                    {hasKey && !isViewing && (
+                      <Check className="w-3 h-3 text-green-500" />
+                    )}
+                    {isActive && !isViewing && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-500" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Active Provider Config */}
-          {currentProvider && (
+          {/* Provider Config */}
+          {viewingProviderDetails && (
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                      <currentProvider.icon />
+                      <viewingProviderDetails.icon />
                     </div>
                     <div>
-                      <h4 className="font-medium">{currentProvider.name}</h4>
+                      <h4 className="font-medium">{viewingProviderDetails.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {currentProvider.description}
+                        {viewingProviderDetails.description}
                       </p>
                     </div>
                   </div>
-                  {currentProviderHasKey && (
-                    <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
-                      <Check className="w-3 h-3" />
-                      Connected
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {viewingProvider === activeProvider && viewingProviderHasKey && (
+                      <span className="flex items-center gap-1 text-xs text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 px-2.5 py-1 rounded-full font-medium">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
+                    )}
+                    {viewingProviderHasKey && (
+                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+                        <Check className="w-3 h-3" />
+                        Connected
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Model Selector */}
@@ -705,7 +837,7 @@ export default function AIAPISettingsPage() {
                       <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currentProvider.models.map((model) => (
+                      {viewingProviderDetails.models.map((model) => (
                         <SelectItem key={model.id} value={model.id}>
                           <div className="flex items-center justify-between w-full gap-3">
                             <span>{model.name}</span>
@@ -716,33 +848,47 @@ export default function AIAPISettingsPage() {
                     </SelectContent>
                   </Select>
                   {/* Pricing info for selected model */}
-                  {currentProvider.models.find(m => m.id === selectedModel) && (
+                  {viewingProviderDetails.models.find(m => m.id === selectedModel) && (
                     <div className="mt-2 p-2 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
                       <p className="text-xs text-cyan-700 dark:text-cyan-300">
                         <span className="font-medium">Estimated cost:</span>{" "}
-                        {currentProvider.models.find(m => m.id === selectedModel)?.price} = {currentProvider.models.find(m => m.id === selectedModel)?.monthly} for 30 posts
+                        {viewingProviderDetails.models.find(m => m.id === selectedModel)?.price} = {viewingProviderDetails.models.find(m => m.id === selectedModel)?.monthly} for 30 posts
                       </p>
                     </div>
                   )}
                 </div>
 
-                {currentProviderHasKey ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="password"
-                      value="••••••••••••••••••••••••"
-                      disabled
-                      className="flex-1 bg-white dark:bg-slate-800"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleDeleteApiKey}
-                      disabled={isDeletingApiKey}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </Button>
+                {viewingProviderHasKey ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="password"
+                        value="••••••••••••••••••••••••"
+                        disabled
+                        className="flex-1 bg-white dark:bg-slate-800"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleDeleteApiKey}
+                        disabled={isDeletingApiKey}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    {/* Set as Active button - only show if this provider is not already active */}
+                    {viewingProvider !== activeProvider && (
+                      <Button
+                        type="button"
+                        onClick={handleSetActiveProvider}
+                        disabled={isSettingActive}
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                      >
+                        {isSettingActive ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+                        Set as Active Provider
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -751,7 +897,7 @@ export default function AIAPISettingsPage() {
                         id="text-ai-api-key"
                         name="text-ai-api-key"
                         type={showApiKey ? "text" : "password"}
-                        placeholder={currentProvider.placeholder}
+                        placeholder={viewingProviderDetails.placeholder}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         autoComplete="off"
@@ -924,234 +1070,291 @@ export default function AIAPISettingsPage() {
             </div>
           )}
 
-          {/* Provider Selector */}
-          <div className="flex flex-wrap gap-2">
-            {imageProviders.map((provider) => {
-              const Icon = provider.icon;
-              return (
-                <button
-                  key={provider.id}
-                  onClick={() => setSelectedImageProvider(provider.id)}
-                  disabled={!hasImageAccess}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2",
-                    selectedImageProvider === provider.id
-                      ? "bg-linear-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/25"
-                      : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700",
-                    !hasImageAccess && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <Icon />
-                  {provider.name}
-                </button>
-              );
-            })}
+          {/* Active Image Provider Banner */}
+          {activeImageProvider && imageProviderSettings[activeImageProvider]?.hasKey && (
+            <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white">
+                  {(() => {
+                    const ActiveIcon = imageProviders.find(p => p.id === activeImageProvider)?.icon;
+                    return ActiveIcon ? <ActiveIcon /> : null;
+                  })()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                    Active Provider: {imageProviders.find(p => p.id === activeImageProvider)?.name}
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    This provider will be used for all image generation
+                  </p>
+                </div>
+              </div>
+              <span className="flex items-center gap-1 text-xs text-purple-700 dark:text-purple-300 font-medium bg-purple-100 dark:bg-purple-800/50 px-2.5 py-1 rounded-full">
+                <Check className="w-3 h-3" />
+                Active
+              </span>
+            </div>
+          )}
+
+          {/* Provider Selector - for viewing/configuring */}
+          <div>
+            <Label className="mb-2 block text-sm text-muted-foreground">Select a provider to configure:</Label>
+            <div className="flex flex-wrap gap-2">
+              {imageProviders.map((provider) => {
+                const Icon = provider.icon;
+                const hasKey = imageProviderSettings[provider.id]?.hasKey || false;
+                const isActive = provider.id === activeImageProvider;
+                const isViewing = provider.id === viewingImageProvider;
+                return (
+                  <button
+                    key={provider.id}
+                    onClick={() => setViewingImageProvider(provider.id)}
+                    disabled={!hasImageAccess}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 relative",
+                      isViewing
+                        ? "bg-linear-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/25"
+                        : hasKey
+                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-green-500/50"
+                          : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700",
+                      !hasImageAccess && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <Icon />
+                    {provider.name}
+                    {hasKey && !isViewing && (
+                      <Check className="w-3 h-3 text-green-500" />
+                    )}
+                    {isActive && !isViewing && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Active Provider Config */}
-          {imageProviders
-            .filter((p) => p.id === selectedImageProvider)
-            .map((provider) => {
-              const Icon = provider.icon;
-              return (
-                <div key={provider.id} className="space-y-3">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                          <Icon />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{provider.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {provider.description}
-                          </p>
-                        </div>
-                      </div>
-                      {currentImageProviderHasKey && (
-                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
-                          <Check className="w-3 h-3" />
-                          Connected
-                        </span>
-                      )}
+          {/* Provider Config */}
+          {viewingImageProviderDetails && (
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <viewingImageProviderDetails.icon />
                     </div>
-
-                    {provider.note && (
-                      <p className="text-xs text-muted-foreground mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
-                        {provider.note}
-                      </p>
-                    )}
-
-                    {/* Model Selector */}
-                    {provider.models && provider.models.length > 0 && (
-                      <div className="mb-4">
-                        <Label className="mb-2 block text-sm">Model</Label>
-                        <Select value={selectedImageModel} onValueChange={setSelectedImageModel} disabled={!hasImageAccess}>
-                          <SelectTrigger className="bg-white dark:bg-slate-800">
-                            <SelectValue placeholder="Select a model" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {provider.models.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                <div className="flex items-center justify-between w-full gap-3">
-                                  <span>{model.name}</span>
-                                  <span className="text-xs text-muted-foreground">{model.tag}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Resolution/Size Selector */}
-                    {provider.hasResolution && resolutionOptions[provider.id as keyof typeof resolutionOptions] && (
-                      <div className="mb-4">
-                        <Label className="mb-2 block text-sm">Resolution / Size</Label>
-                        <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
-                          <SelectTrigger className="bg-white dark:bg-slate-800">
-                            <SelectValue placeholder="Select resolution" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {resolutionOptions[provider.id as keyof typeof resolutionOptions].map((res) => (
-                              <SelectItem key={res.id} value={res.id}>
-                                <div className="flex items-center justify-between w-full gap-3">
-                                  <span>{res.name}</span>
-                                  <span className="text-xs text-muted-foreground">{res.price}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Aspect Ratio Selector (Google & Replicate) */}
-                    {provider.hasAspectRatio && aspectRatioOptions[provider.id as keyof typeof aspectRatioOptions] && (
-                      <div className="mb-4">
-                        <Label className="mb-2 block text-sm">Aspect Ratio</Label>
-                        <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio} disabled={!hasImageAccess}>
-                          <SelectTrigger className="bg-white dark:bg-slate-800">
-                            <SelectValue placeholder="Select aspect ratio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {aspectRatioOptions[provider.id as keyof typeof aspectRatioOptions].map((ratio) => (
-                              <SelectItem key={ratio} value={ratio}>
-                                {ratio}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Quality Selector (OpenAI) */}
-                    {provider.hasQuality && qualityOptions[provider.id as keyof typeof qualityOptions] && (
-                      <div className="mb-4">
-                        <Label className="mb-2 block text-sm">Quality</Label>
-                        <Select value={selectedQuality} onValueChange={setSelectedQuality} disabled={!hasImageAccess}>
-                          <SelectTrigger className="bg-white dark:bg-slate-800">
-                            <SelectValue placeholder="Select quality" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {qualityOptions[provider.id as keyof typeof qualityOptions].map((q) => (
-                              <SelectItem key={q.id} value={q.id}>
-                                <div className="flex items-center justify-between w-full gap-3">
-                                  <span>{q.name}</span>
-                                  <span className="text-xs text-muted-foreground">{q.description}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Style Selector (OpenAI) */}
-                    {provider.hasStyle && styleOptions[provider.id as keyof typeof styleOptions] && (
-                      <div className="mb-4">
-                        <Label className="mb-2 block text-sm">Style</Label>
-                        <Select value={selectedStyle} onValueChange={setSelectedStyle} disabled={!hasImageAccess}>
-                          <SelectTrigger className="bg-white dark:bg-slate-800">
-                            <SelectValue placeholder="Select style" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {styleOptions[provider.id as keyof typeof styleOptions].map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                <div className="flex items-center justify-between w-full gap-3">
-                                  <span>{s.name}</span>
-                                  <span className="text-xs text-muted-foreground">{s.description}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Pricing info */}
-                    <div className="mb-3 p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-                      <p className="text-xs text-purple-700 dark:text-purple-300">
-                        <span className="font-medium">Estimated cost:</span> {provider.price} = {provider.monthly}
+                    <div>
+                      <h4 className="font-medium">{viewingImageProviderDetails.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {viewingImageProviderDetails.description}
                       </p>
                     </div>
-
-                    {currentImageProviderHasKey ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="password"
-                          value="••••••••••••••••••••••••"
-                          disabled
-                          className="flex-1 bg-white dark:bg-slate-800"
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={handleDeleteImageApiKey}
-                          disabled={isDeletingImageApiKey || !hasImageAccess}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          {isDeletingImageApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <Input
-                            id="image-ai-api-key"
-                            name="image-ai-api-key"
-                            type={showImageApiKey ? "text" : "password"}
-                            placeholder={provider.placeholder}
-                            value={imageApiKey}
-                            onChange={(e) => setImageApiKey(e.target.value)}
-                            disabled={!hasImageAccess}
-                            autoComplete="off"
-                            className="pr-10 bg-white dark:bg-slate-800"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowImageApiKey(!showImageApiKey)}
-                            disabled={!hasImageAccess}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                          >
-                            {showImageApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleSaveImageApiKey}
-                          disabled={isSavingImageApiKey || !imageApiKey.trim() || !hasImageAccess}
-                          className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                        >
-                          {isSavingImageApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                          Save Image API Key
-                        </Button>
-                      </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingImageProvider === activeImageProvider && viewingImageProviderHasKey && (
+                      <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 rounded-full font-medium">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
+                    )}
+                    {viewingImageProviderHasKey && (
+                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
+                        <Check className="w-3 h-3" />
+                        Connected
+                      </span>
                     )}
                   </div>
                 </div>
-              );
-            })}
+
+                {viewingImageProviderDetails.note && (
+                  <p className="text-xs text-muted-foreground mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
+                    {viewingImageProviderDetails.note}
+                  </p>
+                )}
+
+                {/* Model Selector */}
+                {viewingImageProviderDetails.models && viewingImageProviderDetails.models.length > 0 && (
+                  <div className="mb-4">
+                    <Label className="mb-2 block text-sm">Model</Label>
+                    <Select value={selectedImageModel} onValueChange={setSelectedImageModel} disabled={!hasImageAccess}>
+                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viewingImageProviderDetails.models.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            <div className="flex items-center justify-between w-full gap-3">
+                              <span>{model.name}</span>
+                              <span className="text-xs text-muted-foreground">{model.tag}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Resolution/Size Selector */}
+                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && (
+                  <div className="mb-4">
+                    <Label className="mb-2 block text-sm">Resolution / Size</Label>
+                    <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
+                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                        <SelectValue placeholder="Select resolution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions].map((res) => (
+                          <SelectItem key={res.id} value={res.id}>
+                            <div className="flex items-center justify-between w-full gap-3">
+                              <span>{res.name}</span>
+                              <span className="text-xs text-muted-foreground">{res.price}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Aspect Ratio Selector (Google & Replicate) */}
+                {viewingImageProviderDetails.hasAspectRatio && aspectRatioOptions[viewingImageProvider as keyof typeof aspectRatioOptions] && (
+                  <div className="mb-4">
+                    <Label className="mb-2 block text-sm">Aspect Ratio</Label>
+                    <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio} disabled={!hasImageAccess}>
+                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                        <SelectValue placeholder="Select aspect ratio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aspectRatioOptions[viewingImageProvider as keyof typeof aspectRatioOptions].map((ratio) => (
+                          <SelectItem key={ratio} value={ratio}>
+                            {ratio}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Quality Selector (OpenAI) */}
+                {viewingImageProviderDetails.hasQuality && qualityOptions[viewingImageProvider as keyof typeof qualityOptions] && (
+                  <div className="mb-4">
+                    <Label className="mb-2 block text-sm">Quality</Label>
+                    <Select value={selectedQuality} onValueChange={setSelectedQuality} disabled={!hasImageAccess}>
+                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                        <SelectValue placeholder="Select quality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {qualityOptions[viewingImageProvider as keyof typeof qualityOptions].map((q) => (
+                          <SelectItem key={q.id} value={q.id}>
+                            <div className="flex items-center justify-between w-full gap-3">
+                              <span>{q.name}</span>
+                              <span className="text-xs text-muted-foreground">{q.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Style Selector (OpenAI) */}
+                {viewingImageProviderDetails.hasStyle && styleOptions[viewingImageProvider as keyof typeof styleOptions] && (
+                  <div className="mb-4">
+                    <Label className="mb-2 block text-sm">Style</Label>
+                    <Select value={selectedStyle} onValueChange={setSelectedStyle} disabled={!hasImageAccess}>
+                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                        <SelectValue placeholder="Select style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {styleOptions[viewingImageProvider as keyof typeof styleOptions].map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            <div className="flex items-center justify-between w-full gap-3">
+                              <span>{s.name}</span>
+                              <span className="text-xs text-muted-foreground">{s.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Pricing info */}
+                <div className="mb-3 p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    <span className="font-medium">Estimated cost:</span> {viewingImageProviderDetails.price} = {viewingImageProviderDetails.monthly}
+                  </p>
+                </div>
+
+                {viewingImageProviderHasKey ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="password"
+                        value="••••••••••••••••••••••••"
+                        disabled
+                        className="flex-1 bg-white dark:bg-slate-800"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleDeleteImageApiKey}
+                        disabled={isDeletingImageApiKey || !hasImageAccess}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        {isDeletingImageApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    {/* Set as Active button - only show if this provider is not already active */}
+                    {viewingImageProvider !== activeImageProvider && (
+                      <Button
+                        type="button"
+                        onClick={handleSetActiveImageProvider}
+                        disabled={isSettingActiveImage || !hasImageAccess}
+                        className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                      >
+                        {isSettingActiveImage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+                        Set as Active Provider
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Input
+                        id="image-ai-api-key"
+                        name="image-ai-api-key"
+                        type={showImageApiKey ? "text" : "password"}
+                        placeholder={viewingImageProviderDetails.placeholder}
+                        value={imageApiKey}
+                        onChange={(e) => setImageApiKey(e.target.value)}
+                        disabled={!hasImageAccess}
+                        autoComplete="off"
+                        className="pr-10 bg-white dark:bg-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowImageApiKey(!showImageApiKey)}
+                        disabled={!hasImageAccess}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                      >
+                        {showImageApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleSaveImageApiKey}
+                      disabled={isSavingImageApiKey || !imageApiKey.trim() || !hasImageAccess}
+                      className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                    >
+                      {isSavingImageApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save Image API Key
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800">
             <ImageIcon className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
