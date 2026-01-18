@@ -72,6 +72,12 @@ const PerplexityIcon = () => (
   </svg>
 );
 
+const ReplicateIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+    <path d="M1.5 3.5h9v2h-9zM1.5 8.5h9v2h-9zM1.5 13.5h9v2h-9zM1.5 18.5h5v2h-5zM13.5 3.5h9v2h-9zM13.5 8.5h9v2h-9zM13.5 13.5h5v2h-5z"/>
+  </svg>
+);
+
 const aiProviders = [
   {
     id: "openai",
@@ -225,7 +231,7 @@ const imageProviders = [
     name: "Replicate",
     description: "FLUX.2 Pro, FLUX.2 Flex",
     placeholder: "r8_...",
-    icon: OpenAIIcon,
+    icon: ReplicateIcon,
     note: "FLUX.2 - best open-source model, up to 4MP, multi-image references",
     price: "$0.015-0.03/image",
     monthly: "~$0.45/mo (30 images)",
@@ -241,6 +247,21 @@ const imageProviders = [
   },
 ];
 
+// Per-provider settings types
+interface TextProviderSettings {
+  hasKey: boolean;
+  model: string | null;
+}
+
+interface ImageProviderSettings {
+  hasKey: boolean;
+  model: string | null;
+  resolution: string | null;
+  aspectRatio: string | null;
+  quality: string | null;
+  style: string | null;
+}
+
 export default function AIAPISettingsPage() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
@@ -248,10 +269,11 @@ export default function AIAPISettingsPage() {
 
   // Text AI API state
   const [selectedProvider, setSelectedProvider] = useState("openai");
-  const [selectedModel, setSelectedModel] = useState("gpt-4o");
+  const [selectedModel, setSelectedModel] = useState("gpt-5");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(false);
+  // Per-provider settings: { openai: { hasKey: true, model: "gpt-5" }, ... }
+  const [textProviderSettings, setTextProviderSettings] = useState<Record<string, TextProviderSettings>>({});
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [isDeletingApiKey, setIsDeletingApiKey] = useState(false);
 
@@ -264,7 +286,8 @@ export default function AIAPISettingsPage() {
   const [selectedStyle, setSelectedStyle] = useState("vivid");
   const [imageApiKey, setImageApiKey] = useState("");
   const [showImageApiKey, setShowImageApiKey] = useState(false);
-  const [hasImageApiKey, setHasImageApiKey] = useState(false);
+  // Per-provider image settings
+  const [imageProviderSettings, setImageProviderSettings] = useState<Record<string, ImageProviderSettings>>({});
   const [isSavingImageApiKey, setIsSavingImageApiKey] = useState(false);
   const [isDeletingImageApiKey, setIsDeletingImageApiKey] = useState(false);
 
@@ -278,6 +301,11 @@ export default function AIAPISettingsPage() {
   const [imageApiMessage, setImageApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Check if current text provider has an API key
+  const currentProviderHasKey = textProviderSettings[selectedProvider]?.hasKey || false;
+  // Check if current image provider has an API key
+  const currentImageProviderHasKey = imageProviderSettings[selectedImageProvider]?.hasKey || false;
+
   // Load settings from API
   useEffect(() => {
     const loadSettings = async () => {
@@ -285,31 +313,40 @@ export default function AIAPISettingsPage() {
         const response = await fetch("/api/user/settings");
         if (response.ok) {
           const data = await response.json();
-          setHasApiKey(data.hasApiKey);
+          // Load per-provider settings
+          if (data.textProviderSettings) {
+            setTextProviderSettings(data.textProviderSettings);
+          }
+          if (data.imageProviderSettings) {
+            setImageProviderSettings(data.imageProviderSettings);
+          }
           if (data.aiProvider) {
             setSelectedProvider(data.aiProvider);
+            // Load saved model for this provider
+            const providerSettings = data.textProviderSettings?.[data.aiProvider];
+            if (providerSettings?.model) {
+              setSelectedModel(providerSettings.model);
+            }
           }
-          if (data.aiModel) {
-            setSelectedModel(data.aiModel);
-          }
-          setHasImageApiKey(data.hasImageApiKey || false);
           if (data.imageProvider) {
             setSelectedImageProvider(data.imageProvider);
-          }
-          if (data.imageModel) {
-            setSelectedImageModel(data.imageModel);
-          }
-          if (data.imageResolution) {
-            setSelectedImageResolution(data.imageResolution);
-          }
-          if (data.imageAspectRatio) {
-            setSelectedAspectRatio(data.imageAspectRatio);
-          }
-          if (data.imageQuality) {
-            setSelectedQuality(data.imageQuality);
-          }
-          if (data.imageStyle) {
-            setSelectedStyle(data.imageStyle);
+            // Load saved settings for this provider
+            const providerSettings = data.imageProviderSettings?.[data.imageProvider];
+            if (providerSettings?.model) {
+              setSelectedImageModel(providerSettings.model);
+            }
+            if (providerSettings?.resolution) {
+              setSelectedImageResolution(providerSettings.resolution);
+            }
+            if (providerSettings?.aspectRatio) {
+              setSelectedAspectRatio(providerSettings.aspectRatio);
+            }
+            if (providerSettings?.quality) {
+              setSelectedQuality(providerSettings.quality);
+            }
+            if (providerSettings?.style) {
+              setSelectedStyle(providerSettings.style);
+            }
           }
           // Load voice settings
           if (data.samplePosts && data.samplePosts.length > 0) {
@@ -326,41 +363,85 @@ export default function AIAPISettingsPage() {
     loadSettings();
   }, []);
 
-  // Update model when provider changes
+  // When provider changes, load saved model for that provider
   useEffect(() => {
-    const provider = aiProviders.find(p => p.id === selectedProvider);
-    if (provider && provider.models.length > 0) {
-      setSelectedModel(provider.models[0].id);
+    const providerSettings = textProviderSettings[selectedProvider];
+    if (providerSettings?.model) {
+      setSelectedModel(providerSettings.model);
+    } else {
+      // Default to first model if no saved model
+      const provider = aiProviders.find(p => p.id === selectedProvider);
+      if (provider && provider.models.length > 0) {
+        setSelectedModel(provider.models[0].id);
+      }
     }
-  }, [selectedProvider]);
+  }, [selectedProvider, textProviderSettings]);
 
-  // Update image model when image provider changes
+  // When image provider changes, load saved settings for that provider
   useEffect(() => {
-    const provider = imageProviders.find(p => p.id === selectedImageProvider);
-    if (provider && provider.models && provider.models.length > 0) {
-      setSelectedImageModel(provider.models[0].id);
+    const providerSettings = imageProviderSettings[selectedImageProvider];
+    const providerDef = imageProviders.find(p => p.id === selectedImageProvider);
+
+    if (providerSettings?.model) {
+      setSelectedImageModel(providerSettings.model);
+    } else if (providerDef?.models?.length) {
+      setSelectedImageModel(providerDef.models[0].id);
     }
-  }, [selectedImageProvider]);
+
+    if (providerSettings?.resolution) {
+      setSelectedImageResolution(providerSettings.resolution);
+    } else {
+      // Set default resolution based on provider
+      const defaultRes = selectedImageProvider === "google" ? "1K" : "1792x1024";
+      setSelectedImageResolution(defaultRes);
+    }
+
+    if (providerSettings?.aspectRatio) {
+      setSelectedAspectRatio(providerSettings.aspectRatio);
+    } else {
+      setSelectedAspectRatio("16:9");
+    }
+
+    if (providerSettings?.quality) {
+      setSelectedQuality(providerSettings.quality);
+    } else {
+      setSelectedQuality("high");
+    }
+
+    if (providerSettings?.style) {
+      setSelectedStyle(providerSettings.style);
+    } else {
+      setSelectedStyle("vivid");
+    }
+  }, [selectedImageProvider, imageProviderSettings]);
 
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) return;
     setIsSavingApiKey(true);
     setTextApiMessage(null);
     try {
+      // Build provider-specific field names
+      const keyFieldName = `${selectedProvider}ApiKey`;
+      const modelFieldName = `${selectedProvider}Model`;
+
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           aiProvider: selectedProvider,
-          aiModel: selectedModel,
-          aiApiKey: apiKey,
+          [keyFieldName]: apiKey,
+          [modelFieldName]: selectedModel,
         }),
       });
       if (response.ok) {
-        setHasApiKey(true);
+        // Update per-provider settings
+        setTextProviderSettings(prev => ({
+          ...prev,
+          [selectedProvider]: { hasKey: true, model: selectedModel }
+        }));
         setApiKey("");
         setShowApiKey(false);
-        setTextApiMessage({ type: "success", text: "API key saved successfully!" });
+        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === selectedProvider)?.name} API key saved!` });
       } else {
         setTextApiMessage({ type: "error", text: "Failed to save API key" });
       }
@@ -376,13 +457,17 @@ export default function AIAPISettingsPage() {
     setIsDeletingApiKey(true);
     setTextApiMessage(null);
     try {
-      const response = await fetch("/api/user/settings?field=aiApiKey", {
+      const response = await fetch(`/api/user/settings?field=textApiKey&provider=${selectedProvider}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setHasApiKey(false);
+        // Update per-provider settings
+        setTextProviderSettings(prev => ({
+          ...prev,
+          [selectedProvider]: { hasKey: false, model: null }
+        }));
         setApiKey("");
-        setTextApiMessage({ type: "success", text: "API key deleted" });
+        setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === selectedProvider)?.name} API key deleted` });
       }
     } catch (error) {
       console.error("Failed to delete API key:", error);
@@ -396,24 +481,29 @@ export default function AIAPISettingsPage() {
     setIsSavingImageApiKey(true);
     setImageApiMessage(null);
     try {
-      // Build image settings object based on provider
+      // Build provider-specific field names
+      const provider = imageProviders.find(p => p.id === selectedImageProvider);
+      const providerPrefix = selectedImageProvider;
+
+      // Build settings object with provider-specific keys
       const imageSettings: Record<string, string> = {
         imageProvider: selectedImageProvider,
-        imageModel: selectedImageModel,
-        imageResolution: selectedImageResolution,
-        imageApiKey: imageApiKey,
+        [`${providerPrefix}ImageApiKey`]: imageApiKey,
+        [`${providerPrefix}ImageModel`]: selectedImageModel,
       };
 
-      // Add provider-specific settings
-      const provider = imageProviders.find(p => p.id === selectedImageProvider);
+      // Add provider-specific settings based on what the provider supports
+      if (provider?.hasResolution) {
+        imageSettings[`${providerPrefix}ImageResolution`] = selectedImageResolution;
+      }
       if (provider?.hasAspectRatio) {
-        imageSettings.imageAspectRatio = selectedAspectRatio;
+        imageSettings[`${providerPrefix}ImageAspectRatio`] = selectedAspectRatio;
       }
       if (provider?.hasQuality) {
-        imageSettings.imageQuality = selectedQuality;
+        imageSettings[`${providerPrefix}ImageQuality`] = selectedQuality;
       }
       if (provider?.hasStyle) {
-        imageSettings.imageStyle = selectedStyle;
+        imageSettings[`${providerPrefix}ImageStyle`] = selectedStyle;
       }
 
       const response = await fetch("/api/user/settings", {
@@ -422,10 +512,21 @@ export default function AIAPISettingsPage() {
         body: JSON.stringify(imageSettings),
       });
       if (response.ok) {
-        setHasImageApiKey(true);
+        // Update per-provider settings
+        setImageProviderSettings(prev => ({
+          ...prev,
+          [selectedImageProvider]: {
+            hasKey: true,
+            model: selectedImageModel,
+            resolution: selectedImageResolution,
+            aspectRatio: selectedAspectRatio,
+            quality: selectedQuality,
+            style: selectedStyle,
+          }
+        }));
         setImageApiKey("");
         setShowImageApiKey(false);
-        setImageApiMessage({ type: "success", text: "Image API key saved successfully!" });
+        setImageApiMessage({ type: "success", text: `${provider?.name} API key saved!` });
       } else {
         setImageApiMessage({ type: "error", text: "Failed to save image API key" });
       }
@@ -441,13 +542,25 @@ export default function AIAPISettingsPage() {
     setIsDeletingImageApiKey(true);
     setImageApiMessage(null);
     try {
-      const response = await fetch("/api/user/settings?field=imageApiKey", {
+      const response = await fetch(`/api/user/settings?field=imageApiKey&provider=${selectedImageProvider}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setHasImageApiKey(false);
+        // Update per-provider settings
+        setImageProviderSettings(prev => ({
+          ...prev,
+          [selectedImageProvider]: {
+            hasKey: false,
+            model: null,
+            resolution: null,
+            aspectRatio: null,
+            quality: null,
+            style: null,
+          }
+        }));
         setImageApiKey("");
-        setImageApiMessage({ type: "success", text: "Image API key deleted" });
+        const providerName = imageProviders.find(p => p.id === selectedImageProvider)?.name;
+        setImageApiMessage({ type: "success", text: `${providerName} API key deleted` });
       }
     } catch (error) {
       console.error("Failed to delete image API key:", error);
@@ -576,7 +689,7 @@ export default function AIAPISettingsPage() {
                       </p>
                     </div>
                   </div>
-                  {hasApiKey && (
+                  {currentProviderHasKey && (
                     <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
                       <Check className="w-3 h-3" />
                       Connected
@@ -613,7 +726,7 @@ export default function AIAPISettingsPage() {
                   )}
                 </div>
 
-                {hasApiKey ? (
+                {currentProviderHasKey ? (
                   <div className="flex items-center gap-2">
                     <Input
                       type="password"
@@ -635,13 +748,17 @@ export default function AIAPISettingsPage() {
                   <div className="space-y-3">
                     <div className="relative">
                       <Input
+                        id="text-ai-api-key"
+                        name="text-ai-api-key"
                         type={showApiKey ? "text" : "password"}
                         placeholder={currentProvider.placeholder}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
+                        autoComplete="off"
                         className="pr-10 bg-white dark:bg-slate-800"
                       />
                       <button
+                        type="button"
                         onClick={() => setShowApiKey(!showApiKey)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
@@ -649,6 +766,7 @@ export default function AIAPISettingsPage() {
                       </button>
                     </div>
                     <Button
+                      type="button"
                       onClick={handleSaveApiKey}
                       disabled={isSavingApiKey || !apiKey.trim()}
                       className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
@@ -850,7 +968,7 @@ export default function AIAPISettingsPage() {
                           </p>
                         </div>
                       </div>
-                      {hasImageApiKey && (
+                      {currentImageProviderHasKey && (
                         <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2.5 py-1 rounded-full">
                           <Check className="w-3 h-3" />
                           Connected
@@ -978,7 +1096,7 @@ export default function AIAPISettingsPage() {
                       </p>
                     </div>
 
-                    {hasImageApiKey ? (
+                    {currentImageProviderHasKey ? (
                       <div className="flex items-center gap-2">
                         <Input
                           type="password"
@@ -1000,14 +1118,18 @@ export default function AIAPISettingsPage() {
                       <div className="space-y-3">
                         <div className="relative">
                           <Input
+                            id="image-ai-api-key"
+                            name="image-ai-api-key"
                             type={showImageApiKey ? "text" : "password"}
                             placeholder={provider.placeholder}
                             value={imageApiKey}
                             onChange={(e) => setImageApiKey(e.target.value)}
                             disabled={!hasImageAccess}
+                            autoComplete="off"
                             className="pr-10 bg-white dark:bg-slate-800"
                           />
                           <button
+                            type="button"
                             onClick={() => setShowImageApiKey(!showImageApiKey)}
                             disabled={!hasImageAccess}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
@@ -1016,6 +1138,7 @@ export default function AIAPISettingsPage() {
                           </button>
                         </div>
                         <Button
+                          type="button"
                           onClick={handleSaveImageApiKey}
                           disabled={isSavingImageApiKey || !imageApiKey.trim() || !hasImageAccess}
                           className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"

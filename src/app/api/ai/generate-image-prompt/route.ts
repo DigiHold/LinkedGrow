@@ -56,15 +56,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if user has AI text API key configured
-    if (!user.aiApiKey || !user.aiProvider) {
+    const provider = user.aiProvider || "openai";
+
+    // Get per-provider API key based on selected provider
+    const providerKeyMap: Record<string, string | null> = {
+      openai: user.openaiApiKey,
+      anthropic: user.anthropicApiKey,
+      google: user.googleApiKey,
+      grok: user.grokApiKey,
+      perplexity: user.perplexityApiKey,
+    };
+
+    const encryptedApiKey = providerKeyMap[provider];
+    if (!encryptedApiKey) {
       return NextResponse.json(
-        { error: "No AI API key configured. Please add your API key in Settings." },
+        { error: `No API key configured for ${provider}. Please add your API key in Settings.` },
         { status: 400 }
       );
     }
 
-    const apiKey = decryptApiKey(user.aiApiKey);
+    const apiKey = decryptApiKey(encryptedApiKey);
     if (!apiKey) {
       return NextResponse.json(
         { error: "Failed to decrypt API key. Please re-add your API key in Settings." },
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
     let generatedPrompt: string;
 
     // Generate prompt using user's configured AI provider
-    switch (user.aiProvider) {
+    switch (provider) {
       case "openai":
         generatedPrompt = await generateWithOpenAI(apiKey, postContent);
         break;
@@ -91,12 +102,15 @@ export async function POST(request: NextRequest) {
       case "google":
         generatedPrompt = await generateWithGoogle(apiKey, postContent);
         break;
-      case "groq":
-        generatedPrompt = await generateWithGroq(apiKey, postContent);
+      case "grok":
+        generatedPrompt = await generateWithGrok(apiKey, postContent);
+        break;
+      case "perplexity":
+        generatedPrompt = await generateWithPerplexity(apiKey, postContent);
         break;
       default:
         return NextResponse.json(
-          { error: `Unsupported AI provider: ${user.aiProvider}` },
+          { error: `Unsupported AI provider: ${provider}` },
           { status: 400 }
         );
     }
@@ -199,15 +213,15 @@ async function generateWithGoogle(apiKey: string, postContent: string): Promise<
   return data.candidates[0].content.parts[0].text.trim();
 }
 
-async function generateWithGroq(apiKey: string, postContent: string): Promise<string> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+async function generateWithGrok(apiKey: string, postContent: string): Promise<string> {
+  const response = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "grok-3-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
@@ -219,7 +233,34 @@ async function generateWithGroq(apiKey: string, postContent: string): Promise<st
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error?.message || "Groq request failed");
+    throw new Error(error.error?.message || "Grok request failed");
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim();
+}
+
+async function generateWithPerplexity(apiKey: string, postContent: string): Promise<string> {
+  const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "sonar-pro",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Perplexity request failed");
   }
 
   const data = await response.json();

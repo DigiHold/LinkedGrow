@@ -40,10 +40,19 @@ export const users = sqliteTable("users", {
   linkedinCommunityRefreshToken: text("linkedin_community_refresh_token"),
   linkedinCommunityTokenExpiry: integer("linkedin_community_token_expiry", { mode: "timestamp" }),
 
-  // AI API keys (encrypted)
-  aiProvider: text("ai_provider"),
-  aiApiKey: text("ai_api_key"), // Should be encrypted in production
-  aiModel: text("ai_model"), // User's selected AI model
+  // AI API keys (encrypted) - per-provider storage
+  aiProvider: text("ai_provider"), // Currently selected provider
+  // Per-provider API keys and models (all encrypted)
+  openaiApiKey: text("openai_api_key"),
+  openaiModel: text("openai_model"),
+  anthropicApiKey: text("anthropic_api_key"),
+  anthropicModel: text("anthropic_model"),
+  googleApiKey: text("google_api_key"),
+  googleModel: text("google_model"),
+  grokApiKey: text("grok_api_key"),
+  grokModel: text("grok_model"),
+  perplexityApiKey: text("perplexity_api_key"),
+  perplexityModel: text("perplexity_model"),
 
   // Voice/style settings for AI content generation
   samplePosts: text("sample_posts"), // JSON array of sample posts for voice matching
@@ -52,14 +61,25 @@ export const users = sqliteTable("users", {
   targetAudience: text("target_audience"), // Who they're writing for
   writingTone: text("writing_tone"), // e.g., "professional", "casual", "witty"
 
-  // Image generation API keys (encrypted, BYOK)
-  imageProvider: text("image_provider"), // "google", "openai", "replicate"
-  imageModel: text("image_model"), // "gemini-3-pro-image-preview", "dall-e-3", "flux-2-pro", etc.
-  imageResolution: text("image_resolution"), // "1K", "2K", "4K" or "1024x1024", etc.
-  imageAspectRatio: text("image_aspect_ratio"), // "16:9", "1:1", "9:16", etc.
-  imageQuality: text("image_quality"), // "high", "medium", "low" (OpenAI)
-  imageStyle: text("image_style"), // "vivid", "natural" (OpenAI)
-  imageApiKey: text("image_api_key"), // User's own API key, encrypted
+  // Image generation API keys (encrypted, BYOK) - per-provider storage
+  imageProvider: text("image_provider"), // Currently selected: "google", "openai", "replicate"
+  // Per-provider image settings (API key + model + settings)
+  // Google AI
+  googleImageApiKey: text("google_image_api_key"),
+  googleImageModel: text("google_image_model"),
+  googleImageResolution: text("google_image_resolution"),
+  googleImageAspectRatio: text("google_image_aspect_ratio"),
+  // OpenAI
+  openaiImageApiKey: text("openai_image_api_key"),
+  openaiImageModel: text("openai_image_model"),
+  openaiImageResolution: text("openai_image_resolution"),
+  openaiImageQuality: text("openai_image_quality"),
+  openaiImageStyle: text("openai_image_style"),
+  // Replicate
+  replicateImageApiKey: text("replicate_image_api_key"),
+  replicateImageModel: text("replicate_image_model"),
+  replicateImageResolution: text("replicate_image_resolution"),
+  replicateImageAspectRatio: text("replicate_image_aspect_ratio"),
 
   // Timestamps
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),

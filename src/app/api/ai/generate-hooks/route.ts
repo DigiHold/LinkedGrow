@@ -126,15 +126,16 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
     const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     hooks = JSON.parse(cleanContent);
-  } else if (provider === "groq") {
-    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  } else if (provider === "grok") {
+    // xAI Grok uses OpenAI-compatible API
+    response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "llama-3.3-70b-versatile",
+        model: model || "grok-3-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -142,12 +143,37 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with Groq");
+      throw new Error(error.error?.message || "Failed to generate hooks with Grok");
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    hooks = JSON.parse(content);
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    hooks = JSON.parse(cleanContent);
+  } else if (provider === "perplexity") {
+    // Perplexity uses OpenAI-compatible API
+    response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "sonar-pro",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate hooks with Perplexity");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    hooks = JSON.parse(cleanContent);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
@@ -173,21 +199,46 @@ export async function POST(request: NextRequest) {
       where: eq(users.id, session.user.id),
     });
 
-    if (!user?.aiApiKey) {
-      return NextResponse.json({ error: "No AI API key configured" }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const apiKey = decryptApiKey(user.aiApiKey);
+    const provider = user.aiProvider || "openai";
+
+    // Get per-provider API key based on selected provider
+    const providerKeyMap: Record<string, string | null> = {
+      openai: user.openaiApiKey,
+      anthropic: user.anthropicApiKey,
+      google: user.googleApiKey,
+      grok: user.grokApiKey,
+      perplexity: user.perplexityApiKey,
+    };
+
+    const encryptedApiKey = providerKeyMap[provider];
+    if (!encryptedApiKey) {
+      return NextResponse.json({ error: `No API key configured for ${provider}. Please add your API key in Settings.` }, { status: 400 });
+    }
+
+    const apiKey = decryptApiKey(encryptedApiKey);
     if (!apiKey) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    const provider = user.aiProvider || "openai";
-    const defaultModel = provider === "openai" ? "gpt-4o" :
-                         provider === "anthropic" ? "claude-3-5-sonnet-20241022" :
-                         provider === "google" ? "gemini-2.0-flash" :
-                         provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o";
-    const model = user.aiModel || defaultModel;
+    // Get per-provider model based on selected provider
+    const providerModelMap: Record<string, string | null> = {
+      openai: user.openaiModel,
+      anthropic: user.anthropicModel,
+      google: user.googleModel,
+      grok: user.grokModel,
+      perplexity: user.perplexityModel,
+    };
+
+    const defaultModel = provider === "openai" ? "gpt-5" :
+                         provider === "anthropic" ? "claude-sonnet-4-5-20251101" :
+                         provider === "google" ? "gemini-3-flash" :
+                         provider === "grok" ? "grok-3-mini" :
+                         provider === "perplexity" ? "sonar-pro" : "gpt-5";
+    const model = providerModelMap[provider] || defaultModel;
 
     const hooks = await generateHooks(
       postIdea,

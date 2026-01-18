@@ -20,17 +20,52 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Decrypt API key for display (masked)
-    const decryptedApiKey = decryptApiKey(user.aiApiKey);
-    const maskedApiKey = decryptedApiKey
-      ? `${decryptedApiKey.slice(0, 8)}${"*".repeat(20)}${decryptedApiKey.slice(-4)}`
-      : null;
+    // Helper to check if a provider has an API key
+    const hasProviderKey = (key: string | null | undefined) => !!key;
 
-    // Decrypt image API key for display (masked)
-    const decryptedImageApiKey = decryptApiKey(user.imageApiKey);
-    const maskedImageApiKey = decryptedImageApiKey
-      ? `${decryptedImageApiKey.slice(0, 8)}${"*".repeat(20)}${decryptedImageApiKey.slice(-4)}`
-      : null;
+    // Build per-provider settings for text AI (API key status + model)
+    const textProviderSettings: Record<string, { hasKey: boolean; model: string | null }> = {
+      openai: { hasKey: hasProviderKey(user.openaiApiKey), model: user.openaiModel },
+      anthropic: { hasKey: hasProviderKey(user.anthropicApiKey), model: user.anthropicModel },
+      google: { hasKey: hasProviderKey(user.googleApiKey), model: user.googleModel },
+      grok: { hasKey: hasProviderKey(user.grokApiKey), model: user.grokModel },
+      perplexity: { hasKey: hasProviderKey(user.perplexityApiKey), model: user.perplexityModel },
+    };
+
+    // Build per-provider settings for image AI (API key status + all settings)
+    const imageProviderSettings: Record<string, {
+      hasKey: boolean;
+      model: string | null;
+      resolution: string | null;
+      aspectRatio: string | null;
+      quality: string | null;
+      style: string | null;
+    }> = {
+      google: {
+        hasKey: hasProviderKey(user.googleImageApiKey),
+        model: user.googleImageModel,
+        resolution: user.googleImageResolution,
+        aspectRatio: user.googleImageAspectRatio,
+        quality: null,
+        style: null,
+      },
+      openai: {
+        hasKey: hasProviderKey(user.openaiImageApiKey),
+        model: user.openaiImageModel,
+        resolution: user.openaiImageResolution,
+        aspectRatio: null,
+        quality: user.openaiImageQuality,
+        style: user.openaiImageStyle,
+      },
+      replicate: {
+        hasKey: hasProviderKey(user.replicateImageApiKey),
+        model: user.replicateImageModel,
+        resolution: user.replicateImageResolution,
+        aspectRatio: user.replicateImageAspectRatio,
+        quality: null,
+        style: null,
+      },
+    };
 
     // Parse sample posts from JSON
     let samplePosts: string[] = [];
@@ -43,18 +78,13 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      // Currently selected providers
       aiProvider: user.aiProvider,
-      aiModel: user.aiModel,
-      aiApiKey: maskedApiKey,
-      hasApiKey: !!user.aiApiKey,
       imageProvider: user.imageProvider,
-      imageModel: user.imageModel,
-      imageResolution: user.imageResolution,
-      imageAspectRatio: user.imageAspectRatio,
-      imageQuality: user.imageQuality,
-      imageStyle: user.imageStyle,
-      imageApiKey: maskedImageApiKey,
-      hasImageApiKey: !!user.imageApiKey,
+      // Per-provider settings (API key status + model + settings)
+      textProviderSettings,
+      imageProviderSettings,
+      // Other settings
       linkedinConnected: !!user.linkedinAccessToken,
       linkedinProfileName: user.linkedinProfileName,
       samplePosts,
@@ -83,15 +113,32 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       aiProvider,
-      aiApiKey,
-      aiModel,
+      // Per-provider text AI keys and models
+      openaiApiKey,
+      openaiModel,
+      anthropicApiKey,
+      anthropicModel,
+      googleApiKey,
+      googleModel,
+      grokApiKey,
+      grokModel,
+      perplexityApiKey,
+      perplexityModel,
       imageProvider,
-      imageModel,
-      imageResolution,
-      imageAspectRatio,
-      imageQuality,
-      imageStyle,
-      imageApiKey,
+      // Per-provider image AI settings
+      googleImageApiKey,
+      googleImageModel,
+      googleImageResolution,
+      googleImageAspectRatio,
+      openaiImageApiKey,
+      openaiImageModel,
+      openaiImageResolution,
+      openaiImageQuality,
+      openaiImageStyle,
+      replicateImageApiKey,
+      replicateImageModel,
+      replicateImageResolution,
+      replicateImageAspectRatio,
       samplePosts,
       neverMention,
       businessDescription,
@@ -107,48 +154,84 @@ export async function PUT(request: NextRequest) {
       updateData.aiProvider = aiProvider;
     }
 
-    if (aiModel !== undefined) {
-      updateData.aiModel = aiModel || null;
+    // Per-provider text AI keys and models
+    if (openaiApiKey !== undefined) {
+      updateData.openaiApiKey = openaiApiKey ? encryptApiKey(openaiApiKey) : null;
     }
-
-    if (aiApiKey !== undefined) {
-      if (!aiApiKey) {
-        updateData.aiApiKey = null;
-      } else {
-        updateData.aiApiKey = encryptApiKey(aiApiKey);
-      }
+    if (openaiModel !== undefined) {
+      updateData.openaiModel = openaiModel || null;
+    }
+    if (anthropicApiKey !== undefined) {
+      updateData.anthropicApiKey = anthropicApiKey ? encryptApiKey(anthropicApiKey) : null;
+    }
+    if (anthropicModel !== undefined) {
+      updateData.anthropicModel = anthropicModel || null;
+    }
+    if (googleApiKey !== undefined) {
+      updateData.googleApiKey = googleApiKey ? encryptApiKey(googleApiKey) : null;
+    }
+    if (googleModel !== undefined) {
+      updateData.googleModel = googleModel || null;
+    }
+    if (grokApiKey !== undefined) {
+      updateData.grokApiKey = grokApiKey ? encryptApiKey(grokApiKey) : null;
+    }
+    if (grokModel !== undefined) {
+      updateData.grokModel = grokModel || null;
+    }
+    if (perplexityApiKey !== undefined) {
+      updateData.perplexityApiKey = perplexityApiKey ? encryptApiKey(perplexityApiKey) : null;
+    }
+    if (perplexityModel !== undefined) {
+      updateData.perplexityModel = perplexityModel || null;
     }
 
     if (imageProvider !== undefined) {
       updateData.imageProvider = imageProvider;
     }
 
-    if (imageModel !== undefined) {
-      updateData.imageModel = imageModel || null;
+    // Per-provider Google image settings
+    if (googleImageApiKey !== undefined) {
+      updateData.googleImageApiKey = googleImageApiKey ? encryptApiKey(googleImageApiKey) : null;
+    }
+    if (googleImageModel !== undefined) {
+      updateData.googleImageModel = googleImageModel || null;
+    }
+    if (googleImageResolution !== undefined) {
+      updateData.googleImageResolution = googleImageResolution || null;
+    }
+    if (googleImageAspectRatio !== undefined) {
+      updateData.googleImageAspectRatio = googleImageAspectRatio || null;
+    }
+    // Per-provider OpenAI image settings
+    if (openaiImageApiKey !== undefined) {
+      updateData.openaiImageApiKey = openaiImageApiKey ? encryptApiKey(openaiImageApiKey) : null;
+    }
+    if (openaiImageModel !== undefined) {
+      updateData.openaiImageModel = openaiImageModel || null;
+    }
+    if (openaiImageResolution !== undefined) {
+      updateData.openaiImageResolution = openaiImageResolution || null;
+    }
+    if (openaiImageQuality !== undefined) {
+      updateData.openaiImageQuality = openaiImageQuality || null;
+    }
+    if (openaiImageStyle !== undefined) {
+      updateData.openaiImageStyle = openaiImageStyle || null;
     }
 
-    if (imageResolution !== undefined) {
-      updateData.imageResolution = imageResolution || null;
+    // Per-provider Replicate image settings
+    if (replicateImageApiKey !== undefined) {
+      updateData.replicateImageApiKey = replicateImageApiKey ? encryptApiKey(replicateImageApiKey) : null;
     }
-
-    if (imageAspectRatio !== undefined) {
-      updateData.imageAspectRatio = imageAspectRatio || null;
+    if (replicateImageModel !== undefined) {
+      updateData.replicateImageModel = replicateImageModel || null;
     }
-
-    if (imageQuality !== undefined) {
-      updateData.imageQuality = imageQuality || null;
+    if (replicateImageResolution !== undefined) {
+      updateData.replicateImageResolution = replicateImageResolution || null;
     }
-
-    if (imageStyle !== undefined) {
-      updateData.imageStyle = imageStyle || null;
-    }
-
-    if (imageApiKey !== undefined) {
-      if (!imageApiKey) {
-        updateData.imageApiKey = null;
-      } else {
-        updateData.imageApiKey = encryptApiKey(imageApiKey);
-      }
+    if (replicateImageAspectRatio !== undefined) {
+      updateData.replicateImageAspectRatio = replicateImageAspectRatio || null;
     }
 
     if (samplePosts !== undefined) {
@@ -199,38 +282,57 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const field = searchParams.get("field");
+    const provider = searchParams.get("provider");
 
-    if (field === "aiApiKey") {
+    // Per-provider text AI key deletion
+    const textProviderKeyMap: Record<string, string> = {
+      openai: "openaiApiKey",
+      anthropic: "anthropicApiKey",
+      google: "googleApiKey",
+      grok: "grokApiKey",
+      perplexity: "perplexityApiKey",
+    };
+
+    // Per-provider image AI key deletion
+    const imageProviderKeyMap: Record<string, string> = {
+      google: "googleImageApiKey",
+      openai: "openaiImageApiKey",
+      replicate: "replicateImageApiKey",
+    };
+
+    // Delete specific text provider key
+    if (field === "textApiKey" && provider && textProviderKeyMap[provider]) {
       await db
         .update(users)
         .set({
-          aiApiKey: null,
+          [textProviderKeyMap[provider]]: null,
           updatedAt: new Date(),
         })
         .where(eq(users.id, session.user.id));
 
       return NextResponse.json({
         success: true,
-        message: "API key removed successfully",
+        message: `${provider} API key removed successfully`,
       });
     }
 
-    if (field === "imageApiKey") {
+    // Delete specific image provider key
+    if (field === "imageApiKey" && provider && imageProviderKeyMap[provider]) {
       await db
         .update(users)
         .set({
-          imageApiKey: null,
+          [imageProviderKeyMap[provider]]: null,
           updatedAt: new Date(),
         })
         .where(eq(users.id, session.user.id));
 
       return NextResponse.json({
         success: true,
-        message: "Image API key removed successfully",
+        message: `${provider} image API key removed successfully`,
       });
     }
 
-    return NextResponse.json({ error: "Invalid field" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid field or provider" }, { status: 400 });
   } catch (error) {
     console.error("Failed to delete setting:", error);
     return NextResponse.json(

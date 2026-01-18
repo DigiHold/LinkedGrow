@@ -134,16 +134,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has Image API key configured
-    if (!user.imageApiKey || !user.imageProvider) {
+    const imageProvider = user.imageProvider || "google";
+
+    // Get per-provider API key based on selected provider
+    const providerKeyMap: Record<string, string | null> = {
+      google: user.googleImageApiKey,
+      openai: user.openaiImageApiKey,
+      replicate: user.replicateImageApiKey,
+    };
+
+    const encryptedApiKey = providerKeyMap[imageProvider];
+    if (!encryptedApiKey) {
       return NextResponse.json(
-        { error: "No Image API key configured. Please add your API key in Settings." },
+        { error: `No API key configured for ${imageProvider}. Please add your API key in Settings.` },
         { status: 400 }
       );
     }
 
     // Decrypt the image API key
-    const apiKey = decryptApiKey(user.imageApiKey);
+    const apiKey = decryptApiKey(encryptedApiKey);
     if (!apiKey) {
       return NextResponse.json(
         { error: "Failed to decrypt API key. Please re-add your API key in Settings." },
@@ -162,17 +171,49 @@ export async function POST(request: NextRequest) {
 
     let base64Image: string;
 
-    // Get user's image settings with defaults
-    const imageSettings = {
-      model: user.imageModel || "gemini-3-pro-image-preview",
-      resolution: user.imageResolution || "1K",
-      aspectRatio: user.imageAspectRatio || "16:9",
-      quality: user.imageQuality || "high",
-      style: user.imageStyle || "vivid",
+    // Get per-provider image settings with defaults
+    const getProviderSettings = (): ImageSettings => {
+      switch (imageProvider) {
+        case "google":
+          return {
+            model: user.googleImageModel || "gemini-3-pro-image-preview",
+            resolution: user.googleImageResolution || "1K",
+            aspectRatio: user.googleImageAspectRatio || "16:9",
+            quality: "high", // Google doesn't use quality setting
+            style: "vivid", // Google doesn't use style setting
+          };
+        case "openai":
+          return {
+            model: user.openaiImageModel || "gpt-image-1.5",
+            resolution: user.openaiImageResolution || "1792x1024",
+            aspectRatio: "16:9", // OpenAI uses resolution instead of aspect ratio
+            quality: user.openaiImageQuality || "high",
+            style: user.openaiImageStyle || "vivid",
+          };
+        case "replicate":
+          return {
+            model: user.replicateImageModel || "flux-2-pro",
+            resolution: user.replicateImageResolution || "1536x1024",
+            aspectRatio: user.replicateImageAspectRatio || "16:9",
+            quality: "high", // Replicate doesn't use quality setting
+            style: "vivid", // Replicate doesn't use style setting
+          };
+        default:
+          // Default to Google settings
+          return {
+            model: user.googleImageModel || "gemini-3-pro-image-preview",
+            resolution: user.googleImageResolution || "1K",
+            aspectRatio: user.googleImageAspectRatio || "16:9",
+            quality: "high",
+            style: "vivid",
+          };
+      }
     };
 
+    const imageSettings = getProviderSettings();
+
     // Generate image based on provider
-    switch (user.imageProvider) {
+    switch (imageProvider) {
       case "google":
         base64Image = await generateWithGoogle(apiKey, prompt, imageSettings);
         break;
@@ -191,7 +232,7 @@ export async function POST(request: NextRequest) {
         break;
       default:
         return NextResponse.json(
-          { error: `Image generation not supported for provider: ${user.imageProvider}. Please select a provider in Settings.` },
+          { error: `Image generation not supported for provider: ${imageProvider}. Please select a provider in Settings.` },
           { status: 400 }
         );
     }
@@ -205,7 +246,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now().toString(36); // Short unique identifier
     const filename = `${keywords}-${timestamp}.webp`;
 
-    console.log(`Image optimized: ${optimized.sizeKB}KB, filename: ${filename}, provider: ${user.imageProvider}`);
+    console.log(`Image optimized: ${optimized.sizeKB}KB, filename: ${filename}, provider: ${imageProvider}`);
 
     return NextResponse.json({
       success: true,
