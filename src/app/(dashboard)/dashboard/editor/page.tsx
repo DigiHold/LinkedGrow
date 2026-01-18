@@ -66,6 +66,12 @@ function EditorContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [scheduleModal, setScheduleModal] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [isScheduling, setIsScheduling] = useState(false);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -310,8 +316,12 @@ function EditorContent() {
         const data = await response.json();
         setCurrentPostId(data.post.id);
       }
-      alert("Draft saved successfully!");
-      router.push("/dashboard/posts");
+      setSuccessMessage("Draft saved successfully!");
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        router.push("/dashboard/posts");
+      }, 1500);
     } catch (error) {
       console.error("Save error:", error);
       alert(error instanceof Error ? error.message : "Failed to save draft");
@@ -349,13 +359,67 @@ function EditorContent() {
         throw new Error(error.error || "Failed to publish");
       }
 
-      alert("Post published to LinkedIn!");
-      router.push("/dashboard/posts");
+      setSuccessMessage("Post published to LinkedIn!");
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        router.push("/dashboard/posts");
+      }, 1500);
     } catch (error) {
       console.error("Publish error:", error);
       alert(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleOpenScheduleModal = () => {
+    // Set default date/time to tomorrow at 9 AM
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    setScheduleDate(tomorrow.toISOString().split("T")[0]);
+    setScheduleTime("09:00");
+    setScheduleModal(true);
+  };
+
+  const handleSchedulePost = async () => {
+    if (!content.trim() || !scheduleDate || !scheduleTime) return;
+    setIsScheduling(true);
+
+    try {
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+
+      if (currentPostId) {
+        // Update existing post to scheduled
+        const response = await fetch(`/api/posts/${currentPostId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt }),
+        });
+        if (!response.ok) throw new Error("Failed to schedule post");
+      } else {
+        // Create new scheduled post
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, status: "scheduled", postType: "text", scheduledAt }),
+        });
+        if (!response.ok) throw new Error("Failed to schedule post");
+      }
+
+      setScheduleModal(false);
+      setSuccessMessage("Post scheduled successfully!");
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        router.push("/dashboard/posts");
+      }, 1500);
+    } catch (error) {
+      console.error("Schedule error:", error);
+      alert(error instanceof Error ? error.message : "Failed to schedule post");
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -622,7 +686,12 @@ Tips for viral posts:
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 {isSaving ? "Saving..." : "Save as Draft"}
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleOpenScheduleModal}
+                disabled={isSaving || !content.trim()}
+              >
                 <Calendar className="w-4 h-4 mr-2" />
                 Schedule Post
               </Button>
@@ -654,6 +723,85 @@ Tips for viral posts:
           </Card>
         </div>
       </div>
+
+      {/* Schedule Post Modal */}
+      {scheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !isScheduling && setScheduleModal(false)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+            <div className="p-6">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-center mb-2">Schedule Post</h2>
+              <p className="text-muted-foreground text-center text-sm mb-6">
+                Choose when you want this post to be published.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setScheduleModal(false)}
+                  disabled={isScheduling}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                  onClick={handleSchedulePost}
+                  disabled={isScheduling || !scheduleDate || !scheduleTime}
+                >
+                  {isScheduling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Schedule
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Check className="w-5 h-5" />
+            <span className="font-medium">{successMessage}</span>
+          </div>
+        </div>
+      )}
       </div>
     </FeatureGate>
   );
