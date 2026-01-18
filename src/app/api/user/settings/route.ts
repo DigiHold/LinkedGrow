@@ -90,7 +90,7 @@ export async function GET() {
       // Per-provider settings (API key status + model + settings)
       textProviderSettings,
       imageProviderSettings,
-      // Computed fields for backward compatibility with dashboard pages
+      // Computed fields: whether active provider has a key configured
       hasApiKey,
       hasImageApiKey,
       // Other settings

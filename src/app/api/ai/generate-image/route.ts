@@ -223,13 +223,6 @@ export async function POST(request: NextRequest) {
       case "replicate":
         base64Image = await generateWithReplicate(apiKey, prompt, imageSettings);
         break;
-      // Legacy provider names for backward compatibility
-      case "gemini-image":
-        base64Image = await generateWithGoogle(apiKey, prompt, imageSettings);
-        break;
-      case "openai-dalle":
-        base64Image = await generateWithOpenAI(apiKey, prompt, imageSettings);
-        break;
       default:
         return NextResponse.json(
           { error: `Image generation not supported for provider: ${imageProvider}. Please select a provider in Settings.` },

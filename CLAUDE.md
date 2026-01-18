@@ -1,5 +1,9 @@
 # LinkedGrow - AI-Powered LinkedIn Content Platform
 
+> **CRITICAL: NO BACKWARD COMPATIBILITY CODE**
+>
+> LinkedGrow is pre-launch with ZERO users. Never add backward compatibility code, legacy field mappings, migration shims, or "for old users" logic. If something needs to change, change it directly. Delete unused code completely - no commented code, no "deprecated" markers, no fallbacks.
+
 ## Project Overview
 
 LinkedGrow is a SaaS platform that helps users create, schedule, and optimize LinkedIn content using AI. The key differentiator is the **BYOK (Bring Your Own Key)** model - users connect their own AI API keys (OpenAI, Anthropic, Google, etc.) for unlimited generations without monthly caps.
@@ -113,7 +117,8 @@ Main tables in `src/lib/db/schema.ts`:
 Auth: email, password (bcrypt), twoFactorEnabled, twoFactorSecret, isAdmin
 Subscription: plan (free/starter/pro/business), stripeCustomerId, stripeSubscriptionId
 LinkedIn: linkedinAccessToken, linkedinRefreshToken, linkedinTokenExpiry, linkedinProfileId, linkedinProfileName
-AI Settings: aiProvider, aiApiKey, aiModel, imageProvider, imageApiKey
+Text AI (per-provider): aiProvider, openaiApiKey, openaiModel, anthropicApiKey, anthropicModel, googleApiKey, googleModel, grokApiKey, grokModel, perplexityApiKey, perplexityModel
+Image AI (per-provider): imageProvider, googleImageApiKey, googleImageModel, googleImageResolution, googleImageAspectRatio, openaiImageApiKey, openaiImageModel, openaiImageResolution, openaiImageQuality, openaiImageStyle, replicateImageApiKey, replicateImageModel, replicateImageResolution, replicateImageAspectRatio
 Voice: samplePosts (JSON), neverMention, businessDescription, targetAudience, writingTone
 Branding: brandLogoUrl, brandPrimaryColor, brandSecondaryColor, brandFontFamily
 ```
