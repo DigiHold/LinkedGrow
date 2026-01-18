@@ -77,6 +77,12 @@ export async function GET() {
       }
     }
 
+    // Computed fields: check if the active provider has an API key configured
+    const activeTextProvider = user.aiProvider || "openai";
+    const activeImageProvider = user.imageProvider || "google";
+    const hasApiKey = textProviderSettings[activeTextProvider]?.hasKey || false;
+    const hasImageApiKey = imageProviderSettings[activeImageProvider]?.hasKey || false;
+
     return NextResponse.json({
       // Currently selected providers
       aiProvider: user.aiProvider,
@@ -84,6 +90,9 @@ export async function GET() {
       // Per-provider settings (API key status + model + settings)
       textProviderSettings,
       imageProviderSettings,
+      // Computed fields for backward compatibility with dashboard pages
+      hasApiKey,
+      hasImageApiKey,
       // Other settings
       linkedinConnected: !!user.linkedinAccessToken,
       linkedinProfileName: user.linkedinProfileName,
