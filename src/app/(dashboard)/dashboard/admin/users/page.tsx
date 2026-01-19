@@ -94,6 +94,7 @@ export default function AdminUsersPage() {
 
   // Dropdown state
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -106,6 +107,20 @@ export default function AdminUsersPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleDropdownToggle = (userId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (openDropdownId === userId) {
+      setOpenDropdownId(null);
+    } else {
+      const button = event.currentTarget;
+      const rect = button.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.right - 160,
+      });
+      setOpenDropdownId(userId);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -256,13 +271,13 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-10"
             />
           </div>
           <Button type="submit">Search</Button>
@@ -273,8 +288,8 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border">
-        <div className="overflow-x-auto overflow-y-visible">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
@@ -388,41 +403,14 @@ export default function AdminUsersPage() {
                           </a>
                         )}
                         {user.id !== session?.user?.id && (
-                          <div className="relative" ref={openDropdownId === user.id ? dropdownRef : null}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                            {openDropdownId === user.id && (
-                              <div className="absolute right-0 top-full mt-1 z-50 min-w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1">
-                                <button
-                                  onClick={() => {
-                                    openEditModal(user);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                  Edit User
-                                </button>
-                                <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-                                <button
-                                  onClick={() => {
-                                    openDeleteModal(user);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete User
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => handleDropdownToggle(user.id, e)}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -460,6 +448,39 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {/* Dropdown Menu - Fixed position to avoid scrollbar issues */}
+      {openDropdownId && (
+        <div
+          ref={dropdownRef}
+          className="fixed z-50 w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1"
+          style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+        >
+          <button
+            onClick={() => {
+              const user = users.find(u => u.id === openDropdownId);
+              if (user) openEditModal(user);
+              setOpenDropdownId(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit User
+          </button>
+          <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+          <button
+            onClick={() => {
+              const user = users.find(u => u.id === openDropdownId);
+              if (user) openDeleteModal(user);
+              setOpenDropdownId(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete User
+          </button>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
