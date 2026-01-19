@@ -6,11 +6,32 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
+  const popup = searchParams.get('popup') === 'true';
 
   // Check if Google credentials are configured
   if (!isGoogleConfigured()) {
+    const errorMessage = 'Google login is not configured';
+    if (popup) {
+      return new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><title>Google Login Error</title></head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'google-error', error: '${errorMessage}' }, '*');
+                window.close();
+              } else {
+                document.body.innerHTML = '<p>${errorMessage}</p>';
+              }
+            </script>
+          </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+    }
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Google login is not configured')}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorMessage)}`
     );
   }
 
@@ -43,6 +64,17 @@ export async function GET(request: NextRequest) {
   // Store newsletter preference for callback
   if (newsletter) {
     response.cookies.set('google_newsletter', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+      path: '/',
+    });
+  }
+
+  // Store popup flag for callback
+  if (popup) {
+    response.cookies.set('google_popup', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

@@ -322,6 +322,45 @@ export async function GET(request: NextRequest) {
         maxAge: 30 * 24 * 60 * 60, // 30 days
       });
 
+      // Handle popup mode for login/register
+      if (isPopup) {
+        const response = new NextResponse(
+          `<!DOCTYPE html>
+          <html>
+            <head><title>LinkedIn Login</title></head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'linkedin-success' }, '*');
+                  window.close();
+                } else {
+                  window.location.href = '/dashboard';
+                }
+              </script>
+            </body>
+          </html>`,
+          { headers: { 'Content-Type': 'text/html' } }
+        );
+
+        // Set the session cookie
+        response.cookies.set(cookieName, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60, // 30 days
+          path: '/',
+        });
+
+        // Clear OAuth cookies
+        response.cookies.delete('linkedin_oauth_state');
+        response.cookies.delete('linkedin_app_type');
+        response.cookies.delete('linkedin_oauth_mode');
+        response.cookies.delete('linkedin_popup');
+        response.cookies.delete('linkedin_newsletter');
+
+        return response;
+      }
+
       // Redirect to dashboard with session cookie
       const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
 

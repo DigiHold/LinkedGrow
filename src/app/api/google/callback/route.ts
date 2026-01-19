@@ -7,6 +7,30 @@ import { encode } from 'next-auth/jwt';
 import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
 
+function createPopupResponse(success: boolean, data: { error?: string }) {
+  const message = success
+    ? { type: 'google-success' }
+    : { type: 'google-error', error: data.error };
+
+  return new NextResponse(
+    `<!DOCTYPE html>
+    <html>
+      <head><title>Google Login</title></head>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage(${JSON.stringify(message)}, '*');
+            window.close();
+          } else {
+            window.location.href = '${success ? '/dashboard' : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+          }
+        </script>
+      </body>
+    </html>`,
+    { headers: { 'Content-Type': 'text/html' } }
+  );
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
@@ -17,9 +41,13 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get('google_oauth_state')?.value;
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const subscribeNewsletterCookie = request.cookies.get('google_newsletter')?.value === 'true';
+  const isPopup = request.cookies.get('google_popup')?.value === 'true';
 
   // Handle OAuth errors
   if (error) {
+    if (isPopup) {
+      return createPopupResponse(false, { error });
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(error)}`
     );
@@ -27,12 +55,18 @@ export async function GET(request: NextRequest) {
 
   // Validate state
   if (!state || state !== storedState) {
+    if (isPopup) {
+      return createPopupResponse(false, { error: 'Invalid state parameter' });
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Invalid state parameter')}`
     );
   }
 
   if (!code) {
+    if (isPopup) {
+      return createPopupResponse(false, { error: 'No authorization code provided' });
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('No authorization code provided')}`
     );
@@ -48,6 +82,9 @@ export async function GET(request: NextRequest) {
     const googleUser = await getGoogleUserInfo(tokenData.access_token);
 
     if (!googleUser.email) {
+      if (isPopup) {
+        return createPopupResponse(false, { error: 'Could not retrieve email from Google' });
+      }
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('Could not retrieve email from Google')}`
       );
@@ -70,6 +107,9 @@ export async function GET(request: NextRequest) {
       // Registration flow
       if (user) {
         // User already exists - redirect to login
+        if (isPopup) {
+          return createPopupResponse(false, { error: 'An account with this email already exists. Please sign in instead.' });
+        }
         return NextResponse.redirect(
           `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent('An account with this email already exists. Please sign in instead.')}`
         );
@@ -126,6 +166,9 @@ export async function GET(request: NextRequest) {
       // Login flow
       if (!user) {
         // User doesn't exist - redirect to register
+        if (isPopup) {
+          return createPopupResponse(false, { error: 'No account found with this email. Please create an account first.' });
+        }
         return NextResponse.redirect(
           `${process.env.NEXT_PUBLIC_APP_URL}/sign-up?error=${encodeURIComponent('No account found with this email. Please create an account first.')}`
         );
@@ -203,6 +246,44 @@ export async function GET(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
+    // Handle popup mode - return HTML that sets cookie and notifies parent
+    if (isPopup) {
+      const response = new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><title>Google Login</title></head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'google-success' }, '*');
+                window.close();
+              } else {
+                window.location.href = '/dashboard';
+              }
+            </script>
+          </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+
+      // Set the session cookie
+      response.cookies.set(cookieName, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+
+      // Clear OAuth cookies
+      response.cookies.delete('google_oauth_state');
+      response.cookies.delete('google_oauth_mode');
+      response.cookies.delete('google_newsletter');
+      response.cookies.delete('google_popup');
+
+      return response;
+    }
+
     // Redirect to dashboard with session cookie
     const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
 
@@ -225,6 +306,9 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('Google OAuth callback error:', err);
     const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
+    if (isPopup) {
+      return createPopupResponse(false, { error: errorMessage });
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=${encodeURIComponent(errorMessage)}`
     );
