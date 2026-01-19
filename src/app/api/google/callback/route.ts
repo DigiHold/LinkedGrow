@@ -115,13 +115,13 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Create new user
+      // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
       await db.insert(users).values({
         id: userId,
         email: googleUser.email,
         name: googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim(),
-        image: googleUser.picture || null,
+        image: null,
         emailVerified: googleUser.verified_email ? new Date() : null,
         plan: 'free',
         twoFactorEnabled: false,
@@ -209,16 +209,7 @@ export async function GET(request: NextRequest) {
           );
       }
 
-      // Update user profile picture if they don't have one
-      if (!user.image && googleUser.picture) {
-        await db
-          .update(users)
-          .set({
-            image: googleUser.picture,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, user.id));
-      }
+      // Don't update profile picture from Google - only LinkedIn pictures are used
     }
 
     if (!user) {
@@ -236,7 +227,7 @@ export async function GET(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
-        image: user.image,
+        image: user.image, // Only set if user connected LinkedIn
         plan: user.plan,
         twoFactorEnabled: user.twoFactorEnabled,
         isAdmin: user.isAdmin,
