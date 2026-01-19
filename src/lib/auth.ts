@@ -101,6 +101,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (dbUser) {
+          token.email = dbUser.email;
           token.name = dbUser.name;
           token.image = dbUser.image;
           token.plan = dbUser.plan;
@@ -114,6 +115,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.email = token.email as string;
         session.user.name = token.name as string | null;
         session.user.image = token.image as string | null;
         session.user.plan = token.plan as string;
