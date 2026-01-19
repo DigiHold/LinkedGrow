@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Gift, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Turnstile } from "@/components/turnstile";
 
 interface ExitIntentPopupProps {
-  onSubmit: (email: string, formLoadTime: number, honeypot: string, turnstileToken: string) => Promise<void>;
+  onSubmit: (email: string, formLoadTime: number, honeypot: string) => Promise<void>;
 }
 
 export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
@@ -19,7 +18,6 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
   const [formLoadTime, setFormLoadTime] = useState(0);
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   useEffect(() => {
     // Check if already shown in this session
@@ -54,16 +52,11 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
     e.preventDefault();
     if (!email) return;
 
-    if (!turnstileToken) {
-      setError("Please complete the verification");
-      return;
-    }
-
     setIsLoading(true);
     setError("");
 
     try {
-      await onSubmit(email, formLoadTime, honeypot, turnstileToken);
+      await onSubmit(email, formLoadTime, honeypot);
       setIsSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
@@ -175,11 +168,9 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
                         <p className="text-sm text-red-500">{error}</p>
                       )}
 
-                      <Turnstile onVerify={setTurnstileToken} className="mb-2" />
-
                       <Button
                         type="submit"
-                        disabled={isLoading || !turnstileToken}
+                        disabled={isLoading}
                         className="w-full py-3 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-cyan-500/30 transition-all"
                       >
                         {isLoading ? (

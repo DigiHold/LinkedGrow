@@ -43,7 +43,6 @@ import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
 import { ActivityToast } from "@/components/prelaunch/activity-toast";
 import { ExitIntentPopup } from "@/components/prelaunch/exit-intent-popup";
-import { Turnstile } from "@/components/turnstile";
 
 // Translations type
 export interface PrelaunchTranslations {
@@ -141,7 +140,7 @@ export interface PrelaunchTranslations {
 // ============================================
 
 // Hero Section with Floating Elements
-function HeroSection({ email, setEmail, honeypot, setHoneypot, turnstileToken, setTurnstileToken, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
+function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
       {/* Floating Elements with Official AI Brand Logos */}
@@ -371,14 +370,11 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, turnstileToken, s
                 />
                 <Button
                   type="submit"
-                  disabled={isLoading || !turnstileToken}
+                  disabled={isLoading}
                   className="h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 shrink-0"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{translations.hero.cta} <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
-              </div>
-              <div className="flex justify-center mt-4">
-                <Turnstile onVerify={setTurnstileToken} />
               </div>
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             </form>
@@ -463,8 +459,6 @@ interface HeroProps {
   setEmail: (email: string) => void;
   honeypot: string;
   setHoneypot: (honeypot: string) => void;
-  turnstileToken: string;
-  setTurnstileToken: (token: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   isSuccess: boolean;
@@ -1737,8 +1731,6 @@ interface CTAProps {
   setEmail: (email: string) => void;
   honeypot: string;
   setHoneypot: (honeypot: string) => void;
-  turnstileToken: string;
-  setTurnstileToken: (token: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   isSuccess: boolean;
@@ -1747,7 +1739,7 @@ interface CTAProps {
 }
 
 // Shared form component for all CTA variants
-function CTAForm({ email, setEmail, honeypot, setHoneypot, turnstileToken, setTurnstileToken, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
+function CTAForm({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
   const isDark = variant === "dark";
 
   if (isSuccess) {
@@ -1792,14 +1784,13 @@ function CTAForm({ email, setEmail, honeypot, setHoneypot, turnstileToken, setTu
           />
           <Button
             type="submit"
-            disabled={isLoading || !turnstileToken}
+            disabled={isLoading}
             className="h-14 md:h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
         </div>
       </div>
-      <Turnstile onVerify={setTurnstileToken} className="flex justify-center" />
       {error && <p className="text-red-400 text-sm text-center">{error}</p>}
       <p className={`text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
         Join 179 founders - No spam - Unsubscribe anytime
@@ -1892,7 +1883,6 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
   const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Bot trap - should stay empty
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -1932,17 +1922,13 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!turnstileToken) {
-      setError("Please complete the verification");
-      return;
-    }
     setIsLoading(true);
     setError("");
     try {
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, _hp: honeypot, _ts: formLoadTime.toString(), _turnstile: turnstileToken }),
+        body: JSON.stringify({ email, _hp: honeypot, _ts: formLoadTime.toString() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1954,11 +1940,11 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
-  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string, exitTurnstileToken: string) => {
+  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string) => {
     const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: exitEmail, _hp: exitHoneypot, _ts: exitFormLoadTime.toString(), _turnstile: exitTurnstileToken }),
+      body: JSON.stringify({ email: exitEmail, _hp: exitHoneypot, _ts: exitFormLoadTime.toString() }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1969,8 +1955,6 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     setEmail,
     honeypot,
     setHoneypot,
-    turnstileToken,
-    setTurnstileToken,
     handleSubmit,
     isLoading,
     isSuccess,
@@ -2145,8 +2129,6 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
         setEmail={setEmail}
         honeypot={honeypot}
         setHoneypot={setHoneypot}
-        turnstileToken={turnstileToken}
-        setTurnstileToken={setTurnstileToken}
         handleSubmit={handleSubmit}
         isLoading={isLoading}
         isSuccess={isSuccess}
