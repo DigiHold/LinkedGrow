@@ -10,17 +10,17 @@
 // Poster app: Sign-in + Share on LinkedIn
 const POSTER_SCOPES = ['openid', 'profile', 'email', 'w_member_social'];
 // Community app: Community Management API for engagement features
-// Required scopes per LinkedIn docs:
-// - w_member_social: Post content on behalf of member
-// - r_organization_social: Read organization posts/comments
-// - w_organization_social: Post/comment on behalf of organization
+// Development Tier: Only w_member_social is available
+// Standard Tier (after approval): r_organization_social, w_organization_social
+// For now, we use Development Tier scopes only
 const COMMUNITY_SCOPES = [
   'openid',
   'profile',
   'email',
-  'w_member_social',            // Post/interact as member
-  'r_organization_social',      // Read org content (comments, reactions)
-  'w_organization_social',      // Post/comment as organization
+  'w_member_social',            // Post/interact as member (Development Tier)
+  // After Standard Tier approval, uncomment these:
+  // 'r_organization_social',   // Read org content (comments, reactions)
+  // 'w_organization_social',   // Post/comment as organization
 ];
 
 // LinkedIn API endpoints
