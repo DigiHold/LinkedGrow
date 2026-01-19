@@ -143,7 +143,7 @@ function SignInForm() {
               Linked<span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Grow</span>
             </span>
           </Link>
-          <h1 className="text-[2rem] font-bold text-slate-900 dark:text-white mb-2">Welcome back</h1>
+          <h1 className="text-[2rem] font-bold leading-[1.2] text-slate-900 dark:text-white mb-2">Welcome back</h1>
           <p className="text-slate-600 dark:text-slate-400">
             Sign in to your account to continue
           </p>
