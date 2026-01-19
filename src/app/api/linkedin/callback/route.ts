@@ -171,20 +171,14 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // Create new user
+        // Create new user (don't store profile picture during social login - only when connecting LinkedIn via settings)
         const userId = randomUUID();
-
-        // Store profile picture in R2
-        let storedPictureUrl: string | null = null;
-        if (linkedInPictureUrl) {
-          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, userId);
-        }
 
         await db.insert(users).values({
           id: userId,
           email: linkedInEmail,
           name: fullName,
-          image: storedPictureUrl,
+          image: null,
           emailVerified: new Date(), // LinkedIn emails are verified
           plan: 'free',
           twoFactorEnabled: false,
@@ -275,11 +269,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Also update the user's LinkedIn posting tokens (auto-connect)
-        let storedPictureUrl: string | null = user.image;
-        if (!user.image && linkedInPictureUrl) {
-          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, user.id);
-        }
-
+        // Don't update profile picture during social login - only when connecting LinkedIn via settings
         await db
           .update(users)
           .set({
@@ -290,7 +280,6 @@ export async function GET(request: NextRequest) {
               : null,
             linkedinProfileId: profile.id,
             linkedinProfileName: fullName,
-            image: storedPictureUrl,
             name: user.name || fullName,
             updatedAt: new Date(),
           })
