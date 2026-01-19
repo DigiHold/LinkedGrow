@@ -127,15 +127,16 @@ export default function EngagementPage() {
 
   const loadEngagementData = async () => {
     try {
-      const response = await fetch("/api/linkedin/engagement/today");
+      const response = await fetch("/api/linkedin/engagement");
       if (response.ok) {
         const data = await response.json();
-        setTodayLikes(data.likes || 0);
-        setTodayComments(data.comments || 0);
-        setLikesObjective(data.likesObjective || 10);
-        setCommentsObjective(data.commentsObjective || 5);
-        setTempLikesObjective(data.likesObjective || 10);
-        setTempCommentsObjective(data.commentsObjective || 5);
+        setTodayLikes(data.today?.likes || 0);
+        setTodayComments(data.today?.comments || 0);
+        setLikesObjective(data.objectives?.dailyLikes || 10);
+        setCommentsObjective(data.objectives?.dailyComments || 5);
+        setTempLikesObjective(data.objectives?.dailyLikes || 10);
+        setTempCommentsObjective(data.objectives?.dailyComments || 5);
+        setCommunityConnected(data.communityConnected || false);
       }
     } catch (error) {
       console.error("Failed to load engagement data:", error);
@@ -225,12 +226,12 @@ export default function EngagementPage() {
 
   const handleSaveObjectives = async () => {
     try {
-      const response = await fetch("/api/linkedin/engagement/objectives", {
-        method: "POST",
+      const response = await fetch("/api/linkedin/engagement", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          likesObjective: tempLikesObjective,
-          commentsObjective: tempCommentsObjective,
+          dailyLikes: tempLikesObjective,
+          dailyComments: tempCommentsObjective,
         }),
       });
 
@@ -262,10 +263,10 @@ export default function EngagementPage() {
       const post = feed.find(p => p.id === postId);
       if (post && !post.liked) {
         setTodayLikes(prev => prev + 1);
-        await fetch("/api/linkedin/engagement/track", {
+        await fetch("/api/linkedin/engagement", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "like" }),
+          body: JSON.stringify({ type: "like", linkedinPostId: postId }),
         }).catch(() => {});
       }
     } catch (error) {
@@ -302,10 +303,10 @@ export default function EngagementPage() {
 
       // Track engagement
       setTodayComments(prev => prev + 1);
-      await fetch("/api/linkedin/engagement/track", {
+      await fetch("/api/linkedin/engagement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "comment" }),
+        body: JSON.stringify({ type: "comment", linkedinPostId: postId, commentContent: commentText }),
       }).catch(() => {});
     } catch (error) {
       console.error("Failed to submit comment:", error);

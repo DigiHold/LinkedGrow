@@ -326,6 +326,35 @@ export const postAnalytics = sqliteTable("post_analytics", {
 });
 
 // ============================================
+// ENGAGEMENT TRACKING
+// ============================================
+
+// Daily engagement actions tracking
+export const engagementActions = sqliteTable("engagement_actions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["like", "comment"] }).notNull(),
+  linkedinPostId: text("linkedin_post_id"), // The LinkedIn post URN that was liked/commented
+  commentContent: text("comment_content"), // If type is comment, store the comment text
+  date: text("date").notNull(), // YYYY-MM-DD format for easy daily grouping
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// User engagement objectives (settings)
+export const engagementObjectives = sqliteTable("engagement_objectives", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  dailyLikes: integer("daily_likes").default(10),
+  dailyComments: integer("daily_comments").default(5),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
 // ADMIN FEATURES
 // ============================================
 
@@ -391,6 +420,10 @@ export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
 export type PostAnalytics = typeof postAnalytics.$inferSelect;
 export type NewPostAnalytics = typeof postAnalytics.$inferInsert;
+export type EngagementAction = typeof engagementActions.$inferSelect;
+export type NewEngagementAction = typeof engagementActions.$inferInsert;
+export type EngagementObjective = typeof engagementObjectives.$inferSelect;
+export type NewEngagementObjective = typeof engagementObjectives.$inferInsert;
 export type CookieConsent = typeof cookieConsents.$inferSelect;
 export type NewCookieConsent = typeof cookieConsents.$inferInsert;
 export type DataRemovalRequest = typeof dataRemovalRequests.$inferSelect;
