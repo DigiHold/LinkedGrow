@@ -9,15 +9,14 @@
 // LinkedIn OAuth scopes
 // Poster app: Sign-in + Share on LinkedIn
 const POSTER_SCOPES = ['openid', 'profile', 'email', 'w_member_social'];
-// Community app: Community Management API with analytics access
+// Community app: Community Management API for engagement features
+// Development Tier allows: w_member_social (interact with posts)
+// Standard Tier adds: r_organization_social, w_organization_social
 const COMMUNITY_SCOPES = [
   'openid',
   'profile',
   'email',
-  'r_organization_social',
-  'w_organization_social',
-  'r_member_postAnalytics',      // Member post analytics (v202506+)
-  'r_member_profileAnalytics',   // Member follower count (v202504+)
+  'w_member_social',            // Like, comment, share posts (Development Tier)
 ];
 
 // LinkedIn API endpoints
