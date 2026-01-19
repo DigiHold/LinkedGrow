@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import {
   Users,
   Search,
@@ -64,6 +65,7 @@ const planColors: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const { data: session } = useSession();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -271,8 +273,8 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
@@ -385,41 +387,43 @@ export default function AdminUsersPage() {
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         )}
-                        <div className="relative" ref={openDropdownId === user.id ? dropdownRef : null}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                          {openDropdownId === user.id && (
-                            <div className="absolute right-0 top-full mt-1 z-50 min-w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1">
-                              <button
-                                onClick={() => {
-                                  openEditModal(user);
-                                  setOpenDropdownId(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                              >
-                                <Pencil className="w-4 h-4" />
-                                Edit User
-                              </button>
-                              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-                              <button
-                                onClick={() => {
-                                  openDeleteModal(user);
-                                  setOpenDropdownId(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete User
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        {user.id !== session?.user?.id && (
+                          <div className="relative" ref={openDropdownId === user.id ? dropdownRef : null}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                            {openDropdownId === user.id && (
+                              <div className="absolute right-0 top-full mt-1 z-50 min-w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1">
+                                <button
+                                  onClick={() => {
+                                    openEditModal(user);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                  Edit User
+                                </button>
+                                <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+                                <button
+                                  onClick={() => {
+                                    openDeleteModal(user);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete User
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
