@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users,
   Search,
@@ -11,9 +11,31 @@ import {
   Calendar,
   Shield,
   ExternalLink,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Check,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface UserData {
   id: string;
@@ -49,6 +71,39 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 20;
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    plan: "free",
+    isAdmin: false,
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<UserData | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  // Dropdown state
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -91,6 +146,93 @@ export default function AdminUsersPage() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const openEditModal = (user: UserData) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name || "",
+      email: user.email,
+      plan: user.plan,
+      isAdmin: user.isAdmin,
+    });
+    setEditError("");
+    setEditModalOpen(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!editingUser) return;
+
+    setEditLoading(true);
+    setEditError("");
+
+    try {
+      const response = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEditError(data.error || "Failed to update user");
+        return;
+      }
+
+      // Update local state
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === editingUser.id
+            ? { ...u, ...editForm }
+            : u
+        )
+      );
+
+      setEditModalOpen(false);
+      setEditingUser(null);
+    } catch (error) {
+      setEditError("An error occurred while updating the user");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const openDeleteModal = (user: UserData) => {
+    setDeletingUser(user);
+    setDeleteError("");
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    setDeleteLoading(true);
+    setDeleteError("");
+
+    try {
+      const response = await fetch(`/api/admin/users/${deletingUser.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || "Failed to delete user");
+        return;
+      }
+
+      // Remove from local state
+      setUsers((prev) => prev.filter((u) => u.id !== deletingUser.id));
+      setTotal((prev) => prev - 1);
+
+      setDeleteModalOpen(false);
+      setDeletingUser(null);
+    } catch (error) {
+      setDeleteError("An error occurred while deleting the user");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -231,17 +373,54 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {user.stripeCustomerId && (
-                        <a
-                          href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
-                        >
-                          Stripe
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {user.stripeCustomerId && (
+                          <a
+                            href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
+                          >
+                            Stripe
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        <div className="relative" ref={openDropdownId === user.id ? dropdownRef : null}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                          {openDropdownId === user.id && (
+                            <div className="absolute right-0 top-full mt-1 z-50 min-w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1">
+                              <button
+                                onClick={() => {
+                                  openEditModal(user);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                                Edit User
+                              </button>
+                              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+                              <button
+                                onClick={() => {
+                                  openDeleteModal(user);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete User
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -277,6 +456,174 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-cyan-600" />
+              Edit User
+            </DialogTitle>
+            <DialogDescription>
+              Update user information. Changes will take effect immediately.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {editError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="User name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="user@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-plan">Plan</Label>
+              <Select
+                value={editForm.plan}
+                onValueChange={(value) => setEditForm({ ...editForm, plan: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="starter">Starter</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="edit-admin"
+                checked={editForm.isAdmin}
+                onChange={(e) => setEditForm({ ...editForm, isAdmin: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+              />
+              <Label htmlFor="edit-admin" className="cursor-pointer">
+                Admin privileges
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditModalOpen(false)}
+              disabled={editLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditUser}
+              disabled={editLoading}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              {editLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete User
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. All user data will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {deleteError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm mb-4">
+                {deleteError}
+              </div>
+            )}
+
+            {deletingUser && (
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-medium">
+                    {(deletingUser.name || deletingUser.email.charAt(0)).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium">{deletingUser.name || "No name"}</p>
+                    <p className="text-sm text-muted-foreground">{deletingUser.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-4 text-sm text-muted-foreground">
+              This will delete:
+            </p>
+            <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside space-y-1">
+              <li>User account and profile</li>
+              <li>All posts and scheduled content</li>
+              <li>All media files</li>
+              <li>All saved ideas</li>
+              <li>LinkedIn connection data</li>
+              <li>API keys and logs</li>
+            </ul>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

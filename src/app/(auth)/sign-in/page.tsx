@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ function GoogleIcon({ className }: { className?: string }) {
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { update: updateSession } = useSession();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const error = searchParams.get("error");
   const registered = searchParams.get("registered");
@@ -98,10 +99,11 @@ function SignInForm() {
     );
 
     // Listen for messages from the popup
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
-        // Redirect to dashboard after successful login
+        // Force session refresh to get updated user data, then redirect
+        await updateSession();
         router.push(callbackUrl);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);

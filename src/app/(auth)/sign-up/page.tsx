@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ function GoogleIcon({ className }: { className?: string }) {
 function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { update: updateSession } = useSession();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -73,10 +75,11 @@ function SignUpContent() {
     );
 
     // Listen for messages from the popup
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
-        // Redirect to dashboard after successful signup
+        // Force session refresh to get updated user data, then redirect
+        await updateSession();
         router.push('/dashboard');
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
