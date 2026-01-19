@@ -23,14 +23,15 @@ function LinkedInIcon({ className }: { className?: string }) {
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      {/* Blue - right side and horizontal bar */}
-      <path stroke="#4285F4" d="M21 12c0-.82-.1-1.61-.28-2.37H12v4.49h5.05" />
-      {/* Green - bottom arc */}
-      <path stroke="#34A853" d="M12 21a9 9 0 0 0 6.33-2.57l-2.84-2.2a5.4 5.4 0 0 1-3.49 1.23 5.4 5.4 0 0 1-5.07-3.54" />
-      {/* Yellow - left side */}
-      <path stroke="#FBBC05" d="M6.93 13.92A5.5 5.5 0 0 1 6.5 12c0-.68.1-1.33.28-1.94L3.64 7.78A9 9 0 0 0 3 12c0 1.5.37 2.92 1.02 4.17" />
-      {/* Red - top arc */}
-      <path stroke="#EA4335" d="M12 3a9 9 0 0 1 5.72 2.04l-2.77 2.77A5.4 5.4 0 0 0 12 6.54a5.4 5.4 0 0 0-5.07 3.54L4.02 7.78A9 9 0 0 1 12 3z" />
+      {/* Google "G" as a circle with 4 colored quadrant arcs + horizontal bar */}
+      {/* Red - top right quadrant (12 o'clock to 3 o'clock) */}
+      <path stroke="#EA4335" d="M12 3a9 9 0 0 1 9 9" />
+      {/* Blue - right side going down + horizontal bar */}
+      <path stroke="#4285F4" d="M21 12h-9" />
+      {/* Green - bottom half (3 o'clock to 9 o'clock) */}
+      <path stroke="#34A853" d="M21 12a9 9 0 0 1-15.36 6.36" />
+      {/* Yellow - left side going up (9 o'clock to 12 o'clock) */}
+      <path stroke="#FBBC05" d="M5.64 18.36A9 9 0 0 1 12 3" />
     </svg>
   );
 }
