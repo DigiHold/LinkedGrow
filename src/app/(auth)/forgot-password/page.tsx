@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -53,11 +52,6 @@ export default function ForgotPasswordPage() {
 
       {/* Grid pattern overlay */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none opacity-30 dark:opacity-10" />
-
-      {/* Theme Toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
 
       <div className="relative w-full max-w-md">
         {/* Glassmorphism Card */}
@@ -138,7 +132,7 @@ export default function ForgotPasswordPage() {
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full h-14 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                        className="w-full h-14 min-h-[54px] pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                         required
                       />
                     </div>

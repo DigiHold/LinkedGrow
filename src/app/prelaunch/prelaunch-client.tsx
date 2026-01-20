@@ -366,7 +366,7 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-16 px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-[2] min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-[2] min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                 />
                 <Button
                   type="submit"
@@ -1780,7 +1780,7 @@ function CTAForm({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoadi
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className={`flex-[2] min-w-0 h-14 md:h-16 px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+            className={`flex-[2] min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
           />
           <Button
             type="submit"
@@ -1846,7 +1846,7 @@ function CTASection(props: CTAProps) {
                 value={props.email}
                 onChange={(e) => props.setEmail(e.target.value)}
                 required
-                className="flex-[2] min-w-0 h-16 px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                className="flex-[2] min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
               <Button type="submit" disabled={props.isLoading} className="h-16 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shrink-0">
                 {props.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{props.translations.cta.button} <ArrowRight className="w-5 h-5 ml-2" /></>}

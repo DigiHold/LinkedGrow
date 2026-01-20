@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 // LinkedIn "in" icon only
 function LinkedInIcon({ className }: { className?: string }) {
@@ -198,7 +197,7 @@ function SignInForm() {
                   <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white dark:bg-slate-900 px-3 text-slate-500">or continue with email</span>
+                  <span className="bg-white/80 dark:bg-slate-900/80 px-3 text-slate-500">or continue with email</span>
                 </div>
               </div>
             </>
@@ -215,7 +214,7 @@ function SignInForm() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-14 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      className="w-full h-14 min-h-[54px] pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                       required
                     />
                   </div>
@@ -344,11 +343,6 @@ export default function SignInPage() {
 
       {/* Grid pattern overlay */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none opacity-30 dark:opacity-10" />
-
-      {/* Theme Toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
 
       <Suspense fallback={<LoadingFallback />}>
         <SignInForm />

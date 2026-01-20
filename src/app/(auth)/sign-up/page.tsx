@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
 
 type SocialProvider = "linkedin" | "google" | null;
-import { ThemeToggle } from "@/components/theme-toggle";
 
 // LinkedIn "in" icon only
 function LinkedInIcon({ className }: { className?: string }) {
@@ -163,11 +162,6 @@ function SignUpContent() {
       {/* Grid pattern overlay */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none opacity-30 dark:opacity-10" />
 
-      {/* Theme Toggle */}
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
-
       <div className="relative w-full max-w-md">
         {/* Glassmorphism Card */}
         <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
@@ -234,7 +228,7 @@ function SignUpContent() {
                 <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">
+                <span className="px-4 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400">
                   or continue with email
                 </span>
               </div>
@@ -263,7 +257,7 @@ function SignUpContent() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-14 pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                    className="w-full h-14 min-h-[54px] pl-12 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     required
                   />
                 </div>
