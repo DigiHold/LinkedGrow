@@ -52,43 +52,20 @@ interface RedditPostData {
   num_comments: number;
 }
 
-// Fetch Reddit post data client-side (works from user's browser IP)
-async function fetchRedditPostClientSide(url: string): Promise<RedditPostData> {
-  // Convert regular Reddit URL to JSON API URL
-  let jsonUrl = url.trim();
-
-  // Remove query parameters and trailing slashes
-  jsonUrl = jsonUrl.split("?")[0].replace(/\/+$/, "");
-
-  // Add .json extension
-  jsonUrl = jsonUrl + ".json";
-
-  const response = await fetch(jsonUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; LinkedGrow/1.0)",
-    },
+// Fetch Reddit post data via our server-side API (bypasses CORS)
+async function fetchRedditPost(url: string): Promise<RedditPostData> {
+  const response = await fetch("/api/reddit/fetch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch Reddit post. Make sure the URL is correct and the post is public.");
+    const data = await response.json();
+    throw new Error(data.error || "Failed to fetch Reddit post");
   }
 
-  const data = await response.json();
-
-  // Reddit JSON structure: [post data, comments data]
-  const postData = data[0]?.data?.children?.[0]?.data;
-
-  if (!postData) {
-    throw new Error("Could not parse Reddit post data");
-  }
-
-  return {
-    title: postData.title || "",
-    selftext: postData.selftext || "",
-    subreddit: postData.subreddit || "",
-    score: postData.score || 0,
-    num_comments: postData.num_comments || 0,
-  };
+  return response.json();
 }
 
 function RedditImportContent() {
@@ -149,8 +126,8 @@ function RedditImportContent() {
     setError(null);
 
     try {
-      // Step 1: Fetch Reddit data client-side (bypasses IP blocking)
-      const postData = await fetchRedditPostClientSide(url);
+      // Step 1: Fetch Reddit data via server-side API (bypasses CORS)
+      const postData = await fetchRedditPost(url);
       setRedditPost(postData);
 
       // Step 2: Send to our API to generate hooks with AI
