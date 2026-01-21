@@ -82,11 +82,6 @@ function RedditImportContent() {
   const [error, setError] = useState<string | null>(null);
   const [redditPost, setRedditPost] = useState<RedditPostData | null>(null);
 
-  // Manual paste mode (when auto-fetch fails)
-  const [showManualPaste, setShowManualPaste] = useState(false);
-  const [manualTitle, setManualTitle] = useState("");
-  const [manualContent, setManualContent] = useState("");
-
   // API key state
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
@@ -129,10 +124,9 @@ function RedditImportContent() {
     if (!url.includes("reddit.com") || !hasApiKey) return;
     setIsLoading(true);
     setError(null);
-    setShowManualPaste(false);
 
     try {
-      // Step 1: Fetch Reddit data via server-side API (bypasses CORS)
+      // Step 1: Fetch Reddit data via server-side API
       const postData = await fetchRedditPost(url);
       setRedditPost(postData);
 
@@ -155,50 +149,7 @@ function RedditImportContent() {
       setHooks(data.hooks || []);
       setStep(2);
     } catch (err) {
-      // Show manual paste option when auto-fetch fails
-      setShowManualPaste(true);
-      setError("Reddit is blocking automated requests. Please paste the post content manually below.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle manual paste submission
-  const handleManualSubmit = async () => {
-    if (!manualContent.trim() || !hasApiKey) return;
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Store manual input as reddit post data
-      setRedditPost({
-        title: manualTitle.trim() || "Reddit Post",
-        selftext: manualContent.trim(),
-        subreddit: "manual",
-        score: 0,
-        num_comments: 0,
-      });
-
-      // Send to our API to generate hooks with AI
-      const response = await fetch("/api/reddit/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: manualTitle.trim() || "Reddit Post",
-          content: manualContent.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to analyze content");
-      }
-
-      const data = await response.json();
-      setHooks(data.hooks || []);
-      setStep(2);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to analyze content");
+      setError(err instanceof Error ? err.message : "Failed to fetch Reddit post");
     } finally {
       setIsLoading(false);
     }
@@ -377,136 +328,53 @@ function RedditImportContent() {
         </div>
       )}
 
-      {/* Step 1: Paste URL or Manual Content */}
+      {/* Step 1: Paste URL */}
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>
-              {showManualPaste ? "Paste Reddit Content Manually" : "Paste a Reddit URL"}
-            </CardTitle>
+            <CardTitle>Paste a Reddit URL</CardTitle>
             <CardDescription>
-              {showManualPaste
-                ? "Copy the title and content from the Reddit post and paste them below"
-                : "Find a viral post on Reddit and paste the URL here"}
+              Find a viral post on Reddit and paste the URL here
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!showManualPaste ? (
-              <>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    placeholder="https://reddit.com/r/..."
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleFetchReddit}
-                    disabled={!url.includes("reddit.com") || isLoading}
-                    className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                  >
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Hooks
-                      </>
-                    )}
-                  </Button>
-                </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                placeholder="https://reddit.com/r/..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleFetchReddit}
+                disabled={!url.includes("reddit.com") || isLoading}
+                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Hooks
+                  </>
+                )}
+              </Button>
+            </div>
 
-                <div className="mt-4 text-center">
-                  <button
-                    onClick={() => setShowManualPaste(true)}
-                    className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
-                  >
-                    Or paste content manually
-                  </button>
-                </div>
-
-                <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <h4 className="font-medium text-orange-800 dark:text-orange-200">
-                    Tips for finding viral Reddit posts:
-                  </h4>
-                  <ul className="mt-2 text-sm text-orange-700 dark:text-orange-300 space-y-1">
-                    <li>- Check r/technology, r/startups, r/entrepreneur</li>
-                    <li>- Sort by &quot;Top&quot; posts of the week/month</li>
-                    <li>- Look for posts with high engagement</li>
-                    <li>- Personal stories often convert well</li>
-                  </ul>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Post Title
-                    </label>
-                    <Input
-                      placeholder="Paste the Reddit post title here..."
-                      value={manualTitle}
-                      onChange={(e) => setManualTitle(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Post Content <span className="text-red-500">*</span>
-                    </label>
-                    <Textarea
-                      placeholder="Paste the Reddit post content here..."
-                      value={manualContent}
-                      onChange={(e) => setManualContent(e.target.value)}
-                      className="min-h-50"
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowManualPaste(false);
-                        setError(null);
-                      }}
-                    >
-                      Back to URL
-                    </Button>
-                    <Button
-                      onClick={handleManualSubmit}
-                      disabled={!manualContent.trim() || isLoading}
-                      className="flex-1 sm:flex-none bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                    >
-                      {isLoading ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Generate Hooks
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 bg-cyan-50 dark:bg-cyan-900/10 rounded-lg border border-cyan-200 dark:border-cyan-800">
-                  <h4 className="font-medium text-cyan-800 dark:text-cyan-200">
-                    How to copy Reddit post content:
-                  </h4>
-                  <ol className="mt-2 text-sm text-cyan-700 dark:text-cyan-300 space-y-1 list-decimal list-inside">
-                    <li>Open the Reddit post in your browser</li>
-                    <li>Copy the post title</li>
-                    <li>Select and copy the main text content</li>
-                    <li>Paste them in the fields above</li>
-                  </ol>
-                </div>
-              </>
-            )}
+            <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
+              <h4 className="font-medium text-orange-800 dark:text-orange-200">
+                Tips for finding viral Reddit posts:
+              </h4>
+              <ul className="mt-2 text-sm text-orange-700 dark:text-orange-300 space-y-1">
+                <li>- Check r/technology, r/startups, r/entrepreneur</li>
+                <li>- Sort by &quot;Top&quot; posts of the week/month</li>
+                <li>- Look for posts with high engagement</li>
+                <li>- Personal stories often convert well</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       )}
