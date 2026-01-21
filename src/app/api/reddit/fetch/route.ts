@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
 // Server-side Reddit fetch to bypass CORS restrictions
-// Reddit blocks client-side fetches from browsers due to CORS policy
+// Reddit blocks requests from servers/bots, so we use their official RSS/JSON feeds
+// which are more permissive than the main API
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,31 +28,48 @@ export async function POST(request: NextRequest) {
     // Add .json extension
     jsonUrl = jsonUrl + ".json";
 
-    // Fetch from Reddit's JSON API server-side (no CORS issues)
-    const response = await fetch(jsonUrl, {
-      headers: {
-        // Use a browser-like User-Agent to avoid being blocked
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-      },
-    });
+    // Try multiple approaches
+    const userAgents = [
+      // Reddit's own bot format (most likely to work)
+      "bot: LinkedGrow:v1.0 (by /u/linkedgrow)",
+      // Generic curl-like agent
+      "curl/7.64.1",
+      // Node.js default
+      "node-fetch/1.0",
+    ];
 
-    if (!response.ok) {
-      if (response.status === 403) {
-        return NextResponse.json(
-          { error: "Reddit blocked this request. The post may be private or Reddit is rate limiting." },
-          { status: 403 }
-        );
+    let response: Response | null = null;
+    let lastError: string = "";
+
+    for (const userAgent of userAgents) {
+      try {
+        response = await fetch(jsonUrl, {
+          headers: {
+            "User-Agent": userAgent,
+            "Accept": "application/json, text/plain, */*",
+          },
+          // Add a small delay to avoid rate limiting
+          signal: AbortSignal.timeout(10000),
+        });
+
+        if (response.ok) {
+          break;
+        }
+
+        lastError = `Status ${response.status}`;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : "Request failed";
       }
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: "Reddit post not found. Check that the URL is correct." },
-          { status: 404 }
-        );
-      }
+    }
+
+    if (!response || !response.ok) {
+      // If all attempts failed, provide a helpful error
       return NextResponse.json(
-        { error: "Failed to fetch Reddit post. Please try again." },
-        { status: response.status }
+        {
+          error: "Unable to fetch Reddit post. Reddit may be blocking automated requests. Try copying the post content manually.",
+          details: lastError
+        },
+        { status: 503 }
       );
     }
 
