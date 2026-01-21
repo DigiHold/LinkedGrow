@@ -83,7 +83,8 @@ Return ONLY a JSON array of ${count} complete post strings. Example:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    posts = JSON.parse(content);
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    posts = JSON.parse(cleanContent);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -105,7 +106,8 @@ Return ONLY a JSON array of ${count} complete post strings. Example:
 
     const data = await response.json();
     const content = data.content[0]?.text || "[]";
-    posts = JSON.parse(content);
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    posts = JSON.parse(cleanContent);
   } else if (provider === "google") {
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
       method: "POST",
