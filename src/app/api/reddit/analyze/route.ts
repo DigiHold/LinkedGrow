@@ -12,28 +12,33 @@ async function generateHooks(
   provider: string,
   model: string
 ): Promise<string[]> {
-  const prompt = `You are an expert at writing viral LinkedIn posts. Based on this Reddit post, generate 5 powerful hooks (opening lines) that stop the scroll.
+  const prompt = `You are an expert at writing viral LinkedIn posts. Based on this Reddit post, generate 5 powerful two-line hooks.
 
 Reddit Post Title: ${postTitle}
 
 Reddit Post Content: ${postContent.substring(0, 2000)}
 
-VIRAL HOOK FORMULAS TO USE:
-1. Controversial/Contrarian: "Unpopular opinion:" or "Hot take:" or challenge common beliefs
-2. Personal story: "I [did something unexpected]." or "3 years ago, I [situation]."
-3. Numbers/Results: "I went from X to Y in Z months." or specific metrics
-4. Pattern interrupt: Start with a shocking statement or admission
-5. Question hook: Rhetorical question that makes reader think
+HOOK STRUCTURE (2 lines):
+Line 1: Pattern interrupt - stops the scroll (shocking, controversial, or unexpected)
+Line 2: Curiosity builder - makes them click "see more" (teases the story/insight)
+
+VIRAL HOOK FORMULAS:
+1. Contrarian: "Everyone says X. They're wrong." + "Here's what actually works."
+2. Personal failure: "I lost everything." + "Best thing that ever happened."
+3. Numbers shock: "From $0 to $X in Y months." + "With zero [common thing]."
+4. Confession: "I was doing [thing] wrong for years." + "Until I discovered this."
+5. Question + tease: "Why do most [people] fail?" + "It's not what you think."
 
 Requirements:
-- Each hook is 1 short sentence only (max 10-15 words)
+- Line 1: Max 8 words, punchy, stops the scroll
+- Line 2: Max 12 words, builds curiosity, makes them click "see more"
+- Separate the two lines with a newline character
 - NO emojis
-- Create curiosity gap - make them NEED to read more
-- Be specific, not generic
-- Sound human, not corporate
+- Be specific to the Reddit content
+- Sound human, raw, authentic
 
-Return ONLY a JSON array of 5 strings:
-["Hook 1", "Hook 2", "Hook 3", "Hook 4", "Hook 5"]`;
+Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n):
+["Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2"]`;
 
   let response;
   let hooks: string[] = [];
