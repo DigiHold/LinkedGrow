@@ -12,21 +12,28 @@ async function generateHooks(
   provider: string,
   model: string
 ): Promise<string[]> {
-  const prompt = `You are an expert LinkedIn content creator. Based on this viral Reddit post, generate 5 compelling LinkedIn post hooks (opening lines) that would capture attention.
+  const prompt = `You are an expert at writing viral LinkedIn posts. Based on this Reddit post, generate 5 powerful hooks (opening lines) that stop the scroll.
 
 Reddit Post Title: ${postTitle}
 
 Reddit Post Content: ${postContent.substring(0, 2000)}
 
-Requirements:
-- Each hook should be 1-2 sentences max
-- Make them attention-grabbing and curiosity-inducing
-- Adapt the Reddit content style to LinkedIn's professional audience
-- Focus on lessons learned, insights, or contrarian takes
-- Do NOT use emojis in the hooks
+VIRAL HOOK FORMULAS TO USE:
+1. Controversial/Contrarian: "Unpopular opinion:" or "Hot take:" or challenge common beliefs
+2. Personal story: "I [did something unexpected]." or "3 years ago, I [situation]."
+3. Numbers/Results: "I went from X to Y in Z months." or specific metrics
+4. Pattern interrupt: Start with a shocking statement or admission
+5. Question hook: Rhetorical question that makes reader think
 
-Return ONLY a JSON array of 5 strings, no other text. Example:
-["Hook 1 text here.", "Hook 2 text here.", "Hook 3 text here.", "Hook 4 text here.", "Hook 5 text here."]`;
+Requirements:
+- Each hook is 1 short sentence only (max 10-15 words)
+- NO emojis
+- Create curiosity gap - make them NEED to read more
+- Be specific, not generic
+- Sound human, not corporate
+
+Return ONLY a JSON array of 5 strings:
+["Hook 1", "Hook 2", "Hook 3", "Hook 4", "Hook 5"]`;
 
   let response;
   let hooks: string[] = [];

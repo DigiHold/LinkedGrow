@@ -39,7 +39,7 @@ async function generatePosts(
     avoidInstructions = `\n\nNEVER mention or reference: ${neverMention}`;
   }
 
-  const prompt = `You are an expert LinkedIn content creator. Generate ${count} different LinkedIn posts based on this viral Reddit content, using the provided hook as the opening.
+  const prompt = `You are an expert at writing viral LinkedIn posts. Generate ${count} different posts based on this Reddit content.
 
 Hook to use: "${hook}"
 
@@ -47,18 +47,40 @@ Reddit Post Title: ${redditTitle}
 
 Reddit Post Content: ${redditContent.substring(0, 2000)}${contextInstructions}
 
-Requirements for each post:
-1. Start with the exact hook provided
-2. Expand into a full LinkedIn post (800-1500 characters)
-3. Use short paragraphs and line breaks for readability
-4. Include a call-to-action at the end (ask a question or encourage engagement)
-5. Make it professional but conversational
-6. Do NOT use hashtags
-7. Limit emoji usage - maximum 1-2 per post if any
-8. Focus on actionable insights and lessons learned${voiceInstructions}${avoidInstructions}
+VIRAL LINKEDIN POST STRUCTURE:
+1. HOOK (use the provided hook exactly)
+2. STORY/CONTEXT (2-3 short paragraphs, personal angle)
+3. KEY INSIGHT or LESSON (what you learned)
+4. ACTIONABLE TAKEAWAY (what the reader can do)
+5. ENGAGEMENT CTA (question to spark comments)
 
-Return ONLY a JSON array of ${count} complete post strings. Example:
-["Full post 1 text here...", "Full post 2 text here...", "Full post 3 text here..."]`;
+FORMATTING RULES:
+- Start with the hook on its own line
+- Use single line breaks between thoughts
+- Keep paragraphs to 1-2 sentences MAX
+- Use white space generously
+- Total length: 1000-1500 characters
+- NO hashtags
+- NO emojis (or max 1 if essential)
+- Write like you're talking to a friend, not a corporate memo
+- Be vulnerable and authentic
+- Include specific details/numbers when possible${voiceInstructions}${avoidInstructions}
+
+EXAMPLE FORMAT:
+[Hook line]
+
+[Short personal context - 1-2 sentences]
+
+[What happened - be specific]
+
+[The insight/lesson - bold statement]
+
+[Actionable advice for reader]
+
+[Engaging question to end]
+
+Return ONLY a JSON array of ${count} complete post strings:
+["Post 1...", "Post 2...", "Post 3..."]`;
 
   let response;
   let posts: string[] = [];
