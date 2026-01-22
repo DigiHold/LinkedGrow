@@ -120,6 +120,7 @@ export function CalendarContent() {
   const [editPostContent, setEditPostContent] = useState("");
   const [editScheduleTime, setEditScheduleTime] = useState("");
   const [editScheduleDate, setEditScheduleDate] = useState("");
+  const [editAttachedImage, setEditAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string } | null>(null);
 
   // Error toast state
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -645,6 +646,7 @@ export function CalendarContent() {
   const openEditPost = (post: Post) => {
     setSelectedPost(post);
     setEditPostContent(post.content);
+    setEditAttachedImage(null); // Reset attached image when editing
     // Parse the scheduled date and time
     const scheduledDate = post.scheduledAt ? new Date(post.scheduledAt) : new Date();
     setEditScheduleDate(scheduledDate.toISOString().split('T')[0]);
@@ -996,9 +998,9 @@ export function CalendarContent() {
       {/* Multi-purpose Drawer */}
       <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={true}>
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" />
           <Drawer.Content
-            className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none"
+            className="fixed right-0 top-0 bottom-0 z-150 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -1630,6 +1632,11 @@ Tips for viral posts:
                         onChange={setEditPostContent}
                         placeholder="Write your LinkedIn post..."
                         minHeight="min-h-80"
+                        showImageButton={true}
+                        showVideoButton={true}
+                        attachedImage={editAttachedImage}
+                        onImageChange={setEditAttachedImage}
+                        onError={showError}
                       />
                     </div>
                   </div>
@@ -1668,7 +1675,7 @@ Tips for viral posts:
                             value={editScheduleDate}
                             onChange={(e) => setEditScheduleDate(e.target.value)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
                           />
                         </div>
                         <div>
@@ -1677,14 +1684,20 @@ Tips for viral posts:
                             type="time"
                             value={editScheduleTime}
                             onChange={(e) => setEditScheduleTime(e.target.value)}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
                           />
                         </div>
                       </CardContent>
                     </Card>
 
                     <div className="space-y-3">
-                      <Button className="w-full" onClick={handleSaveEditedPost} disabled={!editPostContent.trim() || isSaving}>
+                      {/* Video notice - videos cannot be stored, must be published immediately */}
+                      {isVideoMedia(editAttachedImage) && (
+                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+                          Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                        </div>
+                      )}
+                      <Button className="w-full" onClick={handleSaveEditedPost} disabled={!editPostContent.trim() || isSaving || isVideoMedia(editAttachedImage)}>
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "Saving..." : "Save changes"}
                       </Button>
