@@ -453,27 +453,22 @@ function EditorContent() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Editor */}
           <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardContent className="p-0">
-                <PostEditor
-                  value={content}
-                  onChange={setContent}
-                  placeholder="Start writing your LinkedIn post...
+            <PostEditor
+              value={content}
+              onChange={setContent}
+              placeholder="Start writing your LinkedIn post...
 
 Tips for viral posts:
 - Start with a strong hook (first 2 lines are crucial)
 - Use short paragraphs and line breaks
 - Add bullet points for readability
 - End with a question or CTA"
-                  minHeight="min-h-[400px] sm:min-h-[500px]"
-                  showImageButton
-                  attachedImage={attachedImage}
-                  onImageChange={setAttachedImage}
-                  onError={showError}
-                  className="border-0"
-                />
-              </CardContent>
-            </Card>
+              minHeight="min-h-[400px] sm:min-h-[500px]"
+              showImageButton
+              attachedImage={attachedImage}
+              onImageChange={setAttachedImage}
+              onError={showError}
+            />
 
             {/* AI Panel */}
             {showAIPanel && (

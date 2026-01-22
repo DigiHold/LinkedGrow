@@ -152,6 +152,8 @@ export const posts = sqliteTable("posts", {
   publishedAt: integer("published_at", { mode: "timestamp" }),
   linkedinPostId: text("linkedin_post_id"),
   linkedinPostUrl: text("linkedin_post_url"),
+  // QStash message ID for scheduled posts (used to cancel/reschedule)
+  qstashMessageId: text("qstash_message_id"),
   // Store metadata like formatting options, hashtags, etc.
   metadata: text("metadata"), // JSON string
   // Error message if publishing failed

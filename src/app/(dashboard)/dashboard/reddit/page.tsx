@@ -1052,10 +1052,10 @@ function RedditImportContent() {
           <div className="space-y-4">
             {/* Publish Actions */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col items-center">
                 <Button
                   className="w-full justify-center bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                   size="lg"
@@ -1125,10 +1125,10 @@ function RedditImportContent() {
 
             {/* Add Media */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Add Media</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col items-center">
                 {/* AI Image Generation - only show if has API key */}
                 {hasImageApiKey && (
                   <Button

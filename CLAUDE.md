@@ -22,6 +22,7 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 -   **File Storage:** Cloudflare R2 (S3-compatible)
 -   **Email:** Brevo (marketing + transactional)
 -   **Hosting:** Vercel
+-   **Scheduling:** QStash (Upstash) for exact-time post publishing
 -   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI
 
 ## Deployment
@@ -192,6 +193,14 @@ R2_BUCKET_NAME=linkedgrow-media
 
 # Email (Brevo)
 BREVO_API_KEY=xkeysib-xxxxx
+
+# QStash (Upstash - for scheduled posts)
+QSTASH_TOKEN=xxxxx
+QSTASH_CURRENT_SIGNING_KEY=xxxxx
+QSTASH_NEXT_SIGNING_KEY=xxxxx
+
+# Vercel Cron (fallback)
+CRON_SECRET=xxxxx
 
 # Analytics
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX

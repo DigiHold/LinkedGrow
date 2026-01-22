@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, media, users } from "@/lib/db/schema";
-import { eq, desc, and, or, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { schedulePost } from "@/lib/qstash";
 
 // GET /api/posts - Get all posts for current user
 export async function GET(request: NextRequest) {
@@ -146,6 +147,13 @@ export async function POST(request: NextRequest) {
 
     const postId = nanoid();
     const now = new Date();
+    let qstashMessageId: string | null = null;
+
+    // If scheduling, create QStash job for exact-time delivery
+    if (status === "scheduled" && scheduledAt) {
+      const scheduleDate = new Date(scheduledAt);
+      qstashMessageId = await schedulePost(postId, scheduleDate);
+    }
 
     await db.insert(posts).values({
       id: postId,
@@ -154,6 +162,7 @@ export async function POST(request: NextRequest) {
       status,
       postType,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      qstashMessageId,
       metadata: metadata ? JSON.stringify(metadata) : null,
       createdAt: now,
       updatedAt: now,

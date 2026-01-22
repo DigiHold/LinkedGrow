@@ -1335,10 +1335,10 @@ export default function GeneratorPage() {
           <div className="space-y-4">
             {/* Primary Actions */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col items-center">
                 <Button
                   variant="linkedin"
                   className="w-full"
@@ -1405,10 +1405,10 @@ export default function GeneratorPage() {
 
             {/* Media & Enhancements */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Add Media</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col items-center">
                 {/* AI Image Generation - only show if has API key */}
                 {hasImageApiKey && (
                   <Button
@@ -1465,10 +1465,10 @@ export default function GeneratorPage() {
 
             {/* Regenerate Options */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Regenerate</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col items-center">
                 <Button variant="outline" className="w-full justify-start" onClick={() => setStep(3)}>
                   <Lightbulb className="w-4 h-4 mr-2" />
                   Pick Different Idea
