@@ -4,31 +4,35 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
+// Define trimmed JSON type
+interface TrimmedRedditJson {
+  post: {
+    title: string;
+    selftext: string;
+    score: number;
+    upvote_ratio?: number;
+    num_comments: number;
+    subreddit: string;
+    author?: string;
+  };
+  comments: Array<{
+    body: string;
+    score: number;
+  }>;
+}
+
 // Generate hooks from Reddit post using AI
 async function generateHooks(
-  postTitle: string,
-  postContent: string,
-  subreddit: string,
-  score: number,
-  numComments: number,
+  trimmedJson: TrimmedRedditJson,
   apiKey: string,
   provider: string,
   model: string
 ): Promise<string[]> {
-  // Build JSON metadata like Reddit provides
-  const jsonMetadata = JSON.stringify({
-    title: postTitle,
-    selftext: postContent.substring(0, 2000),
-    subreddit: subreddit,
-    score: score,
-    num_comments: numComments,
-  }, null, 2);
-
   const prompt = `I will give you JSON metadata from Reddit like this:
-TITLE: ${postTitle}
-JSON: ${jsonMetadata}
+TITLE: ${trimmedJson.post.title}
+JSON: ${JSON.stringify(trimmedJson, null, 2)}
 
-You'll extract the pain points, make 5 viral hooks (2 lines in one hook) on the same.
+You'll extract the pain points from both the post and top comments, make 5 viral hooks (2 lines in one hook) on the same.
 
 The viral hooks should be on the same format, style and tone as these 3 hooks that got results:
 
@@ -182,11 +186,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Accept Reddit post data
-    const { title, content, subreddit, score, num_comments } = await request.json();
+    // Accept trimmed Reddit JSON data
+    const { trimmedJson } = await request.json();
 
-    if (!title && !content) {
-      return NextResponse.json({ error: "No content provided" }, { status: 400 });
+    if (!trimmedJson || !trimmedJson.post) {
+      return NextResponse.json({ error: "No Reddit data provided" }, { status: 400 });
     }
 
     // Get user's AI settings
@@ -237,11 +241,7 @@ export async function POST(request: NextRequest) {
     const model = providerModelMap[provider] || defaultModel;
 
     const hooks = await generateHooks(
-      title || "",
-      content || "",
-      subreddit || "",
-      score || 0,
-      num_comments || 0,
+      trimmedJson,
       apiKey,
       provider,
       model

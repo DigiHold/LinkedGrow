@@ -4,6 +4,23 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
+// Define trimmed JSON type
+interface TrimmedRedditJson {
+  post: {
+    title: string;
+    selftext: string;
+    score: number;
+    upvote_ratio?: number;
+    num_comments: number;
+    subreddit: string;
+    author?: string;
+  };
+  comments: Array<{
+    body: string;
+    score: number;
+  }>;
+}
+
 // Sanitize AI output: remove wrapping quotes
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();
@@ -23,8 +40,7 @@ function sanitizeAIOutput(text: string): string {
 
 async function generatePosts(
   hook: string,
-  redditTitle: string,
-  redditContent: string,
+  trimmedJson: TrimmedRedditJson,
   count: number,
   apiKey: string,
   provider: string,
@@ -78,6 +94,13 @@ Writing tone: ${writingTone}`;
 NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
+  // Build Reddit context from trimmed JSON including top comments
+  const topCommentsPainPoints = trimmedJson.comments
+    .slice(0, 15)
+    .map(c => c.body)
+    .join(" | ")
+    .substring(0, 1500);
+
   const prompt = `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
 
 Goal: Create ${count} compelling LinkedIn posts based on this Reddit content, using the provided hook.
@@ -86,8 +109,12 @@ Hook to use (MUST be the first 2 lines):
 "${hook}"
 
 Reddit Context:
-Title: ${redditTitle}
-Content: ${redditContent.substring(0, 2000)}${businessContext}
+Title: ${trimmedJson.post.title}
+Post: ${trimmedJson.post.selftext}
+Subreddit: r/${trimmedJson.post.subreddit} (Score: ${trimmedJson.post.score}, ${trimmedJson.post.num_comments} comments)
+
+Top Comments Pain Points:
+${topCommentsPainPoints}${businessContext}
 
 === CRITICAL RULES ===
 
@@ -250,10 +277,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { hook, title, content, count = 3 } = await request.json();
+    const { hook, trimmedJson, count = 3 } = await request.json();
 
     if (!hook) {
       return NextResponse.json({ error: "Hook is required" }, { status: 400 });
+    }
+
+    if (!trimmedJson || !trimmedJson.post) {
+      return NextResponse.json({ error: "Reddit data is required" }, { status: 400 });
     }
 
     // Get user's AI settings
@@ -316,8 +347,7 @@ export async function POST(request: NextRequest) {
     // Generate posts using AI with voice settings
     const posts = await generatePosts(
       hook,
-      title || "",
-      content || "",
+      trimmedJson,
       count,
       apiKey,
       provider,

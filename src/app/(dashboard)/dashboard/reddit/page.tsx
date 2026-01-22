@@ -57,12 +57,30 @@ interface SettingsResponse {
   aiProvider: string | null;
 }
 
+// Trimmed JSON structure for AI processing
+interface TrimmedRedditJson {
+  post: {
+    title: string;
+    selftext: string;
+    score: number;
+    upvote_ratio?: number;
+    num_comments: number;
+    subreddit: string;
+    author?: string;
+  };
+  comments: Array<{
+    body: string;
+    score: number;
+  }>;
+}
+
 interface RedditPostData {
   title: string;
   selftext: string;
   subreddit: string;
   score: number;
   num_comments: number;
+  trimmedJson: TrimmedRedditJson;
 }
 
 // Fetch Reddit post data via backend API to avoid CORS issues
@@ -86,6 +104,7 @@ async function fetchRedditPost(url: string): Promise<RedditPostData> {
     subreddit: data.subreddit || "",
     score: data.score || 0,
     num_comments: data.num_comments || 0,
+    trimmedJson: data.trimmedJson,
   };
 }
 
@@ -231,20 +250,16 @@ function RedditImportContent() {
     setError(null);
 
     try {
-      // Step 1: Fetch Reddit data via server-side API
+      // Step 1: Fetch Reddit data via server-side API (includes trimmed JSON)
       const postData = await fetchRedditPost(url);
       setRedditPost(postData);
 
-      // Step 2: Send to our API to generate hooks with AI
+      // Step 2: Send trimmed JSON to our API to generate hooks with AI
       const response = await fetch("/api/reddit/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: postData.title,
-          content: postData.selftext,
-          subreddit: postData.subreddit,
-          score: postData.score,
-          num_comments: postData.num_comments,
+          trimmedJson: postData.trimmedJson,
         }),
       });
 
@@ -274,8 +289,7 @@ function RedditImportContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hook: hooks[selectedHook],
-          title: redditPost.title,
-          content: redditPost.selftext,
+          trimmedJson: redditPost.trimmedJson,
           count: 3,
         }),
       });
