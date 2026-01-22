@@ -468,75 +468,6 @@ async function uploadVideoToLinkedIn(
 }
 
 /**
- * Check video asset processing status
- * Videos need time to be processed by LinkedIn
- */
-async function checkVideoAssetStatus(
-  accessToken: string,
-  asset: string
-): Promise<'PROCESSING' | 'AVAILABLE' | 'FAILED'> {
-  // Extract asset ID from URN (e.g., urn:li:digitalmediaAsset:123456 -> 123456)
-  const assetId = asset.split(':').pop();
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/assets/${assetId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'X-Restli-Protocol-Version': '2.0.0',
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to check video status: ${error}`);
-  }
-
-  const data = await response.json();
-  const recipes = data.recipes || [];
-
-  // Check if any recipe is still processing
-  for (const recipe of recipes) {
-    if (recipe.status === 'PROCESSING') {
-      return 'PROCESSING';
-    }
-    if (recipe.status === 'FAILED') {
-      return 'FAILED';
-    }
-  }
-
-  return 'AVAILABLE';
-}
-
-/**
- * Wait for video to be processed by LinkedIn
- * Polls every 2 seconds, times out after 2 minutes
- */
-async function waitForVideoProcessing(
-  accessToken: string,
-  asset: string,
-  maxWaitMs: number = 120000
-): Promise<void> {
-  const startTime = Date.now();
-  const pollInterval = 2000;
-
-  while (Date.now() - startTime < maxWaitMs) {
-    const status = await checkVideoAssetStatus(accessToken, asset);
-
-    if (status === 'AVAILABLE') {
-      return;
-    }
-
-    if (status === 'FAILED') {
-      throw new Error('Video processing failed on LinkedIn');
-    }
-
-    // Wait before next poll
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
-  }
-
-  throw new Error('Video processing timed out - please try again');
-}
-
-/**
  * Create a LinkedIn post with a video (native video upload)
  * @param authorId - Either a person ID or organization ID
  * @param authorType - 'person' for personal profile or 'organization' for company page
@@ -575,10 +506,9 @@ export async function createLinkedInPostWithVideo(
   // Step 2: Upload the video binary to LinkedIn
   await uploadVideoToLinkedIn(uploadUrl, videoBlob, videoMimeType);
 
-  // Step 3: Wait for video to be processed (LinkedIn needs time to transcode)
-  await waitForVideoProcessing(accessToken, asset);
-
-  // Step 4: Create the post with the uploaded video asset
+  // Step 3: Create the post with the uploaded video asset
+  // Note: We don't wait for video processing - LinkedIn handles this automatically
+  // and shows a "processing" indicator to viewers until ready
   const postData = {
     author: authorUrn,
     lifecycleState: 'PUBLISHED',
