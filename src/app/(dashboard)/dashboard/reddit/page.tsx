@@ -811,9 +811,6 @@ function RedditImportContent() {
               </Button>
             </div>
 
-            <p className="mt-3 text-xs text-muted-foreground">
-              Reddit content is fetched directly in your browser for privacy - no data passes through our servers.
-            </p>
 
             <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
               <h4 className="font-medium text-orange-800 dark:text-orange-200">
