@@ -137,6 +137,7 @@ function EditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const editPostId = searchParams.get("edit");
+  const initialContent = searchParams.get("content");
 
   const [content, setContent] = useState("");
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -170,6 +171,13 @@ function EditorContent() {
   });
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Load initial content from query param (from hooks page, etc.)
+  useEffect(() => {
+    if (initialContent && !editPostId) {
+      setContent(initialContent);
+    }
+  }, [initialContent, editPostId]);
 
   // Load post if edit parameter is present
   useEffect(() => {
