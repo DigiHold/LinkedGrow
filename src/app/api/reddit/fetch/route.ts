@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Extract post info from Reddit URL
-function extractPostInfo(url: string): { subreddit: string; postId: string } | null {
-  const match = url.match(/reddit\.com\/r\/([^/]+)\/comments\/([a-z0-9]+)/i);
-  if (match) {
-    return { subreddit: match[1], postId: match[2] };
-  }
-  return null;
-}
-
 // Trim Reddit JSON to reduce token count for AI processing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
@@ -48,6 +39,8 @@ function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
   return { post, comments };
 }
 
+// This endpoint receives raw Reddit JSON from the client and trims it
+// The client fetches Reddit directly (no CORS issues for .json endpoints)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -56,73 +49,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { url } = await request.json();
+    const { rawJson } = await request.json();
 
-    if (!url || !url.includes("reddit.com")) {
-      return NextResponse.json({ error: "Invalid Reddit URL" }, { status: 400 });
+    if (!rawJson) {
+      return NextResponse.json({ error: "rawJson is required" }, { status: 400 });
     }
-
-    const postInfo = extractPostInfo(url);
-    if (!postInfo) {
-      return NextResponse.json(
-        { error: "Could not parse Reddit URL. Make sure it's a link to a post." },
-        { status: 400 }
-      );
-    }
-
-    // Use old.reddit.com - more permissive for server-side requests
-    const jsonUrl = `https://old.reddit.com/r/${postInfo.subreddit}/comments/${postInfo.postId}.json`;
-
-    const response = await fetch(jsonUrl, {
-      headers: {
-        // Mimic a real browser request
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
-
-    if (!response.ok) {
-      console.error("Reddit response:", response.status, response.statusText);
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: "Reddit post not found." },
-          { status: 404 }
-        );
-      }
-      if (response.status === 403 || response.status === 429) {
-        return NextResponse.json(
-          { error: "Reddit is temporarily blocking requests. Try again in a minute." },
-          { status: 503 }
-        );
-      }
-      return NextResponse.json(
-        { error: "Failed to fetch Reddit post." },
-        { status: response.status }
-      );
-    }
-
-    const rawJson = await response.json();
 
     // Trim the Reddit JSON to reduce token count
     const trimmedData = trimRedditData(rawJson);
 
     // Return the trimmed JSON structure for AI processing
     return NextResponse.json({
-      // Legacy fields for backward compatibility with existing UI
       title: trimmedData.post.title || "",
       selftext: trimmedData.post.selftext || "",
       subreddit: trimmedData.post.subreddit || "",
       score: trimmedData.post.score || 0,
       num_comments: trimmedData.post.num_comments || 0,
       author: trimmedData.post.author || "",
-      // New trimmed JSON structure for AI
       trimmedJson: trimmedData,
     });
   } catch (error) {
     console.error("Reddit fetch error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch Reddit post." },
+      { error: error instanceof Error ? error.message : "Failed to parse Reddit data" },
       { status: 500 }
     );
   }
