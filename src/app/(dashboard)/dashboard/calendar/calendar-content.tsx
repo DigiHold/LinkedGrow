@@ -1626,14 +1626,13 @@ Tips for viral posts:
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
                   {/* LEFT SIDE - Editor */}
                   <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-gray-800">
-                    <div className="w-full max-w-lg mx-auto">
+                    <div className="w-full max-w-lg mx-auto h-full flex flex-col">
                       <PostEditor
                         value={editPostContent}
                         onChange={setEditPostContent}
                         placeholder="Write your LinkedIn post..."
-                        minHeight="min-h-80"
+                        minHeight="min-h-[calc(100vh-200px)]"
                         showImageButton={true}
-                        showVideoButton={true}
                         attachedImage={editAttachedImage}
                         onImageChange={setEditAttachedImage}
                         onError={showError}
@@ -1691,13 +1690,7 @@ Tips for viral posts:
                     </Card>
 
                     <div className="space-y-3">
-                      {/* Video notice - videos cannot be stored, must be published immediately */}
-                      {isVideoMedia(editAttachedImage) && (
-                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
-                          Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
-                        </div>
-                      )}
-                      <Button className="w-full" onClick={handleSaveEditedPost} disabled={!editPostContent.trim() || isSaving || isVideoMedia(editAttachedImage)}>
+                      <Button className="w-full" onClick={handleSaveEditedPost} disabled={!editPostContent.trim() || isSaving}>
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "Saving..." : "Save changes"}
                       </Button>
