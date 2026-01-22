@@ -47,29 +47,29 @@ const ITALIC_REVERSE_MAP: Record<string, string> = Object.fromEntries(
 );
 
 function toBold(text: string): string {
-  return text.split("").map((char) => BOLD_MAP[char] || char).join("");
+  return [...text].map((char) => BOLD_MAP[char] || char).join("");
 }
 
 function toItalic(text: string): string {
-  return text.split("").map((char) => ITALIC_MAP[char] || char).join("");
+  return [...text].map((char) => ITALIC_MAP[char] || char).join("");
 }
 
 function fromBold(text: string): string {
-  return text.split("").map((char) => BOLD_REVERSE_MAP[char] || char).join("");
+  return [...text].map((char) => BOLD_REVERSE_MAP[char] || char).join("");
 }
 
 function fromItalic(text: string): string {
-  return text.split("").map((char) => ITALIC_REVERSE_MAP[char] || char).join("");
+  return [...text].map((char) => ITALIC_REVERSE_MAP[char] || char).join("");
 }
 
 function isBold(text: string): boolean {
-  // Check if text contains any bold characters
-  return text.split("").some((char) => BOLD_REVERSE_MAP[char]);
+  // Check if text contains any bold characters (use spread for proper Unicode handling)
+  return [...text].some((char) => BOLD_REVERSE_MAP[char]);
 }
 
 function isItalic(text: string): boolean {
-  // Check if text contains any italic characters
-  return text.split("").some((char) => ITALIC_REVERSE_MAP[char]);
+  // Check if text contains any italic characters (use spread for proper Unicode handling)
+  return [...text].some((char) => ITALIC_REVERSE_MAP[char]);
 }
 
 function isBulletList(text: string): boolean {
