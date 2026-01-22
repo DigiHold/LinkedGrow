@@ -51,6 +51,12 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+interface PostMedia {
+  id: string;
+  storageUrl: string;
+  mimeType: string;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -61,6 +67,7 @@ interface Post {
   linkedinPostUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  media?: PostMedia[];
 }
 
 interface Idea {
@@ -646,7 +653,17 @@ export function CalendarContent() {
   const openEditPost = (post: Post) => {
     setSelectedPost(post);
     setEditPostContent(post.content);
-    setEditAttachedImage(null); // Reset attached image when editing
+    // Load existing media if present
+    if (post.media && post.media.length > 0) {
+      const existingMedia = post.media[0];
+      setEditAttachedImage({
+        base64: "", // Empty since we're using existing URL
+        mimeType: existingMedia.mimeType,
+        preview: existingMedia.storageUrl,
+      });
+    } else {
+      setEditAttachedImage(null);
+    }
     // Parse the scheduled date and time
     const scheduledDate = post.scheduledAt ? new Date(post.scheduledAt) : new Date();
     setEditScheduleDate(scheduledDate.toISOString().split('T')[0]);
@@ -675,13 +692,34 @@ export function CalendarContent() {
         }
       }
 
+      // Determine media changes
+      const originalHasMedia = selectedPost.media && selectedPost.media.length > 0;
+      const currentHasMedia = editAttachedImage !== null;
+      const isNewUpload = currentHasMedia && editAttachedImage?.base64 && editAttachedImage.base64.length > 0;
+
+      // Build request body
+      const requestBody: Record<string, unknown> = {
+        content: editPostContent,
+        scheduledAt: scheduledAt.toISOString(),
+      };
+
+      // If user removed media (had media before, now doesn't)
+      if (originalHasMedia && !currentHasMedia) {
+        requestBody.removeMedia = true;
+      }
+
+      // If user added new media (has base64 data)
+      if (isNewUpload) {
+        requestBody.mediaData = {
+          base64: editAttachedImage!.base64,
+          mimeType: editAttachedImage!.mimeType,
+        };
+      }
+
       const response = await fetch(`/api/posts/${selectedPost.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: editPostContent,
-          scheduledAt: scheduledAt.toISOString(),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -1087,6 +1125,24 @@ export function CalendarContent() {
                             <div className="mb-4 relative">
                               <div className="whitespace-pre-line text-sm leading-5">{selectedPost.content}</div>
                             </div>
+                            {/* Display attached media */}
+                            {selectedPost.media && selectedPost.media.length > 0 && (
+                              <div className="mt-3">
+                                {selectedPost.media[0].mimeType.startsWith("video/") ? (
+                                  <video
+                                    src={selectedPost.media[0].storageUrl}
+                                    className="w-full rounded-lg border"
+                                    controls
+                                  />
+                                ) : (
+                                  <img
+                                    src={selectedPost.media[0].storageUrl}
+                                    alt="Post attachment"
+                                    className="w-full rounded-lg border"
+                                  />
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

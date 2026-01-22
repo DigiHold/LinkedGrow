@@ -108,7 +108,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { content, status, postType, scheduledAt, metadata, mediaData } = body;
+    const { content, status, postType, scheduledAt, metadata, mediaData, removeMedia } = body;
 
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
@@ -166,6 +166,29 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     updateData.qstashMessageId = qstashMessageId;
+
+    // Handle media removal if requested
+    if (removeMedia === true) {
+      const existingMedia = await db
+        .select()
+        .from(media)
+        .where(eq(media.postId, postId));
+
+      if (existingMedia.length > 0) {
+        // Delete media from R2
+        const oldKeys = existingMedia.map((m) => m.storageKey);
+        try {
+          await deleteMultipleFromR2(oldKeys);
+        } catch (e) {
+          console.error("Failed to delete media from R2:", e);
+        }
+        // Delete media records
+        await db.delete(media).where(eq(media.postId, postId));
+      }
+
+      // Update post type to text
+      updateData.postType = "text";
+    }
 
     // Handle image upload if provided
     if (mediaData?.base64 && mediaData?.mimeType && isR2Configured()) {
