@@ -48,7 +48,7 @@ export default function EngagementPage() {
         </Card>
 
         {/* Preview of what's coming */}
-        <Card className="opacity-60">
+        <Card>
           <CardContent className="p-6">
             <h4 className="font-semibold mb-4 flex items-center gap-2">
               <PartyPopper className="w-5 h-5 text-cyan-500" />
