@@ -16,7 +16,6 @@ export async function GET() {
       columns: {
         name: true,
         linkedinProfileName: true,
-        linkedinHeadline: true,
         image: true,
       },
     });
@@ -29,10 +28,8 @@ export async function GET() {
       name: user.name,
       linkedinProfileName: user.linkedinProfileName,
       image: user.image,
-      headline: user.linkedinHeadline,
     });
-  } catch (error) {
-    console.error("Failed to fetch profile:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }

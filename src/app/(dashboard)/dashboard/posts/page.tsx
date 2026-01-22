@@ -73,7 +73,6 @@ export default function PostsPage() {
   // LinkedIn profile data for preview
   const [linkedInProfile, setLinkedInProfile] = useState<{
     name: string;
-    headline: string;
     image: string | null;
   } | null>(null);
 
@@ -86,12 +85,11 @@ export default function PostsPage() {
           const data = await response.json();
           setLinkedInProfile({
             name: data.linkedinProfileName || data.name || "Your Name",
-            headline: data.headline || "LinkedIn User",
             image: data.image || null,
           });
         }
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
+      } catch (error) {
+        // Silently fail - will use default values
       }
     };
     fetchProfile();
@@ -763,7 +761,7 @@ export default function PostsPage() {
                   )}
                   <div>
                     <p className="font-semibold">{linkedInProfile?.name || "Your Name"}</p>
-                    <p className="text-sm text-muted-foreground">{linkedInProfile?.headline || "LinkedIn User"}</p>
+                    <p className="text-sm text-muted-foreground">Your headline here</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />
                       {previewPost.status === "scheduled" && previewPost.scheduledAt

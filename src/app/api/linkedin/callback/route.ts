@@ -140,7 +140,6 @@ export async function GET(request: NextRequest) {
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
     const linkedInPictureUrl = profile.profilePicture?.displayImage || null;
     const linkedInEmail = profile.email;
-    const linkedInHeadline = profile.localizedHeadline || null;
 
     // Handle social login flow (login or register mode)
     if (mode === 'login' || mode === 'register') {
@@ -200,7 +199,6 @@ export async function GET(request: NextRequest) {
             : null,
           linkedinProfileId: profile.id,
           linkedinProfileName: fullName,
-          linkedinHeadline: linkedInHeadline,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -302,7 +300,6 @@ export async function GET(request: NextRequest) {
               : null,
             linkedinProfileId: profile.id,
             linkedinProfileName: fullName,
-            linkedinHeadline: linkedInHeadline,
             name: user.name || fullName,
             updatedAt: new Date(),
           })
@@ -436,7 +433,6 @@ export async function GET(request: NextRequest) {
               : null,
             linkedinProfileId: profile.id,
             linkedinProfileName: fullName,
-            linkedinHeadline: linkedInHeadline,
             // Store our own copy of the profile picture (from R2)
             image: storedPictureUrl,
             // Update name if not already set

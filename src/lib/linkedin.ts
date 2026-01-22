@@ -50,7 +50,6 @@ interface LinkedInProfile {
   email?: string;
   localizedFirstName: string;
   localizedLastName: string;
-  localizedHeadline?: string;
   profilePicture?: {
     displayImage: string;
   };
@@ -172,101 +171,16 @@ export async function exchangeCodeForToken(
 }
 
 /**
- * Get LinkedIn user profile using the Community Management REST API
- * This endpoint provides access to headline when you have Community Management API access.
- * Falls back to OpenID Connect /userinfo if REST API fails.
+ * Get LinkedIn user profile using OpenID Connect userinfo endpoint
  *
- * Requires: Community Management API access (after LinkedIn approval)
- * Endpoint: GET /rest/me (versioned REST API)
+ * This is the recommended approach for 2025/2026 using:
+ * - Sign In with LinkedIn using OpenID Connect
+ * - Scopes: openid, profile, email
+ *
+ * Available fields: sub (id), name, given_name, family_name, picture, email
+ * Note: Headline requires Community Management API (r_member_social) - not available via OpenID Connect
  */
 export async function getLinkedInProfile(accessToken: string): Promise<LinkedInProfile> {
-  // First try the versioned REST API /rest/me endpoint (Community Management API)
-  // This endpoint provides headline when you have the proper access
-  try {
-    const restResponse = await fetch(`${LINKEDIN_REST_API_BASE}/me?projection=(id,firstName,lastName,headline,profilePicture)`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'LinkedIn-Version': LINKEDIN_API_VERSION,
-        'X-Restli-Protocol-Version': '2.0.0',
-      },
-    });
-
-    if (restResponse.ok) {
-      const restData = await restResponse.json();
-      console.log('LinkedIn REST /me response:', JSON.stringify(restData, null, 2));
-
-      // Extract localized values from the REST API response
-      const firstName = restData.firstName?.localized?.en_US ||
-                       Object.values(restData.firstName?.localized || {})[0] || '';
-      const lastName = restData.lastName?.localized?.en_US ||
-                      Object.values(restData.lastName?.localized || {})[0] || '';
-      const headline = restData.headline?.localized?.en_US ||
-                      Object.values(restData.headline?.localized || {})[0] || undefined;
-
-      // Extract profile picture URL
-      let pictureUrl: string | undefined;
-      if (restData.profilePicture?.displayImage) {
-        pictureUrl = restData.profilePicture.displayImage;
-      } else if (restData.profilePicture?.['displayImage~']?.elements?.length > 0) {
-        const elements = restData.profilePicture['displayImage~'].elements;
-        const largestImage = elements[elements.length - 1];
-        pictureUrl = largestImage?.identifiers?.[0]?.identifier;
-      }
-
-      return {
-        id: restData.id,
-        localizedFirstName: firstName,
-        localizedLastName: lastName,
-        localizedHeadline: headline,
-        profilePicture: pictureUrl ? { displayImage: pictureUrl } : undefined,
-      };
-    }
-
-    const errorText = await restResponse.text();
-    console.log('LinkedIn REST /me failed (status:', restResponse.status, '), response:', errorText);
-    console.log('Falling back to legacy /v2/me endpoint...');
-  } catch (error) {
-    console.log('LinkedIn REST /me error:', error);
-  }
-
-  // Second attempt: Try legacy /v2/me endpoint with projection
-  try {
-    const meResponse = await fetch(
-      `${LINKEDIN_API_BASE}/me?projection=(id,localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams))`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0',
-        },
-      }
-    );
-
-    if (meResponse.ok) {
-      const meData = await meResponse.json();
-      console.log('LinkedIn /v2/me response:', JSON.stringify(meData, null, 2));
-
-      // Extract profile picture URL from the nested structure
-      let pictureUrl: string | undefined;
-      if (meData.profilePicture?.['displayImage~']?.elements?.length > 0) {
-        const elements = meData.profilePicture['displayImage~'].elements;
-        const largestImage = elements[elements.length - 1];
-        pictureUrl = largestImage?.identifiers?.[0]?.identifier;
-      }
-
-      return {
-        id: meData.id,
-        localizedFirstName: meData.localizedFirstName || '',
-        localizedLastName: meData.localizedLastName || '',
-        localizedHeadline: meData.localizedHeadline,
-        profilePicture: pictureUrl ? { displayImage: pictureUrl } : undefined,
-      };
-    }
-    console.log('LinkedIn /v2/me failed (status:', meResponse.status, '), falling back to /v2/userinfo');
-  } catch (error) {
-    console.log('LinkedIn /v2/me error, falling back to /v2/userinfo:', error);
-  }
-
-  // Final fallback: /v2/userinfo (OpenID Connect - always works but no headline)
   const response = await fetch(`${LINKEDIN_API_BASE}/userinfo`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -274,18 +188,17 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch LinkedIn profile');
+    const error = await response.text();
+    throw new Error(`Failed to fetch LinkedIn profile: ${error}`);
   }
 
   const data = await response.json();
-  console.log('LinkedIn /v2/userinfo response (no headline available):', JSON.stringify(data, null, 2));
 
   return {
     id: data.sub,
     email: data.email,
     localizedFirstName: data.given_name || '',
     localizedLastName: data.family_name || '',
-    // No headline available via OpenID Connect
     profilePicture: data.picture ? { displayImage: data.picture } : undefined,
   };
 }
