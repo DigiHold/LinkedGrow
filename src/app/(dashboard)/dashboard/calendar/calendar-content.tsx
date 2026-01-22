@@ -670,8 +670,8 @@ export function CalendarContent() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <CalendarDays className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                <CalendarDays className="w-5 h-5 text-white" />
               </div>
               Content Calendar
             </h1>

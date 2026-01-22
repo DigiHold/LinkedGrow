@@ -805,7 +805,9 @@ export default function GeneratorPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-linkedin" />
+            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
             Post Generator
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -879,7 +881,12 @@ export default function GeneratorPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Post Generator</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          Post Generator
+        </h1>
         <p className="text-muted-foreground mt-1">
           Create viral LinkedIn posts with AI in seconds
         </p>
