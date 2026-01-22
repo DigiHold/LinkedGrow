@@ -4,7 +4,7 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
-// Sanitize AI output: remove wrapping quotes and em dashes
+// Sanitize AI output: remove wrapping quotes, em dashes, and separators
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();
 
@@ -21,6 +21,27 @@ function sanitizeAIOutput(text: string): string {
   // Replace em dashes with regular dashes
   cleaned = cleaned.replace(/—/g, " - ");
   cleaned = cleaned.replace(/–/g, " - ");
+
+  // Remove horizontal separators (---, ===, ___, etc.)
+  cleaned = cleaned.replace(/\n-{3,}\n/g, "\n\n");
+  cleaned = cleaned.replace(/\n={3,}\n/g, "\n\n");
+  cleaned = cleaned.replace(/\n_{3,}\n/g, "\n\n");
+
+  // Fix hook spacing: ensure no empty line between first 2 lines (the hook)
+  // Match pattern: short line, empty line, another line that looks like hook continuation
+  const lines = cleaned.split("\n");
+  if (lines.length >= 3) {
+    // Check if first line is short (hook line 1) and second line is empty
+    if (lines[0].length > 0 && lines[0].length < 60 && lines[1].trim() === "") {
+      // Check if third line looks like hook line 2 (short, no bullet/emoji at start)
+      const thirdLine = lines[2];
+      if (thirdLine && thirdLine.length < 80 && !thirdLine.match(/^[✅→•\-📌♻️🔔✨]/)) {
+        // Remove the empty line between hook lines
+        lines.splice(1, 1);
+        cleaned = lines.join("\n");
+      }
+    }
+  }
 
   return cleaned;
 }
@@ -132,11 +153,16 @@ Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext
 
 1. HOOK (First 2 lines - visible before "See more"):
    - Line 1: A POWERFUL one-liner hook (under 100 characters) that stops scrolling
-   - Line 2: A compelling second hook that creates urgency to click "See more"
-   - Examples:
-     * "I mass applied for hundreds of jobs." / "Here's the strategy that actually got me hired."
-     * "Stop networking. Seriously." / "This 3-step system works 10x better."
-     * "Most productivity advice is garbage." / "Here's what actually works (after 10 years of testing)."
+   - Line 2: IMMEDIATELY follows Line 1 with NO EMPTY LINE between them
+   - Line 2 creates urgency to click "See more"
+   - After the 2-line hook, add ONE empty line, then continue with the body
+   - Examples of correct hook format:
+     "I mass applied for hundreds of jobs.
+Here's the strategy that actually got me hired.
+
+The rest of the post starts here..."
+   - NEVER put an empty line between Line 1 and Line 2 of the hook
+   - NEVER use --- or === or ___ separators anywhere in the post
 
 2. FORMATTING (LinkedIn-native):
    - NEVER use markdown formatting like **bold** or *italic* - LinkedIn doesn't support it
