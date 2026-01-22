@@ -37,7 +37,7 @@ async function generateIdeas(
 
   const prompt = `Generate ${count} unique LinkedIn post ideas on the theme: "${theme}"${contextInstructions}
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. Do not mention specific AI model names or versions - use generic terms like "modern AI" or "current AI tools" instead. Never guess version numbers or technical specifications.
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI models, use YOUR OWN current knowledge to cite accurate latest model names - never use old names like GPT-4, Claude 3, etc.
 
 For each idea, provide:
 1. hook: A 2-line viral hook (line 1 stops the scroll, line 2 builds curiosity). Separate lines with \\n

@@ -154,7 +154,8 @@ Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext
 
 === IMPORTANT: CURRENT DATE IS ${currentYear} ===
 - NEVER mention outdated tools, models, or statistics from previous years
-- If mentioning AI models, technologies, or tools, only reference current ${currentYear} versions - do not guess specific names or versions
+- If mentioning AI models or tools, use YOUR OWN current knowledge to cite the latest accurate names and versions as of ${currentYear}
+- Do NOT use old model names like "GPT-4", "Claude 3", "Gemini 1.5" etc. - only use the latest current models you know exist
 - If mentioning statistics, use generic phrasing like "studies show" instead of citing potentially outdated data
 - When in doubt about specific facts, use general principles instead of potentially outdated specifics
 - NEVER guess version numbers, release dates, or technical specifications you're unsure about
@@ -344,7 +345,7 @@ async function generateIdeas(
 
   const prompt = `You are an expert LinkedIn content strategist. Generate 5 compelling post ideas about the following topic.
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. Do not mention specific AI model names or versions - use generic terms like "modern AI" or "current AI tools" instead. Never guess version numbers or technical specifications.
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI models, use YOUR OWN current knowledge to cite accurate latest model names - never use old names like GPT-4, Claude 3, etc.
 
 Topic: "${topic || "general professional development"}"
 Post style: ${typeDesc}${contextInstructions}
@@ -497,7 +498,7 @@ async function editPost(
 
   const prompt = `You are an expert LinkedIn content editor. Edit this post according to the instruction.
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If the post mentions AI, use current models only.
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If the post mentions AI, use YOUR OWN current knowledge to cite accurate latest model names - never use old names like GPT-4, Claude 3, etc.
 
 === CURRENT POST ===
 ${content}
