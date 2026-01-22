@@ -160,6 +160,7 @@ function EditorContent() {
     mimeType: string;
     preview?: string;
   } | null>(null);
+  const [originalHadMedia, setOriginalHadMedia] = useState(false);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -181,6 +182,16 @@ function EditorContent() {
             const data = await response.json();
             setContent(data.post.content || "");
             setCurrentPostId(data.post.id);
+            // Load existing media if present
+            if (data.post.media && data.post.media.length > 0) {
+              const existingMedia = data.post.media[0];
+              setAttachedImage({
+                base64: "", // Empty since we're using existing URL
+                mimeType: existingMedia.mimeType,
+                preview: existingMedia.storageUrl,
+              });
+              setOriginalHadMedia(true);
+            }
           }
         } catch (error) {
           console.error("Failed to load post:", error);
@@ -260,17 +271,21 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
+      // Determine if we're uploading new media or keeping/removing existing
+      const isNewUpload = attachedImage && attachedImage.base64 && attachedImage.base64.length > 0;
+      const mediaData = isNewUpload ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
+
+      // Check if user removed media (had media before, now doesn't)
+      const removeMedia = originalHadMedia && !attachedImage;
 
       if (currentPostId) {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", mediaData }),
+          body: JSON.stringify({ content, status: "draft", mediaData, removeMedia }),
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
@@ -420,17 +435,21 @@ function EditorContent() {
     try {
       const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
 
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
+      // Determine if we're uploading new media or keeping/removing existing
+      const isNewUpload = attachedImage && attachedImage.base64 && attachedImage.base64.length > 0;
+      const mediaData = isNewUpload ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
+
+      // Check if user removed media (had media before, now doesn't)
+      const removeMedia = originalHadMedia && !attachedImage;
 
       if (currentPostId) {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaData }),
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaData, removeMedia }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
