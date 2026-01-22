@@ -306,48 +306,88 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
-        base64: attachedImage.base64,
-        mimeType: attachedImage.mimeType,
-      } : undefined;
+      const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
       let postId = currentPostId;
       let imageUrl: string | undefined;
 
-      if (!postId) {
-        const response = await fetch("/api/posts", {
+      // For videos, we don't save to R2 (too large) - we send directly to LinkedIn
+      if (isVideo && attachedImage) {
+        if (!postId) {
+          // Create a text-only post record first
+          const response = await fetch("/api/posts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content,
+              status: "draft",
+              postType: "video",
+            }),
+          });
+          if (!response.ok) throw new Error("Failed to save post");
+          const data = await response.json();
+          postId = data.post.id;
+        }
+
+        // Publish to LinkedIn with video data
+        const publishResponse = await fetch("/api/linkedin/post", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            content,
-            status: "draft",
-            postType: attachedImage ? "image" : "text",
-            mediaData,
+            postId,
+            text: content,
+            videoData: {
+              base64: attachedImage.base64,
+              mimeType: attachedImage.mimeType,
+            },
           }),
         });
-        if (!response.ok) throw new Error("Failed to save post");
-        const data = await response.json();
-        postId = data.post.id;
-        // Get the uploaded image URL
-        if (data.post.media && data.post.media.length > 0) {
-          imageUrl = data.post.media[0].storageUrl;
+
+        if (!publishResponse.ok) {
+          const error = await publishResponse.json();
+          throw new Error(error.error || "Failed to publish");
         }
-      }
+      } else {
+        // For images and text posts, save to R2 first
+        const mediaData = attachedImage ? {
+          base64: attachedImage.base64,
+          mimeType: attachedImage.mimeType,
+        } : undefined;
 
-      const publishResponse = await fetch("/api/linkedin/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          text: content,
-          imageUrl,
-        }),
-      });
+        if (!postId) {
+          const response = await fetch("/api/posts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content,
+              status: "draft",
+              postType: attachedImage ? "image" : "text",
+              mediaData,
+            }),
+          });
+          if (!response.ok) throw new Error("Failed to save post");
+          const data = await response.json();
+          postId = data.post.id;
+          // Get the uploaded image URL
+          if (data.post.media && data.post.media.length > 0) {
+            imageUrl = data.post.media[0].storageUrl;
+          }
+        }
 
-      if (!publishResponse.ok) {
-        const error = await publishResponse.json();
-        throw new Error(error.error || "Failed to publish");
+        const publishResponse = await fetch("/api/linkedin/post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId,
+            text: content,
+            imageUrl,
+          }),
+        });
+
+        if (!publishResponse.ok) {
+          const error = await publishResponse.json();
+          throw new Error(error.error || "Failed to publish");
+        }
       }
 
       setSuccessMessage("Post published to LinkedIn!");

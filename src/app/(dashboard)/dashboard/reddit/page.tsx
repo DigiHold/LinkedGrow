@@ -400,52 +400,97 @@ function RedditImportContent() {
 
     setIsPublishing(true);
     try {
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
-        base64: attachedImage.base64,
-        mimeType: attachedImage.mimeType,
-      } : undefined;
+      const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
-      // First save the post (which will upload image to R2)
-      const saveResponse = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: currentPost,
-          status: "draft",
-          postType: attachedImage ? "image" : "text",
-          mediaData,
-          metadata: {
-            source: "reddit",
-            redditUrl: url,
-            redditTitle: redditPost?.title,
-          },
-        }),
-      });
+      // For videos, we don't save to R2 (too large) - we send directly to LinkedIn
+      if (isVideo && attachedImage) {
+        // Create a text-only post record first
+        const saveResponse = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: currentPost,
+            status: "draft",
+            postType: "video",
+            metadata: {
+              source: "reddit",
+              redditUrl: url,
+              redditTitle: redditPost?.title,
+            },
+          }),
+        });
 
-      if (!saveResponse.ok) {
-        throw new Error("Failed to save post before publishing");
-      }
+        if (!saveResponse.ok) {
+          throw new Error("Failed to save post before publishing");
+        }
 
-      const { post } = await saveResponse.json();
+        const { post } = await saveResponse.json();
 
-      // Get the uploaded image URL from the saved post
-      const imageUrl = post.media && post.media.length > 0 ? post.media[0].storageUrl : undefined;
+        // Publish to LinkedIn with video data
+        const publishResponse = await fetch("/api/linkedin/post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId: post.id,
+            text: currentPost,
+            videoData: {
+              base64: attachedImage.base64,
+              mimeType: attachedImage.mimeType,
+            },
+          }),
+        });
 
-      // Then publish to LinkedIn
-      const publishResponse = await fetch("/api/linkedin/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId: post.id,
-          text: currentPost,
-          imageUrl,
-        }),
-      });
+        if (!publishResponse.ok) {
+          const error = await publishResponse.json();
+          throw new Error(error.error || "Failed to publish to LinkedIn");
+        }
+      } else {
+        // For images and text posts, save to R2 first
+        const mediaData = attachedImage ? {
+          base64: attachedImage.base64,
+          mimeType: attachedImage.mimeType,
+        } : undefined;
 
-      if (!publishResponse.ok) {
-        const error = await publishResponse.json();
-        throw new Error(error.error || "Failed to publish to LinkedIn");
+        const saveResponse = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: currentPost,
+            status: "draft",
+            postType: attachedImage ? "image" : "text",
+            mediaData,
+            metadata: {
+              source: "reddit",
+              redditUrl: url,
+              redditTitle: redditPost?.title,
+            },
+          }),
+        });
+
+        if (!saveResponse.ok) {
+          throw new Error("Failed to save post before publishing");
+        }
+
+        const { post } = await saveResponse.json();
+
+        // Get the uploaded image URL from the saved post
+        const imageUrl = post.media && post.media.length > 0 ? post.media[0].storageUrl : undefined;
+
+        // Then publish to LinkedIn
+        const publishResponse = await fetch("/api/linkedin/post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId: post.id,
+            text: currentPost,
+            imageUrl,
+          }),
+        });
+
+        if (!publishResponse.ok) {
+          const error = await publishResponse.json();
+          throw new Error(error.error || "Failed to publish to LinkedIn");
+        }
       }
 
       clearDraft();

@@ -400,6 +400,228 @@ export async function createLinkedInPostWithImage(
 }
 
 /**
+ * Register a video upload with LinkedIn
+ * Returns the upload URL and asset URN
+ */
+async function registerVideoUpload(
+  accessToken: string,
+  ownerUrn: string,
+  fileSizeBytes: number
+): Promise<{ uploadUrl: string; asset: string }> {
+  const registerRequest = {
+    registerUploadRequest: {
+      recipes: ['urn:li:digitalmediaRecipe:feedshare-video'],
+      owner: ownerUrn,
+      serviceRelationships: [
+        {
+          relationshipType: 'OWNER',
+          identifier: 'urn:li:userGeneratedContent',
+        },
+      ],
+      supportedUploadMechanism: ['SINGLE_REQUEST_UPLOAD'],
+      fileSize: fileSizeBytes,
+    },
+  };
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(registerRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to register video upload: ${error}`);
+  }
+
+  const data: LinkedInRegisterUploadResponse = await response.json();
+  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
+  const asset = data.value.asset;
+
+  return { uploadUrl, asset };
+}
+
+/**
+ * Upload video binary data to LinkedIn
+ */
+async function uploadVideoToLinkedIn(
+  uploadUrl: string,
+  videoBlob: Blob,
+  contentType: string
+): Promise<void> {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: videoBlob,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to upload video to LinkedIn: ${error}`);
+  }
+}
+
+/**
+ * Check video asset processing status
+ * Videos need time to be processed by LinkedIn
+ */
+async function checkVideoAssetStatus(
+  accessToken: string,
+  asset: string
+): Promise<'PROCESSING' | 'AVAILABLE' | 'FAILED'> {
+  // Extract asset ID from URN (e.g., urn:li:digitalmediaAsset:123456 -> 123456)
+  const assetId = asset.split(':').pop();
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/assets/${assetId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to check video status: ${error}`);
+  }
+
+  const data = await response.json();
+  const recipes = data.recipes || [];
+
+  // Check if any recipe is still processing
+  for (const recipe of recipes) {
+    if (recipe.status === 'PROCESSING') {
+      return 'PROCESSING';
+    }
+    if (recipe.status === 'FAILED') {
+      return 'FAILED';
+    }
+  }
+
+  return 'AVAILABLE';
+}
+
+/**
+ * Wait for video to be processed by LinkedIn
+ * Polls every 2 seconds, times out after 2 minutes
+ */
+async function waitForVideoProcessing(
+  accessToken: string,
+  asset: string,
+  maxWaitMs: number = 120000
+): Promise<void> {
+  const startTime = Date.now();
+  const pollInterval = 2000;
+
+  while (Date.now() - startTime < maxWaitMs) {
+    const status = await checkVideoAssetStatus(accessToken, asset);
+
+    if (status === 'AVAILABLE') {
+      return;
+    }
+
+    if (status === 'FAILED') {
+      throw new Error('Video processing failed on LinkedIn');
+    }
+
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+
+  throw new Error('Video processing timed out - please try again');
+}
+
+/**
+ * Create a LinkedIn post with a video (native video upload)
+ * @param authorId - Either a person ID or organization ID
+ * @param authorType - 'person' for personal profile or 'organization' for company page
+ * @param videoBase64 - Base64 encoded video data
+ * @param videoMimeType - MIME type of the video (video/mp4 or video/quicktime)
+ */
+export async function createLinkedInPostWithVideo(
+  accessToken: string,
+  authorId: string,
+  text: string,
+  videoBase64: string,
+  videoMimeType: string,
+  videoTitle?: string,
+  visibility: 'PUBLIC' | 'CONNECTIONS' = 'PUBLIC',
+  authorType: 'person' | 'organization' = 'person'
+): Promise<{ id: string }> {
+  const authorUrn = authorType === 'organization'
+    ? `urn:li:organization:${authorId}`
+    : `urn:li:person:${authorId}`;
+
+  // Convert base64 to blob
+  const binaryString = atob(videoBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  const videoBlob = new Blob([bytes], { type: videoMimeType });
+
+  // Step 1: Register the video upload with LinkedIn
+  const { uploadUrl, asset } = await registerVideoUpload(
+    accessToken,
+    authorUrn,
+    videoBlob.size
+  );
+
+  // Step 2: Upload the video binary to LinkedIn
+  await uploadVideoToLinkedIn(uploadUrl, videoBlob, videoMimeType);
+
+  // Step 3: Wait for video to be processed (LinkedIn needs time to transcode)
+  await waitForVideoProcessing(accessToken, asset);
+
+  // Step 4: Create the post with the uploaded video asset
+  const postData = {
+    author: authorUrn,
+    lifecycleState: 'PUBLISHED',
+    specificContent: {
+      'com.linkedin.ugc.ShareContent': {
+        shareCommentary: {
+          text: text,
+        },
+        shareMediaCategory: 'VIDEO',
+        media: [
+          {
+            status: 'READY',
+            media: asset,
+            title: videoTitle ? { text: videoTitle } : undefined,
+          },
+        ],
+      },
+    },
+    visibility: {
+      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
+    },
+  };
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create LinkedIn post with video: ${error}`);
+  }
+
+  const data = await response.json();
+  return { id: data.id };
+}
+
+/**
  * Validate LinkedIn access token
  */
 export async function validateLinkedInToken(accessToken: string): Promise<boolean> {

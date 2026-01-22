@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLinkedInPost, createLinkedInPostWithImage } from '@/lib/linkedin';
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text, imageUrl, imageTitle, visibility = 'PUBLIC' } = body;
+    const { text, imageUrl, imageTitle, videoData, visibility = 'PUBLIC' } = body;
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -67,7 +67,20 @@ export async function POST(request: NextRequest) {
 
     let result;
 
-    if (imageUrl) {
+    if (videoData?.base64 && videoData?.mimeType) {
+      // Video post - upload video directly to LinkedIn
+      result = await createLinkedInPostWithVideo(
+        user.linkedinAccessToken,
+        authorId,
+        text,
+        videoData.base64,
+        videoData.mimeType,
+        videoData.title,
+        visibility,
+        authorType
+      );
+    } else if (imageUrl) {
+      // Image post - fetch from R2 URL and upload to LinkedIn
       result = await createLinkedInPostWithImage(
         user.linkedinAccessToken,
         authorId,
@@ -78,6 +91,7 @@ export async function POST(request: NextRequest) {
         authorType
       );
     } else {
+      // Text-only post
       result = await createLinkedInPost(
         user.linkedinAccessToken,
         authorId,
