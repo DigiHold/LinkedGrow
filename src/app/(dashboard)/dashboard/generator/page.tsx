@@ -1338,7 +1338,7 @@ export default function GeneratorPage() {
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
+              <CardContent className="space-y-3">
                 <Button
                   variant="linkedin"
                   className="w-full"
@@ -1408,12 +1408,12 @@ export default function GeneratorPage() {
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Add Media</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
+              <CardContent className="space-y-3">
                 {/* AI Image Generation - only show if has API key */}
                 {hasImageApiKey && (
                   <Button
                     variant="outline"
-                    className="w-full justify-start"
+                    className="w-full"
                     onClick={() => setShowImageModal(true)}
                   >
                     <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
@@ -1432,7 +1432,7 @@ export default function GeneratorPage() {
                 />
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="w-4 h-4 mr-2" />
@@ -1440,7 +1440,7 @@ export default function GeneratorPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={() => setShowLinkInput(!showLinkInput)}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -1468,16 +1468,16 @@ export default function GeneratorPage() {
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Regenerate</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
-                <Button variant="outline" className="w-full justify-start" onClick={() => setStep(3)}>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full" onClick={() => setStep(3)}>
                   <Lightbulb className="w-4 h-4 mr-2" />
                   Pick Different Idea
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={handleGeneratePost}>
+                <Button variant="outline" className="w-full" onClick={handleGeneratePost}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Regenerate Post
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full">
                   <Wand2 className="w-4 h-4 mr-2" />
                   3 More Variations
                 </Button>

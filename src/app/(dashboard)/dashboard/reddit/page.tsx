@@ -1055,9 +1055,9 @@ function RedditImportContent() {
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
+              <CardContent className="space-y-3">
                 <Button
-                  className="w-full justify-center bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                  className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                   size="lg"
                   onClick={handlePublish}
                   disabled={isPublishing || !getCurrentPost().trim()}
@@ -1071,7 +1071,7 @@ function RedditImportContent() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-center"
+                  className="w-full"
                   onClick={() => setShowScheduler(!showScheduler)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
@@ -1109,7 +1109,7 @@ function RedditImportContent() {
                 )}
                 <Button
                   variant="outline"
-                  className="w-full justify-center"
+                  className="w-full"
                   onClick={handleSaveAsDraft}
                   disabled={isSaving || !getCurrentPost().trim()}
                 >
@@ -1128,12 +1128,12 @@ function RedditImportContent() {
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
                 <CardTitle className="text-base">Add Media</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
+              <CardContent className="space-y-3">
                 {/* AI Image Generation - only show if has API key */}
                 {hasImageApiKey && (
                   <Button
                     variant="outline"
-                    className="w-full justify-center"
+                    className="w-full"
                     onClick={() => setShowImageModal(true)}
                   >
                     <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
@@ -1155,7 +1155,7 @@ function RedditImportContent() {
                 />
                 <Button
                   variant="outline"
-                  className="w-full justify-center"
+                  className="w-full"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="w-4 h-4 mr-2" />
