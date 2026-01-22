@@ -9,16 +9,21 @@
 // LinkedIn OAuth scopes
 // Poster app: Sign-in + Share on LinkedIn
 const POSTER_SCOPES = ['openid', 'profile', 'email', 'w_member_social'];
+
 // Community app: Community Management API for engagement features
 // Development Tier: Only w_member_social is available
-// Standard Tier (after approval): r_organization_social, w_organization_social
-// For now, we use Development Tier scopes only
+// Standard Tier (after approval): Full Community Management API access
+//
+// IMPORTANT: When LinkedIn approves your Community Management API access:
+// 1. Uncomment the scopes below based on your approval
+// 2. The headline will automatically be fetched via REST API /rest/me endpoint
 const COMMUNITY_SCOPES = [
   'openid',
   'profile',
   'email',
   'w_member_social',            // Post/interact as member (Development Tier)
-  // After Standard Tier approval, uncomment these:
+  // After Community Management API approval, uncomment these:
+  // 'r_member_social',         // Read member profile including HEADLINE
   // 'r_organization_social',   // Read org content (comments, reactions)
   // 'w_organization_social',   // Post/comment as organization
 ];
@@ -167,12 +172,64 @@ export async function exchangeCodeForToken(
 }
 
 /**
- * Get LinkedIn user profile
- * First tries the /v2/me endpoint for extended profile data (including headline),
- * falls back to /v2/userinfo if that fails.
+ * Get LinkedIn user profile using the Community Management REST API
+ * This endpoint provides access to headline when you have Community Management API access.
+ * Falls back to OpenID Connect /userinfo if REST API fails.
+ *
+ * Requires: Community Management API access (after LinkedIn approval)
+ * Endpoint: GET /rest/me (versioned REST API)
  */
 export async function getLinkedInProfile(accessToken: string): Promise<LinkedInProfile> {
-  // First try /v2/me with projection to get headline
+  // First try the versioned REST API /rest/me endpoint (Community Management API)
+  // This endpoint provides headline when you have the proper access
+  try {
+    const restResponse = await fetch(`${LINKEDIN_REST_API_BASE}/me?projection=(id,firstName,lastName,headline,profilePicture)`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+        'X-Restli-Protocol-Version': '2.0.0',
+      },
+    });
+
+    if (restResponse.ok) {
+      const restData = await restResponse.json();
+      console.log('LinkedIn REST /me response:', JSON.stringify(restData, null, 2));
+
+      // Extract localized values from the REST API response
+      const firstName = restData.firstName?.localized?.en_US ||
+                       Object.values(restData.firstName?.localized || {})[0] || '';
+      const lastName = restData.lastName?.localized?.en_US ||
+                      Object.values(restData.lastName?.localized || {})[0] || '';
+      const headline = restData.headline?.localized?.en_US ||
+                      Object.values(restData.headline?.localized || {})[0] || undefined;
+
+      // Extract profile picture URL
+      let pictureUrl: string | undefined;
+      if (restData.profilePicture?.displayImage) {
+        pictureUrl = restData.profilePicture.displayImage;
+      } else if (restData.profilePicture?.['displayImage~']?.elements?.length > 0) {
+        const elements = restData.profilePicture['displayImage~'].elements;
+        const largestImage = elements[elements.length - 1];
+        pictureUrl = largestImage?.identifiers?.[0]?.identifier;
+      }
+
+      return {
+        id: restData.id,
+        localizedFirstName: firstName,
+        localizedLastName: lastName,
+        localizedHeadline: headline,
+        profilePicture: pictureUrl ? { displayImage: pictureUrl } : undefined,
+      };
+    }
+
+    const errorText = await restResponse.text();
+    console.log('LinkedIn REST /me failed (status:', restResponse.status, '), response:', errorText);
+    console.log('Falling back to legacy /v2/me endpoint...');
+  } catch (error) {
+    console.log('LinkedIn REST /me error:', error);
+  }
+
+  // Second attempt: Try legacy /v2/me endpoint with projection
   try {
     const meResponse = await fetch(
       `${LINKEDIN_API_BASE}/me?projection=(id,localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams))`,
@@ -192,7 +249,6 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
       let pictureUrl: string | undefined;
       if (meData.profilePicture?.['displayImage~']?.elements?.length > 0) {
         const elements = meData.profilePicture['displayImage~'].elements;
-        // Get the largest image (last in array usually)
         const largestImage = elements[elements.length - 1];
         pictureUrl = largestImage?.identifiers?.[0]?.identifier;
       }
@@ -205,12 +261,12 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
         profilePicture: pictureUrl ? { displayImage: pictureUrl } : undefined,
       };
     }
-    console.log('LinkedIn /v2/me failed, falling back to /v2/userinfo');
+    console.log('LinkedIn /v2/me failed (status:', meResponse.status, '), falling back to /v2/userinfo');
   } catch (error) {
     console.log('LinkedIn /v2/me error, falling back to /v2/userinfo:', error);
   }
 
-  // Fallback to /v2/userinfo (OpenID Connect)
+  // Final fallback: /v2/userinfo (OpenID Connect - always works but no headline)
   const response = await fetch(`${LINKEDIN_API_BASE}/userinfo`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -222,12 +278,14 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
   }
 
   const data = await response.json();
+  console.log('LinkedIn /v2/userinfo response (no headline available):', JSON.stringify(data, null, 2));
 
   return {
     id: data.sub,
     email: data.email,
     localizedFirstName: data.given_name || '',
     localizedLastName: data.family_name || '',
+    // No headline available via OpenID Connect
     profilePicture: data.picture ? { displayImage: data.picture } : undefined,
   };
 }
