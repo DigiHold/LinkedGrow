@@ -143,6 +143,10 @@ function RedditImportContent() {
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
+  // AI Edit state
+  const [isAiEditing, setIsAiEditing] = useState(false);
+  const [customAiInstruction, setCustomAiInstruction] = useState("");
+
   // Router and refs
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -509,6 +513,43 @@ function RedditImportContent() {
     }
   };
 
+  // Handle AI edit
+  const handleAiEdit = async (instruction: string) => {
+    if (!instruction.trim() || selectedPost === null) return;
+
+    setIsAiEditing(true);
+    try {
+      const currentContent = posts[selectedPost];
+
+      const response = await fetch("/api/ai/edit-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: currentContent,
+          instruction: instruction,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to edit post");
+      }
+
+      const data = await response.json();
+      if (data.content) {
+        const newPosts = [...posts];
+        newPosts[selectedPost] = data.content;
+        setPosts(newPosts);
+        setCustomAiInstruction("");
+        showToast("Post updated with AI!", "success");
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to edit post");
+    } finally {
+      setIsAiEditing(false);
+    }
+  };
+
   // Loading state while checking API key
   if (isCheckingApiKey) {
     return (
@@ -802,7 +843,7 @@ function RedditImportContent() {
                       <Check className="w-5 h-5 text-cyan-500" />
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground line-clamp-[12] whitespace-pre-wrap">
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-100 overflow-y-auto">
                     {post}
                   </div>
                 </CardContent>
@@ -945,9 +986,10 @@ function RedditImportContent() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wand2 className="w-4 h-4 text-cyan-500" />
                   AI Quick Edit
+                  {isAiEditing && <Loader2 className="w-4 h-4 animate-spin" />}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {["Make Shorter", "Add Emojis", "Stronger Hook", "Add CTA", "More Casual"].map((action) => (
                     <Button
@@ -955,10 +997,34 @@ function RedditImportContent() {
                       variant="outline"
                       size="sm"
                       className="bg-white dark:bg-gray-900 hover:bg-cyan-100 hover:border-cyan-300"
+                      onClick={() => handleAiEdit(action)}
+                      disabled={isAiEditing}
                     >
                       {action}
                     </Button>
                   ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Custom instruction (e.g., 'Make it more professional')"
+                    value={customAiInstruction}
+                    onChange={(e) => setCustomAiInstruction(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && customAiInstruction.trim()) {
+                        handleAiEdit(customAiInstruction);
+                      }
+                    }}
+                    disabled={isAiEditing}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleAiEdit(customAiInstruction)}
+                    disabled={isAiEditing || !customAiInstruction.trim()}
+                    className="bg-cyan-600 hover:bg-cyan-700"
+                  >
+                    {isAiEditing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
