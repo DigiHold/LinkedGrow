@@ -176,13 +176,16 @@ export function ImageGeneratorModal({
             <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
               <AlertCircle className="w-8 h-8 text-amber-600" />
             </div>
-            <h3 className="font-semibold mb-2">No Image API Connected</h3>
+            <h3 className="font-semibold mb-2">AI Image API Key Required</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              To generate AI images, please add your Google AI (Gemini 3 Pro Image) or OpenAI (DALL-E 3) API key in Settings.
+              To generate AI images, you need to add an Image AI API key. Go to Settings &gt; AI API and scroll down to the &quot;AI Image Generation&quot; section.
             </p>
-            <Button onClick={() => window.location.href = "/dashboard/settings"}>
+            <p className="text-xs text-muted-foreground mb-4">
+              Supported providers: Google AI (Gemini), OpenAI (DALL-E 3), Replicate (FLUX)
+            </p>
+            <Button onClick={() => window.location.href = "/dashboard/settings/ai-api"}>
               <Sparkles className="w-4 h-4 mr-2" />
-              Go to Settings
+              Configure AI Image API Key
             </Button>
           </div>
         </DialogContent>
@@ -255,7 +258,11 @@ export function ImageGeneratorModal({
           <div className="space-y-4">
             {!hasTextApiKey && (
               <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300">
-                <strong>Tip:</strong> Add a text AI API key in Settings to auto-generate detailed prompts from your post content.
+                <strong>Tip:</strong> Add a Text AI API key in{" "}
+                <a href="/dashboard/settings/ai-api" className="underline font-medium hover:text-amber-800 dark:hover:text-amber-200">
+                  Settings &gt; AI API
+                </a>{" "}
+                to auto-generate detailed image prompts from your post content.
               </div>
             )}
 
