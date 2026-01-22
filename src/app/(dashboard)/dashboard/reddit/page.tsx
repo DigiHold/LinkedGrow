@@ -1057,7 +1057,7 @@ function RedditImportContent() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
-                  className="w-full justify-start bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                  className="w-full justify-center bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                   size="lg"
                   onClick={handlePublish}
                   disabled={isPublishing || !getCurrentPost().trim()}
@@ -1071,7 +1071,7 @@ function RedditImportContent() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-center"
                   onClick={() => setShowScheduler(!showScheduler)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
@@ -1109,7 +1109,7 @@ function RedditImportContent() {
                 )}
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-center"
                   onClick={handleSaveAsDraft}
                   disabled={isSaving || !getCurrentPost().trim()}
                 >
@@ -1133,13 +1133,13 @@ function RedditImportContent() {
                 {hasImageApiKey && (
                   <Button
                     variant="outline"
-                    className="w-full justify-start"
+                    className="w-full justify-center"
                     onClick={() => setShowImageModal(true)}
                   >
                     <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
                     Generate AI Image
                     {!hasImageAccess && (
-                      <span className="ml-auto text-xs text-amber-600 flex items-center gap-1">
+                      <span className="ml-2 text-xs text-amber-600 flex items-center gap-1">
                         <Lock className="w-3 h-3" />
                         Pro
                       </span>
@@ -1155,7 +1155,7 @@ function RedditImportContent() {
                 />
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-center"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="w-4 h-4 mr-2" />
