@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
-import { db, users, accounts } from '@/lib/db';
+import { db, users, accounts, betaUsers } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
@@ -117,17 +117,38 @@ export async function GET(request: NextRequest) {
 
       // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
+
+      // Check if email is in beta users list - they get free business plan
+      const normalizedEmail = googleUser.email.toLowerCase().trim();
+      const betaUser = await db.query.betaUsers.findFirst({
+        where: eq(betaUsers.email, normalizedEmail),
+      });
+
+      const isBetaTester = betaUser && !betaUser.converted;
+      const userPlan = isBetaTester ? 'business' : 'free';
+
       await db.insert(users).values({
         id: userId,
         email: googleUser.email,
         name: googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim(),
         image: null,
         emailVerified: googleUser.verified_email ? new Date() : null,
-        plan: 'free',
+        plan: userPlan,
         twoFactorEnabled: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+
+      // Mark beta user as converted if applicable
+      if (isBetaTester) {
+        await db
+          .update(betaUsers)
+          .set({
+            converted: true,
+            convertedAt: new Date(),
+          })
+          .where(eq(betaUsers.email, normalizedEmail));
+      }
 
       // Link Google account
       await db.insert(accounts).values({

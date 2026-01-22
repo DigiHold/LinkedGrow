@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, users } from "@/lib/db";
+import { db, users, betaUsers } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
@@ -63,6 +63,15 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Check if email is in beta users list - they get free business plan
+    const normalizedEmail = email.toLowerCase().trim();
+    const betaUser = await db.query.betaUsers.findFirst({
+      where: eq(betaUsers.email, normalizedEmail),
+    });
+
+    const isBetaTester = betaUser && !betaUser.converted;
+    const userPlan = isBetaTester ? "business" : "free";
+
     // Create user
     const userId = randomUUID();
     await db.insert(users).values({
@@ -70,11 +79,22 @@ export async function POST(request: NextRequest) {
       name: name || null,
       email: email,
       password: hashedPassword,
-      plan: "free",
+      plan: userPlan,
       twoFactorEnabled: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+
+    // Mark beta user as converted if applicable
+    if (isBetaTester) {
+      await db
+        .update(betaUsers)
+        .set({
+          converted: true,
+          convertedAt: new Date(),
+        })
+        .where(eq(betaUsers.email, normalizedEmail));
+    }
 
     // Send welcome email (non-blocking)
     sendWelcomeEmail({ to: email, name: name || undefined }).catch((err) => {

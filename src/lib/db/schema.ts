@@ -209,6 +209,16 @@ export const waitlist = sqliteTable("waitlist", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
+// Beta users table - separate from waitlist, for beta testers who get free business plan
+export const betaUsers = sqliteTable("beta_users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  converted: integer("converted", { mode: "boolean" }).default(false), // True when user signs up
+  convertedAt: integer("converted_at", { mode: "timestamp" }), // When they signed up
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
 // Password reset tokens table
 // Note: We store a hash of the token, not the token itself
 // This way if the DB is breached, tokens can't be used directly
@@ -428,3 +438,5 @@ export type CookieConsent = typeof cookieConsents.$inferSelect;
 export type NewCookieConsent = typeof cookieConsents.$inferInsert;
 export type DataRemovalRequest = typeof dataRemovalRequests.$inferSelect;
 export type NewDataRemovalRequest = typeof dataRemovalRequests.$inferInsert;
+export type BetaUser = typeof betaUsers.$inferSelect;
+export type NewBetaUser = typeof betaUsers.$inferInsert;

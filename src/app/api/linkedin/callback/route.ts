@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLinkedInProfile, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
-import { db, users, accounts } from '@/lib/db';
+import { db, users, accounts, betaUsers } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
@@ -174,13 +174,22 @@ export async function GET(request: NextRequest) {
         // Create new user (don't store profile picture during social login - only when connecting LinkedIn via settings)
         const userId = randomUUID();
 
+        // Check if email is in beta users list - they get free business plan
+        const normalizedEmail = linkedInEmail.toLowerCase().trim();
+        const betaUser = await db.query.betaUsers.findFirst({
+          where: eq(betaUsers.email, normalizedEmail),
+        });
+
+        const isBetaTester = betaUser && !betaUser.converted;
+        const userPlan = isBetaTester ? 'business' : 'free';
+
         await db.insert(users).values({
           id: userId,
           email: linkedInEmail,
           name: fullName,
           image: null,
           emailVerified: new Date(), // LinkedIn emails are verified
-          plan: 'free',
+          plan: userPlan,
           twoFactorEnabled: false,
           // Auto-connect LinkedIn for posting
           linkedinAccessToken: tokenData.access_token,
@@ -193,6 +202,17 @@ export async function GET(request: NextRequest) {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+
+        // Mark beta user as converted if applicable
+        if (isBetaTester) {
+          await db
+            .update(betaUsers)
+            .set({
+              converted: true,
+              convertedAt: new Date(),
+            })
+            .where(eq(betaUsers.email, normalizedEmail));
+        }
 
         // Link LinkedIn account
         await db.insert(accounts).values({

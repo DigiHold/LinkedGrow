@@ -1,11 +1,14 @@
-// Beta Tester API - Email capture for beta testers with Brevo
+// Beta Tester API - Email capture for beta testers with Brevo + Database storage
 import { NextRequest, NextResponse } from "next/server";
+import { db, betaUsers } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_BETA_LIST_ID = 10; // Beta testers list
 const MIN_SUBMIT_TIME_MS = 1000; // Minimum 1 second to submit (bot protection)
 
-// POST /api/beta - Add email to Brevo beta testers list
+// POST /api/beta - Add email to Brevo beta testers list and database
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -49,6 +52,22 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if email already exists in database
+    const existingBetaUser = await db.query.betaUsers.findFirst({
+      where: eq(betaUsers.email, normalizedEmail),
+    });
+
+    // Save to database if not already there
+    if (!existingBetaUser) {
+      await db.insert(betaUsers).values({
+        id: randomUUID(),
+        email: normalizedEmail,
+        name: name?.trim() || null,
+        converted: false,
+        createdAt: new Date(),
+      });
+    }
 
     // Add contact to Brevo
     const response = await fetch("https://api.brevo.com/v3/contacts", {
