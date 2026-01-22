@@ -45,6 +45,7 @@ interface LinkedInProfile {
   email?: string;
   localizedFirstName: string;
   localizedLastName: string;
+  localizedHeadline?: string;
   profilePicture?: {
     displayImage: string;
   };
@@ -167,8 +168,49 @@ export async function exchangeCodeForToken(
 
 /**
  * Get LinkedIn user profile
+ * First tries the /v2/me endpoint for extended profile data (including headline),
+ * falls back to /v2/userinfo if that fails.
  */
 export async function getLinkedInProfile(accessToken: string): Promise<LinkedInProfile> {
+  // First try /v2/me with projection to get headline
+  try {
+    const meResponse = await fetch(
+      `${LINKEDIN_API_BASE}/me?projection=(id,localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams))`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+      }
+    );
+
+    if (meResponse.ok) {
+      const meData = await meResponse.json();
+      console.log('LinkedIn /v2/me response:', JSON.stringify(meData, null, 2));
+
+      // Extract profile picture URL from the nested structure
+      let pictureUrl: string | undefined;
+      if (meData.profilePicture?.['displayImage~']?.elements?.length > 0) {
+        const elements = meData.profilePicture['displayImage~'].elements;
+        // Get the largest image (last in array usually)
+        const largestImage = elements[elements.length - 1];
+        pictureUrl = largestImage?.identifiers?.[0]?.identifier;
+      }
+
+      return {
+        id: meData.id,
+        localizedFirstName: meData.localizedFirstName || '',
+        localizedLastName: meData.localizedLastName || '',
+        localizedHeadline: meData.localizedHeadline,
+        profilePicture: pictureUrl ? { displayImage: pictureUrl } : undefined,
+      };
+    }
+    console.log('LinkedIn /v2/me failed, falling back to /v2/userinfo');
+  } catch (error) {
+    console.log('LinkedIn /v2/me error, falling back to /v2/userinfo:', error);
+  }
+
+  // Fallback to /v2/userinfo (OpenID Connect)
   const response = await fetch(`${LINKEDIN_API_BASE}/userinfo`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
