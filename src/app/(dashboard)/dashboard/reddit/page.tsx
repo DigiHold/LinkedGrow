@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PostEditor } from "@/components/dashboard/post-editor";
 import {
   MessageSquareText,
   ArrowRight,
@@ -949,11 +950,11 @@ function RedditImportContent() {
               </CardHeader>
               <CardContent>
                 {isEditing ? (
-                  <Textarea
+                  <PostEditor
                     value={editedPost}
-                    onChange={(e) => setEditedPost(e.target.value)}
-                    className="min-h-[400px] text-base leading-relaxed"
+                    onChange={setEditedPost}
                     placeholder="Edit your post..."
+                    minHeight="min-h-[400px]"
                   />
                 ) : (
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-border min-h-[300px]">
@@ -984,17 +985,19 @@ function RedditImportContent() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-                  <span>
-                    {(isEditing ? editedPost : posts[selectedPost]).length} / 3000 characters
-                  </span>
-                  {attachedImage && (
-                    <span className="text-green-600 font-medium flex items-center gap-1">
-                      <Image className="w-4 h-4" />
-                      Image attached
+                {!isEditing && (
+                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                    <span>
+                      {posts[selectedPost].length} / 3000 characters
                     </span>
-                  )}
-                </div>
+                    {attachedImage && (
+                      <span className="text-green-600 font-medium flex items-center gap-1">
+                        <Image className="w-4 h-4" />
+                        Image attached
+                      </span>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

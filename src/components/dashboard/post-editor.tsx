@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,6 +137,68 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
     const [history, setHistory] = useState<string[]>([value]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const charCount = value.length;
+
+    // Track formatting state of current selection
+    const [selectionFormat, setSelectionFormat] = useState({
+      isBold: false,
+      isItalic: false,
+      isBullet: false,
+      isNumbered: false,
+    });
+
+    // Update formatting state when selection changes
+    const updateSelectionFormat = useCallback(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = value.substring(start, end);
+
+      if (selectedText.length > 0) {
+        setSelectionFormat({
+          isBold: isBold(selectedText),
+          isItalic: isItalic(selectedText),
+          isBullet: isBulletList(selectedText),
+          isNumbered: isNumberedList(selectedText),
+        });
+      } else {
+        // No selection - check character at cursor position
+        const charAtCursor = value.charAt(start) || value.charAt(start - 1) || "";
+        setSelectionFormat({
+          isBold: isBold(charAtCursor),
+          isItalic: isItalic(charAtCursor),
+          isBullet: false,
+          isNumbered: false,
+        });
+      }
+    }, [value]);
+
+    // Listen to selection changes
+    useEffect(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const handleSelectionChange = () => {
+        // Only update if this textarea is focused
+        if (document.activeElement === textarea) {
+          updateSelectionFormat();
+        }
+      };
+
+      // Use document selectionchange event
+      document.addEventListener("selectionchange", handleSelectionChange);
+
+      // Also update on mouseup and keyup for better responsiveness
+      textarea.addEventListener("mouseup", updateSelectionFormat);
+      textarea.addEventListener("keyup", updateSelectionFormat);
+
+      return () => {
+        document.removeEventListener("selectionchange", handleSelectionChange);
+        textarea.removeEventListener("mouseup", updateSelectionFormat);
+        textarea.removeEventListener("keyup", updateSelectionFormat);
+      };
+    }, [updateSelectionFormat]);
 
     // Handle image upload
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,11 +369,18 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       onChange(newContent);
       saveToHistory(newContent);
 
-      // Restore cursor position
+      // Restore cursor position and update selection format
       setTimeout(() => {
         textarea.focus();
-        const newPosition = start + (selectedText ? newText.length : cursorOffset);
-        textarea.setSelectionRange(newPosition, newPosition);
+        if (selectedText) {
+          // Keep the formatted text selected
+          textarea.setSelectionRange(start, start + newText.length);
+        } else {
+          const newPosition = start + cursorOffset;
+          textarea.setSelectionRange(newPosition, newPosition);
+        }
+        // Update format state after applying
+        updateSelectionFormat();
       }, 0);
     };
 
@@ -322,7 +391,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className={cn(
+                "h-8 w-8",
+                selectionFormat.isBold && "bg-accent text-accent-foreground"
+              )}
               onClick={() => applyFormatting("bold")}
               disabled={disabled}
               title="Bold (Ctrl+B)"
@@ -333,7 +405,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className={cn(
+                "h-8 w-8",
+                selectionFormat.isItalic && "bg-accent text-accent-foreground"
+              )}
               onClick={() => applyFormatting("italic")}
               disabled={disabled}
               title="Italic (Ctrl+I)"
@@ -345,7 +420,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className={cn(
+                "h-8 w-8",
+                selectionFormat.isBullet && "bg-accent text-accent-foreground"
+              )}
               onClick={() => applyFormatting("bullet")}
               disabled={disabled}
               title="Bullet List"
@@ -356,7 +434,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className={cn(
+                "h-8 w-8",
+                selectionFormat.isNumbered && "bg-accent text-accent-foreground"
+              )}
               onClick={() => applyFormatting("number")}
               disabled={disabled}
               title="Numbered List"

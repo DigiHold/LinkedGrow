@@ -27,10 +27,6 @@ import {
   Info,
   Save,
   Trash2,
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -133,7 +129,7 @@ export function CalendarContent() {
     setTimeout(() => setShowErrorToast(false), 4000);
   };
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const postEditorRef = useRef<{ focus: () => void; getContent: () => string; setContent: (content: string) => void } | null>(null);
   const dayDropdownRef = useRef<HTMLDivElement>(null);
   const postMenuRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
@@ -341,7 +337,7 @@ export function CalendarContent() {
     setDropdownOpen(false);
     if (view === "create-post") {
       setNewPostContent("");
-      setTimeout(() => textareaRef.current?.focus(), 100);
+      setTimeout(() => postEditorRef.current?.focus(), 100);
     }
     if (view === "schedule-post") {
       setSelectedPostToSchedule(null);
@@ -489,41 +485,7 @@ export function CalendarContent() {
     setNewPostContent(newIdeaText);
     setDrawerView("create-post");
     setDrawerOpen(true);
-    setTimeout(() => textareaRef.current?.focus(), 100);
-  };
-
-  const insertFormatting = (format: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = newPostContent.substring(start, end);
-
-    let newText = "";
-    switch (format) {
-      case "bold":
-        newText = selectedText || "bold text";
-        break;
-      case "italic":
-        newText = selectedText || "italic text";
-        break;
-      case "bullet":
-        newText = selectedText ? `• ${selectedText}` : "• ";
-        break;
-      case "number":
-        newText = selectedText ? `1. ${selectedText}` : "1. ";
-        break;
-      default:
-        return;
-    }
-
-    const updatedContent = newPostContent.substring(0, start) + newText + newPostContent.substring(end);
-    setNewPostContent(updatedContent);
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + newText.length, start + newText.length);
-    }, 0);
+    setTimeout(() => postEditorRef.current?.focus(), 100);
   };
 
   const handleAIEdit = async () => {
@@ -1106,96 +1068,41 @@ export function CalendarContent() {
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
                   {/* LEFT SIDE - Editor */}
                   <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-white dark:bg-gray-900">
-                    <Card>
-                      <CardContent className="p-4">
-                        {/* Formatting Toolbar */}
-                        <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-border">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => insertFormatting("bold")}
-                            title="Bold"
-                          >
-                            <Bold className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => insertFormatting("italic")}
-                            title="Italic"
-                          >
-                            <Italic className="w-4 h-4" />
-                          </Button>
-                          <div className="w-px h-6 bg-border mx-1" />
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => insertFormatting("bullet")}
-                            title="Bullet List"
-                          >
-                            <List className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => insertFormatting("number")}
-                            title="Numbered List"
-                          >
-                            <ListOrdered className="w-4 h-4" />
-                          </Button>
-                          <div className="w-px h-6 bg-border mx-1" />
-                          <Button variant="ghost" size="icon-sm" title="Add Image">
-                            <ImageIcon className="w-4 h-4" />
-                          </Button>
-                          <div className="flex-1" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newState = !showAIPanel;
-                              setShowAIPanel(newState);
-                              if (newState) {
-                                setTimeout(() => {
-                                  aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                                }, 100);
-                              }
-                            }}
-                            className={cn(showAIPanel && "bg-linkedin/10 text-linkedin")}
-                          >
-                            <Sparkles className="w-4 h-4 mr-1" />
-                            <span className="hidden sm:inline">AI Assist</span>
-                          </Button>
-                        </div>
-
-                        {/* Main Textarea */}
-                        <Textarea
-                          ref={textareaRef}
-                          value={newPostContent}
-                          onChange={(e) => setNewPostContent(e.target.value)}
-                          placeholder="Start writing your LinkedIn post...
+                    <div className="space-y-4">
+                      <PostEditor
+                        ref={postEditorRef}
+                        value={newPostContent}
+                        onChange={setNewPostContent}
+                        placeholder="Start writing your LinkedIn post...
 
 Tips for viral posts:
 • Start with a strong hook (first 2 lines are crucial)
 • Use short paragraphs and line breaks
 • Add bullet points for readability
 • End with a question or CTA"
-                          className="min-h-80 sm:min-h-100 border-0 focus-visible:ring-0 resize-none text-base"
-                        />
-
-                        {/* Character Counter */}
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <span className={cn(
-                            "text-sm",
-                            newPostContent.length > 3000 ? "text-destructive font-medium" : "text-muted-foreground"
-                          )}>
-                            {newPostContent.length} / 3000
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            ~{Math.ceil(newPostContent.length / 200)} min read
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        minHeight="min-h-80 sm:min-h-100"
+                        showImageButton={true}
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newState = !showAIPanel;
+                            setShowAIPanel(newState);
+                            if (newState) {
+                              setTimeout(() => {
+                                aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                              }, 100);
+                            }
+                          }}
+                          className={cn(showAIPanel && "bg-linkedin/10 text-linkedin")}
+                        >
+                          <Sparkles className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">AI Assist</span>
+                        </Button>
+                      </div>
+                    </div>
 
                     {/* AI Panel */}
                     {showAIPanel && (
