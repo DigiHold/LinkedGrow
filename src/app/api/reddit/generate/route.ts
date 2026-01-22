@@ -4,6 +4,23 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
+// Sanitize AI output: remove wrapping quotes
+function sanitizeAIOutput(text: string): string {
+  let cleaned = text.trim();
+
+  // Remove wrapping triple quotes
+  if (cleaned.startsWith('"""') && cleaned.endsWith('"""')) {
+    cleaned = cleaned.slice(3, -3).trim();
+  }
+  // Remove wrapping single or double quotes
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
 async function generatePosts(
   hook: string,
   redditTitle: string,
@@ -18,69 +35,93 @@ async function generatePosts(
   targetAudience?: string,
   writingTone?: string
 ): Promise<string[]> {
+  // Build voice instructions from sample posts
   let voiceInstructions = "";
   if (samplePosts && samplePosts.length > 0) {
-    voiceInstructions = `\n\nIMPORTANT - Match the writing style from these sample posts:\n${samplePosts.map((p, i) => `Sample ${i + 1}: ${p.substring(0, 500)}`).join("\n\n")}`;
+    voiceInstructions = `
+
+=== SAMPLE POSTS TO MATCH ===
+Match the structure, pacing, formatting, and voice of these posts. The ideas and wording must be NEW - do NOT copy phrases.
+${samplePosts.map((p, i) => `
+--- Sample ${i + 1} ---
+${p.substring(0, 800)}`).join("\n")}
+=== END SAMPLES ===`;
   }
 
-  let contextInstructions = "";
-  if (businessDescription) {
-    contextInstructions += `\n\nAbout the author: ${businessDescription}`;
-  }
-  if (targetAudience) {
-    contextInstructions += `\nTarget audience: ${targetAudience}`;
-  }
-  if (writingTone) {
-    contextInstructions += `\nWriting tone: ${writingTone}`;
+  // Build business context
+  let businessContext = "";
+  if (businessDescription || targetAudience || writingTone) {
+    businessContext = `
+
+=== AUTHOR PROFILE ===`;
+    if (businessDescription) {
+      businessContext += `
+What I do: ${businessDescription}`;
+    }
+    if (targetAudience) {
+      businessContext += `
+Target audience: ${targetAudience}`;
+    }
+    if (writingTone) {
+      businessContext += `
+Writing tone: ${writingTone}`;
+    }
+    businessContext += `
+=== END PROFILE ===`;
   }
 
+  // Build avoid instructions
   let avoidInstructions = "";
   if (neverMention) {
-    avoidInstructions = `\n\nNEVER mention or reference: ${neverMention}`;
+    avoidInstructions = `
+
+NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
-  const prompt = `You are an expert at writing viral LinkedIn posts. Generate ${count} different posts based on this Reddit content.
+  const prompt = `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
 
-Hook to use: "${hook}"
+Goal: Create ${count} compelling LinkedIn posts based on this Reddit content, using the provided hook.
 
-Reddit Post Title: ${redditTitle}
+Hook to use (MUST be the first 2 lines):
+"${hook}"
 
-Reddit Post Content: ${redditContent.substring(0, 2000)}${contextInstructions}
+Reddit Context:
+Title: ${redditTitle}
+Content: ${redditContent.substring(0, 2000)}${businessContext}
 
-VIRAL LINKEDIN POST STRUCTURE:
-1. HOOK (use the provided hook exactly)
-2. STORY/CONTEXT (2-3 short paragraphs, personal angle)
-3. KEY INSIGHT or LESSON (what you learned)
-4. ACTIONABLE TAKEAWAY (what the reader can do)
-5. ENGAGEMENT CTA (question to spark comments)
+=== CRITICAL RULES ===
 
-FORMATTING RULES:
-- Start with the hook on its own line
-- Use single line breaks between thoughts
-- Keep paragraphs to 1-2 sentences MAX
-- Use white space generously
-- Total length: 1000-1500 characters
-- NO hashtags
-- NO emojis (or max 1 if essential)
-- Write like you're talking to a friend, not a corporate memo
-- Be vulnerable and authentic
-- Include specific details/numbers when possible${voiceInstructions}${avoidInstructions}
+1. HOOK (First 2 lines - use the provided hook EXACTLY):
+   - Start with the provided hook word for word
+   - These are the first 2 lines visible before "See more"
 
-EXAMPLE FORMAT:
-[Hook line]
+2. FORMATTING (LinkedIn-native):
+   - NEVER use markdown formatting like **bold** or *italic* - LinkedIn doesn't support it
+   - USE Unicode bold characters for section headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
+   - USE emojis strategically: ✅ for list items, ✨ for highlights, 📌 for save CTA, ♻️ for repost CTA, 🔔 for follow CTA
+   - USE → arrows for bullet points when listing steps or features
+   - Keep lines SHORT (5-10 words max per line)
+   - Add whitespace between sections for skimmability
+   - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
 
-[Short personal context - 1-2 sentences]
+3. STRUCTURE:
+   - Start with the provided 2-line hook exactly
+   - Keep it skimmable with short lines and whitespace
+   - Include 1 clear takeaway + 1 framework (steps)
+   - End with a CTA like "📌 Save this for later" or "♻️ Repost if this helped"
+   - 800-1500 characters total
+   - NO hashtags
 
-[What happened - be specific]
+4. CONTENT:
+   - Extract insights and pain points from the Reddit content
+   - No fluff, no generic advice
+   - Be specific and actionable
+   - Professional but conversational tone
+   - Focus on genuine value
+   - Make it feel like a personal story/experience${voiceInstructions}${avoidInstructions}
 
-[The insight/lesson - bold statement]
-
-[Actionable advice for reader]
-
-[Engaging question to end]
-
-Return ONLY a JSON array of ${count} complete post strings:
-["Post 1...", "Post 2...", "Post 3..."]`;
+Return ONLY a JSON array of ${count} complete post strings (no explanations):
+["Post 1 full text...", "Post 2 full text...", "Post 3 full text..."]`;
 
   let response;
   let posts: string[] = [];
@@ -149,11 +190,56 @@ Return ONLY a JSON array of ${count} complete post strings:
     const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
+  } else if (provider === "grok") {
+    response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "grok-3-mini-beta",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate posts with Grok");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    posts = JSON.parse(cleanContent);
+  } else if (provider === "perplexity") {
+    response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "sonar-pro",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate posts with Perplexity");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    posts = JSON.parse(cleanContent);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return posts;
+  // Sanitize each post
+  return posts.map(post => sanitizeAIOutput(post));
 }
 
 export async function POST(request: NextRequest) {
@@ -164,7 +250,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Accept content directly (fetched client-side to bypass Reddit IP blocking)
     const { hook, title, content, count = 3 } = await request.json();
 
     if (!hook) {

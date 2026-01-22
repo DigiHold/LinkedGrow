@@ -4,38 +4,54 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
-// Generate hooks using AI
+// Generate hooks from Reddit post using AI
 async function generateHooks(
   postTitle: string,
   postContent: string,
+  subreddit: string,
+  score: number,
+  numComments: number,
   apiKey: string,
   provider: string,
   model: string
 ): Promise<string[]> {
-  const prompt = `You are an expert at writing viral LinkedIn posts. Based on this Reddit post, generate 5 powerful two-line hooks.
+  // Build JSON metadata like Reddit provides
+  const jsonMetadata = JSON.stringify({
+    title: postTitle,
+    selftext: postContent.substring(0, 2000),
+    subreddit: subreddit,
+    score: score,
+    num_comments: numComments,
+  }, null, 2);
 
-Reddit Post Title: ${postTitle}
+  const prompt = `I will give you JSON metadata from Reddit like this:
+TITLE: ${postTitle}
+JSON: ${jsonMetadata}
 
-Reddit Post Content: ${postContent.substring(0, 2000)}
+You'll extract the pain points, make 5 viral hooks (2 lines in one hook) on the same.
 
-HOOK STRUCTURE (2 lines):
-Line 1: Pattern interrupt - stops the scroll (shocking, controversial, or unexpected)
-Line 2: Curiosity builder - makes them click "see more" (teases the story/insight)
+The viral hooks should be on the same format, style and tone as these 3 hooks that got results:
 
-VIRAL HOOK FORMULAS:
-1. Contrarian: "Everyone says X. They're wrong." + "Here's what actually works."
-2. Personal failure: "I lost everything." + "Best thing that ever happened."
-3. Numbers shock: "From $0 to $X in Y months." + "With zero [common thing]."
-4. Confession: "I was doing [thing] wrong for years." + "Until I discovered this."
-5. Question + tease: "Why do most [people] fail?" + "It's not what you think."
+Hook 1:
+"3 seconds.
+That's all it takes to lose half your visitors."
+
+Hook 2:
+"Stop collecting compliments.
+Your testimonials are useless. And I can prove it."
+
+Hook 3:
+"It's 2026. STOP using page builders!
+I've seen 500,000+ sites. The pattern is always the same."
 
 Requirements:
-- Line 1: Max 8 words, punchy, stops the scroll
-- Line 2: Max 12 words, builds curiosity, makes them click "see more"
-- Separate the two lines with a newline character
+- Each hook is EXACTLY 2 lines
+- Line 1: Short, punchy, stops the scroll (max 8 words)
+- Line 2: Builds curiosity, makes them click "see more" (max 15 words)
 - NO emojis
-- Be specific to the Reddit content
+- Be specific to the Reddit content pain points
 - Sound human, raw, authentic
+- Controversial or contrarian angles work best
 
 Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n):
 ["Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2"]`;
@@ -105,7 +121,50 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     const data = await response.json();
     const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
-    // Clean up the response - remove markdown code blocks if present
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    hooks = JSON.parse(cleanContent);
+  } else if (provider === "grok") {
+    response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "grok-3-mini-beta",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate hooks with Grok");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    hooks = JSON.parse(cleanContent);
+  } else if (provider === "perplexity") {
+    response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "sonar-pro",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate hooks with Perplexity");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     hooks = JSON.parse(cleanContent);
   } else {
@@ -123,8 +182,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Accept content directly (fetched client-side to bypass Reddit IP blocking)
-    const { title, content } = await request.json();
+    // Accept Reddit post data
+    const { title, content, subreddit, score, num_comments } = await request.json();
 
     if (!title && !content) {
       return NextResponse.json({ error: "No content provided" }, { status: 400 });
@@ -180,6 +239,9 @@ export async function POST(request: NextRequest) {
     const hooks = await generateHooks(
       title || "",
       content || "",
+      subreddit || "",
+      score || 0,
+      num_comments || 0,
       apiKey,
       provider,
       model

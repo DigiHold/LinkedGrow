@@ -242,6 +242,9 @@ function RedditImportContent() {
         body: JSON.stringify({
           title: postData.title,
           content: postData.selftext,
+          subreddit: postData.subreddit,
+          score: postData.score,
+          num_comments: postData.num_comments,
         }),
       });
 
