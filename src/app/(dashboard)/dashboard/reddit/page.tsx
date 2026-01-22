@@ -669,7 +669,7 @@ function RedditImportContent() {
               <Button
                 onClick={handleFetchReddit}
                 disabled={!url.includes("reddit.com") || isLoading}
-                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isLoading ? (
                   <>
