@@ -65,47 +65,27 @@ interface RedditPostData {
   num_comments: number;
 }
 
-// Extract post info from Reddit URL
-function extractPostInfo(url: string): { subreddit: string; postId: string } | null {
-  const match = url.match(/reddit\.com\/r\/([^/]+)\/comments\/([a-z0-9]+)/i);
-  if (match) {
-    return { subreddit: match[1], postId: match[2] };
-  }
-  return null;
-}
-
-// Fetch Reddit post data directly from client (browser doesn't get blocked)
+// Fetch Reddit post data via backend API to avoid CORS issues
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  const postInfo = extractPostInfo(url);
-  if (!postInfo) {
-    throw new Error("Could not parse Reddit URL. Make sure it's a link to a post.");
-  }
-
-  // Fetch directly from Reddit's public .json endpoint - works from browser
-  const jsonUrl = `https://www.reddit.com/r/${postInfo.subreddit}/comments/${postInfo.postId}.json`;
-
-  const response = await fetch(jsonUrl);
+  const response = await fetch("/api/reddit/fetch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
 
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error("Reddit post not found.");
-    }
-    throw new Error("Failed to fetch Reddit post. Please try again.");
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to fetch Reddit post. Please try again.");
   }
 
   const data = await response.json();
-  const postData = data[0]?.data?.children?.[0]?.data;
-
-  if (!postData) {
-    throw new Error("Could not parse Reddit post data.");
-  }
 
   return {
-    title: postData.title || "",
-    selftext: postData.selftext || "",
-    subreddit: postData.subreddit || "",
-    score: postData.score || 0,
-    num_comments: postData.num_comments || 0,
+    title: data.title || "",
+    selftext: data.selftext || "",
+    subreddit: data.subreddit || "",
+    score: data.score || 0,
+    num_comments: data.num_comments || 0,
   };
 }
 
