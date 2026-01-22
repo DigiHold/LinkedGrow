@@ -70,6 +70,33 @@ export default function PostsPage() {
   const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // LinkedIn profile data for preview
+  const [linkedInProfile, setLinkedInProfile] = useState<{
+    name: string;
+    headline: string;
+    image: string | null;
+  } | null>(null);
+
+  // Fetch LinkedIn profile for preview
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch("/api/user/profile");
+        if (response.ok) {
+          const data = await response.json();
+          setLinkedInProfile({
+            name: data.linkedinProfileName || data.name || "Your Name",
+            headline: data.headline || "LinkedIn User",
+            image: data.image || null,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   // Fetch posts from API
   useEffect(() => {
     const fetchPosts = async () => {
@@ -721,12 +748,22 @@ export default function PostsPage() {
               {/* LinkedIn-style preview card */}
               <div className="bg-white dark:bg-gray-800 border rounded-xl p-4">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                    <span className="text-white font-semibold">U</span>
-                  </div>
+                  {linkedInProfile?.image ? (
+                    <img
+                      src={linkedInProfile.image}
+                      alt={linkedInProfile.name}
+                      className="w-12 h-12 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                      <span className="text-white font-semibold">
+                        {(linkedInProfile?.name || "U").charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div>
-                    <p className="font-semibold">Your Name</p>
-                    <p className="text-sm text-muted-foreground">Your headline</p>
+                    <p className="font-semibold">{linkedInProfile?.name || "Your Name"}</p>
+                    <p className="text-sm text-muted-foreground">{linkedInProfile?.headline || "LinkedIn User"}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />
                       {previewPost.status === "scheduled" && previewPost.scheduledAt

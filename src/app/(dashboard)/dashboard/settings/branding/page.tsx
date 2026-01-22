@@ -9,18 +9,24 @@ import {
   Image as ImageIcon,
   Type,
   Trash2,
+  Sparkles,
+  FileImage,
+  FileText,
+  Presentation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
+import { cn } from "@/lib/utils";
 
 const FONT_OPTIONS = [
-  { value: "inter", label: "Inter", style: "font-sans" },
-  { value: "roboto", label: "Roboto", style: "font-sans" },
-  { value: "poppins", label: "Poppins", style: "font-sans" },
-  { value: "montserrat", label: "Montserrat", style: "font-sans" },
-  { value: "playfair", label: "Playfair Display", style: "font-serif" },
-  { value: "merriweather", label: "Merriweather", style: "font-serif" },
+  { value: "inter", label: "Inter", preview: "Modern & Clean" },
+  { value: "roboto", label: "Roboto", preview: "Professional" },
+  { value: "poppins", label: "Poppins", preview: "Friendly & Round" },
+  { value: "montserrat", label: "Montserrat", preview: "Bold & Strong" },
+  { value: "playfair", label: "Playfair Display", preview: "Elegant & Classic" },
+  { value: "merriweather", label: "Merriweather", preview: "Readable & Warm" },
 ];
 
 export default function BrandingPage() {
@@ -30,8 +36,8 @@ export default function BrandingPage() {
 
   // Branding settings
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState("#0a66c2"); // LinkedIn blue default
-  const [secondaryColor, setSecondaryColor] = useState("#057642"); // LinkedIn green default
+  const [primaryColor, setPrimaryColor] = useState("#0891b2"); // Cyan-600 default
+  const [secondaryColor, setSecondaryColor] = useState("#2563eb"); // Blue-600 default
   const [fontFamily, setFontFamily] = useState("inter");
 
   // Fetch current settings
@@ -144,245 +150,398 @@ export default function BrandingPage() {
 
   return (
     <FeatureGate feature="customBranding">
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-pink-500 to-orange-500 flex items-center justify-center">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <Palette className="w-5 h-5 text-white" />
             </div>
             Custom Branding
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            Customize your brand appearance for exported carousels and documents
+          <p className="text-muted-foreground mt-2">
+            Make your content uniquely yours with custom branding
           </p>
         </div>
 
+        {/* What is Custom Branding */}
+        <Card className="bg-cyan-50 dark:bg-cyan-900/10 border-cyan-200 dark:border-cyan-800">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-cyan-900 dark:text-cyan-100 mb-2">
+                  What is Custom Branding?
+                </h3>
+                <p className="text-cyan-800 dark:text-cyan-200 mb-4">
+                  Custom branding lets you personalize all your exported content with your company's visual identity.
+                  Your logo, colors, and fonts will be automatically applied to make your content instantly recognizable
+                  and professionally branded.
+                </p>
+                <div className="grid sm:grid-cols-3 gap-4 mt-4">
+                  <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
+                    <Presentation className="w-5 h-5 text-cyan-600" />
+                    <div>
+                      <p className="font-medium text-sm">Carousels</p>
+                      <p className="text-xs text-muted-foreground">Branded slide exports</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
+                    <FileImage className="w-5 h-5 text-cyan-600" />
+                    <div>
+                      <p className="font-medium text-sm">Images</p>
+                      <p className="text-xs text-muted-foreground">Quote cards & visuals</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
+                    <FileText className="w-5 h-5 text-cyan-600" />
+                    <div>
+                      <p className="font-medium text-sm">Documents</p>
+                      <p className="text-xs text-muted-foreground">PDF reports & exports</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
           </div>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Settings */}
-            <div className="space-y-6">
+          <div className="grid lg:grid-cols-5 gap-6">
+            {/* Settings Column */}
+            <div className="lg:col-span-3 space-y-6">
               {/* Logo Upload */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5" />
-                  Brand Logo
-                </h2>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5 text-cyan-600" />
+                    Brand Logo
+                  </CardTitle>
+                  <CardDescription>
+                    Upload your company logo to appear on all exports
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start gap-6">
+                    {logoUrl ? (
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 flex items-center justify-center">
+                          <img
+                            src={logoUrl}
+                            alt="Brand logo"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                        <button
+                          onClick={handleRemoveLogo}
+                          disabled={isSaving}
+                          className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50">
+                        <ImageIcon className="w-8 h-8 text-slate-400" />
+                      </div>
+                    )}
 
-                <div className="flex items-center gap-4">
-                  {logoUrl ? (
-                    <div className="relative">
-                      <img
-                        src={logoUrl}
-                        alt="Brand logo"
-                        className="w-20 h-20 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white"
-                      />
-                      <button
-                        onClick={handleRemoveLogo}
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                    <div className="flex-1">
+                      <label className="cursor-pointer inline-block">
+                        <span className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-cyan-500/25">
+                          <Upload className="w-4 h-4" />
+                          {logoUrl ? "Change Logo" : "Upload Logo"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoUpload}
+                          disabled={isSaving}
+                        />
+                      </label>
+                      <div className="mt-3 space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          Recommended: Square image (512x512px)
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Supported formats: PNG, JPG, SVG - Max 2MB
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-slate-400" />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="cursor-pointer">
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors">
-                        <Upload className="w-4 h-4" />
-                        {logoUrl ? "Change Logo" : "Upload Logo"}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoUpload}
-                      />
-                    </label>
-                    <p className="text-xs text-slate-500 mt-2">
-                      PNG, JPG or SVG, max 2MB
-                    </p>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Colors */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Palette className="w-5 h-5" />
-                  Brand Colors
-                </h2>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-cyan-600" />
+                    Brand Colors
+                  </CardTitle>
+                  <CardDescription>
+                    Choose colors that represent your brand identity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    {/* Primary Color */}
+                    <div>
+                      <label className="block text-sm font-medium mb-3">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={primaryColor}
+                            onChange={(e) => setPrimaryColor(e.target.value)}
+                            className="w-14 h-14 rounded-xl cursor-pointer border-2 border-slate-200 dark:border-slate-700 overflow-hidden"
+                            style={{ backgroundColor: primaryColor }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Input
+                            value={primaryColor}
+                            onChange={(e) => setPrimaryColor(e.target.value)}
+                            placeholder="#0891b2"
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Headers, titles, main accents
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Primary Color
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700"
-                      />
-                      <Input
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        placeholder="#0a66c2"
-                        className="w-32 font-mono"
-                      />
+                    {/* Secondary Color */}
+                    <div>
+                      <label className="block text-sm font-medium mb-3">
+                        Secondary Color
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={secondaryColor}
+                            onChange={(e) => setSecondaryColor(e.target.value)}
+                            className="w-14 h-14 rounded-xl cursor-pointer border-2 border-slate-200 dark:border-slate-700 overflow-hidden"
+                            style={{ backgroundColor: secondaryColor }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Input
+                            value={secondaryColor}
+                            onChange={(e) => setSecondaryColor(e.target.value)}
+                            placeholder="#2563eb"
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Buttons, badges, highlights
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Secondary Color
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700"
-                      />
-                      <Input
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        placeholder="#057642"
-                        className="w-32 font-mono"
-                      />
-                    </div>
+                  {/* Color Preview Bar */}
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <div
+                      className="w-8 h-8 rounded-lg"
+                      style={{ backgroundColor: primaryColor }}
+                    />
+                    <div
+                      className="w-8 h-8 rounded-lg"
+                      style={{ backgroundColor: secondaryColor }}
+                    />
+                    <div
+                      className="flex-1 h-8 rounded-lg"
+                      style={{
+                        background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground ml-2">Gradient preview</span>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Font */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Type className="w-5 h-5" />
-                  Font Family
-                </h2>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Type className="w-5 h-5 text-cyan-600" />
+                    Font Family
+                  </CardTitle>
+                  <CardDescription>
+                    Select a font that matches your brand's personality
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {FONT_OPTIONS.map((font) => (
+                      <button
+                        key={font.value}
+                        onClick={() => setFontFamily(font.value)}
+                        className={cn(
+                          "p-4 rounded-xl border-2 text-left transition-all",
+                          fontFamily === font.value
+                            ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 ring-2 ring-cyan-500/20"
+                            : "border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-700"
+                        )}
+                      >
+                        <span className="block text-lg font-medium mb-1">
+                          {font.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {font.preview}
+                        </span>
+                        {fontFamily === font.value && (
+                          <div className="mt-2">
+                            <Check className="w-4 h-4 text-cyan-600" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {FONT_OPTIONS.map((font) => (
-                    <button
-                      key={font.value}
-                      onClick={() => setFontFamily(font.value)}
-                      className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                        fontFamily === font.value
-                          ? "border-pink-500 bg-pink-50 dark:bg-pink-950/30"
-                          : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                      }`}
-                    >
-                      <span className={`text-sm font-medium ${font.style}`}>
-                        {font.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              {/* Save Button & Message */}
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Save Branding
+                    </>
+                  )}
+                </Button>
               </div>
 
-              {/* Save Button */}
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="w-full bg-linear-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Save Branding
-                  </>
-                )}
-              </Button>
-
               {message && (
-                <p className={`text-sm text-center ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                <div className={cn(
+                  "p-3 rounded-lg text-sm flex items-center gap-2",
+                  message.type === "success"
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                )}>
+                  {message.type === "success" ? <Check className="w-4 h-4" /> : null}
                   {message.text}
-                </p>
+                </div>
               )}
             </div>
 
-            {/* Preview */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Preview
-              </h2>
+            {/* Preview Column */}
+            <div className="lg:col-span-2">
+              <Card className="sticky top-6">
+                <CardHeader>
+                  <CardTitle>Live Preview</CardTitle>
+                  <CardDescription>
+                    See how your branding will look on exports
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Carousel Slide Preview */}
+                  <div
+                    className="rounded-xl overflow-hidden shadow-xl"
+                    style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                  >
+                    {/* Slide Header */}
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-4">
+                        {logoUrl ? (
+                          <div className="w-10 h-10 rounded-lg bg-white p-1.5 flex items-center justify-center">
+                            <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-white/60" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-white font-semibold text-sm">Your Brand</p>
+                          <p className="text-white/70 text-xs">@yourbrand</p>
+                        </div>
+                      </div>
 
-              {/* Carousel Preview */}
-              <div
-                className="rounded-lg overflow-hidden shadow-lg"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <div className="p-6">
-                  {/* Header with logo */}
-                  <div className="flex items-center gap-3 mb-4">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain bg-white rounded-lg p-1" />
-                    ) : (
-                      <div className="w-10 h-10 bg-white/20 rounded-lg" />
-                    )}
-                    <div>
-                      <p className="text-white font-bold">Your Brand</p>
-                      <p className="text-white/70 text-xs">linkedin.com/in/you</p>
+                      {/* Content Area */}
+                      <div className="bg-white rounded-lg p-5 shadow-lg">
+                        <h3
+                          className="text-xl font-bold mb-3"
+                          style={{ color: primaryColor }}
+                        >
+                          5 Tips for Better Content
+                        </h3>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: secondaryColor }}
+                            />
+                            <p className="text-sm text-slate-600">Know your audience</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: secondaryColor }}
+                            />
+                            <p className="text-sm text-slate-600">Tell compelling stories</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: secondaryColor }}
+                            />
+                            <p className="text-sm text-slate-600">Be consistent</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="px-3 py-1 rounded-full text-white text-xs font-medium"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            Marketing
+                          </span>
+                          <span
+                            className="px-3 py-1 rounded-full text-white text-xs font-medium"
+                            style={{ backgroundColor: secondaryColor }}
+                          >
+                            Tips
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Slide Footer */}
+                    <div className="px-5 py-3 bg-black/10">
+                      <div className="flex items-center justify-between">
+                        <p className="text-white/80 text-xs">Slide 1 of 5</p>
+                        <p className="text-white text-xs font-medium">Swipe</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Content preview */}
-                  <div className="bg-white rounded-lg p-4">
-                    <h3
-                      className="text-xl font-bold mb-2"
-                      style={{ color: primaryColor, fontFamily }}
-                    >
-                      Sample Carousel Slide
-                    </h3>
-                    <p className="text-slate-600 text-sm mb-3">
-                      This is how your branded content will look when exported.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="px-3 py-1 rounded-full text-white text-xs font-medium"
-                        style={{ backgroundColor: secondaryColor }}
-                      >
-                        Tag 1
-                      </span>
-                      <span
-                        className="px-3 py-1 rounded-full text-white text-xs font-medium"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        Tag 2
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div
-                  className="px-6 py-3 text-center"
-                  style={{ backgroundColor: secondaryColor }}
-                >
-                  <p className="text-white text-sm font-medium">
-                    Swipe for more insights
+                  <p className="text-xs text-muted-foreground mt-4 text-center">
+                    This is a preview of how your carousel exports will look
                   </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 text-center">
-                Your branding will be applied to carousel exports and documents
-              </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}

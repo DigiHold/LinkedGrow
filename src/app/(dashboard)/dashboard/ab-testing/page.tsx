@@ -111,7 +111,7 @@ export default function ABTestingPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <GitBranch className="w-5 h-5 text-white" />
               </div>
               A/B Testing
@@ -121,7 +121,7 @@ export default function ABTestingPage() {
             </p>
           </div>
           <Link href="/dashboard/ab-testing/new">
-            <Button className="bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
+            <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               New A/B Test
             </Button>
@@ -131,7 +131,7 @@ export default function ABTestingPage() {
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Tests", value: tests.length, color: "text-violet-500" },
+            { label: "Total Tests", value: tests.length, color: "text-cyan-500" },
             { label: "Running", value: tests.filter((t) => t.status === "running").length, color: "text-green-500" },
             { label: "Completed", value: tests.filter((t) => t.status === "completed").length, color: "text-blue-500" },
             { label: "Drafts", value: tests.filter((t) => t.status === "draft").length, color: "text-slate-500" },
@@ -148,7 +148,7 @@ export default function ABTestingPage() {
         {/* Tests List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
           </div>
         ) : tests.length === 0 ? (
           <Card>
@@ -338,23 +338,23 @@ export default function ABTestingPage() {
         )}
 
         {/* How it works */}
-        <Card className="bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800">
+        <Card className="bg-cyan-50 dark:bg-cyan-900/10 border-cyan-200 dark:border-cyan-800">
           <CardContent className="p-6">
             <h3 className="font-semibold flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-violet-600" />
+              <AlertCircle className="w-5 h-5 text-cyan-600" />
               How A/B Testing Works
             </h3>
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="font-medium text-violet-700 dark:text-violet-300">1. Create variants</p>
+                <p className="font-medium text-cyan-700 dark:text-cyan-300">1. Create variants</p>
                 <p className="text-muted-foreground">Write two different versions of your post content</p>
               </div>
               <div>
-                <p className="font-medium text-violet-700 dark:text-violet-300">2. Publish both</p>
+                <p className="font-medium text-cyan-700 dark:text-cyan-300">2. Publish both</p>
                 <p className="text-muted-foreground">Post both variants to LinkedIn at similar times</p>
               </div>
               <div>
-                <p className="font-medium text-violet-700 dark:text-violet-300">3. Pick the winner</p>
+                <p className="font-medium text-cyan-700 dark:text-cyan-300">3. Pick the winner</p>
                 <p className="text-muted-foreground">After a few days, compare engagement and declare a winner</p>
               </div>
             </div>

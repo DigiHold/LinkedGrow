@@ -164,7 +164,7 @@ export default function ApiKeysPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Key className="w-5 h-5 text-white" />
               </div>
               API Keys
@@ -176,7 +176,7 @@ export default function ApiKeysPage() {
 
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create API Key
@@ -202,7 +202,7 @@ export default function ApiKeysPage() {
         {/* API Keys List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
           </div>
         ) : apiKeys.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
@@ -215,7 +215,7 @@ export default function ApiKeysPage() {
             </p>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-linear-to-r from-violet-500 to-purple-600"
+              className="bg-linear-to-r from-cyan-500 to-blue-600"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create API Key
@@ -254,7 +254,7 @@ export default function ApiKeysPage() {
                   {key.scopes.map((scope) => (
                     <span
                       key={scope}
-                      className="text-xs px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+                      className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400"
                     >
                       {scope}
                     </span>
@@ -296,7 +296,7 @@ export default function ApiKeysPage() {
               <a
                 href="/api/docs"
                 target="_blank"
-                className="inline-flex items-center gap-1 text-sm text-violet-600 hover:text-violet-700 mt-2"
+                className="inline-flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700 mt-2"
               >
                 View documentation
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -403,7 +403,7 @@ export default function ApiKeysPage() {
 
                   <Button
                     onClick={handleCloseNewKeyModal}
-                    className="w-full mt-6 bg-linear-to-r from-violet-500 to-purple-600"
+                    className="w-full mt-6 bg-linear-to-r from-cyan-500 to-blue-600"
                   >
                     Done
                   </Button>
@@ -442,7 +442,7 @@ export default function ApiKeysPage() {
                               type="checkbox"
                               checked={selectedScopes.includes(scope.id)}
                               onChange={() => toggleScope(scope.id)}
-                              className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                              className="w-4 h-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                             />
                             <div>
                               <span className="text-sm font-medium text-slate-900 dark:text-white">
@@ -469,7 +469,7 @@ export default function ApiKeysPage() {
                     <Button
                       onClick={handleCreateKey}
                       disabled={!newKeyName.trim() || selectedScopes.length === 0 || isCreating}
-                      className="flex-1 bg-linear-to-r from-violet-500 to-purple-600"
+                      className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600"
                     >
                       {isCreating ? (
                         <>

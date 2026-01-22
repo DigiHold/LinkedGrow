@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -24,10 +23,6 @@ import {
   Save,
   Trash2,
   Loader2,
-  Plus,
-  X,
-  MessageSquare,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
@@ -298,15 +293,9 @@ export default function AIAPISettingsPage() {
   const [isSettingActiveImage, setIsSettingActiveImage] = useState(false);
   const [isSavingImageSettings, setIsSavingImageSettings] = useState(false);
 
-  // Voice & Style Settings
-  const [samplePosts, setSamplePosts] = useState<string[]>([""]);
-  const [neverMention, setNeverMention] = useState("");
-  const [isSavingVoice, setIsSavingVoice] = useState(false);
-
   // Messages
   const [textApiMessage, setTextApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [imageApiMessage, setImageApiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Check if viewing text provider has an API key
   const viewingProviderHasKey = textProviderSettings[viewingProvider]?.hasKey || false;
@@ -359,13 +348,6 @@ export default function AIAPISettingsPage() {
             if (providerSettings?.style) {
               setSelectedStyle(providerSettings.style);
             }
-          }
-          // Load voice settings
-          if (data.samplePosts && data.samplePosts.length > 0) {
-            setSamplePosts(data.samplePosts);
-          }
-          if (data.neverMention) {
-            setNeverMention(data.neverMention);
           }
         }
       } catch (error) {
@@ -738,47 +720,6 @@ export default function AIAPISettingsPage() {
     }
   };
 
-  const handleSaveVoiceSettings = async () => {
-    setIsSavingVoice(true);
-    setVoiceMessage(null);
-    try {
-      const response = await fetch("/api/user/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          samplePosts: samplePosts.filter(p => p.trim()),
-          neverMention: neverMention,
-        }),
-      });
-      if (response.ok) {
-        setVoiceMessage({ type: "success", text: "Voice settings saved successfully!" });
-      } else {
-        setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
-      }
-    } catch (error) {
-      console.error("Failed to save voice settings:", error);
-      setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
-    } finally {
-      setIsSavingVoice(false);
-    }
-  };
-
-  const addSamplePost = () => {
-    if (samplePosts.length < 4) {
-      setSamplePosts([...samplePosts, ""]);
-    }
-  };
-
-  const removeSamplePost = (index: number) => {
-    setSamplePosts(samplePosts.filter((_, i) => i !== index));
-  };
-
-  const updateSamplePost = (index: number, value: string) => {
-    const newPosts = [...samplePosts];
-    newPosts[index] = value;
-    setSamplePosts(newPosts);
-  };
-
   // Get viewing provider details
   const viewingProviderDetails = aiProviders.find(p => p.id === viewingProvider);
   const viewingImageProviderDetails = imageProviders.find(p => p.id === viewingImageProvider);
@@ -1042,92 +983,6 @@ export default function AIAPISettingsPage() {
               Your API keys are encrypted with AES-256 and never shared. You only pay for what you use directly to the provider.
             </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Voice & Style Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-cyan-600" />
-            Voice & Style Settings
-          </CardTitle>
-          <CardDescription>
-            Help AI replicate your writing style by providing sample posts. This is optional but highly recommended.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {voiceMessage && (
-            <div className={cn(
-              "p-3 rounded-lg text-sm flex items-center gap-2",
-              voiceMessage.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-            )}>
-              {voiceMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-              {voiceMessage.text}
-            </div>
-          )}
-
-          {/* Sample Posts */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              Sample Posts (Max 4)
-              <span className="text-xs text-muted-foreground font-normal">- AI will match your writing style</span>
-            </Label>
-            {samplePosts.map((post, index) => (
-              <div key={index} className="flex gap-2">
-                <Textarea
-                  placeholder={`Paste one of your best LinkedIn posts here... (Post ${index + 1})`}
-                  value={post}
-                  onChange={(e) => updateSamplePost(index, e.target.value)}
-                  className="min-h-[100px] flex-1"
-                />
-                {samplePosts.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeSamplePost(index)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            {samplePosts.length < 4 && (
-              <Button variant="outline" onClick={addSamplePost} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Another Sample Post
-              </Button>
-            )}
-          </div>
-
-          {/* Never Mention */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-red-500" />
-              Things AI Should NEVER Mention
-            </Label>
-            <Textarea
-              placeholder="Competitors, sensitive topics, incorrect claims about your business..."
-              value={neverMention}
-              onChange={(e) => setNeverMention(e.target.value)}
-              className="min-h-[80px]"
-            />
-            <p className="text-xs text-muted-foreground">
-              AI will avoid these topics in all generated content.
-            </p>
-          </div>
-
-          <Button
-            onClick={handleSaveVoiceSettings}
-            disabled={isSavingVoice}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-          >
-            {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Voice Settings
-          </Button>
         </CardContent>
       </Card>
 
