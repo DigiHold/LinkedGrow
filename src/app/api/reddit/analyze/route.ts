@@ -35,7 +35,7 @@ async function generateHooks(
 TITLE: ${trimmedJson.post.title}
 JSON: ${JSON.stringify(trimmedJson, null, 2)}
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, statistics, or data. If mentioning AI, use only current models (GPT-5, Claude Opus 4.5, Gemini 3). Don't guess version numbers.
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, statistics, or data. Do not mention specific AI model names or versions - use generic terms like "modern AI" or "current AI tools" instead. Never guess version numbers or technical specifications.
 
 You'll extract the pain points from both the post and top comments, make 5 viral hooks (2 lines in one hook) on the same.
 

@@ -154,8 +154,8 @@ Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext
 
 === IMPORTANT: CURRENT DATE IS ${currentYear} ===
 - NEVER mention outdated tools, models, or statistics from previous years
-- If mentioning AI models, use ONLY current ${currentYear} models (GPT-5, Claude Opus 4.5, Gemini 3, etc.)
-- If mentioning statistics, note they should be recent or use generic phrasing like "studies show" instead of citing old data
+- If mentioning AI models, technologies, or tools, only reference current ${currentYear} versions - do not guess specific names or versions
+- If mentioning statistics, use generic phrasing like "studies show" instead of citing potentially outdated data
 - When in doubt about specific facts, use general principles instead of potentially outdated specifics
 - NEVER guess version numbers, release dates, or technical specifications you're unsure about
 
@@ -344,7 +344,7 @@ async function generateIdeas(
 
   const prompt = `You are an expert LinkedIn content strategist. Generate 5 compelling post ideas about the following topic.
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI, use current models (GPT-5, Claude Opus 4.5, Gemini 3). Don't guess version numbers.
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. Do not mention specific AI model names or versions - use generic terms like "modern AI" or "current AI tools" instead. Never guess version numbers or technical specifications.
 
 Topic: "${topic || "general professional development"}"
 Post style: ${typeDesc}${contextInstructions}
