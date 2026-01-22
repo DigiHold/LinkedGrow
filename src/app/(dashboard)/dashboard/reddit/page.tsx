@@ -84,7 +84,7 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data - client fetches directly, backend trims
+// Fetch Reddit post data - client fetches via CORS proxy, backend trims
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
   // Build JSON URL from Reddit URL
   let jsonUrl = url;
@@ -92,8 +92,9 @@ async function fetchRedditPost(url: string): Promise<RedditPostData> {
     jsonUrl = jsonUrl.replace(/\/?$/, ".json");
   }
 
-  // Client fetches Reddit directly (no CORS issues for .json endpoints)
-  const redditResponse = await fetch(jsonUrl);
+  // Use CORS proxy to fetch Reddit JSON (same approach as DigiPlan)
+  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(jsonUrl);
+  const redditResponse = await fetch(proxyUrl);
   if (!redditResponse.ok) {
     if (redditResponse.status === 404) {
       throw new Error("Reddit post not found.");
