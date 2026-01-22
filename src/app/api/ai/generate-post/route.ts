@@ -143,11 +143,21 @@ NEVER MENTION OR REFERENCE: ${neverMention}`;
     categoryInstructions = categoryDescriptions[postCategory] ? `\nFormat: ${categoryDescriptions[postCategory]}` : "";
   }
 
+  // Get current year for accurate data
+  const currentYear = new Date().getFullYear();
+
   const prompt = `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
 
 Goal: Create a compelling LinkedIn post on this topic.
 
 Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext}
+
+=== IMPORTANT: CURRENT DATE IS ${currentYear} ===
+- NEVER mention outdated tools, models, or statistics from previous years
+- If mentioning AI models, use ONLY current ${currentYear} models (GPT-5, Claude Opus 4.5, Gemini 3, etc.)
+- If mentioning statistics, note they should be recent or use generic phrasing like "studies show" instead of citing old data
+- When in doubt about specific facts, use general principles instead of potentially outdated specifics
+- NEVER guess version numbers, release dates, or technical specifications you're unsure about
 
 === CRITICAL RULES ===
 
@@ -329,7 +339,12 @@ async function generateIdeas(
   };
   const typeDesc = typeDescriptions[postType] || "engaging content";
 
+  // Get current year for accurate data
+  const currentYear = new Date().getFullYear();
+
   const prompt = `You are an expert LinkedIn content strategist. Generate 5 compelling post ideas about the following topic.
+
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI, use current models (GPT-5, Claude Opus 4.5, Gemini 3). Don't guess version numbers.
 
 Topic: "${topic || "general professional development"}"
 Post style: ${typeDesc}${contextInstructions}
@@ -477,7 +492,12 @@ async function editPost(
   provider: string,
   model: string
 ): Promise<string> {
+  // Get current year for accurate data
+  const currentYear = new Date().getFullYear();
+
   const prompt = `You are an expert LinkedIn content editor. Edit this post according to the instruction.
+
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If the post mentions AI, use current models only.
 
 === CURRENT POST ===
 ${content}

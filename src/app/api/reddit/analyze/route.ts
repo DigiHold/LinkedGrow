@@ -28,9 +28,14 @@ async function generateHooks(
   provider: string,
   model: string
 ): Promise<string[]> {
+  // Get current year for accurate data
+  const currentYear = new Date().getFullYear();
+
   const prompt = `I will give you JSON metadata from Reddit like this:
 TITLE: ${trimmedJson.post.title}
 JSON: ${JSON.stringify(trimmedJson, null, 2)}
+
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, statistics, or data. If mentioning AI, use only current models (GPT-5, Claude Opus 4.5, Gemini 3). Don't guess version numbers.
 
 You'll extract the pain points from both the post and top comments, make 5 viral hooks (2 lines in one hook) on the same.
 
@@ -45,7 +50,7 @@ Hook 2:
 Your testimonials are useless. And I can prove it."
 
 Hook 3:
-"It's 2026. STOP using page builders!
+"It's ${currentYear}. STOP using page builders!
 I've seen 500,000+ sites. The pattern is always the same."
 
 Requirements:
@@ -53,6 +58,7 @@ Requirements:
 - Line 1: Short, punchy, stops the scroll (max 8 words)
 - Line 2: Builds curiosity, makes them click "see more" (max 15 words)
 - NO emojis
+- NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
 - Be specific to the Reddit content pain points
 - Sound human, raw, authentic
 - Controversial or contrarian angles work best

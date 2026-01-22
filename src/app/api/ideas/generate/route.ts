@@ -32,7 +32,12 @@ async function generateIdeas(
     contextInstructions += `\nWriting tone: ${writingTone}`;
   }
 
+  // Get current year for accurate data
+  const currentYear = new Date().getFullYear();
+
   const prompt = `Generate ${count} unique LinkedIn post ideas on the theme: "${theme}"${contextInstructions}
+
+IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, or data. If mentioning AI, use current models (GPT-5, Claude Opus 4.5, Gemini 3). Don't guess version numbers or specs.
 
 For each idea, provide:
 1. hook: A 2-line viral hook (line 1 stops the scroll, line 2 builds curiosity). Separate lines with \\n
