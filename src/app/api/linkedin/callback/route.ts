@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // Create new user (don't store profile picture during social login - only when connecting LinkedIn via settings)
+        // Create new user
         const userId = randomUUID();
 
         // Check if email is in beta users list - they get free business plan
@@ -183,11 +183,17 @@ export async function GET(request: NextRequest) {
         const isBetaTester = betaUser && !betaUser.converted;
         const userPlan = isBetaTester ? 'business' : 'free';
 
+        // Download and store profile picture in R2
+        let storedPictureUrl: string | null = null;
+        if (linkedInPictureUrl) {
+          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, userId);
+        }
+
         await db.insert(users).values({
           id: userId,
           email: linkedInEmail,
           name: fullName,
-          image: null,
+          image: storedPictureUrl,
           emailVerified: new Date(), // LinkedIn emails are verified
           plan: userPlan,
           twoFactorEnabled: false,
@@ -289,7 +295,12 @@ export async function GET(request: NextRequest) {
         }
 
         // Also update the user's LinkedIn posting tokens (auto-connect)
-        // Don't update profile picture during social login - only when connecting LinkedIn via settings
+        // Update profile picture if user doesn't have one stored
+        let storedPictureUrl: string | null = null;
+        if (linkedInPictureUrl && !user.image) {
+          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, user.id);
+        }
+
         await db
           .update(users)
           .set({

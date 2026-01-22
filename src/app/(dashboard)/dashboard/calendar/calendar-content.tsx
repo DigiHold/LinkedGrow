@@ -42,6 +42,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -124,6 +125,12 @@ export function CalendarContent() {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // LinkedIn profile data for preview
+  const [linkedInProfile, setLinkedInProfile] = useState<{
+    name: string;
+    image: string | null;
+  } | null>(null);
+
   const showError = (message: string) => {
     setErrorMessage(message);
     setShowErrorToast(true);
@@ -187,6 +194,25 @@ export function CalendarContent() {
     fetchAllPosts();
     fetchIdeas();
   }, [fetchPosts, fetchAllPosts, fetchIdeas]);
+
+  // Fetch LinkedIn profile for preview
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch("/api/user/profile");
+        if (response.ok) {
+          const data = await response.json();
+          setLinkedInProfile({
+            name: data.linkedinProfileName || data.name || "Your Name",
+            image: data.image && data.image.trim() !== "" ? data.image : null,
+          });
+        }
+      } catch {
+        // Silently fail - will use default values
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Set schedule date when selecting a day
   useEffect(() => {
@@ -327,12 +353,18 @@ export function CalendarContent() {
 
   const handlePostClick = (post: Post, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Blur the clicked element to prevent focus issues when drawer opens
+    (e.currentTarget as HTMLElement).blur();
     setSelectedPost(post);
     setDrawerView("post-detail");
     setDrawerOpen(true);
   };
 
   const openDrawer = (view: DrawerView) => {
+    // Blur any focused element to prevent aria-hidden focus issues
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setDrawerView(view);
     setDrawerOpen(true);
     setDropdownOpen(false);
@@ -383,7 +415,17 @@ export function CalendarContent() {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute));
+      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
+
+      // For scheduled posts, ensure the time is in the future
+      if (!publish) {
+        const now = new Date();
+        if (scheduledAt <= now) {
+          showError("Scheduled time must be in the future");
+          setIsSaving(false);
+          return;
+        }
+      }
 
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
@@ -460,7 +502,15 @@ export function CalendarContent() {
     setIsSaving(true);
     try {
       const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute));
+      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
+
+      // Ensure the scheduled time is at least 1 minute in the future
+      const now = new Date();
+      if (scheduledAt <= now) {
+        showError("Scheduled time must be in the future");
+        setIsSaving(false);
+        return;
+      }
 
       const response = await fetch(`/api/posts/${selectedPostToSchedule.id}`, {
         method: "PATCH",
@@ -471,14 +521,17 @@ export function CalendarContent() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to schedule post");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to schedule post");
+      }
 
       await fetchPosts();
       await fetchAllPosts();
       setDrawerOpen(false);
       setSelectedPostToSchedule(null);
-    } catch {
-      // Silent fail
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsSaving(false);
     }
@@ -608,7 +661,17 @@ export function CalendarContent() {
     try {
       const [year, month, day] = editScheduleDate.split('-').map(Number);
       const [hours, minutes] = editScheduleTime.split(':').map(Number);
-      const scheduledAt = new Date(year, month - 1, day, hours, minutes);
+      const scheduledAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+      // Ensure the scheduled time is in the future for scheduled posts
+      if (selectedPost.status === "scheduled") {
+        const now = new Date();
+        if (scheduledAt <= now) {
+          showError("Scheduled time must be in the future");
+          setIsSaving(false);
+          return;
+        }
+      }
 
       const response = await fetch(`/api/posts/${selectedPost.id}`, {
         method: "PATCH",
@@ -619,14 +682,17 @@ export function CalendarContent() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to update post");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update post");
+      }
 
       await fetchPosts();
       await fetchAllPosts();
       setDrawerOpen(false);
       setSelectedPost(null);
-    } catch {
-      showError("Failed to save post");
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Failed to save post");
     } finally {
       setIsSaving(false);
     }
@@ -928,10 +994,19 @@ export function CalendarContent() {
       )}
 
       {/* Multi-purpose Drawer */}
-      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
+      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={true}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-          <Drawer.Content className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none">
+          <Drawer.Content
+            className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none"
+            aria-describedby={undefined}
+          >
+            <DialogPrimitive.Title className="sr-only">
+              {drawerView === "post-detail" ? "Post Details" :
+               drawerView === "create-post" ? "Create Post" :
+               drawerView === "schedule-post" ? "Schedule Post" :
+               drawerView === "edit-post" ? "Edit Post" : "Calendar Drawer"}
+            </DialogPrimitive.Title>
 
             {/* POST DETAIL VIEW */}
             {drawerView === "post-detail" && selectedPost && (
@@ -959,13 +1034,21 @@ export function CalendarContent() {
                           <div className="px-4 pt-4 pb-0">
                             <div className="flex w-full justify-between items-start">
                               <div className="flex max-w-[90%] items-start">
-                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                  <span className="text-primary font-semibold text-sm">
-                                    {session?.user?.name?.charAt(0) || "U"}
-                                  </span>
-                                </div>
+                                {linkedInProfile && linkedInProfile.image ? (
+                                  <img
+                                    src={linkedInProfile.image}
+                                    alt={linkedInProfile.name || "Profile"}
+                                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                                    <span className="text-white font-semibold text-sm">
+                                      {(linkedInProfile?.name || session?.user?.name || "U").charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="flex flex-col ml-2.5">
-                                  <h3 className="font-semibold">{session?.user?.name || "Your LinkedIn Profile"}</h3>
+                                  <h3 className="font-semibold">{linkedInProfile?.name || session?.user?.name || "Your LinkedIn Profile"}</h3>
                                   <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
                                 </div>
                               </div>
@@ -1430,13 +1513,21 @@ Tips for viral posts:
                         <div className="px-4 pt-4 pb-0">
                           <div className="flex w-full justify-between items-start">
                             <div className="flex max-w-[90%] items-start">
-                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                <span className="text-primary font-semibold text-sm">
-                                  {session?.user?.name?.charAt(0) || "U"}
-                                </span>
-                              </div>
+                              {linkedInProfile && linkedInProfile.image ? (
+                                <img
+                                  src={linkedInProfile.image}
+                                  alt={linkedInProfile.name || "Profile"}
+                                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                                  <span className="text-white font-semibold text-sm">
+                                    {(linkedInProfile?.name || session?.user?.name || "U").charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex flex-col ml-2.5">
-                                <h3 className="font-semibold">{session?.user?.name || "Your LinkedIn Profile"}</h3>
+                                <h3 className="font-semibold">{linkedInProfile?.name || session?.user?.name || "Your LinkedIn Profile"}</h3>
                                 <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
                               </div>
                             </div>
