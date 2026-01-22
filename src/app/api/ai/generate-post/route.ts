@@ -4,7 +4,7 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
-// Sanitize AI output: remove wrapping quotes
+// Sanitize AI output: remove wrapping quotes and em dashes
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();
 
@@ -17,6 +17,10 @@ function sanitizeAIOutput(text: string): string {
       (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
     cleaned = cleaned.slice(1, -1).trim();
   }
+
+  // Replace em dashes with regular dashes
+  cleaned = cleaned.replace(/—/g, " - ");
+  cleaned = cleaned.replace(/–/g, " - ");
 
   return cleaned;
 }
@@ -309,6 +313,7 @@ Requirements:
 - Ideas should be different angles on the topic
 - Make them suitable for LinkedIn's professional audience
 - Each idea should be 1-2 sentences max
+- NEVER use em dashes (—) or en dashes (–). Use regular hyphens or commas instead.
 
 Return ONLY a JSON array of 5 strings. Example:
 ["Idea 1 here", "Idea 2 here", "Idea 3 here", "Idea 4 here", "Idea 5 here"]`;
@@ -435,7 +440,8 @@ Return ONLY a JSON array of 5 strings. Example:
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return ideas;
+  // Sanitize each idea to remove em dashes
+  return ideas.map((idea: string) => sanitizeAIOutput(idea));
 }
 
 async function editPost(
