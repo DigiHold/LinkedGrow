@@ -32,25 +32,30 @@ async function generateIdeas(
     contextInstructions += `\nWriting tone: ${writingTone}`;
   }
 
-  const prompt = `You are an expert LinkedIn content strategist. Generate ${count} unique post ideas on the theme: "${theme}"${contextInstructions}
+  const prompt = `Generate ${count} unique LinkedIn post ideas on the theme: "${theme}"${contextInstructions}
 
 For each idea, provide:
-1. hook: A compelling one-line hook (the first line of the post that grabs attention)
-2. type: The post type (Story, Listicle, Opinion, How-to, Question, Insight, Case Study, Myth Buster)
-3. category: The content category (e.g., Career, Leadership, Productivity, Tech, Marketing, etc.)
-4. engagement: Expected engagement level (Very High, High, Medium)
+1. hook: A 2-line viral hook (line 1 stops the scroll, line 2 builds curiosity). Separate lines with \\n
+2. type: Post type (Story, Listicle, Opinion, How-to, Question, Insight, Case Study, Myth Buster)
+3. category: Content category (Career, Leadership, Productivity, Tech, Marketing, etc.)
+4. engagement: Expected engagement (Very High, High, Medium)
 
-Post idea principles:
-- Hooks should stop the scroll - be bold, specific, or curiosity-inducing
-- Mix different post types for variety
-- Focus on actionable insights and real experiences
-- Avoid generic advice - be specific and authentic
-- Consider what would make people comment and share
+CRITICAL RULES:
+- NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
+- NEVER sound like AI. No "game-changer", "elevate", "unlock", "landscape", "leverage", "delve", "tapestry"
+- Write like a real human sharing raw, honest experiences
+- Line 1 of hook: max 8 words, punchy, stops the scroll
+- Line 2 of hook: max 15 words, builds curiosity
 
-Return ONLY a JSON array of ${count} objects. Example format:
+Example hooks that work:
+"3 seconds.\\nThat's all it takes to lose half your visitors."
+"Stop collecting compliments.\\nYour testimonials are useless. And I can prove it."
+"I mass-applied to 200 jobs.\\nHere's what actually got me interviews - it wasn't my resume."
+
+Return ONLY a JSON array:
 [
   {
-    "hook": "I turned down a $300k job offer. Here's why it was the best decision I ever made.",
+    "hook": "Line 1\\nLine 2",
     "type": "Story",
     "category": "Career",
     "engagement": "Very High"
@@ -177,7 +182,11 @@ Return ONLY a JSON array of ${count} objects. Example format:
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return ideas;
+  // Sanitize em dashes from all hook texts
+  return ideas.map(idea => ({
+    ...idea,
+    hook: idea.hook.replace(/—/g, " - ").replace(/–/g, " - ")
+  }));
 }
 
 export async function POST(request: NextRequest) {

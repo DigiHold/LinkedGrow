@@ -227,7 +227,11 @@ export function CalendarContent() {
   const getPostsForDate = (day: number, m: number, y: number) => {
     const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return posts.filter((post) => {
-      const postDate = post.scheduledAt || post.publishedAt;
+      // For drafts without scheduledAt, use createdAt
+      // For scheduled/published, use scheduledAt or publishedAt
+      const postDate = post.status === "draft" && !post.scheduledAt
+        ? post.createdAt
+        : (post.scheduledAt || post.publishedAt);
       if (!postDate) return false;
       const postDateStr = new Date(postDate).toISOString().split("T")[0];
       return postDateStr === dateStr;
@@ -752,6 +756,7 @@ export function CalendarContent() {
                           onClick={(e) => handlePostClick(post, e)}
                           className={cn(
                             "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
+                            post.status === "draft" && "border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20",
                             post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
                             post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
                             post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
@@ -760,6 +765,7 @@ export function CalendarContent() {
                           <div className="flex items-center gap-1.5 px-1.5 py-1">
                             <div className={cn(
                               "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
+                              post.status === "draft" && "bg-yellow-100 dark:bg-yellow-800/40",
                               post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
                               post.status === "published" && "bg-green-100 dark:bg-green-800/40"
                             )}>
@@ -927,7 +933,7 @@ export function CalendarContent() {
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">
-                        {selectedPost.status === "published" ? "Your post published" : "Scheduled post"}
+                        {selectedPost.status === "published" ? "Your post published" : selectedPost.status === "draft" ? "Draft post" : "Scheduled post"}
                       </h2>
                     </div>
                     <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
@@ -1001,7 +1007,7 @@ export function CalendarContent() {
                       </div>
                       <div className="flex flex-col gap-1 pt-2">
                         <p className="text-sm text-muted-foreground">
-                          {selectedPost.status === "published" ? "Post published" : "Scheduled for"}
+                          {selectedPost.status === "published" ? "Post published" : selectedPost.status === "draft" ? "Created on" : "Scheduled for"}
                         </p>
                         <p className="text-base font-bold">
                           {formatFullDate(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)} - {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
@@ -1051,6 +1057,19 @@ export function CalendarContent() {
                       <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         View on LinkedIn <ExternalLink className="w-4 h-4" />
                       </a>
+                    )}
+                    {/* Schedule button for draft posts */}
+                    {selectedPost.status === "draft" && (
+                      <Button
+                        variant="linkedin"
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedPostToSchedule(selectedPost);
+                          setDrawerView("schedule-post");
+                        }}
+                      >
+                        <Calendar className="w-4 h-4 mr-2" /> Schedule this draft
+                      </Button>
                     )}
                     <div className="flex flex-col mt-3 gap-3 justify-center items-center">
                       <Link href={`/dashboard/generator?duplicate=${selectedPost.id}`} className="w-full">

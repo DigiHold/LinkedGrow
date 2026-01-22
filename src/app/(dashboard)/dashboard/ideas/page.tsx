@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
   Settings,
   Loader2,
   AlertCircle,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -45,6 +47,7 @@ interface SettingsResponse {
 }
 
 export default function IdeasPage() {
+  const router = useRouter();
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customTheme, setCustomTheme] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -52,6 +55,11 @@ export default function IdeasPage() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [isGeneratingPost, setIsGeneratingPost] = useState(false);
 
   // Check if user has API key configured
   useEffect(() => {
@@ -99,6 +107,59 @@ export default function IdeasPage() {
       setError(err instanceof Error ? err.message : "Failed to generate ideas");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleIdeaClick = (idea: Idea) => {
+    setSelectedIdea(idea);
+    setShowConfirmModal(true);
+  };
+
+  const handleGeneratePost = async () => {
+    if (!selectedIdea) return;
+
+    setIsGeneratingPost(true);
+    try {
+      const response = await fetch("/api/ai/generate-post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          idea: selectedIdea.hook,
+          postType: selectedIdea.type.toLowerCase().replace(/[- ]/g, ""),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to generate post");
+      }
+
+      const data = await response.json();
+
+      // Create a draft post with the generated content
+      const postResponse = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: data.post,
+          status: "draft",
+        }),
+      });
+
+      if (!postResponse.ok) {
+        throw new Error("Failed to save draft");
+      }
+
+      const postData = await postResponse.json();
+
+      // Redirect to editor with the new post
+      router.push(`/dashboard/editor?edit=${postData.post.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate post");
+      setShowConfirmModal(false);
+    } finally {
+      setIsGeneratingPost(false);
     }
   };
 
@@ -286,6 +347,7 @@ export default function IdeasPage() {
             {ideas.map((idea, index) => (
               <Card
                 key={index}
+                onClick={() => handleIdeaClick(idea)}
                 className="group hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
               >
                 <CardContent className="p-4 sm:p-5">
@@ -306,7 +368,7 @@ export default function IdeasPage() {
                     <span className="text-xs text-muted-foreground">#{index + 1}</span>
                   </div>
 
-                  <p className="font-medium text-sm sm:text-base leading-relaxed mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                  <p className="font-medium text-sm sm:text-base leading-snug mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors whitespace-pre-line">
                     {idea.hook}
                   </p>
 
@@ -319,16 +381,18 @@ export default function IdeasPage() {
                     <span>{idea.category}</span>
                   </div>
 
-                  <Link href={`/dashboard/editor?idea=${encodeURIComponent(idea.hook)}`}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      Create Post
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleIdeaClick(idea);
+                    }}
+                  >
+                    Create Post
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -342,6 +406,68 @@ export default function IdeasPage() {
             </Button>
           </div>
         </>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && selectedIdea && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40" onClick={() => !isGeneratingPost && setShowConfirmModal(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Generate Post from Idea</h2>
+              {!isGeneratingPost && (
+                <button onClick={() => setShowConfirmModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            <div className="mb-6">
+              <p className="text-muted-foreground mb-4">
+                Are you sure you want to use this idea to generate a full LinkedIn post?
+              </p>
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border">
+                <p className="font-medium whitespace-pre-line">{selectedIdea.hook}</p>
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Hash className="w-3 h-3" />
+                    {selectedIdea.type}
+                  </span>
+                  <span>-</span>
+                  <span>{selectedIdea.category}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isGeneratingPost}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGeneratePost}
+                disabled={isGeneratingPost}
+                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              >
+                {isGeneratingPost ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Post
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
