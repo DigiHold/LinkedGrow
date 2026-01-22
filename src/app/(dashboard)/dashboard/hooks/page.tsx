@@ -86,7 +86,7 @@ export default function HooksPage() {
       const res = await fetch("/api/ai/generate-hooks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postIdea: topic, count: 5 }),
+        body: JSON.stringify({ postIdea: topic, count: 6 }),
       });
 
       if (!res.ok) {
@@ -266,7 +266,7 @@ export default function HooksPage() {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generate 5 Hooks
+                    Generate 6 Hooks
                   </>
                 )}
               </Button>
@@ -291,7 +291,7 @@ export default function HooksPage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Ready to generate hooks</h3>
                 <p className="text-muted-foreground text-sm">
-                  Select a topic above and click &quot;Generate 5 Hooks&quot; to get attention-grabbing opening lines for your LinkedIn posts.
+                  Select a topic above and click &quot;Generate 6 Hooks&quot; to get attention-grabbing opening lines for your LinkedIn posts.
                 </p>
               </div>
             </CardContent>

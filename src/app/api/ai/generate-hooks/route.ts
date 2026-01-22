@@ -9,57 +9,128 @@ interface HookPair {
   secondLine: string;
 }
 
+// Sanitize AI output: remove em dashes and clean up formatting
+function sanitizeHookOutput(text: string): string {
+  let cleaned = text.trim();
+
+  // Replace em dashes with regular dashes
+  cleaned = cleaned.replace(/—/g, " - ");
+  cleaned = cleaned.replace(/–/g, " - ");
+
+  // Remove wrapping quotes if present
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
 async function generateHooks(
   postIdea: string,
   count: number,
   apiKey: string,
   provider: string,
   model: string,
+  samplePosts?: string[],
   businessDescription?: string,
   targetAudience?: string,
-  writingTone?: string
+  writingTone?: string,
+  neverMention?: string
 ): Promise<HookPair[]> {
-  let contextInstructions = "";
-  if (businessDescription) {
-    contextInstructions += `\n\nAbout the author: ${businessDescription}`;
+  // Build voice instructions from sample posts
+  let voiceInstructions = "";
+  if (samplePosts && samplePosts.length > 0) {
+    voiceInstructions = `
+
+=== SAMPLE POSTS TO MATCH VOICE ===
+Match the tone, energy, and personality of these posts. The hooks must feel like they come from the same person.
+${samplePosts.map((p, i) => `
+--- Sample ${i + 1} ---
+${p.substring(0, 500)}`).join("\n")}
+=== END SAMPLES ===`;
   }
-  if (targetAudience) {
-    contextInstructions += `\nTarget audience: ${targetAudience}`;
+
+  // Build business context
+  let businessContext = "";
+  if (businessDescription || targetAudience || writingTone) {
+    businessContext = `
+
+=== AUTHOR PROFILE ===`;
+    if (businessDescription) {
+      businessContext += `
+What I do: ${businessDescription}`;
+    }
+    if (targetAudience) {
+      businessContext += `
+Target audience: ${targetAudience}`;
+    }
+    if (writingTone) {
+      businessContext += `
+Writing tone: ${writingTone}`;
+    }
+    businessContext += `
+=== END PROFILE ===`;
   }
-  if (writingTone) {
-    contextInstructions += `\nWriting tone: ${writingTone}`;
+
+  // Build avoid instructions
+  let avoidInstructions = "";
+  if (neverMention) {
+    avoidInstructions = `
+
+NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
-  const prompt = `You are an expert LinkedIn content strategist. Generate ${count} pairs of attention-grabbing hooks for the following post idea.
+  const prompt = `You are a viral LinkedIn ghostwriter who creates hooks that stop the scroll.
 
-Post idea: "${postIdea}"${contextInstructions}
+Generate ${count} hook pairs for this post topic: "${postIdea}"${businessContext}${voiceInstructions}${avoidInstructions}
 
-Each hook pair consists of:
-- First line: The opening statement that stops the scroll (pattern interrupt, bold claim, question, or curiosity gap)
-- Second line: The follow-up that builds tension or adds context
+=== WHAT MAKES A GREAT HOOK ===
 
-CRITICAL RULES - FOLLOW EXACTLY:
-1. NEVER use em dashes (-). Use regular dashes with spaces ( - ) or colons instead
-2. NEVER use phrases like "Here's the truth", "Let me explain", "Here's why", "The reality is"
-3. Write like a real human, not AI. Be conversational and direct
-4. First line must be under 100 characters for mobile visibility
-5. Create curiosity gaps - make readers NEED to know more
-6. Use pattern interrupts (unexpected statements, contrarian views)
-7. Be specific with numbers when possible
-8. Address pain points or desires directly
-9. Second line should complement, not repeat, the first line
-10. Avoid clickbait - deliver real value in the post
+Each hook pair has TWO lines that work together:
+- Line 1: The pattern interrupt that makes someone stop scrolling
+- Line 2: The curiosity amplifier that makes them click "see more"
 
-Hook styles to vary:
-- Bold statement: "I turned down a $500k offer. Best decision I ever made."
-- Question: "What if everything you knew about productivity was wrong?"
-- Contrarian: "Hustle culture is a lie. I built a 7-figure business working 4 hours a day."
-- Story: "3 years ago, I was fired. Today, I run a $2M company."
-- Pattern interrupt: "Stop networking. Do this instead."
-- Curiosity gap: "The one skill that 10x'd my income isn't what you think."
+The two lines should flow naturally together with NO empty line between them.
 
-Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" properties. Example:
-[{"firstLine": "I quit my $200k job yesterday.", "secondLine": "Not because I hated it. Because I found something better."}, {"firstLine": "The best advice I ever got was completely wrong.", "secondLine": "It cost me 3 years."}]`;
+=== CRITICAL RULES ===
+
+1. NEVER use em dashes or en dashes. Use commas, colons, or " - " with spaces instead.
+2. NEVER use AI-sounding phrases:
+   - "Here's the truth" / "Here's why" / "Here's what happened"
+   - "Let me explain" / "Let me tell you"
+   - "The reality is" / "The fact is" / "The thing is"
+   - "Most people don't realize" / "What most people miss"
+   - "Game-changer" / "Mind-blowing" / "Revolutionary"
+3. Write like a real person having a conversation, not a marketer
+4. Line 1 must be under 80 characters (mobile visibility)
+5. Be specific - use real numbers, timeframes, outcomes
+6. Create genuine curiosity, not clickbait
+
+=== HOOK FORMULAS THAT WORK ===
+
+Personal story: "I got fired 3 months ago. It was the best thing that happened to me."
+Contrarian take: "Networking events are useless. Cold DMs work 10x better."
+Vulnerable admission: "I wasted 5 years chasing the wrong goal."
+Surprising outcome: "I said no to a promotion. My income doubled."
+Direct challenge: "Your morning routine is killing your productivity."
+Specific result: "One email got me 47 client calls in 30 days."
+
+=== BAD VS GOOD EXAMPLES ===
+
+BAD: "Here's the truth about success—it's not what you think."
+GOOD: "Success isn't about working harder. I learned this the hard way."
+
+BAD: "Most people don't realize that networking is overrated."
+GOOD: "I stopped networking 2 years ago. My business grew 3x."
+
+BAD: "Let me tell you why your strategy isn't working."
+GOOD: "Your strategy worked in 2020. The market changed."
+
+Return ONLY a valid JSON array with ${count} objects. Each object has "firstLine" and "secondLine" strings.
+
+Example format:
+[{"firstLine": "I rejected a $300k job offer.", "secondLine": "My wife thought I was crazy. She was right to worry."}]`;
 
   let response;
   let hooks: HookPair[] = [];
@@ -183,7 +254,11 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return hooks;
+  // Sanitize each hook to remove em dashes
+  return hooks.map(hook => ({
+    firstLine: sanitizeHookOutput(hook.firstLine),
+    secondLine: sanitizeHookOutput(hook.secondLine),
+  }));
 }
 
 export async function POST(request: NextRequest) {
@@ -194,7 +269,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postIdea, count = 5 } = await request.json();
+    const { postIdea, count = 6 } = await request.json();
 
     if (!postIdea) {
       return NextResponse.json({ error: "Post idea is required" }, { status: 400 });
@@ -245,15 +320,27 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
     const model = providerModelMap[provider] || defaultModel;
 
+    // Parse sample posts if available
+    let samplePosts: string[] | undefined;
+    if (user.samplePosts) {
+      try {
+        samplePosts = JSON.parse(user.samplePosts);
+      } catch {
+        samplePosts = undefined;
+      }
+    }
+
     const hooks = await generateHooks(
       postIdea,
-      Math.min(count, 10),
+      Math.min(count, 12),
       apiKey,
       provider,
       model,
+      samplePosts,
       user.businessDescription || undefined,
       user.targetAudience || undefined,
-      user.writingTone || undefined
+      user.writingTone || undefined,
+      user.neverMention || undefined
     );
 
     return NextResponse.json({ hooks });
