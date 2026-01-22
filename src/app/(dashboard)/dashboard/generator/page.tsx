@@ -1486,20 +1486,61 @@ export default function GeneratorPage() {
             </Card>
 
             {/* Algorithm Tips */}
-            <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
-              <CardContent className="p-4">
-                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  Optimization Tips
-                </h4>
-                <ul className="text-sm text-green-700 dark:text-green-300 space-y-1.5">
-                  <li>• Strong hook in first 2 lines ✓</li>
-                  <li>• Good use of formatting ✓</li>
-                  <li>• Ends with question (engagement) ✓</li>
-                  <li>• Optimal length (800-1500 chars) ✓</li>
-                </ul>
-              </CardContent>
-            </Card>
+            {(() => {
+              const post = currentPost;
+              const lines = post.split("\n").filter((l) => l.trim());
+              const firstLine = lines[0] || "";
+
+              // Check hook strength (first line 10-100 chars)
+              const hasStrongHook = firstLine.length >= 10 && firstLine.length <= 100;
+
+              // Check formatting (bullets, line breaks, special chars)
+              const hasBullets = post.includes("•") || post.includes("-") || post.includes("→");
+              const hasLineBreaks = (post.match(/\n\n/g) || []).length >= 2;
+              const hasFormatting = hasBullets || hasLineBreaks;
+
+              // Check for question at end
+              const lastLines = post.trim().split("\n").slice(-3).join(" ");
+              const endsWithQuestion = lastLines.includes("?");
+
+              // Check optimal length
+              const optimalLength = post.length >= 800 && post.length <= 1500;
+
+              const checks = [
+                { label: "Strong hook in first 2 lines", passed: hasStrongHook },
+                { label: "Good use of formatting", passed: hasFormatting },
+                { label: "Ends with question (engagement)", passed: endsWithQuestion },
+                { label: `Optimal length (800-1500 chars)`, passed: optimalLength },
+              ];
+
+              const passedCount = checks.filter(c => c.passed).length;
+              const allPassed = passedCount === checks.length;
+
+              return (
+                <Card className={cn(
+                  allPassed
+                    ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
+                    : "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800"
+                )}>
+                  <CardContent className="p-4">
+                    <h4 className={cn(
+                      "font-medium mb-2 flex items-center gap-2",
+                      allPassed ? "text-green-800 dark:text-green-200" : "text-amber-800 dark:text-amber-200"
+                    )}>
+                      <Zap className="w-4 h-4" />
+                      Optimization Tips ({passedCount}/4)
+                    </h4>
+                    <ul className="text-sm space-y-1.5">
+                      {checks.map((check, i) => (
+                        <li key={i} className={check.passed ? "text-green-700 dark:text-green-300" : "text-amber-700 dark:text-amber-300"}>
+                          • {check.label} {check.passed ? "✓" : "✗"}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </div>
         </div>
       )}
