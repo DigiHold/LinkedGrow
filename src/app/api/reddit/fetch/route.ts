@@ -70,23 +70,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Reddit's public .json endpoint - works without any API key
-    const jsonUrl = `https://www.reddit.com/r/${postInfo.subreddit}/comments/${postInfo.postId}.json`;
+    // Use old.reddit.com - more permissive for server-side requests
+    const jsonUrl = `https://old.reddit.com/r/${postInfo.subreddit}/comments/${postInfo.postId}.json`;
 
     const response = await fetch(jsonUrl, {
       headers: {
         // Mimic a real browser request
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0",
       },
     });
 
