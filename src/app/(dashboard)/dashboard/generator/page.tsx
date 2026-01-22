@@ -288,7 +288,8 @@ export default function GeneratorPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [topic, setTopic] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
+  const [isGeneratingPost, setIsGeneratingPost] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
   const [selectedIdea, setSelectedIdea] = useState<number | null>(null);
   const [generatedPost, setGeneratedPost] = useState("");
@@ -422,7 +423,7 @@ export default function GeneratorPage() {
   };
 
   const handleGenerateIdeas = async () => {
-    setIsGenerating(true);
+    setIsGeneratingIdeas(true);
     try {
       const response = await fetch("/api/ai/generate-post", {
         method: "POST",
@@ -446,14 +447,14 @@ export default function GeneratorPage() {
       console.error("Failed to generate ideas:", error);
       showToast(error instanceof Error ? error.message : "Failed to generate ideas");
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingIdeas(false);
     }
   };
 
   const handleGeneratePost = async () => {
     if (selectedIdea === null) return;
 
-    setIsGenerating(true);
+    setIsGeneratingPost(true);
     try {
       const response = await fetch("/api/ai/generate-post", {
         method: "POST",
@@ -479,7 +480,7 @@ export default function GeneratorPage() {
       console.error("Failed to generate post:", error);
       showToast(error instanceof Error ? error.message : "Failed to generate post");
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingPost(false);
     }
   };
 
@@ -1043,10 +1044,10 @@ export default function GeneratorPage() {
               <Button
                 variant="linkedin"
                 onClick={handleGenerateIdeas}
-                disabled={isGenerating}
+                disabled={isGeneratingIdeas}
                 className="flex-1 sm:flex-none"
               >
-                {isGenerating ? (
+                {isGeneratingIdeas ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Generating Ideas...
@@ -1112,18 +1113,18 @@ export default function GeneratorPage() {
               <Button
                 variant="outline"
                 onClick={handleGenerateIdeas}
-                disabled={isGenerating}
+                disabled={isGeneratingIdeas || isGeneratingPost}
               >
-                <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
+                <RefreshCw className={cn("w-4 h-4 mr-2", isGeneratingIdeas && "animate-spin")} />
                 Regenerate
               </Button>
               <Button
                 variant="linkedin"
                 onClick={handleGeneratePost}
-                disabled={selectedIdea === null || isGenerating}
+                disabled={selectedIdea === null || isGeneratingIdeas || isGeneratingPost}
                 className="flex-1 sm:flex-none"
               >
-                {isGenerating ? (
+                {isGeneratingPost ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Generating Post...
