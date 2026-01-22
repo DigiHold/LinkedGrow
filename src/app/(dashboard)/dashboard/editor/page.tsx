@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { PostEditor } from "@/components/dashboard/post-editor";
+import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { Textarea } from "@/components/ui/textarea";
 
 const LINKEDIN_MAX_CHARS = 3000;
@@ -260,18 +260,29 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       if (currentPostId) {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft" }),
+          body: JSON.stringify({ content, status: "draft", mediaData }),
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
         const response = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", postType: "text" }),
+          body: JSON.stringify({
+            content,
+            status: "draft",
+            postType: attachedImage ? "image" : "text",
+            mediaData,
+          }),
         });
         if (!response.ok) throw new Error("Failed to save draft");
         const data = await response.json();
@@ -295,22 +306,43 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       let postId = currentPostId;
+      let imageUrl: string | undefined;
+
       if (!postId) {
         const response = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", postType: "text" }),
+          body: JSON.stringify({
+            content,
+            status: "draft",
+            postType: attachedImage ? "image" : "text",
+            mediaData,
+          }),
         });
         if (!response.ok) throw new Error("Failed to save post");
         const data = await response.json();
         postId = data.post.id;
+        // Get the uploaded image URL
+        if (data.post.media && data.post.media.length > 0) {
+          imageUrl = data.post.media[0].storageUrl;
+        }
       }
 
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, content }),
+        body: JSON.stringify({
+          postId,
+          text: content,
+          imageUrl,
+        }),
       });
 
       if (!publishResponse.ok) {
@@ -348,11 +380,17 @@ function EditorContent() {
     try {
       const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
 
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       if (currentPostId) {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", scheduledAt }),
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaData }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
@@ -362,8 +400,9 @@ function EditorContent() {
           body: JSON.stringify({
             content,
             status: "scheduled",
-            postType: "text",
+            postType: attachedImage ? "image" : "text",
             scheduledAt,
+            mediaData,
           }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
@@ -465,6 +504,7 @@ Tips for viral posts:
 - End with a question or CTA"
               minHeight="min-h-[400px] sm:min-h-[500px]"
               showImageButton
+              showVideoButton
               attachedImage={attachedImage}
               onImageChange={setAttachedImage}
               onError={showError}
@@ -617,11 +657,17 @@ Tips for viral posts:
             {/* Actions */}
             <Card>
               <CardContent className="p-4 space-y-3">
+                {/* Video notice - videos cannot be stored, must be published immediately */}
+                {isVideoMedia(attachedImage) && (
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+                    Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   className="w-full"
                   onClick={handleSaveAsDraft}
-                  disabled={isSaving || !content.trim()}
+                  disabled={isSaving || !content.trim() || isVideoMedia(attachedImage)}
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -634,7 +680,7 @@ Tips for viral posts:
                   variant="outline"
                   className="w-full"
                   onClick={handleOpenScheduleModal}
-                  disabled={isSaving || !content.trim()}
+                  disabled={isSaving || !content.trim() || isVideoMedia(attachedImage)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Post

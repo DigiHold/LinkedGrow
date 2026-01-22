@@ -42,7 +42,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
-import { PostEditor } from "@/components/dashboard/post-editor";
+import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -87,6 +87,7 @@ export function CalendarContent() {
 
   // Create post state
   const [newPostContent, setNewPostContent] = useState("");
+  const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiInstruction, setAIInstruction] = useState("");
@@ -384,6 +385,12 @@ export function CalendarContent() {
       const scheduledAt = new Date(scheduleDate);
       scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute));
 
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -391,6 +398,8 @@ export function CalendarContent() {
           content: newPostContent,
           status: publish ? "published" : "scheduled",
           scheduledAt: publish ? undefined : scheduledAt.toISOString(),
+          postType: attachedImage ? "image" : "text",
+          mediaData,
         }),
       });
 
@@ -399,6 +408,7 @@ export function CalendarContent() {
       await fetchPosts();
       setDrawerOpen(false);
       setNewPostContent("");
+      setAttachedImage(null);
     } catch {
       // Silent fail
     } finally {
@@ -1082,6 +1092,10 @@ Tips for viral posts:
 • End with a question or CTA"
                         minHeight="min-h-80 sm:min-h-100"
                         showImageButton={true}
+                        showVideoButton={true}
+                        attachedImage={attachedImage}
+                        onImageChange={setAttachedImage}
+                        onError={showError}
                       />
                       <div className="flex justify-end">
                         <Button
@@ -1226,14 +1240,26 @@ Tips for viral posts:
                     </Card>
 
                     <div className="space-y-3">
-                      <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                      {/* Video notice - videos cannot be stored, must be published immediately */}
+                      {isVideoMedia(attachedImage) && (
+                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+                          Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                        </div>
+                      )}
+                      <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving || isVideoMedia(attachedImage)}>
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "Saving..." : "Save as Draft"}
                       </Button>
-                      <Button className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving}>
+                      <Button className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving || isVideoMedia(attachedImage)}>
                         <Calendar className="w-4 h-4 mr-2" />
                         {isSaving ? "Scheduling..." : "Schedule Post"}
                       </Button>
+                      {isVideoMedia(attachedImage) && (
+                        <Button variant="linkedin" className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
+                          <Send className="w-4 h-4 mr-2" />
+                          {isSaving ? "Publishing..." : "Publish Now"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

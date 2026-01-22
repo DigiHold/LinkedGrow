@@ -11,6 +11,7 @@ import {
   Undo,
   Redo,
   Image as ImageIcon,
+  Video,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -95,10 +96,18 @@ export interface PostEditorRef {
   setContent: (content: string) => void;
 }
 
-interface AttachedImage {
+interface AttachedMedia {
   base64: string;
   mimeType: string;
   preview?: string;
+}
+
+// Alias for backward compatibility
+type AttachedImage = AttachedMedia;
+
+// Helper to check if media is a video
+export function isVideoMedia(media: AttachedMedia | null | undefined): boolean {
+  return media?.mimeType?.startsWith("video/") ?? false;
 }
 
 interface PostEditorProps {
@@ -108,6 +117,7 @@ interface PostEditorProps {
   minHeight?: string;
   showToolbar?: boolean;
   showImageButton?: boolean;
+  showVideoButton?: boolean;
   className?: string;
   disabled?: boolean;
   attachedImage?: AttachedImage | null;
@@ -124,6 +134,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       minHeight = "min-h-100",
       showToolbar = true,
       showImageButton = false,
+      showVideoButton = false,
       className,
       disabled = false,
       attachedImage,
@@ -134,6 +145,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
   ) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
     const [history, setHistory] = useState<string[]>([value]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const charCount = value.length;
@@ -205,16 +217,16 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       const file = event.target.files?.[0];
       if (!file) return;
 
-      // Validate file type
-      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      // LinkedIn only supports JPG, PNG, and GIF for posts
+      const validTypes = ["image/jpeg", "image/png", "image/gif"];
       if (!validTypes.includes(file.type)) {
-        onError?.("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
+        onError?.("LinkedIn only supports JPG, PNG, and GIF images. WebP and AVIF are not supported.");
         return;
       }
 
-      // Validate file size (max 5MB - LinkedIn limit)
-      if (file.size > 5 * 1024 * 1024) {
-        onError?.("Image must be less than 5MB (LinkedIn limit)");
+      // Validate file size (max 8MB - LinkedIn limit for posts)
+      if (file.size > 8 * 1024 * 1024) {
+        onError?.("Image must be less than 8MB (LinkedIn limit)");
         return;
       }
 
@@ -234,6 +246,43 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+    };
+
+    // Handle video upload - videos can only be published immediately (not stored in R2)
+    const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // LinkedIn supported video formats
+      const validTypes = ["video/mp4", "video/quicktime"];
+      if (!validTypes.includes(file.type)) {
+        onError?.("LinkedIn only supports MP4 and MOV video formats.");
+        return;
+      }
+
+      // Validate file size (max 200MB - LinkedIn limit)
+      if (file.size > 200 * 1024 * 1024) {
+        onError?.("Video must be less than 200MB (LinkedIn limit)");
+        return;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        const base64 = result.split(",")[1];
+        onImageChange?.({
+          base64,
+          mimeType: file.type,
+          preview: result,
+        });
+      };
+      reader.readAsDataURL(file);
+
+      // Reset input
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
       }
     };
 
@@ -445,27 +494,53 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             >
               <ListOrdered className="w-4 h-4" />
             </Button>
-            {showImageButton && (
+            {(showImageButton || showVideoButton) && (
               <>
                 <div className="w-px h-6 bg-border mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={disabled}
-                  title="Add Image"
-                  type="button"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
+                {showImageButton && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={disabled}
+                      title="Add Image (max 5MB)"
+                      type="button"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </>
+                )}
+                {showVideoButton && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={disabled}
+                      title="Add Video (max 200MB)"
+                      type="button"
+                    >
+                      <Video className="w-4 h-4" />
+                    </Button>
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/mp4,video/quicktime"
+                      className="hidden"
+                      onChange={handleVideoUpload}
+                    />
+                  </>
+                )}
               </>
             )}
             <div className="w-px h-6 bg-border mx-1" />
@@ -519,15 +594,24 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
           )}
         />
 
-        {/* Image Preview */}
+        {/* Media Preview (Image or Video) */}
         {attachedImage?.preview && (
           <div className="relative p-3 border-t bg-muted/20">
             <div className="relative inline-block">
-              <img
-                src={attachedImage.preview}
-                alt="Attached"
-                className="max-h-32 rounded-lg border"
-              />
+              {isVideoMedia(attachedImage) ? (
+                <video
+                  src={attachedImage.preview}
+                  className="max-h-32 rounded-lg border"
+                  controls
+                  muted
+                />
+              ) : (
+                <img
+                  src={attachedImage.preview}
+                  alt="Attached"
+                  className="max-h-32 rounded-lg border"
+                />
+              )}
               <button
                 type="button"
                 onClick={() => onImageChange?.(null)}

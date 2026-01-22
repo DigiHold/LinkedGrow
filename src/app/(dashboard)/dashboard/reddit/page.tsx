@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PostEditor } from "@/components/dashboard/post-editor";
+import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import {
   MessageSquareText,
   ArrowRight,
@@ -351,6 +351,12 @@ function RedditImportContent() {
 
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -358,6 +364,7 @@ function RedditImportContent() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaData,
           metadata: {
             source: "reddit",
             redditUrl: url,
@@ -393,7 +400,13 @@ function RedditImportContent() {
 
     setIsPublishing(true);
     try {
-      // First save the post
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
+      // First save the post (which will upload image to R2)
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -401,6 +414,7 @@ function RedditImportContent() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaData,
           metadata: {
             source: "reddit",
             redditUrl: url,
@@ -415,15 +429,17 @@ function RedditImportContent() {
 
       const { post } = await saveResponse.json();
 
+      // Get the uploaded image URL from the saved post
+      const imageUrl = post.media && post.media.length > 0 ? post.media[0].storageUrl : undefined;
+
       // Then publish to LinkedIn
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId: post.id,
-          content: currentPost,
-          imageBase64: attachedImage?.base64,
-          imageMimeType: attachedImage?.mimeType,
+          text: currentPost,
+          imageUrl,
         }),
       });
 
@@ -463,6 +479,12 @@ function RedditImportContent() {
 
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -471,6 +493,7 @@ function RedditImportContent() {
           status: "scheduled",
           scheduledAt: scheduledAt.toISOString(),
           postType: attachedImage ? "image" : "text",
+          mediaData,
           metadata: {
             source: "reddit",
             redditUrl: url,
@@ -955,6 +978,11 @@ function RedditImportContent() {
                     onChange={setEditedPost}
                     placeholder="Edit your post..."
                     minHeight="min-h-[400px]"
+                    showImageButton={true}
+                    showVideoButton={true}
+                    attachedImage={attachedImage}
+                    onImageChange={setAttachedImage}
+                    onError={showToast}
                   />
                 ) : (
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-border min-h-[300px]">
@@ -1059,6 +1087,12 @@ function RedditImportContent() {
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Video notice - videos cannot be stored, must be published immediately */}
+                {isVideoMedia(attachedImage) && (
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+                    Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                  </div>
+                )}
                 <Button
                   className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                   size="lg"
@@ -1076,6 +1110,7 @@ function RedditImportContent() {
                   variant="outline"
                   className="w-full"
                   onClick={() => setShowScheduler(!showScheduler)}
+                  disabled={isVideoMedia(attachedImage)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule for Later
@@ -1114,7 +1149,7 @@ function RedditImportContent() {
                   variant="outline"
                   className="w-full"
                   onClick={handleSaveAsDraft}
-                  disabled={isSaving || !getCurrentPost().trim()}
+                  disabled={isSaving || !getCurrentPost().trim() || isVideoMedia(attachedImage)}
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

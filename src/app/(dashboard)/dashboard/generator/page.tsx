@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
-import { PostEditor } from "@/components/dashboard/post-editor";
+import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { redirectToCheckout } from "@/lib/checkout";
 
 const postTypes = [
@@ -612,6 +612,12 @@ export default function GeneratorPage() {
 
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -619,6 +625,7 @@ export default function GeneratorPage() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaData,
           metadata: {
             postType: selectedType,
             postCategory: selectedCategory,
@@ -653,7 +660,13 @@ export default function GeneratorPage() {
 
     setIsPublishing(true);
     try {
-      // First save the post
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
+      // First save the post (which will upload image to R2)
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -661,6 +674,7 @@ export default function GeneratorPage() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaData,
         }),
       });
 
@@ -670,15 +684,17 @@ export default function GeneratorPage() {
 
       const { post } = await saveResponse.json();
 
+      // Get the uploaded image URL from the saved post
+      const imageUrl = post.media && post.media.length > 0 ? post.media[0].storageUrl : undefined;
+
       // Then publish to LinkedIn
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId: post.id,
-          content: currentPost,
-          imageBase64: attachedImage?.base64,
-          imageMimeType: attachedImage?.mimeType,
+          text: currentPost,
+          imageUrl,
         }),
       });
 
@@ -717,6 +733,12 @@ export default function GeneratorPage() {
 
     setIsSaving(true);
     try {
+      // Prepare media data if image is attached
+      const mediaData = attachedImage ? {
+        base64: attachedImage.base64,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -725,6 +747,7 @@ export default function GeneratorPage() {
           status: "scheduled",
           scheduledAt: scheduledAt.toISOString(),
           postType: attachedImage ? "image" : "text",
+          mediaData,
           metadata: {
             postType: selectedType,
             postCategory: selectedCategory,
@@ -1188,6 +1211,11 @@ export default function GeneratorPage() {
                     placeholder="Edit your post..."
                     minHeight="min-h-100"
                     showToolbar={true}
+                    showImageButton={true}
+                    showVideoButton={true}
+                    attachedImage={attachedImage}
+                    onImageChange={setAttachedImage}
+                    onError={showToast}
                   />
                 ) : (
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 sm:p-6 border border-border min-h-75">
@@ -1340,6 +1368,12 @@ export default function GeneratorPage() {
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Video notice - videos cannot be stored, must be published immediately */}
+                {isVideoMedia(attachedImage) && (
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+                    Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                  </div>
+                )}
                 <Button
                   variant="linkedin"
                   className="w-full"
@@ -1354,7 +1388,12 @@ export default function GeneratorPage() {
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
-                <Button variant="outline" className="w-full" onClick={() => setShowScheduler(!showScheduler)}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowScheduler(!showScheduler)}
+                  disabled={isVideoMedia(attachedImage)}
+                >
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule for Later
                 </Button>
@@ -1392,7 +1431,7 @@ export default function GeneratorPage() {
                   variant="outline"
                   className="w-full"
                   onClick={handleSaveAsDraft}
-                  disabled={isSaving || !currentPost.trim()}
+                  disabled={isSaving || !currentPost.trim() || isVideoMedia(attachedImage)}
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -68,6 +68,7 @@ interface LinkedInPostRequest {
       media?: Array<{
         status: 'READY';
         originalUrl?: string;
+        media?: string; // Asset URN for native image uploads
         title?: { text: string };
         description?: { text: string };
       }>;
@@ -75,6 +76,19 @@ interface LinkedInPostRequest {
   };
   visibility: {
     'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' | 'CONNECTIONS';
+  };
+}
+
+interface LinkedInRegisterUploadResponse {
+  value: {
+    uploadMechanism: {
+      'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': {
+        uploadUrl: string;
+        headers: Record<string, string>;
+      };
+    };
+    asset: string;
+    mediaArtifact: string;
   };
 }
 
@@ -235,7 +249,88 @@ export async function createLinkedInPost(
 }
 
 /**
- * Create a LinkedIn post with an image
+ * Register an image upload with LinkedIn
+ * Returns the upload URL and asset URN
+ */
+async function registerImageUpload(
+  accessToken: string,
+  ownerUrn: string
+): Promise<{ uploadUrl: string; asset: string }> {
+  const registerRequest = {
+    registerUploadRequest: {
+      recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+      owner: ownerUrn,
+      serviceRelationships: [
+        {
+          relationshipType: 'OWNER',
+          identifier: 'urn:li:userGeneratedContent',
+        },
+      ],
+    },
+  };
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(registerRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to register image upload: ${error}`);
+  }
+
+  const data: LinkedInRegisterUploadResponse = await response.json();
+  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
+  const asset = data.value.asset;
+
+  return { uploadUrl, asset };
+}
+
+/**
+ * Upload binary image data to LinkedIn
+ */
+async function uploadImageToLinkedIn(
+  uploadUrl: string,
+  imageBlob: Blob,
+  contentType: string
+): Promise<void> {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: imageBlob,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to upload image to LinkedIn: ${error}`);
+  }
+}
+
+/**
+ * Fetch image from URL and return as Blob with content type
+ */
+async function fetchImageAsBlob(imageUrl: string): Promise<{ blob: Blob; contentType: string }> {
+  const response = await fetch(imageUrl);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image from URL: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || 'image/png';
+  const blob = await response.blob();
+
+  return { blob, contentType };
+}
+
+/**
+ * Create a LinkedIn post with an image (native image upload)
  * @param authorId - Either a person ID or organization ID
  * @param authorType - 'person' for personal profile or 'organization' for company page
  */
@@ -252,6 +347,16 @@ export async function createLinkedInPostWithImage(
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
 
+  // Step 1: Fetch the image from R2/external URL
+  const { blob, contentType } = await fetchImageAsBlob(imageUrl);
+
+  // Step 2: Register the upload with LinkedIn
+  const { uploadUrl, asset } = await registerImageUpload(accessToken, authorUrn);
+
+  // Step 3: Upload the actual image binary to LinkedIn
+  await uploadImageToLinkedIn(uploadUrl, blob, contentType);
+
+  // Step 4: Create the post with the uploaded image asset
   const postData: LinkedInPostRequest = {
     author: authorUrn,
     lifecycleState: 'PUBLISHED',
@@ -260,11 +365,11 @@ export async function createLinkedInPostWithImage(
         shareCommentary: {
           text: text,
         },
-        shareMediaCategory: 'ARTICLE',
+        shareMediaCategory: 'IMAGE',
         media: [
           {
             status: 'READY',
-            originalUrl: imageUrl,
+            media: asset,
             title: imageTitle ? { text: imageTitle } : undefined,
           },
         ],
