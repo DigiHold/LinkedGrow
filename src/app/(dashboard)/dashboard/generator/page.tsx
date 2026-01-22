@@ -1334,7 +1334,7 @@ export default function GeneratorPage() {
               <CardContent className="space-y-3">
                 <Button
                   variant="linkedin"
-                  className="w-full justify-start"
+                  className="w-full"
                   size="lg"
                   onClick={handlePublish}
                   disabled={isPublishing || !currentPost.trim()}
@@ -1346,7 +1346,7 @@ export default function GeneratorPage() {
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setShowScheduler(!showScheduler)}>
+                <Button variant="outline" className="w-full" onClick={() => setShowScheduler(!showScheduler)}>
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule for Later
                 </Button>
@@ -1382,7 +1382,7 @@ export default function GeneratorPage() {
                 )}
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={handleSaveAsDraft}
                   disabled={isSaving || !currentPost.trim()}
                 >

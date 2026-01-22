@@ -724,7 +724,7 @@ export function CalendarContent() {
                     "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
                     !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
                     isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
-                    dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20",
+                    dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20 calendar-past-stripes",
                     isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
                     index % 7 === 6 && "border-r-0"
                   )}

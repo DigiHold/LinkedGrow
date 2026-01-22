@@ -71,7 +71,7 @@ export default function CarouselPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-violet-500 to-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
               <Layers className="w-5 h-5 text-white" />
             </div>
             Carousel Generator
@@ -88,7 +88,7 @@ export default function CarouselPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-violet-600" />
+                  <Sparkles className="w-4 h-4 text-cyan-600" />
                   Generate with AI
                 </CardTitle>
               </CardHeader>
@@ -137,7 +137,7 @@ export default function CarouselPage() {
                 <Button
                   onClick={handleGenerate}
                   disabled={!topic.trim() || isGenerating}
-                  className="w-full bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
+                  className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                 >
                   {isGenerating ? (
                     <>
@@ -159,7 +159,7 @@ export default function CarouselPage() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <Type className="w-4 h-4 text-violet-600" />
+                    <Type className="w-4 h-4 text-cyan-600" />
                     Edit Slides
                   </span>
                   <span className="text-sm font-normal text-muted-foreground">
@@ -177,7 +177,7 @@ export default function CarouselPage() {
                       className={cn(
                         "w-10 h-10 rounded-lg text-sm font-medium transition-colors shrink-0",
                         currentSlide === index
-                          ? "bg-violet-600 text-white"
+                          ? "bg-cyan-600 text-white"
                           : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
                       )}
                     >
@@ -189,7 +189,7 @@ export default function CarouselPage() {
                       setSlides([...slides, { title: `Slide ${slides.length + 1}`, content: "" }]);
                       setCurrentSlide(slides.length);
                     }}
-                    className="w-10 h-10 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-violet-500 dark:hover:border-violet-500 transition-colors shrink-0 flex items-center justify-center"
+                    className="w-10 h-10 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500 dark:hover:border-cyan-500 transition-colors shrink-0 flex items-center justify-center"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -247,7 +247,7 @@ export default function CarouselPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-violet-600" />
+                  <Eye className="w-4 h-4 text-cyan-600" />
                   Preview
                 </CardTitle>
               </CardHeader>
@@ -304,7 +304,7 @@ export default function CarouselPage() {
                     <Copy className="w-4 h-4 mr-2" />
                     Copy Text
                   </Button>
-                  <Button className="flex-1 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white">
+                  <Button className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                     <Download className="w-4 h-4 mr-2" />
                     Download PDF
                   </Button>
@@ -316,7 +316,7 @@ export default function CarouselPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-violet-600" />
+                  <Palette className="w-4 h-4 text-cyan-600" />
                   Design Options
                 </CardTitle>
               </CardHeader>
@@ -330,7 +330,7 @@ export default function CarouselPage() {
                         "aspect-square rounded-lg transition-all",
                         t.colors,
                         template === t.id
-                          ? "ring-2 ring-violet-600 ring-offset-2"
+                          ? "ring-2 ring-cyan-600 ring-offset-2"
                           : "opacity-60 hover:opacity-100"
                       )}
                       title={t.name}
@@ -341,10 +341,10 @@ export default function CarouselPage() {
             </Card>
 
             {/* Tips */}
-            <Card className="bg-violet-50/50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800">
+            <Card className="bg-cyan-50/50 dark:bg-cyan-900/10 border-cyan-200 dark:border-cyan-800">
               <CardContent className="py-4">
                 <div className="flex items-start gap-3">
-                  <Layout className="w-5 h-5 text-violet-600 mt-0.5" />
+                  <Layout className="w-5 h-5 text-cyan-600 mt-0.5" />
                   <div>
                     <h4 className="font-medium text-sm">Carousel Best Practices</h4>
                     <ul className="text-sm text-muted-foreground mt-2 space-y-1">

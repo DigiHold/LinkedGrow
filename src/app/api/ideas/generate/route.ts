@@ -4,13 +4,15 @@ import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
 
-interface HookPair {
-  firstLine: string;
-  secondLine: string;
+interface Idea {
+  hook: string;
+  type: string;
+  category: string;
+  engagement: string;
 }
 
-async function generateHooks(
-  postIdea: string,
+async function generateIdeas(
+  theme: string,
   count: number,
   apiKey: string,
   provider: string,
@@ -18,7 +20,7 @@ async function generateHooks(
   businessDescription?: string,
   targetAudience?: string,
   writingTone?: string
-): Promise<HookPair[]> {
+): Promise<Idea[]> {
   let contextInstructions = "";
   if (businessDescription) {
     contextInstructions += `\n\nAbout the author: ${businessDescription}`;
@@ -30,36 +32,33 @@ async function generateHooks(
     contextInstructions += `\nWriting tone: ${writingTone}`;
   }
 
-  const prompt = `You are an expert LinkedIn content strategist specializing in viral hooks. Generate ${count} pairs of attention-grabbing hooks for the following post idea.
+  const prompt = `You are an expert LinkedIn content strategist. Generate ${count} unique post ideas on the theme: "${theme}"${contextInstructions}
 
-Post idea: "${postIdea}"${contextInstructions}
+For each idea, provide:
+1. hook: A compelling one-line hook (the first line of the post that grabs attention)
+2. type: The post type (Story, Listicle, Opinion, How-to, Question, Insight, Case Study, Myth Buster)
+3. category: The content category (e.g., Career, Leadership, Productivity, Tech, Marketing, etc.)
+4. engagement: Expected engagement level (Very High, High, Medium)
 
-Each hook pair consists of:
-- First line: The opening statement that stops the scroll (pattern interrupt, bold claim, question, or curiosity gap)
-- Second line: The follow-up that builds tension or adds context
+Post idea principles:
+- Hooks should stop the scroll - be bold, specific, or curiosity-inducing
+- Mix different post types for variety
+- Focus on actionable insights and real experiences
+- Avoid generic advice - be specific and authentic
+- Consider what would make people comment and share
 
-Hook writing principles:
-1. First line must be under 100 characters for mobile visibility
-2. Create curiosity gaps - make readers NEED to know more
-3. Use pattern interrupts (unexpected statements, contrarian views)
-4. Be specific with numbers when possible
-5. Address pain points or desires directly
-6. Second line should complement, not repeat, the first line
-7. Avoid clickbait - deliver real value in the post
-
-Hook styles to vary:
-- Bold statement: "I turned down a $500k offer. Here's why."
-- Question: "What if everything you knew about productivity was wrong?"
-- Contrarian: "Hustle culture is a lie. I built a 7-figure business working 4 hours a day."
-- Story: "3 years ago, I was fired. Today, I run a $2M company."
-- Pattern interrupt: "Stop networking. Do this instead."
-- Curiosity gap: "The one skill that 10x'd my income isn't what you think."
-
-Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" properties. Example:
-[{"firstLine": "I quit my $200k job yesterday.", "secondLine": "Not because I hated it. Because I found something better."}, {"firstLine": "The best advice I ever got was wrong.", "secondLine": "Let me explain."}]`;
+Return ONLY a JSON array of ${count} objects. Example format:
+[
+  {
+    "hook": "I turned down a $300k job offer. Here's why it was the best decision I ever made.",
+    "type": "Story",
+    "category": "Career",
+    "engagement": "Very High"
+  }
+]`;
 
   let response;
-  let hooks: HookPair[] = [];
+  let ideas: Idea[] = [];
 
   if (provider === "openai") {
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -77,13 +76,13 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with OpenAI");
+      throw new Error(error.error?.message || "Failed to generate ideas with OpenAI");
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "anthropic") {
     response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -94,20 +93,20 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-4-5-20250929",
-        max_tokens: 2048,
+        max_tokens: 4096,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with Anthropic");
+      throw new Error(error.error?.message || "Failed to generate ideas with Anthropic");
     }
 
     const data = await response.json();
     const content = data.content[0]?.text || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
       method: "POST",
@@ -121,15 +120,14 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with Google AI");
+      throw new Error(error.error?.message || "Failed to generate ideas with Google AI");
     }
 
     const data = await response.json();
     const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "grok") {
-    // xAI Grok uses OpenAI-compatible API
     response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -145,15 +143,14 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with Grok");
+      throw new Error(error.error?.message || "Failed to generate ideas with Grok");
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    ideas = JSON.parse(cleanContent);
   } else if (provider === "perplexity") {
-    // Perplexity uses OpenAI-compatible API
     response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
@@ -169,18 +166,18 @@ Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" p
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate hooks with Perplexity");
+      throw new Error(error.error?.message || "Failed to generate ideas with Perplexity");
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    hooks = JSON.parse(cleanContent);
+    ideas = JSON.parse(cleanContent);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  return hooks;
+  return ideas;
 }
 
 export async function POST(request: NextRequest) {
@@ -191,10 +188,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postIdea, count = 5 } = await request.json();
+    const { theme, count = 10 } = await request.json();
 
-    if (!postIdea) {
-      return NextResponse.json({ error: "Post idea is required" }, { status: 400 });
+    if (!theme) {
+      return NextResponse.json({ error: "Theme is required" }, { status: 400 });
     }
 
     const user = await db.query.users.findFirst({
@@ -207,7 +204,7 @@ export async function POST(request: NextRequest) {
 
     const provider = user.aiProvider || "openai";
 
-    // Get per-provider API key based on selected provider
+    // Get per-provider API key
     const providerKeyMap: Record<string, string | null> = {
       openai: user.openaiApiKey,
       anthropic: user.anthropicApiKey,
@@ -226,7 +223,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get per-provider model based on selected provider
+    // Get per-provider model
     const providerModelMap: Record<string, string | null> = {
       openai: user.openaiModel,
       anthropic: user.anthropicModel,
@@ -242,9 +239,9 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    const hooks = await generateHooks(
-      postIdea,
-      Math.min(count, 10),
+    const ideas = await generateIdeas(
+      theme,
+      Math.min(count, 20),
       apiKey,
       provider,
       model,
@@ -253,11 +250,11 @@ export async function POST(request: NextRequest) {
       user.writingTone || undefined
     );
 
-    return NextResponse.json({ hooks });
+    return NextResponse.json({ ideas });
   } catch (error) {
-    console.error("Hooks generation error:", error);
+    console.error("Ideas generation error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate hooks" },
+      { error: error instanceof Error ? error.message : "Failed to generate ideas" },
       { status: 500 }
     );
   }

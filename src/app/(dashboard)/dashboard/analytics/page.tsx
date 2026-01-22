@@ -305,6 +305,18 @@ function AnalyticsContent() {
         </div>
       </div>
 
+      {/* Community Management API Notice */}
+      <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+        <CardContent className="py-4 px-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              Full analytics features require LinkedIn&apos;s Community Management API approval. We&apos;re in the process of getting access and will notify you when it&apos;s ready.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* LinkedIn Connection CTA - show if not connected */}
       {!hasLinkedIn && (
         <Card className="border-linkedin/20 bg-linkedin/5">

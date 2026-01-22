@@ -462,3 +462,24 @@ html[style] {
   padding-right: 0 !important;
   overflow: unset !important;
 }
+
+/* Calendar past day stripes */
+.calendar-past-stripes {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(156, 163, 175, 0.08) 4px,
+    rgba(156, 163, 175, 0.08) 8px
+  );
+}
+
+.dark .calendar-past-stripes {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(75, 85, 99, 0.15) 4px,
+    rgba(75, 85, 99, 0.15) 8px
+  );
+}

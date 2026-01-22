@@ -618,7 +618,7 @@ Tips for viral posts:
               <CardContent className="p-4 space-y-3">
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={handleSaveAsDraft}
                   disabled={isSaving || !content.trim()}
                 >
@@ -631,7 +631,7 @@ Tips for viral posts:
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={handleOpenScheduleModal}
                   disabled={isSaving || !content.trim()}
                 >
@@ -640,7 +640,7 @@ Tips for viral posts:
                 </Button>
                 <Button
                   variant="linkedin"
-                  className="w-full justify-start"
+                  className="w-full"
                   onClick={handlePublish}
                   disabled={isSaving || !content.trim()}
                 >
