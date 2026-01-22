@@ -1682,12 +1682,12 @@ Tips for viral posts:
                 <div className="flex md:flex-row flex-col w-full h-full min-h-0">
                   {/* LEFT SIDE - Editor */}
                   <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-gray-800">
-                    <div className="w-full max-w-lg mx-auto h-full flex flex-col">
+                    <div className="w-full max-w-lg mx-auto">
                       <PostEditor
                         value={editPostContent}
                         onChange={setEditPostContent}
                         placeholder="Write your LinkedIn post..."
-                        minHeight="min-h-[calc(100vh-200px)]"
+                        minHeight="min-h-80"
                         showImageButton={true}
                         attachedImage={editAttachedImage}
                         onImageChange={setEditAttachedImage}
