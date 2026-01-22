@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Anchor,
   Sparkles,
@@ -11,47 +12,72 @@ import {
   Check,
   RefreshCw,
   Loader2,
-  Zap,
-  Crown,
-  Lock,
+  Key,
+  Settings,
+  AlertCircle,
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
+import Link from "next/link";
+
+const popularTopics = [
+  "Career Growth",
+  "Leadership",
+  "Productivity",
+  "Hiring & Recruiting",
+  "Startups",
+  "Remote Work",
+  "Sales Tips",
+  "Marketing",
+  "AI & Tech",
+  "Personal Branding",
+];
 
 interface HookPair {
   firstLine: string;
   secondLine: string;
 }
 
+interface SettingsResponse {
+  hasApiKey: boolean;
+  aiProvider: string | null;
+}
+
 export default function HooksPage() {
-  const [postIdea, setPostIdea] = useState("");
+  const router = useRouter();
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [customTopic, setCustomTopic] = useState("");
   const [hooks, setHooks] = useState<HookPair[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+  const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadSettings = async () => {
+    const checkApiKey = async () => {
       try {
-        const res = await fetch("/api/user/settings");
-        if (res.ok) {
-          const data = await res.json();
-          setHasApiKey(data.hasApiKey || false);
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data: SettingsResponse = await response.json();
+          setHasApiKey(data.hasApiKey);
+        } else {
+          setHasApiKey(false);
         }
-      } catch (err) {
-        console.error("Failed to load settings:", err);
+      } catch {
+        setHasApiKey(false);
       } finally {
-        setIsLoading(false);
+        setIsCheckingApiKey(false);
       }
     };
-    loadSettings();
+
+    checkApiKey();
   }, []);
 
   const handleGenerate = async () => {
-    if (!postIdea.trim()) return;
+    const topic = customTopic || selectedTopic;
+    if (!topic || !hasApiKey) return;
 
     setIsGenerating(true);
     setError(null);
@@ -60,7 +86,7 @@ export default function HooksPage() {
       const res = await fetch("/api/ai/generate-hooks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postIdea, count: 5 }),
+        body: JSON.stringify({ postIdea: topic, count: 5 }),
       });
 
       if (!res.ok) {
@@ -79,23 +105,96 @@ export default function HooksPage() {
 
   const handleCopy = (index: number) => {
     const hook = hooks[index];
-    const text = `${hook.firstLine}\n\n${hook.secondLine}`;
+    // No line space between the two hooks - just a single newline
+    const text = `${hook.firstLine}\n${hook.secondLine}`;
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const handleCopyFirst = (index: number) => {
-    navigator.clipboard.writeText(hooks[index].firstLine);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+  const handleUseInEditor = (hook: HookPair) => {
+    // Navigate to editor with the hook as starting content
+    const content = `${hook.firstLine}\n${hook.secondLine}`;
+    router.push(`/dashboard/editor?content=${encodeURIComponent(content)}`);
   };
 
-  if (isLoading) {
+  // Loading state while checking API key
+  if (isCheckingApiKey) {
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-100">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
+    );
+  }
+
+  // No API key configured - show setup prompt
+  if (!hasApiKey) {
+    return (
+      <FeatureGate feature="hooksGenerator">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Anchor className="w-5 h-5 text-white" />
+              </div>
+              Hooks Generator
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Generate scroll-stopping hooks that capture attention in the first 2 lines
+            </p>
+          </div>
+
+          {/* API Key Required Card */}
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+            <CardContent className="py-12 px-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+                  <Key className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
+                <p className="text-muted-foreground mb-6">
+                  To generate hooks, you need to configure your AI API key in settings.
+                  LinkedGrow uses your own API key (BYOK) for unlimited generations.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link href="/dashboard/settings/ai-api">
+                    <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure API Key
+                    </Button>
+                  </Link>
+                </div>
+                <p className="text-xs text-muted-foreground mt-6">
+                  We support OpenAI, Anthropic, Google AI, and Groq. Your key is encrypted and stored securely.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Preview of what's possible */}
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="text-base">Preview - Popular Topics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {popularTopics.map((topic) => (
+                  <span
+                    key={topic}
+                    className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </FeatureGate>
     );
   }
 
@@ -115,94 +214,93 @@ export default function HooksPage() {
           </p>
         </div>
 
-        {/* No API Key Warning */}
-        {!hasApiKey && (
-          <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20">
-            <CardContent className="py-6">
-              <div className="text-center">
-                <Zap className="w-10 h-10 text-amber-600 mx-auto mb-3" />
-                <h3 className="font-semibold mb-2">AI API Key Required</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Configure your AI API key to generate hooks
-                </p>
-                <a href="/dashboard/settings/ai-api">
-                  <Button className="bg-amber-600 hover:bg-amber-700">
+        {/* Topic Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle>What&apos;s your post about?</CardTitle>
+            <CardDescription>
+              Select a popular topic or enter your own idea
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {popularTopics.map((topic) => (
+                <button
+                  key={topic}
+                  onClick={() => {
+                    setSelectedTopic(topic);
+                    setCustomTopic("");
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm transition-colors",
+                    selectedTopic === topic && !customTopic
+                      ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  )}
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                placeholder="Or describe your post idea..."
+                value={customTopic}
+                onChange={(e) => {
+                  setCustomTopic(e.target.value);
+                  setSelectedTopic(null);
+                }}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={(!selectedTopic && !customTopic) || isGenerating}
+                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Configure API Key
-                  </Button>
-                </a>
+                    Generate 5 Hooks
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Empty State - No Hooks Generated Yet */}
+        {hooks.length === 0 && !isGenerating && (
+          <Card className="border-dashed">
+            <CardContent className="py-16 px-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-linear-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
+                  <Anchor className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Ready to generate hooks</h3>
+                <p className="text-muted-foreground text-sm">
+                  Select a topic above and click &quot;Generate 5 Hooks&quot; to get attention-grabbing opening lines for your LinkedIn posts.
+                </p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Input Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>What&apos;s your post about?</CardTitle>
-            <CardDescription>
-              Describe your post idea and we&apos;ll generate attention-grabbing hooks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              placeholder="e.g., How I went from 0 to 10k followers in 6 months by posting consistently and engaging with my audience..."
-              value={postIdea}
-              onChange={(e) => setPostIdea(e.target.value)}
-              className="min-h-[120px]"
-              disabled={!hasApiKey}
-            />
-
-            {/* Quick Ideas */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground">Try:</span>
-              {[
-                "Career pivot story",
-                "Productivity hack",
-                "Leadership lesson",
-                "Hiring mistake",
-                "Side project success",
-              ].map((idea) => (
-                <button
-                  key={idea}
-                  onClick={() => setPostIdea(idea)}
-                  disabled={!hasApiKey}
-                  className="px-3 py-1 text-sm rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                >
-                  {idea}
-                </button>
-              ))}
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!postIdea.trim() || isGenerating || !hasApiKey}
-              className="w-full sm:w-auto px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating Hooks...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate 5 Hook Pairs
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Results */}
+        {/* Hooks Grid */}
         {hooks.length > 0 && (
-          <div className="space-y-4">
+          <>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Generated Hooks</h2>
               <Button
@@ -216,93 +314,74 @@ export default function HooksPage() {
               </Button>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {hooks.map((hook, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="p-4 sm:p-6">
-                      {/* Hook Preview */}
-                      <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-border mb-4">
-                        <p className="font-semibold text-lg leading-relaxed">
-                          {hook.firstLine}
-                        </p>
-                        <p className="text-muted-foreground mt-2 leading-relaxed">
-                          {hook.secondLine}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopy(index)}
-                          className="flex-1 sm:flex-none"
-                        >
-                          {copiedIndex === index ? (
-                            <>
-                              <Check className="w-4 h-4 mr-2 text-green-500" />
-                              Copied!
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Copy Both Lines
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyFirst(index)}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          First Line Only
-                        </Button>
-                      </div>
+                <Card
+                  key={index}
+                  className="group hover:shadow-lg transition-all hover:-translate-y-1"
+                >
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
+                        Hook #{index + 1}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{hook.firstLine.length} chars</span>
                     </div>
 
-                    {/* Character counts */}
-                    <div className="px-4 sm:px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                      <span>First line: {hook.firstLine.length} chars</span>
-                      <span>Second line: {hook.secondLine.length} chars</span>
+                    {/* Hook Preview - no empty line between */}
+                    <div className="mb-4">
+                      <p className="font-semibold text-sm sm:text-base leading-snug">
+                        {hook.firstLine}
+                      </p>
+                      <p className="text-muted-foreground text-sm sm:text-base leading-snug">
+                        {hook.secondLine}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopy(index)}
+                        className="flex-1"
+                      >
+                        {copiedIndex === index ? (
+                          <>
+                            <Check className="w-4 h-4 mr-2 text-green-500" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUseInEditor(hook)}
+                        className="flex-1"
+                      >
+                        Use in Editor
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </div>
-        )}
 
-        {/* Tips Card */}
-        <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="w-5 h-5 text-blue-600" />
-              Hook Writing Tips
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <ArrowRight className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
-                <span>Keep your first line under 100 characters for mobile visibility</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <ArrowRight className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
-                <span>Create a curiosity gap - make readers NEED to click &quot;see more&quot;</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <ArrowRight className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
-                <span>Use specific numbers and results when possible</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <ArrowRight className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
-                <span>The second line should build tension, not give away the answer</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+            {/* Load More */}
+            <div className="text-center">
+              <Button variant="outline" onClick={handleGenerate} disabled={isGenerating}>
+                <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
+                Generate More Hooks
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </FeatureGate>
   );

@@ -30,7 +30,7 @@ async function generateHooks(
     contextInstructions += `\nWriting tone: ${writingTone}`;
   }
 
-  const prompt = `You are an expert LinkedIn content strategist specializing in viral hooks. Generate ${count} pairs of attention-grabbing hooks for the following post idea.
+  const prompt = `You are an expert LinkedIn content strategist. Generate ${count} pairs of attention-grabbing hooks for the following post idea.
 
 Post idea: "${postIdea}"${contextInstructions}
 
@@ -38,17 +38,20 @@ Each hook pair consists of:
 - First line: The opening statement that stops the scroll (pattern interrupt, bold claim, question, or curiosity gap)
 - Second line: The follow-up that builds tension or adds context
 
-Hook writing principles:
-1. First line must be under 100 characters for mobile visibility
-2. Create curiosity gaps - make readers NEED to know more
-3. Use pattern interrupts (unexpected statements, contrarian views)
-4. Be specific with numbers when possible
-5. Address pain points or desires directly
-6. Second line should complement, not repeat, the first line
-7. Avoid clickbait - deliver real value in the post
+CRITICAL RULES - FOLLOW EXACTLY:
+1. NEVER use em dashes (-). Use regular dashes with spaces ( - ) or colons instead
+2. NEVER use phrases like "Here's the truth", "Let me explain", "Here's why", "The reality is"
+3. Write like a real human, not AI. Be conversational and direct
+4. First line must be under 100 characters for mobile visibility
+5. Create curiosity gaps - make readers NEED to know more
+6. Use pattern interrupts (unexpected statements, contrarian views)
+7. Be specific with numbers when possible
+8. Address pain points or desires directly
+9. Second line should complement, not repeat, the first line
+10. Avoid clickbait - deliver real value in the post
 
 Hook styles to vary:
-- Bold statement: "I turned down a $500k offer. Here's why."
+- Bold statement: "I turned down a $500k offer. Best decision I ever made."
 - Question: "What if everything you knew about productivity was wrong?"
 - Contrarian: "Hustle culture is a lie. I built a 7-figure business working 4 hours a day."
 - Story: "3 years ago, I was fired. Today, I run a $2M company."
@@ -56,7 +59,7 @@ Hook styles to vary:
 - Curiosity gap: "The one skill that 10x'd my income isn't what you think."
 
 Return ONLY a JSON array of ${count} objects with "firstLine" and "secondLine" properties. Example:
-[{"firstLine": "I quit my $200k job yesterday.", "secondLine": "Not because I hated it. Because I found something better."}, {"firstLine": "The best advice I ever got was wrong.", "secondLine": "Let me explain."}]`;
+[{"firstLine": "I quit my $200k job yesterday.", "secondLine": "Not because I hated it. Because I found something better."}, {"firstLine": "The best advice I ever got was completely wrong.", "secondLine": "It cost me 3 years."}]`;
 
   let response;
   let hooks: HookPair[] = [];
