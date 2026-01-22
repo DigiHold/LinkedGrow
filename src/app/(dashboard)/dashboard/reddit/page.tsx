@@ -55,6 +55,7 @@ const steps = [
 
 interface SettingsResponse {
   hasApiKey: boolean;
+  hasImageApiKey: boolean;
   aiProvider: string | null;
 }
 
@@ -252,11 +253,10 @@ function RedditImportContent() {
         if (response.ok) {
           const data: SettingsResponse = await response.json();
           setHasApiKey(data.hasApiKey);
-          // For now, we use the same API key for images
-          // TODO: Add separate image API key check when implemented
-          setHasImageApiKey(data.hasApiKey);
+          setHasImageApiKey(data.hasImageApiKey);
         } else {
           setHasApiKey(false);
+          setHasImageApiKey(false);
         }
       } catch {
         setHasApiKey(false);
@@ -1280,6 +1280,7 @@ function RedditImportContent() {
             postTopic={hooks[selectedHook ?? 0]}
             userPlan={userPlan}
             hasImageApiKey={hasImageApiKey}
+            hasTextApiKey={hasApiKey ?? false}
             onImageGenerated={(imageData) => {
               setAttachedImage(imageData);
             }}
