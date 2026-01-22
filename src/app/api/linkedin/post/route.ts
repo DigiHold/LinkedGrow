@@ -4,6 +4,9 @@ import { auth } from '@/lib/auth';
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
+// Extend timeout for video uploads (Pro plan allows up to 300s)
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   try {
     // Verify user is authenticated
