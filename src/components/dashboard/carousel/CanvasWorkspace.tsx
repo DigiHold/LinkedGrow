@@ -116,6 +116,18 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const [isReady, setIsReady] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
 
+    // Store callbacks in refs to avoid re-initializing canvas when they change
+    const onSelectionChangeRef = useRef(onSelectionChange);
+    const onCanvasChangeRef = useRef(onCanvasChange);
+    const onElementMovingRef = useRef(onElementMoving);
+
+    // Keep refs up to date
+    useEffect(() => {
+      onSelectionChangeRef.current = onSelectionChange;
+      onCanvasChangeRef.current = onCanvasChange;
+      onElementMovingRef.current = onElementMoving;
+    }, [onSelectionChange, onCanvasChange, onElementMoving]);
+
     // Undo/Redo history
     const historyRef = useRef<string[]>([]);
     const historyIndexRef = useRef(-1);
@@ -188,14 +200,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
 
         // Notify about position change for real-time updates
-        onElementMoving?.(obj);
+        onElementMovingRef.current?.(obj);
       });
 
       // Also track scaling for real-time size updates
       canvas.on('object:scaling', (e) => {
         const obj = e.target;
         if (obj) {
-          onElementMoving?.(obj);
+          onElementMovingRef.current?.(obj);
         }
       });
 
@@ -203,37 +215,37 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       canvas.on('object:rotating', (e) => {
         const obj = e.target;
         if (obj) {
-          onElementMoving?.(obj);
+          onElementMovingRef.current?.(obj);
         }
       });
 
       // Selection events
       canvas.on('selection:created', (e) => {
-        onSelectionChange?.(e.selected?.[0] || null);
+        onSelectionChangeRef.current?.(e.selected?.[0] || null);
       });
 
       canvas.on('selection:updated', (e) => {
-        onSelectionChange?.(e.selected?.[0] || null);
+        onSelectionChangeRef.current?.(e.selected?.[0] || null);
       });
 
       canvas.on('selection:cleared', () => {
-        onSelectionChange?.(null);
+        onSelectionChangeRef.current?.(null);
       });
 
       // Track changes
       canvas.on('object:modified', () => {
         saveHistory();
-        onCanvasChange?.();
+        onCanvasChangeRef.current?.();
       });
 
       canvas.on('object:added', () => {
         saveHistory();
-        onCanvasChange?.();
+        onCanvasChangeRef.current?.();
       });
 
       canvas.on('object:removed', () => {
         saveHistory();
-        onCanvasChange?.();
+        onCanvasChangeRef.current?.();
       });
 
       fabricRef.current = canvas;
@@ -246,7 +258,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         canvas.dispose();
         fabricRef.current = null;
       };
-    }, [onSelectionChange, onCanvasChange, onElementMoving, saveHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [saveHistory]);
 
     // Handle zoom
     useEffect(() => {
@@ -542,7 +555,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
         fabricRef.current.renderAll();
         saveHistory();
-        onCanvasChange?.();
+        onCanvasChangeRef.current?.();
       },
 
       exportToDataURL: () => {
@@ -583,7 +596,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
           fabricRef.current.renderAll();
-          onCanvasChange?.();
+          onCanvasChangeRef.current?.();
         } catch (error) {
           console.error('Failed to load canvas from JSON:', error);
         }
@@ -603,7 +616,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           setTimeout(() => {
             isUndoRedoRef.current = false;
           }, 100);
-          onCanvasChange?.();
+          onCanvasChangeRef.current?.();
         });
       },
 
@@ -621,7 +634,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           setTimeout(() => {
             isUndoRedoRef.current = false;
           }, 100);
-          onCanvasChange?.();
+          onCanvasChangeRef.current?.();
         });
       },
 
@@ -633,9 +646,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         fabricRef.current.backgroundColor = '#ffffff';
         fabricRef.current.renderAll();
         saveHistory();
-        onCanvasChange?.();
+        onCanvasChangeRef.current?.();
       },
-    }), [saveHistory, onCanvasChange]);
+    }), [saveHistory]);
 
     // Keyboard shortcuts
     useEffect(() => {
