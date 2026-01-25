@@ -23,11 +23,13 @@ const prelaunchAllowedRoutes = [
   "/sign-in",
   "/sign-up",
   "/forgot-password",
+  "/reset-password",
   "/privacy",
   "/cookies",
   "/terms",
   "/about",
   "/api",
+  "/team/invite",
 ];
 
 export default auth((req) => {
