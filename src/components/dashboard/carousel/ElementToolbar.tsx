@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +29,7 @@ import {
   TrendingUp,
   Award,
   Loader2,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -47,6 +48,7 @@ interface ToolItem {
   label: string;
   icon: React.ReactNode;
   action: () => void;
+  dragData?: { type: string; data: Record<string, unknown> };
 }
 
 interface ToolSection {
@@ -156,24 +158,28 @@ export function ElementToolbar({
       label: 'Heading',
       icon: <Heading1 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Your Heading', fontSize: 72, fontWeight: 'bold' }),
+      dragData: { type: 'text', data: { text: 'Your Heading', fontSize: 72, fontWeight: 'bold' } },
     },
     {
       id: 'subheading',
       label: 'Subheading',
       icon: <Heading2 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Subheading text', fontSize: 48, fontWeight: '600' }),
+      dragData: { type: 'text', data: { text: 'Subheading text', fontSize: 48, fontWeight: '600' } },
     },
     {
       id: 'body',
       label: 'Body Text',
       icon: <AlignLeft className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Add your body text here. This is a longer paragraph that you can edit.', fontSize: 32, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal' } },
     },
     {
       id: 'quote',
       label: 'Quote',
       icon: <Quote className="w-4 h-4" />,
       action: () => handleAddText({ text: '"Your inspiring quote goes here"', fontSize: 40, fontWeight: '500' }),
+      dragData: { type: 'text', data: { text: '"Your inspiring quote goes here"', fontSize: 40, fontWeight: '500' } },
     },
   ];
 
@@ -183,20 +189,31 @@ export function ElementToolbar({
       label: 'Rectangle',
       icon: <Square className="w-4 h-4" />,
       action: () => handleAddShape('rect'),
+      dragData: { type: 'shape', data: { shapeType: 'rect' } },
     },
     {
       id: 'circle',
       label: 'Circle',
       icon: <Circle className="w-4 h-4" />,
       action: () => handleAddShape('circle'),
+      dragData: { type: 'shape', data: { shapeType: 'circle' } },
     },
     {
       id: 'line',
       label: 'Line',
       icon: <Minus className="w-4 h-4" />,
       action: () => handleAddShape('line'),
+      dragData: { type: 'shape', data: { shapeType: 'line' } },
     },
   ];
+
+  // Handle drag start
+  const handleDragStart = useCallback((e: React.DragEvent, item: ToolItem) => {
+    if (item.dragData) {
+      e.dataTransfer.setData('application/json', JSON.stringify(item.dragData));
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+  }, []);
 
   const iconElements: ToolItem[] = [
     {
@@ -298,16 +315,20 @@ export function ElementToolbar({
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {textElements.map((item) => (
-                <Button
+                <button
                   key={item.id}
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, item)}
                   onClick={item.action}
+                  className={cn(
+                    "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    "cursor-grab active:cursor-grabbing transition-colors"
+                  )}
                 >
                   {item.icon}
                   <span className="text-xs">{item.label}</span>
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -319,7 +340,8 @@ export function ElementToolbar({
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               Images
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {/* Upload Image */}
               <label className="block">
                 <input
                   type="file"
@@ -340,38 +362,49 @@ export function ElementToolbar({
                 </Button>
               </label>
 
-              {/* AI Image Generation */}
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Describe your image..."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border rounded-md bg-background"
-                  onKeyDown={(e) => e.key === 'Enter' && onAIImageGenerate && handleAIGenerate()}
-                  disabled={!onAIImageGenerate}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-950"
-                  onClick={handleAIGenerate}
-                  disabled={isGenerating || !aiPrompt.trim() || !onAIImageGenerate}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
+              {/* AI Image Generation - separated visually */}
+              <div className="pt-2 border-t border-dashed">
+                <p className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  AI Image Generator
+                </p>
+                <div className="space-y-2">
+                  <textarea
+                    placeholder="Describe the image you want to generate..."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border rounded-md bg-background resize-none"
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && onAIImageGenerate) {
+                        e.preventDefault();
+                        handleAIGenerate();
+                      }
+                    }}
+                    disabled={!onAIImageGenerate}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-auto py-2.5 flex items-center justify-center gap-2 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-950"
+                    onClick={handleAIGenerate}
+                    disabled={isGenerating || !aiPrompt.trim() || !onAIImageGenerate}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span className="text-xs">
+                      {isGenerating ? 'Generating...' : 'Generate with AI'}
+                    </span>
+                  </Button>
+                  {!onAIImageGenerate && (
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Configure Image AI API key in settings
+                    </p>
                   )}
-                  <span className="text-xs">
-                    {isGenerating ? 'Generating...' : !onAIImageGenerate ? 'Configure Image AI' : 'AI Generate'}
-                  </span>
-                </Button>
-                {!onAIImageGenerate && (
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    Configure Image AI API key in settings
-                  </p>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -385,16 +418,20 @@ export function ElementToolbar({
             </h3>
             <div className="grid grid-cols-3 gap-2">
               {shapeElements.map((item) => (
-                <Button
+                <button
                   key={item.id}
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, item)}
                   onClick={item.action}
+                  className={cn(
+                    "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    "cursor-grab active:cursor-grabbing transition-colors"
+                  )}
                 >
                   {item.icon}
                   <span className="text-xs">{item.label}</span>
-                </Button>
+                </button>
               ))}
             </div>
           </div>

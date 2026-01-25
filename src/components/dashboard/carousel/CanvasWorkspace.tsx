@@ -102,12 +102,13 @@ interface TextOptions {
 interface CanvasWorkspaceProps {
   onSelectionChange?: (element: FabricObject | null) => void;
   onCanvasChange?: () => void;
+  onElementDrop?: (type: string, data: Record<string, unknown>, x: number, y: number) => void;
   zoom?: number;
   className?: string;
 }
 
 export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspaceProps>(
-  ({ onSelectionChange, onCanvasChange, zoom = 0.4, className }, ref) => {
+  ({ onSelectionChange, onCanvasChange, onElementDrop, zoom = 0.4, className }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -429,6 +430,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
         if (!fabricRef.current) return;
 
+        // Remove any existing background rect first
+        const objects = fabricRef.current.getObjects();
+        const existingBgRect = objects.find(obj =>
+          obj instanceof Rect && !obj.selectable && obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT
+        );
+        if (existingBgRect) {
+          fabricRef.current.remove(existingBgRect);
+        }
+
         // Clear any existing background image when setting color/gradient
         if (type !== 'image') {
           fabricRef.current.backgroundImage = undefined;
@@ -440,7 +450,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           // Parse CSS gradient and create a Fabric.js gradient
           const parsed = parseGradientToFabric(value);
           if (parsed) {
-            // Convert angle to coordinates
+            // Convert angle to coordinates for gradient direction
             const angleRad = (parsed.angle - 90) * Math.PI / 180;
             const coords = {
               x1: 0.5 - Math.cos(angleRad) * 0.5,
@@ -449,7 +459,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               y2: 0.5 + Math.sin(angleRad) * 0.5,
             };
 
-            // Create gradient rectangle as background
+            // Create gradient rectangle as background - must cover entire canvas
             const gradientRect = new Rect({
               left: 0,
               top: 0,
@@ -458,8 +468,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               selectable: false,
               evented: false,
               excludeFromExport: false,
+              strokeWidth: 0,
             });
 
+            // Create gradient with coordinates relative to the rect
             const gradient = new Gradient({
               type: 'linear',
               coords: {
@@ -476,18 +488,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
             gradientRect.set('fill', gradient);
 
-            // Remove any existing gradient background (first non-selectable rect)
-            const objects = fabricRef.current.getObjects();
-            const existingBgRect = objects.find(obj =>
-              obj instanceof Rect && !obj.selectable && obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT
-            );
-            if (existingBgRect) {
-              fabricRef.current.remove(existingBgRect);
-            }
-
-            // Add gradient rect at the bottom
+            // Set white background as fallback and add gradient rect at position 0
+            fabricRef.current.backgroundColor = '#ffffff';
             fabricRef.current.insertAt(0, gradientRect);
-            fabricRef.current.backgroundColor = '#ffffff'; // Fallback
+          } else {
+            // If parsing fails, just use first color from gradient string as solid
+            const colorMatch = value.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/);
+            if (colorMatch) {
+              fabricRef.current.backgroundColor = colorMatch[0];
+            }
           }
         } else if (type === 'image') {
           FabricImage.fromURL(value, { crossOrigin: 'anonymous' }).then((img) => {
@@ -676,6 +685,98 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    // Handle drop events
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (!jsonData || !containerRef.current) return;
+
+      try {
+        const { type, data } = JSON.parse(jsonData);
+
+        // Get drop position relative to canvas
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const canvasElement = containerRef.current.querySelector('canvas');
+        if (!canvasElement) return;
+
+        const canvasRect = canvasElement.getBoundingClientRect();
+
+        // Calculate position on canvas accounting for zoom
+        const x = (e.clientX - canvasRect.left) / zoom;
+        const y = (e.clientY - canvasRect.top) / zoom;
+
+        // Call the drop handler or handle internally
+        if (onElementDrop) {
+          onElementDrop(type, data, x, y);
+        } else if (fabricRef.current) {
+          // Handle internally if no external handler
+          if (type === 'text') {
+            const text = new Textbox(data.text || 'Add text here', {
+              left: Math.max(0, Math.min(x - 100, CANVAS_WIDTH - 200)),
+              top: Math.max(0, Math.min(y - 20, CANVAS_HEIGHT - 40)),
+              width: 400,
+              fontSize: data.fontSize ?? 48,
+              fontFamily: data.fontFamily ?? 'Inter',
+              fontWeight: data.fontWeight ?? 'normal',
+              fill: data.fill ?? '#000000',
+              textAlign: data.textAlign ?? 'center',
+              editable: true,
+            });
+            fabricRef.current.add(text);
+            fabricRef.current.setActiveObject(text);
+            fabricRef.current.renderAll();
+          } else if (type === 'shape') {
+            let shape: FabricObject;
+            const dropX = Math.max(0, Math.min(x - 50, CANVAS_WIDTH - 100));
+            const dropY = Math.max(0, Math.min(y - 50, CANVAS_HEIGHT - 100));
+
+            switch (data.shapeType) {
+              case 'rect':
+                shape = new Rect({
+                  left: dropX,
+                  top: dropY,
+                  width: 200,
+                  height: 150,
+                  fill: '#0891b2',
+                  rx: 8,
+                  ry: 8,
+                });
+                break;
+              case 'circle':
+                shape = new Circle({
+                  left: dropX,
+                  top: dropY,
+                  radius: 75,
+                  fill: '#0891b2',
+                });
+                break;
+              case 'line':
+                shape = new Line([0, 0, 300, 0], {
+                  left: dropX,
+                  top: dropY,
+                  stroke: '#0891b2',
+                  strokeWidth: 4,
+                });
+                break;
+              default:
+                return;
+            }
+            fabricRef.current.add(shape);
+            fabricRef.current.setActiveObject(shape);
+            fabricRef.current.renderAll();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to handle drop:', error);
+      }
+    }, [zoom, onElementDrop]);
+
     return (
       <div
         ref={containerRef}
@@ -684,6 +785,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           "flex items-center justify-center",
           className
         )}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         {/* Canvas container with checkerboard pattern for transparency */}
         <div
