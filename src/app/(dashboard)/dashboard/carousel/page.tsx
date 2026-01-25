@@ -43,6 +43,7 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -97,6 +98,12 @@ export default function CarouselPage() {
   const [topic, setTopic] = useState("");
   const [slideCount, setSlideCount] = useState("7");
   const [showAIDialog, setShowAIDialog] = useState(false);
+
+  // Save Template state
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   // API keys state
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
@@ -518,6 +525,58 @@ export default function CarouselPage() {
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.2));
 
+  // Save template handler
+  const handleSaveTemplate = async () => {
+    if (!canvasRef.current || !templateName.trim()) return;
+
+    setIsSavingTemplate(true);
+    try {
+      // Save current slide first
+      saveCurrentSlide();
+
+      // Get canvas JSON and thumbnail
+      const canvasJson = canvasRef.current.exportToJSON();
+      const thumbnail = canvasRef.current.exportToDataURL();
+
+      const response = await fetch('/api/user/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: templateName.trim(),
+          description: templateDescription.trim() || null,
+          thumbnail,
+          canvasJson,
+          category: 'custom',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save template');
+      }
+
+      showToast(`Template "${templateName}" saved!`, "success");
+      setShowSaveTemplateDialog(false);
+      setTemplateName("");
+      setTemplateDescription("");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to save template");
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  // Load user template handler
+  const handleLoadUserTemplate = (canvasJson: string) => {
+    if (!canvasRef.current) return;
+    try {
+      canvasRef.current.loadFromJSON(canvasJson);
+      showToast("Template loaded!", "success");
+    } catch (err) {
+      showToast("Failed to load template");
+    }
+  };
+
   // Loading state
   if (isCheckingApiKey) {
     return (
@@ -705,6 +764,63 @@ export default function CarouselPage() {
               Templates
             </Button>
 
+            {/* Save Template Button */}
+            <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Save className="w-5 h-5 text-cyan-600" />
+                    Save as Template
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label>Template Name</Label>
+                    <Input
+                      placeholder="My Custom Template"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Description (optional)</Label>
+                    <Textarea
+                      placeholder="A brief description of this template..."
+                      value={templateDescription}
+                      onChange={(e) => setTemplateDescription(e.target.value)}
+                      className="mt-1.5"
+                      rows={2}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Save the current slide design as a reusable template. You can access your saved templates from the Templates gallery.
+                  </p>
+                  <Button
+                    onClick={handleSaveTemplate}
+                    disabled={!templateName.trim() || isSavingTemplate}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                  >
+                    {isSavingTemplate ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {isSavingTemplate ? "Saving..." : "Save Template"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <div className="h-6 w-px bg-border" />
 
             {/* Export Buttons */}
@@ -831,6 +947,7 @@ export default function CarouselPage() {
           onOpenChange={setShowTemplateGallery}
           selectedTemplateId=""
           onSelectTemplate={handleTemplateSelect}
+          onLoadUserTemplate={handleLoadUserTemplate}
           userPlan={userPlan}
         />
 

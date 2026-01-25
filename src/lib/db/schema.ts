@@ -445,6 +445,19 @@ export const dataRemovalRequests = sqliteTable("data_removal_requests", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
+// User saved carousel templates
+export const userTemplates = sqliteTable("user_templates", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  thumbnail: text("thumbnail"), // Base64 or URL to thumbnail image
+  canvasJson: text("canvas_json").notNull(), // Fabric.js canvas JSON
+  category: text("category").default("custom"), // custom, or copied from template category
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
 // ============================================
 // TYPE EXPORTS
 // ============================================
@@ -477,6 +490,8 @@ export type PostAnalytics = typeof postAnalytics.$inferSelect;
 export type NewPostAnalytics = typeof postAnalytics.$inferInsert;
 export type EngagementAction = typeof engagementActions.$inferSelect;
 export type NewEngagementAction = typeof engagementActions.$inferInsert;
+export type UserTemplate = typeof userTemplates.$inferSelect;
+export type NewUserTemplate = typeof userTemplates.$inferInsert;
 export type EngagementObjective = typeof engagementObjectives.$inferSelect;
 export type NewEngagementObjective = typeof engagementObjectives.$inferInsert;
 export type CookieConsent = typeof cookieConsents.$inferSelect;
