@@ -266,7 +266,17 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-          {navigation.map((item) => {
+          {navigation
+            .filter((item) => {
+              // Team members shouldn't see Engagement or Analytics (owner's data)
+              if (isTeamMember) {
+                if (item.href === "/dashboard/engagement" || item.href === "/dashboard/analytics") {
+                  return false;
+                }
+              }
+              return true;
+            })
+            .map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link

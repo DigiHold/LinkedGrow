@@ -568,8 +568,64 @@ function SettingsContent() {
         </p>
       </div>
 
-      {/* LinkedIn Connection - Hidden for team members (they use owner's LinkedIn) */}
-      {!isTeamMember && (
+      {/* LinkedIn Connection - Read-only for team members (they use owner's LinkedIn) */}
+      {isTeamMember ? (
+        // Team member view - read-only status of owner's LinkedIn
+        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
+          <div className={cn(
+            "px-5 py-4",
+            linkedInConnected ? "bg-linkedin" : "bg-slate-400"
+          )}>
+            <div className="flex items-center gap-3">
+              <Linkedin className="w-6 h-6 text-white" />
+              <div>
+                <h3 className="text-white font-semibold">
+                  {linkedInConnected ? "LinkedIn Connected" : "LinkedIn Not Connected"}
+                </h3>
+                <p className="text-white/80 text-sm">
+                  {linkedInConnected
+                    ? "Team owner's account is linked for publishing"
+                    : "Ask team owner to connect LinkedIn in Settings"}
+                </p>
+              </div>
+            </div>
+          </div>
+          {linkedInConnected && (
+            <div className="bg-white dark:bg-slate-900 p-5">
+              <div className="flex items-center gap-4">
+                {linkedInSettings?.postingTarget === "organization" ? (
+                  <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                    <Building2 className="w-8 h-8 text-slate-500" />
+                  </div>
+                ) : linkedInSettings?.profileImage ? (
+                  <Image
+                    src={linkedInSettings.profileImage}
+                    alt={linkedInName}
+                    width={64}
+                    height={64}
+                    className="w-16 h-16 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
+                    {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-lg">{linkedInName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span>Ready to publish</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        // Owner view - full controls
         <>
           {linkedInMessage && (
             <div className={cn(
