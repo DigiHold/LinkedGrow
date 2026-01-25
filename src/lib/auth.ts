@@ -50,13 +50,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: eq(users.email, email),
         });
 
+        console.log(`Login attempt for: ${email}, user found: ${!!user}, has password: ${!!user?.password}`);
+
         if (!user || !user.password) {
+          console.log(`Login failed: user not found or no password`);
           throw new InvalidCredentialsError();
         }
 
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password);
+        console.log(`Password validation result: ${isValidPassword}`);
         if (!isValidPassword) {
+          console.log(`Login failed: invalid password for ${email}`);
           throw new InvalidCredentialsError();
         }
 
