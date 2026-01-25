@@ -38,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    console.log(`2FA disable attempt for user ${session.user.id}, password length: ${password.length}`);
     const isValidPassword = await bcrypt.compare(password, user.password);
-    console.log(`2FA disable password validation: ${isValidPassword}`);
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Invalid password" },

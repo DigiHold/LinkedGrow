@@ -59,19 +59,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
         }
 
-        console.log(`Login attempt for: ${emailTrimmed}, user found: ${!!user}, has password: ${!!user?.password}, db email: ${user?.email || 'N/A'}`);
-
         if (!user || !user.password) {
-          console.log(`Login failed: user not found or no password`);
           throw new InvalidCredentialsError();
         }
 
         // Verify password
-        console.log(`Comparing password. Input length: ${password.length}, Hash prefix: ${user.password.substring(0, 7)}`);
         const isValidPassword = await bcrypt.compare(password, user.password);
-        console.log(`Password validation result: ${isValidPassword}`);
         if (!isValidPassword) {
-          console.log(`Login failed: invalid password for ${emailTrimmed}`);
           throw new InvalidCredentialsError();
         }
 
