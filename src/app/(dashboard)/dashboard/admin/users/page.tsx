@@ -18,6 +18,8 @@ import {
   Check,
   Loader2,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +84,9 @@ export default function AdminUsersPage() {
     email: "",
     plan: "free",
     isAdmin: false,
+    password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -172,7 +176,9 @@ export default function AdminUsersPage() {
       email: user.email,
       plan: user.plan,
       isAdmin: user.isAdmin,
+      password: "",
     });
+    setShowPassword(false);
     setEditError("");
     setEditModalOpen(true);
   };
@@ -184,10 +190,19 @@ export default function AdminUsersPage() {
     setEditError("");
 
     try {
+      // Only send password if it's been set
+      const payload = {
+        name: editForm.name,
+        email: editForm.email,
+        plan: editForm.plan,
+        isAdmin: editForm.isAdmin,
+        ...(editForm.password.trim() !== "" ? { password: editForm.password } : {}),
+      };
+
       const response = await fetch(`/api/admin/users/${editingUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -521,6 +536,34 @@ export default function AdminUsersPage() {
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                 placeholder="user@example.com"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  type={showPassword ? "text" : "password"}
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  placeholder="Leave empty to keep current password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Min 8 characters. Leave empty to keep the current password.
+              </p>
             </div>
 
             <div className="space-y-2">

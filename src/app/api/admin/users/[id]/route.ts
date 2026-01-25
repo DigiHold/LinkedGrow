@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, users, teams, apiLogs } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 // GET /api/admin/users/[id] - Get single user details
 export async function GET(
@@ -60,7 +61,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, email, plan, isAdmin } = body;
+    const { name, email, plan, isAdmin, password } = body;
 
     // Verify user exists
     const existingUser = await db.query.users.findFirst({
@@ -101,6 +102,18 @@ export async function PUT(
     if (email !== undefined) updateData.email = email;
     if (plan !== undefined) updateData.plan = plan;
     if (isAdmin !== undefined) updateData.isAdmin = isAdmin;
+
+    // Handle password change
+    if (password !== undefined && password.trim() !== "") {
+      if (password.length < 8) {
+        return NextResponse.json(
+          { error: "Password must be at least 8 characters" },
+          { status: 400 }
+        );
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
 
     // Update user
     await db.update(users).set(updateData).where(eq(users.id, id));
