@@ -113,10 +113,22 @@ export async function PUT(
       }
       const hashedPassword = await bcrypt.hash(password, 10);
       updateData.password = hashedPassword;
+      console.log(`Admin updating password for user ${id}`);
     }
 
     // Update user
     await db.update(users).set(updateData).where(eq(users.id, id));
+
+    // Verify password was saved correctly (for debugging)
+    if (updateData.password) {
+      const verifyUser = await db.query.users.findFirst({
+        where: eq(users.id, id),
+      });
+      if (verifyUser?.password) {
+        const testMatch = await bcrypt.compare(password, verifyUser.password);
+        console.log(`Password verification after save: ${testMatch ? 'SUCCESS' : 'FAILED'}`);
+      }
+    }
 
     // Fetch updated user
     const updatedUser = await db.query.users.findFirst({
