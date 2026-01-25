@@ -7,6 +7,7 @@ import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { nanoid } from "nanoid";
 import crypto from "crypto";
+import { sendTeamInviteEmail } from "@/lib/email";
 
 // POST /api/team/invite - Send team invite
 export async function POST(request: NextRequest) {
@@ -125,6 +126,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get team details for the email
+    const teamDetails = await db.query.teams.findFirst({
+      where: eq(teams.id, teamId),
+    });
+
+    if (!teamDetails) {
+      return NextResponse.json(
+        { error: "Team not found" },
+        { status: 404 }
+      );
+    }
+
     // Generate invite token
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date();
@@ -142,6 +155,20 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     });
 
+    // Send invite email
+    try {
+      await sendTeamInviteEmail({
+        to: normalizedEmail,
+        inviterName: user.name || user.email,
+        teamName: teamDetails.name,
+        role: role || "member",
+        inviteToken: token,
+      });
+    } catch (emailError) {
+      console.error("Failed to send invite email:", emailError);
+      // Don't fail the request if email fails - invite is still created
+    }
+
     return NextResponse.json({
       invite: {
         id: inviteId,
@@ -150,7 +177,7 @@ export async function POST(request: NextRequest) {
         createdAt: new Date().toISOString(),
         expiresAt: expiresAt.toISOString(),
       },
-      message: "Invite created successfully",
+      message: "Invite sent successfully",
       inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/team/invite?token=${token}`,
     });
   } catch (error) {

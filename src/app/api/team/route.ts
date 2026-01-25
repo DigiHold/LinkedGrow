@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { teams, teamMembers, teamInvites, users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { nanoid } from "nanoid";
@@ -286,6 +286,142 @@ export async function POST(request: NextRequest) {
     console.error("Failed to create team:", error);
     return NextResponse.json(
       { error: "Failed to create team" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/team - Update team (name)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, session.user.email))
+      .limit(1);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if user has access to team collaboration
+    const userPlan = (user.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "teamCollaboration")) {
+      return NextResponse.json(
+        { error: "Team Collaboration requires Business plan" },
+        { status: 403 }
+      );
+    }
+
+    // Find user's team (must be owner)
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.ownerId, user.id),
+    });
+
+    if (!team) {
+      return NextResponse.json(
+        { error: "You must be the team owner to update the team" },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { name } = body;
+
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Team name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (name.length > 50) {
+      return NextResponse.json(
+        { error: "Team name must be 50 characters or less" },
+        { status: 400 }
+      );
+    }
+
+    // Update team
+    await db.update(teams).set({ name: name.trim() }).where(eq(teams.id, team.id));
+
+    return NextResponse.json({
+      team: {
+        id: team.id,
+        name: name.trim(),
+        ownerId: team.ownerId,
+        createdAt: team.createdAt?.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update team:", error);
+    return NextResponse.json(
+      { error: "Failed to update team" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/team - Delete team
+export async function DELETE() {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, session.user.email))
+      .limit(1);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if user has access to team collaboration
+    const userPlan = (user.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "teamCollaboration")) {
+      return NextResponse.json(
+        { error: "Team Collaboration requires Business plan" },
+        { status: 403 }
+      );
+    }
+
+    // Find user's team (must be owner)
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.ownerId, user.id),
+    });
+
+    if (!team) {
+      return NextResponse.json(
+        { error: "You must be the team owner to delete the team" },
+        { status: 403 }
+      );
+    }
+
+    // Delete all team invites
+    await db.delete(teamInvites).where(eq(teamInvites.teamId, team.id));
+
+    // Delete all team members
+    await db.delete(teamMembers).where(eq(teamMembers.teamId, team.id));
+
+    // Delete team
+    await db.delete(teams).where(eq(teams.id, team.id));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete team:", error);
+    return NextResponse.json(
+      { error: "Failed to delete team" },
       { status: 500 }
     );
   }

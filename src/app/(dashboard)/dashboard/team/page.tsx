@@ -72,6 +72,13 @@ export default function TeamPage() {
   const [removeMember, setRemoveMember] = useState<TeamMember | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
+  // Settings modal
+  const [showSettings, setShowSettings] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
+  const [isDeletingTeam, setIsDeletingTeam] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   useEffect(() => {
     fetchTeamData();
   }, []);
@@ -206,6 +213,62 @@ export default function TeamPage() {
   };
 
   const isOwner = team && session?.user?.id === team.ownerId;
+  const currentUserRole = members.find((m) => m.userId === session?.user?.id)?.role;
+  const isAdmin = currentUserRole === "admin";
+  const canInvite = isOwner || isAdmin;
+
+  const handleOpenSettings = () => {
+    if (team) {
+      setNewTeamName(team.name);
+      setShowSettings(true);
+    }
+  };
+
+  const handleUpdateTeamName = async () => {
+    if (!newTeamName.trim() || !team) return;
+
+    setIsUpdatingTeam(true);
+    try {
+      const response = await fetch("/api/team", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTeamName.trim() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTeam(data.team);
+        setShowSettings(false);
+      }
+    } catch (error) {
+      console.error("Failed to update team:", error);
+    } finally {
+      setIsUpdatingTeam(false);
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!team) return;
+
+    setIsDeletingTeam(true);
+    try {
+      const response = await fetch("/api/team", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setTeam(null);
+        setMembers([]);
+        setPendingInvites([]);
+        setShowSettings(false);
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Failed to delete team:", error);
+    } finally {
+      setIsDeletingTeam(false);
+    }
+  };
 
   return (
     <FeatureGate feature="teamCollaboration">
@@ -273,7 +336,7 @@ export default function TeamPage() {
                     </CardDescription>
                   </div>
                   {isOwner && (
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={handleOpenSettings}>
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </Button>
@@ -283,7 +346,7 @@ export default function TeamPage() {
             </Card>
 
             {/* Invite Member */}
-            {isOwner && (
+            {canInvite && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -309,7 +372,7 @@ export default function TeamPage() {
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>
                       </select>
-                      <Button type="submit" disabled={isInviting}>
+                      <Button type="submit" disabled={isInviting} className="px-[1.8rem]">
                         {isInviting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
@@ -361,7 +424,7 @@ export default function TeamPage() {
                             </p>
                           </div>
                         </div>
-                        {isOwner && (
+                        {canInvite && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -546,6 +609,114 @@ export default function TeamPage() {
                         )}
                       </Button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Settings Modal */}
+            {showSettings && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => !isUpdatingTeam && !isDeletingTeam && setShowSettings(false)}
+                />
+                <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-lg font-semibold">Team Settings</h2>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowSettings(false)}
+                        disabled={isUpdatingTeam || isDeletingTeam}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {!showDeleteConfirm ? (
+                      <>
+                        {/* Team Name */}
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Team Name</label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={newTeamName}
+                                onChange={(e) => setNewTeamName(e.target.value)}
+                                maxLength={50}
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={handleUpdateTeamName}
+                                disabled={isUpdatingTeam || newTeamName.trim() === team?.name}
+                              >
+                                {isUpdatingTeam ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Danger Zone */}
+                          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h3>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Deleting your team will remove all members and pending invites. This action cannot be undone.
+                            </p>
+                            <Button
+                              variant="destructive"
+                              onClick={() => setShowDeleteConfirm(true)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Team
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Delete Confirmation */
+                      <div className="text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                          <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <h3 className="font-semibold mb-2">Delete Team?</h3>
+                        <p className="text-sm text-muted-foreground mb-6">
+                          This will permanently delete <strong>{team?.name}</strong> and remove all team members. This cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeletingTeam}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={handleDeleteTeam}
+                            disabled={isDeletingTeam}
+                          >
+                            {isDeletingTeam ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Team
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
