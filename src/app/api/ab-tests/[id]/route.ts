@@ -47,6 +47,23 @@ export async function GET(
       return NextResponse.json({ error: "Test not found" }, { status: 404 });
     }
 
+    // Calculate engagement rates
+    const variantAImpressions = test.variantAImpressions || 0;
+    const variantAReactions = test.variantAReactions || 0;
+    const variantAComments = test.variantAComments || 0;
+    const variantAShares = test.variantAShares || 0;
+    const variantAEngagementRate = variantAImpressions > 0
+      ? ((variantAReactions + variantAComments + variantAShares) / variantAImpressions * 100)
+      : 0;
+
+    const variantBImpressions = test.variantBImpressions || 0;
+    const variantBReactions = test.variantBReactions || 0;
+    const variantBComments = test.variantBComments || 0;
+    const variantBShares = test.variantBShares || 0;
+    const variantBEngagementRate = variantBImpressions > 0
+      ? ((variantBReactions + variantBComments + variantBShares) / variantBImpressions * 100)
+      : 0;
+
     return NextResponse.json({
       id: test.id,
       name: test.name,
@@ -55,6 +72,20 @@ export async function GET(
       variantBContent: test.variantBContent,
       variantAPostId: test.variantAPostId,
       variantBPostId: test.variantBPostId,
+      variantAStats: {
+        impressions: variantAImpressions,
+        reactions: variantAReactions,
+        comments: variantAComments,
+        shares: variantAShares,
+        engagementRate: variantAEngagementRate,
+      },
+      variantBStats: {
+        impressions: variantBImpressions,
+        reactions: variantBReactions,
+        comments: variantBComments,
+        shares: variantBShares,
+        engagementRate: variantBEngagementRate,
+      },
       winningVariant: test.winningVariant,
       startedAt: test.startedAt?.toISOString(),
       endedAt: test.endedAt?.toISOString(),
@@ -112,7 +143,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, winningVariant, variantAPostId, variantBPostId } = body;
+    const { status, winningVariant, variantAPostId, variantBPostId, variantAStats, variantBStats } = body;
 
     // Build update object
     const updates: Partial<typeof abTests.$inferInsert> = {};
@@ -153,6 +184,38 @@ export async function PATCH(
 
     if (variantBPostId !== undefined) {
       updates.variantBPostId = variantBPostId;
+    }
+
+    // Handle variant A stats
+    if (variantAStats !== undefined) {
+      if (typeof variantAStats.impressions === "number") {
+        updates.variantAImpressions = variantAStats.impressions;
+      }
+      if (typeof variantAStats.reactions === "number") {
+        updates.variantAReactions = variantAStats.reactions;
+      }
+      if (typeof variantAStats.comments === "number") {
+        updates.variantAComments = variantAStats.comments;
+      }
+      if (typeof variantAStats.shares === "number") {
+        updates.variantAShares = variantAStats.shares;
+      }
+    }
+
+    // Handle variant B stats
+    if (variantBStats !== undefined) {
+      if (typeof variantBStats.impressions === "number") {
+        updates.variantBImpressions = variantBStats.impressions;
+      }
+      if (typeof variantBStats.reactions === "number") {
+        updates.variantBReactions = variantBStats.reactions;
+      }
+      if (typeof variantBStats.comments === "number") {
+        updates.variantBComments = variantBStats.comments;
+      }
+      if (typeof variantBStats.shares === "number") {
+        updates.variantBShares = variantBStats.shares;
+      }
     }
 
     // Update test

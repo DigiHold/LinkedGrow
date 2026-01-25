@@ -17,7 +17,7 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 -   **Language:** TypeScript 5.9.3
 -   **Styling:** Tailwind CSS 4.1.8 + shadcn/ui components
 -   **Authentication:** NextAuth.js v5 (beta) with Credentials Provider + 2FA/TOTP
--   **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM
+-   **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM (schema only, no migrations)
 -   **Payments:** Stripe (subscriptions)
 -   **File Storage:** Cloudflare R2 (S3-compatible)
 -   **Email:** Brevo (marketing + transactional)
@@ -86,7 +86,34 @@ Always use `git push origin main` - SSH authentication is automatic.
 | API Access          | -    | -       | -   | ✓        |
 | Priority Support    | -    | -       | -   | ✓        |
 
-## Database Schema (Turso/Drizzle)
+## Database (Turso)
+
+### How to Modify the Database
+
+**IMPORTANT: Never use drizzle-kit for migrations. Always use Turso CLI directly.**
+
+When you need to add/modify columns or tables:
+
+1. **Update the schema file** (`src/lib/db/schema.ts`) - this is for TypeScript types only
+2. **Run SQL directly on Turso** using the CLI:
+
+```bash
+# Add a column
+turso db shell linkedgrow "ALTER TABLE table_name ADD COLUMN column_name TYPE DEFAULT value"
+
+# Create a table
+turso db shell linkedgrow "CREATE TABLE table_name (id TEXT PRIMARY KEY, ...)"
+
+# View table structure
+turso db shell linkedgrow "PRAGMA table_info(table_name)"
+
+# Run a query
+turso db shell linkedgrow "SELECT * FROM table_name LIMIT 10"
+```
+
+**Database name:** `linkedgrow` (not `linkedgrow-database`)
+
+### Schema Location
 
 Main tables in `src/lib/db/schema.ts`:
 
@@ -264,8 +291,8 @@ src/
 │   └── cookie-consent/     # GDPR cookie banner
 └── lib/
     ├── db/
-    │   ├── index.ts        # Drizzle client
-    │   └── schema.ts       # Database schema
+    │   ├── index.ts        # Drizzle client (runtime queries)
+    │   └── schema.ts       # Database schema (TypeScript types only)
     ├── auth.ts             # NextAuth configuration
     ├── plans.ts            # Pricing plans & features
     ├── stripe.ts           # Stripe client

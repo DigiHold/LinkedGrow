@@ -252,6 +252,16 @@ export const abTests = sqliteTable("ab_tests", {
   variantBContent: text("variant_b_content").notNull(),
   variantAPostId: text("variant_a_post_id").references(() => posts.id),
   variantBPostId: text("variant_b_post_id").references(() => posts.id),
+  // Variant A stats
+  variantAImpressions: integer("variant_a_impressions").default(0),
+  variantAReactions: integer("variant_a_reactions").default(0),
+  variantAComments: integer("variant_a_comments").default(0),
+  variantAShares: integer("variant_a_shares").default(0),
+  // Variant B stats
+  variantBImpressions: integer("variant_b_impressions").default(0),
+  variantBReactions: integer("variant_b_reactions").default(0),
+  variantBComments: integer("variant_b_comments").default(0),
+  variantBShares: integer("variant_b_shares").default(0),
   winningVariant: text("winning_variant", { enum: ["a", "b"] }),
   startedAt: integer("started_at", { mode: "timestamp" }),
   endedAt: integer("ended_at", { mode: "timestamp" }),
