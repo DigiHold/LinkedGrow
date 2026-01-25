@@ -61,6 +61,10 @@ function SignUpContent() {
     const params = new URLSearchParams({ mode: "register", popup: "true" });
     if (subscribeNewsletter) params.set("newsletter", "true");
 
+    // Pass through callbackUrl if present (e.g., for team invite flow)
+    const callbackUrl = searchParams.get("callbackUrl");
+    if (callbackUrl) params.set("callbackUrl", callbackUrl);
+
     // Open OAuth in a popup window
     const width = 500;
     const height = 600;
@@ -79,7 +83,9 @@ function SignUpContent() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         await updateSession();
-        router.push('/dashboard');
+        // Use callbackUrl from the OAuth response if provided, otherwise dashboard
+        const redirectTo = event.data.callbackUrl || callbackUrl || '/dashboard';
+        router.push(redirectTo);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
         setErrorMessage(event.data.error || `Failed to sign up with ${provider}`);

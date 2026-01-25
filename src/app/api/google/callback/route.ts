@@ -7,9 +7,10 @@ import { encode } from 'next-auth/jwt';
 import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
 
-function createPopupResponse(success: boolean, data: { error?: string }) {
+function createPopupResponse(success: boolean, data: { error?: string; callbackUrl?: string }) {
+  const redirectUrl = data.callbackUrl || '/dashboard';
   const message = success
-    ? { type: 'google-success' }
+    ? { type: 'google-success', callbackUrl: redirectUrl }
     : { type: 'google-error', error: data.error };
 
   return new NextResponse(
@@ -22,7 +23,7 @@ function createPopupResponse(success: boolean, data: { error?: string }) {
             window.opener.postMessage(${JSON.stringify(message)}, '*');
             window.close();
           } else {
-            window.location.href = '${success ? '/dashboard' : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+            window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
           }
         </script>
       </body>
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const subscribeNewsletterCookie = request.cookies.get('google_newsletter')?.value === 'true';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
+  const callbackUrl = request.cookies.get('google_callback_url')?.value;
 
   // Handle OAuth errors
   if (error) {
@@ -260,6 +262,7 @@ export async function GET(request: NextRequest) {
 
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
+      const redirectUrl = callbackUrl || '/dashboard';
       const response = new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -267,10 +270,10 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-success' }, '*');
+                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}' }, '*');
                 window.close();
               } else {
-                window.location.href = '/dashboard';
+                window.location.href = '${redirectUrl}';
               }
             </script>
           </body>
@@ -292,12 +295,14 @@ export async function GET(request: NextRequest) {
       response.cookies.delete('google_oauth_mode');
       response.cookies.delete('google_newsletter');
       response.cookies.delete('google_popup');
+      response.cookies.delete('google_callback_url');
 
       return response;
     }
 
-    // Redirect to dashboard with session cookie
-    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+    // Redirect to callbackUrl or dashboard with session cookie
+    const redirectUrl = callbackUrl || '/dashboard';
+    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`);
 
     // Set the session cookie (NextAuth v5 uses authjs.session-token)
     response.cookies.set(cookieName, token, {
@@ -312,6 +317,7 @@ export async function GET(request: NextRequest) {
     response.cookies.delete('google_oauth_state');
     response.cookies.delete('google_oauth_mode');
     response.cookies.delete('google_newsletter');
+    response.cookies.delete('google_callback_url');
 
     return response;
 

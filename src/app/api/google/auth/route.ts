@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
   const popup = searchParams.get('popup') === 'true';
+  const callbackUrl = searchParams.get('callbackUrl');
 
   // Check if Google credentials are configured
   if (!isGoogleConfigured()) {
@@ -75,6 +76,17 @@ export async function GET(request: NextRequest) {
   // Store popup flag for callback
   if (popup) {
     response.cookies.set('google_popup', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+      path: '/',
+    });
+  }
+
+  // Store callbackUrl for redirect after auth
+  if (callbackUrl) {
+    response.cookies.set('google_callback_url', callbackUrl, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

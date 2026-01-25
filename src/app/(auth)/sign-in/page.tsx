@@ -85,6 +85,12 @@ function SignInForm() {
   const handleSocialLogin = (provider: "linkedin" | "google") => {
     setSocialLoading(provider);
 
+    // Build OAuth URL with params including callbackUrl
+    const params = new URLSearchParams({ mode: "login", popup: "true" });
+    if (callbackUrl && callbackUrl !== "/dashboard") {
+      params.set("callbackUrl", callbackUrl);
+    }
+
     // Open OAuth in a popup window
     const width = 500;
     const height = 600;
@@ -92,7 +98,7 @@ function SignInForm() {
     const top = window.screenY + (window.outerHeight - height) / 2;
 
     const popup = window.open(
-      `/api/${provider}/auth?mode=login&popup=true`,
+      `/api/${provider}/auth?${params.toString()}`,
       `${provider}-login`,
       `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
     );
@@ -103,7 +109,9 @@ function SignInForm() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         await updateSession();
-        router.push(callbackUrl);
+        // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
+        const redirectTo = event.data.callbackUrl || callbackUrl;
+        router.push(redirectTo);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
         setErrorMessage(event.data.error || `Failed to sign in with ${provider}`);

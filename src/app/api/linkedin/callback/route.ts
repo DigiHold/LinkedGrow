@@ -47,9 +47,10 @@ async function downloadAndStoreProfilePicture(
   }
 }
 
-function createPopupResponse(success: boolean, data: { name?: string; error?: string; showSelection?: boolean }) {
+function createPopupResponse(success: boolean, data: { name?: string; error?: string; showSelection?: boolean; callbackUrl?: string }) {
+  const redirectUrl = data.callbackUrl || '/dashboard';
   const message = success
-    ? { type: 'linkedin-success', name: data.name, showSelection: data.showSelection || false }
+    ? { type: 'linkedin-success', name: data.name, showSelection: data.showSelection || false, callbackUrl: redirectUrl }
     : { type: 'linkedin-error', error: data.error };
 
   return new NextResponse(
@@ -62,7 +63,7 @@ function createPopupResponse(success: boolean, data: { name?: string; error?: st
             window.opener.postMessage(${JSON.stringify(message)}, '*');
             window.close();
           } else {
-            window.location.href = '/dashboard/settings${success ? `?linkedin=connected&name=${encodeURIComponent(data.name || '')}${data.showSelection ? '&showSelection=true' : ''}` : `?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
+            window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
           }
         </script>
       </body>
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
   const isPopup = request.cookies.get('linkedin_popup')?.value === 'true';
   const mode = request.cookies.get('linkedin_oauth_mode')?.value || 'connect';
   const subscribeNewsletterCookie = request.cookies.get('linkedin_newsletter')?.value === 'true';
+  const callbackUrl = request.cookies.get('linkedin_callback_url')?.value;
 
   // Check for OAuth errors
   if (error) {
@@ -344,6 +346,7 @@ export async function GET(request: NextRequest) {
 
       // Handle popup mode for login/register
       if (isPopup) {
+        const redirectUrl = callbackUrl || '/dashboard';
         const response = new NextResponse(
           `<!DOCTYPE html>
           <html>
@@ -351,10 +354,10 @@ export async function GET(request: NextRequest) {
             <body>
               <script>
                 if (window.opener) {
-                  window.opener.postMessage({ type: 'linkedin-success' }, '*');
+                  window.opener.postMessage({ type: 'linkedin-success', callbackUrl: '${redirectUrl}' }, '*');
                   window.close();
                 } else {
-                  window.location.href = '/dashboard';
+                  window.location.href = '${redirectUrl}';
                 }
               </script>
             </body>
@@ -377,12 +380,14 @@ export async function GET(request: NextRequest) {
         response.cookies.delete('linkedin_oauth_mode');
         response.cookies.delete('linkedin_popup');
         response.cookies.delete('linkedin_newsletter');
+        response.cookies.delete('linkedin_callback_url');
 
         return response;
       }
 
-      // Redirect to dashboard with session cookie
-      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+      // Redirect to callbackUrl or dashboard with session cookie
+      const redirectUrl = callbackUrl || '/dashboard';
+      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`);
 
       // Set the session cookie (NextAuth v5 uses authjs.session-token)
       response.cookies.set(cookieName, token, {
@@ -399,6 +404,7 @@ export async function GET(request: NextRequest) {
       response.cookies.delete('linkedin_oauth_mode');
       response.cookies.delete('linkedin_popup');
       response.cookies.delete('linkedin_newsletter');
+      response.cookies.delete('linkedin_callback_url');
 
       return response;
     }

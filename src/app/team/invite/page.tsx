@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Users, Loader2, CheckCircle, XCircle, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -153,13 +153,12 @@ function InviteContent() {
           </p>
 
           <div className="space-y-3">
-            <Button
-              className="w-full"
-              onClick={() => signIn(undefined, { callbackUrl: `/team/invite?token=${token}` })}
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </Button>
+            <Link href={`/sign-in?callbackUrl=${encodeURIComponent(`/team/invite?token=${token}`)}`} className="block">
+              <Button className="w-full">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+            </Link>
             <Link href={`/sign-up?callbackUrl=${encodeURIComponent(`/team/invite?token=${token}`)}`} className="block">
               <Button variant="outline" className="w-full">
                 <UserPlus className="w-4 h-4 mr-2" />

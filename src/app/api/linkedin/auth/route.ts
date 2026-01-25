@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const popup = searchParams.get('popup') === 'true';
   const mode = searchParams.get('mode') || 'connect'; // 'connect', 'login', or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
+  const callbackUrl = searchParams.get('callbackUrl');
 
   // Check if LinkedIn credentials are configured
   const clientId = appType === 'poster'
@@ -97,6 +98,17 @@ export async function GET(request: NextRequest) {
   // Store newsletter preference for callback
   if (newsletter) {
     response.cookies.set('linkedin_newsletter', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+      path: '/',
+    });
+  }
+
+  // Store callbackUrl for redirect after auth
+  if (callbackUrl) {
+    response.cookies.set('linkedin_callback_url', callbackUrl, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
