@@ -66,6 +66,8 @@ function SettingsContent() {
   const [verificationCode, setVerificationCode] = useState("");
   const [isSettingUp2FA, setIsSettingUp2FA] = useState(false);
   const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+  const [show2FADisable, setShow2FADisable] = useState(false);
+  const [disable2FAPassword, setDisable2FAPassword] = useState("");
   const [twoFAMessage, setTwoFAMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Business profile
@@ -342,17 +344,26 @@ function SettingsContent() {
   };
 
   const handleDisable2FA = async () => {
+    if (!disable2FAPassword) {
+      setTwoFAMessage({ type: "error", text: "Password is required" });
+      return;
+    }
+
     setIsDisabling2FA(true);
     setTwoFAMessage(null);
 
     try {
       const response = await fetch("/api/auth/2fa/disable", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: disable2FAPassword }),
       });
 
       if (response.ok) {
         setTwoFactorEnabled(false);
         await updateSession();
+        setShow2FADisable(false);
+        setDisable2FAPassword("");
         setTwoFAMessage({ type: "success", text: "Two-factor authentication disabled" });
       } else {
         const data = await response.json();
@@ -886,11 +897,13 @@ function SettingsContent() {
             {twoFactorEnabled ? (
               <Button
                 variant="outline"
-                onClick={handleDisable2FA}
-                disabled={isDisabling2FA}
+                onClick={() => {
+                  setDisable2FAPassword("");
+                  setTwoFAMessage(null);
+                  setShow2FADisable(true);
+                }}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                {isDisabling2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Disable
               </Button>
             ) : (
@@ -967,6 +980,55 @@ function SettingsContent() {
               >
                 {isSettingUp2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
                 Verify & Enable
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2FA Disable Confirmation Dialog */}
+      <Dialog open={show2FADisable} onOpenChange={setShow2FADisable}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Shield className="w-5 h-5" />
+              Disable Two-Factor Authentication
+            </DialogTitle>
+            <DialogDescription>
+              Enter your password to confirm disabling 2FA. This will make your account less secure.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {twoFAMessage && (
+              <div className={`p-3 rounded-lg text-sm ${twoFAMessage.type === "error" ? "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400" : "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400"}`}>
+                {twoFAMessage.text}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="disable-2fa-password">Password</Label>
+              <Input
+                id="disable-2fa-password"
+                type="password"
+                placeholder="Enter your password"
+                value={disable2FAPassword}
+                onChange={(e) => setDisable2FAPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShow2FADisable(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDisable2FA}
+                disabled={!disable2FAPassword || isDisabling2FA}
+                className="flex-1"
+              >
+                {isDisabling2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Disable 2FA
               </Button>
             </div>
           </div>
