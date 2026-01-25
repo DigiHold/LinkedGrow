@@ -89,12 +89,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Allow sign in if user exists
       return !!user;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
       }
 
-      // Fetch latest user data from database
+      // Fetch latest user data from database on sign in or update
       if (token.id) {
         const dbUser = await db.query.users.findFirst({
           where: eq(users.id, token.id as string),

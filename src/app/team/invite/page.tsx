@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Users, Loader2, CheckCircle, XCircle, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import Link from "next/link";
 function InviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const token = searchParams.get("token");
 
   const [isLoading, setIsLoading] = useState(true);
@@ -68,11 +68,12 @@ function InviteContent() {
         setError(data.error || "Failed to accept invite");
       } else {
         setSuccess(true);
-        // Sign out and redirect to sign-in to force session refresh with new team membership
-        // This ensures isTeamMember flag is properly set in the session
-        setTimeout(async () => {
-          await signOut({ redirect: false });
-          router.push("/sign-in?message=Team joined successfully! Please sign in again.");
+        // Force session refresh to pick up new team membership
+        // Pass a trigger object to force JWT callback to run
+        await updateSession({ trigger: "update" });
+        // Redirect to dashboard after short delay
+        setTimeout(() => {
+          router.push("/dashboard");
         }, 2000);
       }
     } catch (err) {
@@ -121,7 +122,7 @@ function InviteContent() {
           <p className="text-muted-foreground mb-4">
             You've joined <strong>{invite?.teamName}</strong> as {invite?.role === "admin" ? "an Admin" : "a Member"}.
           </p>
-          <p className="text-sm text-muted-foreground">Please sign in again to continue...</p>
+          <p className="text-sm text-muted-foreground">Redirecting to dashboard...</p>
         </div>
       </div>
     );
