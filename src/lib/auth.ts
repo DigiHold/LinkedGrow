@@ -45,12 +45,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials.password as string;
         const totpCode = credentials.totpCode as string | undefined;
 
-        // Find user by email
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, email),
+        // Find user by email - try exact match first, then case-insensitive
+        const emailTrimmed = email.trim();
+        let user = await db.query.users.findFirst({
+          where: eq(users.email, emailTrimmed),
         });
 
-        console.log(`Login attempt for: ${email}, user found: ${!!user}, has password: ${!!user?.password}`);
+        // If not found, try lowercase
+        if (!user) {
+          const emailLower = emailTrimmed.toLowerCase();
+          user = await db.query.users.findFirst({
+            where: eq(users.email, emailLower),
+          });
+        }
+
+        console.log(`Login attempt for: ${emailTrimmed}, user found: ${!!user}, has password: ${!!user?.password}, db email: ${user?.email || 'N/A'}`);
 
         if (!user || !user.password) {
           console.log(`Login failed: user not found or no password`);
@@ -58,10 +67,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         // Verify password
+        console.log(`Comparing password. Input length: ${password.length}, Hash prefix: ${user.password.substring(0, 7)}`);
         const isValidPassword = await bcrypt.compare(password, user.password);
         console.log(`Password validation result: ${isValidPassword}`);
         if (!isValidPassword) {
-          console.log(`Login failed: invalid password for ${email}`);
+          console.log(`Login failed: invalid password for ${emailTrimmed}`);
           throw new InvalidCredentialsError();
         }
 
