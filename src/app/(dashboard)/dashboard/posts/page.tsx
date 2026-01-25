@@ -41,6 +41,12 @@ interface Post {
     storageUrl: string;
     mimeType: string;
   }>;
+  author?: {
+    name: string;
+    email: string;
+    image: string | null;
+    isOwner: boolean;
+  } | null;
 }
 
 interface PostsResponse {
@@ -50,6 +56,7 @@ interface PostsResponse {
     offset: number;
     total: number;
   };
+  isTeamView?: boolean;
 }
 
 export default function PostsPage() {
@@ -60,6 +67,7 @@ export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTeamView, setIsTeamView] = useState(false);
   const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [deletePost, setDeletePost] = useState<Post | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -107,6 +115,7 @@ export default function PostsPage() {
         }
         const data: PostsResponse = await response.json();
         setPosts(data.posts || []);
+        setIsTeamView(data.isTeamView || false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load posts");
         setPosts([]);
@@ -315,9 +324,13 @@ export default function PostsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">My Posts</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {isTeamView ? "Team Posts" : "My Posts"}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Manage all your LinkedIn content in one place
+            {isTeamView
+              ? "View and manage posts from all team members"
+              : "Manage all your LinkedIn content in one place"}
           </p>
         </div>
         <Link href="/dashboard/editor">
@@ -414,6 +427,29 @@ export default function PostsPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
+                    {/* Author badge (team view only) */}
+                    {isTeamView && post.author && (
+                      <span className={cn(
+                        "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
+                        post.author.isOwner
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                      )}>
+                        {post.author.image ? (
+                          <img
+                            src={post.author.image}
+                            alt={post.author.name}
+                            className="w-4 h-4 rounded-full"
+                          />
+                        ) : (
+                          <span className="w-4 h-4 rounded-full bg-current/20 flex items-center justify-center text-[10px]">
+                            {post.author.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        {post.author.name}
+                        {post.author.isOwner && " (You)"}
+                      </span>
+                    )}
                     {/* Status Badge */}
                     <span
                       className={cn(
@@ -746,22 +782,31 @@ export default function PostsPage() {
               {/* LinkedIn-style preview card */}
               <div className="bg-white dark:bg-gray-800 border rounded-xl p-4">
                 <div className="flex items-start gap-3 mb-4">
-                  {linkedInProfile?.image ? (
+                  {(isTeamView && previewPost.author?.image) || linkedInProfile?.image ? (
                     <img
-                      src={linkedInProfile.image}
-                      alt={linkedInProfile.name}
+                      src={(isTeamView && previewPost.author?.image) || linkedInProfile?.image || ""}
+                      alt={(isTeamView && previewPost.author?.name) || linkedInProfile?.name || ""}
                       className="w-12 h-12 rounded-full object-cover shrink-0"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
                       <span className="text-white font-semibold">
-                        {(linkedInProfile?.name || "U").charAt(0).toUpperCase()}
+                        {((isTeamView && previewPost.author?.name) || linkedInProfile?.name || "U").charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold">{linkedInProfile?.name || "Your Name"}</p>
-                    <p className="text-sm text-muted-foreground">Your headline here</p>
+                    <p className="font-semibold">
+                      {(isTeamView && previewPost.author?.name) || linkedInProfile?.name || "Your Name"}
+                      {isTeamView && previewPost.author?.isOwner && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">(You)</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isTeamView && previewPost.author && !previewPost.author.isOwner
+                        ? "Team Member"
+                        : "Your headline here"}
+                    </p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />
                       {previewPost.status === "scheduled" && previewPost.scheduledAt

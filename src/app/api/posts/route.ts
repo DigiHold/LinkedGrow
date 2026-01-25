@@ -2,8 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users } from "@/lib/db/schema";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
+import { eq, desc, and, inArray, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { schedulePost } from "@/lib/qstash";
 import { uploadBase64ToR2, isR2Configured } from "@/lib/storage/r2";
@@ -33,8 +33,33 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Build query conditions
-    const conditions = [eq(posts.userId, user.id)];
+    // Check if user is a team owner - if so, fetch posts from all team members
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.ownerId, user.id),
+    });
+
+    let userIdsToFetch = [user.id];
+
+    if (team) {
+      // User is a team owner - get all team members' user IDs
+      const members = await db
+        .select({ userId: teamMembers.userId })
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, team.id));
+
+      userIdsToFetch = members.map((m) => m.userId);
+      // Make sure owner is included (they might not be in teamMembers if they never added themselves)
+      if (!userIdsToFetch.includes(user.id)) {
+        userIdsToFetch.push(user.id);
+      }
+    }
+
+    // Build query conditions - fetch posts from all relevant users
+    const userCondition = userIdsToFetch.length === 1
+      ? eq(posts.userId, userIdsToFetch[0])
+      : inArray(posts.userId, userIdsToFetch);
+
+    const conditions = [userCondition];
 
     if (status) {
       const statuses = status.split(",") as ("draft" | "scheduled" | "published" | "failed")[];
@@ -70,12 +95,44 @@ export async function GET(request: NextRequest) {
             .orderBy(media.sortOrder)
         : [];
 
-    // Combine posts with their media
-    const postsWithMedia = userPosts.map((post) => ({
-      ...post,
-      metadata: post.metadata ? JSON.parse(post.metadata) : null,
-      media: postMedia.filter((m) => m.postId === post.id),
-    }));
+    // If owner, get author info for all posts
+    let authorMap: Map<string, { name: string | null; email: string; image: string | null }> = new Map();
+    if (team && userIdsToFetch.length > 1) {
+      const authors = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+        })
+        .from(users)
+        .where(inArray(users.id, userIdsToFetch));
+
+      authors.forEach((author) => {
+        authorMap.set(author.id, {
+          name: author.name,
+          email: author.email,
+          image: author.image,
+        });
+      });
+    }
+
+    // Combine posts with their media and author info
+    const postsWithMedia = userPosts.map((post) => {
+      const author = authorMap.get(post.userId);
+      return {
+        ...post,
+        metadata: post.metadata ? JSON.parse(post.metadata) : null,
+        media: postMedia.filter((m) => m.postId === post.id),
+        // Include author info if this is a team view (owner viewing)
+        author: author ? {
+          name: author.name || author.email.split("@")[0],
+          email: author.email,
+          image: author.image,
+          isOwner: post.userId === user.id,
+        } : null,
+      };
+    });
 
     return NextResponse.json({
       posts: postsWithMedia,
@@ -84,6 +141,7 @@ export async function GET(request: NextRequest) {
         offset,
         total: userPosts.length, // Would need COUNT query for accurate total
       },
+      isTeamView: !!team && userIdsToFetch.length > 1,
     });
   } catch (error) {
     console.error("Get posts error:", error);
