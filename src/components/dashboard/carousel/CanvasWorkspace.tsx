@@ -113,6 +113,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const fabricRef = useRef<Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isReady, setIsReady] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     // Undo/Redo history
     const historyRef = useRef<string[]>([]);
@@ -430,14 +431,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
         if (!fabricRef.current) return;
 
-        // Remove any existing background rect first
+        // Remove ALL existing background rects (non-selectable rects at position 0,0)
         const objects = fabricRef.current.getObjects();
-        const existingBgRect = objects.find(obj =>
-          obj instanceof Rect && !obj.selectable && obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT
+        const bgRects = objects.filter(obj =>
+          obj instanceof Rect && !obj.selectable && obj.left === 0 && obj.top === 0
         );
-        if (existingBgRect) {
-          fabricRef.current.remove(existingBgRect);
-        }
+        bgRects.forEach(rect => fabricRef.current!.remove(rect));
 
         // Clear any existing background image when setting color/gradient
         if (type !== 'image') {
@@ -460,6 +459,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             };
 
             // Create gradient rectangle as background - must cover entire canvas
+            // Use explicit origin settings to ensure exact positioning
             const gradientRect = new Rect({
               left: 0,
               top: 0,
@@ -469,6 +469,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               evented: false,
               excludeFromExport: false,
               strokeWidth: 0,
+              originX: 'left',
+              originY: 'top',
             });
 
             // Create gradient with coordinates relative to the rect
@@ -488,8 +490,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
             gradientRect.set('fill', gradient);
 
-            // Set white background as fallback and add gradient rect at position 0
-            fabricRef.current.backgroundColor = '#ffffff';
+            // Clear canvas background color and add gradient rect at position 0
+            fabricRef.current.backgroundColor = '';
             fabricRef.current.insertAt(0, gradientRect);
           } else {
             // If parsing fails, just use first color from gradient string as solid
@@ -509,6 +511,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               scaleY: scale,
               left: 0,
               top: 0,
+              originX: 'left',
+              originY: 'top',
               selectable: false,
               evented: false,
             });
@@ -685,14 +689,24 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Handle drop events
+    // Handle drop events with visual feedback
     const handleDragOver = useCallback((e: React.DragEvent) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
     }, []);
 
-    const handleDrop = useCallback((e: React.DragEvent) => {
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+      // Only set to false if we're leaving the container entirely
+      const relatedTarget = e.relatedTarget as HTMLElement;
+      if (!containerRef.current?.contains(relatedTarget)) {
+        setIsDragOver(false);
+      }
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent) => {
       e.preventDefault();
+      setIsDragOver(false);
 
       const jsonData = e.dataTransfer.getData('application/json');
       if (!jsonData || !containerRef.current) return;
@@ -701,7 +715,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const { type, data } = JSON.parse(jsonData);
 
         // Get drop position relative to canvas
-        const containerRect = containerRef.current.getBoundingClientRect();
         const canvasElement = containerRef.current.querySelector('canvas');
         if (!canvasElement) return;
 
@@ -770,6 +783,32 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             fabricRef.current.add(shape);
             fabricRef.current.setActiveObject(shape);
             fabricRef.current.renderAll();
+          } else if (type === 'image' && data.url) {
+            // Handle image drops (for branding elements like logo/avatar)
+            try {
+              const img = await FabricImage.fromURL(data.url, { crossOrigin: 'anonymous' });
+
+              // Scale image to fit nicely
+              const maxWidth = CANVAS_WIDTH * 0.4;
+              const maxHeight = CANVAS_HEIGHT * 0.3;
+              const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
+
+              const dropX = Math.max(0, Math.min(x - (img.width! * scale) / 2, CANVAS_WIDTH - img.width! * scale));
+              const dropY = Math.max(0, Math.min(y - (img.height! * scale) / 2, CANVAS_HEIGHT - img.height! * scale));
+
+              img.set({
+                left: dropX,
+                top: dropY,
+                scaleX: scale,
+                scaleY: scale,
+              });
+
+              fabricRef.current.add(img);
+              fabricRef.current.setActiveObject(img);
+              fabricRef.current.renderAll();
+            } catch (error) {
+              console.error('Failed to load dropped image:', error);
+            }
           }
         }
       } catch (error) {
@@ -783,14 +822,20 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         className={cn(
           "relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800",
           "flex items-center justify-center",
+          "transition-all duration-200",
+          isDragOver && "ring-2 ring-cyan-500 ring-offset-2 bg-cyan-50/50 dark:bg-cyan-950/50",
           className
         )}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Canvas container with checkerboard pattern for transparency */}
+        {/* Canvas container */}
         <div
-          className="relative shadow-2xl"
+          className={cn(
+            "relative shadow-2xl transition-transform duration-200",
+            isDragOver && "scale-[1.01]"
+          )}
           style={{
             width: CANVAS_WIDTH * zoom,
             height: CANVAS_HEIGHT * zoom,
@@ -798,6 +843,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         >
           <canvas ref={canvasRef} />
         </div>
+
+        {/* Drop zone indicator */}
+        {isDragOver && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="px-6 py-3 bg-cyan-500/90 text-white rounded-lg shadow-lg animate-pulse">
+              <p className="text-sm font-medium">Drop element here</p>
+            </div>
+          </div>
+        )}
 
         {!isReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80">

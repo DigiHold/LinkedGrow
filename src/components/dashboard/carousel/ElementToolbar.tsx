@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -29,7 +29,6 @@ import {
   TrendingUp,
   Award,
   Loader2,
-  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -65,6 +64,35 @@ export function ElementToolbar({
 }: ElementToolbarProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const dragImageRef = useRef<HTMLDivElement | null>(null);
+
+  // Create custom drag image element on mount
+  useEffect(() => {
+    const dragImage = document.createElement('div');
+    dragImage.style.cssText = `
+      position: fixed;
+      top: -1000px;
+      left: -1000px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: white;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      pointer-events: none;
+      z-index: 9999;
+    `;
+    document.body.appendChild(dragImage);
+    dragImageRef.current = dragImage;
+
+    return () => {
+      if (dragImageRef.current) {
+        document.body.removeChild(dragImageRef.current);
+      }
+    };
+  }, []);
 
   const handleAddText = (options: {
     text?: string;
@@ -207,12 +235,24 @@ export function ElementToolbar({
     },
   ];
 
-  // Handle drag start
+  // Handle drag start with custom drag image
   const handleDragStart = useCallback((e: React.DragEvent, item: ToolItem) => {
     if (item.dragData) {
       e.dataTransfer.setData('application/json', JSON.stringify(item.dragData));
       e.dataTransfer.effectAllowed = 'copy';
+
+      // Set custom drag image with element label
+      if (dragImageRef.current) {
+        dragImageRef.current.textContent = item.label;
+        e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+      }
+
+      setIsDragging(true);
     }
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
   }, []);
 
   const iconElements: ToolItem[] = [
@@ -221,83 +261,83 @@ export function ElementToolbar({
       label: 'Arrow',
       icon: <ArrowRight className="w-4 h-4" />,
       action: () => handleAddText({ text: '→', fontSize: 64, fontWeight: 'bold' }),
+      dragData: { type: 'text', data: { text: '→', fontSize: 64, fontWeight: 'bold' } },
     },
     {
       id: 'checkmark',
       label: 'Checkmark',
       icon: <CheckCircle2 className="w-4 h-4" />,
       action: () => handleAddText({ text: '✓', fontSize: 64, fontWeight: 'bold' }),
+      dragData: { type: 'text', data: { text: '✓', fontSize: 64, fontWeight: 'bold' } },
     },
     {
       id: 'star',
       label: 'Star',
       icon: <Star className="w-4 h-4" />,
       action: () => handleAddText({ text: '★', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '★', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'heart',
       label: 'Heart',
       icon: <Heart className="w-4 h-4" />,
       action: () => handleAddText({ text: '♥', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '♥', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'lightning',
       label: 'Lightning',
       icon: <Zap className="w-4 h-4" />,
       action: () => handleAddText({ text: '⚡', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '⚡', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'target',
       label: 'Target',
       icon: <Target className="w-4 h-4" />,
       action: () => handleAddText({ text: '◎', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '◎', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'bulb',
       label: 'Idea',
       icon: <Lightbulb className="w-4 h-4" />,
       action: () => handleAddText({ text: '💡', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '💡', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'trending',
       label: 'Trending',
       icon: <TrendingUp className="w-4 h-4" />,
       action: () => handleAddText({ text: '📈', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '📈', fontSize: 64, fontWeight: 'normal' } },
     },
     {
       id: 'trophy',
       label: 'Trophy',
       icon: <Award className="w-4 h-4" />,
       action: () => handleAddText({ text: '🏆', fontSize: 64, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: '🏆', fontSize: 64, fontWeight: 'normal' } },
     },
   ];
 
-  const brandingElements: ToolItem[] = [
-    {
-      id: 'logo',
-      label: 'Logo',
-      icon: <ImageIcon className="w-4 h-4" />,
-      action: () => handleAddBrandingElement('logo'),
-    },
-    {
-      id: 'avatar',
-      label: 'Profile Picture',
-      icon: <User className="w-4 h-4" />,
-      action: () => handleAddBrandingElement('avatar'),
-    },
-    {
-      id: 'handle',
-      label: 'Handle',
-      icon: <AtSign className="w-4 h-4" />,
-      action: () => handleAddBrandingElement('handle'),
-    },
-    {
-      id: 'website',
-      label: 'Website',
-      icon: <Globe className="w-4 h-4" />,
-      action: () => handleAddBrandingElement('website'),
-    },
-  ];
+  // Branding elements - handle and website are text, logo and avatar are images (need upload first)
+  const handleDragData = branding?.handle
+    ? { type: 'text', data: { text: branding.handle, fontSize: 32, fontWeight: 'normal' } }
+    : { type: 'text', data: { text: '@yourhandle', fontSize: 32, fontWeight: 'normal' } };
+
+  const websiteDragData = branding?.website
+    ? { type: 'text', data: { text: branding.website, fontSize: 28, fontWeight: 'normal' } }
+    : { type: 'text', data: { text: 'yoursite.com', fontSize: 28, fontWeight: 'normal' } };
+
+  // Logo and avatar need image URL - they can be dragged if URL exists
+  const logoDragData = branding?.logoUrl
+    ? { type: 'image', data: { url: branding.logoUrl } }
+    : undefined;
+
+  const avatarDragData = branding?.avatarUrl
+    ? { type: 'image', data: { url: branding.avatarUrl } }
+    : undefined;
 
   return (
     <div className={cn("w-64 bg-background border-r flex flex-col h-full overflow-hidden", className)}>
@@ -319,11 +359,12 @@ export function ElementToolbar({
                   key={item.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item)}
+                  onDragEnd={handleDragEnd}
                   onClick={item.action}
                   className={cn(
                     "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
                     "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
-                    "cursor-grab active:cursor-grabbing transition-colors"
+                    "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
                   {item.icon}
@@ -422,11 +463,12 @@ export function ElementToolbar({
                   key={item.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, item)}
+                  onDragEnd={handleDragEnd}
                   onClick={item.action}
                   className={cn(
                     "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
                     "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
-                    "cursor-grab active:cursor-grabbing transition-colors"
+                    "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
                   {item.icon}
@@ -445,16 +487,22 @@ export function ElementToolbar({
             </h3>
             <div className="grid grid-cols-3 gap-2">
               {iconElements.map((item) => (
-                <Button
+                <button
                   key={item.id}
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-2.5 flex flex-col gap-0.5 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  draggable={!!item.dragData}
+                  onDragStart={(e) => handleDragStart(e, item)}
+                  onDragEnd={handleDragEnd}
                   onClick={item.action}
+                  className={cn(
+                    "h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-md border border-input bg-background text-sm",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    item.dragData && "cursor-grab active:cursor-grabbing",
+                    "transition-all duration-150"
+                  )}
                 >
                   {item.icon}
                   <span className="text-[10px]">{item.label}</span>
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -467,18 +515,33 @@ export function ElementToolbar({
               Branding
             </h3>
             <div className="space-y-2">
-              {/* Logo - with upload option */}
+              {/* Logo - with upload option or draggable if exists */}
               <div className="flex gap-2">
                 {branding?.logoUrl ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  <button
+                    draggable={!!logoDragData}
+                    onDragStart={(e) => {
+                      if (logoDragData) {
+                        e.dataTransfer.setData('application/json', JSON.stringify(logoDragData));
+                        e.dataTransfer.effectAllowed = 'copy';
+                        if (dragImageRef.current) {
+                          dragImageRef.current.textContent = 'Logo';
+                          e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                        }
+                        setIsDragging(true);
+                      }
+                    }}
+                    onDragEnd={handleDragEnd}
                     onClick={() => handleAddBrandingElement('logo')}
+                    className={cn(
+                      "flex-1 h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                      "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                      "cursor-grab active:cursor-grabbing transition-all duration-150"
+                    )}
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span className="text-xs">Add Logo</span>
-                  </Button>
+                  </button>
                 ) : (
                   <label className="flex-1">
                     <input
@@ -512,18 +575,33 @@ export function ElementToolbar({
                 )}
               </div>
 
-              {/* Avatar - with upload option */}
+              {/* Avatar - with upload option or draggable if exists */}
               <div className="flex gap-2">
                 {branding?.avatarUrl ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  <button
+                    draggable={!!avatarDragData}
+                    onDragStart={(e) => {
+                      if (avatarDragData) {
+                        e.dataTransfer.setData('application/json', JSON.stringify(avatarDragData));
+                        e.dataTransfer.effectAllowed = 'copy';
+                        if (dragImageRef.current) {
+                          dragImageRef.current.textContent = 'Avatar';
+                          e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                        }
+                        setIsDragging(true);
+                      }
+                    }}
+                    onDragEnd={handleDragEnd}
                     onClick={() => handleAddBrandingElement('avatar')}
+                    className={cn(
+                      "flex-1 h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                      "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                      "cursor-grab active:cursor-grabbing transition-all duration-150"
+                    )}
                   >
                     <User className="w-4 h-4" />
                     <span className="text-xs">Add Avatar</span>
-                  </Button>
+                  </button>
                 ) : (
                   <label className="flex-1">
                     <input
@@ -557,26 +635,52 @@ export function ElementToolbar({
                 )}
               </div>
 
-              {/* Handle and Website */}
+              {/* Handle and Website - always draggable */}
               <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                <button
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify(handleDragData));
+                    e.dataTransfer.effectAllowed = 'copy';
+                    if (dragImageRef.current) {
+                      dragImageRef.current.textContent = 'Handle';
+                      e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                    }
+                    setIsDragging(true);
+                  }}
+                  onDragEnd={handleDragEnd}
                   onClick={() => handleAddBrandingElement('handle')}
+                  className={cn(
+                    "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    "cursor-grab active:cursor-grabbing transition-all duration-150"
+                  )}
                 >
                   <AtSign className="w-4 h-4" />
                   <span className="text-xs">Handle</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                </button>
+                <button
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify(websiteDragData));
+                    e.dataTransfer.effectAllowed = 'copy';
+                    if (dragImageRef.current) {
+                      dragImageRef.current.textContent = 'Website';
+                      e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                    }
+                    setIsDragging(true);
+                  }}
+                  onDragEnd={handleDragEnd}
                   onClick={() => handleAddBrandingElement('website')}
+                  className={cn(
+                    "h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    "cursor-grab active:cursor-grabbing transition-all duration-150"
+                  )}
                 >
                   <Globe className="w-4 h-4" />
                   <span className="text-xs">Website</span>
-                </Button>
+                </button>
               </div>
             </div>
           </div>
