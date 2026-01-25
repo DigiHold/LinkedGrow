@@ -120,10 +120,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
 
             if (team) {
-              token.isTeamMember = true;
-              token.teamId = membership.teamId;
-              token.teamRole = membership.role;
-              token.teamOwnerId = team.ownerId;
+              // Fetch owner to get their plan - team members inherit owner's plan
+              const owner = await db.query.users.findFirst({
+                where: eq(users.id, team.ownerId),
+              });
+
+              if (owner) {
+                token.isTeamMember = true;
+                token.teamId = membership.teamId;
+                token.teamRole = membership.role;
+                token.teamOwnerId = team.ownerId;
+                // Team members inherit owner's plan so they have access to all features
+                token.plan = owner.plan;
+              }
             }
           } else {
             token.isTeamMember = false;
