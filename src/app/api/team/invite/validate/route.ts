@@ -50,14 +50,28 @@ export async function GET(request: NextRequest) {
 
     // Return minimal info needed for invite page UI
     // Don't expose owner details or full email to prevent information harvesting
+    // Mask email: co*****@di****.me
+    const maskEmail = (email: string) => {
+      const [local, domain] = email.split('@');
+      const [domainName, ...tld] = domain.split('.');
+      const tldPart = tld.join('.');
+
+      const maskedLocal = local.length <= 2
+        ? local + '*****'
+        : local.slice(0, 2) + '*'.repeat(Math.min(local.length - 2, 5));
+
+      const maskedDomain = domainName.length <= 2
+        ? domainName + '****'
+        : domainName.slice(0, 2) + '*'.repeat(Math.min(domainName.length - 2, 4));
+
+      return `${maskedLocal}@${maskedDomain}.${tldPart}`;
+    };
+
     return NextResponse.json({
       invite: {
         teamName: team.name,
         role: invite.role,
-        // Only show masked email for verification (e.g., t***@example.com)
-        emailHint: invite.email.replace(/^(.{1,2})(.*)(@.*)$/, (_, start, middle, domain) =>
-          start + '*'.repeat(Math.min(middle.length, 5)) + domain
-        ),
+        emailHint: maskEmail(invite.email),
       },
     });
   } catch (error) {
