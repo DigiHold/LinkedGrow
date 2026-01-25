@@ -178,60 +178,164 @@ export default function CarouselPage() {
 
   // Handle slide selection
   const handleSlideSelect = useCallback((index: number) => {
-    saveCurrentSlide();
+    if (!canvasRef.current || index === currentSlideIndex) return;
+
+    // Save current slide state directly from canvas
+    const canvasJSON = canvasRef.current.exportToJSON();
+    const thumbnail = canvasRef.current.exportToDataURL();
+
+    // Get the slide we're switching to before any state updates
+    const targetSlideJSON = slides[index].canvasJSON;
+
+    // Update state with functional update
+    setSlides(prev => prev.map((slide, i) =>
+      i === currentSlideIndex
+        ? { ...slide, canvasJSON, thumbnail }
+        : slide
+    ));
+
     setCurrentSlideIndex(index);
-    // Load the new slide after a brief delay to ensure state is updated
-    setTimeout(() => loadSlide(index), 50);
-  }, [saveCurrentSlide, loadSlide]);
+
+    // Load the target slide using the JSON we captured
+    setTimeout(() => {
+      if (canvasRef.current) {
+        if (targetSlideJSON) {
+          canvasRef.current.loadFromJSON(targetSlideJSON);
+        } else {
+          canvasRef.current.clearCanvas();
+        }
+      }
+    }, 50);
+  }, [currentSlideIndex, slides]);
 
   // Handle adding a new slide
   const handleSlideAdd = useCallback(() => {
-    saveCurrentSlide();
+    if (!canvasRef.current) return;
+
+    // Save current slide state directly from canvas
+    const canvasJSON = canvasRef.current.exportToJSON();
+    const thumbnail = canvasRef.current.exportToDataURL();
+
     const newSlide: SlideState = {
       id: generateId(),
       canvasJSON: '',
       thumbnail: '',
     };
-    setSlides(prev => [...prev, newSlide]);
+
+    // Use functional update to ensure we have the latest state
+    setSlides(prev => {
+      const updated = prev.map((slide, i) =>
+        i === currentSlideIndex
+          ? { ...slide, canvasJSON, thumbnail }
+          : slide
+      );
+      return [...updated, newSlide];
+    });
+
     setCurrentSlideIndex(slides.length);
+
     setTimeout(() => {
       canvasRef.current?.clearCanvas();
     }, 50);
-  }, [saveCurrentSlide, slides.length]);
+  }, [currentSlideIndex, slides.length]);
 
   // Handle duplicating a slide
   const handleSlideDuplicate = useCallback((index: number) => {
-    saveCurrentSlide();
-    const slideToDuplicate = slides[index];
+    if (!canvasRef.current) return;
+
+    // If duplicating the current slide, get fresh data from canvas
+    let canvasJSON: string;
+    let thumbnail: string;
+
+    if (index === currentSlideIndex) {
+      // Get current canvas state directly (fresh, not from stale state)
+      canvasJSON = canvasRef.current.exportToJSON();
+      thumbnail = canvasRef.current.exportToDataURL();
+    } else {
+      // Duplicating a different slide - use its saved state
+      canvasJSON = slides[index].canvasJSON;
+      thumbnail = slides[index].thumbnail;
+    }
+
     const newSlide: SlideState = {
       id: generateId(),
-      canvasJSON: slideToDuplicate.canvasJSON,
-      thumbnail: slideToDuplicate.thumbnail,
+      canvasJSON,
+      thumbnail,
     };
-    const newSlides = [...slides];
-    newSlides.splice(index + 1, 0, newSlide);
-    setSlides(newSlides);
+
+    // Use functional update to ensure we have the latest state
+    setSlides(prev => {
+      const newSlides = [...prev];
+      // Also update the current slide if we're duplicating it
+      if (index === currentSlideIndex) {
+        newSlides[index] = { ...newSlides[index], canvasJSON, thumbnail };
+      }
+      newSlides.splice(index + 1, 0, newSlide);
+      return newSlides;
+    });
+
     setCurrentSlideIndex(index + 1);
-    setTimeout(() => loadSlide(index + 1), 50);
-  }, [saveCurrentSlide, slides, loadSlide]);
+
+    // Load the duplicated slide - use the canvasJSON we already have
+    setTimeout(() => {
+      if (canvasRef.current && canvasJSON) {
+        canvasRef.current.loadFromJSON(canvasJSON);
+      }
+    }, 50);
+  }, [currentSlideIndex, slides]);
 
   // Handle deleting a slide
   const handleSlideDelete = useCallback((index: number) => {
     if (slides.length <= 1) return;
 
-    const newSlides = slides.filter((_, i) => i !== index);
-    setSlides(newSlides);
+    // Calculate which slide to show after deletion
+    const newLength = slides.length - 1;
+    const newIndex = index >= newLength ? newLength - 1 : index;
 
-    const newIndex = Math.max(0, Math.min(currentSlideIndex, newSlides.length - 1));
+    // Get the JSON of the slide we'll switch to (after deletion)
+    // If we're deleting before newIndex, the target slide is at newIndex + 1 in current array
+    // If we're deleting at or after newIndex, the target slide is at newIndex in current array
+    const targetIndex = index <= newIndex ? newIndex + 1 : newIndex;
+    const targetSlideJSON = targetIndex < slides.length ? slides[targetIndex].canvasJSON : '';
+
+    setSlides(prev => prev.filter((_, i) => i !== index));
     setCurrentSlideIndex(newIndex);
-    setTimeout(() => loadSlide(newIndex), 50);
-  }, [slides, currentSlideIndex, loadSlide]);
+
+    setTimeout(() => {
+      if (canvasRef.current) {
+        if (targetSlideJSON) {
+          canvasRef.current.loadFromJSON(targetSlideJSON);
+        } else {
+          canvasRef.current.clearCanvas();
+        }
+      }
+    }, 50);
+  }, [slides]);
 
   // Handle slides reorder
   const handleSlidesReorder = useCallback((newSlides: SlideState[]) => {
-    saveCurrentSlide();
-    setSlides(newSlides);
-  }, [saveCurrentSlide]);
+    if (!canvasRef.current) return;
+
+    // Save current slide state directly from canvas before reordering
+    const canvasJSON = canvasRef.current.exportToJSON();
+    const thumbnail = canvasRef.current.exportToDataURL();
+
+    // Update the current slide's data in the new array
+    const currentSlideId = slides[currentSlideIndex]?.id;
+    const updatedSlides = newSlides.map(slide =>
+      slide.id === currentSlideId
+        ? { ...slide, canvasJSON, thumbnail }
+        : slide
+    );
+
+    // Find new index of the current slide after reorder
+    const newCurrentIndex = updatedSlides.findIndex(s => s.id === currentSlideId);
+
+    setSlides(updatedSlides);
+    if (newCurrentIndex !== -1) {
+      setCurrentSlideIndex(newCurrentIndex);
+    }
+  }, [currentSlideIndex, slides]);
 
   // Handle canvas change (update thumbnail)
   const handleCanvasChange = useCallback(() => {

@@ -4,8 +4,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Type,
   Image as ImageIcon,
   Square,
   Circle,
@@ -19,20 +19,14 @@ import {
   Heading2,
   AlignLeft,
   Quote,
-  ArrowRight,
-  CheckCircle2,
-  Star,
-  Heart,
-  Zap,
-  Target,
-  Lightbulb,
-  TrendingUp,
-  Award,
   Loader2,
+  Palette,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 import type { BrandingData } from "./types";
+import { IconPicker, QuickIcons } from "./IconPicker";
 
 interface ElementToolbarProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
@@ -50,10 +44,21 @@ interface ToolItem {
   dragData?: { type: string; data: Record<string, unknown> };
 }
 
-interface ToolSection {
-  title: string;
-  items: ToolItem[];
-}
+// Preset colors for text
+const textColors = [
+  "#000000", // Black
+  "#FFFFFF", // White
+  "#0891b2", // Cyan
+  "#3b82f6", // Blue
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#ef4444", // Red
+  "#f97316", // Orange
+  "#eab308", // Yellow
+  "#22c55e", // Green
+  "#64748b", // Slate
+  "#1e293b", // Dark Slate
+];
 
 export function ElementToolbar({
   canvasRef,
@@ -65,6 +70,9 @@ export function ElementToolbar({
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedTextColor, setSelectedTextColor] = useState("#000000");
+  const [selectedIconColor, setSelectedIconColor] = useState("#0891b2");
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const dragImageRef = useRef<HTMLDivElement | null>(null);
 
   // Create custom drag image element on mount
@@ -98,8 +106,12 @@ export function ElementToolbar({
     text?: string;
     fontSize?: number;
     fontWeight?: string | number;
+    fill?: string;
   }) => {
-    canvasRef.current?.addText(options);
+    canvasRef.current?.addText({
+      ...options,
+      fill: options.fill || selectedTextColor,
+    });
   };
 
   const handleAddShape = (type: 'rect' | 'circle' | 'line') => {
@@ -110,7 +122,7 @@ export function ElementToolbar({
     const file = e.target.files?.[0];
     if (!file || !onImageUpload) return;
 
-    // Validate file type - support common web image formats
+    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       alert('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
@@ -130,7 +142,6 @@ export function ElementToolbar({
       console.error('Failed to upload image:', error);
       alert('Failed to upload image. Please try again.');
     }
-    // Reset input so same file can be uploaded again
     e.target.value = '';
   };
 
@@ -149,18 +160,30 @@ export function ElementToolbar({
     }
   };
 
-  const handleAddBrandingElement = (type: 'logo' | 'avatar' | 'handle' | 'website') => {
+  const handleAddBrandingElement = async (type: 'logo' | 'avatar' | 'handle' | 'website') => {
     if (!branding) return;
 
     switch (type) {
       case 'logo':
         if (branding.logoUrl) {
-          canvasRef.current?.addImage(branding.logoUrl);
+          try {
+            await canvasRef.current?.addImage(branding.logoUrl);
+          } catch (error) {
+            console.error('Failed to add logo:', error);
+            alert('Failed to add logo. The image might not be accessible.');
+          }
         }
         break;
       case 'avatar':
         if (branding.avatarUrl) {
-          canvasRef.current?.addImage(branding.avatarUrl);
+          try {
+            await canvasRef.current?.addImage(branding.avatarUrl);
+          } catch (error) {
+            console.error('Failed to add avatar:', error);
+            alert('Failed to add avatar. LinkedIn profile images may have access restrictions. Try uploading a custom avatar instead.');
+          }
+        } else {
+          alert('No avatar URL available. Please upload a custom avatar.');
         }
         break;
       case 'handle':
@@ -168,6 +191,7 @@ export function ElementToolbar({
           text: branding.handle || '@yourhandle',
           fontSize: 32,
           fontWeight: 'normal',
+          fill: selectedTextColor,
         });
         break;
       case 'website':
@@ -175,10 +199,29 @@ export function ElementToolbar({
           text: branding.website || 'yoursite.com',
           fontSize: 28,
           fontWeight: 'normal',
+          fill: selectedTextColor,
         });
         break;
     }
   };
+
+  // Handle adding icon to canvas
+  // For now, we add the icon name as text - in future we could render actual SVG
+  const handleAddIcon = useCallback((
+    IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>,
+    iconName: string
+  ) => {
+    if (canvasRef.current) {
+      // Add as a text element with the icon name
+      // TODO: In future, render actual SVG path on canvas for true icon support
+      canvasRef.current.addText({
+        text: iconName,
+        fontSize: 48,
+        fontWeight: 'bold',
+        fill: selectedIconColor,
+      });
+    }
+  }, [selectedIconColor, canvasRef]);
 
   const textElements: ToolItem[] = [
     {
@@ -186,28 +229,28 @@ export function ElementToolbar({
       label: 'Heading',
       icon: <Heading1 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Your Heading', fontSize: 72, fontWeight: 'bold' }),
-      dragData: { type: 'text', data: { text: 'Your Heading', fontSize: 72, fontWeight: 'bold' } },
+      dragData: { type: 'text', data: { text: 'Your Heading', fontSize: 72, fontWeight: 'bold', fill: selectedTextColor } },
     },
     {
       id: 'subheading',
       label: 'Subheading',
       icon: <Heading2 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Subheading text', fontSize: 48, fontWeight: '600' }),
-      dragData: { type: 'text', data: { text: 'Subheading text', fontSize: 48, fontWeight: '600' } },
+      dragData: { type: 'text', data: { text: 'Subheading text', fontSize: 48, fontWeight: '600', fill: selectedTextColor } },
     },
     {
       id: 'body',
       label: 'Body Text',
       icon: <AlignLeft className="w-4 h-4" />,
-      action: () => handleAddText({ text: 'Add your body text here. This is a longer paragraph that you can edit.', fontSize: 32, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal' } },
+      action: () => handleAddText({ text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal' }),
+      dragData: { type: 'text', data: { text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } },
     },
     {
       id: 'quote',
       label: 'Quote',
       icon: <Quote className="w-4 h-4" />,
-      action: () => handleAddText({ text: '"Your inspiring quote goes here"', fontSize: 40, fontWeight: '500' }),
-      dragData: { type: 'text', data: { text: '"Your inspiring quote goes here"', fontSize: 40, fontWeight: '500' } },
+      action: () => handleAddText({ text: '"Your inspiring quote"', fontSize: 40, fontWeight: '500' }),
+      dragData: { type: 'text', data: { text: '"Your inspiring quote"', fontSize: 40, fontWeight: '500', fill: selectedTextColor } },
     },
   ];
 
@@ -241,7 +284,6 @@ export function ElementToolbar({
       e.dataTransfer.setData('application/json', JSON.stringify(item.dragData));
       e.dataTransfer.effectAllowed = 'copy';
 
-      // Set custom drag image with element label
       if (dragImageRef.current) {
         dragImageRef.current.textContent = item.label;
         e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
@@ -255,82 +297,15 @@ export function ElementToolbar({
     setIsDragging(false);
   }, []);
 
-  const iconElements: ToolItem[] = [
-    {
-      id: 'arrow',
-      label: 'Arrow',
-      icon: <ArrowRight className="w-4 h-4" />,
-      action: () => handleAddText({ text: '→', fontSize: 64, fontWeight: 'bold' }),
-      dragData: { type: 'text', data: { text: '→', fontSize: 64, fontWeight: 'bold' } },
-    },
-    {
-      id: 'checkmark',
-      label: 'Checkmark',
-      icon: <CheckCircle2 className="w-4 h-4" />,
-      action: () => handleAddText({ text: '✓', fontSize: 64, fontWeight: 'bold' }),
-      dragData: { type: 'text', data: { text: '✓', fontSize: 64, fontWeight: 'bold' } },
-    },
-    {
-      id: 'star',
-      label: 'Star',
-      icon: <Star className="w-4 h-4" />,
-      action: () => handleAddText({ text: '★', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '★', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'heart',
-      label: 'Heart',
-      icon: <Heart className="w-4 h-4" />,
-      action: () => handleAddText({ text: '♥', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '♥', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'lightning',
-      label: 'Lightning',
-      icon: <Zap className="w-4 h-4" />,
-      action: () => handleAddText({ text: '⚡', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '⚡', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'target',
-      label: 'Target',
-      icon: <Target className="w-4 h-4" />,
-      action: () => handleAddText({ text: '◎', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '◎', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'bulb',
-      label: 'Idea',
-      icon: <Lightbulb className="w-4 h-4" />,
-      action: () => handleAddText({ text: '💡', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '💡', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'trending',
-      label: 'Trending',
-      icon: <TrendingUp className="w-4 h-4" />,
-      action: () => handleAddText({ text: '📈', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '📈', fontSize: 64, fontWeight: 'normal' } },
-    },
-    {
-      id: 'trophy',
-      label: 'Trophy',
-      icon: <Award className="w-4 h-4" />,
-      action: () => handleAddText({ text: '🏆', fontSize: 64, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: '🏆', fontSize: 64, fontWeight: 'normal' } },
-    },
-  ];
-
-  // Branding elements - handle and website are text, logo and avatar are images (need upload first)
+  // Branding elements drag data
   const handleDragData = branding?.handle
-    ? { type: 'text', data: { text: branding.handle, fontSize: 32, fontWeight: 'normal' } }
-    : { type: 'text', data: { text: '@yourhandle', fontSize: 32, fontWeight: 'normal' } };
+    ? { type: 'text', data: { text: branding.handle, fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } }
+    : { type: 'text', data: { text: '@yourhandle', fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } };
 
   const websiteDragData = branding?.website
-    ? { type: 'text', data: { text: branding.website, fontSize: 28, fontWeight: 'normal' } }
-    : { type: 'text', data: { text: 'yoursite.com', fontSize: 28, fontWeight: 'normal' } };
+    ? { type: 'text', data: { text: branding.website, fontSize: 28, fontWeight: 'normal', fill: selectedTextColor } }
+    : { type: 'text', data: { text: 'yoursite.com', fontSize: 28, fontWeight: 'normal', fill: selectedTextColor } };
 
-  // Logo and avatar need image URL - they can be dragged if URL exists
   const logoDragData = branding?.logoUrl
     ? { type: 'image', data: { url: branding.logoUrl } }
     : undefined;
@@ -343,16 +318,68 @@ export function ElementToolbar({
     <div className={cn("w-64 bg-background border-r flex flex-col h-full overflow-hidden", className)}>
       <div className="p-4 border-b shrink-0">
         <h2 className="font-semibold text-sm">Elements</h2>
-        <p className="text-xs text-muted-foreground mt-1">Click to add to canvas</p>
+        <p className="text-xs text-muted-foreground mt-1">Click or drag to add</p>
       </div>
 
       <ScrollArea className="flex-1 h-0">
         <div className="p-4 space-y-6">
-          {/* Text Elements */}
+          {/* Text Elements with Color Picker */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Text
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Text
+              </h3>
+              {/* Text Color Picker */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div
+                      className="w-4 h-4 rounded border border-input"
+                      style={{ backgroundColor: selectedTextColor }}
+                    />
+                    <Palette className="w-3 h-3" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="end">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">Text Color</p>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {textColors.map(color => (
+                        <button
+                          key={color}
+                          onClick={() => setSelectedTextColor(color)}
+                          className={cn(
+                            "w-6 h-6 rounded border-2 transition-all",
+                            selectedTextColor === color
+                              ? "border-cyan-500 scale-110"
+                              : "border-transparent hover:border-gray-300"
+                          )}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="color"
+                        value={selectedTextColor}
+                        onChange={(e) => setSelectedTextColor(e.target.value)}
+                        className="w-8 h-8 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={selectedTextColor}
+                        onChange={(e) => setSelectedTextColor(e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs border rounded"
+                        placeholder="#000000"
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {textElements.map((item) => (
                 <button
@@ -367,7 +394,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  {item.icon}
+                  <span style={{ color: selectedTextColor }}>{item.icon}</span>
                   <span className="text-xs">{item.label}</span>
                 </button>
               ))}
@@ -403,7 +430,7 @@ export function ElementToolbar({
                 </Button>
               </label>
 
-              {/* AI Image Generation - separated visually */}
+              {/* AI Image Generation */}
               <div className="pt-2 border-t border-dashed">
                 <p className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
@@ -480,31 +507,81 @@ export function ElementToolbar({
 
           <Separator />
 
-          {/* Icons */}
+          {/* Icons with Color Picker */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Icons
-            </h3>
-            <div className="grid grid-cols-3 gap-2">
-              {iconElements.map((item) => (
-                <button
-                  key={item.id}
-                  draggable={!!item.dragData}
-                  onDragStart={(e) => handleDragStart(e, item)}
-                  onDragEnd={handleDragEnd}
-                  onClick={item.action}
-                  className={cn(
-                    "h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-md border border-input bg-background text-sm",
-                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
-                    item.dragData && "cursor-grab active:cursor-grabbing",
-                    "transition-all duration-150"
-                  )}
-                >
-                  {item.icon}
-                  <span className="text-[10px]">{item.label}</span>
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Icons
+              </h3>
+              {/* Icon Color Picker */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div
+                      className="w-4 h-4 rounded border border-input"
+                      style={{ backgroundColor: selectedIconColor }}
+                    />
+                    <Palette className="w-3 h-3" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="end">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">Icon Color</p>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {textColors.map(color => (
+                        <button
+                          key={color}
+                          onClick={() => setSelectedIconColor(color)}
+                          className={cn(
+                            "w-6 h-6 rounded border-2 transition-all",
+                            selectedIconColor === color
+                              ? "border-cyan-500 scale-110"
+                              : "border-transparent hover:border-gray-300"
+                          )}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="color"
+                        value={selectedIconColor}
+                        onChange={(e) => setSelectedIconColor(e.target.value)}
+                        className="w-8 h-8 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={selectedIconColor}
+                        onChange={(e) => setSelectedIconColor(e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs border rounded"
+                        placeholder="#0891b2"
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
+
+            {/* Quick Icons + Browse All */}
+            <QuickIcons
+              onSelectIcon={handleAddIcon}
+              selectedColor={selectedIconColor}
+              onOpenFullPicker={() => setShowIconPicker(true)}
+            />
+
+            {/* Full Icon Picker Dialog - controlled externally */}
+            <IconPicker
+              onSelectIcon={(icon, name) => {
+                handleAddIcon(icon, name);
+                setShowIconPicker(false);
+              }}
+              selectedColor={selectedIconColor}
+              open={showIconPicker}
+              onOpenChange={setShowIconPicker}
+            />
           </div>
 
           <Separator />
@@ -515,7 +592,7 @@ export function ElementToolbar({
               Branding
             </h3>
             <div className="space-y-2">
-              {/* Logo - with upload option or draggable if exists */}
+              {/* Logo */}
               <div className="flex gap-2">
                 {branding?.logoUrl ? (
                   <button
@@ -575,67 +652,40 @@ export function ElementToolbar({
                 )}
               </div>
 
-              {/* Avatar - with upload option or draggable if exists */}
+              {/* Avatar - always show upload option since LinkedIn images often fail */}
               <div className="flex gap-2">
-                {branding?.avatarUrl ? (
-                  <button
-                    draggable={!!avatarDragData}
-                    onDragStart={(e) => {
-                      if (avatarDragData) {
-                        e.dataTransfer.setData('application/json', JSON.stringify(avatarDragData));
-                        e.dataTransfer.effectAllowed = 'copy';
-                        if (dragImageRef.current) {
-                          dragImageRef.current.textContent = 'Avatar';
-                          e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
-                        }
-                        setIsDragging(true);
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !onImageUpload) return;
+                      try {
+                        const url = await onImageUpload(file);
+                        await canvasRef.current?.addImage(url);
+                      } catch (error) {
+                        console.error('Failed to upload avatar:', error);
                       }
+                      e.target.value = '';
                     }}
-                    onDragEnd={handleDragEnd}
-                    onClick={() => handleAddBrandingElement('avatar')}
-                    className={cn(
-                      "flex-1 h-auto py-3 flex flex-col items-center gap-1 rounded-md border border-input bg-background text-sm",
-                      "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
-                      "cursor-grab active:cursor-grabbing transition-all duration-150"
-                    )}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                    asChild
                   >
-                    <User className="w-4 h-4" />
-                    <span className="text-xs">Add Avatar</span>
-                  </button>
-                ) : (
-                  <label className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file || !onImageUpload) return;
-                        try {
-                          const url = await onImageUpload(file);
-                          await canvasRef.current?.addImage(url);
-                        } catch (error) {
-                          console.error('Failed to upload avatar:', error);
-                        }
-                        e.target.value = '';
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
-                      asChild
-                    >
-                      <span>
-                        <Upload className="w-4 h-4" />
-                        <span className="text-xs">Upload Avatar</span>
-                      </span>
-                    </Button>
-                  </label>
-                )}
+                    <span>
+                      <User className="w-4 h-4" />
+                      <span className="text-xs">Upload Avatar</span>
+                    </span>
+                  </Button>
+                </label>
               </div>
 
-              {/* Handle and Website - always draggable */}
+              {/* Handle and Website */}
               <div className="grid grid-cols-2 gap-2">
                 <button
                   draggable
@@ -656,7 +706,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  <AtSign className="w-4 h-4" />
+                  <AtSign className="w-4 h-4" style={{ color: selectedTextColor }} />
                   <span className="text-xs">Handle</span>
                 </button>
                 <button
@@ -678,7 +728,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  <Globe className="w-4 h-4" />
+                  <Globe className="w-4 h-4" style={{ color: selectedTextColor }} />
                   <span className="text-xs">Website</span>
                 </button>
               </div>
