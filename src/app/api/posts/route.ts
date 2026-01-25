@@ -34,23 +34,47 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Check if user is a team owner - if so, fetch posts from all team members
-    const team = await db.query.teams.findFirst({
+    const ownedTeam = await db.query.teams.findFirst({
       where: eq(teams.ownerId, user.id),
     });
 
     let userIdsToFetch = [user.id];
+    let isTeamOwner = false;
+    let isTeamAdmin = false;
 
-    if (team) {
+    if (ownedTeam) {
+      isTeamOwner = true;
       // User is a team owner - get all team members' user IDs
       const members = await db
         .select({ userId: teamMembers.userId })
         .from(teamMembers)
-        .where(eq(teamMembers.teamId, team.id));
+        .where(eq(teamMembers.teamId, ownedTeam.id));
 
       userIdsToFetch = members.map((m) => m.userId);
       // Make sure owner is included (they might not be in teamMembers if they never added themselves)
       if (!userIdsToFetch.includes(user.id)) {
         userIdsToFetch.push(user.id);
+      }
+    } else {
+      // Check if user is a team admin - if so, fetch posts from members (not admins)
+      const membership = await db.query.teamMembers.findFirst({
+        where: eq(teamMembers.userId, user.id),
+      });
+
+      if (membership && membership.role === "admin") {
+        isTeamAdmin = true;
+        // Get all members in this team with role "member" only
+        const teamMembersList = await db
+          .select({ userId: teamMembers.userId, role: teamMembers.role })
+          .from(teamMembers)
+          .where(eq(teamMembers.teamId, membership.teamId));
+
+        // Admin sees their own posts plus member posts (not other admin posts)
+        const memberUserIds = teamMembersList
+          .filter((m) => m.role === "member")
+          .map((m) => m.userId);
+
+        userIdsToFetch = [user.id, ...memberUserIds];
       }
     }
 
@@ -95,9 +119,9 @@ export async function GET(request: NextRequest) {
             .orderBy(media.sortOrder)
         : [];
 
-    // If owner, get author info for all posts
+    // If owner or admin, get author info for all posts
     let authorMap: Map<string, { name: string | null; email: string; image: string | null }> = new Map();
-    if (team && userIdsToFetch.length > 1) {
+    if ((isTeamOwner || isTeamAdmin) && userIdsToFetch.length > 1) {
       const authors = await db
         .select({
           id: users.id,
@@ -141,7 +165,7 @@ export async function GET(request: NextRequest) {
         offset,
         total: userPosts.length, // Would need COUNT query for accurate total
       },
-      isTeamView: !!team && userIdsToFetch.length > 1,
+      isTeamView: (isTeamOwner || isTeamAdmin) && userIdsToFetch.length > 1,
     });
   } catch (error) {
     console.error("Get posts error:", error);

@@ -370,10 +370,13 @@ export default function TeamPage() {
               Collaborate with your teams on LinkedIn content
             </p>
           </div>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Team
-          </Button>
+          {/* Only owners can create new teams */}
+          {!isTeamMember && (
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Team
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -628,7 +631,12 @@ export default function TeamPage() {
                       {selectedTeam.members.map((member) => {
                         const RoleIcon = roleConfig[member.role].icon;
                         const isCurrentUser = session?.user?.id === member.userId;
-                        const canManage = isOwner && !isCurrentUser && member.role !== "owner";
+                        // Owner can manage anyone except themselves and other owners
+                        // Admin can only remove members (not admins or owners)
+                        const canManage = !isCurrentUser && member.role !== "owner" && (
+                          isOwner || (isAdmin && member.role === "member")
+                        );
+                        const canChangeRole = isOwner; // Only owners can change roles
 
                         return (
                           <div
@@ -671,23 +679,29 @@ export default function TeamPage() {
                                 <RoleIcon className="w-3 h-3" />
                                 {roleConfig[member.role].label}
                               </span>
-                              {canManage && (
+                              {(canManage || canChangeRole) && (
                                 <div className="flex items-center gap-1">
-                                  <select
-                                    value={member.role}
-                                    onChange={(e) => handleChangeRole(member.id, e.target.value as "admin" | "member")}
-                                    className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                                  >
-                                    <option value="member">Member</option>
-                                    <option value="admin">Admin</option>
-                                  </select>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setRemoveMember(member)}
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                  </Button>
+                                  {/* Only owners can change roles */}
+                                  {canChangeRole && member.role !== "owner" && (
+                                    <select
+                                      value={member.role}
+                                      onChange={(e) => handleChangeRole(member.id, e.target.value as "admin" | "member")}
+                                      className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                                    >
+                                      <option value="member">Member</option>
+                                      <option value="admin">Admin</option>
+                                    </select>
+                                  )}
+                                  {/* Remove button - owner can remove anyone, admin can only remove members */}
+                                  {canManage && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setRemoveMember(member)}
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-500" />
+                                    </Button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -710,8 +724,8 @@ export default function TeamPage() {
                         </div>
                         <ul className="text-muted-foreground space-y-1">
                           <li>- Full access to everything</li>
-                          <li>- Manage team members</li>
-                          <li>- Delete team</li>
+                          <li>- Manage all team members</li>
+                          <li>- Create, rename, delete teams</li>
                         </ul>
                       </div>
                       <div>
@@ -720,9 +734,9 @@ export default function TeamPage() {
                           <span className="font-medium">Admin</span>
                         </div>
                         <ul className="text-muted-foreground space-y-1">
-                          <li>- Create and edit all content</li>
-                          <li>- View analytics</li>
-                          <li>- Invite new members</li>
+                          <li>- Edit and delete all posts</li>
+                          <li>- View team analytics</li>
+                          <li>- Invite and remove members</li>
                         </ul>
                       </div>
                       <div>
@@ -733,7 +747,7 @@ export default function TeamPage() {
                         <ul className="text-muted-foreground space-y-1">
                           <li>- Create own content</li>
                           <li>- View team content</li>
-                          <li>- Limited analytics</li>
+                          <li>- No analytics access</li>
                         </ul>
                       </div>
                     </div>

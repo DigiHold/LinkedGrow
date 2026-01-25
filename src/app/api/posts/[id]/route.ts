@@ -8,26 +8,48 @@ import { deleteMultipleFromR2, uploadBase64ToR2, isR2Configured } from "@/lib/st
 import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 
-// Helper function to check if user can access a post (owner or team member's post if owner)
+// Helper function to check if user can access a post (owner, team owner, or team admin)
 async function canUserAccessPost(userId: string, postUserId: string): Promise<boolean> {
   // User owns the post
   if (userId === postUserId) return true;
 
   // Check if user is a team owner and the post belongs to one of their team members
-  const team = await db.query.teams.findFirst({
+  const ownedTeam = await db.query.teams.findFirst({
     where: eq(teams.ownerId, userId),
   });
 
-  if (!team) return false;
+  if (ownedTeam) {
+    // Get all team member user IDs
+    const members = await db
+      .select({ userId: teamMembers.userId })
+      .from(teamMembers)
+      .where(eq(teamMembers.teamId, ownedTeam.id));
 
-  // Get all team member user IDs
-  const members = await db
-    .select({ userId: teamMembers.userId })
-    .from(teamMembers)
-    .where(eq(teamMembers.teamId, team.id));
+    const teamMemberIds = members.map((m) => m.userId);
+    if (teamMemberIds.includes(postUserId)) return true;
+  }
 
-  const teamMemberIds = members.map((m) => m.userId);
-  return teamMemberIds.includes(postUserId);
+  // Check if user is a team admin and the post belongs to a member of the same team
+  const membership = await db.query.teamMembers.findFirst({
+    where: eq(teamMembers.userId, userId),
+  });
+
+  if (membership && membership.role === "admin") {
+    // Get all members in this team (admins can manage member posts, not other admin posts)
+    const teamMembersList = await db
+      .select({ userId: teamMembers.userId, role: teamMembers.role })
+      .from(teamMembers)
+      .where(eq(teamMembers.teamId, membership.teamId));
+
+    // Find the post owner in the team members
+    const postOwnerMembership = teamMembersList.find((m) => m.userId === postUserId);
+    // Admin can only edit member posts (not admin or owner posts)
+    if (postOwnerMembership && postOwnerMembership.role === "member") {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 interface RouteParams {
