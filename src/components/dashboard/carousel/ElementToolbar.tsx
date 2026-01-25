@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
-import type { BrandingData } from "./slide-canvas";
+import type { BrandingData } from "./types";
 
 interface ElementToolbarProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
@@ -283,13 +283,13 @@ export function ElementToolbar({
   ];
 
   return (
-    <div className={cn("w-64 bg-background border-r flex flex-col", className)}>
-      <div className="p-4 border-b">
+    <div className={cn("w-64 bg-background border-r flex flex-col h-full overflow-hidden", className)}>
+      <div className="p-4 border-b shrink-0">
         <h2 className="font-semibold text-sm">Elements</h2>
         <p className="text-xs text-muted-foreground mt-1">Click to add to canvas</p>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="p-4 space-y-6">
           {/* Text Elements */}
           <div>

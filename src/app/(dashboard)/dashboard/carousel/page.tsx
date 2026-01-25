@@ -54,7 +54,7 @@ import { ElementProperties } from "@/components/dashboard/carousel/ElementProper
 import { SlideManager, SlideState } from "@/components/dashboard/carousel/SlideManager";
 import { BrandingSettings } from "@/components/dashboard/carousel/branding-settings";
 import { TemplateGallery } from "@/components/dashboard/carousel/template-gallery";
-import type { BrandingData } from "@/components/dashboard/carousel/slide-canvas";
+import type { BrandingData } from "@/components/dashboard/carousel/types";
 import { carouselTemplates, type CarouselTemplate } from "@/lib/carousel-templates";
 
 // Generate unique ID
@@ -457,17 +457,55 @@ export default function CarouselPage() {
   const handleTemplateSelect = (template: CarouselTemplate) => {
     if (!canvasRef.current) return;
 
-    // Clear canvas and apply template styles
+    // Clear canvas
     canvasRef.current.clearCanvas();
-    canvasRef.current.setBackground('solid', template.background.value);
 
-    // Add template-based elements
-    if (template.defaultElements) {
-      template.defaultElements.forEach(element => {
+    // Apply background
+    canvasRef.current.setBackground(template.background.type, template.background.value);
+
+    // Add template elements
+    if (template.elements && template.elements.length > 0) {
+      template.elements.forEach(element => {
         if (element.type === 'text') {
-          canvasRef.current?.addText(element.options);
+          canvasRef.current?.addText({
+            text: element.text,
+            fontSize: element.fontSize,
+            fontFamily: element.fontFamily,
+            fontWeight: element.fontWeight,
+            fill: element.fill,
+            textAlign: element.textAlign,
+            left: element.left,
+            top: element.top,
+            width: element.width,
+            opacity: element.opacity,
+          });
         } else if (element.type === 'shape' && element.shapeType) {
-          canvasRef.current?.addShape(element.shapeType);
+          canvasRef.current?.addShapeWithOptions({
+            shapeType: element.shapeType,
+            left: element.left,
+            top: element.top,
+            width: element.width,
+            height: element.height,
+            fill: element.fill,
+            stroke: element.stroke,
+            strokeWidth: element.strokeWidth,
+            opacity: element.opacity,
+            rx: element.rx,
+            ry: element.ry,
+          });
+        } else if (element.type === 'line') {
+          canvasRef.current?.addShapeWithOptions({
+            shapeType: 'line',
+            left: element.left,
+            top: element.top,
+            x1: element.x1,
+            y1: element.y1,
+            x2: element.x2,
+            y2: element.y2,
+            stroke: element.stroke ?? element.fill,
+            strokeWidth: element.strokeWidth,
+            opacity: element.opacity,
+          });
         }
       });
     }

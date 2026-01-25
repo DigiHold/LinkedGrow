@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Layers,
   Check,
@@ -53,21 +52,33 @@ export function TemplateGallery({
     onOpenChange(false);
   };
 
+  // Get background style from new template structure
+  const getPreviewBackground = (template: CarouselTemplate) => {
+    if (template.background.type === 'gradient') {
+      return template.background.value;
+    }
+    return template.background.value;
+  };
+
+  // Get primary text color from template elements
+  const getTextColor = (template: CarouselTemplate) => {
+    const textElement = template.elements.find(e => e.type === 'text' && e.fontSize && e.fontSize > 60);
+    return textElement?.fill || '#ffffff';
+  };
+
+  // Get accent color from template elements
+  const getAccentColor = (template: CarouselTemplate) => {
+    const shapeElement = template.elements.find(e => e.type === 'shape' && e.fill && e.opacity !== 0.1);
+    return shapeElement?.fill || '#0891b2';
+  };
+
   // Render a mini preview of the template
   const renderTemplatePreview = (template: CarouselTemplate) => {
     const isSelected = template.id === selectedTemplateId;
     const isHovered = hoveredTemplate === template.id;
     const isLocked = template.isPremium && !canUsePremium;
-
-    // Get background style
-    const getPreviewBackground = () => {
-      if (template.colors.backgroundSecondary) {
-        const direction = template.colors.gradientDirection === 'to-br' ? '135deg' :
-                          template.colors.gradientDirection === 'to-r' ? '90deg' : '180deg';
-        return `linear-gradient(${direction}, ${template.colors.background}, ${template.colors.backgroundSecondary})`;
-      }
-      return template.colors.background;
-    };
+    const textColor = getTextColor(template);
+    const accentColor = getAccentColor(template);
 
     return (
       <button
@@ -83,60 +94,41 @@ export function TemplateGallery({
           isHovered && !isLocked ? "scale-105 shadow-lg" : "",
           isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:shadow-md"
         )}
-        style={{ background: getPreviewBackground() }}
+        style={{ background: getPreviewBackground(template) }}
       >
         {/* Template preview content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
-          {/* Decorative elements preview */}
-          {template.elements.hasDecorativeElements && template.elements.decorativeStyle === 'geometric' && (
+          {/* Decorative shape preview */}
+          {template.elements.some(e => e.type === 'shape' && e.shapeType === 'circle') && (
             <div
-              className="absolute top-0 right-0 w-6 h-6 opacity-20"
-              style={{
-                backgroundColor: template.colors.accent,
-                clipPath: 'polygon(100% 0, 0 0, 100% 100%)'
-              }}
+              className="absolute top-0 right-0 w-8 h-8 rounded-full opacity-20"
+              style={{ backgroundColor: accentColor }}
             />
           )}
 
           {/* Title preview */}
           <div
             className="text-xs font-bold text-center leading-tight mb-1"
-            style={{ color: template.colors.text }}
+            style={{ color: textColor }}
           >
             Title
           </div>
 
-          {/* Accent line */}
-          {template.layouts.hook.hasAccentShape && template.layouts.hook.accentShapeType === 'underline' && (
+          {/* Accent line preview */}
+          {template.elements.some(e => e.type === 'shape' && e.shapeType === 'rect' && e.height && e.height < 20) && (
             <div
-              className="w-4 h-0.5 rounded-full mb-1"
-              style={{ backgroundColor: template.colors.accent }}
+              className="w-6 h-0.5 rounded-full mb-1"
+              style={{ backgroundColor: accentColor }}
             />
           )}
 
           {/* Content preview */}
           <div
             className="text-[8px] text-center opacity-70"
-            style={{ color: template.colors.textSecondary }}
+            style={{ color: textColor }}
           >
-            Content here
+            Content
           </div>
-
-          {/* Progress dots preview */}
-          {template.elements.showProgressBar && template.elements.progressBarStyle === 'dots' && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="w-1 h-1 rounded-full"
-                  style={{
-                    backgroundColor: template.colors.text,
-                    opacity: i === 0 ? 1 : 0.4
-                  }}
-                />
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Selected checkmark */}
@@ -270,6 +262,14 @@ export function TemplateSelect({
   // Show first 5 templates as quick options
   const quickTemplates = carouselTemplates.slice(0, 5);
 
+  // Get background style from new template structure
+  const getPreviewBackground = (template: CarouselTemplate) => {
+    if (template.background.type === 'gradient') {
+      return template.background.value;
+    }
+    return template.background.value;
+  };
+
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
@@ -287,14 +287,6 @@ export function TemplateSelect({
       <div className="flex gap-2">
         {quickTemplates.map((template) => {
           const isSelected = template.id === selectedTemplateId;
-          const getPreviewBackground = () => {
-            if (template.colors.backgroundSecondary) {
-              const direction = template.colors.gradientDirection === 'to-br' ? '135deg' :
-                                template.colors.gradientDirection === 'to-r' ? '90deg' : '180deg';
-              return `linear-gradient(${direction}, ${template.colors.background}, ${template.colors.backgroundSecondary})`;
-            }
-            return template.colors.background;
-          };
 
           return (
             <button
@@ -305,7 +297,7 @@ export function TemplateSelect({
                 "border-2",
                 isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 scale-105" : "border-transparent hover:border-slate-300"
               )}
-              style={{ background: getPreviewBackground() }}
+              style={{ background: getPreviewBackground(template) }}
               title={template.name}
             />
           );

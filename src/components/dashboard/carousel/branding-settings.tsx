@@ -14,7 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { BrandingData } from "./slide-canvas";
+import type { BrandingData } from "./types";
 
 interface BrandingSettingsProps {
   branding: BrandingData;

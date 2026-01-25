@@ -1,73 +1,34 @@
 // Carousel Template System for LinkedGrow
-// 23 professional templates organized by category
-// 8 best templates are premium (Business plan only)
+// Templates now include complete slide designs with multiple elements
 
-export type TemplateCategory = 'minimal' | 'bold' | 'gradient' | 'photo' | 'corporate' | 'creative';
+export type TemplateCategory = 'minimal' | 'bold' | 'gradient' | 'corporate' | 'creative' | 'data';
 
-export type SlideType = 'hook' | 'content' | 'stat' | 'quote' | 'list' | 'cta';
-
-export type TextPosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-
-export type BackgroundType = 'solid' | 'gradient' | 'pattern';
-
-export type BrandingPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
-
-export interface SlideLayout {
-  textPosition: TextPosition;
-  titleAlign: 'left' | 'center' | 'right';
-  contentAlign: 'left' | 'center' | 'right';
-  hasAccentShape: boolean;
-  accentShapeType?: 'underline' | 'box' | 'circle' | 'corner' | 'line';
-  padding: {
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
-  };
-}
-
-export interface TemplateColors {
-  background: string;
-  backgroundSecondary?: string;
-  gradientDirection?: 'to-r' | 'to-l' | 'to-t' | 'to-b' | 'to-br' | 'to-bl' | 'to-tr' | 'to-tl';
-  text: string;
-  textSecondary: string;
-  accent: string;
-  accentSecondary?: string;
-}
-
-export interface TemplateTypography {
-  titleFont: string;
-  titleWeight: number;
-  titleSize: number;
-  bodyFont: string;
-  bodyWeight: number;
-  bodySize: number;
-  lineHeight: number;
-}
-
-export interface TemplateElements {
-  showProgressBar: boolean;
-  progressBarStyle: 'dots' | 'numbers' | 'bar' | 'fraction';
-  progressBarPosition: 'top' | 'bottom';
-  showBranding: boolean;
-  brandingPosition: BrandingPosition;
-  brandingElements: ('logo' | 'avatar' | 'handle' | 'website')[];
-  hasDecorativeElements: boolean;
-  decorativeStyle?: 'geometric' | 'organic' | 'lines' | 'dots' | 'none';
-}
-
-export interface TemplateDefaultElement {
-  type: 'text' | 'shape';
-  options?: {
-    text?: string;
-    fontSize?: number;
-    fontWeight?: string | number;
-    fill?: string;
-    top?: number;
-    left?: number;
-  };
+export interface TemplateElement {
+  type: 'text' | 'shape' | 'line';
+  // For text
+  text?: string;
+  fontSize?: number;
+  fontWeight?: string | number;
+  fontFamily?: string;
+  fill?: string;
+  textAlign?: 'left' | 'center' | 'right';
+  // Position
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  // For shapes
   shapeType?: 'rect' | 'circle' | 'line';
+  rx?: number;
+  ry?: number;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  // For lines
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
 }
 
 export interface CarouselTemplate {
@@ -76,1081 +37,456 @@ export interface CarouselTemplate {
   description: string;
   category: TemplateCategory;
   isPremium: boolean;
-  colors: TemplateColors;
-  typography: TemplateTypography;
-  elements: TemplateElements;
-  layouts: {
-    hook: SlideLayout;
-    content: SlideLayout;
-    stat: SlideLayout;
-    quote: SlideLayout;
-    list: SlideLayout;
-    cta: SlideLayout;
-  };
-  backgroundClass: string;
-  textClass: string;
-  accentClass: string;
+  thumbnail?: string;
   background: {
-    type: 'solid' | 'gradient' | 'image';
+    type: 'solid' | 'gradient';
     value: string;
   };
-  defaultElements?: TemplateDefaultElement[];
+  elements: TemplateElement[];
 }
 
-const defaultLayouts: CarouselTemplate['layouts'] = {
-  hook: {
-    textPosition: 'center',
-    titleAlign: 'center',
-    contentAlign: 'center',
-    hasAccentShape: true,
-    accentShapeType: 'underline',
-    padding: { top: 120, bottom: 120, left: 80, right: 80 },
-  },
-  content: {
-    textPosition: 'center',
-    titleAlign: 'left',
-    contentAlign: 'left',
-    hasAccentShape: false,
-    padding: { top: 100, bottom: 100, left: 80, right: 80 },
-  },
-  stat: {
-    textPosition: 'center',
-    titleAlign: 'center',
-    contentAlign: 'center',
-    hasAccentShape: true,
-    accentShapeType: 'circle',
-    padding: { top: 120, bottom: 120, left: 80, right: 80 },
-  },
-  quote: {
-    textPosition: 'center',
-    titleAlign: 'center',
-    contentAlign: 'center',
-    hasAccentShape: true,
-    accentShapeType: 'line',
-    padding: { top: 140, bottom: 140, left: 100, right: 100 },
-  },
-  list: {
-    textPosition: 'top',
-    titleAlign: 'left',
-    contentAlign: 'left',
-    hasAccentShape: false,
-    padding: { top: 100, bottom: 100, left: 80, right: 80 },
-  },
-  cta: {
-    textPosition: 'center',
-    titleAlign: 'center',
-    contentAlign: 'center',
-    hasAccentShape: true,
-    accentShapeType: 'box',
-    padding: { top: 120, bottom: 120, left: 80, right: 80 },
-  },
-};
-
 // ============================================
-// MINIMAL CATEGORY (5 templates - 0 premium)
+// MINIMAL TEMPLATES - Clean and Simple
 // ============================================
 
 const cleanWhite: CarouselTemplate = {
   id: 'clean-white',
   name: 'Clean White',
-  description: 'Minimalist white background with dark text',
+  description: 'Minimalist white with cyan accent line',
   category: 'minimal',
   isPremium: false,
-  colors: {
-    background: '#ffffff',
-    text: '#1a1a2e',
-    textSecondary: '#4a4a68',
-    accent: '#0891b2',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-white',
-  textClass: 'text-slate-900',
-  accentClass: 'text-cyan-600',
   background: { type: 'solid', value: '#ffffff' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Your Headline', fontSize: 72, fontWeight: 'bold', fill: '#1a1a2e', top: 450, left: 340 } },
-    { type: 'text', options: { text: 'Supporting text goes here', fontSize: 32, fontWeight: 'normal', fill: '#4a4a68', top: 580, left: 340 } },
+  elements: [
+    // Top accent line
+    { type: 'shape', shapeType: 'rect', left: 80, top: 120, width: 200, height: 6, fill: '#0891b2', rx: 3, ry: 3 },
+    // Main headline
+    { type: 'text', text: 'Your Headline Here', fontSize: 72, fontWeight: 'bold', fill: '#1a1a2e', left: 80, top: 180, width: 920, textAlign: 'left' },
+    // Subheadline
+    { type: 'text', text: 'Add your supporting message that explains the main point', fontSize: 36, fontWeight: 'normal', fill: '#64748b', left: 80, top: 320, width: 920, textAlign: 'left' },
+    // Bottom decorative dots
+    { type: 'shape', shapeType: 'circle', left: 80, top: 1200, width: 12, height: 12, fill: '#0891b2' },
+    { type: 'shape', shapeType: 'circle', left: 110, top: 1200, width: 12, height: 12, fill: '#0891b2', opacity: 0.5 },
+    { type: 'shape', shapeType: 'circle', left: 140, top: 1200, width: 12, height: 12, fill: '#0891b2', opacity: 0.3 },
+    // Handle placeholder
+    { type: 'text', text: '@yourhandle', fontSize: 28, fontWeight: 'normal', fill: '#94a3b8', left: 80, top: 1260, textAlign: 'left' },
   ],
 };
 
 const darkMode: CarouselTemplate = {
   id: 'dark-mode',
   name: 'Dark Mode',
-  description: 'Sleek dark background with white text',
+  description: 'Sleek dark with glowing accent',
   category: 'minimal',
   isPremium: false,
-  colors: {
-    background: '#1a1a2e',
-    text: '#ffffff',
-    textSecondary: '#a0a0b8',
-    accent: '#22d3ee',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-slate-900',
-  textClass: 'text-white',
-  accentClass: 'text-cyan-400',
-  background: { type: 'solid', value: '#1a1a2e' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Your Headline Here', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Add your supporting text', fontSize: 36, fontWeight: 'normal', fill: '#a0a0b8', top: 550 } },
+  background: { type: 'solid', value: '#0f172a' },
+  elements: [
+    // Glowing accent circle (top right)
+    { type: 'shape', shapeType: 'circle', left: 800, top: -100, width: 400, height: 400, fill: '#0891b2', opacity: 0.15 },
+    // Main headline
+    { type: 'text', text: 'Bold Statement', fontSize: 80, fontWeight: 'bold', fill: '#ffffff', left: 80, top: 450, width: 920, textAlign: 'left' },
+    // Accent underline
+    { type: 'shape', shapeType: 'rect', left: 80, top: 560, width: 300, height: 8, fill: '#22d3ee', rx: 4, ry: 4 },
+    // Supporting text
+    { type: 'text', text: 'Your key message goes here with impact', fontSize: 32, fontWeight: 'normal', fill: '#94a3b8', left: 80, top: 620, width: 920, textAlign: 'left' },
+    // Bottom branding area
+    { type: 'shape', shapeType: 'rect', left: 0, top: 1200, width: 1080, height: 150, fill: '#1e293b' },
+    { type: 'text', text: '@yourhandle', fontSize: 28, fontWeight: '500', fill: '#64748b', left: 80, top: 1250, textAlign: 'left' },
   ],
 };
 
-const softGray: CarouselTemplate = {
-  id: 'soft-gray',
-  name: 'Soft Gray',
-  description: 'Gentle light gray background with charcoal text',
+const softBeige: CarouselTemplate = {
+  id: 'soft-beige',
+  name: 'Soft Beige',
+  description: 'Warm and elegant with serif typography',
   category: 'minimal',
   isPremium: false,
-  colors: {
-    background: '#f5f5f7',
-    text: '#2d2d2d',
-    textSecondary: '#6b6b6b',
-    accent: '#3b82f6',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 600,
-    titleSize: 68,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 40,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'fraction',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['logo', 'website'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gray-100',
-  textClass: 'text-gray-800',
-  accentClass: 'text-blue-500',
-  background: { type: 'solid', value: '#f5f5f7' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Your Headline Here', fontSize: 68, fontWeight: '600', fill: '#2d2d2d', top: 400 } },
-    { type: 'text', options: { text: 'Add your supporting text', fontSize: 36, fontWeight: 'normal', fill: '#6b6b6b', top: 550 } },
-  ],
-};
-
-const paper: CarouselTemplate = {
-  id: 'paper',
-  name: 'Paper',
-  description: 'Off-white textured feel with elegant serif typography',
-  category: 'minimal',
-  isPremium: false,
-  colors: {
-    background: '#faf8f5',
-    text: '#2c2c2c',
-    textSecondary: '#5c5c5c',
-    accent: '#8b5a2b',
-  },
-  typography: {
-    titleFont: 'Georgia',
-    titleWeight: 700,
-    titleSize: 64,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 38,
-    lineHeight: 1.6,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'numbers',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-center',
-    brandingElements: ['handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'lines',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-amber-50',
-  textClass: 'text-stone-800',
-  accentClass: 'text-amber-700',
   background: { type: 'solid', value: '#faf8f5' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Your Headline Here', fontSize: 64, fontWeight: 'bold', fill: '#2c2c2c', top: 400 } },
-    { type: 'text', options: { text: 'Add your supporting text', fontSize: 36, fontWeight: 'normal', fill: '#5c5c5c', top: 550 } },
-  ],
-};
-
-const neoBrutalist: CarouselTemplate = {
-  id: 'neo-brutalist',
-  name: 'Neo Brutalist',
-  description: 'Bold black borders, raw aesthetic, high impact',
-  category: 'minimal',
-  isPremium: false,
-  colors: {
-    background: '#ffffff',
-    text: '#000000',
-    textSecondary: '#333333',
-    accent: '#ff3366',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 900,
-    titleSize: 80,
-    bodyFont: 'Inter',
-    bodyWeight: 500,
-    bodySize: 44,
-    lineHeight: 1.3,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'bar',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'geometric',
-  },
-  layouts: {
-    ...defaultLayouts,
-    hook: { ...defaultLayouts.hook, hasAccentShape: true, accentShapeType: 'box' },
-  },
-  backgroundClass: 'bg-white',
-  textClass: 'text-black',
-  accentClass: 'text-rose-500',
-  background: { type: 'solid', value: '#ffffff' },
-  defaultElements: [
-    { type: 'text', options: { text: 'BOLD HEADLINE', fontSize: 80, fontWeight: '900', fill: '#000000', top: 400 } },
-    { type: 'text', options: { text: 'Make an impact', fontSize: 40, fontWeight: '500', fill: '#333333', top: 560 } },
-    { type: 'shape', shapeType: 'rect' },
+  elements: [
+    // Decorative corner element
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 40, height: 300, fill: '#d4a574', opacity: 0.3 },
+    // Main headline (serif style)
+    { type: 'text', text: 'Elegant Ideas', fontSize: 76, fontWeight: 'bold', fontFamily: 'Georgia', fill: '#2c2c2c', left: 100, top: 400, width: 880, textAlign: 'center' },
+    // Decorative line
+    { type: 'shape', shapeType: 'rect', left: 390, top: 520, width: 300, height: 3, fill: '#d4a574' },
+    // Supporting text
+    { type: 'text', text: 'Thoughtful content that resonates', fontSize: 32, fontWeight: 'normal', fontFamily: 'Georgia', fill: '#5c5c5c', left: 100, top: 580, width: 880, textAlign: 'center' },
+    // Bottom quote marks
+    { type: 'text', text: '"', fontSize: 200, fontWeight: 'normal', fontFamily: 'Georgia', fill: '#d4a574', opacity: 0.2, left: 80, top: 1000 },
   ],
 };
 
 // ============================================
-// BOLD CATEGORY (4 templates - 1 premium)
+// BOLD TEMPLATES - High Impact
 // ============================================
 
 const neonPop: CarouselTemplate = {
   id: 'neon-pop',
   name: 'Neon Pop',
-  description: 'Dark background with vibrant neon accent colors',
+  description: 'Electric neon on dark background',
   category: 'bold',
   isPremium: false,
-  colors: {
-    background: '#0f0f1a',
-    text: '#ffffff',
-    textSecondary: '#b8b8d0',
-    accent: '#00ff88',
-    accentSecondary: '#ff00ff',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 800,
-    titleSize: 76,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'bar',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'top-right',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'geometric',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-slate-950',
-  textClass: 'text-white',
-  accentClass: 'text-emerald-400',
-  background: { type: 'solid', value: '#0f0f1a' },
-  defaultElements: [
-    { type: 'shape', shapeType: 'circle' },
-    { type: 'text', options: { text: 'NEON GLOW', fontSize: 76, fontWeight: '800', fill: '#00ff88', top: 500, left: 340 } },
-    { type: 'text', options: { text: 'Electric vibes', fontSize: 36, fontWeight: 'normal', fill: '#ff00ff', top: 640, left: 340 } },
+  background: { type: 'solid', value: '#0a0a0f' },
+  elements: [
+    // Neon glow effect (multiple circles)
+    { type: 'shape', shapeType: 'circle', left: -100, top: 200, width: 600, height: 600, fill: '#00ff88', opacity: 0.05 },
+    { type: 'shape', shapeType: 'circle', left: 600, top: 800, width: 400, height: 400, fill: '#ff00ff', opacity: 0.05 },
+    // Main neon text
+    { type: 'text', text: 'STAND OUT', fontSize: 100, fontWeight: '900', fill: '#00ff88', left: 80, top: 450, width: 920, textAlign: 'left' },
+    // Secondary text in magenta
+    { type: 'text', text: 'FROM THE NOISE', fontSize: 60, fontWeight: '700', fill: '#ff00ff', left: 80, top: 580, width: 920, textAlign: 'left' },
+    // Accent line
+    { type: 'shape', shapeType: 'rect', left: 80, top: 700, width: 400, height: 4, fill: '#00ff88' },
+    // CTA text
+    { type: 'text', text: 'Swipe for more →', fontSize: 28, fontWeight: '500', fill: '#ffffff', left: 80, top: 1200 },
   ],
 };
 
 const colorBlock: CarouselTemplate = {
   id: 'color-block',
   name: 'Color Block',
-  description: 'Bold solid color backgrounds that demand attention',
+  description: 'Bold indigo with golden accent',
   category: 'bold',
   isPremium: false,
-  colors: {
-    background: '#6366f1',
-    text: '#ffffff',
-    textSecondary: '#e0e0ff',
-    accent: '#fbbf24',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 500,
-    bodySize: 44,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['logo'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-indigo-500',
-  textClass: 'text-white',
-  accentClass: 'text-amber-400',
-  background: { type: 'solid', value: '#6366f1' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Bold Statement', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Stand out from the crowd', fontSize: 40, fontWeight: '500', fill: '#e0e0ff', top: 550 } },
+  background: { type: 'solid', value: '#4f46e5' },
+  elements: [
+    // Large decorative circle
+    { type: 'shape', shapeType: 'circle', left: 700, top: -200, width: 600, height: 600, fill: '#ffffff', opacity: 0.1 },
+    // Golden accent bar
+    { type: 'shape', shapeType: 'rect', left: 0, top: 350, width: 20, height: 400, fill: '#fbbf24' },
+    // Main headline
+    { type: 'text', text: 'Make An', fontSize: 80, fontWeight: '700', fill: '#ffffff', left: 80, top: 400, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'IMPACT', fontSize: 120, fontWeight: '900', fill: '#fbbf24', left: 80, top: 490, width: 920, textAlign: 'left' },
+    // Supporting text
+    { type: 'text', text: 'Content that converts', fontSize: 36, fontWeight: '400', fill: '#e0e7ff', left: 80, top: 650, width: 920, textAlign: 'left' },
+    // Bottom slide indicator
+    { type: 'text', text: '01 / 07', fontSize: 24, fontWeight: '600', fill: '#ffffff', opacity: 0.7, left: 920, top: 1260 },
   ],
 };
 
-const highContrast: CarouselTemplate = {
-  id: 'high-contrast',
-  name: 'High Contrast',
-  description: 'Pure black and white with single color accent',
-  category: 'bold',
-  isPremium: false,
-  colors: {
-    background: '#000000',
-    text: '#ffffff',
-    textSecondary: '#cccccc',
-    accent: '#ff4444',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 800,
-    titleSize: 80,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'fraction',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['handle', 'website'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-black',
-  textClass: 'text-white',
-  accentClass: 'text-red-500',
-  background: { type: 'solid', value: '#000000' },
-  defaultElements: [
-    { type: 'text', options: { text: 'MAXIMUM IMPACT', fontSize: 80, fontWeight: '800', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Black and white clarity', fontSize: 40, fontWeight: 'normal', fill: '#cccccc', top: 560 } },
-  ],
-};
-
-const retroBold: CarouselTemplate = {
-  id: 'retro-bold',
-  name: 'Retro Bold',
-  description: '70s inspired with warm colors - Premium',
+const retroOrange: CarouselTemplate = {
+  id: 'retro-orange',
+  name: 'Retro Orange',
+  description: 'Warm 70s vibes with bold typography',
   category: 'bold',
   isPremium: true,
-  colors: {
-    background: '#f97316',
-    text: '#ffffff',
-    textSecondary: '#fff7ed',
-    accent: '#1e1b4b',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 68,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 40,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-center',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'organic',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-orange-500',
-  textClass: 'text-white',
-  accentClass: 'text-indigo-950',
-  background: { type: 'solid', value: '#f97316' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Groovy Headline', fontSize: 68, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Vintage vibes for modern times', fontSize: 38, fontWeight: 'normal', fill: '#fff7ed', top: 550 } },
-    { type: 'shape', shapeType: 'circle' },
+  background: { type: 'solid', value: '#ea580c' },
+  elements: [
+    // Retro circle pattern
+    { type: 'shape', shapeType: 'circle', left: 750, top: 100, width: 300, height: 300, fill: '#fbbf24', opacity: 0.3 },
+    { type: 'shape', shapeType: 'circle', left: 820, top: 170, width: 160, height: 160, fill: '#ffffff', opacity: 0.2 },
+    // Main headline
+    { type: 'text', text: 'GROOVY', fontSize: 120, fontWeight: '900', fill: '#ffffff', left: 80, top: 400, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'IDEAS', fontSize: 120, fontWeight: '900', fill: '#fef3c7', left: 80, top: 520, width: 920, textAlign: 'left' },
+    // Wavy underline (simulated with rect)
+    { type: 'shape', shapeType: 'rect', left: 80, top: 680, width: 500, height: 12, fill: '#1e1b4b', rx: 6, ry: 6 },
+    // Tagline
+    { type: 'text', text: 'Vintage style, modern results', fontSize: 32, fontWeight: '500', fill: '#fff7ed', left: 80, top: 740, width: 920, textAlign: 'left' },
   ],
 };
 
 // ============================================
-// GRADIENT CATEGORY (4 templates - 2 premium)
+// GRADIENT TEMPLATES - Colorful Backgrounds
 // ============================================
 
 const oceanBreeze: CarouselTemplate = {
   id: 'ocean-breeze',
   name: 'Ocean Breeze',
-  description: 'Fresh cyan to blue diagonal gradient',
+  description: 'Fresh cyan to blue gradient',
   category: 'gradient',
   isPremium: false,
-  colors: {
-    background: '#06b6d4',
-    backgroundSecondary: '#2563eb',
-    gradientDirection: 'to-br',
-    text: '#ffffff',
-    textSecondary: '#e0f2fe',
-    accent: '#fbbf24',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gradient-to-br from-cyan-500 to-blue-600',
-  textClass: 'text-white',
-  accentClass: 'text-amber-300',
   background: { type: 'gradient', value: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Fresh Ideas Flow', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Like waves on a shore', fontSize: 40, fontWeight: 'normal', fill: '#e0f2fe', top: 550 } },
+  elements: [
+    // Wave-like shape
+    { type: 'shape', shapeType: 'circle', left: -200, top: 900, width: 600, height: 600, fill: '#ffffff', opacity: 0.1 },
+    // Main headline
+    { type: 'text', text: 'Fresh Ideas', fontSize: 90, fontWeight: '700', fill: '#ffffff', left: 80, top: 380, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'Flow Here', fontSize: 90, fontWeight: '700', fill: '#e0f2fe', left: 80, top: 490, width: 920, textAlign: 'left' },
+    // Divider
+    { type: 'shape', shapeType: 'rect', left: 80, top: 630, width: 120, height: 6, fill: '#ffffff', rx: 3, ry: 3 },
+    // Supporting text
+    { type: 'text', text: 'Dive into content that makes waves', fontSize: 32, fontWeight: '400', fill: '#ffffff', opacity: 0.9, left: 80, top: 680, width: 920, textAlign: 'left' },
+    // CTA arrow
+    { type: 'text', text: '→', fontSize: 48, fontWeight: '400', fill: '#ffffff', left: 980, top: 1220 },
   ],
 };
 
 const sunsetGlow: CarouselTemplate = {
   id: 'sunset-glow',
   name: 'Sunset Glow',
-  description: 'Warm orange to pink gradient - Premium',
+  description: 'Warm orange to pink gradient',
   category: 'gradient',
   isPremium: true,
-  colors: {
-    background: '#f97316',
-    backgroundSecondary: '#db2777',
-    gradientDirection: 'to-br',
-    text: '#ffffff',
-    textSecondary: '#fff7ed',
-    accent: '#fef3c7',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['logo', 'website'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gradient-to-br from-orange-500 to-pink-600',
-  textClass: 'text-white',
-  accentClass: 'text-amber-100',
   background: { type: 'gradient', value: 'linear-gradient(135deg, #f97316 0%, #db2777 100%)' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Golden Hour', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'When everything glows', fontSize: 40, fontWeight: 'normal', fill: '#fff7ed', top: 550 } },
+  elements: [
+    // Sun circle
+    { type: 'shape', shapeType: 'circle', left: 700, top: -100, width: 500, height: 500, fill: '#fef3c7', opacity: 0.2 },
+    // Main content
+    { type: 'text', text: 'Golden', fontSize: 100, fontWeight: '300', fill: '#ffffff', left: 80, top: 380, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'HOUR', fontSize: 140, fontWeight: '900', fill: '#ffffff', left: 80, top: 470, width: 920, textAlign: 'left' },
+    // Tagline
+    { type: 'text', text: 'When everything glows', fontSize: 36, fontWeight: '400', fill: '#fff7ed', left: 80, top: 650, width: 920, textAlign: 'left' },
+    // Bottom branding bar
+    { type: 'shape', shapeType: 'rect', left: 0, top: 1180, width: 1080, height: 170, fill: '#000000', opacity: 0.2 },
+    { type: 'text', text: '@yourhandle', fontSize: 28, fontWeight: '500', fill: '#ffffff', left: 80, top: 1240, textAlign: 'left' },
   ],
 };
 
 const purpleHaze: CarouselTemplate = {
   id: 'purple-haze',
   name: 'Purple Haze',
-  description: 'Deep purple to pink gradient - Premium',
+  description: 'Deep purple to pink gradient',
   category: 'gradient',
   isPremium: true,
-  colors: {
-    background: '#7c3aed',
-    backgroundSecondary: '#ec4899',
-    gradientDirection: 'to-br',
-    text: '#ffffff',
-    textSecondary: '#f3e8ff',
-    accent: '#fbbf24',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'dots',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gradient-to-br from-purple-600 to-pink-500',
-  textClass: 'text-white',
-  accentClass: 'text-amber-300',
   background: { type: 'gradient', value: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Creative Vision', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Think outside the box', fontSize: 40, fontWeight: 'normal', fill: '#f3e8ff', top: 550 } },
+  elements: [
+    // Geometric decoration
+    { type: 'shape', shapeType: 'rect', left: 800, top: 100, width: 200, height: 200, fill: '#ffffff', opacity: 0.1, rx: 20, ry: 20 },
+    { type: 'shape', shapeType: 'rect', left: 850, top: 150, width: 200, height: 200, fill: '#ffffff', opacity: 0.1, rx: 20, ry: 20 },
+    // Number indicator
+    { type: 'text', text: '01', fontSize: 200, fontWeight: '900', fill: '#ffffff', opacity: 0.1, left: 700, top: 800 },
+    // Main content
+    { type: 'text', text: 'CREATIVE', fontSize: 90, fontWeight: '800', fill: '#ffffff', left: 80, top: 420, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'VISION', fontSize: 90, fontWeight: '800', fill: '#fdf4ff', left: 80, top: 530, width: 920, textAlign: 'left' },
+    // Tagline
+    { type: 'text', text: 'Think outside the box', fontSize: 32, fontWeight: '400', fill: '#ffffff', opacity: 0.9, left: 80, top: 680, width: 920, textAlign: 'left' },
   ],
 };
 
-const forest: CarouselTemplate = {
-  id: 'forest',
+const forestGreen: CarouselTemplate = {
+  id: 'forest-green',
   name: 'Forest',
-  description: 'Calming dark green to teal gradient',
+  description: 'Calming green gradient',
   category: 'gradient',
   isPremium: false,
-  colors: {
-    background: '#064e3b',
-    backgroundSecondary: '#0d9488',
-    gradientDirection: 'to-br',
-    text: '#ffffff',
-    textSecondary: '#d1fae5',
-    accent: '#fbbf24',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 600,
-    titleSize: 68,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 40,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'numbers',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-center',
-    brandingElements: ['handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'organic',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gradient-to-br from-emerald-900 to-teal-600',
-  textClass: 'text-white',
-  accentClass: 'text-amber-300',
-  background: { type: 'gradient', value: 'linear-gradient(135deg, #064e3b 0%, #0d9488 100%)' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Natural Growth', fontSize: 68, fontWeight: '600', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Sustainable success', fontSize: 38, fontWeight: 'normal', fill: '#d1fae5', top: 550 } },
+  background: { type: 'gradient', value: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' },
+  elements: [
+    // Leaf-like shapes
+    { type: 'shape', shapeType: 'circle', left: 850, top: 150, width: 300, height: 300, fill: '#ffffff', opacity: 0.1 },
+    { type: 'shape', shapeType: 'circle', left: 750, top: 250, width: 200, height: 200, fill: '#ffffff', opacity: 0.05 },
+    // Main text
+    { type: 'text', text: 'Sustainable', fontSize: 70, fontWeight: '600', fill: '#d1fae5', left: 80, top: 400, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'GROWTH', fontSize: 110, fontWeight: '800', fill: '#ffffff', left: 80, top: 480, width: 920, textAlign: 'left' },
+    // Accent line
+    { type: 'shape', shapeType: 'rect', left: 80, top: 630, width: 150, height: 6, fill: '#fbbf24', rx: 3, ry: 3 },
+    // Supporting text
+    { type: 'text', text: 'Building for the long term', fontSize: 30, fontWeight: '400', fill: '#ffffff', opacity: 0.9, left: 80, top: 680, width: 920, textAlign: 'left' },
   ],
 };
 
 // ============================================
-// PHOTO CATEGORY (3 templates - 2 premium)
-// ============================================
-
-const photoCard: CarouselTemplate = {
-  id: 'photo-card',
-  name: 'Photo Card',
-  description: 'Full bleed image with text overlay - Premium',
-  category: 'photo',
-  isPremium: true,
-  colors: {
-    background: 'transparent',
-    text: '#ffffff',
-    textSecondary: '#e5e5e5',
-    accent: '#22d3ee',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 64,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 38,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'top-left',
-    brandingElements: ['logo'],
-    hasDecorativeElements: false,
-  },
-  layouts: {
-    ...defaultLayouts,
-    content: { ...defaultLayouts.content, textPosition: 'bottom', padding: { top: 60, bottom: 140, left: 60, right: 60 } },
-  },
-  backgroundClass: 'bg-black/40',
-  textClass: 'text-white',
-  accentClass: 'text-cyan-400',
-  background: { type: 'solid', value: '#1f2937' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Your Photo Title', fontSize: 64, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Upload an image as background', fontSize: 36, fontWeight: 'normal', fill: '#e5e5e5', top: 540 } },
-  ],
-};
-
-const blurredBackground: CarouselTemplate = {
-  id: 'blurred-background',
-  name: 'Blurred Background',
-  description: 'Softly blurred image background - Premium',
-  category: 'photo',
-  isPremium: true,
-  colors: {
-    background: 'transparent',
-    text: '#ffffff',
-    textSecondary: '#d1d5db',
-    accent: '#fbbf24',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'fraction',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['avatar', 'website'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'backdrop-blur-xl bg-black/30',
-  textClass: 'text-white',
-  accentClass: 'text-amber-400',
-  background: { type: 'solid', value: '#374151' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Dreamy Visuals', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Soft focus, sharp message', fontSize: 40, fontWeight: 'normal', fill: '#d1d5db', top: 550 } },
-  ],
-};
-
-const splitScreen: CarouselTemplate = {
-  id: 'split-screen',
-  name: 'Split Screen',
-  description: 'Half image, half solid color with text',
-  category: 'photo',
-  isPremium: false,
-  colors: {
-    background: '#1e293b',
-    text: '#ffffff',
-    textSecondary: '#cbd5e1',
-    accent: '#38bdf8',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 64,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 38,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['handle'],
-    hasDecorativeElements: false,
-  },
-  layouts: {
-    ...defaultLayouts,
-    content: { ...defaultLayouts.content, textPosition: 'right', padding: { top: 80, bottom: 80, left: 40, right: 60 } },
-  },
-  backgroundClass: 'bg-slate-800',
-  textClass: 'text-white',
-  accentClass: 'text-sky-400',
-  background: { type: 'solid', value: '#1e293b' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Two Halves', fontSize: 64, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'One powerful message', fontSize: 36, fontWeight: 'normal', fill: '#cbd5e1', top: 540 } },
-  ],
-};
-
-// ============================================
-// CORPORATE CATEGORY (4 templates - 1 premium)
+// CORPORATE TEMPLATES - Professional
 // ============================================
 
 const linkedinBlue: CarouselTemplate = {
   id: 'linkedin-blue',
   name: 'LinkedIn Blue',
-  description: 'Official LinkedIn brand colors for platform fit',
+  description: 'Official LinkedIn brand colors',
   category: 'corporate',
   isPremium: false,
-  colors: {
-    background: '#0A66C2',
-    text: '#ffffff',
-    textSecondary: '#cce4f7',
-    accent: '#ffffff',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 700,
-    titleSize: 72,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 42,
-    lineHeight: 1.4,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'dots',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'bottom-left',
-    brandingElements: ['avatar', 'handle'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-[#0A66C2]',
-  textClass: 'text-white',
-  accentClass: 'text-white',
   background: { type: 'solid', value: '#0A66C2' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Professional Insight', fontSize: 72, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Native to LinkedIn', fontSize: 40, fontWeight: 'normal', fill: '#cce4f7', top: 550 } },
+  elements: [
+    // LinkedIn-style card
+    { type: 'shape', shapeType: 'rect', left: 60, top: 280, width: 960, height: 600, fill: '#ffffff', rx: 16, ry: 16 },
+    // Content inside card
+    { type: 'text', text: 'Professional', fontSize: 60, fontWeight: '600', fill: '#0A66C2', left: 120, top: 380, width: 840, textAlign: 'left' },
+    { type: 'text', text: 'INSIGHT', fontSize: 80, fontWeight: '800', fill: '#1a1a2e', left: 120, top: 460, width: 840, textAlign: 'left' },
+    // Divider line
+    { type: 'shape', shapeType: 'rect', left: 120, top: 580, width: 840, height: 2, fill: '#e5e7eb' },
+    // Supporting text
+    { type: 'text', text: 'Expert knowledge shared with clarity', fontSize: 28, fontWeight: '400', fill: '#64748b', left: 120, top: 620, width: 840, textAlign: 'left' },
+    // Engagement icons placeholder
+    { type: 'shape', shapeType: 'circle', left: 120, top: 760, width: 40, height: 40, fill: '#0A66C2', opacity: 0.2 },
+    { type: 'shape', shapeType: 'circle', left: 180, top: 760, width: 40, height: 40, fill: '#0A66C2', opacity: 0.2 },
+    { type: 'shape', shapeType: 'circle', left: 240, top: 760, width: 40, height: 40, fill: '#0A66C2', opacity: 0.2 },
+    // Bottom branding
+    { type: 'text', text: '@yourhandle', fontSize: 26, fontWeight: '500', fill: '#ffffff', left: 80, top: 1260, textAlign: 'left' },
   ],
 };
 
 const executiveNavy: CarouselTemplate = {
   id: 'executive-navy',
   name: 'Executive Navy',
-  description: 'Professional navy blue with gold - Premium',
+  description: 'Premium navy with gold accents',
   category: 'corporate',
   isPremium: true,
-  colors: {
-    background: '#1e3a5f',
-    text: '#ffffff',
-    textSecondary: '#94a3b8',
-    accent: '#d4af37',
-  },
-  typography: {
-    titleFont: 'Georgia',
-    titleWeight: 700,
-    titleSize: 64,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 38,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'numbers',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-center',
-    brandingElements: ['logo', 'website'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'lines',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-slate-800',
-  textClass: 'text-white',
-  accentClass: 'text-amber-500',
   background: { type: 'solid', value: '#1e3a5f' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Executive Summary', fontSize: 64, fontWeight: 'bold', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Leadership insights that matter', fontSize: 36, fontWeight: 'normal', fill: '#94a3b8', top: 540 } },
-    { type: 'shape', shapeType: 'line' },
+  elements: [
+    // Gold corner accent
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 8, height: 200, fill: '#d4af37' },
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 200, height: 8, fill: '#d4af37' },
+    // Main content
+    { type: 'text', text: 'Executive', fontSize: 70, fontWeight: '400', fontFamily: 'Georgia', fill: '#d4af37', left: 80, top: 400, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'SUMMARY', fontSize: 90, fontWeight: '700', fill: '#ffffff', left: 80, top: 480, width: 920, textAlign: 'left' },
+    // Gold line
+    { type: 'shape', shapeType: 'rect', left: 80, top: 610, width: 200, height: 4, fill: '#d4af37' },
+    // Supporting text
+    { type: 'text', text: 'Leadership insights that drive results', fontSize: 30, fontWeight: '400', fill: '#94a3b8', left: 80, top: 660, width: 920, textAlign: 'left' },
+    // Bottom gold line
+    { type: 'shape', shapeType: 'rect', left: 0, top: 1300, width: 1080, height: 8, fill: '#d4af37' },
   ],
 };
 
 const techStartup: CarouselTemplate = {
   id: 'tech-startup',
   name: 'Tech Startup',
-  description: 'Modern blue-gray palette for tech companies',
+  description: 'Modern dark tech aesthetic',
   category: 'corporate',
   isPremium: false,
-  colors: {
-    background: '#0f172a',
-    text: '#f8fafc',
-    textSecondary: '#94a3b8',
-    accent: '#3b82f6',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 600,
-    titleSize: 68,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 40,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'bar',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'top-right',
-    brandingElements: ['logo'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'geometric',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-slate-900',
-  textClass: 'text-slate-50',
-  accentClass: 'text-blue-500',
   background: { type: 'solid', value: '#0f172a' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Innovation Ahead', fontSize: 68, fontWeight: '600', fill: '#f8fafc', top: 400 } },
-    { type: 'text', options: { text: 'Building the future', fontSize: 38, fontWeight: 'normal', fill: '#94a3b8', top: 550 } },
-  ],
-};
-
-const consulting: CarouselTemplate = {
-  id: 'consulting',
-  name: 'Consulting',
-  description: 'Gray scale professional with accent color pop',
-  category: 'corporate',
-  isPremium: false,
-  colors: {
-    background: '#374151',
-    text: '#ffffff',
-    textSecondary: '#d1d5db',
-    accent: '#10b981',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 600,
-    titleSize: 68,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 40,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'fraction',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['logo', 'website'],
-    hasDecorativeElements: false,
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-gray-700',
-  textClass: 'text-white',
-  accentClass: 'text-emerald-400',
-  background: { type: 'solid', value: '#374151' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Strategic Thinking', fontSize: 68, fontWeight: '600', fill: '#ffffff', top: 400 } },
-    { type: 'text', options: { text: 'Results-driven approach', fontSize: 38, fontWeight: 'normal', fill: '#d1d5db', top: 550 } },
+  elements: [
+    // Tech grid pattern (simplified)
+    { type: 'shape', shapeType: 'rect', left: 800, top: 100, width: 2, height: 400, fill: '#3b82f6', opacity: 0.3 },
+    { type: 'shape', shapeType: 'rect', left: 850, top: 100, width: 2, height: 300, fill: '#3b82f6', opacity: 0.2 },
+    { type: 'shape', shapeType: 'rect', left: 900, top: 100, width: 2, height: 500, fill: '#3b82f6', opacity: 0.4 },
+    // Blue accent dot
+    { type: 'shape', shapeType: 'circle', left: 80, top: 350, width: 16, height: 16, fill: '#3b82f6' },
+    // Main content
+    { type: 'text', text: 'Innovation', fontSize: 80, fontWeight: '600', fill: '#f8fafc', left: 80, top: 400, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'AHEAD', fontSize: 100, fontWeight: '800', fill: '#3b82f6', left: 80, top: 500, width: 920, textAlign: 'left' },
+    // Tagline
+    { type: 'text', text: 'Building the future, one line at a time', fontSize: 28, fontWeight: '400', fill: '#94a3b8', left: 80, top: 650, width: 920, textAlign: 'left' },
+    // Progress bar
+    { type: 'shape', shapeType: 'rect', left: 80, top: 1200, width: 920, height: 8, fill: '#1e293b', rx: 4, ry: 4 },
+    { type: 'shape', shapeType: 'rect', left: 80, top: 1200, width: 300, height: 8, fill: '#3b82f6', rx: 4, ry: 4 },
   ],
 };
 
 // ============================================
-// CREATIVE CATEGORY (3 templates - 2 premium)
+// CREATIVE TEMPLATES - Unique & Artistic
 // ============================================
-
-const handwritten: CarouselTemplate = {
-  id: 'handwritten',
-  name: 'Handwritten',
-  description: 'Notebook paper feel with handwriting - Premium',
-  category: 'creative',
-  isPremium: true,
-  colors: {
-    background: '#fefce8',
-    text: '#1c1917',
-    textSecondary: '#44403c',
-    accent: '#dc2626',
-  },
-  typography: {
-    titleFont: 'Georgia',
-    titleWeight: 700,
-    titleSize: 80,
-    bodyFont: 'Georgia',
-    bodyWeight: 400,
-    bodySize: 48,
-    lineHeight: 1.3,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'numbers',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['handle'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'lines',
-  },
-  layouts: defaultLayouts,
-  backgroundClass: 'bg-yellow-50',
-  textClass: 'text-stone-900',
-  accentClass: 'text-red-600',
-  background: { type: 'solid', value: '#fefce8' },
-  defaultElements: [
-    { type: 'text', options: { text: 'Personal Note', fontSize: 80, fontWeight: 'bold', fill: '#1c1917', top: 400 } },
-    { type: 'text', options: { text: 'Like writing by hand', fontSize: 44, fontWeight: 'normal', fill: '#44403c', top: 560 } },
-  ],
-};
 
 const magazine: CarouselTemplate = {
   id: 'magazine',
   name: 'Magazine',
-  description: 'Editorial layout with bold typography - Premium',
+  description: 'Editorial layout with bold typography',
   category: 'creative',
   isPremium: true,
-  colors: {
-    background: '#fafafa',
-    text: '#0a0a0a',
-    textSecondary: '#525252',
-    accent: '#ea580c',
-  },
-  typography: {
-    titleFont: 'Georgia',
-    titleWeight: 900,
-    titleSize: 88,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 36,
-    lineHeight: 1.6,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'bar',
-    progressBarPosition: 'bottom',
-    showBranding: true,
-    brandingPosition: 'top-left',
-    brandingElements: ['logo'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'lines',
-  },
-  layouts: {
-    ...defaultLayouts,
-    hook: { ...defaultLayouts.hook, titleAlign: 'left', textPosition: 'bottom-left' },
-  },
-  backgroundClass: 'bg-neutral-50',
-  textClass: 'text-neutral-950',
-  accentClass: 'text-orange-600',
   background: { type: 'solid', value: '#fafafa' },
-  defaultElements: [
-    { type: 'text', options: { text: 'THE HEADLINE', fontSize: 88, fontWeight: '900', fill: '#0a0a0a', top: 350 } },
-    { type: 'text', options: { text: 'Editorial excellence', fontSize: 36, fontWeight: 'normal', fill: '#525252', top: 520 } },
+  elements: [
+    // Red accent bar
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 1080, height: 80, fill: '#dc2626' },
+    // Issue number
+    { type: 'text', text: 'ISSUE 01', fontSize: 20, fontWeight: '700', fill: '#ffffff', left: 80, top: 25, textAlign: 'left' },
+    // Large headline
+    { type: 'text', text: 'THE', fontSize: 60, fontWeight: '400', fontFamily: 'Georgia', fill: '#525252', left: 80, top: 350, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'HEADLINE', fontSize: 120, fontWeight: '900', fontFamily: 'Georgia', fill: '#0a0a0a', left: 80, top: 400, width: 920, textAlign: 'left' },
+    // Red underline
+    { type: 'shape', shapeType: 'rect', left: 80, top: 560, width: 400, height: 8, fill: '#dc2626' },
+    // Subheadline
+    { type: 'text', text: 'Editorial excellence in every word', fontSize: 28, fontWeight: '400', fill: '#525252', left: 80, top: 620, width: 920, textAlign: 'left' },
+    // Image placeholder
+    { type: 'shape', shapeType: 'rect', left: 80, top: 750, width: 920, height: 350, fill: '#e5e5e5', rx: 8, ry: 8 },
+    { type: 'text', text: 'IMAGE', fontSize: 24, fontWeight: '500', fill: '#a3a3a3', left: 460, top: 900, textAlign: 'center' },
   ],
 };
 
 const dataViz: CarouselTemplate = {
   id: 'data-viz',
   name: 'Data Viz',
-  description: 'Optimized for statistics and data presentation',
+  description: 'Statistics and metrics focused',
+  category: 'data',
+  isPremium: false,
+  background: { type: 'solid', value: '#18181b' },
+  elements: [
+    // Background decorative element
+    { type: 'shape', shapeType: 'circle', left: 700, top: 200, width: 500, height: 500, fill: '#22c55e', opacity: 0.1 },
+    // Large stat number
+    { type: 'text', text: '87%', fontSize: 200, fontWeight: '800', fill: '#22c55e', left: 80, top: 320, width: 920, textAlign: 'left' },
+    // Stat label
+    { type: 'text', text: 'OF USERS', fontSize: 40, fontWeight: '600', fill: '#ffffff', left: 80, top: 550, width: 920, textAlign: 'left' },
+    { type: 'text', text: 'saw results in 30 days', fontSize: 36, fontWeight: '400', fill: '#a1a1aa', left: 80, top: 610, width: 920, textAlign: 'left' },
+    // Progress bar visualization
+    { type: 'shape', shapeType: 'rect', left: 80, top: 750, width: 920, height: 60, fill: '#27272a', rx: 8, ry: 8 },
+    { type: 'shape', shapeType: 'rect', left: 80, top: 750, width: 800, height: 60, fill: '#22c55e', rx: 8, ry: 8 },
+    // Legend
+    { type: 'shape', shapeType: 'circle', left: 80, top: 880, width: 16, height: 16, fill: '#22c55e' },
+    { type: 'text', text: 'Success rate', fontSize: 22, fontWeight: '400', fill: '#a1a1aa', left: 110, top: 875 },
+    // Source
+    { type: 'text', text: 'Source: Internal data, 2024', fontSize: 18, fontWeight: '400', fill: '#52525b', left: 80, top: 1260 },
+  ],
+};
+
+const handwritten: CarouselTemplate = {
+  id: 'handwritten',
+  name: 'Handwritten',
+  description: 'Personal notebook feel',
+  category: 'creative',
+  isPremium: true,
+  background: { type: 'solid', value: '#fefce8' },
+  elements: [
+    // Notebook lines
+    { type: 'shape', shapeType: 'rect', left: 0, top: 200, width: 1080, height: 2, fill: '#fde68a', opacity: 0.5 },
+    { type: 'shape', shapeType: 'rect', left: 0, top: 300, width: 1080, height: 2, fill: '#fde68a', opacity: 0.5 },
+    { type: 'shape', shapeType: 'rect', left: 0, top: 400, width: 1080, height: 2, fill: '#fde68a', opacity: 0.5 },
+    { type: 'shape', shapeType: 'rect', left: 0, top: 500, width: 1080, height: 2, fill: '#fde68a', opacity: 0.5 },
+    { type: 'shape', shapeType: 'rect', left: 0, top: 600, width: 1080, height: 2, fill: '#fde68a', opacity: 0.5 },
+    // Red margin line
+    { type: 'shape', shapeType: 'rect', left: 100, top: 0, width: 2, height: 1350, fill: '#fca5a5', opacity: 0.5 },
+    // Handwritten-style text
+    { type: 'text', text: 'Dear Reader,', fontSize: 48, fontWeight: '400', fontFamily: 'Georgia', fill: '#1c1917', left: 140, top: 300 },
+    { type: 'text', text: 'This is your', fontSize: 60, fontWeight: '700', fontFamily: 'Georgia', fill: '#1c1917', left: 140, top: 420 },
+    { type: 'text', text: 'personal note', fontSize: 60, fontWeight: '700', fontFamily: 'Georgia', fill: '#dc2626', left: 140, top: 500 },
+    // Signature
+    { type: 'text', text: '- Your Name', fontSize: 36, fontWeight: '400', fontFamily: 'Georgia', fill: '#44403c', left: 140, top: 700 },
+    // Paper clip decoration (circle)
+    { type: 'shape', shapeType: 'circle', left: 900, top: 50, width: 80, height: 80, fill: '#a3a3a3', opacity: 0.3 },
+  ],
+};
+
+const splitDuo: CarouselTemplate = {
+  id: 'split-duo',
+  name: 'Split Duo',
+  description: 'Two-tone split design',
   category: 'creative',
   isPremium: false,
-  colors: {
-    background: '#18181b',
-    text: '#fafafa',
-    textSecondary: '#a1a1aa',
-    accent: '#22c55e',
-    accentSecondary: '#3b82f6',
-  },
-  typography: {
-    titleFont: 'Inter',
-    titleWeight: 600,
-    titleSize: 56,
-    bodyFont: 'Inter',
-    bodyWeight: 400,
-    bodySize: 36,
-    lineHeight: 1.5,
-  },
-  elements: {
-    showProgressBar: true,
-    progressBarStyle: 'bar',
-    progressBarPosition: 'top',
-    showBranding: true,
-    brandingPosition: 'bottom-right',
-    brandingElements: ['logo', 'website'],
-    hasDecorativeElements: true,
-    decorativeStyle: 'geometric',
-  },
-  layouts: {
-    ...defaultLayouts,
-    stat: { ...defaultLayouts.stat, titleAlign: 'center', hasAccentShape: true, accentShapeType: 'circle' },
-  },
-  backgroundClass: 'bg-zinc-900',
-  textClass: 'text-zinc-50',
-  accentClass: 'text-green-500',
-  background: { type: 'solid', value: '#18181b' },
-  defaultElements: [
-    { type: 'shape', shapeType: 'rect' },
-    { type: 'text', options: { text: '87%', fontSize: 180, fontWeight: 'bold', fill: '#22c55e', top: 380, left: 340 } },
-    { type: 'text', options: { text: 'of users saw results', fontSize: 36, fontWeight: 'normal', fill: '#a1a1aa', top: 650, left: 340 } },
+  background: { type: 'solid', value: '#ffffff' },
+  elements: [
+    // Left half dark
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 540, height: 1350, fill: '#1e293b' },
+    // Left side content
+    { type: 'text', text: 'ONE', fontSize: 80, fontWeight: '800', fill: '#ffffff', left: 80, top: 450, width: 400, textAlign: 'left' },
+    { type: 'text', text: 'SIDE', fontSize: 80, fontWeight: '800', fill: '#64748b', left: 80, top: 540, width: 400, textAlign: 'left' },
+    // Right side content
+    { type: 'text', text: 'OTHER', fontSize: 80, fontWeight: '800', fill: '#1e293b', left: 600, top: 450, width: 400, textAlign: 'left' },
+    { type: 'text', text: 'SIDE', fontSize: 80, fontWeight: '800', fill: '#94a3b8', left: 600, top: 540, width: 400, textAlign: 'left' },
+    // Center accent circle
+    { type: 'shape', shapeType: 'circle', left: 490, top: 625, width: 100, height: 100, fill: '#0891b2' },
+    // Bottom tagline
+    { type: 'text', text: 'Two perspectives, one story', fontSize: 28, fontWeight: '400', fill: '#64748b', left: 600, top: 1200, width: 400, textAlign: 'left' },
+    { type: 'text', text: '@yourhandle', fontSize: 24, fontWeight: '400', fill: '#ffffff', left: 80, top: 1200, textAlign: 'left' },
+  ],
+};
+
+// ============================================
+// DATA TEMPLATES - Statistics & Metrics
+// ============================================
+
+const counterCard: CarouselTemplate = {
+  id: 'counter-card',
+  name: 'Counter Card',
+  description: 'Big number with context',
+  category: 'data',
+  isPremium: false,
+  background: { type: 'solid', value: '#f8fafc' },
+  elements: [
+    // Accent top bar
+    { type: 'shape', shapeType: 'rect', left: 0, top: 0, width: 1080, height: 12, fill: '#6366f1' },
+    // Card container
+    { type: 'shape', shapeType: 'rect', left: 80, top: 200, width: 920, height: 900, fill: '#ffffff', rx: 24, ry: 24 },
+    // Shadow effect (darker rect behind)
+    // Large number
+    { type: 'text', text: '10x', fontSize: 240, fontWeight: '900', fill: '#6366f1', left: 120, top: 280, width: 840, textAlign: 'center' },
+    // Label
+    { type: 'text', text: 'FASTER', fontSize: 60, fontWeight: '700', fill: '#1e293b', left: 120, top: 550, width: 840, textAlign: 'center' },
+    // Description
+    { type: 'text', text: 'than traditional methods', fontSize: 32, fontWeight: '400', fill: '#64748b', left: 120, top: 640, width: 840, textAlign: 'center' },
+    // Comparison bars
+    { type: 'shape', shapeType: 'rect', left: 160, top: 780, width: 760, height: 40, fill: '#e2e8f0', rx: 8, ry: 8 },
+    { type: 'shape', shapeType: 'rect', left: 160, top: 780, width: 76, height: 40, fill: '#94a3b8', rx: 8, ry: 8 },
+    { type: 'text', text: 'Before', fontSize: 20, fontWeight: '500', fill: '#64748b', left: 160, top: 835 },
+    { type: 'shape', shapeType: 'rect', left: 160, top: 890, width: 760, height: 40, fill: '#e2e8f0', rx: 8, ry: 8 },
+    { type: 'shape', shapeType: 'rect', left: 160, top: 890, width: 760, height: 40, fill: '#6366f1', rx: 8, ry: 8 },
+    { type: 'text', text: 'After', fontSize: 20, fontWeight: '500', fill: '#6366f1', left: 160, top: 945 },
   ],
 };
 
@@ -1159,44 +495,39 @@ const dataViz: CarouselTemplate = {
 // ============================================
 
 export const carouselTemplates: CarouselTemplate[] = [
-  // Minimal (5 free)
+  // Minimal (3)
   cleanWhite,
   darkMode,
-  softGray,
-  paper,
-  neoBrutalist,
-  // Bold (3 free, 1 premium)
+  softBeige,
+  // Bold (3 - 1 premium)
   neonPop,
   colorBlock,
-  highContrast,
-  retroBold,
-  // Gradient (2 free, 2 premium)
+  retroOrange,
+  // Gradient (4 - 2 premium)
   oceanBreeze,
   sunsetGlow,
   purpleHaze,
-  forest,
-  // Photo (1 free, 2 premium)
-  photoCard,
-  blurredBackground,
-  splitScreen,
-  // Corporate (3 free, 1 premium)
+  forestGreen,
+  // Corporate (3 - 1 premium)
   linkedinBlue,
   executiveNavy,
   techStartup,
-  consulting,
-  // Creative (1 free, 2 premium)
-  handwritten,
+  // Creative (4 - 2 premium)
   magazine,
   dataViz,
+  handwritten,
+  splitDuo,
+  // Data (1)
+  counterCard,
 ];
 
 export const templateCategories: { id: TemplateCategory; name: string; description: string }[] = [
   { id: 'minimal', name: 'Minimal', description: 'Clean and simple designs' },
   { id: 'bold', name: 'Bold', description: 'High-impact, attention-grabbing' },
   { id: 'gradient', name: 'Gradient', description: 'Colorful gradient backgrounds' },
-  { id: 'photo', name: 'Photo', description: 'Image-based layouts' },
   { id: 'corporate', name: 'Corporate', description: 'Professional business styles' },
   { id: 'creative', name: 'Creative', description: 'Unique and artistic' },
+  { id: 'data', name: 'Data', description: 'Statistics and metrics' },
 ];
 
 export function getTemplateById(id: string): CarouselTemplate | undefined {

@@ -48,9 +48,29 @@ export interface SlideData {
   thumbnail?: string;
 }
 
+export interface ShapeOptions {
+  shapeType: 'rect' | 'circle' | 'line';
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  rx?: number;
+  ry?: number;
+  // For lines
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+}
+
 export interface CanvasWorkspaceRef {
   addText: (options?: Partial<TextOptions>) => void;
   addShape: (shapeType: 'rect' | 'circle' | 'line') => void;
+  addShapeWithOptions: (options: ShapeOptions) => void;
   addImage: (url: string) => Promise<void>;
   deleteSelected: () => void;
   duplicateSelected: () => void;
@@ -75,6 +95,8 @@ interface TextOptions {
   textAlign?: 'left' | 'center' | 'right' | 'justify' | 'justify-left' | 'justify-center' | 'justify-right';
   left?: number;
   top?: number;
+  width?: number;
+  opacity?: number;
 }
 
 interface CanvasWorkspaceProps {
@@ -224,12 +246,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const text = new Textbox(options.text || 'Add your text here', {
           left: options.left ?? CANVAS_WIDTH / 2 - 200,
           top: options.top ?? CANVAS_HEIGHT / 2 - 30,
-          width: 400,
+          width: options.width ?? 400,
           fontSize: options.fontSize ?? 48,
           fontFamily: options.fontFamily ?? 'Inter',
           fontWeight: options.fontWeight ?? 'normal',
           fill: options.fill ?? '#000000',
           textAlign: options.textAlign ?? 'center',
+          opacity: options.opacity ?? 1,
           editable: true,
         });
 
@@ -277,6 +300,59 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         fabricRef.current.add(shape);
         fabricRef.current.setActiveObject(shape);
+        fabricRef.current.renderAll();
+      },
+
+      addShapeWithOptions: (options: ShapeOptions) => {
+        if (!fabricRef.current) return;
+
+        let shape: FabricObject;
+
+        switch (options.shapeType) {
+          case 'rect':
+            shape = new Rect({
+              left: options.left ?? CANVAS_WIDTH / 2 - 100,
+              top: options.top ?? CANVAS_HEIGHT / 2 - 75,
+              width: options.width ?? 200,
+              height: options.height ?? 150,
+              fill: options.fill ?? '#0891b2',
+              stroke: options.stroke,
+              strokeWidth: options.strokeWidth,
+              opacity: options.opacity ?? 1,
+              rx: options.rx ?? 0,
+              ry: options.ry ?? 0,
+            });
+            break;
+          case 'circle':
+            shape = new Circle({
+              left: options.left ?? CANVAS_WIDTH / 2 - 75,
+              top: options.top ?? CANVAS_HEIGHT / 2 - 75,
+              radius: (options.width ?? 150) / 2,
+              fill: options.fill ?? '#0891b2',
+              stroke: options.stroke,
+              strokeWidth: options.strokeWidth,
+              opacity: options.opacity ?? 1,
+            });
+            break;
+          case 'line':
+            shape = new Line([
+              options.x1 ?? 0,
+              options.y1 ?? 0,
+              options.x2 ?? 300,
+              options.y2 ?? 0
+            ], {
+              left: options.left ?? CANVAS_WIDTH / 2 - 150,
+              top: options.top ?? CANVAS_HEIGHT / 2,
+              stroke: options.stroke ?? options.fill ?? '#0891b2',
+              strokeWidth: options.strokeWidth ?? 4,
+              opacity: options.opacity ?? 1,
+            });
+            break;
+          default:
+            return;
+        }
+
+        fabricRef.current.add(shape);
         fabricRef.current.renderAll();
       },
 
