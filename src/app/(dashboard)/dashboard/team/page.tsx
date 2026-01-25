@@ -81,6 +81,8 @@ export default function TeamPage() {
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [removeMember, setRemoveMember] = useState<TeamMember | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [cancelInvite, setCancelInvite] = useState<PendingInvite | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Settings modal
   const [showSettings, setShowSettings] = useState(false);
@@ -193,21 +195,27 @@ export default function TeamPage() {
     }
   };
 
-  const handleCancelInvite = async (inviteId: string) => {
+  const handleCancelInviteConfirm = async () => {
+    if (!cancelInvite) return;
+    setIsCancelling(true);
+
     try {
-      const response = await fetch(`/api/team/invite/${inviteId}`, {
+      const response = await fetch(`/api/team/invite/${cancelInvite.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         setTeams(teams.map((t) =>
           t.team.id === selectedTeamId
-            ? { ...t, pendingInvites: t.pendingInvites.filter((i) => i.id !== inviteId) }
+            ? { ...t, pendingInvites: t.pendingInvites.filter((i) => i.id !== cancelInvite.id) }
             : t
         ));
+        setCancelInvite(null);
       }
     } catch (error) {
       console.error("Failed to cancel invite:", error);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -573,7 +581,7 @@ export default function TeamPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleCancelInvite(invite.id)}
+                                onClick={() => setCancelInvite(invite)}
                               >
                                 <X className="w-4 h-4" />
                               </Button>
@@ -752,6 +760,58 @@ export default function TeamPage() {
                           <>
                             <Trash2 className="w-4 h-4 mr-2" />
                             Remove
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cancel Invite Modal */}
+            {cancelInvite && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => !isCancelling && setCancelInvite(null)}
+                />
+                <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
+                  <div className="p-6">
+                    <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                      <Mail className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-center mb-2">Cancel Invitation</h2>
+                    <p className="text-muted-foreground text-center text-sm mb-2">
+                      Are you sure you want to cancel this invitation?
+                    </p>
+                    <p className="text-sm font-medium text-center mb-6 text-foreground">
+                      {cancelInvite.email}
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setCancelInvite(null)}
+                        disabled={isCancelling}
+                      >
+                        Keep Invite
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={handleCancelInviteConfirm}
+                        disabled={isCancelling}
+                      >
+                        {isCancelling ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Cancelling...
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-4 h-4 mr-2" />
+                            Cancel Invite
                           </>
                         )}
                       </Button>
