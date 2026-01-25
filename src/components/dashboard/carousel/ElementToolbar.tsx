@@ -71,7 +71,6 @@ export function ElementToolbar({
   const [aiPrompt, setAiPrompt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [selectedTextColor, setSelectedTextColor] = useState("#000000");
-  const [selectedIconColor, setSelectedIconColor] = useState("#0891b2");
   const [showIconPicker, setShowIconPicker] = useState(false);
   const dragImageRef = useRef<HTMLDivElement | null>(null);
 
@@ -205,23 +204,61 @@ export function ElementToolbar({
     }
   };
 
-  // Handle adding icon to canvas
-  // For now, we add the icon name as text - in future we could render actual SVG
-  const handleAddIcon = useCallback((
+  // Handle adding icon to canvas as actual SVG
+  const handleAddIcon = useCallback(async (
     IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>,
     iconName: string
   ) => {
-    if (canvasRef.current) {
-      // Add as a text element with the icon name
-      // TODO: In future, render actual SVG path on canvas for true icon support
-      canvasRef.current.addText({
-        text: iconName,
-        fontSize: 48,
-        fontWeight: 'bold',
-        fill: selectedIconColor,
-      });
+    if (!canvasRef.current) return;
+
+    // Render the icon to SVG string
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+
+    // Use ReactDOM to render the icon
+    const { createRoot } = await import('react-dom/client');
+    const root = createRoot(container);
+
+    // Create a promise to wait for render
+    await new Promise<void>((resolve) => {
+      root.render(
+        <IconComponent
+          className="w-24 h-24"
+          style={{ width: 96, height: 96, color: '#000000' }}
+        />
+      );
+      // Give React time to render
+      setTimeout(resolve, 50);
+    });
+
+    // Get the SVG element
+    const svgElement = container.querySelector('svg');
+    if (svgElement) {
+      // Ensure SVG has proper attributes for rendering
+      svgElement.setAttribute('width', '96');
+      svgElement.setAttribute('height', '96');
+      svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      // Convert SVG to data URL
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      try {
+        await canvasRef.current.addImage(url);
+      } catch (error) {
+        console.error('Failed to add icon:', error);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     }
-  }, [selectedIconColor, canvasRef]);
+
+    // Cleanup
+    root.unmount();
+    document.body.removeChild(container);
+  }, [canvasRef]);
 
   const textElements: ToolItem[] = [
     {
@@ -507,68 +544,15 @@ export function ElementToolbar({
 
           <Separator />
 
-          {/* Icons with Color Picker */}
+          {/* Icons */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Icons
-              </h3>
-              {/* Icon Color Picker */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <div
-                      className="w-4 h-4 rounded border border-input"
-                      style={{ backgroundColor: selectedIconColor }}
-                    />
-                    <Palette className="w-3 h-3" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="end">
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium">Icon Color</p>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {textColors.map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setSelectedIconColor(color)}
-                          className={cn(
-                            "w-6 h-6 rounded border-2 transition-all",
-                            selectedIconColor === color
-                              ? "border-cyan-500 scale-110"
-                              : "border-transparent hover:border-gray-300"
-                          )}
-                          style={{ backgroundColor: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="color"
-                        value={selectedIconColor}
-                        onChange={(e) => setSelectedIconColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={selectedIconColor}
-                        onChange={(e) => setSelectedIconColor(e.target.value)}
-                        className="flex-1 px-2 py-1 text-xs border rounded"
-                        placeholder="#0891b2"
-                      />
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              Icons
+            </h3>
 
             {/* Quick Icons + Browse All */}
             <QuickIcons
               onSelectIcon={handleAddIcon}
-              selectedColor={selectedIconColor}
               onOpenFullPicker={() => setShowIconPicker(true)}
             />
 
@@ -578,7 +562,6 @@ export function ElementToolbar({
                 handleAddIcon(icon, name);
                 setShowIconPicker(false);
               }}
-              selectedColor={selectedIconColor}
               open={showIconPicker}
               onOpenChange={setShowIconPicker}
             />

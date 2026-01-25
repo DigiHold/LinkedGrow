@@ -555,12 +555,19 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       },
 
       loadFromJSON: (json: string) => {
-        if (!fabricRef.current) return;
+        if (!fabricRef.current || !json) return;
 
-        fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
-          fabricRef.current!.renderAll();
-          onCanvasChange?.();
-        });
+        try {
+          const parsed = JSON.parse(json);
+          // Clear canvas first to prevent any lingering objects
+          fabricRef.current.clear();
+          fabricRef.current.loadFromJSON(parsed).then(() => {
+            fabricRef.current!.renderAll();
+            onCanvasChange?.();
+          });
+        } catch (error) {
+          console.error('Failed to load canvas from JSON:', error);
+        }
       },
 
       undo: () => {

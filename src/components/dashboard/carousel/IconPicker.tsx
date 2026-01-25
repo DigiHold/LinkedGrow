@@ -473,13 +473,11 @@ const popularIcons = iconCategories.find(cat => cat.id === "popular")?.icons.sli
 
 interface IconPickerProps {
   onSelectIcon: (IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, iconName: string) => void;
-  selectedColor?: string;
-  trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, open: controlledOpen, onOpenChange }: IconPickerProps) {
+export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }: IconPickerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
   // Support both controlled and uncontrolled modes
@@ -507,16 +505,11 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
     setSearch("");
   }, [onSelectIcon, setOpen]);
 
+  // Don't render anything if not open (controlled mode, no trigger button)
+  if (!open) return null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="w-full">
-            <Star className="w-4 h-4 mr-2" />
-            Browse Icons
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -540,11 +533,12 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
         </div>
 
         {/* Categories and Icons */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {!search.trim() ? (
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="h-full flex flex-col">
-              <ScrollArea className="w-full">
-                <TabsList className="w-full justify-start flex-nowrap h-auto py-1.5 px-1 inline-flex">
+              {/* Category tabs with horizontal scroll */}
+              <div className="flex-shrink-0 overflow-x-auto pb-2 scrollbar-thin">
+                <TabsList className="inline-flex h-auto py-1.5 px-1 gap-1 min-w-max">
                   {iconCategories.map(cat => (
                     <TabsTrigger
                       key={cat.id}
@@ -555,11 +549,11 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
                     </TabsTrigger>
                   ))}
                 </TabsList>
-              </ScrollArea>
+              </div>
 
               {iconCategories.map(cat => (
-                <TabsContent key={cat.id} value={cat.id} className="flex-1 mt-4">
-                  <ScrollArea className="h-[350px]">
+                <TabsContent key={cat.id} value={cat.id} className="flex-1 mt-2 overflow-hidden">
+                  <ScrollArea className="h-[320px]">
                     <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 p-1">
                       {cat.icons.map(item => {
                         const IconComponent = item.icon;
@@ -572,12 +566,9 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
                               "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
                               "transition-all duration-150 cursor-pointer group"
                             )}
-                            title={`${item.name} (${item.set})`}
+                            title={item.name}
                           >
-                            <IconComponent
-                              className="w-6 h-6 group-hover:scale-110 transition-transform"
-                              style={{ color: selectedColor }}
-                            />
+                            <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
                             <span className="text-[9px] text-muted-foreground truncate w-full text-center">
                               {item.name}
                             </span>
@@ -590,7 +581,7 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
               ))}
             </Tabs>
           ) : (
-            <ScrollArea className="h-[400px] mt-4">
+            <ScrollArea className="h-[380px] mt-2">
               {filteredIcons.length > 0 ? (
                 <>
                   <p className="text-xs text-muted-foreground mb-3 px-1">
@@ -608,12 +599,9 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
                             "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
                             "transition-all duration-150 cursor-pointer group"
                           )}
-                          title={`${item.name} (${item.set})`}
+                          title={item.name}
                         >
-                          <IconComponent
-                            className="w-6 h-6 group-hover:scale-110 transition-transform"
-                            style={{ color: selectedColor }}
-                          />
+                          <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
                           <span className="text-[9px] text-muted-foreground truncate w-full text-center">
                             {item.name}
                           </span>
@@ -632,9 +620,8 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
           )}
         </div>
 
-        <div className="pt-2 border-t text-xs text-muted-foreground text-center flex items-center justify-center gap-4">
-          <span>Click on an icon to add it to the canvas</span>
-          <span className="text-[10px] opacity-60">Icons from Lucide & Font Awesome</span>
+        <div className="pt-2 border-t text-xs text-muted-foreground text-center">
+          Click on an icon to add it to the canvas
         </div>
       </DialogContent>
     </Dialog>
@@ -644,11 +631,10 @@ export function IconPicker({ onSelectIcon, selectedColor = "#0891b2", trigger, o
 // Quick icons component for the toolbar
 interface QuickIconsProps {
   onSelectIcon: (IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, iconName: string) => void;
-  selectedColor?: string;
   onOpenFullPicker: () => void;
 }
 
-export function QuickIcons({ onSelectIcon, selectedColor = "#0891b2", onOpenFullPicker }: QuickIconsProps) {
+export function QuickIcons({ onSelectIcon, onOpenFullPicker }: QuickIconsProps) {
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-3 gap-2">
@@ -665,10 +651,7 @@ export function QuickIcons({ onSelectIcon, selectedColor = "#0891b2", onOpenFull
               )}
               title={item.name}
             >
-              <IconComponent
-                className="w-4 h-4 group-hover:scale-110 transition-transform"
-                style={{ color: selectedColor }}
-              />
+              <IconComponent className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-[10px]">{item.name}</span>
             </button>
           );
