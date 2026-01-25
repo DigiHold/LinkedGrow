@@ -635,10 +635,7 @@ export default function CarouselPage() {
 
     setIsSavingTemplate(true);
     try {
-      // Save current slide first
-      saveCurrentSlide();
-
-      // Get canvas JSON and thumbnail
+      // Get canvas JSON and thumbnail directly from canvas
       const canvasJson = canvasRef.current.exportToJSON();
       const thumbnail = canvasRef.current.exportToDataURL();
 
