@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { toPng } from "html-to-image";
+import { FabricObject } from "fabric";
 import { jsPDF } from "jspdf";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,48 +16,69 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Layers,
   Sparkles,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
   Download,
-  Eye,
-  Palette,
-  RefreshCw,
-  Copy,
-  Trash2,
-  Check,
-  X,
-  ImageIcon,
   Settings,
   Loader2,
   AlertTriangle,
-  Layout,
-  GripVertical,
   FileDown,
   Images,
+  Undo2,
+  Redo2,
+  ZoomIn,
+  ZoomOut,
+  LayoutTemplate,
+  Wand2,
+  Check,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-// Import carousel components
-import { SlideCanvas, createInitialSlides, createDefaultSlide, type SlideData, type BrandingData } from "@/components/dashboard/carousel/slide-canvas";
-import { SlideEditor } from "@/components/dashboard/carousel/slide-editor";
-import { TemplateGallery, TemplateSelect } from "@/components/dashboard/carousel/template-gallery";
+// Import new carousel components
+import { CanvasWorkspace, CanvasWorkspaceRef, CANVAS_WIDTH, CANVAS_HEIGHT } from "@/components/dashboard/carousel/CanvasWorkspace";
+import { ElementToolbar } from "@/components/dashboard/carousel/ElementToolbar";
+import { ElementProperties } from "@/components/dashboard/carousel/ElementProperties";
+import { SlideManager, SlideState } from "@/components/dashboard/carousel/SlideManager";
 import { BrandingSettings } from "@/components/dashboard/carousel/branding-settings";
-import { carouselTemplates, defaultTemplate, getTemplateById, type CarouselTemplate } from "@/lib/carousel-templates";
+import { TemplateGallery } from "@/components/dashboard/carousel/template-gallery";
+import type { BrandingData } from "@/components/dashboard/carousel/slide-canvas";
+import { carouselTemplates, type CarouselTemplate } from "@/lib/carousel-templates";
+
+// Generate unique ID
+const generateId = () => `slide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 export default function CarouselPage() {
-  // Core state
-  const [topic, setTopic] = useState("");
-  const [slideCount, setSlideCount] = useState("7");
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<SlideData[]>(() => createInitialSlides(5));
-  const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(defaultTemplate);
+  // Canvas ref
+  const canvasRef = useRef<CanvasWorkspaceRef>(null);
+
+  // Slides state
+  const [slides, setSlides] = useState<SlideState[]>([
+    { id: generateId(), canvasJSON: '', thumbnail: '' }
+  ]);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  // Selected element
+  const [selectedElement, setSelectedElement] = useState<FabricObject | null>(null);
 
   // Branding state
   const [branding, setBranding] = useState<BrandingData>({});
+
+  // UI state
+  const [zoom, setZoom] = useState(0.4);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showBrandingPanel, setShowBrandingPanel] = useState(false);
   const [showBrandingElements, setShowBrandingElements] = useState({
     logo: true,
     avatar: true,
@@ -65,13 +86,10 @@ export default function CarouselPage() {
     website: false,
   });
 
-  // UI state
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState<string>("");
-  const [isGeneratingBackground, setIsGeneratingBackground] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'branding'>('content');
+  // AI Generation state
+  const [topic, setTopic] = useState("");
+  const [slideCount, setSlideCount] = useState("7");
+  const [showAIDialog, setShowAIDialog] = useState(false);
 
   // API keys state
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
@@ -79,13 +97,8 @@ export default function CarouselPage() {
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
   const [userPlan, setUserPlan] = useState<'free' | 'starter' | 'pro' | 'business'>('pro');
 
-  // Toast and copy state
-  const [copied, setCopied] = useState(false);
+  // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  // Refs for export
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const hiddenSlideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const showToast = (message: string, type: "success" | "error" = "error") => {
     setToast({ message, type });
@@ -117,47 +130,149 @@ export default function CarouselPage() {
     checkApiKeys();
   }, []);
 
-  // Update slide refs array when slides change
-  useEffect(() => {
-    slideRefs.current = slideRefs.current.slice(0, slides.length);
-    hiddenSlideRefs.current = hiddenSlideRefs.current.slice(0, slides.length);
-  }, [slides.length]);
+  // Save current slide before switching
+  const saveCurrentSlide = useCallback(() => {
+    if (!canvasRef.current) return;
 
-  // Handlers
-  const handleTemplateChange = (template: CarouselTemplate) => {
-    setSelectedTemplate(template);
-  };
+    const canvasJSON = canvasRef.current.exportToJSON();
+    const thumbnail = canvasRef.current.exportToDataURL();
 
-  const handleSlideChange = useCallback((updatedSlide: SlideData) => {
-    setSlides(prev => prev.map((s, i) => i === currentSlide ? updatedSlide : s));
-  }, [currentSlide]);
+    setSlides(prev => prev.map((slide, index) =>
+      index === currentSlideIndex
+        ? { ...slide, canvasJSON, thumbnail }
+        : slide
+    ));
+  }, [currentSlideIndex]);
 
-  const handleAddSlide = () => {
-    const newSlide = createDefaultSlide('content', slides.length);
-    setSlides([...slides, newSlide]);
-    setCurrentSlide(slides.length);
-  };
+  // Load slide when switching
+  const loadSlide = useCallback((index: number) => {
+    if (!canvasRef.current || index >= slides.length) return;
 
-  const handleDeleteSlide = () => {
-    if (slides.length <= 1) return;
-    const newSlides = slides.filter((_, i) => i !== currentSlide);
-    setSlides(newSlides);
-    setCurrentSlide(Math.max(0, currentSlide - 1));
-  };
+    const slide = slides[index];
+    if (slide.canvasJSON) {
+      canvasRef.current.loadFromJSON(slide.canvasJSON);
+    } else {
+      canvasRef.current.clearCanvas();
+    }
+  }, [slides]);
 
-  const handleMoveSlide = (direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? currentSlide - 1 : currentSlide + 1;
-    if (newIndex < 0 || newIndex >= slides.length) return;
+  // Handle slide selection
+  const handleSlideSelect = useCallback((index: number) => {
+    saveCurrentSlide();
+    setCurrentSlideIndex(index);
+    // Load the new slide after a brief delay to ensure state is updated
+    setTimeout(() => loadSlide(index), 50);
+  }, [saveCurrentSlide, loadSlide]);
 
+  // Handle adding a new slide
+  const handleSlideAdd = useCallback(() => {
+    saveCurrentSlide();
+    const newSlide: SlideState = {
+      id: generateId(),
+      canvasJSON: '',
+      thumbnail: '',
+    };
+    setSlides(prev => [...prev, newSlide]);
+    setCurrentSlideIndex(slides.length);
+    setTimeout(() => {
+      canvasRef.current?.clearCanvas();
+    }, 50);
+  }, [saveCurrentSlide, slides.length]);
+
+  // Handle duplicating a slide
+  const handleSlideDuplicate = useCallback((index: number) => {
+    saveCurrentSlide();
+    const slideToDuplicate = slides[index];
+    const newSlide: SlideState = {
+      id: generateId(),
+      canvasJSON: slideToDuplicate.canvasJSON,
+      thumbnail: slideToDuplicate.thumbnail,
+    };
     const newSlides = [...slides];
-    [newSlides[currentSlide], newSlides[newIndex]] = [newSlides[newIndex], newSlides[currentSlide]];
+    newSlides.splice(index + 1, 0, newSlide);
     setSlides(newSlides);
-    setCurrentSlide(newIndex);
-  };
+    setCurrentSlideIndex(index + 1);
+    setTimeout(() => loadSlide(index + 1), 50);
+  }, [saveCurrentSlide, slides, loadSlide]);
 
+  // Handle deleting a slide
+  const handleSlideDelete = useCallback((index: number) => {
+    if (slides.length <= 1) return;
+
+    const newSlides = slides.filter((_, i) => i !== index);
+    setSlides(newSlides);
+
+    const newIndex = Math.max(0, Math.min(currentSlideIndex, newSlides.length - 1));
+    setCurrentSlideIndex(newIndex);
+    setTimeout(() => loadSlide(newIndex), 50);
+  }, [slides, currentSlideIndex, loadSlide]);
+
+  // Handle slides reorder
+  const handleSlidesReorder = useCallback((newSlides: SlideState[]) => {
+    saveCurrentSlide();
+    setSlides(newSlides);
+  }, [saveCurrentSlide]);
+
+  // Handle canvas change (update thumbnail)
+  const handleCanvasChange = useCallback(() => {
+    if (!canvasRef.current) return;
+
+    const thumbnail = canvasRef.current.exportToDataURL();
+    setSlides(prev => prev.map((slide, index) =>
+      index === currentSlideIndex
+        ? { ...slide, thumbnail }
+        : slide
+    ));
+  }, [currentSlideIndex]);
+
+  // Handle background change
+  const handleBackgroundChange = useCallback((type: 'solid' | 'gradient' | 'image', value: string) => {
+    canvasRef.current?.setBackground(type, value);
+  }, []);
+
+  // Handle image upload
+  const handleImageUpload = useCallback(async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/media', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload image');
+    }
+
+    const data = await response.json();
+    return data.url;
+  }, []);
+
+  // Handle AI image generation
+  const handleAIImageGenerate = useCallback(async (prompt: string): Promise<string> => {
+    const response = await fetch('/api/ai/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        aspectRatio: '4:5',
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to generate image');
+    }
+
+    const data = await response.json();
+    return data.imageUrl;
+  }, []);
+
+  // Handle AI carousel generation
   const handleGenerateCarousel = async () => {
     if (!topic.trim() || !hasTextApiKey) return;
     setIsGenerating(true);
+    setShowAIDialog(false);
 
     try {
       const count = parseInt(slideCount);
@@ -179,26 +294,49 @@ export default function CarouselPage() {
       }
 
       const data = await response.json();
-      const generatedSlides: { title: string; content: string; imagePrompt: string }[] = data.slides || [];
+      const generatedSlides: { title: string; content: string }[] = data.slides || [];
 
       if (generatedSlides.length === 0) {
         throw new Error("No content generated");
       }
 
-      // Convert to SlideData format
-      const newSlides: SlideData[] = generatedSlides.map((slide, index) => ({
-        id: `slide-${Date.now()}-${index}`,
-        type: index === 0 ? 'hook' : index === generatedSlides.length - 1 ? 'cta' : 'content',
-        title: slide.title,
-        content: slide.content,
-        backgroundType: 'template',
-        showBranding: true,
-        showProgressBar: true,
+      // Create new slides with generated content
+      const newSlides: SlideState[] = generatedSlides.map((slide, index) => ({
+        id: generateId(),
+        canvasJSON: '', // Will be populated when loaded
+        thumbnail: '',
       }));
 
       setSlides(newSlides);
-      setCurrentSlide(0);
-      showToast("Carousel generated successfully!", "success");
+      setCurrentSlideIndex(0);
+
+      // Load first slide with content
+      setTimeout(() => {
+        if (!canvasRef.current) return;
+
+        canvasRef.current.clearCanvas();
+
+        // Add title
+        canvasRef.current.addText({
+          text: generatedSlides[0].title,
+          fontSize: 72,
+          fontWeight: 'bold',
+          top: 200,
+        });
+
+        // Add content
+        canvasRef.current.addText({
+          text: generatedSlides[0].content,
+          fontSize: 36,
+          fontWeight: 'normal',
+          top: 400,
+        });
+
+        // Store generated content for other slides
+        (window as unknown as { __generatedSlides: typeof generatedSlides }).__generatedSlides = generatedSlides;
+      }, 100);
+
+      showToast("Carousel generated! Edit each slide as needed.", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to generate carousel");
     } finally {
@@ -207,90 +345,48 @@ export default function CarouselPage() {
     }
   };
 
-  const handleGenerateBackground = async () => {
-    if (!hasImageApiKey) return;
-    setIsGeneratingBackground(true);
-
-    try {
-      const currentSlideData = slides[currentSlide];
-      const prompt = `Professional, abstract background for a LinkedIn carousel slide about: ${currentSlideData.title}. ${currentSlideData.content}. Clean, modern, subtle design with soft gradients and minimal elements. No text or logos.`;
-
-      const response = await fetch("/api/ai/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          aspectRatio: "4:5",
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to generate image");
-      }
-
-      const data = await response.json();
-
-      handleSlideChange({
-        ...currentSlideData,
-        backgroundType: 'ai-image',
-        backgroundImageUrl: data.imageUrl,
-      });
-
-      showToast("Background generated!", "success");
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to generate background");
-    } finally {
-      setIsGeneratingBackground(false);
-    }
-  };
-
-  const handleCopyText = () => {
-    const text = slides.map((slide, i) => `Slide ${i + 1}: ${slide.title}\n${slide.content}`).join("\n\n");
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+  // Export functions
   const handleDownloadPDF = async () => {
+    if (!canvasRef.current) return;
     setIsExporting(true);
     showToast("Generating PDF...", "success");
 
     try {
-      // Create PDF with carousel dimensions
+      saveCurrentSlide();
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [1080, 1350],
+        format: [CANVAS_WIDTH, CANVAS_HEIGHT],
         hotfixes: ['px_scaling'],
       });
 
-      // Generate each slide
       for (let i = 0; i < slides.length; i++) {
         setGenerationStep(`Exporting slide ${i + 1} of ${slides.length}...`);
 
-        const slideElement = hiddenSlideRefs.current[i];
-        if (!slideElement) continue;
-
-        // Render slide to PNG
-        const dataUrl = await toPng(slideElement, {
-          width: 1080,
-          height: 1350,
-          pixelRatio: 1,
-          cacheBust: true,
-        });
-
-        // Add page (except for first slide)
-        if (i > 0) {
-          pdf.addPage([1080, 1350]);
+        // Load slide if not current
+        if (i !== currentSlideIndex && slides[i].canvasJSON) {
+          canvasRef.current.loadFromJSON(slides[i].canvasJSON);
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
 
-        // Add image to PDF
-        pdf.addImage(dataUrl, 'PNG', 0, 0, 1080, 1350);
+        const dataUrl = canvasRef.current.exportToDataURL();
+
+        if (i > 0) {
+          pdf.addPage([CANVAS_WIDTH, CANVAS_HEIGHT]);
+        }
+
+        pdf.addImage(dataUrl, 'PNG', 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      // Download PDF
-      const fileName = topic ? `carousel-${topic.slice(0, 30).replace(/\s+/g, '-').toLowerCase()}.pdf` : 'carousel.pdf';
+      // Restore current slide
+      if (slides[currentSlideIndex].canvasJSON) {
+        canvasRef.current.loadFromJSON(slides[currentSlideIndex].canvasJSON);
+      }
+
+      const fileName = topic
+        ? `carousel-${topic.slice(0, 30).replace(/\s+/g, '-').toLowerCase()}.pdf`
+        : 'carousel.pdf';
       pdf.save(fileName);
       showToast("PDF downloaded successfully!", "success");
     } catch (err) {
@@ -303,31 +399,35 @@ export default function CarouselPage() {
   };
 
   const handleDownloadImages = async () => {
+    if (!canvasRef.current) return;
     setIsExporting(true);
     showToast("Generating images...", "success");
 
     try {
+      saveCurrentSlide();
+
       for (let i = 0; i < slides.length; i++) {
         setGenerationStep(`Exporting slide ${i + 1} of ${slides.length}...`);
 
-        const slideElement = hiddenSlideRefs.current[i];
-        if (!slideElement) continue;
+        // Load slide if not current
+        if (i !== currentSlideIndex && slides[i].canvasJSON) {
+          canvasRef.current.loadFromJSON(slides[i].canvasJSON);
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
 
-        const dataUrl = await toPng(slideElement, {
-          width: 1080,
-          height: 1350,
-          pixelRatio: 1,
-          cacheBust: true,
-        });
+        const dataUrl = canvasRef.current.exportToDataURL();
 
-        // Create download link
         const link = document.createElement('a');
         link.download = `slide-${i + 1}.png`;
         link.href = dataUrl;
         link.click();
 
-        // Small delay between downloads
         await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      // Restore current slide
+      if (slides[currentSlideIndex].canvasJSON) {
+        canvasRef.current.loadFromJSON(slides[currentSlideIndex].canvasJSON);
       }
 
       showToast("Images downloaded!", "success");
@@ -340,22 +440,37 @@ export default function CarouselPage() {
     }
   };
 
-  // Get branding data with visible elements only
-  const getVisibleBranding = (): BrandingData => {
-    return {
-      logoUrl: showBrandingElements.logo ? branding.logoUrl : undefined,
-      avatarUrl: showBrandingElements.avatar ? branding.avatarUrl : undefined,
-      handle: showBrandingElements.handle ? branding.handle : undefined,
-      website: showBrandingElements.website ? branding.website : undefined,
-      primaryColor: branding.primaryColor,
-      secondaryColor: branding.secondaryColor,
-    };
+  // Handle template selection
+  const handleTemplateSelect = (template: CarouselTemplate) => {
+    if (!canvasRef.current) return;
+
+    // Clear canvas and apply template styles
+    canvasRef.current.clearCanvas();
+    canvasRef.current.setBackground('solid', template.background.value);
+
+    // Add template-based elements
+    if (template.defaultElements) {
+      template.defaultElements.forEach(element => {
+        if (element.type === 'text') {
+          canvasRef.current?.addText(element.options);
+        } else if (element.type === 'shape' && element.shapeType) {
+          canvasRef.current?.addShape(element.shapeType);
+        }
+      });
+    }
+
+    setShowTemplateGallery(false);
+    showToast(`Template "${template.name}" applied!`, "success");
   };
+
+  // Zoom controls
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.2));
 
   // Loading state
   if (isCheckingApiKey) {
     return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-100">
+      <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
@@ -368,38 +483,36 @@ export default function CarouselPage() {
   if (!hasTextApiKey) {
     return (
       <FeatureGate feature="carouselGenerator">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+        <div className="max-w-3xl mx-auto p-8 space-y-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-2xl font-bold flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Layers className="w-5 h-5 text-white" />
               </div>
-              Carousel Generator
+              Carousel Editor
             </h1>
             <p className="text-muted-foreground mt-1">
               Create engaging multi-slide carousels for LinkedIn
             </p>
           </div>
 
-          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
-            <CardContent className="py-12 px-8">
-              <div className="text-center max-w-lg mx-auto">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
-                  <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-4">Text AI API Key Required</h3>
-                <p className="text-muted-foreground mb-6">
-                  The Carousel Generator uses AI to create slide content. Please configure your Text AI API key to get started.
-                </p>
-                <Link href="/dashboard/settings/ai-api">
-                  <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure API Keys
-                  </Button>
-                </Link>
+          <div className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-8">
+            <div className="text-center max-w-lg mx-auto">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+                <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
-            </CardContent>
-          </Card>
+              <h3 className="text-xl font-semibold mb-4">Text AI API Key Required</h3>
+              <p className="text-muted-foreground mb-6">
+                The Carousel Editor uses AI to generate content. Please configure your Text AI API key to unlock AI features.
+              </p>
+              <Link href="/dashboard/settings/ai-api">
+                <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure API Keys
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </FeatureGate>
     );
@@ -407,45 +520,106 @@ export default function CarouselPage() {
 
   return (
     <FeatureGate feature="carouselGenerator">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-white" />
+      <div className="h-screen flex flex-col overflow-hidden">
+        {/* Top Toolbar */}
+        <div className="h-14 border-b bg-background flex items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Layers className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="font-semibold">Carousel Editor</h1>
             </div>
-            Carousel Generator
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Create professional carousels with 20+ templates
-          </p>
-        </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Left Panel - Editor */}
-          <div className="space-y-6">
-            {/* AI Generator */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                  Generate with AI
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Topic or Title</Label>
-                  <Textarea
-                    placeholder="e.g., 10 productivity tips for remote workers..."
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="mt-1.5"
-                    rows={2}
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Label>Slides</Label>
+            <div className="h-6 w-px bg-border" />
+
+            {/* Undo/Redo */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => canvasRef.current?.undo()}
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => canvasRef.current?.redo()}
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <Redo2 className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="h-6 w-px bg-border" />
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.2}
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground w-12 text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleZoomIn}
+                disabled={zoom >= 1}
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* AI Generate Button */}
+            <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4 mr-2" />
+                  )}
+                  {isGenerating ? generationStep || "Generating..." : "AI Generate"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    Generate Carousel with AI
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label>Topic or Title</Label>
+                    <Textarea
+                      placeholder="e.g., 10 productivity tips for remote workers..."
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="mt-1.5"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label>Number of Slides</Label>
                     <Select value={slideCount} onValueChange={setSlideCount}>
                       <SelectTrigger className="mt-1.5">
                         <SelectValue />
@@ -458,322 +632,112 @@ export default function CarouselPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex-1">
-                    <TemplateSelect
-                      selectedTemplateId={selectedTemplate.id}
-                      onSelectTemplate={handleTemplateChange}
-                      onOpenGallery={() => setShowTemplateGallery(true)}
-                    />
-                  </div>
-                </div>
-                <Button
-                  onClick={handleGenerateCarousel}
-                  disabled={!topic.trim() || isGenerating}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      {generationStep || "Generating..."}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Carousel
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Slide Navigator */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Layout className="w-4 h-4 text-cyan-600" />
-                    Slides
-                  </span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {currentSlide + 1} of {slides.length}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {slides.map((slide, index) => (
-                    <button
-                      key={slide.id}
-                      onClick={() => setCurrentSlide(index)}
-                      className={cn(
-                        "relative w-14 h-[70px] rounded-lg text-sm font-medium transition-all shrink-0 overflow-hidden group",
-                        currentSlide === index
-                          ? "ring-2 ring-cyan-600 ring-offset-2"
-                          : "opacity-70 hover:opacity-100"
-                      )}
-                    >
-                      <SlideCanvas
-                        slide={slide}
-                        template={selectedTemplate}
-                        slideIndex={index}
-                        totalSlides={slides.length}
-                        branding={getVisibleBranding()}
-                        isPreview={true}
-                        className="scale-[0.13] origin-top-left"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
-                        <span className="text-xs font-bold text-white opacity-0 group-hover:opacity-100 drop-shadow">
-                          {index + 1}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                  <button
-                    onClick={handleAddSlide}
-                    className="w-14 h-[70px] rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-cyan-500 dark:hover:border-cyan-500 transition-colors shrink-0 flex items-center justify-center"
-                  >
-                    <Plus className="w-5 h-5 text-muted-foreground" />
-                  </button>
-                </div>
-
-                {/* Slide reorder buttons */}
-                <div className="flex gap-2 mt-3">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleMoveSlide('up')}
-                    disabled={currentSlide === 0}
-                    className="flex-1"
+                    onClick={handleGenerateCarousel}
+                    disabled={!topic.trim() || isGenerating}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
                   >
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Move Left
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleMoveSlide('down')}
-                    disabled={currentSlide === slides.length - 1}
-                    className="flex-1"
-                  >
-                    Move Right
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Carousel
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </DialogContent>
+            </Dialog>
 
-            {/* Slide Editor Tabs */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex gap-1 border-b">
-                  {(['content', 'style', 'branding'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={cn(
-                        "px-4 py-2 text-sm font-medium transition-colors capitalize",
-                        activeTab === tab
-                          ? "text-cyan-600 border-b-2 border-cyan-600"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {activeTab === 'content' && slides[currentSlide] && (
-                  <SlideEditor
-                    slide={slides[currentSlide]}
-                    onSlideChange={handleSlideChange}
-                    onGenerateBackground={handleGenerateBackground}
-                    onDeleteSlide={handleDeleteSlide}
-                    isGeneratingBackground={isGeneratingBackground}
-                    canDelete={slides.length > 1}
-                    hasImageApiKey={hasImageApiKey || false}
-                  />
-                )}
-
-                {activeTab === 'style' && (
-                  <div className="space-y-4">
-                    <TemplateSelect
-                      selectedTemplateId={selectedTemplate.id}
-                      onSelectTemplate={handleTemplateChange}
-                      onOpenGallery={() => setShowTemplateGallery(true)}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowTemplateGallery(true)}
-                      className="w-full"
-                    >
-                      <Palette className="w-4 h-4 mr-2" />
-                      Browse All Templates
-                    </Button>
-                  </div>
-                )}
-
-                {activeTab === 'branding' && (
-                  <BrandingSettings
-                    branding={branding}
-                    onBrandingChange={setBranding}
-                    showElements={showBrandingElements}
-                    onShowElementsChange={setShowBrandingElements}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Panel - Preview */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-cyan-600" />
-                  Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Carousel Preview */}
-                <div className="relative">
-                  <div className="aspect-[4/5] rounded-xl overflow-hidden bg-muted">
-                    {slides[currentSlide] && (
-                      <SlideCanvas
-                        ref={(el) => { slideRefs.current[currentSlide] = el; }}
-                        slide={slides[currentSlide]}
-                        template={selectedTemplate}
-                        slideIndex={currentSlide}
-                        totalSlides={slides.length}
-                        branding={getVisibleBranding()}
-                        isPreview={true}
-                        className="w-full h-full"
-                      />
-                    )}
-                  </div>
-
-                  {/* Navigation Arrows */}
-                  <button
-                    onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
-                    disabled={currentSlide === 0}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 flex items-center justify-center disabled:opacity-30 shadow-lg transition-opacity"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1))}
-                    disabled={currentSlide === slides.length - 1}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 flex items-center justify-center disabled:opacity-30 shadow-lg transition-opacity"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </div>
-
-                {/* Export Actions */}
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleCopyText}
-                    disabled={isExporting}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy Text
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadImages}
-                    disabled={isExporting}
-                  >
-                    {isExporting && generationStep.includes('Exporting') ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Images className="w-4 h-4 mr-2" />
-                    )}
-                    Images
-                  </Button>
-                  <Button
-                    onClick={handleDownloadPDF}
-                    disabled={isExporting}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                  >
-                    {isExporting && generationStep.includes('Exporting') ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <FileDown className="w-4 h-4 mr-2" />
-                    )}
-                    PDF
-                  </Button>
-                </div>
-
-                {isExporting && generationStep && (
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    {generationStep}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tips Card */}
-            <Card className="bg-cyan-50/50 dark:bg-cyan-900/10 border-cyan-200 dark:border-cyan-800">
-              <CardContent className="py-4">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-cyan-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-sm">Carousel Best Practices</h4>
-                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <li>- Start with a bold hook on slide 1</li>
-                      <li>- Keep text to 25-50 words per slide</li>
-                      <li>- Use 6-10 slides for best engagement</li>
-                      <li>- End with a clear call to action</li>
-                      <li>- Add your branding for recognition</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Hidden slides for full-resolution export */}
-        <div className="fixed -left-[9999px] -top-[9999px]" aria-hidden="true">
-          {slides.map((slide, index) => (
-            <div
-              key={`export-${slide.id}`}
-              ref={(el) => { hiddenSlideRefs.current[index] = el; }}
+            {/* Templates Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTemplateGallery(true)}
             >
-              <SlideCanvas
-                slide={slide}
-                template={selectedTemplate}
-                slideIndex={index}
-                totalSlides={slides.length}
-                branding={getVisibleBranding()}
-                isPreview={false}
-              />
-            </div>
-          ))}
+              <LayoutTemplate className="w-4 h-4 mr-2" />
+              Templates
+            </Button>
+
+            <div className="h-6 w-px bg-border" />
+
+            {/* Export Buttons */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadImages}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Images className="w-4 h-4 mr-2" />
+              )}
+              Images
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={isExporting}
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-2" />
+              )}
+              Export PDF
+            </Button>
+          </div>
         </div>
+
+        {/* Main Editor Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Sidebar - Element Toolbar */}
+          <ElementToolbar
+            canvasRef={canvasRef}
+            branding={branding}
+            onImageUpload={handleImageUpload}
+            onAIImageGenerate={hasImageApiKey ? handleAIImageGenerate : undefined}
+          />
+
+          {/* Canvas Workspace */}
+          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900 overflow-hidden">
+            <CanvasWorkspace
+              ref={canvasRef}
+              zoom={zoom}
+              onSelectionChange={setSelectedElement}
+              onCanvasChange={handleCanvasChange}
+              className="m-auto"
+            />
+          </div>
+
+          {/* Right Sidebar - Properties Panel */}
+          <ElementProperties
+            selectedElement={selectedElement}
+            canvasRef={canvasRef}
+            onBackgroundChange={handleBackgroundChange}
+          />
+        </div>
+
+        {/* Bottom - Slide Manager */}
+        <SlideManager
+          slides={slides}
+          currentSlideIndex={currentSlideIndex}
+          onSlideSelect={handleSlideSelect}
+          onSlideAdd={handleSlideAdd}
+          onSlideDuplicate={handleSlideDuplicate}
+          onSlideDelete={handleSlideDelete}
+          onSlidesReorder={handleSlidesReorder}
+        />
 
         {/* Template Gallery Modal */}
         <TemplateGallery
           open={showTemplateGallery}
           onOpenChange={setShowTemplateGallery}
-          selectedTemplateId={selectedTemplate.id}
-          onSelectTemplate={handleTemplateChange}
+          selectedTemplateId=""
+          onSelectTemplate={handleTemplateSelect}
           userPlan={userPlan}
         />
 
         {/* Toast Notification */}
         {toast && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="fixed bottom-44 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className={cn(
               "px-6 py-3 rounded-lg shadow-lg flex items-center gap-3",
               toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
@@ -784,6 +748,15 @@ export default function CarouselPage() {
                 <X className="w-5 h-5" />
               )}
               <span className="font-medium">{toast.message}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Export Progress */}
+        {isExporting && generationStep && (
+          <div className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40">
+            <div className="px-4 py-2 rounded-lg bg-background border shadow-lg">
+              <p className="text-sm text-muted-foreground">{generationStep}</p>
             </div>
           </div>
         )}

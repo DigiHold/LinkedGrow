@@ -10,6 +10,14 @@ export {
   teamInviteEmailTemplate,
   teamInviteEmailText,
 } from "./templates/team-invite-email";
+export {
+  abandonedCartEmail1Template,
+  abandonedCartEmail1Text,
+  abandonedCartEmail2Template,
+  abandonedCartEmail2Text,
+  abandonedCartEmail3Template,
+  abandonedCartEmail3Text,
+} from "./templates/abandoned-cart-email";
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";

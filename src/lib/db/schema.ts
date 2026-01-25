@@ -378,6 +378,38 @@ export const engagementObjectives = sqliteTable("engagement_objectives", {
 });
 
 // ============================================
+// ABANDONED CART RECOVERY
+// ============================================
+
+// Track abandoned checkout sessions for email recovery sequence
+export const abandonedCheckouts = sqliteTable("abandoned_checkouts", {
+  id: text("id").primaryKey(),
+  // User info
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  name: text("name"),
+  // Stripe info
+  stripeSessionId: text("stripe_session_id").notNull().unique(),
+  planId: text("plan_id", { enum: ["starter", "pro", "business"] }).notNull(),
+  recoveryUrl: text("recovery_url"), // Stripe recovery URL (valid for 30 days)
+  recoveryUrlExpiresAt: integer("recovery_url_expires_at", { mode: "timestamp" }),
+  // Email sequence tracking
+  email1SentAt: integer("email1_sent_at", { mode: "timestamp" }), // Day 2 - Friendly reminder
+  email2SentAt: integer("email2_sent_at", { mode: "timestamp" }), // Day 5 - Value reminder
+  email3SentAt: integer("email3_sent_at", { mode: "timestamp" }), // Day 8 - Discount offer
+  // QStash message IDs for cancellation if user converts
+  email1QstashId: text("email1_qstash_id"),
+  email2QstashId: text("email2_qstash_id"),
+  email3QstashId: text("email3_qstash_id"),
+  // Status
+  status: text("status", { enum: ["pending", "recovered", "expired", "unsubscribed"] }).default("pending"),
+  recoveredAt: integer("recovered_at", { mode: "timestamp" }), // When they completed checkout
+  // Timestamps
+  abandonedAt: integer("abandoned_at", { mode: "timestamp" }).notNull(), // When checkout session expired
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
 // ADMIN FEATURES
 // ============================================
 
@@ -453,3 +485,5 @@ export type DataRemovalRequest = typeof dataRemovalRequests.$inferSelect;
 export type NewDataRemovalRequest = typeof dataRemovalRequests.$inferInsert;
 export type BetaUser = typeof betaUsers.$inferSelect;
 export type NewBetaUser = typeof betaUsers.$inferInsert;
+export type AbandonedCheckout = typeof abandonedCheckouts.$inferSelect;
+export type NewAbandonedCheckout = typeof abandonedCheckouts.$inferInsert;
