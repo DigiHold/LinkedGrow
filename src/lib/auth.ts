@@ -77,7 +77,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Check 2FA if enabled
         if (user.twoFactorEnabled && user.twoFactorSecret) {
-          if (!totpCode) {
+          // Check for empty/undefined totpCode (handle "undefined" string too)
+          if (!totpCode || totpCode === "undefined" || totpCode.trim() === "") {
             // Return special error to trigger 2FA input
             throw new TwoFactorRequiredError();
           }
