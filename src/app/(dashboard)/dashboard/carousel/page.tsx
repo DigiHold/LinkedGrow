@@ -197,15 +197,17 @@ export default function CarouselPage() {
     setCurrentSlideIndex(index);
 
     // Load the target slide using the JSON we captured
-    setTimeout(() => {
-      if (canvasRef.current) {
-        if (targetSlideJSON) {
-          canvasRef.current.loadFromJSON(targetSlideJSON);
-        } else {
-          canvasRef.current.clearCanvas();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (canvasRef.current) {
+          if (targetSlideJSON) {
+            canvasRef.current.loadFromJSON(targetSlideJSON);
+          } else {
+            canvasRef.current.clearCanvas();
+          }
         }
-      }
-    }, 50);
+      });
+    });
   }, [currentSlideIndex, slides]);
 
   // Handle adding a new slide
@@ -234,15 +236,18 @@ export default function CarouselPage() {
 
     setCurrentSlideIndex(slides.length);
 
-    setTimeout(() => {
-      canvasRef.current?.clearCanvas();
-    }, 50);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        canvasRef.current?.clearCanvas();
+      });
+    });
   }, [currentSlideIndex, slides.length]);
 
   // Handle duplicating a slide
   const handleSlideDuplicate = useCallback((index: number) => {
     if (!canvasRef.current) return;
 
+    // IMPORTANT: Capture the JSON BEFORE any state changes
     // If duplicating the current slide, get fresh data from canvas
     let canvasJSON: string;
     let thumbnail: string;
@@ -257,9 +262,12 @@ export default function CarouselPage() {
       thumbnail = slides[index].thumbnail;
     }
 
+    // Store the JSON in a variable that won't be affected by state changes
+    const capturedJSON = canvasJSON;
+
     const newSlide: SlideState = {
       id: generateId(),
-      canvasJSON,
+      canvasJSON: capturedJSON,
       thumbnail,
     };
 
@@ -268,7 +276,7 @@ export default function CarouselPage() {
       const newSlides = [...prev];
       // Also update the current slide if we're duplicating it
       if (index === currentSlideIndex) {
-        newSlides[index] = { ...newSlides[index], canvasJSON, thumbnail };
+        newSlides[index] = { ...newSlides[index], canvasJSON: capturedJSON, thumbnail };
       }
       newSlides.splice(index + 1, 0, newSlide);
       return newSlides;
@@ -276,12 +284,15 @@ export default function CarouselPage() {
 
     setCurrentSlideIndex(index + 1);
 
-    // Load the duplicated slide - use the canvasJSON we already have
-    setTimeout(() => {
-      if (canvasRef.current && canvasJSON) {
-        canvasRef.current.loadFromJSON(canvasJSON);
-      }
-    }, 50);
+    // Load the duplicated slide - use requestAnimationFrame for proper timing
+    // This ensures the state updates have been processed
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (canvasRef.current && capturedJSON) {
+          canvasRef.current.loadFromJSON(capturedJSON);
+        }
+      });
+    });
   }, [currentSlideIndex, slides]);
 
   // Handle deleting a slide
@@ -301,15 +312,17 @@ export default function CarouselPage() {
     setSlides(prev => prev.filter((_, i) => i !== index));
     setCurrentSlideIndex(newIndex);
 
-    setTimeout(() => {
-      if (canvasRef.current) {
-        if (targetSlideJSON) {
-          canvasRef.current.loadFromJSON(targetSlideJSON);
-        } else {
-          canvasRef.current.clearCanvas();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (canvasRef.current) {
+          if (targetSlideJSON) {
+            canvasRef.current.loadFromJSON(targetSlideJSON);
+          } else {
+            canvasRef.current.clearCanvas();
+          }
         }
-      }
-    }, 50);
+      });
+    });
   }, [slides]);
 
   // Handle slides reorder

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox } from "fabric";
+import { FabricObject, Textbox, FabricImage } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,6 +163,7 @@ export function ElementProperties({
   };
 
   const isTextElement = selectedElement instanceof Textbox;
+  const isImageElement = selectedElement instanceof FabricImage;
 
   return (
     <div className={cn("w-72 bg-background border-l flex flex-col", className)}>
@@ -334,43 +335,45 @@ export function ElementProperties({
                 </>
               )}
 
-              {/* Color */}
-              <div>
-                <Label className="text-xs text-muted-foreground">
-                  {isTextElement ? 'Text Color' : 'Fill Color'}
-                </Label>
-                <div className="mt-2">
-                  <div className="flex gap-2 items-center mb-2">
-                    <input
-                      type="color"
-                      value={elementProps.fill}
-                      onChange={(e) => updateElement({ fill: e.target.value })}
-                      className="w-8 h-8 rounded cursor-pointer border-0"
-                    />
-                    <Input
-                      value={elementProps.fill}
-                      onChange={(e) => updateElement({ fill: e.target.value })}
-                      className="h-8 text-xs flex-1"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {PRESET_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        className={cn(
-                          "w-5 h-5 rounded border border-border hover:scale-110 transition-transform",
-                          elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
-                        )}
-                        style={{ backgroundColor: color }}
-                        onClick={() => updateElement({ fill: color })}
+              {/* Color (for text and shapes, not images) */}
+              {!isImageElement && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    {isTextElement ? 'Text Color' : 'Fill Color'}
+                  </Label>
+                  <div className="mt-2">
+                    <div className="flex gap-2 items-center mb-2">
+                      <input
+                        type="color"
+                        value={elementProps.fill}
+                        onChange={(e) => updateElement({ fill: e.target.value })}
+                        className="w-8 h-8 rounded cursor-pointer border-0"
                       />
-                    ))}
+                      <Input
+                        value={elementProps.fill}
+                        onChange={(e) => updateElement({ fill: e.target.value })}
+                        className="h-8 text-xs flex-1"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          className={cn(
+                            "w-5 h-5 rounded border border-border hover:scale-110 transition-transform",
+                            elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => updateElement({ fill: color })}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Stroke (for shapes) */}
-              {!isTextElement && (
+              {/* Stroke (for shapes only, not images or text) */}
+              {!isTextElement && !isImageElement && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Stroke</Label>
                   <div className="mt-2 space-y-2">

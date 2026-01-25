@@ -632,9 +632,10 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
 interface QuickIconsProps {
   onSelectIcon: (IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, iconName: string) => void;
   onOpenFullPicker: () => void;
+  onDragIcon?: (iconId: string, iconName: string, e: React.DragEvent) => void;
 }
 
-export function QuickIcons({ onSelectIcon, onOpenFullPicker }: QuickIconsProps) {
+export function QuickIcons({ onSelectIcon, onOpenFullPicker, onDragIcon }: QuickIconsProps) {
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-3 gap-2">
@@ -643,11 +644,21 @@ export function QuickIcons({ onSelectIcon, onOpenFullPicker }: QuickIconsProps) 
           return (
             <button
               key={item.id}
+              draggable
+              onDragStart={(e) => {
+                // Set drag data for icon
+                e.dataTransfer.setData('application/json', JSON.stringify({
+                  type: 'icon',
+                  data: { iconId: item.id, iconName: item.name }
+                }));
+                e.dataTransfer.effectAllowed = 'copy';
+                onDragIcon?.(item.id, item.name, e);
+              }}
               onClick={() => onSelectIcon(item.icon, item.name)}
               className={cn(
                 "h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-md border border-input bg-background text-sm",
                 "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
-                "cursor-pointer transition-all duration-150 group"
+                "cursor-grab active:cursor-grabbing transition-all duration-150 group"
               )}
               title={item.name}
             >
@@ -669,6 +680,11 @@ export function QuickIcons({ onSelectIcon, onOpenFullPicker }: QuickIconsProps) 
       </Button>
     </div>
   );
+}
+
+// Export a function to get icon by ID
+export function getIconById(iconId: string): IconItem | undefined {
+  return allIcons.find(icon => icon.id === iconId);
 }
 
 export { iconCategories, allIcons, popularIcons };

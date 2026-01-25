@@ -4,7 +4,6 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Image as ImageIcon,
   Square,
@@ -20,13 +19,12 @@ import {
   AlignLeft,
   Quote,
   Loader2,
-  Palette,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 import type { BrandingData } from "./types";
-import { IconPicker, QuickIcons } from "./IconPicker";
+import { IconPicker, QuickIcons, getIconById } from "./IconPicker";
 
 interface ElementToolbarProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
@@ -44,22 +42,6 @@ interface ToolItem {
   dragData?: { type: string; data: Record<string, unknown> };
 }
 
-// Preset colors for text
-const textColors = [
-  "#000000", // Black
-  "#FFFFFF", // White
-  "#0891b2", // Cyan
-  "#3b82f6", // Blue
-  "#8b5cf6", // Violet
-  "#ec4899", // Pink
-  "#ef4444", // Red
-  "#f97316", // Orange
-  "#eab308", // Yellow
-  "#22c55e", // Green
-  "#64748b", // Slate
-  "#1e293b", // Dark Slate
-];
-
 export function ElementToolbar({
   canvasRef,
   branding,
@@ -70,7 +52,6 @@ export function ElementToolbar({
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedTextColor, setSelectedTextColor] = useState("#000000");
   const [showIconPicker, setShowIconPicker] = useState(false);
   const dragImageRef = useRef<HTMLDivElement | null>(null);
 
@@ -109,7 +90,7 @@ export function ElementToolbar({
   }) => {
     canvasRef.current?.addText({
       ...options,
-      fill: options.fill || selectedTextColor,
+      fill: options.fill || '#000000',
     });
   };
 
@@ -190,7 +171,7 @@ export function ElementToolbar({
           text: branding.handle || '@yourhandle',
           fontSize: 32,
           fontWeight: 'normal',
-          fill: selectedTextColor,
+          fill: '#000000',
         });
         break;
       case 'website':
@@ -198,11 +179,69 @@ export function ElementToolbar({
           text: branding.website || 'yoursite.com',
           fontSize: 28,
           fontWeight: 'normal',
-          fill: selectedTextColor,
+          fill: '#000000',
         });
         break;
     }
   };
+
+  // Determine if background is dark (for icon color selection)
+  const getIconColor = useCallback(() => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return '#000000';
+
+    // Get background color
+    const bgColor = canvas.backgroundColor as string || '#ffffff';
+
+    // If it's a gradient rect, try to get the first color
+    const objects = canvas.getObjects();
+    const bgRect = objects.find(obj =>
+      !obj.selectable && obj.left === 0 && obj.top === 0
+    );
+
+    let colorToCheck = bgColor;
+    if (bgRect && bgRect.fill) {
+      // For gradients, check if fill has colorStops
+      const fill = bgRect.fill;
+      if (typeof fill === 'object' && 'colorStops' in fill) {
+        // Get average color from gradient
+        const stops = fill.colorStops as Array<{ color: string }>;
+        if (stops && stops.length > 0) {
+          colorToCheck = stops[0].color;
+        }
+      } else if (typeof fill === 'string') {
+        colorToCheck = fill;
+      }
+    }
+
+    // Parse color to determine brightness
+    let r = 255, g = 255, b = 255;
+    if (colorToCheck.startsWith('#')) {
+      const hex = colorToCheck.slice(1);
+      if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+      } else if (hex.length === 6) {
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+      }
+    } else if (colorToCheck.startsWith('rgb')) {
+      const match = colorToCheck.match(/\d+/g);
+      if (match && match.length >= 3) {
+        r = parseInt(match[0]);
+        g = parseInt(match[1]);
+        b = parseInt(match[2]);
+      }
+    }
+
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return white for dark backgrounds, black for light backgrounds
+    return luminance < 0.5 ? '#ffffff' : '#000000';
+  }, [canvasRef]);
 
   // Handle adding icon to canvas as actual SVG
   const handleAddIcon = useCallback(async (
@@ -210,6 +249,9 @@ export function ElementToolbar({
     iconName: string
   ) => {
     if (!canvasRef.current) return;
+
+    // Get appropriate icon color based on background
+    const iconColor = getIconColor();
 
     // Render the icon to SVG string
     const container = document.createElement('div');
@@ -226,7 +268,7 @@ export function ElementToolbar({
       root.render(
         <IconComponent
           className="w-24 h-24"
-          style={{ width: 96, height: 96, color: '#000000' }}
+          style={{ width: 96, height: 96, color: iconColor }}
         />
       );
       // Give React time to render
@@ -258,7 +300,24 @@ export function ElementToolbar({
     // Cleanup
     root.unmount();
     document.body.removeChild(container);
-  }, [canvasRef]);
+  }, [canvasRef, getIconColor]);
+
+  // Listen for icon drop events from canvas
+  useEffect(() => {
+    const handleIconDrop = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ iconId: string; iconName: string; x: number; y: number }>;
+      const { iconId, iconName } = customEvent.detail;
+
+      // Get the icon component by ID
+      const iconItem = getIconById(iconId);
+      if (iconItem) {
+        await handleAddIcon(iconItem.icon, iconName);
+      }
+    };
+
+    window.addEventListener('iconDrop', handleIconDrop);
+    return () => window.removeEventListener('iconDrop', handleIconDrop);
+  }, [handleAddIcon]);
 
   const textElements: ToolItem[] = [
     {
@@ -266,28 +325,28 @@ export function ElementToolbar({
       label: 'Heading',
       icon: <Heading1 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Your Heading', fontSize: 72, fontWeight: 'bold' }),
-      dragData: { type: 'text', data: { text: 'Your Heading', fontSize: 72, fontWeight: 'bold', fill: selectedTextColor } },
+      dragData: { type: 'text', data: { text: 'Your Heading', fontSize: 72, fontWeight: 'bold', fill: '#000000' } },
     },
     {
       id: 'subheading',
       label: 'Subheading',
       icon: <Heading2 className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Subheading text', fontSize: 48, fontWeight: '600' }),
-      dragData: { type: 'text', data: { text: 'Subheading text', fontSize: 48, fontWeight: '600', fill: selectedTextColor } },
+      dragData: { type: 'text', data: { text: 'Subheading text', fontSize: 48, fontWeight: '600', fill: '#000000' } },
     },
     {
       id: 'body',
       label: 'Body Text',
       icon: <AlignLeft className="w-4 h-4" />,
       action: () => handleAddText({ text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal' }),
-      dragData: { type: 'text', data: { text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } },
+      dragData: { type: 'text', data: { text: 'Add your body text here.', fontSize: 32, fontWeight: 'normal', fill: '#000000' } },
     },
     {
       id: 'quote',
       label: 'Quote',
       icon: <Quote className="w-4 h-4" />,
       action: () => handleAddText({ text: '"Your inspiring quote"', fontSize: 40, fontWeight: '500' }),
-      dragData: { type: 'text', data: { text: '"Your inspiring quote"', fontSize: 40, fontWeight: '500', fill: selectedTextColor } },
+      dragData: { type: 'text', data: { text: '"Your inspiring quote"', fontSize: 40, fontWeight: '500', fill: '#000000' } },
     },
   ];
 
@@ -336,12 +395,12 @@ export function ElementToolbar({
 
   // Branding elements drag data
   const handleDragData = branding?.handle
-    ? { type: 'text', data: { text: branding.handle, fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } }
-    : { type: 'text', data: { text: '@yourhandle', fontSize: 32, fontWeight: 'normal', fill: selectedTextColor } };
+    ? { type: 'text', data: { text: branding.handle, fontSize: 32, fontWeight: 'normal', fill: '#000000' } }
+    : { type: 'text', data: { text: '@yourhandle', fontSize: 32, fontWeight: 'normal', fill: '#000000' } };
 
   const websiteDragData = branding?.website
-    ? { type: 'text', data: { text: branding.website, fontSize: 28, fontWeight: 'normal', fill: selectedTextColor } }
-    : { type: 'text', data: { text: 'yoursite.com', fontSize: 28, fontWeight: 'normal', fill: selectedTextColor } };
+    ? { type: 'text', data: { text: branding.website, fontSize: 28, fontWeight: 'normal', fill: '#000000' } }
+    : { type: 'text', data: { text: 'yoursite.com', fontSize: 28, fontWeight: 'normal', fill: '#000000' } };
 
   const logoDragData = branding?.logoUrl
     ? { type: 'image', data: { url: branding.logoUrl } }
@@ -360,63 +419,11 @@ export function ElementToolbar({
 
       <ScrollArea className="flex-1 h-0">
         <div className="p-4 space-y-6">
-          {/* Text Elements with Color Picker */}
+          {/* Text Elements */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Text
-              </h3>
-              {/* Text Color Picker */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <div
-                      className="w-4 h-4 rounded border border-input"
-                      style={{ backgroundColor: selectedTextColor }}
-                    />
-                    <Palette className="w-3 h-3" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="end">
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium">Text Color</p>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {textColors.map(color => (
-                        <button
-                          key={color}
-                          onClick={() => setSelectedTextColor(color)}
-                          className={cn(
-                            "w-6 h-6 rounded border-2 transition-all",
-                            selectedTextColor === color
-                              ? "border-cyan-500 scale-110"
-                              : "border-transparent hover:border-gray-300"
-                          )}
-                          style={{ backgroundColor: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="color"
-                        value={selectedTextColor}
-                        onChange={(e) => setSelectedTextColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={selectedTextColor}
-                        onChange={(e) => setSelectedTextColor(e.target.value)}
-                        className="flex-1 px-2 py-1 text-xs border rounded"
-                        placeholder="#000000"
-                      />
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              Text
+            </h3>
             <div className="grid grid-cols-2 gap-2">
               {textElements.map((item) => (
                 <button
@@ -431,7 +438,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  <span style={{ color: selectedTextColor }}>{item.icon}</span>
+                  {item.icon}
                   <span className="text-xs">{item.label}</span>
                 </button>
               ))}
@@ -554,6 +561,12 @@ export function ElementToolbar({
             <QuickIcons
               onSelectIcon={handleAddIcon}
               onOpenFullPicker={() => setShowIconPicker(true)}
+              onDragIcon={(iconId, iconName, e) => {
+                if (dragImageRef.current) {
+                  dragImageRef.current.textContent = iconName;
+                  e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                }
+              }}
             />
 
             {/* Full Icon Picker Dialog - controlled externally */}
@@ -689,7 +702,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  <AtSign className="w-4 h-4" style={{ color: selectedTextColor }} />
+                  <AtSign className="w-4 h-4" />
                   <span className="text-xs">Handle</span>
                 </button>
                 <button
@@ -711,7 +724,7 @@ export function ElementToolbar({
                     "cursor-grab active:cursor-grabbing transition-all duration-150"
                   )}
                 >
-                  <Globe className="w-4 h-4" style={{ color: selectedTextColor }} />
+                  <Globe className="w-4 h-4" />
                   <span className="text-xs">Website</span>
                 </button>
               </div>

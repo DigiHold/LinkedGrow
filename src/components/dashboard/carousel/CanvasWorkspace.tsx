@@ -79,7 +79,7 @@ export interface CanvasWorkspaceRef {
   setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => void;
   exportToDataURL: () => string;
   exportToJSON: () => string;
-  loadFromJSON: (json: string) => void;
+  loadFromJSON: (json: string) => Promise<void>;
   undo: () => void;
   redo: () => void;
   getCanvas: () => Canvas | null;
@@ -554,17 +554,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         return JSON.stringify(fabricRef.current.toJSON());
       },
 
-      loadFromJSON: (json: string) => {
+      loadFromJSON: async (json: string) => {
         if (!fabricRef.current || !json) return;
 
         try {
           const parsed = JSON.parse(json);
           // Clear canvas first to prevent any lingering objects
           fabricRef.current.clear();
-          fabricRef.current.loadFromJSON(parsed).then(() => {
-            fabricRef.current!.renderAll();
-            onCanvasChange?.();
-          });
+          await fabricRef.current.loadFromJSON(parsed);
+          fabricRef.current.renderAll();
+          onCanvasChange?.();
         } catch (error) {
           console.error('Failed to load canvas from JSON:', error);
         }
@@ -816,6 +815,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             } catch (error) {
               console.error('Failed to load dropped image:', error);
             }
+          } else if (type === 'icon' && data.iconId) {
+            // Handle icon drops - dispatch custom event for ElementToolbar to handle
+            const event = new CustomEvent('iconDrop', {
+              detail: { iconId: data.iconId, iconName: data.iconName, x, y }
+            });
+            window.dispatchEvent(event);
           }
         }
       } catch (error) {
