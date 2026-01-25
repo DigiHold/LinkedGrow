@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
-import { db, posts, users, media } from "@/lib/db";
+import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { createLinkedInPost, createLinkedInPostWithImage } from "@/lib/linkedin";
+import { getLinkedInUser } from "@/lib/team-utils";
 
 // Initialize QStash receiver for signature verification
 const receiver = new Receiver({
@@ -55,20 +56,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get user's LinkedIn credentials
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, post.userId),
-      columns: {
-        linkedinAccessToken: true,
-        linkedinProfileId: true,
-        linkedinTokenExpiry: true,
-        linkedinPostingTarget: true,
-        linkedinSelectedOrgId: true,
-        linkedinSelectedOrgName: true,
-      },
-    });
+    // Get LinkedIn credentials (uses team owner's credentials for team members)
+    // Also validates team membership - returns null if user was removed from team
+    const result = await getLinkedInUser(post.userId);
 
-    if (!user?.linkedinAccessToken || !user?.linkedinProfileId) {
+    if (!result) {
+      // User not found or was removed from team
+      await db.update(posts)
+        .set({
+          status: "failed",
+          errorMessage: "User not found or team membership revoked",
+          updatedAt: new Date(),
+        })
+        .where(eq(posts.id, postId));
+
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const { linkedInUser } = result;
+
+    if (!linkedInUser?.linkedinAccessToken || !linkedInUser?.linkedinProfileId) {
       // Mark post as failed
       await db.update(posts)
         .set({
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if token has expired
-    if (user.linkedinTokenExpiry && new Date(user.linkedinTokenExpiry) < new Date()) {
+    if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
       await db.update(posts)
         .set({
           status: "failed",
@@ -94,9 +101,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
     }
 
-    // Determine posting target
-    const isOrganization = user.linkedinPostingTarget === "organization" && user.linkedinSelectedOrgId;
-    const authorId = isOrganization ? user.linkedinSelectedOrgId! : user.linkedinProfileId;
+    // Determine posting target (uses owner's settings for team members)
+    const isOrganization = linkedInUser.linkedinPostingTarget === "organization" && linkedInUser.linkedinSelectedOrgId;
+    const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: "person" | "organization" = isOrganization ? "organization" : "person";
 
     // Get attached media if any
@@ -105,13 +112,13 @@ export async function POST(request: NextRequest) {
       .from(media)
       .where(eq(media.postId, postId));
 
-    let result;
+    let postResult;
     const firstImage = postMedia.find(m => m.mimeType?.startsWith("image/"));
 
     if (firstImage?.storageUrl) {
       // Post with image
-      result = await createLinkedInPostWithImage(
-        user.linkedinAccessToken,
+      postResult = await createLinkedInPostWithImage(
+        linkedInUser.linkedinAccessToken,
         authorId,
         post.content,
         firstImage.storageUrl,
@@ -121,8 +128,8 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Text-only post
-      result = await createLinkedInPost(
-        user.linkedinAccessToken,
+      postResult = await createLinkedInPost(
+        linkedInUser.linkedinAccessToken,
         authorId,
         post.content,
         "PUBLIC",
@@ -135,7 +142,7 @@ export async function POST(request: NextRequest) {
       .set({
         status: "published",
         publishedAt: new Date(),
-        linkedinPostId: result.id,
+        linkedinPostId: postResult.id,
         errorMessage: null,
         updatedAt: new Date(),
       })
@@ -146,7 +153,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       postId,
-      linkedinPostId: result.id,
+      linkedinPostId: postResult.id,
     });
 
   } catch (error) {

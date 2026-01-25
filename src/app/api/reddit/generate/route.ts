@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
+import { getAISettingsUser } from "@/lib/team-utils";
 
 // Define trimmed JSON type
 interface TrimmedRedditJson {
@@ -287,24 +286,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Reddit data is required" }, { status: 400 });
     }
 
-    // Get user's AI settings
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    // Get user's AI settings (uses owner's settings for team members)
+    const result = await getAISettingsUser(session.user.id);
+    if (!result) {
+      return NextResponse.json({ error: "User not found or team membership invalid" }, { status: 404 });
     }
 
-    const provider = user.aiProvider || "openai";
+    const { aiSettingsUser } = result;
 
-    // Get per-provider API key
+    const provider = aiSettingsUser.aiProvider || "openai";
+
+    // Get per-provider API key (from owner for team members)
     const providerKeyMap: Record<string, string | null> = {
-      openai: user.openaiApiKey,
-      anthropic: user.anthropicApiKey,
-      google: user.googleApiKey,
-      grok: user.grokApiKey,
-      perplexity: user.perplexityApiKey,
+      openai: aiSettingsUser.openaiApiKey,
+      anthropic: aiSettingsUser.anthropicApiKey,
+      google: aiSettingsUser.googleApiKey,
+      grok: aiSettingsUser.grokApiKey,
+      perplexity: aiSettingsUser.perplexityApiKey,
     };
 
     const encryptedApiKey = providerKeyMap[provider];
@@ -318,13 +316,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get per-provider model
+    // Get per-provider model (from owner for team members)
     const providerModelMap: Record<string, string | null> = {
-      openai: user.openaiModel,
-      anthropic: user.anthropicModel,
-      google: user.googleModel,
-      grok: user.grokModel,
-      perplexity: user.perplexityModel,
+      openai: aiSettingsUser.openaiModel,
+      anthropic: aiSettingsUser.anthropicModel,
+      google: aiSettingsUser.googleModel,
+      grok: aiSettingsUser.grokModel,
+      perplexity: aiSettingsUser.perplexityModel,
     };
 
     const defaultModel = provider === "openai" ? "gpt-5-mini" :
@@ -334,17 +332,17 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    // Parse sample posts from JSON if stored
+    // Parse sample posts from JSON if stored (from owner for team members)
     let samplePosts: string[] | undefined;
-    if (user.samplePosts) {
+    if (aiSettingsUser.samplePosts) {
       try {
-        samplePosts = JSON.parse(user.samplePosts);
+        samplePosts = JSON.parse(aiSettingsUser.samplePosts);
       } catch {
         samplePosts = undefined;
       }
     }
 
-    // Generate posts using AI with voice settings
+    // Generate posts using AI with voice settings (from owner for team members)
     const posts = await generatePosts(
       hook,
       trimmedJson,
@@ -353,10 +351,10 @@ export async function POST(request: NextRequest) {
       provider,
       model,
       samplePosts,
-      user.neverMention || undefined,
-      user.businessDescription || undefined,
-      user.targetAudience || undefined,
-      user.writingTone || undefined
+      aiSettingsUser.neverMention || undefined,
+      aiSettingsUser.businessDescription || undefined,
+      aiSettingsUser.targetAudience || undefined,
+      aiSettingsUser.writingTone || undefined
     );
 
     return NextResponse.json({ posts });

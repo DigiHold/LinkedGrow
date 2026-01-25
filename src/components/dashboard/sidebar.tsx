@@ -311,7 +311,8 @@ export function Sidebar() {
           })}
 
           {/* Business Plan Features */}
-          {session?.user?.plan === "business" && (
+          {/* Hide for member role (they see no business features), show for admin (Team access) and owners */}
+          {session?.user?.plan === "business" && !(isTeamMember && teamRole === "member") && (
             <>
               {(!isCollapsed || isMobileOpen) && (
                 <div className="pt-4 pb-2">
