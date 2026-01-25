@@ -1,8 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Group, util } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient } from "fabric";
 import { cn } from "@/lib/utils";
+
+// Helper to parse CSS gradient and convert to Fabric gradient
+function parseGradientToFabric(gradientString: string): { colorStops: Record<string, string>; angle: number } | null {
+  // Parse "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  const match = gradientString.match(/linear-gradient\((\d+)deg,\s*([^)]+)\)/);
+  if (!match) return null;
+
+  const angle = parseInt(match[1], 10);
+  const colorsStr = match[2];
+
+  // Parse color stops
+  const colorStops: Record<string, string> = {};
+  const colorRegex = /(#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}|rgb[a]?\([^)]+\))\s*(\d+)?%?/g;
+  let colorMatch;
+  let index = 0;
+  while ((colorMatch = colorRegex.exec(colorsStr)) !== null) {
+    const color = colorMatch[1];
+    const position = colorMatch[2] ? parseInt(colorMatch[2], 10) / 100 : index;
+    colorStops[position.toString()] = color;
+    index++;
+  }
+
+  return { colorStops, angle };
+}
 
 // Canvas dimensions for LinkedIn carousel (4:5 aspect ratio)
 export const CANVAS_WIDTH = 1080;
@@ -71,12 +95,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const historyRef = useRef<string[]>([]);
     const historyIndexRef = useRef(-1);
     const isUndoRedoRef = useRef(false);
+    const lastSavedStateRef = useRef<string>('');
 
-    // Save state to history
+    // Save state to history with debounce to prevent duplicate states
     const saveHistory = useCallback(() => {
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       const json = JSON.stringify(fabricRef.current.toJSON());
+
+      // Don't save if it's the same as the last saved state
+      if (json === lastSavedStateRef.current) return;
+      lastSavedStateRef.current = json;
 
       // Remove any redo states
       historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
@@ -324,11 +353,66 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
         if (!fabricRef.current) return;
 
+        // Clear any existing background image when setting color/gradient
+        if (type !== 'image') {
+          fabricRef.current.backgroundImage = undefined;
+        }
+
         if (type === 'solid') {
           fabricRef.current.backgroundColor = value;
         } else if (type === 'gradient') {
-          // Parse gradient value (e.g., "linear-gradient(135deg, #667eea, #764ba2)")
-          fabricRef.current.backgroundColor = value;
+          // Parse CSS gradient and create a Fabric.js gradient
+          const parsed = parseGradientToFabric(value);
+          if (parsed) {
+            // Convert angle to coordinates
+            const angleRad = (parsed.angle - 90) * Math.PI / 180;
+            const coords = {
+              x1: 0.5 - Math.cos(angleRad) * 0.5,
+              y1: 0.5 - Math.sin(angleRad) * 0.5,
+              x2: 0.5 + Math.cos(angleRad) * 0.5,
+              y2: 0.5 + Math.sin(angleRad) * 0.5,
+            };
+
+            // Create gradient rectangle as background
+            const gradientRect = new Rect({
+              left: 0,
+              top: 0,
+              width: CANVAS_WIDTH,
+              height: CANVAS_HEIGHT,
+              selectable: false,
+              evented: false,
+              excludeFromExport: false,
+            });
+
+            const gradient = new Gradient({
+              type: 'linear',
+              coords: {
+                x1: coords.x1 * CANVAS_WIDTH,
+                y1: coords.y1 * CANVAS_HEIGHT,
+                x2: coords.x2 * CANVAS_WIDTH,
+                y2: coords.y2 * CANVAS_HEIGHT,
+              },
+              colorStops: Object.entries(parsed.colorStops).map(([offset, color]) => ({
+                offset: parseFloat(offset),
+                color,
+              })),
+            });
+
+            gradientRect.set('fill', gradient);
+
+            // Remove any existing gradient background (first non-selectable rect)
+            const objects = fabricRef.current.getObjects();
+            const existingBgRect = objects.find(obj =>
+              obj instanceof Rect && !obj.selectable && obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT
+            );
+            if (existingBgRect) {
+              fabricRef.current.remove(existingBgRect);
+            }
+
+            // Add gradient rect at the bottom
+            fabricRef.current.insertAt(0, gradientRect);
+            fabricRef.current.backgroundColor = '#ffffff'; // Fallback
+          }
         } else if (type === 'image') {
           FabricImage.fromURL(value, { crossOrigin: 'anonymous' }).then((img) => {
             const scale = Math.max(
@@ -348,6 +432,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           });
         }
         fabricRef.current.renderAll();
+        saveHistory();
         onCanvasChange?.();
       },
 
@@ -395,10 +480,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         isUndoRedoRef.current = true;
         historyIndexRef.current--;
         const json = historyRef.current[historyIndexRef.current];
+        lastSavedStateRef.current = json; // Update last saved state to prevent re-save
 
         fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
           fabricRef.current!.renderAll();
-          isUndoRedoRef.current = false;
+          // Small delay before allowing history saves again
+          setTimeout(() => {
+            isUndoRedoRef.current = false;
+          }, 100);
           onCanvasChange?.();
         });
       },
@@ -409,10 +498,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         isUndoRedoRef.current = true;
         historyIndexRef.current++;
         const json = historyRef.current[historyIndexRef.current];
+        lastSavedStateRef.current = json; // Update last saved state to prevent re-save
 
         fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
           fabricRef.current!.renderAll();
-          isUndoRedoRef.current = false;
+          // Small delay before allowing history saves again
+          setTimeout(() => {
+            isUndoRedoRef.current = false;
+          }, 100);
           onCanvasChange?.();
         });
       },
@@ -458,9 +551,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             isUndoRedoRef.current = true;
             historyIndexRef.current--;
             const json = historyRef.current[historyIndexRef.current];
+            lastSavedStateRef.current = json;
             fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
               fabricRef.current!.renderAll();
-              isUndoRedoRef.current = false;
+              setTimeout(() => {
+                isUndoRedoRef.current = false;
+              }, 100);
             });
           }
         }
@@ -472,9 +568,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             isUndoRedoRef.current = true;
             historyIndexRef.current++;
             const json = historyRef.current[historyIndexRef.current];
+            lastSavedStateRef.current = json;
             fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
               fabricRef.current!.renderAll();
-              isUndoRedoRef.current = false;
+              setTimeout(() => {
+                isUndoRedoRef.current = false;
+              }, 100);
             });
           }
         }

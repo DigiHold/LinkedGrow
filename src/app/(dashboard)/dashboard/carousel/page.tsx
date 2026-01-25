@@ -39,6 +39,10 @@ import {
   Wand2,
   Check,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -85,6 +89,9 @@ export default function CarouselPage() {
     handle: true,
     website: false,
   });
+  // Responsive sidebar state
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   // AI Generation state
   const [topic, setTopic] = useState("");
@@ -114,7 +121,13 @@ export default function CarouselPage() {
           const data = await response.json();
           setHasTextApiKey(data.hasApiKey || false);
           setHasImageApiKey(data.hasImageApiKey || false);
-          setUserPlan(data.plan || 'pro');
+          setUserPlan(data.plan || 'free');
+          // Set branding data from API response
+          setBranding({
+            logoUrl: data.brandLogoUrl || undefined,
+            avatarUrl: data.brandAvatarUrl || undefined,
+            handle: data.brandHandle || undefined,
+          });
         } else {
           setHasTextApiKey(false);
           setHasImageApiKey(false);
@@ -687,17 +700,41 @@ export default function CarouselPage() {
         </div>
 
         {/* Main Editor Area */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Left Sidebar Toggle Button (visible on small screens or when sidebar hidden) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute left-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
+              showLeftSidebar && "md:hidden"
+            )}
+            onClick={() => setShowLeftSidebar(!showLeftSidebar)}
+          >
+            {showLeftSidebar ? (
+              <PanelLeftClose className="w-4 h-4" />
+            ) : (
+              <PanelLeftOpen className="w-4 h-4" />
+            )}
+          </Button>
+
           {/* Left Sidebar - Element Toolbar */}
-          <ElementToolbar
-            canvasRef={canvasRef}
-            branding={branding}
-            onImageUpload={handleImageUpload}
-            onAIImageGenerate={hasImageApiKey ? handleAIImageGenerate : undefined}
-          />
+          <div className={cn(
+            "transition-all duration-300 ease-in-out",
+            showLeftSidebar ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
+            "hidden md:block",
+            showLeftSidebar && "block! absolute md:relative z-10 h-full bg-background shadow-lg md:shadow-none"
+          )}>
+            <ElementToolbar
+              canvasRef={canvasRef}
+              branding={branding}
+              onImageUpload={handleImageUpload}
+              onAIImageGenerate={hasImageApiKey ? handleAIImageGenerate : undefined}
+            />
+          </div>
 
           {/* Canvas Workspace */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900 overflow-hidden">
+          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900 overflow-auto p-4">
             <CanvasWorkspace
               ref={canvasRef}
               zoom={zoom}
@@ -707,12 +744,36 @@ export default function CarouselPage() {
             />
           </div>
 
+          {/* Right Sidebar Toggle Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute right-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
+              showRightSidebar && "md:hidden"
+            )}
+            onClick={() => setShowRightSidebar(!showRightSidebar)}
+          >
+            {showRightSidebar ? (
+              <PanelRightClose className="w-4 h-4" />
+            ) : (
+              <PanelRightOpen className="w-4 h-4" />
+            )}
+          </Button>
+
           {/* Right Sidebar - Properties Panel */}
-          <ElementProperties
-            selectedElement={selectedElement}
-            canvasRef={canvasRef}
-            onBackgroundChange={handleBackgroundChange}
-          />
+          <div className={cn(
+            "transition-all duration-300 ease-in-out",
+            showRightSidebar ? "w-72 opacity-100" : "w-0 opacity-0 overflow-hidden",
+            "hidden md:block",
+            showRightSidebar && "block! absolute md:relative right-0 z-10 h-full bg-background shadow-lg md:shadow-none"
+          )}>
+            <ElementProperties
+              selectedElement={selectedElement}
+              canvasRef={canvasRef}
+              onBackgroundChange={handleBackgroundChange}
+            />
+          </div>
         </div>
 
         {/* Bottom - Slide Manager */}

@@ -186,8 +186,8 @@ const cleanWhite: CarouselTemplate = {
   accentClass: 'text-cyan-600',
   background: { type: 'solid', value: '#ffffff' },
   defaultElements: [
-    { type: 'text', options: { text: 'Your Headline Here', fontSize: 72, fontWeight: 'bold', fill: '#1a1a2e', top: 400 } },
-    { type: 'text', options: { text: 'Add your supporting text', fontSize: 36, fontWeight: 'normal', fill: '#4a4a68', top: 550 } },
+    { type: 'text', options: { text: 'Your Headline', fontSize: 72, fontWeight: 'bold', fill: '#1a1a2e', top: 450, left: 340 } },
+    { type: 'text', options: { text: 'Supporting text goes here', fontSize: 32, fontWeight: 'normal', fill: '#4a4a68', top: 580, left: 340 } },
   ],
 };
 
@@ -403,8 +403,9 @@ const neonPop: CarouselTemplate = {
   accentClass: 'text-emerald-400',
   background: { type: 'solid', value: '#0f0f1a' },
   defaultElements: [
-    { type: 'text', options: { text: 'NEON HEADLINE', fontSize: 76, fontWeight: '800', fill: '#00ff88', top: 400 } },
-    { type: 'text', options: { text: 'Glow in the dark', fontSize: 40, fontWeight: 'normal', fill: '#ffffff', top: 560 } },
+    { type: 'shape', shapeType: 'circle' },
+    { type: 'text', options: { text: 'NEON GLOW', fontSize: 76, fontWeight: '800', fill: '#00ff88', top: 500, left: 340 } },
+    { type: 'text', options: { text: 'Electric vibes', fontSize: 36, fontWeight: 'normal', fill: '#ff00ff', top: 640, left: 340 } },
   ],
 };
 
@@ -1147,8 +1148,9 @@ const dataViz: CarouselTemplate = {
   accentClass: 'text-green-500',
   background: { type: 'solid', value: '#18181b' },
   defaultElements: [
-    { type: 'text', options: { text: '87%', fontSize: 120, fontWeight: 'bold', fill: '#22c55e', top: 350 } },
-    { type: 'text', options: { text: 'Key metric that matters', fontSize: 36, fontWeight: 'normal', fill: '#a1a1aa', top: 550 } },
+    { type: 'shape', shapeType: 'rect' },
+    { type: 'text', options: { text: '87%', fontSize: 180, fontWeight: 'bold', fill: '#22c55e', top: 380, left: 340 } },
+    { type: 'text', options: { text: 'of users saw results', fontSize: 36, fontWeight: 'normal', fill: '#a1a1aa', top: 650, left: 340 } },
   ],
 };
 

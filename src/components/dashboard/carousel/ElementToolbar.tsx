@@ -80,12 +80,28 @@ export function ElementToolbar({
     const file = e.target.files?.[0];
     if (!file || !onImageUpload) return;
 
+    // Validate file type - support common web image formats
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image file size must be less than 10MB');
+      return;
+    }
+
     try {
       const url = await onImageUpload(file);
       await canvasRef.current?.addImage(url);
     } catch (error) {
       console.error('Failed to upload image:', error);
+      alert('Failed to upload image. Please try again.');
     }
+    // Reset input so same file can be uploaded again
+    e.target.value = '';
   };
 
   const handleAIGenerate = async () => {
@@ -307,7 +323,7 @@ export function ElementToolbar({
               <label className="block">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   className="hidden"
                   onChange={handleImageUpload}
                 />
@@ -324,34 +340,39 @@ export function ElementToolbar({
                 </Button>
               </label>
 
-              {onAIImageGenerate && (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Describe your image..."
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border rounded-md bg-background"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAIGenerate()}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-950"
-                    onClick={handleAIGenerate}
-                    disabled={isGenerating || !aiPrompt.trim()}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
-                    )}
-                    <span className="text-xs">
-                      {isGenerating ? 'Generating...' : 'AI Generate'}
-                    </span>
-                  </Button>
-                </div>
-              )}
+              {/* AI Image Generation */}
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Describe your image..."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border rounded-md bg-background"
+                  onKeyDown={(e) => e.key === 'Enter' && onAIImageGenerate && handleAIGenerate()}
+                  disabled={!onAIImageGenerate}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-950"
+                  onClick={handleAIGenerate}
+                  disabled={isGenerating || !aiPrompt.trim() || !onAIImageGenerate}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span className="text-xs">
+                    {isGenerating ? 'Generating...' : !onAIImageGenerate ? 'Configure Image AI' : 'AI Generate'}
+                  </span>
+                </Button>
+                {!onAIImageGenerate && (
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Configure Image AI API key in settings
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -408,29 +429,119 @@ export function ElementToolbar({
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               Branding
             </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {brandingElements.map((item) => (
+            <div className="space-y-2">
+              {/* Logo - with upload option */}
+              <div className="flex gap-2">
+                {branding?.logoUrl ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                    onClick={() => handleAddBrandingElement('logo')}
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span className="text-xs">Add Logo</span>
+                  </Button>
+                ) : (
+                  <label className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !onImageUpload) return;
+                        try {
+                          const url = await onImageUpload(file);
+                          await canvasRef.current?.addImage(url);
+                        } catch (error) {
+                          console.error('Failed to upload logo:', error);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                      asChild
+                    >
+                      <span>
+                        <Upload className="w-4 h-4" />
+                        <span className="text-xs">Upload Logo</span>
+                      </span>
+                    </Button>
+                  </label>
+                )}
+              </div>
+
+              {/* Avatar - with upload option */}
+              <div className="flex gap-2">
+                {branding?.avatarUrl ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                    onClick={() => handleAddBrandingElement('avatar')}
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-xs">Add Avatar</span>
+                  </Button>
+                ) : (
+                  <label className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !onImageUpload) return;
+                        try {
+                          const url = await onImageUpload(file);
+                          await canvasRef.current?.addImage(url);
+                        } catch (error) {
+                          console.error('Failed to upload avatar:', error);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                      asChild
+                    >
+                      <span>
+                        <Upload className="w-4 h-4" />
+                        <span className="text-xs">Upload Avatar</span>
+                      </span>
+                    </Button>
+                  </label>
+                )}
+              </div>
+
+              {/* Handle and Website */}
+              <div className="grid grid-cols-2 gap-2">
                 <Button
-                  key={item.id}
                   variant="outline"
                   size="sm"
                   className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
-                  onClick={item.action}
-                  disabled={
-                    (item.id === 'logo' && !branding?.logoUrl) ||
-                    (item.id === 'avatar' && !branding?.avatarUrl)
-                  }
+                  onClick={() => handleAddBrandingElement('handle')}
                 >
-                  {item.icon}
-                  <span className="text-xs">{item.label}</span>
+                  <AtSign className="w-4 h-4" />
+                  <span className="text-xs">Handle</span>
                 </Button>
-              ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
+                  onClick={() => handleAddBrandingElement('website')}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="text-xs">Website</span>
+                </Button>
+              </div>
             </div>
-            {(!branding?.logoUrl || !branding?.avatarUrl) && (
-              <p className="text-[10px] text-muted-foreground mt-2">
-                Configure branding in the right panel
-              </p>
-            )}
           </div>
         </div>
       </ScrollArea>

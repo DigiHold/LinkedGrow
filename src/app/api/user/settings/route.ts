@@ -100,6 +100,8 @@ export async function GET() {
       hasImageApiKey,
       // Team member flag
       isTeamMember,
+      // User plan (from session which handles team member inheritance)
+      plan: session.user.plan || 'free',
       // Other settings (use owner's voice/business settings for team members)
       linkedinConnected: !!aiUser.linkedinAccessToken,
       linkedinProfileName: aiUser.linkedinProfileName,
@@ -108,6 +110,10 @@ export async function GET() {
       businessDescription: aiUser.businessDescription,
       targetAudience: aiUser.targetAudience,
       writingTone: aiUser.writingTone,
+      // Branding settings
+      brandLogoUrl: user.brandLogoUrl,
+      brandAvatarUrl: user.image,
+      brandHandle: aiUser.linkedinProfileName,
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
