@@ -2,11 +2,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadBase64ToR2, isR2Configured } from "@/lib/storage/r2";
 import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
+
+// Helper function to check if user can access a post (owner or team member's post if owner)
+async function canUserAccessPost(userId: string, postUserId: string): Promise<boolean> {
+  // User owns the post
+  if (userId === postUserId) return true;
+
+  // Check if user is a team owner and the post belongs to one of their team members
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.ownerId, userId),
+  });
+
+  if (!team) return false;
+
+  // Get all team member user IDs
+  const members = await db
+    .select({ userId: teamMembers.userId })
+    .from(teamMembers)
+    .where(eq(teamMembers.teamId, team.id));
+
+  const teamMemberIds = members.map((m) => m.userId);
+  return teamMemberIds.includes(postUserId);
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -33,14 +55,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get post (must belong to user)
+    // Get post
     const [post] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.id, postId), eq(posts.userId, user.id)))
+      .where(eq(posts.id, postId))
       .limit(1);
 
     if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // Check if user can access this post (owns it or is team owner)
+    const canAccess = await canUserAccessPost(user.id, post.userId);
+    if (!canAccess) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
@@ -92,10 +120,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const [existingPost] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.id, postId), eq(posts.userId, user.id)))
+      .where(eq(posts.id, postId))
       .limit(1);
 
     if (!existingPost) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // Check if user can access this post (owns it or is team owner)
+    const canAccess = await canUserAccessPost(user.id, existingPost.userId);
+    if (!canAccess) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
@@ -303,10 +337,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const [existingPost] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.id, postId), eq(posts.userId, user.id)))
+      .where(eq(posts.id, postId))
       .limit(1);
 
     if (!existingPost) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // Check if user can access this post (owns it or is team owner)
+    const canAccess = await canUserAccessPost(user.id, existingPost.userId);
+    if (!canAccess) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 

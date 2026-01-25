@@ -78,7 +78,7 @@ interface Idea {
   createdAt: string;
 }
 
-type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-post-preview" | "edit-post" | null;
+type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-post-preview" | "edit-post" | "day-detail" | null;
 
 export function CalendarContent() {
   const { data: session } = useSession();
@@ -923,7 +923,17 @@ export function CalendarContent() {
                         </button>
                       ))}
                       {(postsForDay.length + ideasForDay.length) > 2 && (
-                        <span className="text-[10px] text-muted-foreground px-1.5 block">+{(postsForDay.length + ideasForDay.length) - 2} more</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDay({ day: item.day, month: item.month, year: item.year });
+                            setDrawerView("day-detail");
+                            setDrawerOpen(true);
+                          }}
+                          className="text-[10px] text-primary hover:text-primary/80 px-1.5 block font-medium hover:underline"
+                        >
+                          +{(postsForDay.length + ideasForDay.length) - 2} more
+                        </button>
                       )}
                     </div>
                   )}
@@ -1045,7 +1055,8 @@ export function CalendarContent() {
               {drawerView === "post-detail" ? "Post Details" :
                drawerView === "create-post" ? "Create Post" :
                drawerView === "schedule-post" ? "Schedule Post" :
-               drawerView === "edit-post" ? "Edit Post" : "Calendar Drawer"}
+               drawerView === "edit-post" ? "Edit Post" :
+               drawerView === "day-detail" ? "Day Overview" : "Calendar Drawer"}
             </DialogPrimitive.Title>
 
             {/* POST DETAIL VIEW */}
@@ -1659,6 +1670,206 @@ Tips for viral posts:
                       </Button>
                     </div>
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* DAY DETAIL VIEW */}
+            {drawerView === "day-detail" && selectedDay && (
+              <>
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <h2 className="sm:text-2xl text-xl font-semibold">
+                        {selectedDay.day} {MONTHS[selectedDay.month]} {selectedDay.year}
+                      </h2>
+                    </div>
+                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col w-full h-full min-h-0 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-800/50">
+                  {/* Actions */}
+                  <div className="flex gap-2 mb-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        openDrawer("create-post");
+                      }}
+                      className="flex-1"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> New Post
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        setTimeout(() => openIdeaModal(), 100);
+                      }}
+                      className="flex-1"
+                    >
+                      <Lightbulb className="w-4 h-4 mr-2" /> New Idea
+                    </Button>
+                  </div>
+
+                  {/* Posts Section */}
+                  {(() => {
+                    const dayPosts = getPostsForDate(selectedDay.day, selectedDay.month, selectedDay.year);
+                    const dayIdeas = getIdeasForDate(selectedDay.day, selectedDay.month, selectedDay.year);
+                    return (
+                      <>
+                        {dayPosts.length > 0 && (
+                          <div className="mb-6">
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                              <CalendarDays className="w-4 h-4" />
+                              Posts ({dayPosts.length})
+                            </h3>
+                            <div className="space-y-3">
+                              {dayPosts.map((post) => (
+                                <div
+                                  key={post.id}
+                                  className={cn(
+                                    "p-4 rounded-lg border bg-white dark:bg-gray-900 transition-all hover:shadow-md cursor-pointer",
+                                    post.status === "draft" && "border-l-4 border-l-yellow-500",
+                                    post.status === "scheduled" && "border-l-4 border-l-blue-500",
+                                    post.status === "published" && "border-l-4 border-l-green-500",
+                                    post.status === "failed" && "border-l-4 border-l-red-500"
+                                  )}
+                                  onClick={() => {
+                                    setSelectedPost(post);
+                                    setDrawerView("post-detail");
+                                  }}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className={cn(
+                                          "px-2 py-0.5 rounded-full text-xs font-medium",
+                                          post.status === "draft" && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                                          post.status === "scheduled" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                                          post.status === "published" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                          post.status === "failed" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                        )}>
+                                          {getStatusLabel(post.status)}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm line-clamp-2 text-gray-700 dark:text-gray-300">
+                                        {post.content}
+                                      </p>
+                                    </div>
+                                    {post.media && post.media.length > 0 && (
+                                      <div className="shrink-0">
+                                        {post.media[0].mimeType.startsWith("video/") ? (
+                                          <div className="w-16 h-16 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                          </div>
+                                        ) : (
+                                          <img
+                                            src={post.media[0].storageUrl}
+                                            alt=""
+                                            className="w-16 h-16 rounded-md object-cover"
+                                          />
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditPost(post);
+                                      }}
+                                      className="text-xs h-8"
+                                    >
+                                      <Wand2 className="w-3 h-3 mr-1" /> Edit
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPost(post);
+                                        setShowDeleteConfirm(true);
+                                      }}
+                                      className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    >
+                                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ideas Section */}
+                        {dayIdeas.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                              <Lightbulb className="w-4 h-4" />
+                              Ideas ({dayIdeas.length})
+                            </h3>
+                            <div className="space-y-3">
+                              {dayIdeas.map((idea) => (
+                                <div
+                                  key={idea.id}
+                                  className="p-4 rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 transition-all hover:shadow-md cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedIdeaForModal(idea);
+                                    setNewIdeaText(idea.content || idea.title);
+                                    setDrawerOpen(false);
+                                    setTimeout(() => setIdeaModalOpen(true), 100);
+                                  }}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                                      <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm mb-1 line-clamp-1">{idea.title}</p>
+                                      {idea.content && idea.content !== idea.title && (
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{idea.content}</p>
+                                      )}
+                                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                        <span className="capitalize">{idea.source}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty State */}
+                        {dayPosts.length === 0 && dayIdeas.length === 0 && (
+                          <div className="text-center py-12">
+                            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                              <CalendarDays className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-muted-foreground mb-4">No posts or ideas for this day</p>
+                            <Button
+                              variant="outline"
+                              onClick={() => openDrawer("create-post")}
+                            >
+                              <Plus className="w-4 h-4 mr-2" /> Create your first post
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </>
             )}
