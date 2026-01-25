@@ -29,7 +29,8 @@ export async function PATCH(
     }
 
     // Check if user has access to team collaboration
-    const userPlan = (user.plan || "free") as PlanId;
+    // Use session plan (which includes inherited plan for team members) instead of DB plan
+    const userPlan = (session.user.plan || user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "teamCollaboration")) {
       return NextResponse.json(
         { error: "Team Collaboration requires Business plan" },
@@ -118,7 +119,8 @@ export async function DELETE(
     }
 
     // Check if user has access to team collaboration
-    const userPlan = (user.plan || "free") as PlanId;
+    // Use session plan (which includes inherited plan for team members) instead of DB plan
+    const userPlan = (session.user.plan || user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "teamCollaboration")) {
       return NextResponse.json(
         { error: "Team Collaboration requires Business plan" },
@@ -128,7 +130,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Find the member
+    // Find the member to be removed
     const member = await db.query.teamMembers.findFirst({
       where: eq(teamMembers.id, id),
     });
@@ -137,14 +139,32 @@ export async function DELETE(
       return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
 
-    // Check if user is team owner
+    // Get team and check permissions
     const team = await db.query.teams.findFirst({
       where: eq(teams.id, member.teamId),
     });
 
-    if (!team || team.ownerId !== user.id) {
+    if (!team) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    const isOwner = team.ownerId === user.id;
+
+    // Check if current user is an admin of this team
+    let isAdmin = false;
+    if (!isOwner) {
+      const currentUserMembership = await db.query.teamMembers.findFirst({
+        where: eq(teamMembers.userId, user.id),
+      });
+      isAdmin = currentUserMembership?.role === "admin" && currentUserMembership?.teamId === member.teamId;
+    }
+
+    // Permission checks:
+    // - Owner can remove anyone except themselves
+    // - Admin can only remove members (not other admins or owner)
+    if (!isOwner && !isAdmin) {
       return NextResponse.json(
-        { error: "Only team owners can remove members" },
+        { error: "Only team owners or admins can remove members" },
         { status: 403 }
       );
     }
@@ -154,6 +174,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Cannot remove the team owner" },
         { status: 400 }
+      );
+    }
+
+    // Admins can only remove members, not other admins
+    if (isAdmin && !isOwner && member.role === "admin") {
+      return NextResponse.json(
+        { error: "Admins cannot remove other admins" },
+        { status: 403 }
       );
     }
 

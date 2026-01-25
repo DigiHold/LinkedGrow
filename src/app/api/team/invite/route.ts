@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has access to team collaboration
-    const userPlan = (user.plan || "free") as PlanId;
+    // Use session plan (which includes inherited plan for team members) instead of DB plan
+    const userPlan = (session.user.plan || user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "teamCollaboration")) {
       return NextResponse.json(
         { error: "Team Collaboration requires Business plan" },
