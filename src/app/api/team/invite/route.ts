@@ -37,40 +37,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user's team (must be owner or admin)
-    const team = await db.query.teams.findFirst({
-      where: eq(teams.ownerId, user.id),
-    });
-
-    let teamId = team?.id;
-
-    if (!team) {
-      // Check if user is admin of a team
-      const membership = await db.query.teamMembers.findFirst({
-        where: and(
-          eq(teamMembers.userId, user.id),
-          eq(teamMembers.role, "admin")
-        ),
-      });
-
-      if (!membership) {
-        return NextResponse.json(
-          { error: "You must be a team owner or admin to invite members" },
-          { status: 403 }
-        );
-      }
-      teamId = membership.teamId;
-    }
+    const body = await request.json();
+    const { email, role, teamId } = body;
 
     if (!teamId) {
+      return NextResponse.json(
+        { error: "Team ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user is owner or admin of this team
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.id, teamId),
+    });
+
+    if (!team) {
       return NextResponse.json(
         { error: "Team not found" },
         { status: 404 }
       );
     }
 
-    const body = await request.json();
-    const { email, role } = body;
+    const isOwner = team.ownerId === user.id;
+    let isAdmin = false;
+
+    if (!isOwner) {
+      const membership = await db.query.teamMembers.findFirst({
+        where: and(
+          eq(teamMembers.teamId, teamId),
+          eq(teamMembers.userId, user.id),
+          eq(teamMembers.role, "admin")
+        ),
+      });
+      isAdmin = !!membership;
+    }
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: "You must be a team owner or admin to invite members" },
+        { status: 403 }
+      );
+    }
 
     // Validate email
     if (!email || typeof email !== "string" || !email.includes("@")) {

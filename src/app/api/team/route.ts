@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { teams, teamMembers, teamInvites, users } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { nanoid } from "nanoid";
 
-// GET /api/team - Get user's team and members
+// GET /api/team - Get all user's teams (owned + member of)
 export async function GET() {
   try {
     const session = await auth();
@@ -35,139 +35,102 @@ export async function GET() {
       );
     }
 
-    // Find user's team membership
-    const membership = await db.query.teamMembers.findFirst({
+    // Find all teams user owns
+    const ownedTeams = await db.query.teams.findMany({
+      where: eq(teams.ownerId, user.id),
+    });
+
+    // Find all teams user is a member of (but doesn't own)
+    const memberships = await db.query.teamMembers.findMany({
       where: eq(teamMembers.userId, user.id),
     });
 
-    if (!membership) {
-      // Check if user owns a team
-      const ownedTeam = await db.query.teams.findFirst({
-        where: eq(teams.ownerId, user.id),
-      });
+    const memberTeamIds = memberships
+      .map((m) => m.teamId)
+      .filter((id) => !ownedTeams.some((t) => t.id === id));
 
-      if (!ownedTeam) {
-        return NextResponse.json({ team: null, members: [], pendingInvites: [] });
-      }
-
-      // Get team members
-      const members = await db
-        .select({
-          id: teamMembers.id,
-          userId: teamMembers.userId,
-          role: teamMembers.role,
-          invitedAt: teamMembers.invitedAt,
-          acceptedAt: teamMembers.acceptedAt,
-          email: users.email,
-          name: users.name,
-          image: users.image,
-        })
-        .from(teamMembers)
-        .innerJoin(users, eq(teamMembers.userId, users.id))
-        .where(eq(teamMembers.teamId, ownedTeam.id));
-
-      // Get pending invites
-      const pendingInvites = await db.query.teamInvites.findMany({
-        where: eq(teamInvites.teamId, ownedTeam.id),
-      });
-
-      return NextResponse.json({
-        team: {
-          id: ownedTeam.id,
-          name: ownedTeam.name,
-          ownerId: ownedTeam.ownerId,
-          createdAt: ownedTeam.createdAt?.toISOString(),
-        },
-        members: members.map((m) => ({
-          id: m.id,
-          userId: m.userId,
-          email: m.email,
-          name: m.name,
-          image: m.image,
-          role: m.role,
-          invitedAt: m.invitedAt?.toISOString(),
-          acceptedAt: m.acceptedAt?.toISOString(),
-        })),
-        pendingInvites: pendingInvites.map((i) => ({
-          id: i.id,
-          email: i.email,
-          role: i.role,
-          createdAt: i.createdAt?.toISOString(),
-          expiresAt: i.expiresAt?.toISOString(),
-        })),
+    let memberTeams: typeof ownedTeams = [];
+    if (memberTeamIds.length > 0) {
+      memberTeams = await db.query.teams.findMany({
+        where: or(...memberTeamIds.map((id) => eq(teams.id, id))),
       });
     }
 
-    // User is a member of a team
-    const team = await db.query.teams.findFirst({
-      where: eq(teams.id, membership.teamId),
-    });
+    const allTeams = [...ownedTeams, ...memberTeams];
 
-    if (!team) {
-      return NextResponse.json({ team: null, members: [], pendingInvites: [] });
-    }
+    // For each team, get members and pending invites
+    const teamsWithDetails = await Promise.all(
+      allTeams.map(async (team) => {
+        // Get team members
+        const teamMembersList = await db
+          .select({
+            id: teamMembers.id,
+            userId: teamMembers.userId,
+            role: teamMembers.role,
+            invitedAt: teamMembers.invitedAt,
+            acceptedAt: teamMembers.acceptedAt,
+            email: users.email,
+            name: users.name,
+            image: users.image,
+          })
+          .from(teamMembers)
+          .innerJoin(users, eq(teamMembers.userId, users.id))
+          .where(eq(teamMembers.teamId, team.id));
 
-    // Get team members
-    const members = await db
-      .select({
-        id: teamMembers.id,
-        userId: teamMembers.userId,
-        role: teamMembers.role,
-        invitedAt: teamMembers.invitedAt,
-        acceptedAt: teamMembers.acceptedAt,
-        email: users.email,
-        name: users.name,
-        image: users.image,
+        // Get user's role in this team
+        const userMembership = memberships.find((m) => m.teamId === team.id);
+        const userRole = team.ownerId === user.id ? "owner" : userMembership?.role || "member";
+
+        // Get pending invites (only if user is owner or admin)
+        let pendingInvitesList: {
+          id: string;
+          email: string;
+          role: string | null;
+          createdAt: string | undefined;
+          expiresAt: string | undefined;
+        }[] = [];
+
+        if (userRole === "owner" || userRole === "admin") {
+          const invites = await db.query.teamInvites.findMany({
+            where: eq(teamInvites.teamId, team.id),
+          });
+          pendingInvitesList = invites.map((i) => ({
+            id: i.id,
+            email: i.email,
+            role: i.role,
+            createdAt: i.createdAt?.toISOString(),
+            expiresAt: i.expiresAt?.toISOString(),
+          }));
+        }
+
+        return {
+          team: {
+            id: team.id,
+            name: team.name,
+            ownerId: team.ownerId,
+            createdAt: team.createdAt?.toISOString(),
+          },
+          members: teamMembersList.map((m) => ({
+            id: m.id,
+            userId: m.userId,
+            email: m.email,
+            name: m.name,
+            image: m.image,
+            role: m.role,
+            invitedAt: m.invitedAt?.toISOString(),
+            acceptedAt: m.acceptedAt?.toISOString(),
+          })),
+          pendingInvites: pendingInvitesList,
+          userRole,
+        };
       })
-      .from(teamMembers)
-      .innerJoin(users, eq(teamMembers.userId, users.id))
-      .where(eq(teamMembers.teamId, team.id));
+    );
 
-    // Get pending invites (only if user is owner or admin)
-    let pendingInvites: {
-      id: string;
-      email: string;
-      role: string | null;
-      createdAt: string | undefined;
-      expiresAt: string | undefined;
-    }[] = [];
-
-    if (membership.role === "owner" || membership.role === "admin") {
-      const invites = await db.query.teamInvites.findMany({
-        where: eq(teamInvites.teamId, team.id),
-      });
-      pendingInvites = invites.map((i) => ({
-        id: i.id,
-        email: i.email,
-        role: i.role,
-        createdAt: i.createdAt?.toISOString(),
-        expiresAt: i.expiresAt?.toISOString(),
-      }));
-    }
-
-    return NextResponse.json({
-      team: {
-        id: team.id,
-        name: team.name,
-        ownerId: team.ownerId,
-        createdAt: team.createdAt?.toISOString(),
-      },
-      members: members.map((m) => ({
-        id: m.id,
-        userId: m.userId,
-        email: m.email,
-        name: m.name,
-        image: m.image,
-        role: m.role,
-        invitedAt: m.invitedAt?.toISOString(),
-        acceptedAt: m.acceptedAt?.toISOString(),
-      })),
-      pendingInvites,
-    });
+    return NextResponse.json({ teams: teamsWithDetails });
   } catch (error) {
-    console.error("Failed to fetch team:", error);
+    console.error("Failed to fetch teams:", error);
     return NextResponse.json(
-      { error: "Failed to fetch team" },
+      { error: "Failed to fetch teams" },
       { status: 500 }
     );
   }
@@ -198,30 +161,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Team Collaboration requires Business plan" },
         { status: 403 }
-      );
-    }
-
-    // Check if user already has a team
-    const existingTeam = await db.query.teams.findFirst({
-      where: eq(teams.ownerId, user.id),
-    });
-
-    if (existingTeam) {
-      return NextResponse.json(
-        { error: "You already have a team" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user is already a member of another team
-    const existingMembership = await db.query.teamMembers.findFirst({
-      where: eq(teamMembers.userId, user.id),
-    });
-
-    if (existingMembership) {
-      return NextResponse.json(
-        { error: "You are already a member of another team" },
-        { status: 400 }
       );
     }
 
@@ -281,6 +220,8 @@ export async function POST(request: NextRequest) {
           acceptedAt: new Date().toISOString(),
         },
       ],
+      pendingInvites: [],
+      userRole: "owner",
     });
   } catch (error) {
     console.error("Failed to create team:", error);
@@ -291,7 +232,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/team - Update team (name)
+// PATCH /api/team - Update team (name) - requires teamId in body
 export async function PATCH(request: NextRequest) {
   try {
     const session = await auth();
@@ -319,20 +260,32 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Find user's team (must be owner)
+    const body = await request.json();
+    const { teamId, name } = body;
+
+    if (!teamId) {
+      return NextResponse.json(
+        { error: "Team ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Find the team
     const team = await db.query.teams.findFirst({
-      where: eq(teams.ownerId, user.id),
+      where: eq(teams.id, teamId),
     });
 
     if (!team) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Only owner can update team
+    if (team.ownerId !== user.id) {
       return NextResponse.json(
         { error: "You must be the team owner to update the team" },
         { status: 403 }
       );
     }
-
-    const body = await request.json();
-    const { name } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
@@ -349,7 +302,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update team
-    await db.update(teams).set({ name: name.trim() }).where(eq(teams.id, team.id));
+    await db.update(teams).set({ name: name.trim() }).where(eq(teams.id, teamId));
 
     return NextResponse.json({
       team: {
@@ -368,8 +321,8 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE /api/team - Delete team
-export async function DELETE() {
+// DELETE /api/team - Delete team - requires teamId in query params
+export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
@@ -396,12 +349,27 @@ export async function DELETE() {
       );
     }
 
-    // Find user's team (must be owner)
+    const { searchParams } = new URL(request.url);
+    const teamId = searchParams.get("teamId");
+
+    if (!teamId) {
+      return NextResponse.json(
+        { error: "Team ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Find the team
     const team = await db.query.teams.findFirst({
-      where: eq(teams.ownerId, user.id),
+      where: eq(teams.id, teamId),
     });
 
     if (!team) {
+      return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    }
+
+    // Only owner can delete team
+    if (team.ownerId !== user.id) {
       return NextResponse.json(
         { error: "You must be the team owner to delete the team" },
         { status: 403 }
@@ -409,13 +377,13 @@ export async function DELETE() {
     }
 
     // Delete all team invites
-    await db.delete(teamInvites).where(eq(teamInvites.teamId, team.id));
+    await db.delete(teamInvites).where(eq(teamInvites.teamId, teamId));
 
     // Delete all team members
-    await db.delete(teamMembers).where(eq(teamMembers.teamId, team.id));
+    await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
 
     // Delete team
-    await db.delete(teams).where(eq(teams.id, team.id));
+    await db.delete(teams).where(eq(teams.id, teamId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

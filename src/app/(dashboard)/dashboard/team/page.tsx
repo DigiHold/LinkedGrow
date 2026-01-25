@@ -15,6 +15,8 @@ import {
   Check,
   X,
   Settings,
+  Plus,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +50,13 @@ interface Team {
   createdAt: string;
 }
 
+interface TeamWithDetails {
+  team: Team;
+  members: TeamMember[];
+  pendingInvites: PendingInvite[];
+  userRole: "owner" | "admin" | "member";
+}
+
 const roleConfig = {
   owner: { label: "Owner", icon: Crown, color: "text-amber-500", bgColor: "bg-amber-50 dark:bg-amber-900/20" },
   admin: { label: "Admin", icon: Shield, color: "text-blue-500", bgColor: "bg-blue-50 dark:bg-blue-900/20" },
@@ -56,12 +65,13 @@ const roleConfig = {
 
 export default function TeamPage() {
   const { data: session } = useSession();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [teams, setTeams] = useState<TeamWithDetails[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showTeamSelector, setShowTeamSelector] = useState(false);
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
@@ -88,9 +98,10 @@ export default function TeamPage() {
       const response = await fetch("/api/team");
       if (response.ok) {
         const data = await response.json();
-        setTeam(data.team);
-        setMembers(data.members || []);
-        setPendingInvites(data.pendingInvites || []);
+        setTeams(data.teams || []);
+        if (data.teams?.length > 0 && !selectedTeamId) {
+          setSelectedTeamId(data.teams[0].team.id);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch team data:", error);
@@ -98,6 +109,8 @@ export default function TeamPage() {
       setIsLoading(false);
     }
   };
+
+  const selectedTeam = teams.find((t) => t.team.id === selectedTeamId);
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,8 +126,16 @@ export default function TeamPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setTeam(data.team);
-        setMembers(data.members || []);
+        const newTeamWithDetails: TeamWithDetails = {
+          team: data.team,
+          members: data.members || [],
+          pendingInvites: data.pendingInvites || [],
+          userRole: data.userRole || "owner",
+        };
+        setTeams([...teams, newTeamWithDetails]);
+        setSelectedTeamId(data.team.id);
+        setTeamName("");
+        setShowCreateForm(false);
       }
     } catch (error) {
       console.error("Failed to create team:", error);
@@ -133,6 +154,11 @@ export default function TeamPage() {
       return;
     }
 
+    if (!selectedTeamId) {
+      setInviteError("No team selected");
+      return;
+    }
+
     setIsInviting(true);
     try {
       const response = await fetch("/api/team/invite", {
@@ -141,6 +167,7 @@ export default function TeamPage() {
         body: JSON.stringify({
           email: inviteEmail.trim(),
           role: inviteRole,
+          teamId: selectedTeamId,
         }),
       });
 
@@ -152,7 +179,13 @@ export default function TeamPage() {
 
       setInviteSuccess(`Invite sent to ${inviteEmail}`);
       setInviteEmail("");
-      setPendingInvites([...pendingInvites, data.invite]);
+
+      // Update the selected team's pending invites
+      setTeams(teams.map((t) =>
+        t.team.id === selectedTeamId
+          ? { ...t, pendingInvites: [...t.pendingInvites, data.invite] }
+          : t
+      ));
     } catch (error) {
       setInviteError(error instanceof Error ? error.message : "Failed to send invite");
     } finally {
@@ -167,7 +200,11 @@ export default function TeamPage() {
       });
 
       if (response.ok) {
-        setPendingInvites(pendingInvites.filter((i) => i.id !== inviteId));
+        setTeams(teams.map((t) =>
+          t.team.id === selectedTeamId
+            ? { ...t, pendingInvites: t.pendingInvites.filter((i) => i.id !== inviteId) }
+            : t
+        ));
       }
     } catch (error) {
       console.error("Failed to cancel invite:", error);
@@ -184,7 +221,11 @@ export default function TeamPage() {
       });
 
       if (response.ok) {
-        setMembers(members.filter((m) => m.id !== removeMember.id));
+        setTeams(teams.map((t) =>
+          t.team.id === selectedTeamId
+            ? { ...t, members: t.members.filter((m) => m.id !== removeMember.id) }
+            : t
+        ));
         setRemoveMember(null);
       }
     } catch (error) {
@@ -203,8 +244,15 @@ export default function TeamPage() {
       });
 
       if (response.ok) {
-        setMembers(members.map((m) =>
-          m.id === memberId ? { ...m, role: newRole } : m
+        setTeams(teams.map((t) =>
+          t.team.id === selectedTeamId
+            ? {
+                ...t,
+                members: t.members.map((m) =>
+                  m.id === memberId ? { ...m, role: newRole } : m
+                ),
+              }
+            : t
         ));
       }
     } catch (error) {
@@ -212,32 +260,35 @@ export default function TeamPage() {
     }
   };
 
-  const isOwner = team && session?.user?.id === team.ownerId;
-  const currentUserRole = members.find((m) => m.userId === session?.user?.id)?.role;
-  const isAdmin = currentUserRole === "admin";
+  const isOwner = selectedTeam?.userRole === "owner";
+  const isAdmin = selectedTeam?.userRole === "admin";
   const canInvite = isOwner || isAdmin;
 
   const handleOpenSettings = () => {
-    if (team) {
-      setNewTeamName(team.name);
+    if (selectedTeam) {
+      setNewTeamName(selectedTeam.team.name);
       setShowSettings(true);
     }
   };
 
   const handleUpdateTeamName = async () => {
-    if (!newTeamName.trim() || !team) return;
+    if (!newTeamName.trim() || !selectedTeam) return;
 
     setIsUpdatingTeam(true);
     try {
       const response = await fetch("/api/team", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newTeamName.trim() }),
+        body: JSON.stringify({ teamId: selectedTeam.team.id, name: newTeamName.trim() }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setTeam(data.team);
+        setTeams(teams.map((t) =>
+          t.team.id === selectedTeam.team.id
+            ? { ...t, team: data.team }
+            : t
+        ));
         setShowSettings(false);
       }
     } catch (error) {
@@ -248,18 +299,18 @@ export default function TeamPage() {
   };
 
   const handleDeleteTeam = async () => {
-    if (!team) return;
+    if (!selectedTeam) return;
 
     setIsDeletingTeam(true);
     try {
-      const response = await fetch("/api/team", {
+      const response = await fetch(`/api/team?teamId=${selectedTeam.team.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setTeam(null);
-        setMembers([]);
-        setPendingInvites([]);
+        const remainingTeams = teams.filter((t) => t.team.id !== selectedTeam.team.id);
+        setTeams(remainingTeams);
+        setSelectedTeamId(remainingTeams.length > 0 ? remainingTeams[0].team.id : null);
         setShowSettings(false);
         setShowDeleteConfirm(false);
       }
@@ -280,23 +331,27 @@ export default function TeamPage() {
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Users className="w-5 h-5 text-white" />
               </div>
-              Team
+              Teams
             </h1>
             <p className="text-muted-foreground mt-1">
-              Collaborate with your team on LinkedIn content
+              Collaborate with your teams on LinkedIn content
             </p>
           </div>
+          <Button onClick={() => setShowCreateForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Team
+          </Button>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
           </div>
-        ) : !team ? (
-          /* No team - create one */
+        ) : teams.length === 0 && !showCreateForm ? (
+          /* No teams - create one */
           <Card>
             <CardHeader>
-              <CardTitle>Create Your Team</CardTitle>
+              <CardTitle>Create Your First Team</CardTitle>
               <CardDescription>
                 Set up a team to collaborate with colleagues on LinkedIn content
               </CardDescription>
@@ -322,245 +377,337 @@ export default function TeamPage() {
           </Card>
         ) : (
           <>
-            {/* Team Info */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      {team.name}
-                    </CardTitle>
-                    <CardDescription>
-                      {members.length} member{members.length !== 1 ? "s" : ""} - Created {new Date(team.createdAt).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  {isOwner && (
-                    <Button variant="outline" size="sm" onClick={handleOpenSettings}>
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Invite Member */}
-            {canInvite && (
+            {/* Create Team Form */}
+            {showCreateForm && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="w-5 h-5" />
-                    Invite Team Member
-                  </CardTitle>
+                  <CardTitle>Create New Team</CardTitle>
+                  <CardDescription>
+                    Add another team for different groups or projects
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleInvite} className="space-y-4">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Input
-                        type="email"
-                        placeholder="colleague@company.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        className="flex-1"
-                      />
-                      <select
-                        value={inviteRole}
-                        onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
-                        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      >
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                      <Button type="submit" disabled={isInviting} className="px-[1.8rem]">
-                        {isInviting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Mail className="w-4 h-4 mr-2" />
-                            Send Invite
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                    {inviteError && (
-                      <p className="text-sm text-red-500">{inviteError}</p>
-                    )}
-                    {inviteSuccess && (
-                      <p className="text-sm text-green-500 flex items-center gap-2">
-                        <Check className="w-4 h-4" />
-                        {inviteSuccess}
-                      </p>
-                    )}
+                  <form onSubmit={handleCreateTeam} className="flex gap-3">
+                    <Input
+                      placeholder="Team name (e.g., Sales Team)"
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      className="flex-1"
+                      maxLength={50}
+                      autoFocus
+                    />
+                    <Button type="submit" disabled={isCreating || !teamName.trim()}>
+                      {isCreating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Create"
+                      )}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => { setShowCreateForm(false); setTeamName(""); }}>
+                      Cancel
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
             )}
 
-            {/* Pending Invites */}
-            {pendingInvites.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Pending Invites
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {pendingInvites.map((invite) => (
-                      <div
-                        key={invite.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center">
-                            <Mail className="w-5 h-5 text-amber-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{invite.email}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Invited as {invite.role} - Expires {new Date(invite.expiresAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        {canInvite && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCancelInvite(invite.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
+            {/* Team Selector */}
+            {teams.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowTeamSelector(!showTeamSelector)}
+                  className="w-full flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-cyan-500 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-cyan-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">{selectedTeam?.team.name || "Select a team"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedTeam ? `${selectedTeam.members.length} member${selectedTeam.members.length !== 1 ? "s" : ""}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform", showTeamSelector && "rotate-180")} />
+                </button>
+
+                {showTeamSelector && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                    {teams.map((t) => (
+                      <button
+                        key={t.team.id}
+                        onClick={() => {
+                          setSelectedTeamId(t.team.id);
+                          setShowTeamSelector(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors",
+                          t.team.id === selectedTeamId && "bg-cyan-50 dark:bg-cyan-900/20"
                         )}
-                      </div>
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
+                          <Users className="w-4 h-4 text-cyan-600" />
+                        </div>
+                        <div className="text-left flex-1">
+                          <p className="font-medium text-sm">{t.team.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t.members.length} member{t.members.length !== 1 ? "s" : ""} - {t.userRole}
+                          </p>
+                        </div>
+                        {t.team.id === selectedTeamId && (
+                          <Check className="w-4 h-4 text-cyan-600" />
+                        )}
+                      </button>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             )}
 
-            {/* Team Members */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Members</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {members.map((member) => {
-                    const RoleIcon = roleConfig[member.role].icon;
-                    const isCurrentUser = session?.user?.id === member.userId;
-                    const canManage = isOwner && !isCurrentUser && member.role !== "owner";
+            {selectedTeam && (
+              <>
+                {/* Team Info */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="w-5 h-5" />
+                          {selectedTeam.team.name}
+                        </CardTitle>
+                        <CardDescription>
+                          {selectedTeam.members.length} member{selectedTeam.members.length !== 1 ? "s" : ""} - Created {new Date(selectedTeam.team.createdAt).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      {isOwner && (
+                        <Button variant="outline" size="sm" onClick={handleOpenSettings}>
+                          <Settings className="w-4 h-4 mr-2" />
+                          Settings
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                </Card>
 
-                    return (
-                      <div
-                        key={member.id}
-                        className={cn(
-                          "flex items-center justify-between p-4 rounded-lg",
-                          roleConfig[member.role].bgColor
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          {member.image ? (
-                            <img
-                              src={member.image}
-                              alt={member.name || "Member"}
-                              className="w-10 h-10 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                              <User className="w-5 h-5 text-slate-500" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium">
-                              {member.name || member.email}
-                              {isCurrentUser && (
-                                <span className="ml-2 text-xs text-muted-foreground">(you)</span>
-                              )}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{member.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-                              roleConfig[member.role].bgColor,
-                              roleConfig[member.role].color
-                            )}
+                {/* Invite Member */}
+                {canInvite && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserPlus className="w-5 h-5" />
+                        Invite Team Member
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleInvite} className="space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Input
+                            type="email"
+                            placeholder="colleague@company.com"
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            className="flex-1"
+                          />
+                          <select
+                            value={inviteRole}
+                            onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
+                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                           >
-                            <RoleIcon className="w-3 h-3" />
-                            {roleConfig[member.role].label}
-                          </span>
-                          {canManage && (
-                            <div className="flex items-center gap-1">
-                              <select
-                                value={member.role}
-                                onChange={(e) => handleChangeRole(member.id, e.target.value as "admin" | "member")}
-                                className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                              >
-                                <option value="member">Member</option>
-                                <option value="admin">Admin</option>
-                              </select>
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <Button type="submit" disabled={isInviting} className="px-[1.8rem]">
+                            {isInviting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Mail className="w-4 h-4 mr-2" />
+                                Send Invite
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        {inviteError && (
+                          <p className="text-sm text-red-500">{inviteError}</p>
+                        )}
+                        {inviteSuccess && (
+                          <p className="text-sm text-green-500 flex items-center gap-2">
+                            <Check className="w-4 h-4" />
+                            {inviteSuccess}
+                          </p>
+                        )}
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Pending Invites */}
+                {selectedTeam.pendingInvites.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="w-5 h-5" />
+                        Pending Invites
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {selectedTeam.pendingInvites.map((invite) => (
+                          <div
+                            key={invite.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center">
+                                <Mail className="w-5 h-5 text-amber-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{invite.email}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Invited as {invite.role} - Expires {new Date(invite.expiresAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            {canInvite && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setRemoveMember(member)}
+                                onClick={() => handleCancelInvite(invite.id)}
                               >
-                                <Trash2 className="w-4 h-4 text-red-500" />
+                                <X className="w-4 h-4" />
                               </Button>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Role Permissions */}
-            <Card className="bg-slate-50 dark:bg-slate-800/50">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Role Permissions</h3>
-                <div className="grid sm:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Crown className="w-4 h-4 text-amber-500" />
-                      <span className="font-medium">Owner</span>
+                {/* Team Members */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team Members</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedTeam.members.map((member) => {
+                        const RoleIcon = roleConfig[member.role].icon;
+                        const isCurrentUser = session?.user?.id === member.userId;
+                        const canManage = isOwner && !isCurrentUser && member.role !== "owner";
+
+                        return (
+                          <div
+                            key={member.id}
+                            className={cn(
+                              "flex items-center justify-between p-4 rounded-lg",
+                              roleConfig[member.role].bgColor
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              {member.image ? (
+                                <img
+                                  src={member.image}
+                                  alt={member.name || "Member"}
+                                  className="w-10 h-10 rounded-full"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                                  <User className="w-5 h-5 text-slate-500" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium">
+                                  {member.name || member.email}
+                                  {isCurrentUser && (
+                                    <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{member.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                                  roleConfig[member.role].bgColor,
+                                  roleConfig[member.role].color
+                                )}
+                              >
+                                <RoleIcon className="w-3 h-3" />
+                                {roleConfig[member.role].label}
+                              </span>
+                              {canManage && (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value={member.role}
+                                    onChange={(e) => handleChangeRole(member.id, e.target.value as "admin" | "member")}
+                                    className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                                  >
+                                    <option value="member">Member</option>
+                                    <option value="admin">Admin</option>
+                                  </select>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setRemoveMember(member)}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>- Full access to everything</li>
-                      <li>- Manage team members</li>
-                      <li>- Delete team</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Shield className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">Admin</span>
+                  </CardContent>
+                </Card>
+
+                {/* Role Permissions */}
+                <Card className="bg-slate-50 dark:bg-slate-800/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold mb-4">Role Permissions</h3>
+                    <div className="grid sm:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Crown className="w-4 h-4 text-amber-500" />
+                          <span className="font-medium">Owner</span>
+                        </div>
+                        <ul className="text-muted-foreground space-y-1">
+                          <li>- Full access to everything</li>
+                          <li>- Manage team members</li>
+                          <li>- Delete team</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-4 h-4 text-blue-500" />
+                          <span className="font-medium">Admin</span>
+                        </div>
+                        <ul className="text-muted-foreground space-y-1">
+                          <li>- Create and edit all content</li>
+                          <li>- View analytics</li>
+                          <li>- Invite new members</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className="w-4 h-4 text-slate-500" />
+                          <span className="font-medium">Member</span>
+                        </div>
+                        <ul className="text-muted-foreground space-y-1">
+                          <li>- Create own content</li>
+                          <li>- View team content</li>
+                          <li>- Limited analytics</li>
+                        </ul>
+                      </div>
                     </div>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>- Create and edit all content</li>
-                      <li>- View analytics</li>
-                      <li>- Invite new members</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="w-4 h-4 text-slate-500" />
-                      <span className="font-medium">Member</span>
-                    </div>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>- Create own content</li>
-                      <li>- View team content</li>
-                      <li>- Limited analytics</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
             {/* Remove Member Modal */}
             {removeMember && (
@@ -650,7 +797,7 @@ export default function TeamPage() {
                               />
                               <Button
                                 onClick={handleUpdateTeamName}
-                                disabled={isUpdatingTeam || newTeamName.trim() === team?.name}
+                                disabled={isUpdatingTeam || newTeamName.trim() === selectedTeam?.team.name}
                               >
                                 {isUpdatingTeam ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -685,7 +832,7 @@ export default function TeamPage() {
                         </div>
                         <h3 className="font-semibold mb-2">Delete Team?</h3>
                         <p className="text-sm text-muted-foreground mb-6">
-                          This will permanently delete <strong>{team?.name}</strong> and remove all team members. This cannot be undone.
+                          This will permanently delete <strong>{selectedTeam?.team.name}</strong> and remove all team members. This cannot be undone.
                         </p>
                         <div className="flex gap-3">
                           <Button
