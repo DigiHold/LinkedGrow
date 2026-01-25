@@ -111,7 +111,7 @@ export async function PUT(
           { status: 400 }
         );
       }
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
       updateData.password = hashedPassword;
       console.log(`Admin updating password for user ${id}`);
     }
