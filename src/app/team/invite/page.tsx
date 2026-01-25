@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Users, Loader2, CheckCircle, XCircle, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -68,9 +68,11 @@ function InviteContent() {
         setError(data.error || "Failed to accept invite");
       } else {
         setSuccess(true);
-        // Redirect to team page after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard/team");
+        // Sign out and redirect to sign-in to force session refresh with new team membership
+        // This ensures isTeamMember flag is properly set in the session
+        setTimeout(async () => {
+          await signOut({ redirect: false });
+          router.push("/sign-in?message=Team joined successfully! Please sign in again.");
         }, 2000);
       }
     } catch (err) {
@@ -119,7 +121,7 @@ function InviteContent() {
           <p className="text-muted-foreground mb-4">
             You've joined <strong>{invite?.teamName}</strong> as {invite?.role === "admin" ? "an Admin" : "a Member"}.
           </p>
-          <p className="text-sm text-muted-foreground">Redirecting to team page...</p>
+          <p className="text-sm text-muted-foreground">Please sign in again to continue...</p>
         </div>
       </div>
     );
