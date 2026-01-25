@@ -144,8 +144,12 @@ function SignUpContent() {
         return;
       }
 
-      // Redirect to sign in page
-      router.push("/sign-in?registered=true");
+      // Redirect to sign in page, preserving callbackUrl if present
+      const callbackUrl = searchParams.get("callbackUrl");
+      const signInUrl = callbackUrl
+        ? `/sign-in?registered=true&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        : "/sign-in?registered=true";
+      router.push(signInUrl);
     } catch {
       setErrorMessage("An error occurred. Please try again.");
     } finally {
