@@ -35,6 +35,7 @@ interface ElementPropertiesProps {
   selectedElement: FabricObject | null;
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
   onBackgroundChange?: (type: 'solid' | 'gradient' | 'image', value: string) => void;
+  updateTrigger?: number;
   className?: string;
 }
 
@@ -73,6 +74,7 @@ export function ElementProperties({
   selectedElement,
   canvasRef,
   onBackgroundChange,
+  updateTrigger,
   className,
 }: ElementPropertiesProps) {
   const [elementProps, setElementProps] = useState({
@@ -96,7 +98,7 @@ export function ElementProperties({
 
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
 
-  // Update local state when selection changes
+  // Update local state when selection changes or element is being moved/scaled
   useEffect(() => {
     if (!selectedElement) return;
 
@@ -121,7 +123,7 @@ export function ElementProperties({
       underline: textbox?.underline || false,
       textAlign: textbox?.textAlign || 'center',
     });
-  }, [selectedElement]);
+  }, [selectedElement, updateTrigger]);
 
   const updateElement = useCallback((updates: Partial<typeof elementProps>) => {
     if (!selectedElement) return;
@@ -166,14 +168,14 @@ export function ElementProperties({
   const isImageElement = selectedElement instanceof FabricImage;
 
   return (
-    <div className={cn("w-72 bg-background border-l flex flex-col", className)}>
-      <div className="p-4 border-b">
+    <div className={cn("w-72 bg-background border-l flex flex-col h-full overflow-hidden", className)}>
+      <div className="p-4 border-b shrink-0">
         <h2 className="font-semibold text-sm">
           {selectedElement ? 'Element Properties' : 'Canvas Settings'}
         </h2>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="p-4 space-y-6">
           {selectedElement ? (
             <>

@@ -102,13 +102,14 @@ interface TextOptions {
 interface CanvasWorkspaceProps {
   onSelectionChange?: (element: FabricObject | null) => void;
   onCanvasChange?: () => void;
+  onElementMoving?: (element: FabricObject) => void;
   onElementDrop?: (type: string, data: Record<string, unknown>, x: number, y: number) => void;
   zoom?: number;
   className?: string;
 }
 
 export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspaceProps>(
-  ({ onSelectionChange, onCanvasChange, onElementDrop, zoom = 0.4, className }, ref) => {
+  ({ onSelectionChange, onCanvasChange, onElementMoving, onElementDrop, zoom = 0.4, className }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -168,7 +169,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         borderScaleFactor: 2,
       });
 
-      // Enable center guidelines
+      // Enable center guidelines and real-time position updates
       canvas.on('object:moving', (e) => {
         const obj = e.target;
         if (!obj) return;
@@ -184,6 +185,25 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
         if (Math.abs(objMiddle - canvasMiddle) < 10) {
           obj.set({ top: canvasMiddle - (obj.height! * obj.scaleY!) / 2 });
+        }
+
+        // Notify about position change for real-time updates
+        onElementMoving?.(obj);
+      });
+
+      // Also track scaling for real-time size updates
+      canvas.on('object:scaling', (e) => {
+        const obj = e.target;
+        if (obj) {
+          onElementMoving?.(obj);
+        }
+      });
+
+      // Track rotation for real-time angle updates
+      canvas.on('object:rotating', (e) => {
+        const obj = e.target;
+        if (obj) {
+          onElementMoving?.(obj);
         }
       });
 
@@ -226,7 +246,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         canvas.dispose();
         fabricRef.current = null;
       };
-    }, [onSelectionChange, onCanvasChange, saveHistory]);
+    }, [onSelectionChange, onCanvasChange, onElementMoving, saveHistory]);
 
     // Handle zoom
     useEffect(() => {

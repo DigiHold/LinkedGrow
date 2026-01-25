@@ -73,6 +73,7 @@ export default function CarouselPage() {
 
   // Selected element
   const [selectedElement, setSelectedElement] = useState<FabricObject | null>(null);
+  const [elementUpdateTrigger, setElementUpdateTrigger] = useState(0);
 
   // Branding state
   const [branding, setBranding] = useState<BrandingData>({});
@@ -1008,6 +1009,7 @@ export default function CarouselPage() {
               zoom={zoom}
               onSelectionChange={setSelectedElement}
               onCanvasChange={handleCanvasChange}
+              onElementMoving={() => setElementUpdateTrigger(prev => prev + 1)}
               className="m-auto"
             />
           </div>
@@ -1040,6 +1042,7 @@ export default function CarouselPage() {
               selectedElement={selectedElement}
               canvasRef={canvasRef}
               onBackgroundChange={handleBackgroundChange}
+              updateTrigger={elementUpdateTrigger}
             />
           </div>
         </div>
