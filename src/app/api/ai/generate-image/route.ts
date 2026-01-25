@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
+import { getAISettingsUser } from "@/lib/team-utils";
 import sharp from "sharp";
 import { GoogleGenAI } from "@google/genai";
 
@@ -113,20 +112,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's AI API key from database
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-    });
+    // Get user and AI settings (uses team owner's settings if user is a team member)
+    const result = await getAISettingsUser(session.user.id);
 
-    if (!user) {
+    if (!result) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       );
     }
 
-    // Check if user has Pro plan for image generation
-    const hasImageAccess = ["pro", "business"].includes(user.plan || "free");
+    const { aiSettingsUser } = result;
+
+    // Check if owner has Pro plan for image generation (team members inherit owner's plan access)
+    const hasImageAccess = ["pro", "business"].includes(aiSettingsUser.plan || "free");
     if (!hasImageAccess) {
       return NextResponse.json(
         { error: "Image generation requires Pro plan or higher" },
@@ -134,13 +133,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const imageProvider = user.imageProvider || "google";
+    const imageProvider = aiSettingsUser.imageProvider || "google";
 
-    // Get per-provider API key based on selected provider
+    // Get per-provider API key based on selected provider (from owner if team member)
     const providerKeyMap: Record<string, string | null> = {
-      google: user.googleImageApiKey,
-      openai: user.openaiImageApiKey,
-      replicate: user.replicateImageApiKey,
+      google: aiSettingsUser.googleImageApiKey,
+      openai: aiSettingsUser.openaiImageApiKey,
+      replicate: aiSettingsUser.replicateImageApiKey,
     };
 
     const encryptedApiKey = providerKeyMap[imageProvider];
@@ -171,39 +170,39 @@ export async function POST(request: NextRequest) {
 
     let base64Image: string;
 
-    // Get per-provider image settings with defaults
+    // Get per-provider image settings with defaults (from owner if team member)
     const getProviderSettings = (): ImageSettings => {
       switch (imageProvider) {
         case "google":
           return {
-            model: user.googleImageModel || "gemini-3-pro-image-preview",
-            resolution: user.googleImageResolution || "1K",
-            aspectRatio: user.googleImageAspectRatio || "16:9",
+            model: aiSettingsUser.googleImageModel || "gemini-3-pro-image-preview",
+            resolution: aiSettingsUser.googleImageResolution || "1K",
+            aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
             quality: "high", // Google doesn't use quality setting
             style: "vivid", // Google doesn't use style setting
           };
         case "openai":
           return {
-            model: user.openaiImageModel || "gpt-image-1.5",
-            resolution: user.openaiImageResolution || "1792x1024",
+            model: aiSettingsUser.openaiImageModel || "gpt-image-1.5",
+            resolution: aiSettingsUser.openaiImageResolution || "1792x1024",
             aspectRatio: "16:9", // OpenAI uses resolution instead of aspect ratio
-            quality: user.openaiImageQuality || "high",
-            style: user.openaiImageStyle || "vivid",
+            quality: aiSettingsUser.openaiImageQuality || "high",
+            style: aiSettingsUser.openaiImageStyle || "vivid",
           };
         case "replicate":
           return {
-            model: user.replicateImageModel || "flux-2-pro",
-            resolution: user.replicateImageResolution || "1536x1024",
-            aspectRatio: user.replicateImageAspectRatio || "16:9",
+            model: aiSettingsUser.replicateImageModel || "flux-2-pro",
+            resolution: aiSettingsUser.replicateImageResolution || "1536x1024",
+            aspectRatio: aiSettingsUser.replicateImageAspectRatio || "16:9",
             quality: "high", // Replicate doesn't use quality setting
             style: "vivid", // Replicate doesn't use style setting
           };
         default:
           // Default to Google settings
           return {
-            model: user.googleImageModel || "gemini-3-pro-image-preview",
-            resolution: user.googleImageResolution || "1K",
-            aspectRatio: user.googleImageAspectRatio || "16:9",
+            model: aiSettingsUser.googleImageModel || "gemini-3-pro-image-preview",
+            resolution: aiSettingsUser.googleImageResolution || "1K",
+            aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
             quality: "high",
             style: "vivid",
           };

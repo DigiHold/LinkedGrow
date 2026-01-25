@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 import { decryptApiKey } from "@/lib/encryption";
+import { getAISettingsUser } from "@/lib/team-utils";
 
 interface HookPair {
   firstLine: string;
@@ -275,23 +274,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Post idea is required" }, { status: 400 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-    });
+    // Get user and AI settings (uses team owner's settings if user is a team member)
+    const result = await getAISettingsUser(session.user.id);
 
-    if (!user) {
+    if (!result) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const provider = user.aiProvider || "openai";
+    const { user, aiSettingsUser } = result;
 
-    // Get per-provider API key based on selected provider
+    const provider = aiSettingsUser.aiProvider || "openai";
+
+    // Get per-provider API key based on selected provider (from owner if team member)
     const providerKeyMap: Record<string, string | null> = {
-      openai: user.openaiApiKey,
-      anthropic: user.anthropicApiKey,
-      google: user.googleApiKey,
-      grok: user.grokApiKey,
-      perplexity: user.perplexityApiKey,
+      openai: aiSettingsUser.openaiApiKey,
+      anthropic: aiSettingsUser.anthropicApiKey,
+      google: aiSettingsUser.googleApiKey,
+      grok: aiSettingsUser.grokApiKey,
+      perplexity: aiSettingsUser.perplexityApiKey,
     };
 
     const encryptedApiKey = providerKeyMap[provider];
@@ -304,13 +304,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get per-provider model based on selected provider
+    // Get per-provider model based on selected provider (from owner if team member)
     const providerModelMap: Record<string, string | null> = {
-      openai: user.openaiModel,
-      anthropic: user.anthropicModel,
-      google: user.googleModel,
-      grok: user.grokModel,
-      perplexity: user.perplexityModel,
+      openai: aiSettingsUser.openaiModel,
+      anthropic: aiSettingsUser.anthropicModel,
+      google: aiSettingsUser.googleModel,
+      grok: aiSettingsUser.grokModel,
+      perplexity: aiSettingsUser.perplexityModel,
     };
 
     const defaultModel = provider === "openai" ? "gpt-5-mini" :
@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    // Parse sample posts if available
+    // Parse sample posts if available (use user's own voice settings)
     let samplePosts: string[] | undefined;
     if (user.samplePosts) {
       try {

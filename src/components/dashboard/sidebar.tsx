@@ -188,6 +188,10 @@ export function Sidebar() {
     .toUpperCase()
     .slice(0, 2);
 
+  // Check if user is a team member (not owner)
+  const isTeamMember = session?.user?.isTeamMember === true;
+  const teamRole = session?.user?.teamRole;
+
   return (
     <>
       {/* Mobile Sidebar Toggle */}
@@ -307,7 +311,18 @@ export function Sidebar() {
                   </div>
                 </div>
               )}
-              {businessNavigation.map((item) => {
+              {businessNavigation
+                .filter((item) => {
+                  // Team members can only see Team page if they are admin
+                  if (isTeamMember) {
+                    if (item.href === "/dashboard/team") {
+                      return teamRole === "admin"; // Only admin can manage team
+                    }
+                    return false; // Hide A/B Testing and Advanced Analytics for team members
+                  }
+                  return true; // Owners see everything
+                })
+                .map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <Link
@@ -371,32 +386,38 @@ export function Sidebar() {
                   <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  router.push("/dashboard/upgrade");
-                }}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                  session?.user?.plan === "business"
-                    ? "hover:bg-accent"
-                    : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
-                )}
-              >
-                <Crown className="w-4 h-4" />
-                {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
-              </button>
-              <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  router.push("/dashboard/settings/ai-api");
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-              >
-                <Key className="w-4 h-4" />
-                AI API Keys
-              </button>
-              {session?.user?.plan === "business" && (
+              {/* Hide Upgrade and AI API Keys for team members - they use owner's settings */}
+              {!isTeamMember && (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/upgrade");
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors",
+                      session?.user?.plan === "business"
+                        ? "hover:bg-accent"
+                        : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                    )}
+                  >
+                    <Crown className="w-4 h-4" />
+                    {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/settings/ai-api");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <Key className="w-4 h-4" />
+                    AI API Keys
+                  </button>
+                </>
+              )}
+              {/* Business features - only for owners, not team members */}
+              {session?.user?.plan === "business" && !isTeamMember && (
                 <>
                   <button
                     onClick={() => {

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { db, users } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { getLinkedInUser } from '@/lib/team-utils';
 
 export async function GET() {
   try {
@@ -11,31 +10,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: {
-        linkedinAccessToken: true,
-        linkedinProfileId: true,
-        linkedinProfileName: true,
-        linkedinPostingTarget: true,
-        linkedinSelectedOrgId: true,
-        linkedinSelectedOrgName: true,
-        linkedinOrganizations: true,
-        image: true,
-      },
-    });
+    // Get LinkedIn settings (uses team owner's settings if user is a team member)
+    const result = await getLinkedInUser(session.user.id);
 
-    if (!user) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const isConnected = !!user.linkedinAccessToken && !!user.linkedinProfileId;
+    const { linkedInUser } = result;
+    const isConnected = !!linkedInUser.linkedinAccessToken && !!linkedInUser.linkedinProfileId;
 
     // Parse organizations
     let organizations = [];
-    if (user.linkedinOrganizations) {
+    if (linkedInUser.linkedinOrganizations) {
       try {
-        organizations = JSON.parse(user.linkedinOrganizations);
+        organizations = JSON.parse(linkedInUser.linkedinOrganizations);
       } catch {
         organizations = [];
       }
@@ -43,12 +32,12 @@ export async function GET() {
 
     return NextResponse.json({
       connected: isConnected,
-      profileId: user.linkedinProfileId,
-      profileName: user.linkedinProfileName,
-      profileImage: user.image,
-      postingTarget: user.linkedinPostingTarget || 'profile',
-      selectedOrgId: user.linkedinSelectedOrgId,
-      selectedOrgName: user.linkedinSelectedOrgName,
+      profileId: linkedInUser.linkedinProfileId,
+      profileName: linkedInUser.linkedinProfileName,
+      profileImage: linkedInUser.image,
+      postingTarget: linkedInUser.linkedinPostingTarget || 'profile',
+      selectedOrgId: linkedInUser.linkedinSelectedOrgId,
+      selectedOrgName: linkedInUser.linkedinSelectedOrgName,
       organizations,
       hasOrganizations: organizations.length > 0,
     });

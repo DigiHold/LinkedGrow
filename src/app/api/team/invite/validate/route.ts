@@ -48,17 +48,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get inviter details (team owner)
-    const owner = await db.query.users.findFirst({
-      where: eq(users.id, team.ownerId),
-    });
-
+    // Return minimal info needed for invite page UI
+    // Don't expose owner details or full email to prevent information harvesting
     return NextResponse.json({
       invite: {
         teamName: team.name,
-        inviterName: owner?.name || owner?.email || "Team Owner",
         role: invite.role,
-        email: invite.email,
+        // Only show masked email for verification (e.g., t***@example.com)
+        emailHint: invite.email.replace(/^(.{1,2})(.*)(@.*)$/, (_, start, middle, domain) =>
+          start + '*'.repeat(Math.min(middle.length, 5)) + domain
+        ),
       },
     });
   } catch (error) {

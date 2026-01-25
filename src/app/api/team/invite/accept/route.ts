@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { teamInvites, teamMembers, teams, users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // POST /api/team/invite/accept - Accept a team invite
@@ -74,12 +74,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is already a member
+    // Check if user is already a member of THIS specific team
     const existingMembership = await db.query.teamMembers.findFirst({
-      where: eq(teamMembers.userId, user.id),
+      where: and(
+        eq(teamMembers.userId, user.id),
+        eq(teamMembers.teamId, invite.teamId)
+      ),
     });
 
-    if (existingMembership && existingMembership.teamId === invite.teamId) {
+    if (existingMembership) {
       // Already a member of this team, just delete the invite
       await db.delete(teamInvites).where(eq(teamInvites.id, invite.id));
       return NextResponse.json({

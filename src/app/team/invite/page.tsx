@@ -19,9 +19,8 @@ function InviteContent() {
   const [success, setSuccess] = useState(false);
   const [invite, setInvite] = useState<{
     teamName: string;
-    inviterName: string;
     role: string;
-    email: string;
+    emailHint: string;
   } | null>(null);
 
   useEffect(() => {
@@ -142,14 +141,14 @@ function InviteContent() {
           </div>
 
           <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 mb-6">
-            <p className="text-sm text-muted-foreground mb-1">Invited by</p>
-            <p className="font-medium">{invite?.inviterName}</p>
+            <p className="text-sm text-muted-foreground mb-1">Role</p>
+            <p className="font-medium capitalize">{invite?.role}</p>
             <p className="text-sm text-muted-foreground mt-3 mb-1">Invited email</p>
-            <p className="font-medium">{invite?.email}</p>
+            <p className="font-medium">{invite?.emailHint}</p>
           </div>
 
           <p className="text-sm text-muted-foreground text-center mb-6">
-            Sign in or create an account to accept this invitation.
+            Sign in or create an account with the invited email to accept this invitation.
           </p>
 
           <div className="space-y-3">
@@ -186,8 +185,8 @@ function InviteContent() {
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 mb-6">
-          <p className="text-sm text-muted-foreground mb-1">Invited by</p>
-          <p className="font-medium">{invite?.inviterName}</p>
+          <p className="text-sm text-muted-foreground mb-1">Team</p>
+          <p className="font-medium">{invite?.teamName}</p>
           <p className="text-sm text-muted-foreground mt-3 mb-1">Your role</p>
           <p className="font-medium capitalize">{invite?.role}</p>
         </div>

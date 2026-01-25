@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
-import { db, users } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { getLinkedInUser } from '@/lib/team-utils';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
 export const maxDuration = 300;
@@ -35,45 +34,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's LinkedIn credentials from database
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: {
-        linkedinAccessToken: true,
-        linkedinProfileId: true,
-        linkedinTokenExpiry: true,
-        linkedinPostingTarget: true,
-        linkedinSelectedOrgId: true,
-        linkedinSelectedOrgName: true,
-      },
-    });
+    // Get LinkedIn credentials (uses team owner's credentials if user is a team member)
+    const result = await getLinkedInUser(session.user.id);
 
-    if (!user?.linkedinAccessToken || !user?.linkedinProfileId) {
+    if (!result) {
       return NextResponse.json(
-        { error: 'LinkedIn account not connected. Please connect in Settings.' },
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const { linkedInUser } = result;
+
+    if (!linkedInUser?.linkedinAccessToken || !linkedInUser?.linkedinProfileId) {
+      return NextResponse.json(
+        { error: 'LinkedIn account not connected. Please ask the team owner to connect LinkedIn in Settings.' },
         { status: 401 }
       );
     }
 
     // Check if token has expired
-    if (user.linkedinTokenExpiry && new Date(user.linkedinTokenExpiry) < new Date()) {
+    if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
       return NextResponse.json(
-        { error: 'LinkedIn token has expired. Please reconnect your account in Settings.' },
+        { error: 'LinkedIn token has expired. Please ask the team owner to reconnect their account in Settings.' },
         { status: 401 }
       );
     }
 
-    // Determine posting target (profile or organization)
-    const isOrganization = user.linkedinPostingTarget === 'organization' && user.linkedinSelectedOrgId;
-    const authorId = isOrganization ? user.linkedinSelectedOrgId! : user.linkedinProfileId;
+    // Determine posting target (profile or organization) - uses owner's settings for team members
+    const isOrganization = linkedInUser.linkedinPostingTarget === 'organization' && linkedInUser.linkedinSelectedOrgId;
+    const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: 'person' | 'organization' = isOrganization ? 'organization' : 'person';
 
-    let result;
+    let postResult;
 
     if (videoData?.base64 && videoData?.mimeType) {
       // Video post - upload video directly to LinkedIn
-      result = await createLinkedInPostWithVideo(
-        user.linkedinAccessToken,
+      postResult = await createLinkedInPostWithVideo(
+        linkedInUser.linkedinAccessToken,
         authorId,
         text,
         videoData.base64,
@@ -84,8 +82,8 @@ export async function POST(request: NextRequest) {
       );
     } else if (imageUrl) {
       // Image post - fetch from R2 URL and upload to LinkedIn
-      result = await createLinkedInPostWithImage(
-        user.linkedinAccessToken,
+      postResult = await createLinkedInPostWithImage(
+        linkedInUser.linkedinAccessToken,
         authorId,
         text,
         imageUrl,
@@ -95,8 +93,8 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Text-only post
-      result = await createLinkedInPost(
-        user.linkedinAccessToken,
+      postResult = await createLinkedInPost(
+        linkedInUser.linkedinAccessToken,
         authorId,
         text,
         visibility,
@@ -104,11 +102,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const targetName = isOrganization ? user.linkedinSelectedOrgName : 'your profile';
+    const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';
 
     return NextResponse.json({
       success: true,
-      postId: result.id,
+      postId: postResult.id,
       message: `Post published successfully to ${targetName}`,
       postedTo: isOrganization ? 'organization' : 'profile',
     });

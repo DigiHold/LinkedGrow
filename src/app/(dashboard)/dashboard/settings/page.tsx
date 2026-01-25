@@ -46,6 +46,9 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
+  // Check if user is a team member (not owner)
+  const isTeamMember = session?.user?.isTeamMember === true;
+
   // Account settings
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -565,108 +568,112 @@ function SettingsContent() {
         </p>
       </div>
 
-      {/* LinkedIn Connection */}
-      {linkedInMessage && (
-        <div className={cn(
-          "p-3 rounded-lg text-sm flex items-center gap-2",
-          linkedInMessage.type === "success"
-            ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-            : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-        )}>
-          {linkedInMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-          {linkedInMessage.text}
-        </div>
-      )}
-
-      {linkedInConnected ? (
-        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
-          {/* Header with LinkedIn blue */}
-          <div className="bg-linkedin px-5 py-4">
-            <div className="flex items-center gap-3">
-              <Linkedin className="w-6 h-6 text-white" />
-              <div>
-                <h3 className="text-white font-semibold">LinkedIn Connected</h3>
-                <p className="text-white/80 text-sm">Your account is linked for direct publishing</p>
-              </div>
+      {/* LinkedIn Connection - Hidden for team members (they use owner's LinkedIn) */}
+      {!isTeamMember && (
+        <>
+          {linkedInMessage && (
+            <div className={cn(
+              "p-3 rounded-lg text-sm flex items-center gap-2",
+              linkedInMessage.type === "success"
+                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+            )}>
+              {linkedInMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {linkedInMessage.text}
             </div>
-          </div>
-          {/* Profile info */}
-          <div className="bg-white dark:bg-slate-900 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {linkedInSettings?.postingTarget === "organization" ? (
-                  <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                    <Building2 className="w-8 h-8 text-slate-500" />
-                  </div>
-                ) : session?.user?.image ? (
-                  <Image
-                    src={session.user.image}
-                    alt={linkedInName}
-                    width={64}
-                    height={64}
-                    className="w-16 h-16 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
-                    {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                  </div>
-                )}
-                <div>
-                  <p className="font-semibold text-lg">{linkedInName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
-                    <Check className="w-4 h-4" />
-                    <span>Ready to publish</span>
+          )}
+
+          {linkedInConnected ? (
+            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
+              {/* Header with LinkedIn blue */}
+              <div className="bg-linkedin px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <Linkedin className="w-6 h-6 text-white" />
+                  <div>
+                    <h3 className="text-white font-semibold">LinkedIn Connected</h3>
+                    <p className="text-white/80 text-sm">Your account is linked for direct publishing</p>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                {linkedInSettings?.hasOrganizations && (
-                  <Button
-                    variant="outline"
-                    onClick={handleChangePostingTarget}
-                  >
-                    Change
-                  </Button>
-                )}
+              {/* Profile info */}
+              <div className="bg-white dark:bg-slate-900 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    {linkedInSettings?.postingTarget === "organization" ? (
+                      <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                        <Building2 className="w-8 h-8 text-slate-500" />
+                      </div>
+                    ) : session?.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt={linkedInName}
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
+                        {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-lg">{linkedInName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
+                        <Check className="w-4 h-4" />
+                        <span>Ready to publish</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {linkedInSettings?.hasOrganizations && (
+                      <Button
+                        variant="outline"
+                        onClick={handleChangePostingTarget}
+                      >
+                        Change
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleDisconnectLinkedIn}
+                      className="bg-red-600 hover:bg-red-700 text-white border-0"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg bg-linkedin">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <Linkedin className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <h3 className="text-white font-semibold text-lg">Connect LinkedIn</h3>
+                    <p className="text-white/80 text-sm">Publish posts directly to your LinkedIn profile</p>
+                  </div>
+                </div>
                 <Button
-                  onClick={handleDisconnectLinkedIn}
-                  className="bg-red-600 hover:bg-red-700 text-white border-0"
+                  onClick={handleConnectLinkedIn}
+                  disabled={isConnectingLinkedIn}
+                  className="bg-white hover:bg-slate-100 text-linkedin font-semibold px-6 shrink-0"
                 >
-                  Disconnect
+                  {isConnectingLinkedIn ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Linkedin className="w-4 h-4 mr-2" />
+                  )}
+                  {isConnectingLinkedIn ? "Connecting..." : "Connect"}
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg bg-linkedin">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                <Linkedin className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-center sm:text-left">
-                <h3 className="text-white font-semibold text-lg">Connect LinkedIn</h3>
-                <p className="text-white/80 text-sm">Publish posts directly to your LinkedIn profile</p>
-              </div>
-            </div>
-            <Button
-              onClick={handleConnectLinkedIn}
-              disabled={isConnectingLinkedIn}
-              className="bg-white hover:bg-slate-100 text-linkedin font-semibold px-6 shrink-0"
-            >
-              {isConnectingLinkedIn ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Linkedin className="w-4 h-4 mr-2" />
-              )}
-              {isConnectingLinkedIn ? "Connecting..." : "Connect"}
-            </Button>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Account Settings */}
@@ -1127,263 +1134,267 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
-      {/* Voice & Style */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mic className="w-5 h-5 text-cyan-600" />
-            Voice & Style
-          </CardTitle>
-          <CardDescription>
-            Train the AI to write in your unique voice and style
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {voiceMessage && (
-            <div className={cn(
-              "p-3 rounded-lg text-sm flex items-center gap-2",
-              voiceMessage.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-            )}>
-              {voiceMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-              {voiceMessage.text}
-            </div>
-          )}
+      {/* Voice & Style - Hidden for team members (they use owner's settings) */}
+      {!isTeamMember && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mic className="w-5 h-5 text-cyan-600" />
+              Voice & Style
+            </CardTitle>
+            <CardDescription>
+              Train the AI to write in your unique voice and style
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {voiceMessage && (
+              <div className={cn(
+                "p-3 rounded-lg text-sm flex items-center gap-2",
+                voiceMessage.type === "success"
+                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                  : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+              )}>
+                {voiceMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {voiceMessage.text}
+              </div>
+            )}
 
-          {/* Sample Posts */}
-          <div className="space-y-3">
-            <div>
-              <Label className="text-base font-medium">Sample Posts</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                Paste 3-5 of your best LinkedIn posts so the AI can learn your writing style
-              </p>
-            </div>
+            {/* Sample Posts */}
+            <div className="space-y-3">
+              <div>
+                <Label className="text-base font-medium">Sample Posts</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Paste 3-5 of your best LinkedIn posts so the AI can learn your writing style
+                </p>
+              </div>
 
-            {voiceSettings.samplePosts.length > 0 && (
-              <div className="space-y-2">
-                {voiceSettings.samplePosts.map((post, index) => (
-                  <div
-                    key={index}
-                    className="relative p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border group"
-                  >
-                    <p className="text-sm pr-8 line-clamp-3 whitespace-pre-wrap">{post}</p>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSamplePost(index)}
-                      className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors"
+              {voiceSettings.samplePosts.length > 0 && (
+                <div className="space-y-2">
+                  {voiceSettings.samplePosts.map((post, index) => (
+                    <div
+                      key={index}
+                      className="relative p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border group"
                     >
-                      <X className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs text-muted-foreground mt-2 block">
-                      Sample {index + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {voiceSettings.samplePosts.length < 5 && (
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Paste one of your LinkedIn posts here..."
-                  value={newSamplePost}
-                  onChange={(e) => setNewSamplePost(e.target.value)}
-                  className="min-h-25"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddSamplePost}
-                  disabled={!newSamplePost.trim()}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Sample Post ({voiceSettings.samplePosts.length}/5)
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Writing Tone */}
-          <div className="space-y-2">
-            <Label>Writing Tone</Label>
-            <p className="text-sm text-muted-foreground">
-              Describe how you want your posts to sound
-            </p>
-            <Input
-              placeholder="e.g., Professional but friendly, conversational, inspiring, direct and bold"
-              value={voiceSettings.writingTone}
-              onChange={(e) =>
-                setVoiceSettings({ ...voiceSettings, writingTone: e.target.value })
-              }
-            />
-          </div>
-
-          {/* Never Mention */}
-          <div className="space-y-2">
-            <Label>Never Mention</Label>
-            <p className="text-sm text-muted-foreground">
-              Topics, competitors, or words the AI should avoid
-            </p>
-            <Textarea
-              placeholder="e.g., Competitor names, sensitive topics, specific products..."
-              value={voiceSettings.neverMention}
-              onChange={(e) =>
-                setVoiceSettings({ ...voiceSettings, neverMention: e.target.value })
-              }
-              className="min-h-[80px]"
-            />
-          </div>
-
-          <Button
-            onClick={handleSaveVoiceSettings}
-            disabled={isSavingVoice}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-          >
-            {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Voice Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Business Profile */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-cyan-600" />
-            Business Profile
-          </CardTitle>
-          <CardDescription>
-            Help AI understand your brand and create more relevant content
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Business Name</Label>
-              <Input
-                placeholder="Your company or personal brand name"
-                value={businessProfile.name}
-                onChange={(e) =>
-                  setBusinessProfile({ ...businessProfile, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Niche / Industry</Label>
-              <Input
-                placeholder="e.g., SaaS, Marketing, Tech"
-                value={businessProfile.niche}
-                onChange={(e) =>
-                  setBusinessProfile({ ...businessProfile, niche: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>What do you do?</Label>
-            <Textarea
-              placeholder="Brief description of your business or what you help people with"
-              value={businessProfile.description}
-              onChange={(e) =>
-                setBusinessProfile({
-                  ...businessProfile,
-                  description: e.target.value,
-                })
-              }
-              className="min-h-[80px]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Products / Services</Label>
-            <Textarea
-              placeholder="List your main products or services (one per line)"
-              value={businessProfile.products}
-              onChange={(e) =>
-                setBusinessProfile({
-                  ...businessProfile,
-                  products: e.target.value,
-                })
-              }
-              className="min-h-[80px]"
-            />
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Target Audience</Label>
-              <Input
-                placeholder="e.g., Startup founders, Marketing managers"
-                value={businessProfile.audience}
-                onChange={(e) =>
-                  setBusinessProfile({
-                    ...businessProfile,
-                    audience: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Key Topics</Label>
-              <Input
-                placeholder="e.g., Productivity, Leadership, AI"
-                value={businessProfile.topics}
-                onChange={(e) =>
-                  setBusinessProfile({
-                    ...businessProfile,
-                    topics: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Additional Context / FAQ</Label>
-            <Textarea
-              placeholder="Any other information that would help AI create better content for you..."
-              value={businessProfile.context}
-              onChange={(e) =>
-                setBusinessProfile({
-                  ...businessProfile,
-                  context: e.target.value,
-                })
-              }
-              className="min-h-[100px]"
-            />
-          </div>
-
-          {profileMessage && (
-            <div
-              className={cn(
-                "flex items-center gap-2 p-3 rounded-lg text-sm",
-                profileMessage.type === "success"
-                  ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                  : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                      <p className="text-sm pr-8 line-clamp-3 whitespace-pre-wrap">{post}</p>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSamplePost(index)}
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs text-muted-foreground mt-2 block">
+                        Sample {index + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
+
+              {voiceSettings.samplePosts.length < 5 && (
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Paste one of your LinkedIn posts here..."
+                    value={newSamplePost}
+                    onChange={(e) => setNewSamplePost(e.target.value)}
+                    className="min-h-25"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddSamplePost}
+                    disabled={!newSamplePost.trim()}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Sample Post ({voiceSettings.samplePosts.length}/5)
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Writing Tone */}
+            <div className="space-y-2">
+              <Label>Writing Tone</Label>
+              <p className="text-sm text-muted-foreground">
+                Describe how you want your posts to sound
+              </p>
+              <Input
+                placeholder="e.g., Professional but friendly, conversational, inspiring, direct and bold"
+                value={voiceSettings.writingTone}
+                onChange={(e) =>
+                  setVoiceSettings({ ...voiceSettings, writingTone: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Never Mention */}
+            <div className="space-y-2">
+              <Label>Never Mention</Label>
+              <p className="text-sm text-muted-foreground">
+                Topics, competitors, or words the AI should avoid
+              </p>
+              <Textarea
+                placeholder="e.g., Competitor names, sensitive topics, specific products..."
+                value={voiceSettings.neverMention}
+                onChange={(e) =>
+                  setVoiceSettings({ ...voiceSettings, neverMention: e.target.value })
+                }
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <Button
+              onClick={handleSaveVoiceSettings}
+              disabled={isSavingVoice}
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
             >
-              {profileMessage.type === "success" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <AlertCircle className="w-4 h-4" />
-              )}
-              {profileMessage.text}
-            </div>
-          )}
+              {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Voice Settings
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-          <Button
-            onClick={handleSaveBusinessProfile}
-            disabled={isSavingProfile}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-          >
-            {isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Business Profile
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Business Profile - Hidden for team members (they use owner's settings) */}
+      {!isTeamMember && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-cyan-600" />
+              Business Profile
+            </CardTitle>
+            <CardDescription>
+              Help AI understand your brand and create more relevant content
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Business Name</Label>
+                <Input
+                  placeholder="Your company or personal brand name"
+                  value={businessProfile.name}
+                  onChange={(e) =>
+                    setBusinessProfile({ ...businessProfile, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Niche / Industry</Label>
+                <Input
+                  placeholder="e.g., SaaS, Marketing, Tech"
+                  value={businessProfile.niche}
+                  onChange={(e) =>
+                    setBusinessProfile({ ...businessProfile, niche: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>What do you do?</Label>
+              <Textarea
+                placeholder="Brief description of your business or what you help people with"
+                value={businessProfile.description}
+                onChange={(e) =>
+                  setBusinessProfile({
+                    ...businessProfile,
+                    description: e.target.value,
+                  })
+                }
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Products / Services</Label>
+              <Textarea
+                placeholder="List your main products or services (one per line)"
+                value={businessProfile.products}
+                onChange={(e) =>
+                  setBusinessProfile({
+                    ...businessProfile,
+                    products: e.target.value,
+                  })
+                }
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Target Audience</Label>
+                <Input
+                  placeholder="e.g., Startup founders, Marketing managers"
+                  value={businessProfile.audience}
+                  onChange={(e) =>
+                    setBusinessProfile({
+                      ...businessProfile,
+                      audience: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Key Topics</Label>
+                <Input
+                  placeholder="e.g., Productivity, Leadership, AI"
+                  value={businessProfile.topics}
+                  onChange={(e) =>
+                    setBusinessProfile({
+                      ...businessProfile,
+                      topics: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Additional Context / FAQ</Label>
+              <Textarea
+                placeholder="Any other information that would help AI create better content for you..."
+                value={businessProfile.context}
+                onChange={(e) =>
+                  setBusinessProfile({
+                    ...businessProfile,
+                    context: e.target.value,
+                  })
+                }
+                className="min-h-[100px]"
+              />
+            </div>
+
+            {profileMessage && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 p-3 rounded-lg text-sm",
+                  profileMessage.type === "success"
+                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                    : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                )}
+              >
+                {profileMessage.type === "success" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" />
+                )}
+                {profileMessage.text}
+              </div>
+            )}
+
+            <Button
+              onClick={handleSaveBusinessProfile}
+              disabled={isSavingProfile}
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            >
+              {isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Business Profile
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

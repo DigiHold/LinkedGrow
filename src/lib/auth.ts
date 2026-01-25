@@ -1,7 +1,7 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { db, users } from "./db";
+import { db, users, teamMembers, teams } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
@@ -107,6 +107,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.plan = dbUser.plan;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isAdmin = dbUser.isAdmin;
+
+          // Check if user is a team member (not owner)
+          const membership = await db.query.teamMembers.findFirst({
+            where: eq(teamMembers.userId, dbUser.id),
+          });
+
+          if (membership && membership.role !== "owner") {
+            // User is a team member, get team owner's info
+            const team = await db.query.teams.findFirst({
+              where: eq(teams.id, membership.teamId),
+            });
+
+            if (team) {
+              token.isTeamMember = true;
+              token.teamId = membership.teamId;
+              token.teamRole = membership.role;
+              token.teamOwnerId = team.ownerId;
+            }
+          } else {
+            token.isTeamMember = false;
+            token.teamId = null;
+            token.teamRole = null;
+            token.teamOwnerId = null;
+          }
         }
       }
 
@@ -121,6 +145,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.plan = token.plan as string;
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
         session.user.isAdmin = token.isAdmin as boolean;
+        session.user.isTeamMember = token.isTeamMember as boolean;
+        session.user.teamId = token.teamId as string | null;
+        session.user.teamRole = token.teamRole as string | null;
+        session.user.teamOwnerId = token.teamOwnerId as string | null;
       }
       return session;
     },
@@ -138,6 +166,10 @@ declare module "next-auth" {
       plan?: string;
       twoFactorEnabled?: boolean;
       isAdmin?: boolean;
+      isTeamMember?: boolean;
+      teamId?: string | null;
+      teamRole?: string | null; // "admin" | "member"
+      teamOwnerId?: string | null;
     };
   }
 

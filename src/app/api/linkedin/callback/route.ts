@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
+import { hasPendingTeamInvite } from '@/lib/team-utils';
 
 /**
  * Download image from URL and upload to R2
@@ -241,10 +242,13 @@ export async function GET(request: NextRequest) {
           where: eq(users.id, userId),
         });
 
-        // Send welcome email (non-blocking)
-        sendWelcomeEmail({ to: linkedInEmail, name: profile.localizedFirstName || undefined }).catch((err) => {
-          console.error('Failed to send welcome email:', err);
-        });
+        // Send welcome email (non-blocking) - skip for team members with pending invites
+        const hasTeamInvite = await hasPendingTeamInvite(linkedInEmail);
+        if (!hasTeamInvite) {
+          sendWelcomeEmail({ to: linkedInEmail, name: profile.localizedFirstName || undefined }).catch((err) => {
+            console.error('Failed to send welcome email:', err);
+          });
+        }
 
         // Subscribe to newsletter if opted in (non-blocking)
         if (subscribeNewsletterCookie) {

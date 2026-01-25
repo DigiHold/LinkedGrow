@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
+import { hasPendingTeamInvite } from '@/lib/team-utils';
 
 function createPopupResponse(success: boolean, data: { error?: string; callbackUrl?: string }) {
   const redirectUrl = data.callbackUrl || '/dashboard';
@@ -172,10 +173,13 @@ export async function GET(request: NextRequest) {
         where: eq(users.id, userId),
       });
 
-      // Send welcome email (non-blocking)
-      sendWelcomeEmail({ to: googleUser.email, name: googleUser.given_name || undefined }).catch((err) => {
-        console.error('Failed to send welcome email:', err);
-      });
+      // Send welcome email (non-blocking) - skip for team members with pending invites
+      const hasTeamInvite = await hasPendingTeamInvite(googleUser.email);
+      if (!hasTeamInvite) {
+        sendWelcomeEmail({ to: googleUser.email, name: googleUser.given_name || undefined }).catch((err) => {
+          console.error('Failed to send welcome email:', err);
+        });
+      }
 
       // Subscribe to newsletter if opted in (non-blocking)
       if (subscribeNewsletterCookie) {
