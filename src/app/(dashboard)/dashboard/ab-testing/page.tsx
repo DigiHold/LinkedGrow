@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   GitBranch,
@@ -16,6 +17,7 @@ import {
   BarChart3,
   AlertCircle,
   X,
+  ShieldX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,10 +49,36 @@ const statusConfig = {
 };
 
 export default function ABTestingPage() {
+  const { data: session } = useSession();
+  const isTeamMember = session?.user?.isTeamMember === true;
+
   const [tests, setTests] = useState<AbTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTest, setDeleteTest] = useState<AbTest | null>(null);
+
+  // Team members cannot manage A/B tests - owner only
+  if (isTeamMember) {
+    return (
+      <FeatureGate feature="abTesting">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+            <CardContent className="py-12 px-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+                  <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
+                <p className="text-muted-foreground">
+                  A/B testing management is only available to team owners. Contact the team owner to set up A/B tests.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </FeatureGate>
+    );
+  }
 
   useEffect(() => {
     fetchTests();

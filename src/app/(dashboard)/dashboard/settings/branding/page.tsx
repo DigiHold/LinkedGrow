@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   Palette,
   Upload,
@@ -13,6 +14,7 @@ import {
   FileImage,
   FileText,
   Presentation,
+  ShieldX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,9 +32,35 @@ const FONT_OPTIONS = [
 ];
 
 export default function BrandingPage() {
+  const { data: session } = useSession();
+  const isTeamMember = session?.user?.isTeamMember === true;
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Team members cannot access branding settings - owner only
+  if (isTeamMember) {
+    return (
+      <FeatureGate feature="customBranding">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+            <CardContent className="py-12 px-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+                  <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
+                <p className="text-muted-foreground">
+                  Branding settings are managed by the team owner. Contact the team owner if branding changes are needed.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </FeatureGate>
+    );
+  }
 
   // Branding settings
   const [logoUrl, setLogoUrl] = useState<string | null>(null);

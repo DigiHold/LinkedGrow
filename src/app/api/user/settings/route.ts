@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { encryptApiKey, decryptApiKey } from "@/lib/encryption";
+import { getAISettingsUser } from "@/lib/team-utils";
 
 // GET - Fetch user settings
 export async function GET() {
@@ -12,24 +13,28 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-    });
-
-    if (!user) {
+    // Get AI settings user (owner's settings for team members)
+    const result = await getAISettingsUser(session.user.id);
+    if (!result) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    // Use owner's settings for AI keys, but user's own settings for other things
+    const { user, aiSettingsUser, isTeamMember } = result;
 
     // Helper to check if a provider has an API key
     const hasProviderKey = (key: string | null | undefined) => !!key;
 
+    // Use owner's AI settings for team members
+    const aiUser = aiSettingsUser;
+
     // Build per-provider settings for text AI (API key status + model)
     const textProviderSettings: Record<string, { hasKey: boolean; model: string | null }> = {
-      openai: { hasKey: hasProviderKey(user.openaiApiKey), model: user.openaiModel },
-      anthropic: { hasKey: hasProviderKey(user.anthropicApiKey), model: user.anthropicModel },
-      google: { hasKey: hasProviderKey(user.googleApiKey), model: user.googleModel },
-      grok: { hasKey: hasProviderKey(user.grokApiKey), model: user.grokModel },
-      perplexity: { hasKey: hasProviderKey(user.perplexityApiKey), model: user.perplexityModel },
+      openai: { hasKey: hasProviderKey(aiUser.openaiApiKey), model: aiUser.openaiModel },
+      anthropic: { hasKey: hasProviderKey(aiUser.anthropicApiKey), model: aiUser.anthropicModel },
+      google: { hasKey: hasProviderKey(aiUser.googleApiKey), model: aiUser.googleModel },
+      grok: { hasKey: hasProviderKey(aiUser.grokApiKey), model: aiUser.grokModel },
+      perplexity: { hasKey: hasProviderKey(aiUser.perplexityApiKey), model: aiUser.perplexityModel },
     };
 
     // Build per-provider settings for image AI (API key status + all settings)
@@ -42,65 +47,67 @@ export async function GET() {
       style: string | null;
     }> = {
       google: {
-        hasKey: hasProviderKey(user.googleImageApiKey),
-        model: user.googleImageModel,
-        resolution: user.googleImageResolution,
-        aspectRatio: user.googleImageAspectRatio,
+        hasKey: hasProviderKey(aiUser.googleImageApiKey),
+        model: aiUser.googleImageModel,
+        resolution: aiUser.googleImageResolution,
+        aspectRatio: aiUser.googleImageAspectRatio,
         quality: null,
         style: null,
       },
       openai: {
-        hasKey: hasProviderKey(user.openaiImageApiKey),
-        model: user.openaiImageModel,
-        resolution: user.openaiImageResolution,
+        hasKey: hasProviderKey(aiUser.openaiImageApiKey),
+        model: aiUser.openaiImageModel,
+        resolution: aiUser.openaiImageResolution,
         aspectRatio: null,
-        quality: user.openaiImageQuality,
-        style: user.openaiImageStyle,
+        quality: aiUser.openaiImageQuality,
+        style: aiUser.openaiImageStyle,
       },
       replicate: {
-        hasKey: hasProviderKey(user.replicateImageApiKey),
-        model: user.replicateImageModel,
-        resolution: user.replicateImageResolution,
-        aspectRatio: user.replicateImageAspectRatio,
+        hasKey: hasProviderKey(aiUser.replicateImageApiKey),
+        model: aiUser.replicateImageModel,
+        resolution: aiUser.replicateImageResolution,
+        aspectRatio: aiUser.replicateImageAspectRatio,
         quality: null,
         style: null,
       },
     };
 
-    // Parse sample posts from JSON
+    // Parse sample posts from JSON (use owner's for team members)
     let samplePosts: string[] = [];
-    if (user.samplePosts) {
+    if (aiUser.samplePosts) {
       try {
-        samplePosts = JSON.parse(user.samplePosts);
+        samplePosts = JSON.parse(aiUser.samplePosts);
       } catch {
         samplePosts = [];
       }
     }
 
-    // Computed fields: check if the active provider has an API key configured
-    const activeTextProvider = user.aiProvider || "openai";
-    const activeImageProvider = user.imageProvider || "google";
+    // Computed fields: check if the active provider has an API key configured (using owner's settings)
+    const activeTextProvider = aiUser.aiProvider || "openai";
+    const activeImageProvider = aiUser.imageProvider || "google";
     const hasApiKey = textProviderSettings[activeTextProvider]?.hasKey || false;
     const hasImageApiKey = imageProviderSettings[activeImageProvider]?.hasKey || false;
 
     return NextResponse.json({
-      // Currently selected providers
-      aiProvider: user.aiProvider,
-      imageProvider: user.imageProvider,
+      // Currently selected providers (from owner for team members)
+      aiProvider: aiUser.aiProvider,
+      imageProvider: aiUser.imageProvider,
       // Per-provider settings (API key status + model + settings)
       textProviderSettings,
       imageProviderSettings,
       // Computed fields: whether active provider has a key configured
       hasApiKey,
       hasImageApiKey,
-      // Other settings
-      linkedinConnected: !!user.linkedinAccessToken,
-      linkedinProfileName: user.linkedinProfileName,
+      // Team member flag
+      isTeamMember,
+      // Other settings (use owner's voice/business settings for team members)
+      linkedinConnected: !!aiUser.linkedinAccessToken,
+      linkedinProfileName: aiUser.linkedinProfileName,
       samplePosts,
-      neverMention: user.neverMention,
-      businessDescription: user.businessDescription,
-      targetAudience: user.targetAudience,
-      writingTone: user.writingTone,
+      neverMention: aiUser.neverMention,
+      businessDescription: aiUser.businessDescription,
+      targetAudience: aiUser.targetAudience,
+      writingTone: aiUser.writingTone,
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
