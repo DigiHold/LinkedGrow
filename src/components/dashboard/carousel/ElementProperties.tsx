@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FabricObject, Textbox, FabricImage, Group } from "fabric";
-import FontPicker from "react-fontpicker-ts";
-import "react-fontpicker-ts/dist/index.css";
 import { Button } from "@/components/ui/button";
+import { GoogleFontPicker } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -443,14 +442,9 @@ export function ElementProperties({
                   <div>
                     <Label className="text-xs text-muted-foreground">Font Family</Label>
                     <div className="mt-2">
-                      <FontPicker
-                        autoLoad
-                        defaultValue={elementProps.fontFamily || 'Inter'}
-                        value={(font) => {
-                          if (font && font !== elementProps.fontFamily) {
-                            updateElement({ fontFamily: font });
-                          }
-                        }}
+                      <GoogleFontPicker
+                        value={elementProps.fontFamily || 'Inter'}
+                        onChange={(font) => updateElement({ fontFamily: font })}
                       />
                     </div>
                   </div>
