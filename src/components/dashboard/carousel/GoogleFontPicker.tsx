@@ -68,7 +68,7 @@ let fontsCachePromise: Promise<GoogleFont[]> | null = null;
 const loadedFonts = new Set<string>();
 const fontLoadPromises = new Map<string, Promise<void>>();
 
-function loadGoogleFont(fontName: string): Promise<void> {
+export function loadGoogleFont(fontName: string): Promise<void> {
   // Already fully loaded
   if (loadedFonts.has(fontName)) {
     return Promise.resolve();
@@ -84,23 +84,33 @@ function loadGoogleFont(fontName: string): Promise<void> {
     const link = document.createElement("link");
     link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
     link.rel = "stylesheet";
+    document.head.appendChild(link);
 
-    link.onload = () => {
-      // Wait a bit for the font to be fully available after CSS loads
+    // Use the Font Loading API to wait for the font to be ready
+    // This is much more reliable than link.onload
+    if (document.fonts) {
+      // Load specific font variations we need
+      const fontFace = `400 48px "${fontName}"`;
+      document.fonts.load(fontFace).then(() => {
+        // Wait for all fonts to be ready
+        return document.fonts.ready;
+      }).then(() => {
+        loadedFonts.add(fontName);
+        fontLoadPromises.delete(fontName);
+        resolve();
+      }).catch(() => {
+        // Font might not exist or failed to load, but resolve anyway
+        fontLoadPromises.delete(fontName);
+        resolve();
+      });
+    } else {
+      // Fallback for older browsers - just wait a bit
       setTimeout(() => {
         loadedFonts.add(fontName);
         fontLoadPromises.delete(fontName);
         resolve();
-      }, 100);
-    };
-
-    link.onerror = () => {
-      // Still resolve to not block the UI, font just won't display correctly
-      fontLoadPromises.delete(fontName);
-      resolve();
-    };
-
-    document.head.appendChild(link);
+      }, 500);
+    }
   });
 
   fontLoadPromises.set(fontName, promise);

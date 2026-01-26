@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FabricObject, Textbox, FabricImage, Group } from "fabric";
 import { Button } from "@/components/ui/button";
-import { GoogleFontPicker } from "./GoogleFontPicker";
+import { GoogleFontPicker, loadGoogleFont } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -444,7 +444,19 @@ export function ElementProperties({
                     <div className="mt-2">
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
-                        onChange={(font) => updateElement({ fontFamily: font })}
+                        onChange={async (font) => {
+                          // First ensure the font is loaded
+                          await loadGoogleFont(font);
+                          // Then update the element
+                          updateElement({ fontFamily: font });
+                          // Force Fabric.js to re-render the text with the new font
+                          const canvas = canvasRef.current?.getCanvas();
+                          if (canvas && selectedElement instanceof Textbox) {
+                            // Trigger a dirty flag and re-render
+                            selectedElement.set('dirty', true);
+                            canvas.requestRenderAll();
+                          }
+                        }}
                       />
                     </div>
                   </div>
