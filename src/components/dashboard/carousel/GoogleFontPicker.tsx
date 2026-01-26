@@ -79,38 +79,64 @@ export function loadGoogleFont(fontName: string): Promise<void> {
     return fontLoadPromises.get(fontName)!;
   }
 
-  // Start loading the font
   const promise = new Promise<void>((resolve) => {
-    const link = document.createElement("link");
-    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
-    link.rel = "stylesheet";
-    document.head.appendChild(link);
+    // Check if stylesheet already exists
+    const existingLink = document.querySelector(
+      `link[href*="fonts.googleapis.com"][href*="${fontName.replace(/ /g, "+")}"]`
+    );
 
-    // Use the Font Loading API to wait for the font to be ready
-    // This is much more reliable than link.onload
-    if (document.fonts) {
-      // Load specific font variations we need
-      const fontFace = `400 48px "${fontName}"`;
-      document.fonts.load(fontFace).then(() => {
-        // Wait for all fonts to be ready
-        return document.fonts.ready;
-      }).then(() => {
-        loadedFonts.add(fontName);
-        fontLoadPromises.delete(fontName);
-        resolve();
-      }).catch(() => {
-        // Font might not exist or failed to load, but resolve anyway
-        fontLoadPromises.delete(fontName);
-        resolve();
-      });
-    } else {
-      // Fallback for older browsers - just wait a bit
-      setTimeout(() => {
-        loadedFonts.add(fontName);
-        fontLoadPromises.delete(fontName);
-        resolve();
-      }, 500);
+    if (!existingLink) {
+      const link = document.createElement("link");
+      link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
     }
+
+    // Poll until the font is actually available
+    const checkFont = () => {
+      // Use a test element to check if font is loaded
+      const testEl = document.createElement("span");
+      testEl.style.fontFamily = `"${fontName}", monospace`;
+      testEl.style.fontSize = "48px";
+      testEl.style.position = "absolute";
+      testEl.style.left = "-9999px";
+      testEl.style.visibility = "hidden";
+      testEl.textContent = "giItT1WQy@!-/#";
+      document.body.appendChild(testEl);
+
+      const testWidth = testEl.offsetWidth;
+
+      // Now test with just monospace
+      testEl.style.fontFamily = "monospace";
+      const monoWidth = testEl.offsetWidth;
+
+      document.body.removeChild(testEl);
+
+      // If widths differ, the font is loaded
+      return testWidth !== monoWidth;
+    };
+
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
+
+    const pollFont = () => {
+      attempts++;
+      if (checkFont()) {
+        loadedFonts.add(fontName);
+        fontLoadPromises.delete(fontName);
+        resolve();
+      } else if (attempts < maxAttempts) {
+        setTimeout(pollFont, 100);
+      } else {
+        // Give up after 5 seconds, font might not exist
+        console.warn(`Font "${fontName}" failed to load after 5 seconds`);
+        fontLoadPromises.delete(fontName);
+        resolve();
+      }
+    };
+
+    // Start polling after a small delay to let the CSS start loading
+    setTimeout(pollFont, 50);
   });
 
   fontLoadPromises.set(fontName, promise);
