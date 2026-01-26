@@ -283,17 +283,16 @@ export function ElementToolbar({
       svgElement.setAttribute('height', '96');
       svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-      // Convert SVG to data URL
+      // Convert SVG to base64 data URL (not blob URL) for persistence
+      // Blob URLs are temporary and don't persist when saving/loading canvas JSON
       const svgString = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
+      const base64 = btoa(unescape(encodeURIComponent(svgString)));
+      const dataUrl = `data:image/svg+xml;base64,${base64}`;
 
       try {
-        await canvasRef.current.addImage(url);
+        await canvasRef.current.addImage(dataUrl);
       } catch (error) {
         console.error('Failed to add icon:', error);
-      } finally {
-        URL.revokeObjectURL(url);
       }
     }
 
@@ -454,8 +453,9 @@ export function ElementToolbar({
             </h3>
             <div className="space-y-3">
               {/* Upload Image */}
-              <label className="block">
+              <div>
                 <input
+                  id="image-upload"
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   className="hidden"
@@ -465,14 +465,12 @@ export function ElementToolbar({
                   variant="outline"
                   size="sm"
                   className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
-                  asChild
+                  onClick={() => document.getElementById('image-upload')?.click()}
                 >
-                  <span>
-                    <Upload className="w-4 h-4" />
-                    <span className="text-xs">Upload Image</span>
-                  </span>
+                  <Upload className="w-4 h-4" />
+                  <span className="text-xs">Upload Image</span>
                 </Button>
-              </label>
+              </div>
 
               {/* AI Image Generation */}
               <div className="pt-2 border-t border-dashed">
@@ -616,8 +614,9 @@ export function ElementToolbar({
                     <span className="text-xs">Add Logo</span>
                   </button>
                 ) : (
-                  <label className="flex-1">
+                  <div className="flex-1">
                     <input
+                      id="logo-upload"
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                       className="hidden"
@@ -637,21 +636,20 @@ export function ElementToolbar({
                       variant="outline"
                       size="sm"
                       className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
-                      asChild
+                      onClick={() => document.getElementById('logo-upload')?.click()}
                     >
-                      <span>
-                        <Upload className="w-4 h-4" />
-                        <span className="text-xs">Upload Logo</span>
-                      </span>
+                      <Upload className="w-4 h-4" />
+                      <span className="text-xs">Upload Logo</span>
                     </Button>
-                  </label>
+                  </div>
                 )}
               </div>
 
               {/* Avatar - always show upload option since LinkedIn images often fail */}
               <div className="flex gap-2">
-                <label className="flex-1">
+                <div className="flex-1">
                   <input
+                    id="avatar-upload"
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                     className="hidden"
@@ -671,14 +669,12 @@ export function ElementToolbar({
                     variant="outline"
                     size="sm"
                     className="w-full h-auto py-3 flex flex-col gap-1 hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950"
-                    asChild
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
                   >
-                    <span>
-                      <User className="w-4 h-4" />
-                      <span className="text-xs">Upload Avatar</span>
-                    </span>
+                    <User className="w-4 h-4" />
+                    <span className="text-xs">Upload Avatar</span>
                   </Button>
-                </label>
+                </div>
               </div>
 
               {/* Handle and Website */}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Lucide icons - comprehensive set
@@ -477,6 +477,9 @@ interface IconPickerProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// Batch size for lazy loading "All" tab
+const ICONS_PER_BATCH = 48;
+
 export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }: IconPickerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -484,11 +487,26 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("popular");
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  // Lazy loading state for "All" tab
+  const [loadedCount, setLoadedCount] = useState(ICONS_PER_BATCH);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset loaded count when opening or switching tabs
+  useEffect(() => {
+    if (open) {
+      setLoadedCount(ICONS_PER_BATCH);
+    }
+  }, [open, activeCategory]);
 
   // Filter icons based on search
   const filteredIcons = useMemo(() => {
     if (!search.trim()) {
+      if (activeCategory === 'all') {
+        return allIcons.slice(0, loadedCount);
+      }
       return iconCategories.find(cat => cat.id === activeCategory)?.icons || [];
     }
 
@@ -497,7 +515,31 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
       item.name.toLowerCase().includes(searchLower) ||
       item.keywords.some(kw => kw.includes(searchLower))
     );
-  }, [search, activeCategory]);
+  }, [search, activeCategory, loadedCount]);
+
+  // Check if there are more icons to load
+  const hasMoreIcons = activeCategory === 'all' && !search.trim() && loadedCount < allIcons.length;
+
+  // Load more icons
+  const loadMoreIcons = useCallback(() => {
+    if (isLoadingMore || !hasMoreIcons) return;
+    setIsLoadingMore(true);
+    // Simulate async loading for smooth UX
+    setTimeout(() => {
+      setLoadedCount(prev => Math.min(prev + ICONS_PER_BATCH, allIcons.length));
+      setIsLoadingMore(false);
+    }, 100);
+  }, [isLoadingMore, hasMoreIcons]);
+
+  // Handle scroll for lazy loading
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (activeCategory !== 'all' || search.trim()) return;
+    const target = e.target as HTMLDivElement;
+    const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (scrollBottom < 200) {
+      loadMoreIcons();
+    }
+  }, [activeCategory, search, loadMoreIcons]);
 
   const handleSelectIcon = useCallback((item: IconItem) => {
     onSelectIcon(item.icon, item.name);
@@ -522,8 +564,8 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
         </DialogHeader>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative z-10">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search icons... (e.g., rocket, chart, user)"
             value={search}
@@ -539,6 +581,12 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
               {/* Category tabs with horizontal scroll */}
               <div className="flex-shrink-0 overflow-x-auto pb-2 scrollbar-thin">
                 <TabsList className="inline-flex h-auto py-1.5 px-1 gap-1 min-w-max">
+                  <TabsTrigger
+                    value="all"
+                    className="text-xs px-3 py-1.5 whitespace-nowrap"
+                  >
+                    All
+                  </TabsTrigger>
                   {iconCategories.map(cat => (
                     <TabsTrigger
                       key={cat.id}
@@ -550,6 +598,50 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                   ))}
                 </TabsList>
               </div>
+
+              {/* All icons tab with lazy loading */}
+              <TabsContent value="all" className="flex-1 mt-2 overflow-hidden">
+                <ScrollArea className="h-[320px]" onScrollCapture={handleScroll}>
+                  <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 p-1">
+                    {filteredIcons.map(item => {
+                      const IconComponent = item.icon;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleSelectIcon(item)}
+                          className={cn(
+                            "p-3 rounded-lg border border-input bg-background flex flex-col items-center gap-1.5",
+                            "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                            "transition-all duration-150 cursor-pointer group"
+                          )}
+                          title={item.name}
+                        >
+                          <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                            {item.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {hasMoreIcons && (
+                    <div className="flex justify-center py-4">
+                      {isLoadingMore ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={loadMoreIcons}
+                          className="text-xs"
+                        >
+                          Load more ({allIcons.length - loadedCount} remaining)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
 
               {iconCategories.map(cat => (
                 <TabsContent key={cat.id} value={cat.id} className="flex-1 mt-2 overflow-hidden">

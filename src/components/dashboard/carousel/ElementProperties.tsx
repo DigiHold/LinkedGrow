@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage } from "fabric";
+import { FabricObject, Textbox, FabricImage, filters } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,25 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
+
+// Helper to check if an image is an icon (SVG data URL)
+function isIconImage(element: FabricImage): boolean {
+  const src = element.getSrc?.() || '';
+  // Icons are created as SVG data URLs (base64 encoded)
+  return src.startsWith('data:image/svg+xml');
+}
+
+// Helper to convert hex color to RGB
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
 
 interface ElementPropertiesProps {
   selectedElement: FabricObject | null;
@@ -97,6 +116,7 @@ export function ElementProperties({
   });
 
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [iconColor, setIconColor] = useState('#000000');
 
   // Update local state when selection changes or element is being moved/scaled
   useEffect(() => {
@@ -166,6 +186,39 @@ export function ElementProperties({
 
   const isTextElement = selectedElement instanceof Textbox;
   const isImageElement = selectedElement instanceof FabricImage;
+  const isIconElement = isImageElement && isIconImage(selectedElement as FabricImage);
+
+  // Update icon color using BlendColor filter
+  const updateIconColor = useCallback((color: string) => {
+    if (!selectedElement || !isIconElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const image = selectedElement as FabricImage;
+    const rgb = hexToRgb(color);
+    if (!rgb) return;
+
+    // Remove existing BlendColor filter
+    const existingFilters = image.filters || [];
+    const newFilters = existingFilters.filter(
+      (f: filters.BaseFilter<string, Record<string, unknown>>) => f.type !== 'BlendColor'
+    );
+
+    // Add new BlendColor filter with the selected color
+    // Use 'multiply' mode for dark icons on light bg, 'tint' for full color replacement
+    const blendFilter = new filters.BlendColor({
+      color: color,
+      mode: 'tint',
+      alpha: 1,
+    });
+
+    newFilters.push(blendFilter);
+    image.filters = newFilters;
+    image.applyFilters();
+
+    canvas.renderAll();
+    setIconColor(color);
+  }, [selectedElement, isIconElement, canvasRef]);
 
   return (
     <div className={cn("w-72 bg-background border-l flex flex-col h-full overflow-hidden", className)}>
@@ -335,6 +388,41 @@ export function ElementProperties({
 
                   <Separator />
                 </>
+              )}
+
+              {/* Icon Color (for icon images only) */}
+              {isIconElement && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Icon Color</Label>
+                  <div className="mt-2">
+                    <div className="flex gap-2 items-center mb-2">
+                      <input
+                        type="color"
+                        value={iconColor}
+                        onChange={(e) => updateIconColor(e.target.value)}
+                        className="w-8 h-8 rounded cursor-pointer border-0"
+                      />
+                      <Input
+                        value={iconColor}
+                        onChange={(e) => updateIconColor(e.target.value)}
+                        className="h-8 text-xs flex-1"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          className={cn(
+                            "w-5 h-5 rounded border border-border hover:scale-110 transition-transform",
+                            iconColor === color && "ring-2 ring-cyan-500 ring-offset-1"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => updateIconColor(color)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Color (for text and shapes, not images) */}
