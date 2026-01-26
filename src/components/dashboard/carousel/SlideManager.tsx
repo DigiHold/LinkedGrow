@@ -202,22 +202,8 @@ export function SlideManager({
       const newIndex = slides.findIndex((s) => s.id === over.id);
 
       const newSlides = arrayMove(slides, oldIndex, newIndex);
+      // Parent component (carousel page) handles updating the current slide index
       onSlidesReorder(newSlides);
-
-      // Update current slide index if needed
-      if (currentSlideIndex === oldIndex) {
-        onSlideSelect(newIndex);
-      } else if (
-        currentSlideIndex > oldIndex &&
-        currentSlideIndex <= newIndex
-      ) {
-        onSlideSelect(currentSlideIndex - 1);
-      } else if (
-        currentSlideIndex < oldIndex &&
-        currentSlideIndex >= newIndex
-      ) {
-        onSlideSelect(currentSlideIndex + 1);
-      }
     }
   };
 
