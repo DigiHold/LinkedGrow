@@ -28,6 +28,31 @@ function parseGradientToFabric(gradientString: string): { colorStops: Record<str
   return { colorStops, angle };
 }
 
+// Helper to proxy R2 URLs in canvas JSON for CORS
+function proxyR2UrlsInJson(jsonString: string): string {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (parsed.objects && Array.isArray(parsed.objects)) {
+      parsed.objects = parsed.objects.map((obj: Record<string, unknown>) => {
+        if (obj.type === 'image') {
+          const originalSrc = obj.originalSrc as string | undefined;
+          const src = obj.src as string | undefined;
+          const urlToCheck = originalSrc || src;
+
+          if (urlToCheck && (urlToCheck.includes('r2.dev') || urlToCheck.includes('r2.cloudflarestorage.com'))) {
+            obj.originalSrc = urlToCheck;
+            obj.src = `/api/media/proxy?url=${encodeURIComponent(urlToCheck)}`;
+          }
+        }
+        return obj;
+      });
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return jsonString;
+  }
+}
+
 // Canvas dimensions for LinkedIn carousel (4:5 aspect ratio)
 export const CANVAS_WIDTH = 1080;
 export const CANVAS_HEIGHT = 1350;
@@ -503,11 +528,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
         if (!fabricRef.current) return;
 
-        // Remove ALL existing background rects (non-selectable rects at position 0,0)
+        // Remove ALL existing background rects (non-selectable rects that cover the canvas)
+        // Use more robust detection - check for full canvas size and non-selectable
         const objects = fabricRef.current.getObjects();
-        const bgRects = objects.filter(obj =>
-          obj instanceof Rect && !obj.selectable && obj.left === 0 && obj.top === 0
-        );
+        const bgRects = objects.filter(obj => {
+          if (!(obj instanceof Rect)) return false;
+          // Check if it's a background rect: non-selectable, at origin, full canvas size
+          const isNonSelectable = !obj.selectable;
+          const isAtOrigin = obj.left === 0 && obj.top === 0;
+          const isFullSize = obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT;
+          return isNonSelectable && isAtOrigin && isFullSize;
+        });
         bgRects.forEach(rect => fabricRef.current!.remove(rect));
 
         // Clear any existing background image when setting color/gradient
@@ -663,12 +694,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           // Pre-process objects to proxy R2 image URLs for CORS
           if (parsed.objects && Array.isArray(parsed.objects)) {
             parsed.objects = parsed.objects.map((obj: Record<string, unknown>) => {
-              if (obj.type === 'image' && obj.src && typeof obj.src === 'string') {
-                const src = obj.src as string;
-                if (src.includes('r2.dev') || src.includes('r2.cloudflarestorage.com')) {
-                  // Store original and use proxy URL
-                  obj.originalSrc = src;
-                  obj.src = `/api/media/proxy?url=${encodeURIComponent(src)}`;
+              if (obj.type === 'image') {
+                // Check originalSrc first (stored during export), then src
+                const originalSrc = obj.originalSrc as string | undefined;
+                const src = obj.src as string | undefined;
+                const urlToCheck = originalSrc || src;
+
+                if (urlToCheck && (urlToCheck.includes('r2.dev') || urlToCheck.includes('r2.cloudflarestorage.com'))) {
+                  // Store original R2 URL and use proxy URL for loading
+                  obj.originalSrc = urlToCheck;
+                  obj.src = `/api/media/proxy?url=${encodeURIComponent(urlToCheck)}`;
                 }
               }
               return obj;
@@ -693,7 +728,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const json = historyRef.current[historyIndexRef.current];
         lastSavedStateRef.current = json; // Update last saved state to prevent re-save
 
-        fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
+        // Proxy R2 URLs before loading to avoid CORS issues
+        const proxiedJson = proxyR2UrlsInJson(json);
+        fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
           fabricRef.current!.renderAll();
           // Small delay before allowing history saves again
           setTimeout(() => {
@@ -711,7 +748,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const json = historyRef.current[historyIndexRef.current];
         lastSavedStateRef.current = json; // Update last saved state to prevent re-save
 
-        fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
+        // Proxy R2 URLs before loading to avoid CORS issues
+        const proxiedJson = proxyR2UrlsInJson(json);
+        fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
           fabricRef.current!.renderAll();
           // Small delay before allowing history saves again
           setTimeout(() => {
@@ -763,7 +802,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             historyIndexRef.current--;
             const json = historyRef.current[historyIndexRef.current];
             lastSavedStateRef.current = json;
-            fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
+            // Proxy R2 URLs before loading to avoid CORS issues
+            const proxiedJson = proxyR2UrlsInJson(json);
+            fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
               fabricRef.current!.renderAll();
               setTimeout(() => {
                 isUndoRedoRef.current = false;
@@ -780,7 +821,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             historyIndexRef.current++;
             const json = historyRef.current[historyIndexRef.current];
             lastSavedStateRef.current = json;
-            fabricRef.current.loadFromJSON(JSON.parse(json)).then(() => {
+            // Proxy R2 URLs before loading to avoid CORS issues
+            const proxiedJson = proxyR2UrlsInJson(json);
+            fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
               fabricRef.current!.renderAll();
               setTimeout(() => {
                 isUndoRedoRef.current = false;

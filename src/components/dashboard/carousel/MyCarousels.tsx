@@ -48,10 +48,17 @@ interface SavedCarousel {
   updatedAt: string;
 }
 
+interface CarouselData {
+  id: string;
+  name: string;
+  description: string | null;
+  slidesJson: string;
+}
+
 interface MyCarouselsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLoadCarousel: (slidesJson: string) => void;
+  onLoadCarousel: (data: CarouselData) => void;
   onDuplicateCarousel: (slidesJson: string, name: string) => void;
 }
 
@@ -95,7 +102,13 @@ export function MyCarousels({
       const response = await fetch(`/api/carousels/${id}`);
       if (response.ok) {
         const data = await response.json();
-        onLoadCarousel(data.carousel.slidesJson);
+        const carousel = data.carousel;
+        onLoadCarousel({
+          id: carousel.id,
+          name: carousel.name,
+          description: carousel.description,
+          slidesJson: carousel.slidesJson,
+        });
         onOpenChange(false);
       }
     } catch (error) {

@@ -45,6 +45,7 @@ import {
   PanelRightOpen,
   Save,
   FolderOpen,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -114,6 +115,7 @@ export default function CarouselPage() {
   const [carouselName, setCarouselName] = useState("");
   const [carouselDescription, setCarouselDescription] = useState("");
   const [isSavingCarousel, setIsSavingCarousel] = useState(false);
+  const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null); // Track loaded carousel for updates
 
   // API keys state
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
@@ -726,8 +728,8 @@ export default function CarouselPage() {
     });
   }, []);
 
-  // Save carousel handler (saves all slides)
-  const handleSaveCarousel = async () => {
+  // Save carousel handler (saves all slides) - updates existing or creates new
+  const handleSaveCarousel = async (saveAsNew: boolean = false) => {
     if (!canvasRef.current || !carouselName.trim()) return;
 
     setIsSavingCarousel(true);
@@ -758,16 +760,23 @@ export default function CarouselPage() {
       const rawThumbnail = currentSlideIndex === 0 ? currentThumbnail : (slides[0]?.thumbnail || currentThumbnail);
       const carouselThumbnail = await compressThumbnail(rawThumbnail, 200);
 
-      const response = await fetch('/api/carousels', {
-        method: 'POST',
+      const payload = {
+        name: carouselName.trim(),
+        description: carouselDescription.trim() || null,
+        thumbnail: carouselThumbnail,
+        slidesJson: JSON.stringify(slidesData),
+        slideCount: slidesData.length,
+      };
+
+      // If we have a current carousel ID and not saving as new, update it
+      const isUpdate = currentCarouselId && !saveAsNew;
+      const url = isUpdate ? `/api/carousels/${currentCarouselId}` : '/api/carousels';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: carouselName.trim(),
-          description: carouselDescription.trim() || null,
-          thumbnail: carouselThumbnail,
-          slidesJson: JSON.stringify(slidesData),
-          slideCount: slidesData.length,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -775,10 +784,16 @@ export default function CarouselPage() {
         throw new Error(data.error || 'Failed to save carousel');
       }
 
-      showToast(`Carousel "${carouselName}" saved!`, "success");
+      // If creating new, get the new ID and set it as current
+      if (!isUpdate) {
+        const data = await response.json();
+        if (data.id) {
+          setCurrentCarouselId(data.id);
+        }
+      }
+
+      showToast(`Carousel "${carouselName}" ${isUpdate ? 'updated' : 'saved'}!`, "success");
       setShowSaveCarouselDialog(false);
-      setCarouselName("");
-      setCarouselDescription("");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save carousel");
     } finally {
@@ -787,10 +802,10 @@ export default function CarouselPage() {
   };
 
   // Load carousel handler
-  const handleLoadCarousel = (slidesJson: string) => {
+  const handleLoadCarousel = (data: { id: string; name: string; description: string | null; slidesJson: string }) => {
     if (!canvasRef.current) return;
     try {
-      const loadedSlides = JSON.parse(slidesJson) as Array<{ id: string; canvasJSON: string; thumbnail?: string }>;
+      const loadedSlides = JSON.parse(data.slidesJson) as Array<{ id: string; canvasJSON: string; thumbnail?: string }>;
       if (!loadedSlides || loadedSlides.length === 0) {
         throw new Error("No slides in carousel");
       }
@@ -801,6 +816,11 @@ export default function CarouselPage() {
         canvasJSON: slide.canvasJSON,
         thumbnail: slide.thumbnail || '', // Use saved thumbnail or empty (will regenerate)
       }));
+
+      // Set carousel metadata for future saves
+      setCurrentCarouselId(data.id);
+      setCarouselName(data.name);
+      setCarouselDescription(data.description || '');
 
       // Set slides state
       setSlides(slidesWithEmptyThumbnails);
@@ -822,17 +842,55 @@ export default function CarouselPage() {
         });
       });
 
-      showToast("Carousel loaded!", "success");
+      showToast(`Loaded "${data.name}"`, "success");
     } catch (err) {
       showToast("Failed to load carousel");
     }
   };
 
-  // Duplicate carousel handler (loads and opens save dialog)
+  // Duplicate carousel handler (loads slides but clears ID so it saves as new)
   const handleDuplicateCarousel = (slidesJson: string, name: string) => {
-    handleLoadCarousel(slidesJson);
-    setCarouselName(name);
-    setShowSaveCarouselDialog(true);
+    if (!canvasRef.current) return;
+    try {
+      const loadedSlides = JSON.parse(slidesJson) as Array<{ id: string; canvasJSON: string; thumbnail?: string }>;
+      if (!loadedSlides || loadedSlides.length === 0) {
+        throw new Error("No slides in carousel");
+      }
+
+      const slidesWithEmptyThumbnails: SlideState[] = loadedSlides.map(slide => ({
+        id: slide.id,
+        canvasJSON: slide.canvasJSON,
+        thumbnail: slide.thumbnail || '',
+      }));
+
+      // Clear carousel ID so it saves as new (not update original)
+      setCurrentCarouselId(null);
+      setCarouselName(name);
+      setCarouselDescription('');
+
+      setSlides(slidesWithEmptyThumbnails);
+      setCurrentSlideIndex(0);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (canvasRef.current && slidesWithEmptyThumbnails[0].canvasJSON) {
+            canvasRef.current.loadFromJSON(slidesWithEmptyThumbnails[0].canvasJSON);
+            setTimeout(() => {
+              if (canvasRef.current) {
+                const thumbnail = canvasRef.current.exportToDataURL();
+                setSlides(prev => prev.map((s, i) => i === 0 ? { ...s, thumbnail } : s));
+              }
+            }, 100);
+          }
+        });
+      });
+
+      // Open save dialog immediately for duplicate
+      setShowSaveCarouselDialog(true);
+      showToast("Duplicated - save with a new name", "success");
+    } catch (err) {
+      showToast("Failed to duplicate carousel");
+    }
   };
 
   // Loading state
@@ -1099,14 +1157,14 @@ export default function CarouselPage() {
                   size="sm"
                 >
                   <Layers className="w-4 h-4 mr-2" />
-                  Save Carousel
+                  {currentCarouselId ? "Save" : "Save Carousel"}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-cyan-600" />
-                    Save Carousel
+                    {currentCarouselId ? "Update Carousel" : "Save Carousel"}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -1130,20 +1188,36 @@ export default function CarouselPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Save all {slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".
+                    {currentCarouselId
+                      ? `Update "${carouselName}" with ${slides.length} slides, or save as a new carousel.`
+                      : `Save all ${slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".`
+                    }
                   </p>
-                  <Button
-                    onClick={handleSaveCarousel}
-                    disabled={!carouselName.trim() || isSavingCarousel}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                  >
-                    {isSavingCarousel ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Layers className="w-4 h-4 mr-2" />
+                  <div className={cn("flex gap-2", currentCarouselId ? "flex-col" : "")}>
+                    <Button
+                      onClick={() => handleSaveCarousel(false)}
+                      disabled={!carouselName.trim() || isSavingCarousel}
+                      className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    >
+                      {isSavingCarousel ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Layers className="w-4 h-4 mr-2" />
+                      )}
+                      {isSavingCarousel ? "Saving..." : currentCarouselId ? "Update Carousel" : `Save ${slides.length} Slides`}
+                    </Button>
+                    {currentCarouselId && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleSaveCarousel(true)}
+                        disabled={!carouselName.trim() || isSavingCarousel}
+                        className="flex-1"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Save as New Carousel
+                      </Button>
                     )}
-                    {isSavingCarousel ? "Saving..." : `Save ${slides.length} Slides`}
-                  </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
