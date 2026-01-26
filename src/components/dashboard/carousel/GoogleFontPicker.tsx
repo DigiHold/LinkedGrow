@@ -66,15 +66,45 @@ let fontsCachePromise: Promise<GoogleFont[]> | null = null;
 
 // Track loaded fonts to avoid duplicate loading
 const loadedFonts = new Set<string>();
+const fontLoadPromises = new Map<string, Promise<void>>();
 
-function loadGoogleFont(fontName: string) {
-  if (loadedFonts.has(fontName)) return;
+function loadGoogleFont(fontName: string): Promise<void> {
+  // Already fully loaded
+  if (loadedFonts.has(fontName)) {
+    return Promise.resolve();
+  }
 
-  const link = document.createElement("link");
-  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
-  link.rel = "stylesheet";
-  document.head.appendChild(link);
-  loadedFonts.add(fontName);
+  // Loading in progress, return existing promise
+  if (fontLoadPromises.has(fontName)) {
+    return fontLoadPromises.get(fontName)!;
+  }
+
+  // Start loading the font
+  const promise = new Promise<void>((resolve) => {
+    const link = document.createElement("link");
+    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
+    link.rel = "stylesheet";
+
+    link.onload = () => {
+      // Wait a bit for the font to be fully available after CSS loads
+      setTimeout(() => {
+        loadedFonts.add(fontName);
+        fontLoadPromises.delete(fontName);
+        resolve();
+      }, 100);
+    };
+
+    link.onerror = () => {
+      // Still resolve to not block the UI, font just won't display correctly
+      fontLoadPromises.delete(fontName);
+      resolve();
+    };
+
+    document.head.appendChild(link);
+  });
+
+  fontLoadPromises.set(fontName, promise);
+  return promise;
 }
 
 function isValidTextFont(font: { family: string; category: string; subsets?: string[] }): boolean {
@@ -216,11 +246,14 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
     }
   }, [filteredFonts.length, visibleFonts]);
 
-  const handleSelect = (fontName: string) => {
-    loadGoogleFont(fontName);
-    onChange(fontName);
+  const handleSelect = async (fontName: string) => {
+    // Close immediately for better UX
     setOpen(false);
     setSearch("");
+
+    // Wait for font to load before applying
+    await loadGoogleFont(fontName);
+    onChange(fontName);
   };
 
   return (
