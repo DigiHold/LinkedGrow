@@ -20,6 +20,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -78,7 +80,6 @@ function SortableSlide({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -86,38 +87,41 @@ function SortableSlide({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative flex-shrink-0 cursor-pointer transition-all",
-        isActive && "ring-2 ring-cyan-500 ring-offset-2",
-        isDragging && "z-50"
+        "group relative flex-shrink-0 transition-all",
+        isActive && "ring-2 ring-cyan-500 ring-offset-2 rounded-lg",
+        isDragging && "z-50 opacity-90 scale-105 shadow-xl"
       )}
     >
       {/* Slide Number Badge */}
-      <div className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center font-medium">
+      <div className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center font-medium shadow-sm">
         {index + 1}
       </div>
 
-      {/* Drag Handle */}
-      <button
+      {/* Drag Handle - visible on hover, but entire card is draggable */}
+      <div
         {...attributes}
         {...listeners}
-        className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 p-1 rounded bg-slate-200 dark:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+        className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 rounded bg-slate-700 text-white text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing flex items-center gap-1"
       >
         <GripVertical className="w-3 h-3" />
-      </button>
+        <span>Drag</span>
+      </div>
 
-      {/* Thumbnail */}
+      {/* Thumbnail - entire area is draggable */}
       <div
         onClick={onSelect}
         className={cn(
-          "w-24 h-30 rounded-lg overflow-hidden border-2 transition-all bg-white",
-          isActive ? "border-cyan-500" : "border-border hover:border-cyan-300"
+          "w-24 h-30 rounded-lg overflow-hidden border-2 transition-all bg-white cursor-pointer",
+          isActive ? "border-cyan-500" : "border-border hover:border-cyan-300",
+          isDragging && "border-cyan-500 shadow-lg"
         )}
       >
         {slide.thumbnail ? (
           <img
             src={slide.thumbnail}
             alt={`Slide ${index + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover pointer-events-none"
+            draggable={false}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
@@ -126,8 +130,11 @@ function SortableSlide({
         )}
       </div>
 
-      {/* Actions (visible on hover) */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Actions (visible on hover, but not while dragging) */}
+      <div className={cn(
+        "absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1 transition-opacity",
+        isDragging ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+      )}>
         <Button
           variant="secondary"
           size="icon"
@@ -169,10 +176,12 @@ export function SlideManager({
   onSlidesReorder,
   className,
 }: SlideManagerProps) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -180,7 +189,12 @@ export function SlideManager({
     })
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -243,6 +257,7 @@ export function SlideManager({
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -274,6 +289,25 @@ export function SlideManager({
                 </Button>
               </div>
             </SortableContext>
+
+            {/* Drag Overlay - shows a preview of the dragged slide */}
+            <DragOverlay>
+              {activeId ? (
+                <div className="w-24 h-30 rounded-lg overflow-hidden border-2 border-cyan-500 bg-white shadow-2xl">
+                  {slides.find(s => s.id === activeId)?.thumbnail ? (
+                    <img
+                      src={slides.find(s => s.id === activeId)?.thumbnail}
+                      alt="Dragging slide"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                      <span className="text-xs text-muted-foreground">Empty</span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
