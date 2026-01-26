@@ -27,9 +27,16 @@ import {
   ChevronUp,
   ChevronDown,
   RotateCcw,
+  AlignHorizontalJustifyCenter,
+  AlignVerticalJustifyCenter,
+  AlignStartVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignEndHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from "./CanvasWorkspace";
 
 // Helper to check if an element is an SVG icon group
 function isSvgIconGroup(element: FabricObject): boolean {
@@ -171,6 +178,75 @@ export function ElementProperties({
     canvasRef.current?.sendBackward();
   };
 
+  // Alignment functions
+  const alignHorizontalCenter = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const objWidth = (selectedElement.width || 0) * (selectedElement.scaleX || 1);
+    const newLeft = (CANVAS_WIDTH - objWidth) / 2;
+    selectedElement.set('left', newLeft);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
+  }, [selectedElement, canvasRef]);
+
+  const alignVerticalCenter = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const objHeight = (selectedElement.height || 0) * (selectedElement.scaleY || 1);
+    const newTop = (CANVAS_HEIGHT - objHeight) / 2;
+    selectedElement.set('top', newTop);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
+  }, [selectedElement, canvasRef]);
+
+  const alignToLeft = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    selectedElement.set('left', 0);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, left: 0 }));
+  }, [selectedElement, canvasRef]);
+
+  const alignToRight = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const objWidth = (selectedElement.width || 0) * (selectedElement.scaleX || 1);
+    const newLeft = CANVAS_WIDTH - objWidth;
+    selectedElement.set('left', newLeft);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
+  }, [selectedElement, canvasRef]);
+
+  const alignToTop = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    selectedElement.set('top', 0);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, top: 0 }));
+  }, [selectedElement, canvasRef]);
+
+  const alignToBottom = useCallback(() => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const objHeight = (selectedElement.height || 0) * (selectedElement.scaleY || 1);
+    const newTop = CANVAS_HEIGHT - objHeight;
+    selectedElement.set('top', newTop);
+    canvas.renderAll();
+    setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
+  }, [selectedElement, canvasRef]);
+
   const isTextElement = selectedElement instanceof Textbox;
   const isImageElement = selectedElement instanceof FabricImage;
   const isIconElement = selectedElement ? isSvgIconGroup(selectedElement) : false;
@@ -254,6 +330,68 @@ export function ElementProperties({
                   >
                     <ChevronDown className="w-3 h-3 mr-1" />
                     Backward
+                  </Button>
+                </div>
+              </div>
+
+              {/* Alignment */}
+              <div>
+                <Label className="text-xs text-muted-foreground">Align on Canvas</Label>
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignToLeft}
+                    title="Align Left"
+                  >
+                    <AlignStartVertical className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignHorizontalCenter}
+                    title="Center Horizontally"
+                  >
+                    <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignToRight}
+                    title="Align Right"
+                  >
+                    <AlignEndVertical className="w-3.5 h-3.5" />
+                  </Button>
+                  <div className="w-px bg-border mx-1" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignToTop}
+                    title="Align Top"
+                  >
+                    <AlignStartHorizontal className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignVerticalCenter}
+                    title="Center Vertically"
+                  >
+                    <AlignVerticalJustifyCenter className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={alignToBottom}
+                    title="Align Bottom"
+                  >
+                    <AlignEndHorizontal className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
