@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Layers,
-  Sparkles,
   Download,
   Settings,
   Loader2,
@@ -36,7 +35,6 @@ import {
   ZoomIn,
   ZoomOut,
   LayoutTemplate,
-  Wand2,
   Check,
   X,
   PanelLeftClose,
@@ -97,11 +95,6 @@ export default function CarouselPage() {
   // Responsive sidebar state
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
-
-  // AI Generation state
-  const [topic, setTopic] = useState("");
-  const [slideCount, setSlideCount] = useState("7");
-  const [showAIDialog, setShowAIDialog] = useState(false);
 
   // Save Template state
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
@@ -419,83 +412,6 @@ export default function CarouselPage() {
     return data.imageUrl;
   }, []);
 
-  // Handle AI carousel generation
-  const handleGenerateCarousel = async () => {
-    if (!topic.trim() || !hasTextApiKey) return;
-    setIsGenerating(true);
-    setShowAIDialog(false);
-
-    try {
-      const count = parseInt(slideCount);
-      setGenerationStep("Creating slide content...");
-
-      const response = await fetch("/api/ai/generate-post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "carousel-prompts",
-          topic,
-          slideCount: count,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to generate content");
-      }
-
-      const data = await response.json();
-      const generatedSlides: { title: string; content: string }[] = data.slides || [];
-
-      if (generatedSlides.length === 0) {
-        throw new Error("No content generated");
-      }
-
-      // Create new slides with generated content
-      const newSlides: SlideState[] = generatedSlides.map((slide, index) => ({
-        id: generateId(),
-        canvasJSON: '', // Will be populated when loaded
-        thumbnail: '',
-      }));
-
-      setSlides(newSlides);
-      setCurrentSlideIndex(0);
-
-      // Load first slide with content
-      setTimeout(() => {
-        if (!canvasRef.current) return;
-
-        canvasRef.current.clearCanvas();
-
-        // Add title
-        canvasRef.current.addText({
-          text: generatedSlides[0].title,
-          fontSize: 72,
-          fontWeight: 'bold',
-          top: 200,
-        });
-
-        // Add content
-        canvasRef.current.addText({
-          text: generatedSlides[0].content,
-          fontSize: 36,
-          fontWeight: 'normal',
-          top: 400,
-        });
-
-        // Store generated content for other slides
-        (window as unknown as { __generatedSlides: typeof generatedSlides }).__generatedSlides = generatedSlides;
-      }, 100);
-
-      showToast("Carousel generated! Edit each slide as needed.", "success");
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to generate carousel");
-    } finally {
-      setIsGenerating(false);
-      setGenerationStep("");
-    }
-  };
-
   // Export functions
   const handleDownloadPDF = async () => {
     if (!canvasRef.current) return;
@@ -535,10 +451,7 @@ export default function CarouselPage() {
         canvasRef.current.loadFromJSON(slides[currentSlideIndex].canvasJSON);
       }
 
-      const fileName = topic
-        ? `carousel-${topic.slice(0, 30).replace(/\s+/g, '-').toLowerCase()}.pdf`
-        : 'carousel.pdf';
-      pdf.save(fileName);
+      pdf.save('carousel.pdf');
       showToast("PDF downloaded successfully!", "success");
     } catch (err) {
       console.error("PDF export error:", err);
@@ -1010,66 +923,6 @@ export default function CarouselPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* AI Generate Button */}
-            <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-4 h-4 mr-2" />
-                  )}
-                  {isGenerating ? generationStep || "Generating..." : "AI Generate"}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-600" />
-                    Generate Carousel with AI
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <Label>Topic or Title</Label>
-                    <Textarea
-                      placeholder="e.g., 10 productivity tips for remote workers..."
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      className="mt-1.5"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label>Number of Slides</Label>
-                    <Select value={slideCount} onValueChange={setSlideCount}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5 Slides</SelectItem>
-                        <SelectItem value="7">7 Slides</SelectItem>
-                        <SelectItem value="10">10 Slides</SelectItem>
-                        <SelectItem value="12">12 Slides</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    onClick={handleGenerateCarousel}
-                    disabled={!topic.trim() || isGenerating}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Carousel
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
             {/* Templates Button */}
             <Button
               variant="outline"
