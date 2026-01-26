@@ -11,6 +11,7 @@ import { CTASection } from "@/components/marketing/cta-section";
 import { Footer } from "@/components/marketing/footer";
 import { FAQJsonLd, linkedGrowFAQs } from "@/components/seo/json-ld";
 import { ConversionElements } from "@/components/marketing/conversion-elements";
+import { AnimatedBackground } from "@/components/marketing/animated-background";
 
 // Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
 // Logged-in users and admins can still access this full landing page
@@ -18,7 +19,10 @@ import { ConversionElements } from "@/components/marketing/conversion-elements";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {/* Animated background with floating AI icons */}
+      <AnimatedBackground />
+
       {/* FAQ Rich Results for Google */}
       <FAQJsonLd questions={linkedGrowFAQs} />
       <Header />
