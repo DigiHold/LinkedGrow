@@ -358,6 +358,7 @@ src/
     - Correct: `className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl"`
 
 5. **Font weights**: Use Tailwind's font weight classes
+
     - `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` (700), `font-black` (900)
 
 6. **No Co-Author Attribution in Git Commits**: NEVER add "Co-Authored-By" lines to git commit messages. No attribution, no credits, no signatures of any kind.

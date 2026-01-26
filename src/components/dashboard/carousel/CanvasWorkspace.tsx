@@ -165,7 +165,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toJSON(['isBackgroundRect', 'originalSrc']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -669,7 +669,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toJSON(['isBackgroundRect', 'originalSrc']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
