@@ -388,11 +388,13 @@ export default function CarouselPage() {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload image');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload image');
     }
 
     const data = await response.json();
-    return data.url;
+    // Media API returns { media: { storageUrl: string, ... } }
+    return data.media?.storageUrl || data.url;
   }, []);
 
   // Handle AI image generation
@@ -701,6 +703,29 @@ export default function CarouselPage() {
     }
   };
 
+  // Helper to compress thumbnail for storage (reduce size significantly)
+  const compressThumbnail = useCallback(async (dataUrl: string, maxWidth: number = 200): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          // Use JPEG with lower quality for smaller size
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }, []);
+
   // Save carousel handler (saves all slides)
   const handleSaveCarousel = async () => {
     if (!canvasRef.current || !carouselName.trim()) return;
@@ -712,23 +737,26 @@ export default function CarouselPage() {
       const currentThumbnail = canvasRef.current.exportToDataURL();
 
       // Build slides array with current slide updated
+      // IMPORTANT: Don't include thumbnails in slides - they're too large
+      // Thumbnails are only needed for the UI, not for restoring the carousel
       const slidesData = slides.map((slide, index) => {
         if (index === currentSlideIndex) {
           return {
             id: slide.id,
             canvasJSON: currentCanvasJSON,
-            thumbnail: currentThumbnail,
+            // No thumbnail - will be regenerated when loaded
           };
         }
         return {
           id: slide.id,
           canvasJSON: slide.canvasJSON,
-          thumbnail: slide.thumbnail,
+          // No thumbnail - will be regenerated when loaded
         };
       });
 
-      // Use first slide's thumbnail as carousel thumbnail
-      const carouselThumbnail = slidesData[0]?.thumbnail || currentThumbnail;
+      // Compress the carousel preview thumbnail (first slide)
+      const rawThumbnail = currentSlideIndex === 0 ? currentThumbnail : (slides[0]?.thumbnail || currentThumbnail);
+      const carouselThumbnail = await compressThumbnail(rawThumbnail, 200);
 
       const response = await fetch('/api/carousels', {
         method: 'POST',
@@ -762,20 +790,34 @@ export default function CarouselPage() {
   const handleLoadCarousel = (slidesJson: string) => {
     if (!canvasRef.current) return;
     try {
-      const loadedSlides = JSON.parse(slidesJson) as SlideState[];
+      const loadedSlides = JSON.parse(slidesJson) as Array<{ id: string; canvasJSON: string; thumbnail?: string }>;
       if (!loadedSlides || loadedSlides.length === 0) {
         throw new Error("No slides in carousel");
       }
 
+      // Convert to SlideState format (thumbnails will be empty, will be generated on render)
+      const slidesWithEmptyThumbnails: SlideState[] = loadedSlides.map(slide => ({
+        id: slide.id,
+        canvasJSON: slide.canvasJSON,
+        thumbnail: slide.thumbnail || '', // Use saved thumbnail or empty (will regenerate)
+      }));
+
       // Set slides state
-      setSlides(loadedSlides);
+      setSlides(slidesWithEmptyThumbnails);
       setCurrentSlideIndex(0);
 
-      // Load first slide
+      // Load first slide and generate its thumbnail
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (canvasRef.current && loadedSlides[0].canvasJSON) {
-            canvasRef.current.loadFromJSON(loadedSlides[0].canvasJSON);
+          if (canvasRef.current && slidesWithEmptyThumbnails[0].canvasJSON) {
+            canvasRef.current.loadFromJSON(slidesWithEmptyThumbnails[0].canvasJSON);
+            // After loading, update the thumbnail for the first slide
+            setTimeout(() => {
+              if (canvasRef.current) {
+                const thumbnail = canvasRef.current.exportToDataURL();
+                setSlides(prev => prev.map((s, i) => i === 0 ? { ...s, thumbnail } : s));
+              }
+            }, 100);
           }
         });
       });
