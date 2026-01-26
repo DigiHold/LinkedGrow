@@ -1149,22 +1149,51 @@ export default function CarouselPage() {
               My Carousels
             </Button>
 
-            {/* Save Carousel Button */}
-            <Dialog open={showSaveCarouselDialog} onOpenChange={setShowSaveCarouselDialog}>
-              <DialogTrigger asChild>
+            {/* Save Carousel Button - saves directly if editing existing, opens dialog for new */}
+            {currentCarouselId ? (
+              <>
+                {/* Quick Save button for existing carousel */}
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleSaveCarousel(false)}
+                  disabled={isSavingCarousel}
                 >
-                  <Layers className="w-4 h-4 mr-2" />
-                  {currentCarouselId ? "Save" : "Save Carousel"}
+                  {isSavingCarousel ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {isSavingCarousel ? "Saving..." : "Save"}
                 </Button>
-              </DialogTrigger>
+                {/* Save As button to open dialog */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSaveCarouselDialog(true)}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Save As
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSaveCarouselDialog(true)}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                Save Carousel
+              </Button>
+            )}
+
+            {/* Save Carousel Dialog */}
+            <Dialog open={showSaveCarouselDialog} onOpenChange={setShowSaveCarouselDialog}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-cyan-600" />
-                    {currentCarouselId ? "Update Carousel" : "Save Carousel"}
+                    {currentCarouselId ? "Save As New Carousel" : "Save Carousel"}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -1188,36 +1217,20 @@ export default function CarouselPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {currentCarouselId
-                      ? `Update "${carouselName}" with ${slides.length} slides, or save as a new carousel.`
-                      : `Save all ${slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".`
-                    }
+                    Save all {slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".
                   </p>
-                  <div className={cn("flex gap-2", currentCarouselId ? "flex-col" : "")}>
-                    <Button
-                      onClick={() => handleSaveCarousel(false)}
-                      disabled={!carouselName.trim() || isSavingCarousel}
-                      className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                    >
-                      {isSavingCarousel ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Layers className="w-4 h-4 mr-2" />
-                      )}
-                      {isSavingCarousel ? "Saving..." : currentCarouselId ? "Update Carousel" : `Save ${slides.length} Slides`}
-                    </Button>
-                    {currentCarouselId && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleSaveCarousel(true)}
-                        disabled={!carouselName.trim() || isSavingCarousel}
-                        className="flex-1"
-                      >
-                        <Copy className="w-4 h-4 mr-2" />
-                        Save as New Carousel
-                      </Button>
+                  <Button
+                    onClick={() => handleSaveCarousel(true)}
+                    disabled={!carouselName.trim() || isSavingCarousel}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                  >
+                    {isSavingCarousel ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Layers className="w-4 h-4 mr-2" />
                     )}
-                  </div>
+                    {isSavingCarousel ? "Saving..." : `Save ${slides.length} Slides`}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
