@@ -528,16 +528,22 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
         if (!fabricRef.current) return;
 
-        // Remove ALL existing background rects (non-selectable rects that cover the canvas)
-        // Use more robust detection - check for full canvas size and non-selectable
+        // Remove ALL existing background rects (gradient backgrounds)
+        // Use multiple detection methods to catch all background rects
         const objects = fabricRef.current.getObjects();
         const bgRects = objects.filter(obj => {
           if (!(obj instanceof Rect)) return false;
-          // Check if it's a background rect: non-selectable, at origin, full canvas size
+
+          // Method 1: Check if it has a gradient fill (definite background rect)
+          const hasGradientFill = obj.fill && typeof obj.fill === 'object' && 'colorStops' in obj.fill;
+          if (hasGradientFill && !obj.selectable) return true;
+
+          // Method 2: Check by position and size (approximately full canvas, non-selectable)
           const isNonSelectable = !obj.selectable;
-          const isAtOrigin = obj.left === 0 && obj.top === 0;
-          const isFullSize = obj.width === CANVAS_WIDTH && obj.height === CANVAS_HEIGHT;
-          return isNonSelectable && isAtOrigin && isFullSize;
+          const isNearOrigin = Math.abs(obj.left || 0) < 5 && Math.abs(obj.top || 0) < 5;
+          const isNearFullSize = Math.abs((obj.width || 0) - CANVAS_WIDTH) < 5 && Math.abs((obj.height || 0) - CANVAS_HEIGHT) < 5;
+
+          return isNonSelectable && isNearOrigin && isNearFullSize;
         });
         bgRects.forEach(rect => fabricRef.current!.remove(rect));
 
