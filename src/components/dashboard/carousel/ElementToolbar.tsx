@@ -263,12 +263,15 @@ export function ElementToolbar({
     const { createRoot } = await import('react-dom/client');
     const root = createRoot(container);
 
+    // Render at high resolution (512px) to maintain quality when scaled up
+    // SVGs are vector but Fabric.js rasterizes them, so we need a large base size
+    const iconSize = 512;
+
     // Create a promise to wait for render
     await new Promise<void>((resolve) => {
       root.render(
         <IconComponent
-          className="w-24 h-24"
-          style={{ width: 96, height: 96, color: iconColor }}
+          style={{ width: iconSize, height: iconSize, color: iconColor }}
         />
       );
       // Give React time to render
@@ -278,10 +281,14 @@ export function ElementToolbar({
     // Get the SVG element
     const svgElement = container.querySelector('svg');
     if (svgElement) {
-      // Ensure SVG has proper attributes for rendering
-      svgElement.setAttribute('width', '96');
-      svgElement.setAttribute('height', '96');
+      // Ensure SVG has proper attributes for rendering at high resolution
+      svgElement.setAttribute('width', String(iconSize));
+      svgElement.setAttribute('height', String(iconSize));
       svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      // Ensure viewBox is set for proper scaling
+      if (!svgElement.getAttribute('viewBox')) {
+        svgElement.setAttribute('viewBox', `0 0 24 24`);
+      }
 
       // Convert SVG to base64 data URL (not blob URL) for persistence
       // Blob URLs are temporary and don't persist when saving/loading canvas JSON

@@ -397,10 +397,21 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         try {
           const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
 
-          // Scale image to fit nicely
-          const maxWidth = CANVAS_WIDTH * 0.8;
-          const maxHeight = CANVAS_HEIGHT * 0.5;
-          const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
+          // Check if this is an SVG icon (rendered at high res for quality)
+          const isIcon = url.startsWith('data:image/svg+xml');
+
+          // Icons should display at a smaller initial size (around 100px)
+          // Regular images scale to fit the canvas nicely
+          let scale: number;
+          if (isIcon) {
+            // Icons are rendered at 512px, display at ~120px initially
+            const targetSize = 120;
+            scale = targetSize / img.width!;
+          } else {
+            const maxWidth = CANVAS_WIDTH * 0.8;
+            const maxHeight = CANVAS_HEIGHT * 0.5;
+            scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
+          }
 
           img.set({
             left: CANVAS_WIDTH / 2 - (img.width! * scale) / 2,
