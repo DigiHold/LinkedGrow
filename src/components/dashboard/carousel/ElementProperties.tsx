@@ -387,7 +387,7 @@ export function ElementProperties({
               {/* Alignment */}
               <div>
                 <Label className="text-xs text-muted-foreground">Align on Canvas</Label>
-                <div className="grid grid-cols-6 gap-1 mt-2">
+                <div className="grid grid-cols-3 gap-2 mt-2">
                   <Button
                     variant="outline"
                     size="sm"
