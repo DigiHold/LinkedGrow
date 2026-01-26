@@ -18,7 +18,6 @@ import {
   Anchor,
   PenLine,
   Headphones,
-  Palette,
   TrendingUp,
   Loader2,
 } from "lucide-react";
@@ -48,7 +47,6 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   algorithmOptimizer: Zap,
   abTesting: GitBranch,
   teamCollaboration: UsersRound,
-  customBranding: Palette,
   advancedAnalytics: TrendingUp,
   apiAccess: Code,
   prioritySupport: Headphones,

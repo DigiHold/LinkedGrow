@@ -20,7 +20,6 @@ import {
   Crown,
   Anchor,
   UsersRound,
-  Palette,
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,7 +57,6 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   apiAccess: Code,
   prioritySupport: Headphones,
   teamCollaboration: UsersRound,
-  customBranding: Palette,
   advancedAnalytics: TrendingUp,
 };
 

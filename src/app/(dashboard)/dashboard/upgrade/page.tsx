@@ -21,7 +21,6 @@ import {
   ArrowRight,
   Anchor,
   UsersRound,
-  Palette,
   TrendingUp,
   ArrowDown,
   X,
@@ -49,7 +48,6 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   apiAccess: Code,
   prioritySupport: Headphones,
   teamCollaboration: UsersRound,
-  customBranding: Palette,
   advancedAnalytics: TrendingUp,
 };
 
