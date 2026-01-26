@@ -458,6 +458,19 @@ export const userTemplates = sqliteTable("user_templates", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
 });
 
+// User saved carousels (multi-slide)
+export const savedCarousels = sqliteTable("saved_carousels", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  thumbnail: text("thumbnail"), // Base64 data URL of first slide preview
+  slidesJson: text("slides_json").notNull(), // JSON array of all slides with their Fabric.js canvas data
+  slideCount: integer("slide_count").default(1),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
 // ============================================
 // TYPE EXPORTS
 // ============================================
@@ -492,6 +505,8 @@ export type EngagementAction = typeof engagementActions.$inferSelect;
 export type NewEngagementAction = typeof engagementActions.$inferInsert;
 export type UserTemplate = typeof userTemplates.$inferSelect;
 export type NewUserTemplate = typeof userTemplates.$inferInsert;
+export type SavedCarousel = typeof savedCarousels.$inferSelect;
+export type NewSavedCarousel = typeof savedCarousels.$inferInsert;
 export type EngagementObjective = typeof engagementObjectives.$inferSelect;
 export type NewEngagementObjective = typeof engagementObjectives.$inferInsert;
 export type CookieConsent = typeof cookieConsents.$inferSelect;

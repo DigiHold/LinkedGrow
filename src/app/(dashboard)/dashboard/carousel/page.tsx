@@ -44,6 +44,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Save,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -55,6 +56,7 @@ import { ElementProperties } from "@/components/dashboard/carousel/ElementProper
 import { SlideManager, SlideState } from "@/components/dashboard/carousel/SlideManager";
 import { BrandingSettings } from "@/components/dashboard/carousel/branding-settings";
 import { TemplateGallery } from "@/components/dashboard/carousel/template-gallery";
+import { MyCarousels } from "@/components/dashboard/carousel/MyCarousels";
 import type { BrandingData } from "@/components/dashboard/carousel/types";
 import { carouselTemplates, type CarouselTemplate } from "@/lib/carousel-templates";
 
@@ -105,6 +107,13 @@ export default function CarouselPage() {
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  // My Carousels state
+  const [showMyCarousels, setShowMyCarousels] = useState(false);
+  const [showSaveCarouselDialog, setShowSaveCarouselDialog] = useState(false);
+  const [carouselName, setCarouselName] = useState("");
+  const [carouselDescription, setCarouselDescription] = useState("");
+  const [isSavingCarousel, setIsSavingCarousel] = useState(false);
 
   // API keys state
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
@@ -692,6 +701,98 @@ export default function CarouselPage() {
     }
   };
 
+  // Save carousel handler (saves all slides)
+  const handleSaveCarousel = async () => {
+    if (!canvasRef.current || !carouselName.trim()) return;
+
+    setIsSavingCarousel(true);
+    try {
+      // First, save the current slide state
+      const currentCanvasJSON = canvasRef.current.exportToJSON();
+      const currentThumbnail = canvasRef.current.exportToDataURL();
+
+      // Build slides array with current slide updated
+      const slidesData = slides.map((slide, index) => {
+        if (index === currentSlideIndex) {
+          return {
+            id: slide.id,
+            canvasJSON: currentCanvasJSON,
+            thumbnail: currentThumbnail,
+          };
+        }
+        return {
+          id: slide.id,
+          canvasJSON: slide.canvasJSON,
+          thumbnail: slide.thumbnail,
+        };
+      });
+
+      // Use first slide's thumbnail as carousel thumbnail
+      const carouselThumbnail = slidesData[0]?.thumbnail || currentThumbnail;
+
+      const response = await fetch('/api/carousels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: carouselName.trim(),
+          description: carouselDescription.trim() || null,
+          thumbnail: carouselThumbnail,
+          slidesJson: JSON.stringify(slidesData),
+          slideCount: slidesData.length,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save carousel');
+      }
+
+      showToast(`Carousel "${carouselName}" saved!`, "success");
+      setShowSaveCarouselDialog(false);
+      setCarouselName("");
+      setCarouselDescription("");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to save carousel");
+    } finally {
+      setIsSavingCarousel(false);
+    }
+  };
+
+  // Load carousel handler
+  const handleLoadCarousel = (slidesJson: string) => {
+    if (!canvasRef.current) return;
+    try {
+      const loadedSlides = JSON.parse(slidesJson) as SlideState[];
+      if (!loadedSlides || loadedSlides.length === 0) {
+        throw new Error("No slides in carousel");
+      }
+
+      // Set slides state
+      setSlides(loadedSlides);
+      setCurrentSlideIndex(0);
+
+      // Load first slide
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (canvasRef.current && loadedSlides[0].canvasJSON) {
+            canvasRef.current.loadFromJSON(loadedSlides[0].canvasJSON);
+          }
+        });
+      });
+
+      showToast("Carousel loaded!", "success");
+    } catch (err) {
+      showToast("Failed to load carousel");
+    }
+  };
+
+  // Duplicate carousel handler (loads and opens save dialog)
+  const handleDuplicateCarousel = (slidesJson: string, name: string) => {
+    handleLoadCarousel(slidesJson);
+    setCarouselName(name);
+    setShowSaveCarouselDialog(true);
+  };
+
   // Loading state
   if (isCheckingApiKey) {
     return (
@@ -938,6 +1039,75 @@ export default function CarouselPage() {
 
             <div className="h-6 w-px bg-border" />
 
+            {/* My Carousels Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMyCarousels(true)}
+            >
+              <FolderOpen className="w-4 h-4 mr-2" />
+              My Carousels
+            </Button>
+
+            {/* Save Carousel Button */}
+            <Dialog open={showSaveCarouselDialog} onOpenChange={setShowSaveCarouselDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  Save Carousel
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-cyan-600" />
+                    Save Carousel
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label>Carousel Name</Label>
+                    <Input
+                      placeholder="My Carousel"
+                      value={carouselName}
+                      onChange={(e) => setCarouselName(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Description (optional)</Label>
+                    <Textarea
+                      placeholder="A brief description of this carousel..."
+                      value={carouselDescription}
+                      onChange={(e) => setCarouselDescription(e.target.value)}
+                      className="mt-1.5"
+                      rows={2}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Save all {slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".
+                  </p>
+                  <Button
+                    onClick={handleSaveCarousel}
+                    disabled={!carouselName.trim() || isSavingCarousel}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                  >
+                    {isSavingCarousel ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Layers className="w-4 h-4 mr-2" />
+                    )}
+                    {isSavingCarousel ? "Saving..." : `Save ${slides.length} Slides`}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <div className="h-6 w-px bg-border" />
+
             {/* Export Buttons */}
             <Button
               variant="outline"
@@ -1066,6 +1236,14 @@ export default function CarouselPage() {
           onSelectTemplate={handleTemplateSelect}
           onLoadUserTemplate={handleLoadUserTemplate}
           userPlan={userPlan}
+        />
+
+        {/* My Carousels Modal */}
+        <MyCarousels
+          open={showMyCarousels}
+          onOpenChange={setShowMyCarousels}
+          onLoadCarousel={handleLoadCarousel}
+          onDuplicateCarousel={handleDuplicateCarousel}
         />
 
         {/* Toast Notification */}
