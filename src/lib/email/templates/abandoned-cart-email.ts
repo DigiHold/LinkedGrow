@@ -11,24 +11,24 @@ interface AbandonedCartEmailParams {
 // Helper to get plan features for display
 function getPlanFeatures(planId: PlanId): string[] {
   const features: string[] = [];
-  const plan = PLANS[planId];
 
   if (planId === "starter") {
     features.push("Unlimited AI-powered posts");
     features.push("Advanced editor with rich formatting");
-    features.push("Content calendar & scheduling");
+    features.push("Content calendar & scheduling (10 scheduled posts)");
     features.push("Reddit idea sourcing");
   } else if (planId === "pro") {
     features.push("Unlimited AI-powered posts");
+    features.push("Unlimited scheduling");
     features.push("AI image generation (Banana Pro, DALL-E, Flux, more)");
-    features.push("Carousel generator for viral content");
     features.push("Analytics dashboard & engagement tools");
     features.push("Algorithm optimizer for maximum reach");
+    features.push("Hooks generator");
   } else if (planId === "business") {
     features.push("Everything in Pro, plus:");
+    features.push("Carousel generator for viral content");
     features.push("Team collaboration with role-based access");
     features.push("A/B testing to optimize engagement");
-    features.push("Custom branding for exports");
     features.push("API access for custom integrations");
     features.push("Priority support");
   }

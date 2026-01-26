@@ -115,7 +115,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       features: {
         postGeneration: true,
         imageGeneration: true,
-        carouselGenerator: true,
+        carouselGenerator: false, // Business only
         hooksGenerator: true,
         advancedEditor: true,
         calendar: true,
@@ -146,7 +146,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       features: {
         postGeneration: true,
         imageGeneration: true,
-        carouselGenerator: true,
+        carouselGenerator: true, // Business exclusive
         hooksGenerator: true,
         advancedEditor: true,
         calendar: true,
@@ -157,7 +157,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         algorithmOptimizer: true,
         abTesting: true,
         teamCollaboration: true,
-        customBranding: true,
+        customBranding: false, // Removed - not useful
         advancedAnalytics: true,
         apiAccess: true,
         prioritySupport: true,

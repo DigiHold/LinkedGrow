@@ -109,12 +109,12 @@
     "pro": {
       "name": "Pro",
       "description": "Para crecimiento serio",
-      "features": ["Todo en Starter", "Programacion ilimitada", "Generacion de imagenes IA", "Creador de carruseles", "Dashboard de analytics"]
+      "features": ["Todo en Starter", "Programacion ilimitada", "Generacion de imagenes IA", "Generador de hooks", "Dashboard de analytics"]
     },
     "business": {
       "name": "Business",
       "description": "Para equipos y agencias",
-      "features": ["Todo en Pro", "Tests A/B", "Acceso API", "Soporte prioritario", "Colaboracion en equipo"]
+      "features": ["Todo en Pro", "Creador de carruseles", "Tests A/B", "Colaboracion en equipo", "Analytics avanzados", "Acceso API", "Soporte prioritario"]
     },
     "cta": "Obtener {discount}% de descuento"
   },

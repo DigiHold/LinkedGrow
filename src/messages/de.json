@@ -109,12 +109,12 @@
     "pro": {
       "name": "Pro",
       "description": "Fur ernsthaftes Wachstum",
-      "features": ["Alles in Starter", "Unbegrenzte Planung", "KI-Bildgenerierung", "Karussell-Ersteller", "Analytics-Dashboard"]
+      "features": ["Alles in Starter", "Unbegrenzte Planung", "KI-Bildgenerierung", "Hooks-Generator", "Analytics-Dashboard"]
     },
     "business": {
       "name": "Business",
       "description": "Fur Teams und Agenturen",
-      "features": ["Alles in Pro", "A/B-Tests", "API-Zugang", "Prioritats-Support", "Team-Zusammenarbeit"]
+      "features": ["Alles in Pro", "Karussell-Ersteller", "A/B-Tests", "Team-Zusammenarbeit", "Erweiterte Analytics", "API-Zugang", "Prioritats-Support"]
     },
     "cta": "{discount}% Rabatt sichern"
   },

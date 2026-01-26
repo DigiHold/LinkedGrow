@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, count, gte } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadBase64ToR2, isR2Configured } from "@/lib/storage/r2";
 import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
+import { PLANS, PlanId } from "@/lib/plans";
 
 // Helper function to check if user can access a post (owner, team owner, or team admin)
 async function canUserAccessPost(userId: string, postUserId: string): Promise<boolean> {
@@ -176,6 +177,41 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           { error: "Scheduled date must be in the future" },
           { status: 400 }
         );
+      }
+
+      // Check scheduled posts limit if changing from non-scheduled to scheduled
+      if (existingPost.status !== "scheduled") {
+        const userPlan = (user.plan || "free") as PlanId;
+        const scheduledPostsLimit = PLANS[userPlan].limits.scheduledPosts;
+
+        if (scheduledPostsLimit !== -1) {
+          // Count current month's scheduled posts
+          const startOfMonth = new Date();
+          startOfMonth.setDate(1);
+          startOfMonth.setHours(0, 0, 0, 0);
+
+          const [scheduledCount] = await db
+            .select({ count: count() })
+            .from(posts)
+            .where(
+              and(
+                eq(posts.userId, user.id),
+                eq(posts.status, "scheduled"),
+                gte(posts.createdAt, startOfMonth)
+              )
+            );
+
+          if (scheduledCount.count >= scheduledPostsLimit) {
+            return NextResponse.json(
+              {
+                error: `You've reached your monthly limit of ${scheduledPostsLimit} scheduled posts. Upgrade to Pro for unlimited scheduling.`,
+                limitReached: true,
+                currentPlan: userPlan,
+              },
+              { status: 403 }
+            );
+          }
+        }
       }
     }
 

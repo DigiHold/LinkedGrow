@@ -71,17 +71,16 @@ Always use `git push origin main` - SSH authentication is automatic.
 | Post Generation     | ✓    | ✓       | ✓   | ✓        |
 | Advanced Editor     | -    | ✓       | ✓   | ✓        |
 | Content Calendar    | -    | ✓       | ✓   | ✓        |
-| Post Scheduling     | -    | ✓       | ✓   | ✓        |
+| Post Scheduling     | -    | ✓ (10)  | ✓   | ✓        |
 | Reddit Ideas        | -    | ✓       | ✓   | ✓        |
 | AI Image Generation | -    | -       | ✓   | ✓        |
-| Carousel Generator  | -    | -       | ✓   | ✓        |
 | Hooks Generator     | -    | -       | ✓   | ✓        |
 | Analytics Dashboard | -    | -       | ✓   | ✓        |
 | Engagement Tools    | -    | -       | ✓   | ✓        |
 | Algorithm Optimizer | -    | -       | ✓   | ✓        |
+| Carousel Generator  | -    | -       | -   | ✓        |
 | A/B Testing         | -    | -       | -   | ✓        |
 | Team Collaboration  | -    | -       | -   | ✓        |
-| Custom Branding     | -    | -       | -   | ✓        |
 | Advanced Analytics  | -    | -       | -   | ✓        |
 | API Access          | -    | -       | -   | ✓        |
 | Priority Support    | -    | -       | -   | ✓        |

@@ -109,12 +109,12 @@
     "pro": {
       "name": "Pro",
       "description": "For serious growth",
-      "features": ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Carousel creator", "Analytics dashboard"]
+      "features": ["Everything in Starter", "Unlimited scheduling", "AI image generation", "Hooks generator", "Analytics dashboard"]
     },
     "business": {
       "name": "Business",
       "description": "For teams & agencies",
-      "features": ["Everything in Pro", "A/B testing", "Team collaboration", "Custom branding", "Advanced analytics", "API access", "Priority support"]
+      "features": ["Everything in Pro", "Carousel generator", "A/B testing", "Team collaboration", "Advanced analytics", "API access", "Priority support"]
     },
     "cta": "Get {discount}% Off"
   },
