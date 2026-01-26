@@ -23,6 +23,43 @@ interface GoogleFont {
   category: string;
 }
 
+// Fonts to exclude - icon fonts, symbols, and fonts that don't render text properly
+const EXCLUDED_FONTS = new Set([
+  // Icon fonts
+  "Material Icons",
+  "Material Icons Outlined",
+  "Material Icons Round",
+  "Material Icons Sharp",
+  "Material Icons Two Tone",
+  "Material Symbols Outlined",
+  "Material Symbols Rounded",
+  "Material Symbols Sharp",
+  "Noto Color Emoji",
+  "Noto Emoji",
+  // Symbol/special fonts
+  "Noto Sans Symbols",
+  "Noto Sans Symbols 2",
+  "Noto Sans Math",
+  "Noto Sans SignWriting",
+  "Noto Music",
+  // Fonts that often have rendering issues
+  "Noto Sans Anatolian Hieroglyphs",
+  "Noto Sans Cuneiform",
+  "Noto Sans Egyptian Hieroglyphs",
+  "Noto Sans Linear A",
+  "Noto Sans Linear B",
+  "Noto Sans Mayan Numerals",
+  "Noto Sans Ogham",
+  "Noto Sans Old Italic",
+  "Noto Sans Old Persian",
+  "Noto Sans Runic",
+]);
+
+// Categories that are not suitable for general text
+const EXCLUDED_CATEGORIES = new Set<string>([
+  // These are typically specialized fonts - empty for now but typed for future use
+]);
+
 // Cache for fonts list
 let fontsCache: GoogleFont[] | null = null;
 let fontsCachePromise: Promise<GoogleFont[]> | null = null;
@@ -40,6 +77,21 @@ function loadGoogleFont(fontName: string) {
   loadedFonts.add(fontName);
 }
 
+function isValidTextFont(font: { family: string; category: string; subsets?: string[] }): boolean {
+  // Exclude known icon/symbol fonts
+  if (EXCLUDED_FONTS.has(font.family)) return false;
+
+  // Exclude icon fonts by name pattern
+  if (font.family.toLowerCase().includes("icon")) return false;
+  if (font.family.toLowerCase().includes("symbol")) return false;
+  if (font.family.toLowerCase().includes("emoji")) return false;
+
+  // Exclude by category
+  if (EXCLUDED_CATEGORIES.has(font.category)) return false;
+
+  return true;
+}
+
 async function fetchGoogleFonts(): Promise<GoogleFont[]> {
   // Return cached fonts if available
   if (fontsCache) return fontsCache;
@@ -47,16 +99,18 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
   // Return existing promise if fetch is in progress
   if (fontsCachePromise) return fontsCachePromise;
 
-  // Fetch fonts from Google Fonts API
+  // Fetch fonts from Google Fonts API with subset filter for latin
   fontsCachePromise = fetch(
-    "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBwIX97bVWr3-6AIUvGkcNnmFgirefZ6Sw&sort=popularity"
+    "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBwIX97bVWr3-6AIUvGkcNnmFgirefZ6Sw&sort=popularity&subset=latin"
   )
     .then((res) => res.json())
     .then((data) => {
-      const fonts = data.items.map((item: { family: string; category: string }) => ({
-        family: item.family,
-        category: item.category,
-      }));
+      const fonts = data.items
+        .filter((item: { family: string; category: string; subsets?: string[] }) => isValidTextFont(item))
+        .map((item: { family: string; category: string }) => ({
+          family: item.family,
+          category: item.category,
+        }));
       fontsCache = fonts;
       return fonts;
     })
