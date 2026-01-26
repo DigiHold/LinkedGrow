@@ -483,3 +483,62 @@ html[style] {
     rgba(75, 85, 99, 0.15) 8px
   );
 }
+
+/* ===== Font Picker Styles ===== */
+.fontpicker {
+  --fontpicker-background: hsl(var(--background));
+  --fontpicker-border: hsl(var(--border));
+  width: 100% !important;
+}
+
+.fontpicker__trigger {
+  height: 32px !important;
+  border-radius: 0.375rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--background)) !important;
+  font-size: 0.875rem !important;
+  padding: 0 0.75rem !important;
+}
+
+.fontpicker__trigger:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+.fontpicker__popout {
+  border-radius: 0.5rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--popover)) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  z-index: 50 !important;
+}
+
+.fontpicker__search {
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
+
+.fontpicker__search input {
+  background: transparent !important;
+  border: none !important;
+  font-size: 0.875rem !important;
+}
+
+.fontpicker__option {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+}
+
+.fontpicker__option:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+.fontpicker__option--selected {
+  background: hsl(var(--accent)) !important;
+}
+
+.dark .fontpicker__trigger {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .fontpicker__popout {
+  background: hsl(var(--popover)) !important;
+}

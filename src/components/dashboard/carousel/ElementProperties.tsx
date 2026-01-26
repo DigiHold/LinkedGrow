@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FabricObject, Textbox, FabricImage, Group } from "fabric";
+import FontPicker from "react-fontpicker-ts";
+import "react-fontpicker-ts/dist/index.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,18 +53,6 @@ interface ElementPropertiesProps {
   updateTrigger?: number;
   className?: string;
 }
-
-const FONT_FAMILIES = [
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Helvetica', label: 'Helvetica' },
-  { value: 'Georgia', label: 'Georgia' },
-  { value: 'Times New Roman', label: 'Times New Roman' },
-  { value: 'Courier New', label: 'Courier New' },
-  { value: 'Verdana', label: 'Verdana' },
-  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
-  { value: 'Impact', label: 'Impact' },
-];
 
 const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 128];
 
@@ -452,21 +442,17 @@ export function ElementProperties({
                 <>
                   <div>
                     <Label className="text-xs text-muted-foreground">Font Family</Label>
-                    <Select
-                      value={elementProps.fontFamily}
-                      onValueChange={(value) => updateElement({ fontFamily: value })}
-                    >
-                      <SelectTrigger className="mt-2 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FONT_FAMILIES.map((font) => (
-                          <SelectItem key={font.value} value={font.value}>
-                            <span style={{ fontFamily: font.value }}>{font.label}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="mt-2">
+                      <FontPicker
+                        autoLoad
+                        defaultValue={elementProps.fontFamily || 'Inter'}
+                        value={(font) => {
+                          if (font && font !== elementProps.fontFamily) {
+                            updateElement({ fontFamily: font });
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div>
