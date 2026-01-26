@@ -178,15 +178,24 @@ export function ElementProperties({
     canvasRef.current?.sendBackward();
   };
 
-  // Alignment functions
+  // Alignment functions - use getBoundingRect for accurate positioning
   const alignHorizontalCenter = useCallback(() => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const objWidth = (selectedElement.width || 0) * (selectedElement.scaleX || 1);
-    const newLeft = (CANVAS_WIDTH - objWidth) / 2;
+    // Get the bounding rect which accounts for scale, rotation, etc.
+    const bound = selectedElement.getBoundingRect();
+    const objWidth = bound.width;
+    const currentLeft = selectedElement.left || 0;
+    const boundLeft = bound.left;
+
+    // Calculate offset between object's left and bound's left
+    const offset = currentLeft - boundLeft;
+    const newLeft = (CANVAS_WIDTH - objWidth) / 2 + offset;
+
     selectedElement.set('left', newLeft);
+    selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
   }, [selectedElement, canvasRef]);
@@ -196,9 +205,16 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const objHeight = (selectedElement.height || 0) * (selectedElement.scaleY || 1);
-    const newTop = (CANVAS_HEIGHT - objHeight) / 2;
+    const bound = selectedElement.getBoundingRect();
+    const objHeight = bound.height;
+    const currentTop = selectedElement.top || 0;
+    const boundTop = bound.top;
+
+    const offset = currentTop - boundTop;
+    const newTop = (CANVAS_HEIGHT - objHeight) / 2 + offset;
+
     selectedElement.set('top', newTop);
+    selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
   }, [selectedElement, canvasRef]);
@@ -208,9 +224,18 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    selectedElement.set('left', 0);
+    const bound = selectedElement.getBoundingRect();
+    const currentLeft = selectedElement.left || 0;
+    const boundLeft = bound.left;
+
+    // Move so the left edge of the bounding box is at 0
+    const offset = currentLeft - boundLeft;
+    const newLeft = offset;
+
+    selectedElement.set('left', newLeft);
+    selectedElement.setCoords();
     canvas.renderAll();
-    setElementProps(prev => ({ ...prev, left: 0 }));
+    setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
   }, [selectedElement, canvasRef]);
 
   const alignToRight = useCallback(() => {
@@ -218,9 +243,17 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const objWidth = (selectedElement.width || 0) * (selectedElement.scaleX || 1);
-    const newLeft = CANVAS_WIDTH - objWidth;
+    const bound = selectedElement.getBoundingRect();
+    const objWidth = bound.width;
+    const currentLeft = selectedElement.left || 0;
+    const boundLeft = bound.left;
+
+    // Move so the right edge of the bounding box is at CANVAS_WIDTH
+    const offset = currentLeft - boundLeft;
+    const newLeft = CANVAS_WIDTH - objWidth + offset;
+
     selectedElement.set('left', newLeft);
+    selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
   }, [selectedElement, canvasRef]);
@@ -230,9 +263,18 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    selectedElement.set('top', 0);
+    const bound = selectedElement.getBoundingRect();
+    const currentTop = selectedElement.top || 0;
+    const boundTop = bound.top;
+
+    // Move so the top edge of the bounding box is at 0
+    const offset = currentTop - boundTop;
+    const newTop = offset;
+
+    selectedElement.set('top', newTop);
+    selectedElement.setCoords();
     canvas.renderAll();
-    setElementProps(prev => ({ ...prev, top: 0 }));
+    setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
   }, [selectedElement, canvasRef]);
 
   const alignToBottom = useCallback(() => {
@@ -240,9 +282,17 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const objHeight = (selectedElement.height || 0) * (selectedElement.scaleY || 1);
-    const newTop = CANVAS_HEIGHT - objHeight;
+    const bound = selectedElement.getBoundingRect();
+    const objHeight = bound.height;
+    const currentTop = selectedElement.top || 0;
+    const boundTop = bound.top;
+
+    // Move so the bottom edge of the bounding box is at CANVAS_HEIGHT
+    const offset = currentTop - boundTop;
+    const newTop = CANVAS_HEIGHT - objHeight + offset;
+
     selectedElement.set('top', newTop);
+    selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
   }, [selectedElement, canvasRef]);
@@ -337,11 +387,11 @@ export function ElementProperties({
               {/* Alignment */}
               <div>
                 <Label className="text-xs text-muted-foreground">Align on Canvas</Label>
-                <div className="flex gap-1 mt-2">
+                <div className="grid grid-cols-6 gap-1 mt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignToLeft}
                     title="Align Left"
                   >
@@ -350,7 +400,7 @@ export function ElementProperties({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignHorizontalCenter}
                     title="Center Horizontally"
                   >
@@ -359,17 +409,16 @@ export function ElementProperties({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignToRight}
                     title="Align Right"
                   >
                     <AlignEndVertical className="w-3.5 h-3.5" />
                   </Button>
-                  <div className="w-px bg-border mx-1" />
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignToTop}
                     title="Align Top"
                   >
@@ -378,7 +427,7 @@ export function ElementProperties({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignVerticalCenter}
                     title="Center Vertically"
                   >
@@ -387,7 +436,7 @@ export function ElementProperties({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0"
+                    className="h-8 p-0"
                     onClick={alignToBottom}
                     title="Align Bottom"
                   >
