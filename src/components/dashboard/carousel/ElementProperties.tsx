@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage, filters } from "fabric";
+import { FabricObject, Textbox, FabricImage, Group } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,23 +31,10 @@ import {
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 
-// Helper to check if an image is an icon (SVG data URL)
-function isIconImage(element: FabricImage): boolean {
-  const src = element.getSrc?.() || '';
-  // Icons are created as SVG data URLs (base64 encoded)
-  return src.startsWith('data:image/svg+xml');
-}
-
-// Helper to convert hex color to RGB
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
+// Helper to check if an element is an SVG icon group
+function isSvgIconGroup(element: FabricObject): boolean {
+  // SVG icons are loaded as Groups from loadSVGFromString
+  return element instanceof Group && element.type === 'group';
 }
 
 interface ElementPropertiesProps {
@@ -186,35 +173,27 @@ export function ElementProperties({
 
   const isTextElement = selectedElement instanceof Textbox;
   const isImageElement = selectedElement instanceof FabricImage;
-  const isIconElement = isImageElement && isIconImage(selectedElement as FabricImage);
+  const isIconElement = selectedElement ? isSvgIconGroup(selectedElement) : false;
 
-  // Update icon color using BlendColor filter
+  // Update icon color by changing fill of all paths in the SVG group
   const updateIconColor = useCallback((color: string) => {
     if (!selectedElement || !isIconElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const image = selectedElement as FabricImage;
-    const rgb = hexToRgb(color);
-    if (!rgb) return;
+    const group = selectedElement as Group;
 
-    // Remove existing BlendColor filter
-    const existingFilters = image.filters || [];
-    const newFilters = existingFilters.filter(
-      (f: filters.BaseFilter<string, Record<string, unknown>>) => f.type !== 'BlendColor'
-    );
-
-    // Add new BlendColor filter with the selected color
-    // Use 'multiply' mode for dark icons on light bg, 'tint' for full color replacement
-    const blendFilter = new filters.BlendColor({
-      color: color,
-      mode: 'tint',
-      alpha: 1,
+    // Update fill color of all objects in the group (paths, shapes, etc.)
+    group.getObjects().forEach((obj) => {
+      // Only update fill if the object has a fill (not just stroke)
+      if (obj.fill && obj.fill !== 'none') {
+        obj.set('fill', color);
+      }
+      // Also update stroke if present
+      if (obj.stroke && obj.stroke !== 'none') {
+        obj.set('stroke', color);
+      }
     });
-
-    newFilters.push(blendFilter);
-    image.filters = newFilters;
-    image.applyFilters();
 
     canvas.renderAll();
     setIconColor(color);

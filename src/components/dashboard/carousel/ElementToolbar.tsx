@@ -243,7 +243,7 @@ export function ElementToolbar({
     return luminance < 0.5 ? '#ffffff' : '#000000';
   }, [canvasRef]);
 
-  // Handle adding icon to canvas as actual SVG
+  // Handle adding icon to canvas as true vector SVG
   const handleAddIcon = useCallback(async (
     IconComponent: React.ComponentType<{ className?: string; style?: React.CSSProperties }>,
     iconName: string
@@ -263,15 +263,11 @@ export function ElementToolbar({
     const { createRoot } = await import('react-dom/client');
     const root = createRoot(container);
 
-    // Render at high resolution (512px) to maintain quality when scaled up
-    // SVGs are vector but Fabric.js rasterizes them, so we need a large base size
-    const iconSize = 512;
-
     // Create a promise to wait for render
     await new Promise<void>((resolve) => {
       root.render(
         <IconComponent
-          style={{ width: iconSize, height: iconSize, color: iconColor }}
+          style={{ color: iconColor }}
         />
       );
       // Give React time to render
@@ -281,23 +277,22 @@ export function ElementToolbar({
     // Get the SVG element
     const svgElement = container.querySelector('svg');
     if (svgElement) {
-      // Ensure SVG has proper attributes for rendering at high resolution
-      svgElement.setAttribute('width', String(iconSize));
-      svgElement.setAttribute('height', String(iconSize));
+      // Ensure SVG has proper attributes
       svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      // Ensure viewBox is set for proper scaling
+      // Keep original viewBox if exists, otherwise set standard 24x24
       if (!svgElement.getAttribute('viewBox')) {
-        svgElement.setAttribute('viewBox', `0 0 24 24`);
+        svgElement.setAttribute('viewBox', '0 0 24 24');
       }
+      // Set explicit width/height based on viewBox for proper scaling
+      svgElement.setAttribute('width', '24');
+      svgElement.setAttribute('height', '24');
 
-      // Convert SVG to base64 data URL (not blob URL) for persistence
-      // Blob URLs are temporary and don't persist when saving/loading canvas JSON
+      // Get the SVG string - this preserves vector data
       const svgString = new XMLSerializer().serializeToString(svgElement);
-      const base64 = btoa(unescape(encodeURIComponent(svgString)));
-      const dataUrl = `data:image/svg+xml;base64,${base64}`;
 
       try {
-        await canvasRef.current.addImage(dataUrl);
+        // Add as true vector SVG (not rasterized image)
+        await canvasRef.current.addSvgIcon(svgString);
       } catch (error) {
         console.error('Failed to add icon:', error);
       }

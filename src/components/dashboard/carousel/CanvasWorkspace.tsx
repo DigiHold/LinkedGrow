@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, loadSVGFromString, util } from "fabric";
 import { cn } from "@/lib/utils";
 
 // Helper to parse CSS gradient and convert to Fabric gradient
@@ -72,6 +72,7 @@ export interface CanvasWorkspaceRef {
   addShape: (shapeType: 'rect' | 'circle' | 'line') => void;
   addShapeWithOptions: (options: ShapeOptions) => void;
   addImage: (url: string) => Promise<void>;
+  addSvgIcon: (svgString: string) => Promise<void>;
   deleteSelected: () => void;
   duplicateSelected: () => void;
   bringForward: () => void;
@@ -397,21 +398,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         try {
           const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
 
-          // Check if this is an SVG icon (rendered at high res for quality)
-          const isIcon = url.startsWith('data:image/svg+xml');
-
-          // Icons should display at a smaller initial size (around 100px)
-          // Regular images scale to fit the canvas nicely
-          let scale: number;
-          if (isIcon) {
-            // Icons are rendered at 512px, display at ~120px initially
-            const targetSize = 120;
-            scale = targetSize / img.width!;
-          } else {
-            const maxWidth = CANVAS_WIDTH * 0.8;
-            const maxHeight = CANVAS_HEIGHT * 0.5;
-            scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
-          }
+          // Scale images to fit the canvas nicely
+          const maxWidth = CANVAS_WIDTH * 0.8;
+          const maxHeight = CANVAS_HEIGHT * 0.5;
+          const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
 
           img.set({
             left: CANVAS_WIDTH / 2 - (img.width! * scale) / 2,
@@ -425,6 +415,33 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.renderAll();
         } catch (error) {
           console.error('Failed to load image:', error);
+        }
+      },
+
+      addSvgIcon: async (svgString: string) => {
+        if (!fabricRef.current) return;
+
+        try {
+          const { objects } = await loadSVGFromString(svgString);
+          const svgGroup = util.groupSVGElements(objects as FabricObject[]);
+
+          // Set initial size for icons (120px)
+          const targetSize = 120;
+          const currentSize = Math.max(svgGroup.width || 24, svgGroup.height || 24);
+          const scale = targetSize / currentSize;
+
+          svgGroup.set({
+            left: CANVAS_WIDTH / 2 - (currentSize * scale) / 2,
+            top: CANVAS_HEIGHT / 2 - (currentSize * scale) / 2,
+            scaleX: scale,
+            scaleY: scale,
+          });
+
+          fabricRef.current.add(svgGroup);
+          fabricRef.current.setActiveObject(svgGroup);
+          fabricRef.current.renderAll();
+        } catch (error) {
+          console.error('Failed to load SVG icon:', error);
         }
       },
 
