@@ -164,7 +164,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const saveHistory = useCallback(() => {
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
-      const json = JSON.stringify(fabricRef.current.toJSON());
+      // Include custom properties in history serialization
+      const json = JSON.stringify(fabricRef.current.toJSON(['isBackgroundRect', 'originalSrc']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -534,11 +535,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const bgRects = objects.filter(obj => {
           if (!(obj instanceof Rect)) return false;
 
-          // Method 1: Check if it has a gradient fill (definite background rect)
+          // Method 1: Check custom property (most reliable - survives JSON serialization)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((obj as any).isBackgroundRect === true) return true;
+
+          // Method 2: Check if it has a gradient fill and is non-selectable (definite background rect)
           const hasGradientFill = obj.fill && typeof obj.fill === 'object' && 'colorStops' in obj.fill;
           if (hasGradientFill && !obj.selectable) return true;
 
-          // Method 2: Check by position and size (approximately full canvas, non-selectable)
+          // Method 3: Check by position and size (approximately full canvas, non-selectable)
           const isNonSelectable = !obj.selectable;
           const isNearOrigin = Math.abs(obj.left || 0) < 5 && Math.abs(obj.top || 0) < 5;
           const isNearFullSize = Math.abs((obj.width || 0) - CANVAS_WIDTH) < 5 && Math.abs((obj.height || 0) - CANVAS_HEIGHT) < 5;
@@ -581,6 +586,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               originX: 'left',
               originY: 'top',
             });
+            // Add custom property to identify this as a background rect (survives JSON serialization)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (gradientRect as any).isBackgroundRect = true;
 
             // Create gradient with coordinates relative to the rect
             const gradient = new Gradient({
@@ -660,7 +668,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
-        const json = fabricRef.current.toJSON();
+        // Include custom properties like isBackgroundRect and originalSrc in serialization
+        const json = fabricRef.current.toJSON(['isBackgroundRect', 'originalSrc']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
