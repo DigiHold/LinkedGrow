@@ -396,7 +396,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!fabricRef.current) return;
 
         try {
-          const img = await FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
+          // Check if URL is from R2 and needs proxying to avoid CORS issues
+          let imageUrl = url;
+          if (url.includes('r2.dev') || url.includes('r2.cloudflarestorage.com')) {
+            imageUrl = `/api/media/proxy?url=${encodeURIComponent(url)}`;
+          }
+
+          const img = await FabricImage.fromURL(imageUrl, { crossOrigin: 'anonymous' });
+
+          // Store the original URL in custom data for serialization
+          // This ensures we save the R2 URL, not the proxy URL
+          (img as FabricObject & { originalSrc?: string }).originalSrc = url;
 
           // Scale images to fit the canvas nicely
           const maxWidth = CANVAS_WIDTH * 0.8;
@@ -415,6 +425,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.renderAll();
         } catch (error) {
           console.error('Failed to load image:', error);
+          throw error; // Re-throw so caller can show error message
         }
       },
 
@@ -612,7 +623,35 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
-        return JSON.stringify(fabricRef.current.toJSON());
+        const json = fabricRef.current.toJSON();
+
+        // Post-process to restore original R2 URLs instead of proxy URLs
+        if (json.objects && Array.isArray(json.objects)) {
+          json.objects = json.objects.map((obj: Record<string, unknown>) => {
+            if (obj.type === 'image' && obj.src && typeof obj.src === 'string') {
+              const src = obj.src as string;
+              // If it's a proxy URL, try to restore original
+              if (src.includes('/api/media/proxy?url=')) {
+                try {
+                  const urlParam = new URL(src, 'https://linkedgrow.ai').searchParams.get('url');
+                  if (urlParam) {
+                    obj.src = urlParam;
+                  }
+                } catch {
+                  // Keep proxy URL if parsing fails
+                }
+              }
+              // If we stored originalSrc, use that
+              if (obj.originalSrc && typeof obj.originalSrc === 'string') {
+                obj.src = obj.originalSrc;
+                delete obj.originalSrc;
+              }
+            }
+            return obj;
+          });
+        }
+
+        return JSON.stringify(json);
       },
 
       loadFromJSON: async (json: string) => {
@@ -620,6 +659,22 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         try {
           const parsed = JSON.parse(json);
+
+          // Pre-process objects to proxy R2 image URLs for CORS
+          if (parsed.objects && Array.isArray(parsed.objects)) {
+            parsed.objects = parsed.objects.map((obj: Record<string, unknown>) => {
+              if (obj.type === 'image' && obj.src && typeof obj.src === 'string') {
+                const src = obj.src as string;
+                if (src.includes('r2.dev') || src.includes('r2.cloudflarestorage.com')) {
+                  // Store original and use proxy URL
+                  obj.originalSrc = src;
+                  obj.src = `/api/media/proxy?url=${encodeURIComponent(src)}`;
+                }
+              }
+              return obj;
+            });
+          }
+
           // Clear canvas first to prevent any lingering objects
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
