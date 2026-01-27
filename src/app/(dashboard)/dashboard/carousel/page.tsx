@@ -501,79 +501,115 @@ export default function CarouselPage() {
     }
   };
 
-  // Handle template selection
+  // Handle template selection - builds Fabric.js JSON and loads via loadFromJSON
   const handleTemplateSelect = async (template: CarouselTemplate) => {
     if (!canvasRef.current) return;
 
-    // Collect unique font families from template elements (default to Inter)
-    const fonts = new Set<string>(['Inter']);
-    template.elements?.forEach(el => {
-      if (el.type === 'text' && el.fontFamily) {
-        fonts.add(el.fontFamily);
+    // Pre-load Inter font
+    const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
+    await loadGoogleFont('Inter', true).catch(() => {});
+
+    // Build Fabric.js-compatible JSON objects array
+    const objects: Record<string, unknown>[] = [];
+
+    // If gradient background, create a background rect as first object
+    if (template.background.type === 'gradient') {
+      const gradientMatch = template.background.value.match(/linear-gradient\((\d+)deg,\s*([^)]+)\)/);
+      if (gradientMatch) {
+        const angle = parseInt(gradientMatch[1], 10);
+        const angleRad = (angle - 90) * Math.PI / 180;
+        const colorRegex = /(#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3})\s*(\d+)?%?/g;
+        const colorStops: { offset: number; color: string }[] = [];
+        let cm;
+        let idx = 0;
+        while ((cm = colorRegex.exec(gradientMatch[2])) !== null) {
+          colorStops.push({
+            offset: cm[2] ? parseInt(cm[2], 10) / 100 : idx,
+            color: cm[1],
+          });
+          idx++;
+        }
+        objects.push({
+          type: 'Rect',
+          left: 0, top: 0,
+          width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
+          fill: {
+            type: 'linear',
+            coords: {
+              x1: (0.5 - Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
+              y1: (0.5 - Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
+              x2: (0.5 + Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
+              y2: (0.5 + Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
+            },
+            colorStops,
+          },
+          selectable: false, evented: false, strokeWidth: 0,
+          isBackgroundRect: true,
+        });
       }
+    }
+
+    // Convert template elements to Fabric.js JSON
+    if (template.elements) {
+      for (const el of template.elements) {
+        if (el.type === 'text') {
+          objects.push({
+            type: 'Textbox',
+            text: el.text || '',
+            left: el.left ?? 0,
+            top: el.top ?? 0,
+            width: el.width ?? 400,
+            fontSize: el.fontSize ?? 48,
+            fontFamily: el.fontFamily || 'Inter',
+            fontWeight: String(el.fontWeight ?? 'normal'),
+            fill: el.fill ?? '#000000',
+            textAlign: el.textAlign ?? 'center',
+            opacity: el.opacity ?? 1,
+            editable: true,
+          });
+        } else if (el.type === 'shape' && el.shapeType === 'rect') {
+          objects.push({
+            type: 'Rect',
+            left: el.left ?? 0, top: el.top ?? 0,
+            width: el.width ?? 200, height: el.height ?? 150,
+            fill: el.fill ?? '#0891b2',
+            stroke: el.stroke || null,
+            strokeWidth: el.strokeWidth ?? 0,
+            opacity: el.opacity ?? 1,
+            rx: el.rx ?? 0, ry: el.ry ?? 0,
+          });
+        } else if (el.type === 'shape' && el.shapeType === 'circle') {
+          objects.push({
+            type: 'Circle',
+            left: el.left ?? 0, top: el.top ?? 0,
+            radius: (el.width ?? 150) / 2,
+            fill: el.fill ?? '#0891b2',
+            stroke: el.stroke || null,
+            strokeWidth: el.strokeWidth ?? 0,
+            opacity: el.opacity ?? 1,
+          });
+        } else if (el.type === 'line' || (el.type === 'shape' && el.shapeType === 'line')) {
+          objects.push({
+            type: 'Line',
+            x1: el.x1 ?? 0, y1: el.y1 ?? 0,
+            x2: el.x2 ?? 300, y2: el.y2 ?? 0,
+            left: el.left ?? 0, top: el.top ?? 0,
+            stroke: el.stroke ?? el.fill ?? '#0891b2',
+            strokeWidth: el.strokeWidth ?? 4,
+            opacity: el.opacity ?? 1,
+          });
+        }
+      }
+    }
+
+    // Build complete canvas JSON and load in one shot
+    const canvasJSON = JSON.stringify({
+      version: '6.0.0',
+      objects,
+      background: template.background.type === 'solid' ? template.background.value : '',
     });
 
-    // Pre-load all fonts so Fabric.js Textbox computes correct metrics
-    const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
-    await Promise.all(
-      Array.from(fonts).map(f => loadGoogleFont(f, true).catch(() => {}))
-    );
-
-    // Clear canvas (this preserves zoom)
-    canvasRef.current.clearCanvas();
-
-    // Apply background
-    canvasRef.current.setBackground(template.background.type, template.background.value);
-
-    // Add template elements in batch mode (no setActiveObject/renderAll per element)
-    if (template.elements && template.elements.length > 0) {
-      template.elements.forEach(element => {
-        if (element.type === 'text') {
-          canvasRef.current?.addText({
-            text: element.text,
-            fontSize: element.fontSize,
-            fontFamily: element.fontFamily || 'Inter',
-            fontWeight: element.fontWeight,
-            fill: element.fill,
-            textAlign: element.textAlign,
-            left: element.left,
-            top: element.top,
-            width: element.width,
-            opacity: element.opacity,
-          }, true);
-        } else if (element.type === 'shape' && element.shapeType) {
-          canvasRef.current?.addShapeWithOptions({
-            shapeType: element.shapeType,
-            left: element.left,
-            top: element.top,
-            width: element.width,
-            height: element.height,
-            fill: element.fill,
-            stroke: element.stroke,
-            strokeWidth: element.strokeWidth,
-            opacity: element.opacity,
-            rx: element.rx,
-            ry: element.ry,
-          }, true);
-        } else if (element.type === 'line') {
-          canvasRef.current?.addShapeWithOptions({
-            shapeType: 'line',
-            left: element.left,
-            top: element.top,
-            x1: element.x1,
-            y1: element.y1,
-            x2: element.x2,
-            y2: element.y2,
-            stroke: element.stroke ?? element.fill,
-            strokeWidth: element.strokeWidth,
-            opacity: element.opacity,
-          }, true);
-        }
-      });
-
-      // Single render pass after all elements are added
-      canvasRef.current.finishBatch();
-    }
+    await canvasRef.current.loadFromJSON(canvasJSON);
 
     setShowTemplateGallery(false);
     showToast(`Template "${template.name}" applied!`, "success");

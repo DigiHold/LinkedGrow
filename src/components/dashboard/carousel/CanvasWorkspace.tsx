@@ -730,9 +730,19 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             });
           }
 
+          // Save current zoom before clear
+          const currentZoom = fabricRef.current.getZoom();
+
           // Clear canvas first to prevent any lingering objects
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
+
+          // Restore zoom after loading (clear + loadFromJSON can reset viewport)
+          fabricRef.current.setZoom(currentZoom);
+          fabricRef.current.setDimensions({
+            width: CANVAS_WIDTH * currentZoom,
+            height: CANVAS_HEIGHT * currentZoom,
+          });
           fabricRef.current.renderAll();
           onCanvasChangeRef.current?.();
         } catch (error) {
