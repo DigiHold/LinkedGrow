@@ -942,7 +942,7 @@ export default function CarouselPage() {
         <div className="h-14 border-b bg-background flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 shrink-0 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Layers className="w-4 h-4 text-white" />
               </div>
               <h1 className="font-semibold">Carousel Editor</h1>
