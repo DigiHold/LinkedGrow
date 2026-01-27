@@ -62,7 +62,7 @@ interface Post {
   id: string;
   content: string;
   status: "draft" | "scheduled" | "published" | "failed";
-  postType: "text" | "image" | "carousel" | "video";
+  postType: "text" | "image" | "carousel" | "video" | "document";
   scheduledAt: string | null;
   publishedAt: string | null;
   linkedinPostUrl: string | null;
@@ -872,18 +872,22 @@ export function CalendarContent() {
                           )}
                         >
                           <div className="flex items-center gap-1.5 px-1.5 py-1">
-                            <div className={cn(
-                              "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
-                              post.status === "draft" && "bg-yellow-100 dark:bg-yellow-800/40",
-                              post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
-                              post.status === "published" && "bg-green-100 dark:bg-green-800/40"
-                            )}>
-                              {post.postType === "image" ? (
-                                <ImageIcon className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              ) : (
+                            {post.postType === "image" && post.media?.[0]?.storageUrl ? (
+                              <img
+                                src={post.media[0].storageUrl}
+                                alt=""
+                                className="w-6 h-6 rounded-sm object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className={cn(
+                                "w-6 h-6 rounded-sm flex items-center justify-center shrink-0",
+                                post.status === "draft" && "bg-yellow-100 dark:bg-yellow-800/40",
+                                post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
+                                post.status === "published" && "bg-green-100 dark:bg-green-800/40"
+                              )}>
                                 <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              )}
-                            </div>
+                              </div>
+                            )}
                             <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
                               {getPostPreview(post.content, 30)}
                             </p>
