@@ -492,12 +492,13 @@ export function ElementProperties({
                       key={`${elementProps.fontFamily}-${fontsCacheReady}`}
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
                       onValueChange={(val) => {
-                        // Pass numeric weight to Fabric.js, but store as string in state
-                        if (!selectedElement) return;
+                        if (!(selectedElement instanceof Textbox)) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        selectedElement.set('fontWeight', Number(val));
-                        canvas.renderAll();
+                        selectedElement.set('fontWeight', val);
+                        selectedElement.set('dirty', true);
+                        selectedElement.initDimensions();
+                        canvas.requestRenderAll();
                         setElementProps(prev => ({ ...prev, fontWeight: val }));
                       }}
                     >
