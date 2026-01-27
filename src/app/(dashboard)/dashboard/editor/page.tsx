@@ -20,9 +20,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { Textarea } from "@/components/ui/textarea";
+import { canAccessFeature, PlanId } from "@/lib/plans";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -136,6 +138,9 @@ export default function EditorPage() {
 function EditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
   const editPostId = searchParams.get("edit");
   const initialContent = searchParams.get("content");
 
@@ -536,6 +541,7 @@ Tips for viral posts:
               minHeight="min-h-[400px] sm:min-h-[500px]"
               showImageButton
               showVideoButton
+              showCarouselButton={hasCarouselAccess}
               attachedImage={attachedImage}
               onImageChange={setAttachedImage}
               onError={showError}

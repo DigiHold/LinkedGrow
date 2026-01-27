@@ -179,6 +179,7 @@ function RedditImportContent() {
 
   // Check if user has access to image generation
   const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
 
   // Get current post content
   const getCurrentPost = () => {
@@ -979,6 +980,7 @@ function RedditImportContent() {
                     minHeight="min-h-[400px]"
                     showImageButton={true}
                     showVideoButton={true}
+                    showCarouselButton={hasCarouselAccess}
                     attachedImage={attachedImage}
                     onImageChange={setAttachedImage}
                     onError={showToast}

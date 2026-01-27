@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { canAccessFeature, PlanId } from "@/lib/plans";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -82,6 +83,8 @@ type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-po
 
 export function CalendarContent() {
   const { data: session } = useSession();
+  const userPlan = (session?.user?.plan as PlanId) || "free";
+  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [posts, setPosts] = useState<Post[]>([]);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
@@ -1273,6 +1276,7 @@ Tips for viral posts:
                         minHeight="min-h-80 sm:min-h-100"
                         showImageButton={true}
                         showVideoButton={true}
+                        showCarouselButton={hasCarouselAccess}
                         attachedImage={attachedImage}
                         onImageChange={setAttachedImage}
                         onError={showError}
@@ -1890,6 +1894,7 @@ Tips for viral posts:
                         placeholder="Write your LinkedIn post..."
                         minHeight="min-h-80"
                         showImageButton={true}
+                        showCarouselButton={hasCarouselAccess}
                         attachedImage={editAttachedImage}
                         onImageChange={setEditAttachedImage}
                         onError={showError}

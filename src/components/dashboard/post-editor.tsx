@@ -12,8 +12,10 @@ import {
   Redo,
   Image as ImageIcon,
   Video,
+  Layers,
   X,
 } from "lucide-react";
+import { CarouselPickerDialog } from "./carousel-picker-dialog";
 import { cn } from "@/lib/utils";
 
 const LINKEDIN_MAX_CHARS = 3000;
@@ -113,6 +115,11 @@ export function isVideoMedia(media: AttachedMedia | null | undefined): boolean {
   return media?.mimeType?.startsWith("video/") ?? false;
 }
 
+// Helper to check if media is a PDF (carousel)
+export function isPdfMedia(media: AttachedMedia | null | undefined): boolean {
+  return media?.mimeType === "application/pdf";
+}
+
 interface PostEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -121,6 +128,7 @@ interface PostEditorProps {
   showToolbar?: boolean;
   showImageButton?: boolean;
   showVideoButton?: boolean;
+  showCarouselButton?: boolean;
   className?: string;
   disabled?: boolean;
   attachedImage?: AttachedImage | null;
@@ -138,6 +146,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       showToolbar = true,
       showImageButton = false,
       showVideoButton = false,
+      showCarouselButton = false,
       className,
       disabled = false,
       attachedImage,
@@ -372,6 +381,58 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       }
     };
 
+    // Carousel picker dialog state
+    const [showCarouselDialog, setShowCarouselDialog] = useState(false);
+
+    // Handle carousel PDF selection (from saved carousel or file upload)
+    const handleCarouselSelect = async (file: File) => {
+      setIsUploading(true);
+      try {
+        // Get presigned URL from our API
+        const presignRes = await fetch("/api/media/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: "application/pdf",
+            fileSize: file.size,
+          }),
+        });
+
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => null);
+          throw new Error(err?.error || "Failed to prepare upload");
+        }
+
+        const { uploadUrl, key, publicUrl } = await presignRes.json();
+
+        // Upload directly to R2 via presigned URL
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/pdf" },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload carousel PDF");
+        }
+
+        // Update state with R2 URL
+        onImageChange?.({
+          base64: "",
+          mimeType: "application/pdf",
+          preview: "",
+          storageUrl: publicUrl,
+          storageKey: key,
+        });
+      } catch (error) {
+        onError?.(error instanceof Error ? error.message : "Failed to upload carousel");
+        onImageChange?.(null);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
       getContent: () => value,
@@ -581,7 +642,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             >
               <ListOrdered className="w-4 h-4" />
             </Button>
-            {(showImageButton || showVideoButton) && (
+            {(showImageButton || showVideoButton || showCarouselButton) && (
               <>
                 <div className="w-px h-6 bg-border mx-1" />
                 {showImageButton && (
@@ -627,6 +688,19 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                       onChange={handleVideoUpload}
                     />
                   </>
+                )}
+                {showCarouselButton && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowCarouselDialog(true)}
+                    disabled={disabled}
+                    title="Add Carousel (PDF)"
+                    type="button"
+                  >
+                    <Layers className="w-4 h-4" />
+                  </Button>
                 )}
               </>
             )}
@@ -681,20 +755,28 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
           )}
         />
 
-        {/* Media Preview (Image or Video) */}
-        {attachedImage?.preview && (
+        {/* Media Preview (Image, Video, or PDF) */}
+        {(attachedImage?.preview || isPdfMedia(attachedImage)) && (
           <div className="relative p-3 border-t bg-muted/20">
             <div className="relative inline-block">
-              {isVideoMedia(attachedImage) ? (
+              {isPdfMedia(attachedImage) ? (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-muted/50">
+                  <Layers className="w-8 h-8 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">Carousel (PDF)</p>
+                    <p className="text-xs text-muted-foreground">Ready to publish</p>
+                  </div>
+                </div>
+              ) : isVideoMedia(attachedImage) ? (
                 <video
-                  src={attachedImage.preview}
+                  src={attachedImage!.preview}
                   className="max-h-32 rounded-lg border"
                   controls
                   muted
                 />
               ) : (
                 <img
-                  src={attachedImage.preview}
+                  src={attachedImage?.preview}
                   alt="Attached"
                   className="max-h-32 rounded-lg border"
                 />
@@ -720,6 +802,15 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <span>{charCount} / {LINKEDIN_MAX_CHARS}</span>
             <span>~{Math.ceil(charCount / 200)} min read</span>
           </div>
+        )}
+
+        {showCarouselButton && (
+          <CarouselPickerDialog
+            open={showCarouselDialog}
+            onOpenChange={setShowCarouselDialog}
+            onSelect={handleCarouselSelect}
+            onError={onError}
+          />
         )}
       </div>
     );

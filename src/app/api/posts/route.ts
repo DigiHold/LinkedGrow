@@ -273,7 +273,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine post type based on media
-    const actualPostType = mediaInfo?.storageUrl ? "image" : postType;
+    let actualPostType = postType;
+    if (mediaInfo?.storageUrl) {
+      if (mediaInfo.mimeType === "application/pdf") {
+        actualPostType = "document";
+      } else if (mediaInfo.mimeType?.startsWith("video/")) {
+        actualPostType = "video";
+      } else {
+        actualPostType = "image";
+      }
+    }
 
     await db.insert(posts).values({
       id: postId,

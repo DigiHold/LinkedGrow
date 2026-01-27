@@ -577,6 +577,162 @@ export async function createLinkedInPostWithVideo(
 }
 
 /**
+ * Register a document upload with LinkedIn
+ * Returns the upload URL and asset URN
+ */
+async function registerDocumentUpload(
+  accessToken: string,
+  ownerUrn: string
+): Promise<{ uploadUrl: string; asset: string }> {
+  const registerRequest = {
+    registerUploadRequest: {
+      recipes: ['urn:li:digitalmediaRecipe:feedshare-document'],
+      owner: ownerUrn,
+      serviceRelationships: [
+        {
+          relationshipType: 'OWNER',
+          identifier: 'urn:li:userGeneratedContent',
+        },
+      ],
+    },
+  };
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(registerRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to register document upload: ${error}`);
+  }
+
+  const data: LinkedInRegisterUploadResponse = await response.json();
+  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
+  const asset = data.value.asset;
+
+  return { uploadUrl, asset };
+}
+
+/**
+ * Upload document binary data to LinkedIn
+ */
+async function uploadDocumentToLinkedIn(
+  uploadUrl: string,
+  documentBlob: Blob,
+  contentType: string
+): Promise<void> {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: documentBlob,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to upload document to LinkedIn: ${error}`);
+  }
+}
+
+/**
+ * Fetch document from URL and return as Blob
+ */
+async function fetchDocumentAsBlob(documentUrl: string): Promise<{ blob: Blob; contentType: string }> {
+  const response = await fetch(documentUrl);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch document from URL: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || 'application/pdf';
+  const blob = await response.blob();
+
+  return { blob, contentType };
+}
+
+/**
+ * Create a LinkedIn post with a document (PDF carousel)
+ * @param authorId - Either a person ID or organization ID
+ * @param authorType - 'person' for personal profile or 'organization' for company page
+ * @param documentUrl - URL of the document file (R2 storage URL)
+ * @param documentTitle - Title displayed on the carousel post
+ */
+export async function createLinkedInPostWithDocument(
+  accessToken: string,
+  authorId: string,
+  text: string,
+  documentUrl: string,
+  documentTitle?: string,
+  visibility: 'PUBLIC' | 'CONNECTIONS' = 'PUBLIC',
+  authorType: 'person' | 'organization' = 'person'
+): Promise<{ id: string }> {
+  const authorUrn = authorType === 'organization'
+    ? `urn:li:organization:${authorId}`
+    : `urn:li:person:${authorId}`;
+
+  // Step 1: Fetch the document from R2
+  const { blob: documentBlob, contentType } = await fetchDocumentAsBlob(documentUrl);
+
+  // Step 2: Register the document upload with LinkedIn
+  const { uploadUrl, asset } = await registerDocumentUpload(accessToken, authorUrn);
+
+  // Step 3: Upload the document binary to LinkedIn
+  await uploadDocumentToLinkedIn(uploadUrl, documentBlob, contentType);
+
+  // Step 4: Create the post with the uploaded document asset
+  const postData: LinkedInPostRequest = {
+    author: authorUrn,
+    lifecycleState: 'PUBLISHED',
+    specificContent: {
+      'com.linkedin.ugc.ShareContent': {
+        shareCommentary: {
+          text: text,
+        },
+        shareMediaCategory: 'NONE',
+        media: [
+          {
+            status: 'READY',
+            media: asset,
+            title: documentTitle ? { text: documentTitle } : { text: 'Carousel' },
+          },
+        ],
+      },
+    },
+    visibility: {
+      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
+    },
+  };
+
+  // Document posts use RICH media category
+  (postData.specificContent['com.linkedin.ugc.ShareContent'] as Record<string, unknown>).shareMediaCategory = 'RICH';
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create LinkedIn post with document: ${error}`);
+  }
+
+  const data = await response.json();
+  return { id: data.id };
+}
+
+/**
  * Validate LinkedIn access token
  */
 export async function validateLinkedInToken(accessToken: string): Promise<boolean> {

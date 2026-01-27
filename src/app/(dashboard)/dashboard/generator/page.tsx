@@ -283,6 +283,7 @@ export default function GeneratorPage() {
   const canGenerate = isWithinLimit(userPlan, "postsPerMonth", postsUsedThisMonth);
   const isLimitReached = !canGenerate;
   const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
 
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -1214,6 +1215,7 @@ export default function GeneratorPage() {
                     showToolbar={true}
                     showImageButton={true}
                     showVideoButton={true}
+                    showCarouselButton={hasCarouselAccess}
                     attachedImage={attachedImage}
                     onImageChange={setAttachedImage}
                     onError={showToast}

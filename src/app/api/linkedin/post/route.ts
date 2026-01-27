@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo } from '@/lib/linkedin';
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     let { imageUrl } = body;
     let videoUrl: string | undefined;
     let videoMimeType: string | undefined;
+    let documentUrl: string | undefined;
+    let documentTitle: string | undefined;
 
     // If postId is provided, check it's not already published and look up media from R2
     if (postId) {
@@ -45,10 +47,14 @@ export async function POST(request: NextRequest) {
           .from(media)
           .where(eq(media.postId, postId));
 
+        const firstDocument = postMedia.find(m => m.mimeType === 'application/pdf');
         const firstVideo = postMedia.find(m => m.mimeType?.startsWith('video/'));
         const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
 
-        if (firstVideo?.storageUrl) {
+        if (firstDocument?.storageUrl) {
+          documentUrl = firstDocument.storageUrl;
+          documentTitle = firstDocument.altText || imageTitle || 'Carousel';
+        } else if (firstVideo?.storageUrl) {
           videoUrl = firstVideo.storageUrl;
           videoMimeType = firstVideo.mimeType;
         } else if (firstImage?.storageUrl) {
@@ -105,7 +111,18 @@ export async function POST(request: NextRequest) {
 
     let postResult;
 
-    if (videoUrl && videoMimeType) {
+    if (documentUrl) {
+      // Document/PDF post (carousel) - fetch from R2 and upload to LinkedIn
+      postResult = await createLinkedInPostWithDocument(
+        linkedInUser.linkedinAccessToken,
+        authorId,
+        text,
+        documentUrl,
+        documentTitle,
+        visibility,
+        authorType
+      );
+    } else if (videoUrl && videoMimeType) {
       // Video post - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithVideo(
         linkedInUser.linkedinAccessToken,

@@ -316,7 +316,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         createdAt: new Date(),
       });
 
-      updateData.postType = "image";
+      if (mediaInfo.mimeType === "application/pdf") {
+        updateData.postType = "document";
+      } else if (mediaInfo.mimeType?.startsWith("video/")) {
+        updateData.postType = "video";
+      } else {
+        updateData.postType = "image";
+      }
     }
 
     await db.update(posts).set(updateData).where(eq(posts.id, postId));
