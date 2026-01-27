@@ -289,13 +289,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saveHistory]);
 
-    // Handle zoom via CSS transform (no Fabric zoom - keeps canvas at native resolution)
-    // This avoids all issues with backstore size vs coordinate space mismatches
+    // Handle zoom using Fabric's native zoom + dimension scaling
     useEffect(() => {
       if (!fabricRef.current) return;
-      // Ensure canvas stays at native resolution
-      fabricRef.current.setZoom(1);
-      fabricRef.current.setDimensions({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
+      fabricRef.current.setZoom(zoom);
+      fabricRef.current.setDimensions({
+        width: CANVAS_WIDTH * zoom,
+        height: CANVAS_HEIGHT * zoom,
+      });
     }, [zoom]);
 
     // Expose methods via ref
@@ -647,11 +648,22 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToDataURL: () => {
         if (!fabricRef.current) return '';
 
-        // Canvas is always at native resolution (CSS-only zoom), so export directly
+        // Temporarily reset zoom for full-resolution export
+        const currentZoom = fabricRef.current.getZoom();
+        fabricRef.current.setZoom(1);
+        fabricRef.current.setDimensions({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
+
         const dataURL = fabricRef.current.toDataURL({
           format: 'png',
           quality: 1,
           multiplier: 1,
+        });
+
+        // Restore zoom
+        fabricRef.current.setZoom(currentZoom);
+        fabricRef.current.setDimensions({
+          width: CANVAS_WIDTH * currentZoom,
+          height: CANVAS_HEIGHT * currentZoom,
         });
 
         return dataURL;
@@ -716,9 +728,20 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             });
           }
 
-          // Clear canvas and load new state (canvas stays at native resolution via CSS zoom)
+          // Save current zoom level
+          const currentZoom = fabricRef.current.getZoom();
+
+          // Clear and load new state
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
+
+          // Re-apply zoom (clear/loadFromJSON may reset dimensions)
+          fabricRef.current.setZoom(currentZoom);
+          fabricRef.current.setDimensions({
+            width: CANVAS_WIDTH * currentZoom,
+            height: CANVAS_HEIGHT * currentZoom,
+          });
+
           fabricRef.current.renderAll();
           onCanvasChangeRef.current?.();
         } catch (error) {
@@ -732,13 +755,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         isUndoRedoRef.current = true;
         historyIndexRef.current--;
         const json = historyRef.current[historyIndexRef.current];
-        lastSavedStateRef.current = json; // Update last saved state to prevent re-save
+        lastSavedStateRef.current = json;
 
-        // Proxy R2 URLs before loading to avoid CORS issues
+        const currentZoom = fabricRef.current.getZoom();
         const proxiedJson = proxyR2UrlsInJson(json);
         fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+          fabricRef.current!.setZoom(currentZoom);
+          fabricRef.current!.setDimensions({
+            width: CANVAS_WIDTH * currentZoom,
+            height: CANVAS_HEIGHT * currentZoom,
+          });
           fabricRef.current!.renderAll();
-          // Small delay before allowing history saves again
           setTimeout(() => {
             isUndoRedoRef.current = false;
           }, 100);
@@ -752,13 +779,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         isUndoRedoRef.current = true;
         historyIndexRef.current++;
         const json = historyRef.current[historyIndexRef.current];
-        lastSavedStateRef.current = json; // Update last saved state to prevent re-save
+        lastSavedStateRef.current = json;
 
-        // Proxy R2 URLs before loading to avoid CORS issues
+        const currentZoom = fabricRef.current.getZoom();
         const proxiedJson = proxyR2UrlsInJson(json);
         fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+          fabricRef.current!.setZoom(currentZoom);
+          fabricRef.current!.setDimensions({
+            width: CANVAS_WIDTH * currentZoom,
+            height: CANVAS_HEIGHT * currentZoom,
+          });
           fabricRef.current!.renderAll();
-          // Small delay before allowing history saves again
           setTimeout(() => {
             isUndoRedoRef.current = false;
           }, 100);
@@ -770,8 +801,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       clearCanvas: () => {
         if (!fabricRef.current) return;
+        const currentZoom = fabricRef.current.getZoom();
         fabricRef.current.clear();
         fabricRef.current.backgroundColor = '#ffffff';
+        // Re-apply zoom after clear
+        fabricRef.current.setZoom(currentZoom);
+        fabricRef.current.setDimensions({
+          width: CANVAS_WIDTH * currentZoom,
+          height: CANVAS_HEIGHT * currentZoom,
+        });
         fabricRef.current.renderAll();
         saveHistory();
         onCanvasChangeRef.current?.();
@@ -816,9 +854,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             historyIndexRef.current--;
             const json = historyRef.current[historyIndexRef.current];
             lastSavedStateRef.current = json;
-            // Proxy R2 URLs before loading to avoid CORS issues
+            const currentZoom = fabricRef.current.getZoom();
             const proxiedJson = proxyR2UrlsInJson(json);
             fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+              fabricRef.current!.setZoom(currentZoom);
+              fabricRef.current!.setDimensions({
+                width: CANVAS_WIDTH * currentZoom,
+                height: CANVAS_HEIGHT * currentZoom,
+              });
               fabricRef.current!.renderAll();
               setTimeout(() => {
                 isUndoRedoRef.current = false;
@@ -835,9 +878,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             historyIndexRef.current++;
             const json = historyRef.current[historyIndexRef.current];
             lastSavedStateRef.current = json;
-            // Proxy R2 URLs before loading to avoid CORS issues
+            const currentZoom = fabricRef.current.getZoom();
             const proxiedJson = proxyR2UrlsInJson(json);
             fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+              fabricRef.current!.setZoom(currentZoom);
+              fabricRef.current!.setDimensions({
+                width: CANVAS_WIDTH * currentZoom,
+                height: CANVAS_HEIGHT * currentZoom,
+              });
               fabricRef.current!.renderAll();
               setTimeout(() => {
                 isUndoRedoRef.current = false;
@@ -1015,28 +1063,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Canvas container - uses CSS transform for zoom to keep native resolution */}
+        {/* Canvas container - Fabric handles zoom natively */}
         <div
           className={cn(
             "relative shadow-2xl",
             isDragOver && "scale-[1.01]"
           )}
-          style={{
-            width: CANVAS_WIDTH * zoom,
-            height: CANVAS_HEIGHT * zoom,
-            overflow: 'hidden',
-          }}
         >
-          <div
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: 'top left',
-              width: CANVAS_WIDTH,
-              height: CANVAS_HEIGHT,
-            }}
-          >
-            <canvas ref={canvasRef} />
-          </div>
+          <canvas ref={canvasRef} />
         </div>
 
         {/* Drop zone indicator */}

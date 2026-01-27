@@ -511,7 +511,10 @@ export default function CarouselPage() {
     const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
     await loadGoogleFont('Inter', true).catch(() => {});
 
-    // Clear canvas (canvas stays at native 1080x1350 via CSS zoom)
+    // Save current zoom before clearing
+    const currentZoom = canvas.getZoom();
+
+    // Clear canvas
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
 
@@ -618,7 +621,28 @@ export default function CarouselPage() {
       canvas.add(...fabricObjects);
     }
 
+    // Re-apply zoom after clear + add (critical - clear may reset internal state)
+    canvas.setZoom(currentZoom);
+    canvas.setDimensions({
+      width: CANVAS_WIDTH * currentZoom,
+      height: CANVAS_HEIGHT * currentZoom,
+    });
+
     canvas.renderAll();
+
+    // Debug: log full canvas state after template applied
+    console.log('[Template Applied]', template.name);
+    console.log('[Template] zoom:', canvas.getZoom());
+    console.log('[Template] dimensions:', canvas.width, canvas.height);
+    console.log('[Template] viewportTransform:', JSON.stringify(canvas.viewportTransform));
+    console.log('[Template] wrapperEl size:', canvas.wrapperEl?.offsetWidth, canvas.wrapperEl?.offsetHeight);
+    console.log('[Template] lowerCanvasEl size:', canvas.lowerCanvasEl?.width, canvas.lowerCanvasEl?.height);
+    console.log('[Template] lowerCanvasEl CSS:', canvas.lowerCanvasEl?.style.width, canvas.lowerCanvasEl?.style.height);
+    console.log('[Template] upperCanvasEl size:', canvas.upperCanvasEl?.width, canvas.upperCanvasEl?.height);
+    console.log('[Template] upperCanvasEl CSS:', canvas.upperCanvasEl?.style.width, canvas.upperCanvasEl?.style.height);
+    canvas.getObjects().forEach((obj, i) => {
+      console.log(`[Template] obj[${i}]:`, obj.type, 'left:', obj.left, 'top:', obj.top, 'width:', obj.width, 'height:', obj.height);
+    });
 
     setShowTemplateGallery(false);
     showToast(`Template "${template.name}" applied!`, "success");
