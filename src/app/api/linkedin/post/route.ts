@@ -20,10 +20,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text, postId, imageTitle, videoData, visibility = 'PUBLIC' } = body;
+    const { text, postId, imageTitle, visibility = 'PUBLIC' } = body;
     let { imageUrl } = body;
+    let videoUrl: string | undefined;
+    let videoMimeType: string | undefined;
 
-    // If postId is provided, check it's not already published and look up media
+    // If postId is provided, check it's not already published and look up media from R2
     if (postId) {
       const existingPost = await db.query.posts.findFirst({
         where: eq(posts.id, postId),
@@ -36,14 +38,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Look up the image from the media table if no imageUrl provided
-      if (!imageUrl && !videoData) {
+      // Look up media from the media table (all media is stored on R2)
+      if (!imageUrl) {
         const postMedia = await db
           .select()
           .from(media)
           .where(eq(media.postId, postId));
+
+        const firstVideo = postMedia.find(m => m.mimeType?.startsWith('video/'));
         const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
-        if (firstImage?.storageUrl) {
+
+        if (firstVideo?.storageUrl) {
+          videoUrl = firstVideo.storageUrl;
+          videoMimeType = firstVideo.mimeType;
+        } else if (firstImage?.storageUrl) {
           imageUrl = firstImage.storageUrl;
         }
       }
@@ -97,15 +105,15 @@ export async function POST(request: NextRequest) {
 
     let postResult;
 
-    if (videoData?.base64 && videoData?.mimeType) {
-      // Video post - upload video directly to LinkedIn
+    if (videoUrl && videoMimeType) {
+      // Video post - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithVideo(
         linkedInUser.linkedinAccessToken,
         authorId,
         text,
-        videoData.base64,
-        videoData.mimeType,
-        videoData.title,
+        videoUrl,
+        videoMimeType,
+        imageTitle,
         visibility,
         authorType
       );

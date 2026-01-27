@@ -294,8 +294,8 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       }
     };
 
-    // Handle video upload - videos can only be published immediately (not stored in R2)
-    const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle video upload - upload to R2 via presigned URL
+    const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -312,22 +312,63 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
         return;
       }
 
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        const base64 = result.split(",")[1];
-        onImageChange?.({
-          base64,
-          mimeType: file.type,
-          preview: result,
-        });
-      };
-      reader.readAsDataURL(file);
-
-      // Reset input
+      // Reset input immediately
       if (videoInputRef.current) {
         videoInputRef.current.value = "";
+      }
+
+      // Show preview immediately while uploading
+      const previewUrl = URL.createObjectURL(file);
+      onImageChange?.({
+        base64: "",
+        mimeType: file.type,
+        preview: previewUrl,
+      });
+
+      setIsUploading(true);
+      try {
+        // Get presigned URL from our API
+        const presignRes = await fetch("/api/media/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          }),
+        });
+
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => null);
+          throw new Error(err?.error || "Failed to prepare upload");
+        }
+
+        const { uploadUrl, key, publicUrl } = await presignRes.json();
+
+        // Upload directly to R2 via presigned URL
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload video");
+        }
+
+        // Update state with R2 URL
+        onImageChange?.({
+          base64: "",
+          mimeType: file.type,
+          preview: previewUrl,
+          storageUrl: publicUrl,
+          storageKey: key,
+        });
+      } catch (error) {
+        onError?.(error instanceof Error ? error.message : "Failed to upload video");
+        onImageChange?.(null);
+      } finally {
+        setIsUploading(false);
       }
     };
 

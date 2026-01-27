@@ -467,23 +467,14 @@ export function CalendarContent() {
       if (publish) {
         const { post } = await response.json();
 
-        const publishBody: Record<string, unknown> = {
-          postId: post.id,
-          text: newPostContent,
-        };
-
-        // Videos are sent as base64 directly to LinkedIn
-        if (isVideo && attachedImage?.base64) {
-          publishBody.videoData = {
-            base64: attachedImage.base64,
-            mimeType: attachedImage.mimeType,
-          };
-        }
-
+        // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
         const publishResponse = await fetch("/api/linkedin/post", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(publishBody),
+          body: JSON.stringify({
+            postId: post.id,
+            text: newPostContent,
+          }),
         });
 
         if (!publishResponse.ok) {

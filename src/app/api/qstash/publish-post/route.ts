@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { createLinkedInPost, createLinkedInPostWithImage } from "@/lib/linkedin";
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 
 // Initialize QStash receiver for signature verification
@@ -113,10 +113,23 @@ export async function POST(request: NextRequest) {
       .where(eq(media.postId, postId));
 
     let postResult;
+    const firstVideo = postMedia.find(m => m.mimeType?.startsWith("video/"));
     const firstImage = postMedia.find(m => m.mimeType?.startsWith("image/"));
 
-    if (firstImage?.storageUrl) {
-      // Post with image
+    if (firstVideo?.storageUrl) {
+      // Post with video from R2
+      postResult = await createLinkedInPostWithVideo(
+        linkedInUser.linkedinAccessToken,
+        authorId,
+        post.content,
+        firstVideo.storageUrl,
+        firstVideo.mimeType,
+        firstVideo.altText || undefined,
+        "PUBLIC",
+        authorType
+      );
+    } else if (firstImage?.storageUrl) {
+      // Post with image from R2
       postResult = await createLinkedInPostWithImage(
         linkedInUser.linkedinAccessToken,
         authorId,

@@ -481,17 +481,33 @@ async function uploadVideoToLinkedIn(
 }
 
 /**
+ * Fetch video from URL and return as Blob with content type
+ */
+async function fetchVideoAsBlob(videoUrl: string): Promise<{ blob: Blob; contentType: string }> {
+  const response = await fetch(videoUrl);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch video from URL: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || 'video/mp4';
+  const blob = await response.blob();
+
+  return { blob, contentType };
+}
+
+/**
  * Create a LinkedIn post with a video (native video upload)
  * @param authorId - Either a person ID or organization ID
  * @param authorType - 'person' for personal profile or 'organization' for company page
- * @param videoBase64 - Base64 encoded video data
+ * @param videoUrl - URL of the video file (R2 storage URL)
  * @param videoMimeType - MIME type of the video (video/mp4 or video/quicktime)
  */
 export async function createLinkedInPostWithVideo(
   accessToken: string,
   authorId: string,
   text: string,
-  videoBase64: string,
+  videoUrl: string,
   videoMimeType: string,
   videoTitle?: string,
   visibility: 'PUBLIC' | 'CONNECTIONS' = 'PUBLIC',
@@ -501,25 +517,21 @@ export async function createLinkedInPostWithVideo(
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
 
-  // Convert base64 to blob
-  const binaryString = atob(videoBase64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  const videoBlob = new Blob([bytes], { type: videoMimeType });
+  // Step 1: Fetch the video from R2
+  const { blob: videoBlob, contentType } = await fetchVideoAsBlob(videoUrl);
+  const actualMimeType = videoMimeType || contentType;
 
-  // Step 1: Register the video upload with LinkedIn
+  // Step 2: Register the video upload with LinkedIn
   const { uploadUrl, asset } = await registerVideoUpload(
     accessToken,
     authorUrn,
     videoBlob.size
   );
 
-  // Step 2: Upload the video binary to LinkedIn
-  await uploadVideoToLinkedIn(uploadUrl, videoBlob, videoMimeType);
+  // Step 3: Upload the video binary to LinkedIn
+  await uploadVideoToLinkedIn(uploadUrl, videoBlob, actualMimeType);
 
-  // Step 3: Create the post with the uploaded video asset
+  // Step 4: Create the post with the uploaded video asset
   // Note: We don't wait for video processing - LinkedIn handles this automatically
   // and shows a "processing" indicator to viewers until ready
   const postData = {

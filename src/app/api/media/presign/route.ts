@@ -6,7 +6,13 @@ import { eq } from "drizzle-orm";
 import { getPresignedUploadUrl, isR2Configured } from "@/lib/storage/r2";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB - LinkedIn image limit
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime"];
+const ALLOWED_DOCUMENT_TYPES = ["application/pdf"];
+const ALL_ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES, ...ALLOWED_DOCUMENT_TYPES];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB - LinkedIn image limit
+const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB - LinkedIn video limit
+const MAX_DOCUMENT_SIZE = 100 * 1024 * 1024; // 100MB - LinkedIn document limit
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,18 +48,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!ALLOWED_IMAGE_TYPES.includes(contentType)) {
+    if (!ALL_ALLOWED_TYPES.includes(contentType)) {
       return NextResponse.json(
-        { error: "LinkedIn only supports JPG, PNG, and GIF images" },
+        { error: "Unsupported file type. Allowed: JPG, PNG, GIF, MP4, MOV, PDF" },
         { status: 400 }
       );
     }
 
-    if (fileSize && fileSize > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "Image must be less than 5MB (LinkedIn limit)" },
-        { status: 400 }
-      );
+    // Validate file size based on media type
+    if (fileSize) {
+      if (ALLOWED_IMAGE_TYPES.includes(contentType) && fileSize > MAX_IMAGE_SIZE) {
+        return NextResponse.json(
+          { error: "Image must be less than 5MB (LinkedIn limit)" },
+          { status: 400 }
+        );
+      }
+      if (ALLOWED_VIDEO_TYPES.includes(contentType) && fileSize > MAX_VIDEO_SIZE) {
+        return NextResponse.json(
+          { error: "Video must be less than 200MB (LinkedIn limit)" },
+          { status: 400 }
+        );
+      }
+      if (ALLOWED_DOCUMENT_TYPES.includes(contentType) && fileSize > MAX_DOCUMENT_SIZE) {
+        return NextResponse.json(
+          { error: "Document must be less than 100MB (LinkedIn limit)" },
+          { status: 400 }
+        );
+      }
     }
 
     const presigned = await getPresignedUploadUrl({

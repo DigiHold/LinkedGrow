@@ -362,24 +362,14 @@ function EditorContent() {
         postId = data.post.id;
       }
 
-      // Publish to LinkedIn (API looks up media from DB, handles image upload to LinkedIn)
-      const publishBody: Record<string, unknown> = {
-        postId,
-        text: content,
-      };
-
-      // Videos are sent as base64 directly to LinkedIn (not stored in R2)
-      if (isVideo && attachedImage?.base64) {
-        publishBody.videoData = {
-          base64: attachedImage.base64,
-          mimeType: attachedImage.mimeType,
-        };
-      }
-
+      // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(publishBody),
+        body: JSON.stringify({
+          postId,
+          text: content,
+        }),
       });
 
       if (!publishResponse.ok) {
