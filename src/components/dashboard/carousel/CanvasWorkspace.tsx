@@ -197,13 +197,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         selection: true,
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
-        clipPath: new Rect({
-          left: 0,
-          top: 0,
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          absolutePositioned: true,
-        }),
       });
 
       // Set default control styles
