@@ -429,22 +429,24 @@ function SettingsContent() {
   // Voice & Style functions
   const handleAddSamplePost = () => {
     if (!newSamplePost.trim()) return;
-    if (voiceSettings.samplePosts.length >= 5) {
-      setVoiceMessage({ type: "error", text: "Maximum 5 sample posts allowed" });
-      return;
-    }
-    setVoiceSettings({
-      ...voiceSettings,
-      samplePosts: [...voiceSettings.samplePosts, newSamplePost.trim()],
+    setVoiceSettings((prev) => {
+      if (prev.samplePosts.length >= 5) {
+        setVoiceMessage({ type: "error", text: "Maximum 5 sample posts allowed" });
+        return prev;
+      }
+      return {
+        ...prev,
+        samplePosts: [...prev.samplePosts, newSamplePost.trim()],
+      };
     });
     setNewSamplePost("");
   };
 
   const handleRemoveSamplePost = (index: number) => {
-    setVoiceSettings({
-      ...voiceSettings,
-      samplePosts: voiceSettings.samplePosts.filter((_, i) => i !== index),
-    });
+    setVoiceSettings((prev) => ({
+      ...prev,
+      samplePosts: prev.samplePosts.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSaveVoiceSettings = async () => {
@@ -1357,9 +1359,10 @@ function SettingsContent() {
               <Input
                 placeholder="e.g., Professional but friendly, conversational, inspiring, direct and bold"
                 value={voiceSettings.writingTone}
-                onChange={(e) =>
-                  setVoiceSettings({ ...voiceSettings, writingTone: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setVoiceSettings((prev) => ({ ...prev, writingTone: val }));
+                }}
               />
             </div>
 
@@ -1372,9 +1375,10 @@ function SettingsContent() {
               <Textarea
                 placeholder="e.g., Competitor names, sensitive topics, specific products..."
                 value={voiceSettings.neverMention}
-                onChange={(e) =>
-                  setVoiceSettings({ ...voiceSettings, neverMention: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setVoiceSettings((prev) => ({ ...prev, neverMention: val }));
+                }}
                 className="min-h-[80px]"
               />
             </div>
