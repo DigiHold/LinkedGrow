@@ -454,11 +454,19 @@ function SettingsContent() {
     setVoiceMessage(null);
 
     try {
+      // Auto-add unsaved textarea content as a sample post
+      let postsToSave = voiceSettings.samplePosts;
+      if (newSamplePost.trim() && postsToSave.length < 5) {
+        postsToSave = [...postsToSave, newSamplePost.trim()];
+        setVoiceSettings((prev) => ({ ...prev, samplePosts: postsToSave }));
+        setNewSamplePost("");
+      }
+
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          samplePosts: voiceSettings.samplePosts,
+          samplePosts: postsToSave,
           neverMention: voiceSettings.neverMention,
           writingTone: voiceSettings.writingTone,
         }),
