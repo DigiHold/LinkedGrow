@@ -502,8 +502,24 @@ export default function CarouselPage() {
   };
 
   // Handle template selection
-  const handleTemplateSelect = (template: CarouselTemplate) => {
+  const handleTemplateSelect = async (template: CarouselTemplate) => {
     if (!canvasRef.current) return;
+
+    // Collect unique font families from template elements
+    const fonts = new Set<string>();
+    template.elements?.forEach(el => {
+      if (el.type === 'text' && el.fontFamily) {
+        fonts.add(el.fontFamily);
+      }
+    });
+
+    // Pre-load all fonts so Fabric.js Textbox computes correct metrics
+    if (fonts.size > 0) {
+      const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
+      await Promise.all(
+        Array.from(fonts).map(f => loadGoogleFont(f, true).catch(() => {}))
+      );
+    }
 
     // Clear canvas
     canvasRef.current.clearCanvas();
@@ -511,7 +527,7 @@ export default function CarouselPage() {
     // Apply background
     canvasRef.current.setBackground(template.background.type, template.background.value);
 
-    // Add template elements
+    // Add template elements in batch mode (no setActiveObject/renderAll per element)
     if (template.elements && template.elements.length > 0) {
       template.elements.forEach(element => {
         if (element.type === 'text') {
@@ -526,7 +542,7 @@ export default function CarouselPage() {
             top: element.top,
             width: element.width,
             opacity: element.opacity,
-          });
+          }, true);
         } else if (element.type === 'shape' && element.shapeType) {
           canvasRef.current?.addShapeWithOptions({
             shapeType: element.shapeType,
@@ -540,7 +556,7 @@ export default function CarouselPage() {
             opacity: element.opacity,
             rx: element.rx,
             ry: element.ry,
-          });
+          }, true);
         } else if (element.type === 'line') {
           canvasRef.current?.addShapeWithOptions({
             shapeType: 'line',
@@ -553,9 +569,12 @@ export default function CarouselPage() {
             stroke: element.stroke ?? element.fill,
             strokeWidth: element.strokeWidth,
             opacity: element.opacity,
-          });
+          }, true);
         }
       });
+
+      // Single render pass after all elements are added
+      canvasRef.current.finishBatch();
     }
 
     setShowTemplateGallery(false);
@@ -822,7 +841,7 @@ export default function CarouselPage() {
         <div className="max-w-3xl mx-auto p-8 space-y-6">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Layers className="w-5 h-5 text-white" />
               </div>
               Carousel Editor
@@ -834,7 +853,7 @@ export default function CarouselPage() {
 
           <div className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-8">
             <div className="text-center max-w-lg mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
                 <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-4">Text AI API Key Required</h3>
@@ -842,7 +861,7 @@ export default function CarouselPage() {
                 The Carousel Editor uses AI to generate content. Please configure your Text AI API key to unlock AI features.
               </p>
               <Link href="/dashboard/settings/ai-api">
-                <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
+                <Button className="bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
                   <Settings className="w-4 h-4 mr-2" />
                   Configure API Keys
                 </Button>
@@ -861,7 +880,7 @@ export default function CarouselPage() {
         <div className="h-14 border-b bg-background flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
                 <Layers className="w-4 h-4 text-white" />
               </div>
               <h1 className="font-semibold">Carousel Editor</h1>
@@ -974,7 +993,7 @@ export default function CarouselPage() {
                   <Button
                     onClick={handleSaveTemplate}
                     disabled={!templateName.trim() || isSavingTemplate}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                   >
                     {isSavingTemplate ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1072,7 +1091,7 @@ export default function CarouselPage() {
                   <Button
                     onClick={() => handleSaveCarousel(true)}
                     disabled={!carouselName.trim() || isSavingCarousel}
-                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                   >
                     {isSavingCarousel ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1105,7 +1124,7 @@ export default function CarouselPage() {
               size="sm"
               onClick={handleDownloadPDF}
               disabled={isExporting}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isExporting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

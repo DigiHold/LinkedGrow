@@ -93,9 +93,9 @@ export interface ShapeOptions {
 }
 
 export interface CanvasWorkspaceRef {
-  addText: (options?: Partial<TextOptions>) => void;
+  addText: (options?: Partial<TextOptions>, batch?: boolean) => void;
   addShape: (shapeType: 'rect' | 'circle' | 'line') => void;
-  addShapeWithOptions: (options: ShapeOptions) => void;
+  addShapeWithOptions: (options: ShapeOptions, batch?: boolean) => void;
   addImage: (url: string) => Promise<void>;
   addSvgIcon: (svgString: string) => Promise<void>;
   deleteSelected: () => void;
@@ -110,6 +110,7 @@ export interface CanvasWorkspaceRef {
   redo: () => void;
   getCanvas: () => Canvas | null;
   clearCanvas: () => void;
+  finishBatch: () => void;
 }
 
 interface TextOptions {
@@ -196,6 +197,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         selection: true,
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
+        clipPath: new Rect({
+          left: 0,
+          top: 0,
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          absolutePositioned: true,
+        }),
       });
 
       // Set default control styles
@@ -302,7 +310,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
-      addText: (options: Partial<TextOptions> = {}) => {
+      addText: (options: Partial<TextOptions> = {}, batch = false) => {
         if (!fabricRef.current) return;
 
         const text = new Textbox(options.text || 'Add your text here', {
@@ -316,11 +324,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           textAlign: options.textAlign ?? 'center',
           opacity: options.opacity ?? 1,
           editable: true,
+          splitByGrapheme: true,
         });
 
         fabricRef.current.add(text);
-        fabricRef.current.setActiveObject(text);
-        fabricRef.current.renderAll();
+        if (!batch) {
+          fabricRef.current.setActiveObject(text);
+          fabricRef.current.renderAll();
+        }
       },
 
       addShape: (shapeType: 'rect' | 'circle' | 'line') => {
@@ -365,7 +376,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         fabricRef.current.renderAll();
       },
 
-      addShapeWithOptions: (options: ShapeOptions) => {
+      addShapeWithOptions: (options: ShapeOptions, batch = false) => {
         if (!fabricRef.current) return;
 
         let shape: FabricObject;
@@ -415,7 +426,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
 
         fabricRef.current.add(shape);
-        fabricRef.current.renderAll();
+        if (!batch) {
+          fabricRef.current.renderAll();
+        }
       },
 
       addImage: async (url: string) => {
@@ -781,6 +794,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!fabricRef.current) return;
         fabricRef.current.clear();
         fabricRef.current.backgroundColor = '#ffffff';
+        fabricRef.current.renderAll();
+        saveHistory();
+        onCanvasChangeRef.current?.();
+      },
+
+      finishBatch: () => {
+        if (!fabricRef.current) return;
+        fabricRef.current.discardActiveObject();
         fabricRef.current.renderAll();
         saveHistory();
         onCanvasChangeRef.current?.();
