@@ -676,7 +676,8 @@ export default function GeneratorPage() {
         });
 
         if (!saveResponse.ok) {
-          throw new Error("Failed to save post before publishing");
+          const err = await saveResponse.json();
+          throw new Error(err.error || "Failed to save post before publishing");
         }
 
         const { post } = await saveResponse.json();
@@ -718,7 +719,8 @@ export default function GeneratorPage() {
         });
 
         if (!saveResponse.ok) {
-          throw new Error("Failed to save post before publishing");
+          const err = await saveResponse.json();
+          throw new Error(err.error || "Failed to save post before publishing");
         }
 
         const { post } = await saveResponse.json();

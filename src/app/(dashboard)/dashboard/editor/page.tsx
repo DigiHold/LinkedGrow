@@ -347,7 +347,10 @@ function EditorContent() {
               postType: "video",
             }),
           });
-          if (!response.ok) throw new Error("Failed to save post");
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Failed to save post");
+          }
           const data = await response.json();
           postId = data.post.id;
         }
@@ -388,7 +391,10 @@ function EditorContent() {
               mediaData,
             }),
           });
-          if (!response.ok) throw new Error("Failed to save post");
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Failed to save post");
+          }
           const data = await response.json();
           postId = data.post.id;
           // Get the uploaded image URL

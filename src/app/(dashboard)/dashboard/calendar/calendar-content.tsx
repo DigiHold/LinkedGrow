@@ -450,7 +450,10 @@ export function CalendarContent() {
           }),
         });
 
-        if (!response.ok) throw new Error("Failed to create post");
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || "Failed to create post");
+        }
         const { post } = await response.json();
 
         // Publish to LinkedIn with video data
@@ -490,7 +493,10 @@ export function CalendarContent() {
           }),
         });
 
-        if (!response.ok) throw new Error("Failed to create post");
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || "Failed to create post");
+        }
 
         // If publishing immediately, call the LinkedIn API
         if (publish) {
