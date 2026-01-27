@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { FabricObject } from "fabric";
+import { FabricObject, Textbox, Rect, Circle, Line, Gradient } from "fabric";
 import { jsPDF } from "jspdf";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Button } from "@/components/ui/button";
@@ -501,19 +501,30 @@ export default function CarouselPage() {
     }
   };
 
-  // Handle template selection - builds Fabric.js JSON and loads via loadFromJSON
+  // Handle template selection - creates Fabric objects directly and adds to canvas
   const handleTemplateSelect = async (template: CarouselTemplate) => {
     if (!canvasRef.current) return;
+    const canvas = canvasRef.current.getCanvas();
+    if (!canvas) return;
 
     // Pre-load Inter font
     const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
     await loadGoogleFont('Inter', true).catch(() => {});
 
-    // Build Fabric.js-compatible JSON objects array
-    const objects: Record<string, unknown>[] = [];
+    // Save zoom, clear canvas, restore zoom
+    const currentZoom = canvas.getZoom();
+    canvas.clear();
+    canvas.setZoom(currentZoom);
+    canvas.setDimensions({
+      width: CANVAS_WIDTH * currentZoom,
+      height: CANVAS_HEIGHT * currentZoom,
+    });
 
-    // If gradient background, create a background rect as first object
-    if (template.background.type === 'gradient') {
+    // Set background
+    if (template.background.type === 'solid') {
+      canvas.backgroundColor = template.background.value;
+    } else if (template.background.type === 'gradient') {
+      canvas.backgroundColor = '';
       const gradientMatch = template.background.value.match(/linear-gradient\((\d+)deg,\s*([^)]+)\)/);
       if (gradientMatch) {
         const angle = parseInt(gradientMatch[1], 10);
@@ -529,33 +540,35 @@ export default function CarouselPage() {
           });
           idx++;
         }
-        objects.push({
-          type: 'Rect',
+        const bgRect = new Rect({
           left: 0, top: 0,
           width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
-          fill: {
-            type: 'linear',
-            coords: {
-              x1: (0.5 - Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
-              y1: (0.5 - Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
-              x2: (0.5 + Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
-              y2: (0.5 + Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
-            },
-            colorStops,
-          },
           selectable: false, evented: false, strokeWidth: 0,
-          isBackgroundRect: true,
         });
+        // @ts-expect-error custom property for identifying background rects
+        bgRect.isBackgroundRect = true;
+        const gradient = new Gradient({
+          type: 'linear',
+          coords: {
+            x1: (0.5 - Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
+            y1: (0.5 - Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
+            x2: (0.5 + Math.cos(angleRad) * 0.5) * CANVAS_WIDTH,
+            y2: (0.5 + Math.sin(angleRad) * 0.5) * CANVAS_HEIGHT,
+          },
+          colorStops,
+        });
+        bgRect.set('fill', gradient);
+        canvas.add(bgRect);
       }
     }
 
-    // Convert template elements to Fabric.js JSON
+    // Create all template element objects
+    const fabricObjects: FabricObject[] = [];
+
     if (template.elements) {
       for (const el of template.elements) {
         if (el.type === 'text') {
-          objects.push({
-            type: 'Textbox',
-            text: el.text || '',
+          const textObj = new Textbox(el.text || '', {
             left: el.left ?? 0,
             top: el.top ?? 0,
             width: el.width ?? 400,
@@ -567,49 +580,59 @@ export default function CarouselPage() {
             opacity: el.opacity ?? 1,
             editable: true,
           });
+          fabricObjects.push(textObj);
         } else if (el.type === 'shape' && el.shapeType === 'rect') {
-          objects.push({
-            type: 'Rect',
-            left: el.left ?? 0, top: el.top ?? 0,
-            width: el.width ?? 200, height: el.height ?? 150,
+          fabricObjects.push(new Rect({
+            left: el.left ?? 0,
+            top: el.top ?? 0,
+            width: el.width ?? 200,
+            height: el.height ?? 150,
             fill: el.fill ?? '#0891b2',
-            stroke: el.stroke || null,
+            stroke: el.stroke || undefined,
             strokeWidth: el.strokeWidth ?? 0,
             opacity: el.opacity ?? 1,
-            rx: el.rx ?? 0, ry: el.ry ?? 0,
-          });
+            rx: el.rx ?? 0,
+            ry: el.ry ?? 0,
+          }));
         } else if (el.type === 'shape' && el.shapeType === 'circle') {
-          objects.push({
-            type: 'Circle',
-            left: el.left ?? 0, top: el.top ?? 0,
+          fabricObjects.push(new Circle({
+            left: el.left ?? 0,
+            top: el.top ?? 0,
             radius: (el.width ?? 150) / 2,
             fill: el.fill ?? '#0891b2',
-            stroke: el.stroke || null,
+            stroke: el.stroke || undefined,
             strokeWidth: el.strokeWidth ?? 0,
             opacity: el.opacity ?? 1,
-          });
+          }));
         } else if (el.type === 'line' || (el.type === 'shape' && el.shapeType === 'line')) {
-          objects.push({
-            type: 'Line',
-            x1: el.x1 ?? 0, y1: el.y1 ?? 0,
-            x2: el.x2 ?? 300, y2: el.y2 ?? 0,
-            left: el.left ?? 0, top: el.top ?? 0,
+          fabricObjects.push(new Line([
+            el.x1 ?? 0, el.y1 ?? 0,
+            el.x2 ?? 300, el.y2 ?? 0,
+          ], {
+            left: el.left ?? 0,
+            top: el.top ?? 0,
             stroke: el.stroke ?? el.fill ?? '#0891b2',
             strokeWidth: el.strokeWidth ?? 4,
             opacity: el.opacity ?? 1,
-          });
+          }));
         }
       }
     }
 
-    // Build complete canvas JSON and load in one shot
-    const canvasJSON = JSON.stringify({
-      version: '6.0.0',
-      objects,
-      background: template.background.type === 'solid' ? template.background.value : '',
-    });
+    // Add all objects in one call
+    if (fabricObjects.length > 0) {
+      canvas.add(...fabricObjects);
+    }
 
-    await canvasRef.current.loadFromJSON(canvasJSON);
+    // Debug: log positions after adding
+    console.log('[Template Debug] Canvas zoom:', canvas.getZoom());
+    console.log('[Template Debug] Canvas dimensions:', canvas.width, canvas.height);
+    console.log('[Template Debug] Canvas viewportTransform:', canvas.viewportTransform);
+    for (const obj of canvas.getObjects()) {
+      console.log('[Template Debug] Object:', obj.type, 'left:', obj.left, 'top:', obj.top, 'width:', obj.width, 'height:', obj.height, 'scaleX:', obj.scaleX, 'scaleY:', obj.scaleY);
+    }
+
+    canvas.renderAll();
 
     setShowTemplateGallery(false);
     showToast(`Template "${template.name}" applied!`, "success");
