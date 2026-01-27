@@ -58,7 +58,12 @@ export const users = sqliteTable("users", {
   // Voice/style settings for AI content generation
   samplePosts: text("sample_posts"), // JSON array of sample posts for voice matching
   neverMention: text("never_mention"), // Topics/words AI should never mention
-  businessDescription: text("business_description"), // User's business/role description
+  businessDescription: text("business_description"), // Composite field for AI prompts (auto-built from fields below)
+  businessName: text("business_name"), // Company or personal brand name
+  businessNiche: text("business_niche"), // Industry / niche
+  businessProducts: text("business_products"), // Products or services offered
+  businessTopics: text("business_topics"), // Key topics for content
+  businessContext: text("business_context"), // Additional context / FAQ
   targetAudience: text("target_audience"), // Who they're writing for
   writingTone: text("writing_tone"), // e.g., "professional", "casual", "witty"
 

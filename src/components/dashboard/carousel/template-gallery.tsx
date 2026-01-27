@@ -12,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Layers,
   Check,
-  Lock,
-  Sparkles,
   User,
   Trash2,
   Loader2,
@@ -43,7 +41,6 @@ interface TemplateGalleryProps {
   selectedTemplateId: string;
   onSelectTemplate: (template: CarouselTemplate) => void;
   onLoadUserTemplate?: (canvasJson: string) => void;
-  userPlan?: 'free' | 'starter' | 'pro' | 'business';
 }
 
 export function TemplateGallery({
@@ -52,7 +49,6 @@ export function TemplateGallery({
   selectedTemplateId,
   onSelectTemplate,
   onLoadUserTemplate,
-  userPlan = 'pro',
 }: TemplateGalleryProps) {
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'all'>('all');
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
@@ -60,8 +56,6 @@ export function TemplateGallery({
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [isLoadingUserTemplates, setIsLoadingUserTemplates] = useState(false);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
-
-  const canUsePremium = userPlan === 'business';
 
   const filteredTemplates = selectedCategory === 'all'
     ? carouselTemplates
@@ -108,7 +102,6 @@ export function TemplateGallery({
   };
 
   const handleSelectTemplate = (template: CarouselTemplate) => {
-    if (template.isPremium && !canUsePremium) return;
     onSelectTemplate(template);
     onOpenChange(false);
   };
@@ -144,7 +137,6 @@ export function TemplateGallery({
   const renderTemplatePreview = (template: CarouselTemplate) => {
     const isSelected = template.id === selectedTemplateId;
     const isHovered = hoveredTemplate === template.id;
-    const isLocked = template.isPremium && !canUsePremium;
     const textColor = getTextColor(template);
     const accentColor = getAccentColor(template);
 
@@ -154,13 +146,12 @@ export function TemplateGallery({
         onClick={() => handleSelectTemplate(template)}
         onMouseEnter={() => setHoveredTemplate(template.id)}
         onMouseLeave={() => setHoveredTemplate(null)}
-        disabled={isLocked}
         className={cn(
           "relative aspect-[4/5] rounded-lg overflow-hidden transition-all duration-200 group",
           "border-2",
           isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20" : "border-transparent",
-          isHovered && !isLocked ? "scale-105 shadow-lg" : "",
-          isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:shadow-md"
+          isHovered ? "scale-105 shadow-lg" : "",
+          "cursor-pointer hover:shadow-md"
         )}
         style={{ background: getPreviewBackground(template) }}
       >
@@ -203,20 +194,6 @@ export function TemplateGallery({
         {isSelected && (
           <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
             <Check className="w-3 h-3 text-white" />
-          </div>
-        )}
-
-        {/* Premium lock */}
-        {isLocked && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <Lock className="w-4 h-4 text-white" />
-          </div>
-        )}
-
-        {/* Premium badge */}
-        {template.isPremium && !isLocked && (
-          <div className="absolute top-1.5 left-1.5">
-            <Sparkles className="w-3 h-3 text-amber-400" />
           </div>
         )}
       </button>
@@ -347,20 +324,6 @@ export function TemplateGallery({
                 {filteredTemplates.map(renderTemplatePreview)}
               </div>
 
-              {/* Premium notice */}
-              {!canUsePremium && filteredTemplates.some(t => t.isPremium) && (
-                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-amber-500 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-sm">Premium Templates</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Upgrade to Business plan to unlock all premium templates with advanced designs.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </TabsContent>
 

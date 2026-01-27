@@ -114,8 +114,6 @@ export default function CarouselPage() {
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
   const [hasImageApiKey, setHasImageApiKey] = useState<boolean | null>(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
-  const [userPlan, setUserPlan] = useState<'free' | 'starter' | 'pro' | 'business'>('pro');
-
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -133,7 +131,6 @@ export default function CarouselPage() {
           const data = await response.json();
           setHasTextApiKey(data.hasApiKey || false);
           setHasImageApiKey(data.hasImageApiKey || false);
-          setUserPlan(data.plan || 'free');
           // Set branding data from API response
           setBranding({
             logoUrl: data.brandLogoUrl || undefined,
@@ -1217,7 +1214,6 @@ export default function CarouselPage() {
           selectedTemplateId=""
           onSelectTemplate={handleTemplateSelect}
           onLoadUserTemplate={handleLoadUserTemplate}
-          userPlan={userPlan}
         />
 
         {/* My Carousels Modal */}

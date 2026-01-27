@@ -108,6 +108,11 @@ export async function GET() {
       samplePosts,
       neverMention: aiUser.neverMention,
       businessDescription: aiUser.businessDescription,
+      businessName: aiUser.businessName,
+      businessNiche: aiUser.businessNiche,
+      businessProducts: aiUser.businessProducts,
+      businessTopics: aiUser.businessTopics,
+      businessContext: aiUser.businessContext,
       targetAudience: aiUser.targetAudience,
       writingTone: aiUser.writingTone,
       // Branding settings
@@ -164,6 +169,11 @@ export async function PUT(request: NextRequest) {
       samplePosts,
       neverMention,
       businessDescription,
+      businessName,
+      businessNiche,
+      businessProducts,
+      businessTopics,
+      businessContext,
       targetAudience,
       writingTone,
     } = body;
@@ -266,6 +276,26 @@ export async function PUT(request: NextRequest) {
 
     if (businessDescription !== undefined) {
       updateData.businessDescription = businessDescription || null;
+    }
+
+    if (businessName !== undefined) {
+      updateData.businessName = businessName || null;
+    }
+
+    if (businessNiche !== undefined) {
+      updateData.businessNiche = businessNiche || null;
+    }
+
+    if (businessProducts !== undefined) {
+      updateData.businessProducts = businessProducts || null;
+    }
+
+    if (businessTopics !== undefined) {
+      updateData.businessTopics = businessTopics || null;
+    }
+
+    if (businessContext !== undefined) {
+      updateData.businessContext = businessContext || null;
     }
 
     if (targetAudience !== undefined) {

@@ -210,14 +210,16 @@ function SettingsContent() {
             neverMention: data.neverMention || "",
             writingTone: data.writingTone || "",
           });
-          // Also load business profile fields if they exist
-          if (data.businessDescription || data.targetAudience) {
-            setBusinessProfile((prev) => ({
-              ...prev,
-              description: data.businessDescription || "",
-              audience: data.targetAudience || "",
-            }));
-          }
+          // Load business profile fields
+          setBusinessProfile({
+            name: data.businessName || "",
+            description: data.businessDescription || "",
+            products: data.businessProducts || "",
+            niche: data.businessNiche || "",
+            audience: data.targetAudience || "",
+            topics: data.businessTopics || "",
+            context: data.businessContext || "",
+          });
         }
       } catch (error) {
         console.error("Failed to fetch voice settings:", error);
@@ -383,11 +385,26 @@ function SettingsContent() {
     setProfileMessage(null);
 
     try {
+      // Build composite businessDescription for AI prompts
+      const descParts = [
+        businessProfile.name ? `Business: ${businessProfile.name}.` : "",
+        businessProfile.description,
+        businessProfile.niche ? `Industry: ${businessProfile.niche}.` : "",
+        businessProfile.products ? `Products/Services: ${businessProfile.products}` : "",
+        businessProfile.topics ? `Key topics: ${businessProfile.topics}.` : "",
+        businessProfile.context ? `Additional context: ${businessProfile.context}` : "",
+      ].filter(Boolean).join(" ");
+
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          businessDescription: `${businessProfile.name ? `Business: ${businessProfile.name}. ` : ""}${businessProfile.description}${businessProfile.products ? ` Products/Services: ${businessProfile.products}` : ""}${businessProfile.niche ? ` Industry: ${businessProfile.niche}` : ""}${businessProfile.context ? ` Additional context: ${businessProfile.context}` : ""}`,
+          businessDescription: descParts || null,
+          businessName: businessProfile.name,
+          businessNiche: businessProfile.niche,
+          businessProducts: businessProfile.products,
+          businessTopics: businessProfile.topics,
+          businessContext: businessProfile.context,
           targetAudience: businessProfile.audience,
         }),
       });
