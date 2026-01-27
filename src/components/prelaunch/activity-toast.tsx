@@ -146,7 +146,7 @@ export function ActivityToast({ actionText = "joined the waitlist" }: ActivityTo
           animate={{ opacity: 1, x: 0, y: 0 }}
           exit={{ opacity: 0, x: -100, y: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="fixed bottom-4 left-4 z-[9999] max-w-xs"
+          className="hidden sm:block fixed bottom-4 left-4 z-[9999] max-w-xs"
         >
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-start gap-3">
             {/* Avatar */}

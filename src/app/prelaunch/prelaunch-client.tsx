@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   Loader2,
@@ -405,16 +406,22 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
           className="flex items-center justify-center gap-4 mt-12"
         >
           <div className="flex -space-x-3">
-            {["S", "M", "E", "J", "P"].map((letter, i) => (
+            {[1, 2, 3, 4, 5, 6].map((num, i) => (
               <motion.div
-                key={letter}
+                key={num}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + i * 0.1, type: "spring" }}
-                className="w-11 h-11 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-sm font-bold shadow-lg"
-                style={{ zIndex: 5 - i }}
+                className="w-11 h-11 rounded-full border-2 border-white dark:border-slate-900 overflow-hidden shadow-lg"
+                style={{ zIndex: 6 - i }}
               >
-                {letter}
+                <Image
+                  src={`/images/person${num}.avif`}
+                  alt=""
+                  width={44}
+                  height={44}
+                  className="w-full h-full object-cover"
+                />
               </motion.div>
             ))}
           </div>
@@ -1278,9 +1285,15 @@ function ComparisonSection() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    {["A", "B", "C"].map((l) => (
-                      <div key={l} className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-xs font-bold">
-                        {l}
+                    {[1, 2, 3].map((num) => (
+                      <div key={num} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 overflow-hidden">
+                        <Image
+                          src={`/images/person${num}.avif`}
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     ))}
                   </div>
