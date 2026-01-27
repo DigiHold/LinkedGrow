@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FabricObject, Textbox, FabricImage, Group } from "fabric";
 import { Button } from "@/components/ui/button";
-import { GoogleFontPicker, loadGoogleFont } from "./GoogleFontPicker";
+import { GoogleFontPicker, loadGoogleFont, getFontWeights } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,7 +20,6 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Bold,
   Italic,
   Underline,
   Trash2,
@@ -482,18 +481,27 @@ export function ElementProperties({
                   </div>
 
                   <div>
+                    <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                    <Select
+                      value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
+                      onValueChange={(val) => updateElement({ fontWeight: val })}
+                    >
+                      <SelectTrigger className="mt-2 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getFontWeights(elementProps.fontFamily).map((w) => (
+                          <SelectItem key={w.value} value={String(w.value)}>
+                            {w.label} ({w.value})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
                     <Label className="text-xs text-muted-foreground">Text Style</Label>
                     <div className="flex gap-1 mt-2">
-                      <Button
-                        variant={elementProps.fontWeight === 'bold' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => updateElement({
-                          fontWeight: elementProps.fontWeight === 'bold' ? 'normal' : 'bold'
-                        })}
-                      >
-                        <Bold className="w-3 h-3" />
-                      </Button>
                       <Button
                         variant={elementProps.fontStyle === 'italic' ? 'default' : 'outline'}
                         size="sm"

@@ -21,11 +21,11 @@ import {
 interface GoogleFont {
   family: string;
   category: string;
+  variants: string[];
 }
 
 // Fonts to exclude - icon fonts, symbols, and fonts that don't render text properly
 const EXCLUDED_FONTS = new Set([
-  // Icon fonts
   "Material Icons",
   "Material Icons Outlined",
   "Material Icons Round",
@@ -36,13 +36,11 @@ const EXCLUDED_FONTS = new Set([
   "Material Symbols Sharp",
   "Noto Color Emoji",
   "Noto Emoji",
-  // Symbol/special fonts
   "Noto Sans Symbols",
   "Noto Sans Symbols 2",
   "Noto Sans Math",
   "Noto Sans SignWriting",
   "Noto Music",
-  // Fonts that often have rendering issues
   "Noto Sans Anatolian Hieroglyphs",
   "Noto Sans Cuneiform",
   "Noto Sans Egyptian Hieroglyphs",
@@ -59,44 +57,60 @@ const EXCLUDED_FONTS = new Set([
 let fontsCache: GoogleFont[] | null = null;
 let fontsCachePromise: Promise<GoogleFont[]> | null = null;
 
-// Track which font stylesheets have been injected
-const injectedStylesheets = new Set<string>();
+// Track the currently active font stylesheet
+let activeFontLink: HTMLLinkElement | null = null;
+let activeFontName: string | null = null;
+
+// Permanent fonts - these are always kept (current value on mount)
+const permanentFonts = new Set<string>();
 
 /**
  * Load a Google Font by injecting its stylesheet and waiting until the browser
  * has actually parsed and made the font available for rendering.
+ * Removes the previous font's stylesheet to keep the DOM clean.
  */
-export async function loadGoogleFont(fontName: string): Promise<void> {
-  // Inject the stylesheet if not already done
-  if (!injectedStylesheets.has(fontName)) {
-    const link = document.createElement("link");
-    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
-    link.rel = "stylesheet";
-    document.head.appendChild(link);
-    injectedStylesheets.add(fontName);
-
-    // Wait for the <link> to load (CSS fetched and parsed)
-    await new Promise<void>((resolve) => {
-      link.onload = () => resolve();
-      link.onerror = () => resolve();
-      // Safety timeout - don't block forever
-      setTimeout(resolve, 4000);
-    });
+export async function loadGoogleFont(fontName: string, keepPrevious = false): Promise<void> {
+  // Already the active font
+  if (activeFontName === fontName && activeFontLink) {
+    try {
+      await Promise.all([
+        document.fonts.load(`400 16px "${fontName}"`),
+        document.fonts.load(`700 16px "${fontName}"`),
+      ]);
+      await document.fonts.ready;
+    } catch { /* ignore */ }
+    return;
   }
 
-  // Now wait for the actual font face to be ready using the Font Loading API.
-  // document.fonts.load() returns a promise that resolves when the matching
-  // font face has been downloaded. We try multiple weights.
+  // Remove previous non-permanent font stylesheet
+  if (!keepPrevious && activeFontLink && activeFontName && !permanentFonts.has(activeFontName)) {
+    activeFontLink.remove();
+  }
+
+  // Create and inject new stylesheet
+  const link = document.createElement("link");
+  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+  link.rel = "stylesheet";
+  document.head.appendChild(link);
+
+  activeFontLink = link;
+  activeFontName = fontName;
+
+  // Wait for the <link> to load
+  await new Promise<void>((resolve) => {
+    link.onload = () => resolve();
+    link.onerror = () => resolve();
+    setTimeout(resolve, 4000);
+  });
+
+  // Wait for actual font faces to be ready
   try {
     await Promise.all([
       document.fonts.load(`400 16px "${fontName}"`),
       document.fonts.load(`700 16px "${fontName}"`),
     ]);
-    // Final barrier - wait for all queued font loads
     await document.fonts.ready;
-  } catch {
-    // Ignore errors - font might only have some weights
-  }
+  } catch { /* ignore */ }
 }
 
 function isValidTextFont(font: { family: string; category: string }): boolean {
@@ -117,9 +131,10 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
     .then((data) => {
       const fonts = data.items
         .filter((item: { family: string; category: string }) => isValidTextFont(item))
-        .map((item: { family: string; category: string }) => ({
+        .map((item: { family: string; category: string; variants: string[] }) => ({
           family: item.family,
           category: item.category,
+          variants: item.variants || [],
         }));
       fontsCache = fonts;
       return fonts;
@@ -128,18 +143,76 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
       console.error("Failed to fetch Google Fonts:", error);
       fontsCachePromise = null;
       return [
-        { family: "Inter", category: "sans-serif" },
-        { family: "Roboto", category: "sans-serif" },
-        { family: "Open Sans", category: "sans-serif" },
-        { family: "Lato", category: "sans-serif" },
-        { family: "Montserrat", category: "sans-serif" },
-        { family: "Poppins", category: "sans-serif" },
-        { family: "Playfair Display", category: "serif" },
-        { family: "Merriweather", category: "serif" },
+        { family: "Inter", category: "sans-serif", variants: ["300", "regular", "500", "600", "700", "800", "900"] },
+        { family: "Roboto", category: "sans-serif", variants: ["100", "300", "regular", "500", "700", "900"] },
+        { family: "Open Sans", category: "sans-serif", variants: ["300", "regular", "500", "600", "700", "800"] },
+        { family: "Lato", category: "sans-serif", variants: ["100", "300", "regular", "700", "900"] },
+        { family: "Montserrat", category: "sans-serif", variants: ["100", "200", "300", "regular", "500", "600", "700", "800", "900"] },
+        { family: "Poppins", category: "sans-serif", variants: ["100", "200", "300", "regular", "500", "600", "700", "800", "900"] },
+        { family: "Playfair Display", category: "serif", variants: ["regular", "500", "600", "700", "800", "900"] },
+        { family: "Merriweather", category: "serif", variants: ["300", "regular", "700", "900"] },
       ];
     });
 
   return fontsCachePromise;
+}
+
+/**
+ * Get available font weights for a given font family.
+ * Returns numeric weights (100-900) from the Google Fonts API data.
+ */
+export function getFontWeights(fontFamily: string): { value: number; label: string }[] {
+  const WEIGHT_LABELS: Record<number, string> = {
+    100: "Thin",
+    200: "Extra Light",
+    300: "Light",
+    400: "Regular",
+    500: "Medium",
+    600: "Semi Bold",
+    700: "Bold",
+    800: "Extra Bold",
+    900: "Black",
+  };
+
+  if (!fontsCache) {
+    // Fallback if cache not loaded yet
+    return [
+      { value: 300, label: "Light" },
+      { value: 400, label: "Regular" },
+      { value: 500, label: "Medium" },
+      { value: 600, label: "Semi Bold" },
+      { value: 700, label: "Bold" },
+      { value: 900, label: "Black" },
+    ];
+  }
+
+  const font = fontsCache.find(f => f.family === fontFamily);
+  if (!font) {
+    return [
+      { value: 400, label: "Regular" },
+      { value: 700, label: "Bold" },
+    ];
+  }
+
+  // Parse variants - Google Fonts API returns strings like "100", "300", "regular", "700", "italic", "300italic"
+  const weights: { value: number; label: string }[] = [];
+  const seen = new Set<number>();
+
+  for (const variant of font.variants) {
+    // Skip italic variants
+    if (variant.includes("italic")) continue;
+
+    const numWeight = variant === "regular" ? 400 : parseInt(variant, 10);
+    if (!isNaN(numWeight) && !seen.has(numWeight) && WEIGHT_LABELS[numWeight]) {
+      seen.add(numWeight);
+      weights.push({ value: numWeight, label: WEIGHT_LABELS[numWeight] });
+    }
+  }
+
+  // Sort by weight
+  weights.sort((a, b) => a.value - b.value);
+
+  return weights.length > 0 ? weights : [{ value: 400, label: "Regular" }];
 }
 
 interface GoogleFontPickerProps {
@@ -154,10 +227,11 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Load the current font on mount (just the one being used)
+  // Load the current font on mount (mark as permanent so it never gets removed)
   React.useEffect(() => {
     if (value) {
-      loadGoogleFont(value);
+      permanentFonts.add(value);
+      loadGoogleFont(value, true);
     }
   }, [value]);
 
@@ -205,7 +279,6 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
   const handleSelect = async (fontName: string) => {
     setOpen(false);
     setSearch("");
-    // Load the font and wait for it to be ready, THEN notify parent
     await loadGoogleFont(fontName);
     onChange(fontName);
   };
