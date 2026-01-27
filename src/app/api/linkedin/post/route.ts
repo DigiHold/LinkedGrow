@@ -23,15 +23,29 @@ export async function POST(request: NextRequest) {
     const { text, postId, imageTitle, videoData, visibility = 'PUBLIC' } = body;
     let { imageUrl } = body;
 
-    // If postId is provided but no imageUrl, look up the image from the media table
-    if (postId && !imageUrl && !videoData) {
-      const postMedia = await db
-        .select()
-        .from(media)
-        .where(eq(media.postId, postId));
-      const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
-      if (firstImage?.storageUrl) {
-        imageUrl = firstImage.storageUrl;
+    // If postId is provided, check it's not already published and look up media
+    if (postId) {
+      const existingPost = await db.query.posts.findFirst({
+        where: eq(posts.id, postId),
+      });
+
+      if (existingPost?.status === 'published') {
+        return NextResponse.json(
+          { error: 'This post has already been published to LinkedIn' },
+          { status: 400 }
+        );
+      }
+
+      // Look up the image from the media table if no imageUrl provided
+      if (!imageUrl && !videoData) {
+        const postMedia = await db
+          .select()
+          .from(media)
+          .where(eq(media.postId, postId));
+        const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
+        if (firstImage?.storageUrl) {
+          imageUrl = firstImage.storageUrl;
+        }
       }
     }
 
