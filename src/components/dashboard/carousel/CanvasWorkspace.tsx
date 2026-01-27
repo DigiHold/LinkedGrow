@@ -4,6 +4,21 @@ import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHand
 import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, loadSVGFromString, util } from "fabric";
 import { cn } from "@/lib/utils";
 
+// CRITICAL: Fabric.js v7 changed default originX/originY from 'left'/'top' to 'center'/'center'.
+// We must override ownDefaults BEFORE creating any Fabric objects. In v7, the constructor does:
+//   Object.assign(this, FabricObject.ownDefaults);
+//   this.setOptions(options);
+// So modifying ownDefaults directly is the only way to change defaults globally.
+// Using prototype.set() does NOT work because ownDefaults overwrite prototype values.
+FabricObject.ownDefaults.originX = 'left';
+FabricObject.ownDefaults.originY = 'top';
+FabricObject.ownDefaults.cornerColor = '#0891b2';
+FabricObject.ownDefaults.cornerStyle = 'circle';
+FabricObject.ownDefaults.cornerSize = 12;
+FabricObject.ownDefaults.transparentCorners = false;
+FabricObject.ownDefaults.borderColor = '#0891b2';
+FabricObject.ownDefaults.borderScaleFactor = 2;
+
 // Helper to parse CSS gradient and convert to Fabric gradient
 function parseGradientToFabric(gradientString: string): { colorStops: Record<string, string>; angle: number } | null {
   // Parse "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
@@ -197,19 +212,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         selection: true,
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
-      });
-
-      // Set default origin to top-left (Fabric v7 defaults to center/center)
-      // and default control styles
-      FabricObject.prototype.set({
-        originX: 'left',
-        originY: 'top',
-        cornerColor: '#0891b2',
-        cornerStyle: 'circle',
-        cornerSize: 12,
-        transparentCorners: false,
-        borderColor: '#0891b2',
-        borderScaleFactor: 2,
       });
 
       // Enable center guidelines and real-time position updates

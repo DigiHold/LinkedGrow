@@ -542,6 +542,7 @@ export default function CarouselPage() {
           left: 0, top: 0,
           width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
           selectable: false, evented: false, strokeWidth: 0,
+          originX: 'left', originY: 'top',
         });
         // @ts-expect-error custom property for identifying background rects
         bgRect.isBackgroundRect = true;
@@ -577,6 +578,8 @@ export default function CarouselPage() {
             textAlign: el.textAlign ?? 'center',
             opacity: el.opacity ?? 1,
             editable: true,
+            originX: 'left',
+            originY: 'top',
           }));
         } else if (el.type === 'shape' && el.shapeType === 'rect') {
           fabricObjects.push(new Rect({
@@ -590,6 +593,8 @@ export default function CarouselPage() {
             opacity: el.opacity ?? 1,
             rx: el.rx ?? 0,
             ry: el.ry ?? 0,
+            originX: 'left',
+            originY: 'top',
           }));
         } else if (el.type === 'shape' && el.shapeType === 'circle') {
           fabricObjects.push(new Circle({
@@ -600,6 +605,8 @@ export default function CarouselPage() {
             stroke: el.stroke || undefined,
             strokeWidth: el.strokeWidth ?? 0,
             opacity: el.opacity ?? 1,
+            originX: 'left',
+            originY: 'top',
           }));
         } else if (el.type === 'line' || (el.type === 'shape' && el.shapeType === 'line')) {
           fabricObjects.push(new Line([
@@ -611,6 +618,8 @@ export default function CarouselPage() {
             stroke: el.stroke ?? el.fill ?? '#0891b2',
             strokeWidth: el.strokeWidth ?? 4,
             opacity: el.opacity ?? 1,
+            originX: 'left',
+            originY: 'top',
           }));
         }
       }
