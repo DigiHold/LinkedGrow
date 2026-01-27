@@ -505,8 +505,8 @@ export default function CarouselPage() {
   const handleTemplateSelect = async (template: CarouselTemplate) => {
     if (!canvasRef.current) return;
 
-    // Collect unique font families from template elements
-    const fonts = new Set<string>();
+    // Collect unique font families from template elements (default to Inter)
+    const fonts = new Set<string>(['Inter']);
     template.elements?.forEach(el => {
       if (el.type === 'text' && el.fontFamily) {
         fonts.add(el.fontFamily);
@@ -514,14 +514,12 @@ export default function CarouselPage() {
     });
 
     // Pre-load all fonts so Fabric.js Textbox computes correct metrics
-    if (fonts.size > 0) {
-      const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
-      await Promise.all(
-        Array.from(fonts).map(f => loadGoogleFont(f, true).catch(() => {}))
-      );
-    }
+    const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
+    await Promise.all(
+      Array.from(fonts).map(f => loadGoogleFont(f, true).catch(() => {}))
+    );
 
-    // Clear canvas
+    // Clear canvas (this preserves zoom)
     canvasRef.current.clearCanvas();
 
     // Apply background
@@ -534,7 +532,7 @@ export default function CarouselPage() {
           canvasRef.current?.addText({
             text: element.text,
             fontSize: element.fontSize,
-            fontFamily: element.fontFamily,
+            fontFamily: element.fontFamily || 'Inter',
             fontWeight: element.fontWeight,
             fill: element.fill,
             textAlign: element.textAlign,

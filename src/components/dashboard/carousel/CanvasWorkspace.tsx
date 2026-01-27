@@ -317,7 +317,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           textAlign: options.textAlign ?? 'center',
           opacity: options.opacity ?? 1,
           editable: true,
-          splitByGrapheme: true,
         });
 
         fabricRef.current.add(text);
@@ -785,8 +784,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       clearCanvas: () => {
         if (!fabricRef.current) return;
+        // Save current zoom before clear (clear() resets viewport transform)
+        const currentZoom = fabricRef.current.getZoom();
         fabricRef.current.clear();
         fabricRef.current.backgroundColor = '#ffffff';
+        // Restore zoom that was reset by clear()
+        fabricRef.current.setZoom(currentZoom);
+        fabricRef.current.setDimensions({
+          width: CANVAS_WIDTH * currentZoom,
+          height: CANVAS_HEIGHT * currentZoom,
+        });
         fabricRef.current.renderAll();
         saveHistory();
         onCanvasChangeRef.current?.();
