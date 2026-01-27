@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date(),
         })
         .where(eq(posts.id, postId));
+
     }
 
     const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';

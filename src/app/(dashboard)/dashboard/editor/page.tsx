@@ -160,6 +160,8 @@ function EditorContent() {
     base64: string;
     mimeType: string;
     preview?: string;
+    storageUrl?: string;
+    storageKey?: string;
   } | null>(null);
   const [originalHadMedia, setOriginalHadMedia] = useState(false);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
@@ -279,10 +281,11 @@ function EditorContent() {
     if (!content.trim()) return;
     setIsSaving(true);
     try {
-      // Determine if we're uploading new media or keeping/removing existing
-      const isNewUpload = attachedImage && attachedImage.base64 && attachedImage.base64.length > 0;
-      const mediaData = isNewUpload ? {
-        base64: attachedImage.base64,
+      // Build media info from R2 upload (storageUrl/storageKey set by post-editor)
+      const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasNewMedia ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
         mimeType: attachedImage.mimeType,
       } : undefined;
 
@@ -293,7 +296,7 @@ function EditorContent() {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", mediaData, removeMedia }),
+          body: JSON.stringify({ content, status: "draft", mediaInfo, removeMedia }),
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
@@ -304,7 +307,7 @@ function EditorContent() {
             content,
             status: "draft",
             postType: attachedImage ? "image" : "text",
-            mediaData,
+            mediaInfo,
           }),
         });
         if (!response.ok) throw new Error("Failed to save draft");
@@ -330,93 +333,58 @@ function EditorContent() {
     setIsSaving(true);
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
-
       let postId = currentPostId;
-      let imageUrl: string | undefined;
 
-      // For videos, we don't save to R2 (too large) - we send directly to LinkedIn
-      if (isVideo && attachedImage) {
-        if (!postId) {
-          // Create a text-only post record first
-          const response = await fetch("/api/posts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content,
-              status: "draft",
-              postType: "video",
-            }),
-          });
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || "Failed to save post");
-          }
-          const data = await response.json();
-          postId = data.post.id;
-        }
-
-        // Publish to LinkedIn with video data
-        const publishResponse = await fetch("/api/linkedin/post", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            postId,
-            text: content,
-            videoData: {
-              base64: attachedImage.base64,
-              mimeType: attachedImage.mimeType,
-            },
-          }),
-        });
-
-        if (!publishResponse.ok) {
-          const error = await publishResponse.json();
-          throw new Error(error.error || "Failed to publish");
-        }
-      } else {
-        // For images and text posts, save to R2 first
-        const mediaData = attachedImage ? {
-          base64: attachedImage.base64,
+      // Create post record if not already saved
+      if (!postId) {
+        const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+        const mediaInfo = hasMedia ? {
+          storageUrl: attachedImage.storageUrl,
+          storageKey: attachedImage.storageKey,
           mimeType: attachedImage.mimeType,
         } : undefined;
 
-        if (!postId) {
-          const response = await fetch("/api/posts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content,
-              status: "draft",
-              postType: attachedImage ? "image" : "text",
-              mediaData,
-            }),
-          });
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || "Failed to save post");
-          }
-          const data = await response.json();
-          postId = data.post.id;
-          // Get the uploaded image URL
-          if (data.post.media && data.post.media.length > 0) {
-            imageUrl = data.post.media[0].storageUrl;
-          }
-        }
-
-        const publishResponse = await fetch("/api/linkedin/post", {
+        const response = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            postId,
-            text: content,
-            imageUrl,
+            content,
+            status: "draft",
+            postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
+            mediaInfo,
           }),
         });
-
-        if (!publishResponse.ok) {
-          const error = await publishResponse.json();
-          throw new Error(error.error || "Failed to publish");
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          throw new Error(err?.error || "Failed to save post");
         }
+        const data = await response.json();
+        postId = data.post.id;
+      }
+
+      // Publish to LinkedIn (API looks up media from DB, handles image upload to LinkedIn)
+      const publishBody: Record<string, unknown> = {
+        postId,
+        text: content,
+      };
+
+      // Videos are sent as base64 directly to LinkedIn (not stored in R2)
+      if (isVideo && attachedImage?.base64) {
+        publishBody.videoData = {
+          base64: attachedImage.base64,
+          mimeType: attachedImage.mimeType,
+        };
+      }
+
+      const publishResponse = await fetch("/api/linkedin/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(publishBody),
+      });
+
+      if (!publishResponse.ok) {
+        const error = await publishResponse.json().catch(() => null);
+        throw new Error(error?.error || "Failed to publish");
       }
 
       setSuccessMessage("Post published to LinkedIn!");
@@ -449,10 +417,10 @@ function EditorContent() {
     try {
       const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
 
-      // Determine if we're uploading new media or keeping/removing existing
-      const isNewUpload = attachedImage && attachedImage.base64 && attachedImage.base64.length > 0;
-      const mediaData = isNewUpload ? {
-        base64: attachedImage.base64,
+      const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasNewMedia ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
         mimeType: attachedImage.mimeType,
       } : undefined;
 
@@ -463,7 +431,7 @@ function EditorContent() {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaData, removeMedia }),
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaInfo, removeMedia }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
@@ -475,7 +443,7 @@ function EditorContent() {
             status: "scheduled",
             postType: attachedImage ? "image" : "text",
             scheduledAt,
-            mediaData,
+            mediaInfo,
           }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");

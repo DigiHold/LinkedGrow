@@ -8,7 +8,6 @@ import { nanoid } from "nanoid";
 import {
   uploadToR2,
   uploadBase64ToR2,
-  getPresignedUploadUrl,
   isR2Configured,
 } from "@/lib/storage/r2";
 import sharp from "sharp";
@@ -298,62 +297,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// POST /api/media/presign - Get presigned URL for direct upload
-export async function presignedUrl(request: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!isR2Configured()) {
-      return NextResponse.json(
-        { error: "Storage not configured" },
-        { status: 503 }
-      );
-    }
-
-    // Get user
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, session.user.email))
-      .limit(1);
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const body = await request.json();
-    const { fileName, contentType, postId } = body;
-
-    if (!fileName || !contentType) {
-      return NextResponse.json(
-        { error: "fileName and contentType required" },
-        { status: 400 }
-      );
-    }
-
-    if (!ALLOWED_TYPES.includes(contentType)) {
-      return NextResponse.json(
-        { error: "Invalid content type" },
-        { status: 400 }
-      );
-    }
-
-    const presigned = await getPresignedUploadUrl({
-      fileName,
-      contentType,
-      userId: user.id,
-      postId,
-    });
-
-    return NextResponse.json(presigned);
-  } catch (error) {
-    console.error("Presign error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate presigned URL" },
-      { status: 500 }
-    );
-  }
-}

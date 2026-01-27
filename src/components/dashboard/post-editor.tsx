@@ -94,12 +94,15 @@ export interface PostEditorRef {
   focus: () => void;
   getContent: () => string;
   setContent: (content: string) => void;
+  isUploading?: boolean;
 }
 
 interface AttachedMedia {
   base64: string;
   mimeType: string;
   preview?: string;
+  storageUrl?: string;
+  storageKey?: string;
 }
 
 // Alias for backward compatibility
@@ -212,8 +215,9 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       };
     }, [updateSelectionFormat]);
 
-    // Handle image upload
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle image upload - uploads directly to R2 via presigned URL
+    const [isUploading, setIsUploading] = useState(false);
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -224,28 +228,69 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
         return;
       }
 
-      // Validate file size (max 8MB - LinkedIn limit for posts)
-      if (file.size > 8 * 1024 * 1024) {
-        onError?.("Image must be less than 8MB (LinkedIn limit)");
+      // Validate file size (max 5MB - LinkedIn limit for posts)
+      if (file.size > 5 * 1024 * 1024) {
+        onError?.("Image must be less than 5MB (LinkedIn limit)");
         return;
       }
 
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        const base64 = result.split(",")[1];
-        onImageChange?.({
-          base64,
-          mimeType: file.type,
-          preview: result,
-        });
-      };
-      reader.readAsDataURL(file);
-
-      // Reset input
+      // Reset input immediately
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+
+      // Show preview immediately while uploading
+      const previewUrl = URL.createObjectURL(file);
+      onImageChange?.({
+        base64: "",
+        mimeType: file.type,
+        preview: previewUrl,
+      });
+
+      setIsUploading(true);
+      try {
+        // Get presigned URL from our API
+        const presignRes = await fetch("/api/media/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          }),
+        });
+
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => null);
+          throw new Error(err?.error || "Failed to prepare upload");
+        }
+
+        const { uploadUrl, key, publicUrl } = await presignRes.json();
+
+        // Upload directly to R2 via presigned URL
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        // Update state with R2 URL (no base64 needed)
+        onImageChange?.({
+          base64: "",
+          mimeType: file.type,
+          preview: previewUrl,
+          storageUrl: publicUrl,
+          storageKey: key,
+        });
+      } catch (error) {
+        onError?.(error instanceof Error ? error.message : "Failed to upload image");
+        onImageChange?.(null);
+      } finally {
+        setIsUploading(false);
       }
     };
 
@@ -290,6 +335,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       focus: () => textareaRef.current?.focus(),
       getContent: () => value,
       setContent: (content: string) => onChange(content),
+      isUploading,
     }));
 
     // Save to history when content changes
@@ -611,6 +657,11 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                   alt="Attached"
                   className="max-h-32 rounded-lg border"
                 />
+              )}
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
               )}
               <button
                 type="button"

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
-import { deleteMultipleFromR2, uploadBase64ToR2, isR2Configured } from "@/lib/storage/r2";
+import { deleteMultipleFromR2 } from "@/lib/storage/r2";
 import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 import { PLANS, PlanId } from "@/lib/plans";
@@ -165,7 +165,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { content, status, postType, scheduledAt, metadata, mediaData, removeMedia } = body;
+    const { content, status, postType, scheduledAt, metadata, mediaInfo, removeMedia } = body;
 
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
@@ -282,60 +282,41 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.postType = "text";
     }
 
-    // Handle image upload if provided
-    if (mediaData?.base64 && mediaData?.mimeType && isR2Configured()) {
-      try {
-        // Generate filename from mimeType
-        const ext = mediaData.mimeType.split("/")[1] || "png";
-        const fileName = `post-image-${postId}.${ext}`;
+    // Link new R2 media if provided (image already uploaded directly to R2)
+    if (mediaInfo?.storageUrl && mediaInfo?.storageKey) {
+      // Delete old media from R2 if exists
+      const existingMedia = await db
+        .select()
+        .from(media)
+        .where(eq(media.postId, postId));
 
-        // Upload to R2
-        const uploadResult = await uploadBase64ToR2(mediaData.base64, {
-          fileName,
-          contentType: mediaData.mimeType,
-          userId: user.id,
-          postId,
-        });
-
-        // Check if post already has media
-        const existingMedia = await db
-          .select()
-          .from(media)
-          .where(eq(media.postId, postId));
-
-        if (existingMedia.length > 0) {
-          // Delete old media from R2
-          const oldKeys = existingMedia.map((m) => m.storageKey);
-          try {
-            await deleteMultipleFromR2(oldKeys);
-          } catch (e) {
-            console.error("Failed to delete old media from R2:", e);
-          }
-          // Delete old media records
-          await db.delete(media).where(eq(media.postId, postId));
+      if (existingMedia.length > 0) {
+        const oldKeys = existingMedia.map((m) => m.storageKey);
+        try {
+          await deleteMultipleFromR2(oldKeys);
+        } catch (e) {
+          console.error("Failed to delete old media from R2:", e);
         }
-
-        // Create new media record
-        const mediaId = nanoid();
-        await db.insert(media).values({
-          id: mediaId,
-          userId: user.id,
-          postId,
-          storageKey: uploadResult.key,
-          storageUrl: uploadResult.url,
-          fileName,
-          mimeType: mediaData.mimeType,
-          fileSize: uploadResult.size,
-          status: "ready",
-          createdAt: new Date(),
-        });
-
-        // Update post type to image
-        updateData.postType = "image";
-      } catch (uploadError) {
-        console.error("Failed to upload image:", uploadError);
-        // Continue without image - don't fail the update
+        await db.delete(media).where(eq(media.postId, postId));
       }
+
+      // Create new media record
+      const ext = mediaInfo.mimeType?.split("/")[1] || "png";
+      const mediaId = nanoid();
+      await db.insert(media).values({
+        id: mediaId,
+        userId: user.id,
+        postId,
+        storageKey: mediaInfo.storageKey,
+        storageUrl: mediaInfo.storageUrl,
+        fileName: `post-image-${postId}.${ext}`,
+        mimeType: mediaInfo.mimeType || "image/png",
+        fileSize: mediaInfo.fileSize || 0,
+        status: "ready",
+        createdAt: new Date(),
+      });
+
+      updateData.postType = "image";
     }
 
     await db.update(posts).set(updateData).where(eq(posts.id, postId));

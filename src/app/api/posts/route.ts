@@ -6,7 +6,6 @@ import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
 import { eq, desc, and, inArray, or, count, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { schedulePost } from "@/lib/qstash";
-import { uploadBase64ToR2, isR2Configured } from "@/lib/storage/r2";
 import { PLANS, PlanId } from "@/lib/plans";
 
 // GET /api/posts - Get all posts for current user
@@ -203,7 +202,7 @@ export async function POST(request: NextRequest) {
       postType = "text",
       scheduledAt,
       metadata,
-      mediaData, // { base64: string, mimeType: string }
+      mediaInfo, // { storageUrl, storageKey, mimeType, fileSize } - image already uploaded to R2
     } = body;
 
     if (!content || content.trim() === "") {
@@ -274,7 +273,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine post type based on media
-    const actualPostType = mediaData?.base64 ? "image" : postType;
+    const actualPostType = mediaInfo?.storageUrl ? "image" : postType;
 
     await db.insert(posts).values({
       id: postId,
@@ -289,48 +288,30 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     });
 
-    // Handle image upload if provided
+    // Link already-uploaded R2 media to this post
     let uploadedMedia: typeof media.$inferSelect | null = null;
-    if (mediaData?.base64 && mediaData?.mimeType && isR2Configured()) {
-      try {
-        // Generate filename from mimeType
-        const ext = mediaData.mimeType.split("/")[1] || "png";
-        const fileName = `post-image-${postId}.${ext}`;
+    if (mediaInfo?.storageUrl && mediaInfo?.storageKey) {
+      const mediaId = nanoid();
+      const ext = mediaInfo.mimeType?.split("/")[1] || "png";
+      await db.insert(media).values({
+        id: mediaId,
+        userId: user.id,
+        postId,
+        storageKey: mediaInfo.storageKey,
+        storageUrl: mediaInfo.storageUrl,
+        fileName: `post-image-${postId}.${ext}`,
+        mimeType: mediaInfo.mimeType || "image/png",
+        fileSize: mediaInfo.fileSize || 0,
+        status: "ready",
+        createdAt: now,
+      });
 
-        // Upload to R2
-        const uploadResult = await uploadBase64ToR2(mediaData.base64, {
-          fileName,
-          contentType: mediaData.mimeType,
-          userId: user.id,
-          postId,
-        });
-
-        // Create media record
-        const mediaId = nanoid();
-        await db.insert(media).values({
-          id: mediaId,
-          userId: user.id,
-          postId,
-          storageKey: uploadResult.key,
-          storageUrl: uploadResult.url,
-          fileName,
-          mimeType: mediaData.mimeType,
-          fileSize: uploadResult.size,
-          status: "ready",
-          createdAt: now,
-        });
-
-        // Fetch the created media
-        const [newMedia] = await db
-          .select()
-          .from(media)
-          .where(eq(media.id, mediaId))
-          .limit(1);
-        uploadedMedia = newMedia;
-      } catch (uploadError) {
-        console.error("Failed to upload image:", uploadError);
-        // Continue without image - don't fail the post creation
-      }
+      const [newMedia] = await db
+        .select()
+        .from(media)
+        .where(eq(media.id, mediaId))
+        .limit(1);
+      uploadedMedia = newMedia;
     }
 
     // Fetch the created post

@@ -95,7 +95,7 @@ export function CalendarContent() {
 
   // Create post state
   const [newPostContent, setNewPostContent] = useState("");
-  const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string } | null>(null);
+  const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string; storageUrl?: string; storageKey?: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiInstruction, setAIInstruction] = useState("");
@@ -437,89 +437,58 @@ export function CalendarContent() {
 
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
-      // For video publish, we need to call LinkedIn API directly (no R2 storage)
-      if (publish && isVideo && attachedImage) {
-        // Create a text-only post record first
-        const response = await fetch("/api/posts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: newPostContent,
-            status: "draft",
-            postType: "video",
-          }),
-        });
+      // Build media info (images are already on R2)
+      const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo;
+      const mediaInfo = hasMedia ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
 
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || "Failed to create post");
-        }
+      // Create post record
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: newPostContent,
+          status: publish ? "draft" : "scheduled",
+          scheduledAt: publish ? undefined : scheduledAt.toISOString(),
+          postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
+          mediaInfo,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.error || "Failed to create post");
+      }
+
+      // If publishing immediately, call the LinkedIn API
+      if (publish) {
         const { post } = await response.json();
 
-        // Publish to LinkedIn with video data
+        const publishBody: Record<string, unknown> = {
+          postId: post.id,
+          text: newPostContent,
+        };
+
+        // Videos are sent as base64 directly to LinkedIn
+        if (isVideo && attachedImage?.base64) {
+          publishBody.videoData = {
+            base64: attachedImage.base64,
+            mimeType: attachedImage.mimeType,
+          };
+        }
+
         const publishResponse = await fetch("/api/linkedin/post", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            postId: post.id,
-            text: newPostContent,
-            videoData: {
-              base64: attachedImage.base64,
-              mimeType: attachedImage.mimeType,
-            },
-          }),
+          body: JSON.stringify(publishBody),
         });
 
         if (!publishResponse.ok) {
-          const error = await publishResponse.json();
-          throw new Error(error.error || "Failed to publish to LinkedIn");
-        }
-      } else {
-        // For images/text posts or scheduled posts
-        const mediaData = attachedImage && !isVideo ? {
-          base64: attachedImage.base64,
-          mimeType: attachedImage.mimeType,
-        } : undefined;
-
-        const response = await fetch("/api/posts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: newPostContent,
-            status: publish ? "draft" : "scheduled",
-            scheduledAt: publish ? undefined : scheduledAt.toISOString(),
-            postType: attachedImage ? "image" : "text",
-            mediaData,
-          }),
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || "Failed to create post");
-        }
-
-        // If publishing immediately, call the LinkedIn API
-        if (publish) {
-          const { post } = await response.json();
-          let imageUrl: string | undefined;
-          if (post.media && post.media.length > 0) {
-            imageUrl = post.media[0].storageUrl;
-          }
-
-          const publishResponse = await fetch("/api/linkedin/post", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              postId: post.id,
-              text: newPostContent,
-              imageUrl,
-            }),
-          });
-
-          if (!publishResponse.ok) {
-            const error = await publishResponse.json();
-            throw new Error(error.error || "Failed to publish to LinkedIn");
-          }
+          const error = await publishResponse.json().catch(() => null);
+          throw new Error(error?.error || "Failed to publish to LinkedIn");
         }
       }
 
