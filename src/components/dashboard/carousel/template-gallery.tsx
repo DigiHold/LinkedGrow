@@ -176,49 +176,48 @@ export function TemplateGallery({
       );
     }
 
-    // Text elements - render as colored bars representing text lines
+    // Text elements - render actual text scaled down
     if (el.type === 'text') {
       const text = el.text || '';
       const fontSize = el.fontSize || 24;
-      const lines = text.split('\n');
-      // Estimate bar height based on font size relative to canvas
-      const barH = Math.max(1, (fontSize / CH) * 100);
-      // Gap between lines
-      const gap = barH * 0.3;
       const color = el.fill || '#000';
       const align = el.textAlign || 'left';
       const elementWidth = el.width || 400;
+      const weight = typeof el.fontWeight === 'number' ? el.fontWeight :
+        el.fontWeight === 'bold' ? 700 : el.fontWeight === 'normal' ? 400 :
+        parseInt(String(el.fontWeight || '400'), 10) || 400;
 
       return (
         <div
           key={i}
-          className="absolute flex flex-col"
+          className="absolute overflow-hidden"
           style={{
             left: px(el.left ?? 0),
             top: py(el.top ?? 0),
             width: pw(elementWidth),
             opacity: el.opacity ?? 1,
-            alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
-            gap: `${gap}%`,
           }}
         >
-          {lines.map((line, li) => {
-            // Vary bar width based on line length relative to longest line
-            const maxLen = Math.max(...lines.map(l => l.length), 1);
-            const lineRatio = Math.max(0.3, line.length / maxLen);
-            return (
-              <div
+          <svg
+            viewBox={`0 0 ${elementWidth} ${fontSize * 1.3 * text.split('\n').length}`}
+            className="w-full"
+            style={{ display: 'block' }}
+          >
+            {text.split('\n').map((line, li) => (
+              <text
                 key={li}
-                className="rounded-full"
-                style={{
-                  width: `${lineRatio * 100}%`,
-                  height: `${barH}%`,
-                  backgroundColor: color,
-                  opacity: fontSize > 40 ? 0.9 : 0.6,
-                }}
-              />
-            );
-          })}
+                x={align === 'center' ? elementWidth / 2 : align === 'right' ? elementWidth : 0}
+                y={fontSize * 1.05 + li * fontSize * 1.25}
+                fill={color}
+                fontSize={fontSize}
+                fontWeight={weight}
+                fontFamily="Inter, system-ui, sans-serif"
+                textAnchor={align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start'}
+              >
+                {line}
+              </text>
+            ))}
+          </svg>
         </div>
       );
     }
