@@ -630,49 +630,6 @@ export default function CarouselPage() {
 
     canvas.renderAll();
 
-    // Force recalculate all coordinates
-    canvas.calcOffset();
-    canvas._objects.forEach(obj => obj.setCoords());
-
-    // DEBUG: Draw a bright red cross at canvas center to verify coordinate system
-    const ctx = canvas.getContext();
-    ctx.save();
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 4;
-    // Draw cross at center of zoomed canvas (should be center of visible area)
-    const centerX = (CANVAS_WIDTH / 2) * currentZoom;
-    const centerY = (CANVAS_HEIGHT / 2) * currentZoom;
-    ctx.beginPath();
-    ctx.moveTo(centerX - 30, centerY);
-    ctx.lineTo(centerX + 30, centerY);
-    ctx.moveTo(centerX, centerY - 30);
-    ctx.lineTo(centerX, centerY + 30);
-    ctx.stroke();
-    // Draw border around visible area
-    ctx.strokeStyle = 'lime';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, CANVAS_WIDTH * currentZoom - 2, CANVAS_HEIGHT * currentZoom - 2);
-    ctx.restore();
-
-    // Debug: log canvas state
-    console.log('[Template Applied]', template.name);
-    console.log('[Template] zoom:', canvas.getZoom(), 'dims:', canvas.width, 'x', canvas.height);
-    console.log('[Template] vpt:', JSON.stringify(canvas.viewportTransform));
-    console.log('[Template] wrapper:', canvas.wrapperEl?.offsetWidth, 'x', canvas.wrapperEl?.offsetHeight);
-    console.log('[Template] lowerCanvas backstore:', canvas.lowerCanvasEl?.width, 'x', canvas.lowerCanvasEl?.height);
-    console.log('[Template] lowerCanvas CSS:', canvas.lowerCanvasEl?.style.width, canvas.lowerCanvasEl?.style.height);
-    // Log the getBoundingClientRect of the canvas elements to see actual visible size
-    const wrapperRect = canvas.wrapperEl?.getBoundingClientRect();
-    const lowerRect = canvas.lowerCanvasEl?.getBoundingClientRect();
-    console.log('[Template] wrapper BCR:', wrapperRect ? `${Math.round(wrapperRect.width)}x${Math.round(wrapperRect.height)} at (${Math.round(wrapperRect.left)},${Math.round(wrapperRect.top)})` : 'N/A');
-    console.log('[Template] lowerCanvas BCR:', lowerRect ? `${Math.round(lowerRect.width)}x${Math.round(lowerRect.height)} at (${Math.round(lowerRect.left)},${Math.round(lowerRect.top)})` : 'N/A');
-    canvas.getObjects().forEach((obj, i) => {
-      // Also log the aCoords which are the actual screen coordinates after transforms
-      const aCoords = obj.aCoords;
-      console.log(`[Template] obj[${i}]:`, obj.type, `pos:(${obj.left},${obj.top})`, `size:${Math.round(obj.width!)}x${Math.round(obj.height!)}`,
-        aCoords ? `screen-tl:(${Math.round(aCoords.tl.x)},${Math.round(aCoords.tl.y)})` : 'no-aCoords');
-    });
-
     setShowTemplateGallery(false);
     showToast(`Template "${template.name}" applied!`, "success");
   };

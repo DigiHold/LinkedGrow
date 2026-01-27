@@ -199,8 +199,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         controlsAboveOverlay: true,
       });
 
-      // Set default control styles
+      // Set default origin to top-left (Fabric v7 defaults to center/center)
+      // and default control styles
       FabricObject.prototype.set({
+        originX: 'left',
+        originY: 'top',
         cornerColor: '#0891b2',
         cornerStyle: 'circle',
         cornerSize: 12,
