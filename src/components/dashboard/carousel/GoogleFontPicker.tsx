@@ -61,8 +61,8 @@ let fontsCachePromise: Promise<GoogleFont[]> | null = null;
 let activeFontLink: HTMLLinkElement | null = null;
 let activeFontName: string | null = null;
 
-// Permanent fonts - these are always kept (current value on mount)
-const permanentFonts = new Set<string>();
+// The initial font loaded on mount - this one is never removed
+let initialFont: string | null = null;
 
 /**
  * Load a Google Font by injecting its stylesheet and waiting until the browser
@@ -82,8 +82,8 @@ export async function loadGoogleFont(fontName: string, keepPrevious = false): Pr
     return;
   }
 
-  // Remove previous non-permanent font stylesheet
-  if (!keepPrevious && activeFontLink && activeFontName && !permanentFonts.has(activeFontName)) {
+  // Remove previous font stylesheet (keep only the initial font)
+  if (!keepPrevious && activeFontLink && activeFontName && activeFontName !== initialFont) {
     activeFontLink.remove();
   }
 
@@ -157,32 +157,32 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
   return fontsCachePromise;
 }
 
+const WEIGHT_LABELS: Record<number, string> = {
+  100: "Thin",
+  200: "Extra Light",
+  300: "Light",
+  400: "Regular",
+  500: "Medium",
+  600: "Semi Bold",
+  700: "Bold",
+  800: "Extra Bold",
+  900: "Black",
+};
+
+// Eagerly fetch fonts list on module load (browser only) so weights are available
+if (typeof window !== "undefined") {
+  fetchGoogleFonts();
+}
+
 /**
  * Get available font weights for a given font family.
  * Returns numeric weights (100-900) from the Google Fonts API data.
  */
 export function getFontWeights(fontFamily: string): { value: number; label: string }[] {
-  const WEIGHT_LABELS: Record<number, string> = {
-    100: "Thin",
-    200: "Extra Light",
-    300: "Light",
-    400: "Regular",
-    500: "Medium",
-    600: "Semi Bold",
-    700: "Bold",
-    800: "Extra Bold",
-    900: "Black",
-  };
-
   if (!fontsCache) {
-    // Fallback if cache not loaded yet
     return [
-      { value: 300, label: "Light" },
       { value: 400, label: "Regular" },
-      { value: 500, label: "Medium" },
-      { value: 600, label: "Semi Bold" },
       { value: 700, label: "Bold" },
-      { value: 900, label: "Black" },
     ];
   }
 
@@ -215,6 +215,13 @@ export function getFontWeights(fontFamily: string): { value: number; label: stri
   return weights.length > 0 ? weights : [{ value: 400, label: "Regular" }];
 }
 
+/**
+ * Ensure font cache is loaded. Returns a promise that resolves when fonts data is available.
+ */
+export function ensureFontsLoaded(): Promise<GoogleFont[]> {
+  return fetchGoogleFonts();
+}
+
 interface GoogleFontPickerProps {
   value: string;
   onChange: (font: string) => void;
@@ -227,13 +234,16 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Load the current font on mount (mark as permanent so it never gets removed)
+  // Load the current font on mount only (mark as initial so it never gets removed)
+  const mountedRef = React.useRef(false);
   React.useEffect(() => {
-    if (value) {
-      permanentFonts.add(value);
+    if (value && !mountedRef.current) {
+      mountedRef.current = true;
+      initialFont = value;
       loadGoogleFont(value, true);
     }
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch font list when popover opens
   React.useEffect(() => {

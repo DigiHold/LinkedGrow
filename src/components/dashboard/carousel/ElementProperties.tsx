@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FabricObject, Textbox, FabricImage, Group } from "fabric";
 import { Button } from "@/components/ui/button";
-import { GoogleFontPicker, loadGoogleFont, getFontWeights } from "./GoogleFontPicker";
+import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -99,6 +99,12 @@ export function ElementProperties({
 
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [iconColor, setIconColor] = useState('#000000');
+  const [fontsCacheReady, setFontsCacheReady] = useState(false);
+
+  // Ensure fonts cache is loaded so getFontWeights returns accurate data
+  useEffect(() => {
+    ensureFontsLoaded().then(() => setFontsCacheReady(true));
+  }, []);
 
   // Update local state when selection changes or element is being moved/scaled
   useEffect(() => {
@@ -483,8 +489,17 @@ export function ElementProperties({
                   <div>
                     <Label className="text-xs text-muted-foreground">Font Weight</Label>
                     <Select
+                      key={`${elementProps.fontFamily}-${fontsCacheReady}`}
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
-                      onValueChange={(val) => updateElement({ fontWeight: val })}
+                      onValueChange={(val) => {
+                        // Pass numeric weight to Fabric.js, but store as string in state
+                        if (!selectedElement) return;
+                        const canvas = canvasRef.current?.getCanvas();
+                        if (!canvas) return;
+                        selectedElement.set('fontWeight', Number(val));
+                        canvas.renderAll();
+                        setElementProps(prev => ({ ...prev, fontWeight: val }));
+                      }}
                     >
                       <SelectTrigger className="mt-2 h-8">
                         <SelectValue />
