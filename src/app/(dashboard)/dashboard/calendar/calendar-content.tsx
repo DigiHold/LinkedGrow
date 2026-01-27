@@ -876,6 +876,9 @@ export function CalendarContent() {
                               <img
                                 src={post.media[0].storageUrl}
                                 alt=""
+                                width={60}
+                                height={60}
+                                loading="lazy"
                                 className="w-6 h-6 rounded-sm object-cover shrink-0"
                               />
                             ) : (
