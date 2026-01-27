@@ -483,7 +483,7 @@ export function CalendarContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             content: newPostContent,
-            status: publish ? "published" : "scheduled",
+            status: publish ? "draft" : "scheduled",
             scheduledAt: publish ? undefined : scheduledAt.toISOString(),
             postType: attachedImage ? "image" : "text",
             mediaData,
@@ -491,6 +491,30 @@ export function CalendarContent() {
         });
 
         if (!response.ok) throw new Error("Failed to create post");
+
+        // If publishing immediately, call the LinkedIn API
+        if (publish) {
+          const { post } = await response.json();
+          let imageUrl: string | undefined;
+          if (post.media && post.media.length > 0) {
+            imageUrl = post.media[0].storageUrl;
+          }
+
+          const publishResponse = await fetch("/api/linkedin/post", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              postId: post.id,
+              text: newPostContent,
+              imageUrl,
+            }),
+          });
+
+          if (!publishResponse.ok) {
+            const error = await publishResponse.json();
+            throw new Error(error.error || "Failed to publish to LinkedIn");
+          }
+        }
       }
 
       await fetchPosts();

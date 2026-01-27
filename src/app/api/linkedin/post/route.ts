@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
+import { db, posts, media } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
 export const maxDuration = 300;
@@ -18,7 +20,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text, imageUrl, imageTitle, videoData, visibility = 'PUBLIC' } = body;
+    const { text, postId, imageTitle, videoData, visibility = 'PUBLIC' } = body;
+    let { imageUrl } = body;
+
+    // If postId is provided but no imageUrl, look up the image from the media table
+    if (postId && !imageUrl && !videoData) {
+      const postMedia = await db
+        .select()
+        .from(media)
+        .where(eq(media.postId, postId));
+      const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
+      if (firstImage?.storageUrl) {
+        imageUrl = firstImage.storageUrl;
+      }
+    }
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -100,6 +115,19 @@ export async function POST(request: NextRequest) {
         visibility,
         authorType
       );
+    }
+
+    // Update post status to published in the database
+    if (postId) {
+      await db.update(posts)
+        .set({
+          status: 'published',
+          publishedAt: new Date(),
+          linkedinPostId: postResult.id,
+          errorMessage: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(posts.id, postId));
     }
 
     const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';
