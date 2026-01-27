@@ -511,14 +511,9 @@ export default function CarouselPage() {
     const { loadGoogleFont } = await import("@/components/dashboard/carousel/GoogleFontPicker");
     await loadGoogleFont('Inter', true).catch(() => {});
 
-    // Save zoom, clear canvas, restore zoom
-    const currentZoom = canvas.getZoom();
+    // Clear canvas (canvas stays at native 1080x1350 via CSS zoom)
     canvas.clear();
-    canvas.setZoom(currentZoom);
-    canvas.setDimensions({
-      width: CANVAS_WIDTH * currentZoom,
-      height: CANVAS_HEIGHT * currentZoom,
-    });
+    canvas.backgroundColor = '#ffffff';
 
     // Set background
     if (template.background.type === 'solid') {
@@ -568,7 +563,7 @@ export default function CarouselPage() {
     if (template.elements) {
       for (const el of template.elements) {
         if (el.type === 'text') {
-          const textObj = new Textbox(el.text || '', {
+          fabricObjects.push(new Textbox(el.text || '', {
             left: el.left ?? 0,
             top: el.top ?? 0,
             width: el.width ?? 400,
@@ -579,8 +574,7 @@ export default function CarouselPage() {
             textAlign: el.textAlign ?? 'center',
             opacity: el.opacity ?? 1,
             editable: true,
-          });
-          fabricObjects.push(textObj);
+          }));
         } else if (el.type === 'shape' && el.shapeType === 'rect') {
           fabricObjects.push(new Rect({
             left: el.left ?? 0,
@@ -622,14 +616,6 @@ export default function CarouselPage() {
     // Add all objects in one call
     if (fabricObjects.length > 0) {
       canvas.add(...fabricObjects);
-    }
-
-    // Debug: log positions after adding
-    console.log('[Template Debug] Canvas zoom:', canvas.getZoom());
-    console.log('[Template Debug] Canvas dimensions:', canvas.width, canvas.height);
-    console.log('[Template Debug] Canvas viewportTransform:', canvas.viewportTransform);
-    for (const obj of canvas.getObjects()) {
-      console.log('[Template Debug] Object:', obj.type, 'left:', obj.left, 'top:', obj.top, 'width:', obj.width, 'height:', obj.height, 'scaleX:', obj.scaleX, 'scaleY:', obj.scaleY);
     }
 
     canvas.renderAll();

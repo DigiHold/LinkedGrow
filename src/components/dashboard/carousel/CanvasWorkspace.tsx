@@ -289,16 +289,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saveHistory]);
 
-    // Handle zoom
+    // Handle zoom via CSS transform (no Fabric zoom - keeps canvas at native resolution)
+    // This avoids all issues with backstore size vs coordinate space mismatches
     useEffect(() => {
-      if (!fabricRef.current || !containerRef.current) return;
-
-      const canvas = fabricRef.current;
-      canvas.setZoom(zoom);
-      canvas.setDimensions({
-        width: CANVAS_WIDTH * zoom,
-        height: CANVAS_HEIGHT * zoom,
-      });
+      if (!fabricRef.current) return;
+      // Ensure canvas stays at native resolution
+      fabricRef.current.setZoom(1);
+      fabricRef.current.setDimensions({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
     }, [zoom]);
 
     // Expose methods via ref
@@ -650,22 +647,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToDataURL: () => {
         if (!fabricRef.current) return '';
 
-        // Temporarily reset zoom for export
-        const currentZoom = fabricRef.current.getZoom();
-        fabricRef.current.setZoom(1);
-        fabricRef.current.setDimensions({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
-
+        // Canvas is always at native resolution (CSS-only zoom), so export directly
         const dataURL = fabricRef.current.toDataURL({
           format: 'png',
           quality: 1,
           multiplier: 1,
-        });
-
-        // Restore zoom
-        fabricRef.current.setZoom(currentZoom);
-        fabricRef.current.setDimensions({
-          width: CANVAS_WIDTH * currentZoom,
-          height: CANVAS_HEIGHT * currentZoom,
         });
 
         return dataURL;
@@ -730,19 +716,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             });
           }
 
-          // Save current zoom before clear
-          const currentZoom = fabricRef.current.getZoom();
-
-          // Clear canvas first to prevent any lingering objects
+          // Clear canvas and load new state (canvas stays at native resolution via CSS zoom)
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
-
-          // Restore zoom after loading (clear + loadFromJSON can reset viewport)
-          fabricRef.current.setZoom(currentZoom);
-          fabricRef.current.setDimensions({
-            width: CANVAS_WIDTH * currentZoom,
-            height: CANVAS_HEIGHT * currentZoom,
-          });
           fabricRef.current.renderAll();
           onCanvasChangeRef.current?.();
         } catch (error) {
@@ -794,16 +770,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       clearCanvas: () => {
         if (!fabricRef.current) return;
-        // Save current zoom before clear (clear() resets viewport transform)
-        const currentZoom = fabricRef.current.getZoom();
         fabricRef.current.clear();
         fabricRef.current.backgroundColor = '#ffffff';
-        // Restore zoom that was reset by clear()
-        fabricRef.current.setZoom(currentZoom);
-        fabricRef.current.setDimensions({
-          width: CANVAS_WIDTH * currentZoom,
-          height: CANVAS_HEIGHT * currentZoom,
-        });
         fabricRef.current.renderAll();
         saveHistory();
         onCanvasChangeRef.current?.();
@@ -1047,18 +1015,28 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Canvas container */}
+        {/* Canvas container - uses CSS transform for zoom to keep native resolution */}
         <div
           className={cn(
-            "relative shadow-2xl transition-transform duration-200",
+            "relative shadow-2xl",
             isDragOver && "scale-[1.01]"
           )}
           style={{
             width: CANVAS_WIDTH * zoom,
             height: CANVAS_HEIGHT * zoom,
+            overflow: 'hidden',
           }}
         >
-          <canvas ref={canvasRef} />
+          <div
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+              width: CANVAS_WIDTH,
+              height: CANVAS_HEIGHT,
+            }}
+          >
+            <canvas ref={canvasRef} />
+          </div>
         </div>
 
         {/* Drop zone indicator */}
