@@ -55,124 +55,68 @@ const EXCLUDED_FONTS = new Set([
   "Noto Sans Runic",
 ]);
 
-// Categories that are not suitable for general text
-const EXCLUDED_CATEGORIES = new Set<string>([
-  // These are typically specialized fonts - empty for now but typed for future use
-]);
-
 // Cache for fonts list
 let fontsCache: GoogleFont[] | null = null;
 let fontsCachePromise: Promise<GoogleFont[]> | null = null;
 
-// Track loaded fonts to avoid duplicate loading
-const loadedFonts = new Set<string>();
-const fontLoadPromises = new Map<string, Promise<void>>();
+// Track which font stylesheets have been injected
+const injectedStylesheets = new Set<string>();
 
-export function loadGoogleFont(fontName: string): Promise<void> {
-  // Already fully loaded
-  if (loadedFonts.has(fontName)) {
-    return Promise.resolve();
+/**
+ * Load a Google Font by injecting its stylesheet and waiting until the browser
+ * has actually parsed and made the font available for rendering.
+ */
+export async function loadGoogleFont(fontName: string): Promise<void> {
+  // Inject the stylesheet if not already done
+  if (!injectedStylesheets.has(fontName)) {
+    const link = document.createElement("link");
+    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+    injectedStylesheets.add(fontName);
+
+    // Wait for the <link> to load (CSS fetched and parsed)
+    await new Promise<void>((resolve) => {
+      link.onload = () => resolve();
+      link.onerror = () => resolve();
+      // Safety timeout - don't block forever
+      setTimeout(resolve, 4000);
+    });
   }
 
-  // Loading in progress, return existing promise
-  if (fontLoadPromises.has(fontName)) {
-    return fontLoadPromises.get(fontName)!;
+  // Now wait for the actual font face to be ready using the Font Loading API.
+  // document.fonts.load() returns a promise that resolves when the matching
+  // font face has been downloaded. We try multiple weights.
+  try {
+    await Promise.all([
+      document.fonts.load(`400 16px "${fontName}"`),
+      document.fonts.load(`700 16px "${fontName}"`),
+    ]);
+    // Final barrier - wait for all queued font loads
+    await document.fonts.ready;
+  } catch {
+    // Ignore errors - font might only have some weights
   }
-
-  const promise = new Promise<void>((resolve) => {
-    // Check if stylesheet already exists
-    const existingLink = document.querySelector(
-      `link[href*="fonts.googleapis.com"][href*="${fontName.replace(/ /g, "+")}"]`
-    );
-
-    if (!existingLink) {
-      const link = document.createElement("link");
-      link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`;
-      link.rel = "stylesheet";
-      document.head.appendChild(link);
-    }
-
-    // Poll until the font is actually available
-    const checkFont = () => {
-      // Use a test element to check if font is loaded
-      const testEl = document.createElement("span");
-      testEl.style.fontFamily = `"${fontName}", monospace`;
-      testEl.style.fontSize = "48px";
-      testEl.style.position = "absolute";
-      testEl.style.left = "-9999px";
-      testEl.style.visibility = "hidden";
-      testEl.textContent = "giItT1WQy@!-/#";
-      document.body.appendChild(testEl);
-
-      const testWidth = testEl.offsetWidth;
-
-      // Now test with just monospace
-      testEl.style.fontFamily = "monospace";
-      const monoWidth = testEl.offsetWidth;
-
-      document.body.removeChild(testEl);
-
-      // If widths differ, the font is loaded
-      return testWidth !== monoWidth;
-    };
-
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max
-
-    const pollFont = () => {
-      attempts++;
-      if (checkFont()) {
-        loadedFonts.add(fontName);
-        fontLoadPromises.delete(fontName);
-        resolve();
-      } else if (attempts < maxAttempts) {
-        setTimeout(pollFont, 100);
-      } else {
-        // Give up after 5 seconds, font might not exist
-        console.warn(`Font "${fontName}" failed to load after 5 seconds`);
-        fontLoadPromises.delete(fontName);
-        resolve();
-      }
-    };
-
-    // Start polling after a small delay to let the CSS start loading
-    setTimeout(pollFont, 50);
-  });
-
-  fontLoadPromises.set(fontName, promise);
-  return promise;
 }
 
-function isValidTextFont(font: { family: string; category: string; subsets?: string[] }): boolean {
-  // Exclude known icon/symbol fonts
+function isValidTextFont(font: { family: string; category: string }): boolean {
   if (EXCLUDED_FONTS.has(font.family)) return false;
-
-  // Exclude icon fonts by name pattern
-  if (font.family.toLowerCase().includes("icon")) return false;
-  if (font.family.toLowerCase().includes("symbol")) return false;
-  if (font.family.toLowerCase().includes("emoji")) return false;
-
-  // Exclude by category
-  if (EXCLUDED_CATEGORIES.has(font.category)) return false;
-
+  const lower = font.family.toLowerCase();
+  if (lower.includes("icon") || lower.includes("symbol") || lower.includes("emoji")) return false;
   return true;
 }
 
 async function fetchGoogleFonts(): Promise<GoogleFont[]> {
-  // Return cached fonts if available
   if (fontsCache) return fontsCache;
-
-  // Return existing promise if fetch is in progress
   if (fontsCachePromise) return fontsCachePromise;
 
-  // Fetch fonts from Google Fonts API with subset filter for latin
   fontsCachePromise = fetch(
     "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBwIX97bVWr3-6AIUvGkcNnmFgirefZ6Sw&sort=popularity&subset=latin"
   )
     .then((res) => res.json())
     .then((data) => {
       const fonts = data.items
-        .filter((item: { family: string; category: string; subsets?: string[] }) => isValidTextFont(item))
+        .filter((item: { family: string; category: string }) => isValidTextFont(item))
         .map((item: { family: string; category: string }) => ({
           family: item.family,
           category: item.category,
@@ -183,7 +127,6 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
     .catch((error) => {
       console.error("Failed to fetch Google Fonts:", error);
       fontsCachePromise = null;
-      // Return a fallback list of popular fonts
       return [
         { family: "Inter", category: "sans-serif" },
         { family: "Roboto", category: "sans-serif" },
@@ -211,14 +154,14 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Load the current font on mount
+  // Load the current font on mount (just the one being used)
   React.useEffect(() => {
     if (value) {
       loadGoogleFont(value);
     }
   }, [value]);
 
-  // Fetch fonts when popover opens
+  // Fetch font list when popover opens
   React.useEffect(() => {
     if (open && fonts.length === 0) {
       setIsLoading(true);
@@ -240,54 +183,29 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
     );
   }, [search, fonts]);
 
-  // Only show first 100 fonts initially, load more on scroll
+  // Virtualized list - show 50 at a time, load more on scroll
   const [visibleCount, setVisibleCount] = React.useState(50);
 
-  // Reset visible count when search changes
   React.useEffect(() => {
     setVisibleCount(50);
   }, [search]);
 
   const visibleFonts = filteredFonts.slice(0, visibleCount);
 
-  // Load fonts for visible items
-  React.useEffect(() => {
-    if (open) {
-      // Load fonts for visible items (first 20 for preview)
-      visibleFonts.slice(0, 20).forEach((font) => {
-        loadGoogleFont(font.family);
-      });
-    }
-  }, [open, visibleFonts]);
-
-  // Handle scroll to load more fonts
+  // Handle scroll to load more items (NOT fonts - just list items)
   const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
     const { scrollTop, scrollHeight, clientHeight } = target;
 
-    // Load more when near bottom
     if (scrollHeight - scrollTop - clientHeight < 100) {
       setVisibleCount((prev) => Math.min(prev + 50, filteredFonts.length));
     }
-
-    // Load fonts for newly visible items
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-    const startIndex = Math.floor(scrollPercentage * visibleFonts.length);
-    const endIndex = Math.min(startIndex + 15, visibleFonts.length);
-
-    for (let i = startIndex; i < endIndex; i++) {
-      if (visibleFonts[i]) {
-        loadGoogleFont(visibleFonts[i].family);
-      }
-    }
-  }, [filteredFonts.length, visibleFonts]);
+  }, [filteredFonts.length]);
 
   const handleSelect = async (fontName: string) => {
-    // Close immediately for better UX
     setOpen(false);
     setSearch("");
-
-    // Wait for font to load before applying
+    // Load the font and wait for it to be ready, THEN notify parent
     await loadGoogleFont(fontName);
     onChange(fontName);
   };
@@ -300,13 +218,13 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between h-8 text-sm font-normal"
-          style={{ fontFamily: value || "Inter" }}
+          style={{ fontFamily: value ? `"${value}", sans-serif` : "Inter" }}
         >
           {value || "Select font..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start">
+      <PopoverContent className="w-70 p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search 1600+ fonts..."
@@ -315,7 +233,7 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
           />
           <CommandList
             ref={listRef}
-            className="max-h-[300px]"
+            className="max-h-75"
             onScroll={handleScroll}
           >
             {isLoading ? (
@@ -340,10 +258,7 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
                           value === font.family ? "opacity-100" : "opacity-0"
                         )}
                       />
-                      <span
-                        style={{ fontFamily: font.family }}
-                        className="flex-1 truncate"
-                      >
+                      <span className="flex-1 truncate">
                         {font.family}
                       </span>
                       <span className="text-[10px] text-muted-foreground ml-2 shrink-0">

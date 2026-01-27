@@ -444,17 +444,18 @@ export function ElementProperties({
                     <div className="mt-2">
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
-                        onChange={async (font) => {
-                          // First ensure the font is loaded
-                          await loadGoogleFont(font);
-                          // Then update the element
-                          updateElement({ fontFamily: font });
-                          // Force Fabric.js to re-render the text with the new font
-                          const canvas = canvasRef.current?.getCanvas();
-                          if (canvas && selectedElement instanceof Textbox) {
-                            // Trigger a dirty flag and re-render
-                            selectedElement.set('dirty', true);
-                            canvas.requestRenderAll();
+                        onChange={(font) => {
+                          // Font is already loaded by GoogleFontPicker before calling onChange.
+                          // Apply to the Fabric.js textbox and force a full re-render.
+                          if (selectedElement instanceof Textbox) {
+                            const canvas = canvasRef.current?.getCanvas();
+                            if (canvas) {
+                              selectedElement.set('fontFamily', font);
+                              selectedElement.set('dirty', true);
+                              selectedElement.initDimensions();
+                              canvas.requestRenderAll();
+                              setElementProps(prev => ({ ...prev, fontFamily: font }));
+                            }
                           }
                         }}
                       />
