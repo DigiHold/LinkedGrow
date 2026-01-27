@@ -113,32 +113,123 @@ export function TemplateGallery({
     }
   };
 
-  // Get background style from new template structure
+  // Get background style from template
   const getPreviewBackground = (template: CarouselTemplate) => {
-    if (template.background.type === 'gradient') {
-      return template.background.value;
-    }
     return template.background.value;
   };
 
-  // Get primary text color from template elements
-  const getTextColor = (template: CarouselTemplate) => {
-    const textElement = template.elements.find(e => e.type === 'text' && e.fontSize && e.fontSize > 60);
-    return textElement?.fill || '#ffffff';
+  // Canvas dimensions for scaling
+  const CW = 1080;
+  const CH = 1350;
+
+  // Convert canvas coords to percentage
+  const px = (v: number) => `${(v / CW) * 100}%`;
+  const py = (v: number) => `${(v / CH) * 100}%`;
+  const pw = (v: number) => `${(v / CW) * 100}%`;
+  const ph = (v: number) => `${(v / CH) * 100}%`;
+
+  // Render each template element as a scaled miniature
+  const renderElement = (el: CarouselTemplate['elements'][number], i: number) => {
+    // Shape: circle
+    if (el.type === 'shape' && el.shapeType === 'circle') {
+      const w = el.width || 50;
+      const h = el.height || w;
+      return (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: px(el.left ?? 0),
+            top: py(el.top ?? 0),
+            width: pw(w),
+            height: ph(h),
+            backgroundColor: el.fill === 'transparent' ? 'transparent' : (el.fill || 'transparent'),
+            opacity: el.opacity ?? 1,
+            border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+          }}
+        />
+      );
+    }
+
+    // Shape: rectangle
+    if (el.type === 'shape' && el.shapeType === 'rect') {
+      const w = el.width || 50;
+      const h = el.height || 50;
+      const rx = el.rx ?? 0;
+      // Scale border-radius proportionally (relative to smaller dimension)
+      const scaledRx = rx > 0 ? Math.max(1, (rx / CW) * 100) : 0;
+      return (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: px(el.left ?? 0),
+            top: py(el.top ?? 0),
+            width: pw(w),
+            height: ph(h),
+            backgroundColor: el.fill === 'transparent' ? 'transparent' : (el.fill || 'transparent'),
+            opacity: el.opacity ?? 1,
+            borderRadius: scaledRx > 0 ? `${scaledRx}vw` : undefined,
+            border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+          }}
+        />
+      );
+    }
+
+    // Text elements - render as colored bars representing text lines
+    if (el.type === 'text') {
+      const text = el.text || '';
+      const fontSize = el.fontSize || 24;
+      const lines = text.split('\n');
+      // Estimate bar height based on font size relative to canvas
+      const barH = Math.max(1, (fontSize / CH) * 100);
+      // Gap between lines
+      const gap = barH * 0.3;
+      const color = el.fill || '#000';
+      const align = el.textAlign || 'left';
+      const elementWidth = el.width || 400;
+
+      return (
+        <div
+          key={i}
+          className="absolute flex flex-col"
+          style={{
+            left: px(el.left ?? 0),
+            top: py(el.top ?? 0),
+            width: pw(elementWidth),
+            opacity: el.opacity ?? 1,
+            alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+            gap: `${gap}%`,
+          }}
+        >
+          {lines.map((line, li) => {
+            // Vary bar width based on line length relative to longest line
+            const maxLen = Math.max(...lines.map(l => l.length), 1);
+            const lineRatio = Math.max(0.3, line.length / maxLen);
+            return (
+              <div
+                key={li}
+                className="rounded-full"
+                style={{
+                  width: `${lineRatio * 100}%`,
+                  height: `${barH}%`,
+                  backgroundColor: color,
+                  opacity: fontSize > 40 ? 0.9 : 0.6,
+                }}
+              />
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
   };
 
-  // Get accent color from template elements
-  const getAccentColor = (template: CarouselTemplate) => {
-    const shapeElement = template.elements.find(e => e.type === 'shape' && e.fill && e.opacity !== 0.1);
-    return shapeElement?.fill || '#0891b2';
-  };
-
-  // Render a mini preview of the preset template
+  // Render a mini preview showing actual template elements scaled down
   const renderTemplatePreview = (template: CarouselTemplate) => {
     const isSelected = template.id === selectedTemplateId;
     const isHovered = hoveredTemplate === template.id;
-    const textColor = getTextColor(template);
-    const accentColor = getAccentColor(template);
 
     return (
       <button
@@ -155,44 +246,21 @@ export function TemplateGallery({
         )}
         style={{ background: getPreviewBackground(template) }}
       >
-        {/* Template preview content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
-          {/* Decorative shape preview */}
-          {template.elements.some(e => e.type === 'shape' && e.shapeType === 'circle') && (
-            <div
-              className="absolute top-0 right-0 w-8 h-8 rounded-full opacity-20"
-              style={{ backgroundColor: accentColor }}
-            />
-          )}
-
-          {/* Title preview */}
-          <div
-            className="text-xs font-bold text-center leading-tight mb-1"
-            style={{ color: textColor }}
-          >
-            Title
-          </div>
-
-          {/* Accent line preview */}
-          {template.elements.some(e => e.type === 'shape' && e.shapeType === 'rect' && e.height && e.height < 20) && (
-            <div
-              className="w-6 h-0.5 rounded-full mb-1"
-              style={{ backgroundColor: accentColor }}
-            />
-          )}
-
-          {/* Content preview */}
-          <div
-            className="text-[8px] text-center opacity-70"
-            style={{ color: textColor }}
-          >
-            Content
-          </div>
+        {/* Render actual template elements as scaled miniatures */}
+        <div className="absolute inset-0">
+          {template.elements.map(renderElement)}
         </div>
+
+        {/* Template name tooltip on hover */}
+        {isHovered && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 z-10">
+            <p className="text-[8px] text-white font-medium truncate text-center">{template.name}</p>
+          </div>
+        )}
 
         {/* Selected checkmark */}
         {isSelected && (
-          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center z-10">
             <Check className="w-3 h-3 text-white" />
           </div>
         )}
@@ -393,12 +461,48 @@ export function TemplateSelect({
   // Show first 5 templates as quick options
   const quickTemplates = carouselTemplates.slice(0, 5);
 
-  // Get background style from new template structure
-  const getPreviewBackground = (template: CarouselTemplate) => {
-    if (template.background.type === 'gradient') {
-      return template.background.value;
-    }
-    return template.background.value;
+  // Mini element preview for compact selector (shapes only - text too small)
+  const renderMiniElements = (template: CarouselTemplate) => {
+    const CW = 1080;
+    const CH = 1350;
+    return template.elements
+      .filter(el => el.type === 'shape')
+      .map((el, i) => {
+        if (el.shapeType === 'circle') {
+          return (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${((el.left ?? 0) / CW) * 100}%`,
+                top: `${((el.top ?? 0) / CH) * 100}%`,
+                width: `${((el.width || 50) / CW) * 100}%`,
+                height: `${((el.height || 50) / CH) * 100}%`,
+                backgroundColor: el.fill === 'transparent' ? 'transparent' : (el.fill || 'transparent'),
+                opacity: el.opacity ?? 1,
+              }}
+            />
+          );
+        }
+        if (el.shapeType === 'rect') {
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${((el.left ?? 0) / CW) * 100}%`,
+                top: `${((el.top ?? 0) / CH) * 100}%`,
+                width: `${((el.width || 50) / CW) * 100}%`,
+                height: `${((el.height || 50) / CH) * 100}%`,
+                backgroundColor: el.fill === 'transparent' ? 'transparent' : (el.fill || 'transparent'),
+                opacity: el.opacity ?? 1,
+                borderRadius: el.rx ? '1px' : undefined,
+              }}
+            />
+          );
+        }
+        return null;
+      });
   };
 
   return (
@@ -424,13 +528,17 @@ export function TemplateSelect({
               key={template.id}
               onClick={() => onSelectTemplate(template)}
               className={cn(
-                "w-10 h-12 rounded-lg transition-all",
+                "relative w-10 h-12 rounded-lg transition-all overflow-hidden",
                 "border-2",
                 isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 scale-105" : "border-transparent hover:border-slate-300"
               )}
-              style={{ background: getPreviewBackground(template) }}
+              style={{ background: template.background.value }}
               title={template.name}
-            />
+            >
+              <div className="absolute inset-0">
+                {renderMiniElements(template)}
+              </div>
+            </button>
           );
         })}
         <button
