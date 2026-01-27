@@ -491,10 +491,16 @@ export function ElementProperties({
                     <Select
                       key={`${elementProps.fontFamily}-${fontsCacheReady}`}
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
-                      onValueChange={(val) => {
+                      onValueChange={async (val) => {
                         if (!(selectedElement instanceof Textbox)) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
+                        const fontFamily = selectedElement.fontFamily || 'Inter';
+                        // Ensure this specific weight is loaded before rendering
+                        try {
+                          await document.fonts.load(`${val} 16px "${fontFamily}"`);
+                          await document.fonts.ready;
+                        } catch { /* ignore */ }
                         selectedElement.set('fontWeight', val);
                         selectedElement.set('dirty', true);
                         selectedElement.initDimensions();
