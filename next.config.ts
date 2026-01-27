@@ -41,6 +41,51 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Cache headers for static assets and pages
+  async headers() {
+    return [
+      {
+        // Static assets (JS, CSS, fonts) - immutable, 1 year cache
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Images in /public - 30 days cache, revalidate after
+        source: "/images/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        // Favicon and other root static files
+        source: "/:path(favicon.ico|icon.svg|robots.txt|sitemap.xml)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=43200",
+          },
+        ],
+      },
+      {
+        // Public marketing pages only (logged-out) - CDN cache 1 hour, stale-while-revalidate
+        source: "/:path(prelaunch|about|privacy|terms|cookies|beta|sign-in|sign-up)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=600",
+          },
+        ],
+      },
+    ];
+  },
   // Rewrite IndexNow key files to the API route
   async rewrites() {
     return [

@@ -40,10 +40,18 @@ import {
   Eye,
   MessageCircle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
-import { ActivityToast } from "@/components/prelaunch/activity-toast";
-import { ExitIntentPopup } from "@/components/prelaunch/exit-intent-popup";
+
+const ActivityToast = dynamic(
+  () => import("@/components/prelaunch/activity-toast").then((m) => m.ActivityToast),
+  { ssr: false }
+);
+const ExitIntentPopup = dynamic(
+  () => import("@/components/prelaunch/exit-intent-popup").then((m) => m.ExitIntentPopup),
+  { ssr: false }
+);
 
 // Translations type
 export interface PrelaunchTranslations {
@@ -144,8 +152,8 @@ export interface PrelaunchTranslations {
 function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
-      {/* Floating Elements with Official AI Brand Logos */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Floating Elements with Official AI Brand Logos - hidden on mobile for performance */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 hidden md:block">
         {/* LinkedIn Icon */}
         <motion.div
           animate={{

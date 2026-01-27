@@ -55,6 +55,33 @@ git@github.com:DigiHold/LinkedGrow.git
 
 Always use `git push origin main` - SSH authentication is automatic.
 
+## Caching Strategy
+
+Cache headers are configured in `next.config.ts` via the `headers()` function. Vercel's CDN automatically invalidates all cached content on every deploy - no manual cache clearing is needed.
+
+### Cache Rules
+
+| Resource | Cache Duration | Strategy |
+| --- | --- | --- |
+| `/_next/static/*` (JS, CSS) | 1 year, immutable | Content-hashed filenames - new deploy = new URLs |
+| `/images/*` (public images) | 30 days + 1 day stale-while-revalidate | Long cache for static marketing images |
+| `/favicon.ico`, `/icon.svg`, `/robots.txt`, `/sitemap.xml` | 1 day + 12 hour stale-while-revalidate | Moderate cache for root files |
+| Public pages (`/prelaunch`, `/about`, `/privacy`, `/terms`, `/cookies`, `/beta`, `/sign-in`, `/sign-up`) | CDN: 1 hour (`s-maxage=3600`) + 10 min stale-while-revalidate | Browser gets fresh response, CDN serves cached. Only for logged-out pages. |
+| Dashboard/API routes | No custom cache headers | Authenticated content - not cached at CDN |
+
+### How It Works
+
+- `max-age=0` means the browser always checks with the server (or CDN)
+- `s-maxage=3600` means Vercel's CDN caches the response for 1 hour
+- `stale-while-revalidate=600` means the CDN serves stale content while fetching fresh in the background
+- `immutable` means the browser never re-validates (used for content-hashed static assets)
+- Vercel purges the entire CDN cache on every deployment automatically
+
+### Important
+
+- **Never add cache headers to `/dashboard/*` or `/api/*` routes** - these serve authenticated/dynamic content
+- When adding new public marketing pages, add them to the regex pattern in `next.config.ts` `headers()`
+
 ## Pricing Plans (from src/lib/plans.ts)
 
 | Plan         | Price  | Posts/Month | Scheduled | Saved Ideas | Images    |

@@ -87,5 +87,11 @@
   "overrides": {
     "@smithy/config-resolver": "^4.4.0",
     "@smithy/util-defaults-mode-node": "^4.0.0"
-  }
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ]
 }
