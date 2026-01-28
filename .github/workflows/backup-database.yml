@@ -1,0 +1,32 @@
+name: Daily Database Backup
+
+on:
+  schedule:
+    # Run daily at 3:00 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Turso CLI
+        run: curl -sSfL https://get.tur.so/install.sh | bash
+
+      - name: Export database
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          export PATH="$HOME/.turso:$PATH"
+          TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+          turso db shell linkedgrow --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup_${TIMESTAMP}.sql"
+          echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> $GITHUB_ENV
+          echo "Backup size: $(wc -c < "backup_${TIMESTAMP}.sql") bytes"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 90
