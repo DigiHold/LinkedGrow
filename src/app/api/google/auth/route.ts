@@ -2,17 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAuthUrl, isGoogleConfigured } from '@/lib/google';
 import { randomBytes } from 'crypto';
 
+function sanitizeCallbackUrl(url: string | null): string | null {
+  if (!url) return null;
+  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
+  if (!url.startsWith('/') || url.startsWith('//')) return null;
+  return url;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get('mode') || 'login'; // 'login' or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
   const popup = searchParams.get('popup') === 'true';
-  const callbackUrl = searchParams.get('callbackUrl');
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
 
   // Check if Google credentials are configured
   if (!isGoogleConfigured()) {
     const errorMessage = 'Google login is not configured';
     if (popup) {
+      const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
       return new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-error', error: '${errorMessage}' }, '*');
+                window.opener.postMessage({ type: 'google-error', error: '${errorMessage}' }, '${appOrigin}');
                 window.close();
               } else {
                 document.body.innerHTML = '<p>${errorMessage}</p>';

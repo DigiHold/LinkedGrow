@@ -49,6 +49,9 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+
+# Claude Code config (may contain credential references)
+.claude/
 *.swp
 *.swo
 *.sublime-workspace

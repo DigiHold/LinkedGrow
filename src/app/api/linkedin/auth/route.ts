@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getLinkedInAuthUrl, isLinkedInConfigured, type LinkedInAppType } from '@/lib/linkedin';
 import { randomBytes } from 'crypto';
 
+function sanitizeCallbackUrl(url: string | null): string | null {
+  if (!url) return null;
+  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
+  if (!url.startsWith('/') || url.startsWith('//')) return null;
+  return url;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const appType = (searchParams.get('app') || 'poster') as LinkedInAppType;
   const popup = searchParams.get('popup') === 'true';
   const mode = searchParams.get('mode') || 'connect'; // 'connect', 'login', or 'register'
   const newsletter = searchParams.get('newsletter') === 'true';
-  const callbackUrl = searchParams.get('callbackUrl');
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
 
   // Check if LinkedIn credentials are configured
   const clientId = appType === 'poster'
@@ -18,6 +25,7 @@ export async function GET(request: NextRequest) {
   if (!clientId) {
     const errorMessage = 'LinkedIn API credentials are not configured. Please contact support.';
     if (popup) {
+      const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
       // Return HTML that closes the popup and notifies the parent
       return new NextResponse(
         `<!DOCTYPE html>
@@ -26,7 +34,7 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'linkedin-error', error: '${errorMessage}' }, '*');
+                window.opener.postMessage({ type: 'linkedin-error', error: '${errorMessage}' }, '${appOrigin}');
                 window.close();
               } else {
                 document.body.innerHTML = '<p>${errorMessage}</p>';

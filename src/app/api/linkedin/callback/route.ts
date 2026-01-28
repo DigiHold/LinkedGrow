@@ -10,6 +10,13 @@ import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
 import { hasPendingTeamInvite } from '@/lib/team-utils';
 
+function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
+  if (!url.startsWith('/') || url.startsWith('//')) return undefined;
+  return url;
+}
+
 /**
  * Download image from URL and upload to R2
  */
@@ -54,6 +61,8 @@ function createPopupResponse(success: boolean, data: { name?: string; error?: st
     ? { type: 'linkedin-success', name: data.name, showSelection: data.showSelection || false, callbackUrl: redirectUrl }
     : { type: 'linkedin-error', error: data.error };
 
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+
   return new NextResponse(
     `<!DOCTYPE html>
     <html>
@@ -61,7 +70,7 @@ function createPopupResponse(success: boolean, data: { name?: string; error?: st
       <body>
         <script>
           if (window.opener) {
-            window.opener.postMessage(${JSON.stringify(message)}, '*');
+            window.opener.postMessage(${JSON.stringify(message)}, '${appOrigin}');
             window.close();
           } else {
             window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
@@ -82,7 +91,7 @@ export async function GET(request: NextRequest) {
   const isPopup = request.cookies.get('linkedin_popup')?.value === 'true';
   const mode = request.cookies.get('linkedin_oauth_mode')?.value || 'connect';
   const subscribeNewsletterCookie = request.cookies.get('linkedin_newsletter')?.value === 'true';
-  const callbackUrl = request.cookies.get('linkedin_callback_url')?.value;
+  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('linkedin_callback_url')?.value);
 
   // Check for OAuth errors
   if (error) {
@@ -351,6 +360,7 @@ export async function GET(request: NextRequest) {
       // Handle popup mode for login/register
       if (isPopup) {
         const redirectUrl = callbackUrl || '/dashboard';
+        const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
         const response = new NextResponse(
           `<!DOCTYPE html>
           <html>
@@ -358,7 +368,7 @@ export async function GET(request: NextRequest) {
             <body>
               <script>
                 if (window.opener) {
-                  window.opener.postMessage({ type: 'linkedin-success', callbackUrl: '${redirectUrl}' }, '*');
+                  window.opener.postMessage({ type: 'linkedin-success', callbackUrl: '${redirectUrl}' }, '${appOrigin}');
                   window.close();
                 } else {
                   window.location.href = '${redirectUrl}';

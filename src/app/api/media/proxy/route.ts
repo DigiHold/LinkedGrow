@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai",
       },
     });
   } catch (error) {

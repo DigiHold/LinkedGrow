@@ -8,11 +8,20 @@ import { sendWelcomeEmail } from '@/lib/email';
 import { subscribeToNewsletter } from '@/lib/newsletter';
 import { hasPendingTeamInvite } from '@/lib/team-utils';
 
+function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  // Only allow relative paths starting with / (no protocol-relative //evil.com or absolute URLs)
+  if (!url.startsWith('/') || url.startsWith('//')) return undefined;
+  return url;
+}
+
 function createPopupResponse(success: boolean, data: { error?: string; callbackUrl?: string }) {
   const redirectUrl = data.callbackUrl || '/dashboard';
   const message = success
     ? { type: 'google-success', callbackUrl: redirectUrl }
     : { type: 'google-error', error: data.error };
+
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
 
   return new NextResponse(
     `<!DOCTYPE html>
@@ -21,7 +30,7 @@ function createPopupResponse(success: boolean, data: { error?: string; callbackU
       <body>
         <script>
           if (window.opener) {
-            window.opener.postMessage(${JSON.stringify(message)}, '*');
+            window.opener.postMessage(${JSON.stringify(message)}, '${appOrigin}');
             window.close();
           } else {
             window.location.href = '${success ? redirectUrl : `/sign-in?error=${encodeURIComponent(data.error || 'Unknown error')}`}';
@@ -44,7 +53,7 @@ export async function GET(request: NextRequest) {
   const mode = request.cookies.get('google_oauth_mode')?.value || 'login';
   const subscribeNewsletterCookie = request.cookies.get('google_newsletter')?.value === 'true';
   const isPopup = request.cookies.get('google_popup')?.value === 'true';
-  const callbackUrl = request.cookies.get('google_callback_url')?.value;
+  const callbackUrl = sanitizeCallbackUrl(request.cookies.get('google_callback_url')?.value);
 
   // Handle OAuth errors
   if (error) {
@@ -267,6 +276,7 @@ export async function GET(request: NextRequest) {
     // Handle popup mode - return HTML that sets cookie and notifies parent
     if (isPopup) {
       const redirectUrl = callbackUrl || '/dashboard';
+      const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
       const response = new NextResponse(
         `<!DOCTYPE html>
         <html>
@@ -274,7 +284,7 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}' }, '*');
+                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}' }, '${appOrigin}');
                 window.close();
               } else {
                 window.location.href = '${redirectUrl}';

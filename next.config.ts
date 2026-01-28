@@ -41,9 +41,59 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Cache headers for static assets and pages
+  // Security and cache headers
   async headers() {
+    // Security headers applied to all routes
+    const securityHeaders = [
+      {
+        key: "X-Frame-Options",
+        value: "DENY",
+      },
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+      },
+      {
+        key: "X-DNS-Prefetch-Control",
+        value: "on",
+      },
+      {
+        key: "Content-Security-Policy",
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://connect.facebook.net https://t.contentsquare.net https://snap.licdn.com",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://media.licdn.com https://www.googletagmanager.com https://www.facebook.com https://www.linkedin.com",
+          "font-src 'self' data:",
+          "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://connect.facebook.net https://t.contentsquare.net https://www.linkedin.com",
+          "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.googletagmanager.com",
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "object-src 'none'",
+          "upgrade-insecure-requests",
+        ].join("; "),
+      },
+    ];
+
     return [
+      {
+        // Apply security headers to all routes
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
       {
         // Static assets (JS, CSS, fonts) - immutable, 1 year cache
         source: "/_next/static/:path*",
