@@ -10,30 +10,82 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Turso CLI
-        run: curl -sSfL https://get.tur.so/install.sh | bash
-
-      - name: Export database
+      - name: Export database via HTTP API
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
-          export PATH="$HOME/.turso:$PATH"
           TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 
-          # Convert libsql:// URL to https:// for the Turso CLI
+          # Convert libsql:// to https:// for the HTTP API
           HTTP_URL=$(echo "$TURSO_DATABASE_URL" | sed 's|libsql://|https://|')
 
-          turso db shell "$HTTP_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup_${TIMESTAMP}.sql"
+          # Get all table names
+          TABLES=$(curl -s "${HTTP_URL}/v2/pipeline" \
+            -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"requests":[{"type":"execute","stmt":{"sql":"SELECT name FROM sqlite_master WHERE type='\''table'\'' AND name NOT LIKE '\''sqlite_%'\'' AND name NOT LIKE '\''_litestream_%'\'' ORDER BY name"}}]}' \
+            | jq -r '.results[0].response.result.rows[]?.[] | .value // empty')
 
-          echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> $GITHUB_ENV
+          echo "Found tables: $TABLES"
 
-          FILE_SIZE=$(wc -c < "backup_${TIMESTAMP}.sql")
-          echo "Backup size: ${FILE_SIZE} bytes"
+          # Start the dump file with a header
+          BACKUP_FILE="backup_${TIMESTAMP}.sql"
+          echo "-- LinkedGrow Database Backup" > "$BACKUP_FILE"
+          echo "-- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$BACKUP_FILE"
+          echo "" >> "$BACKUP_FILE"
 
-          # Fail if backup is empty (likely auth error)
-          if [ "$FILE_SIZE" -lt 10 ]; then
-            echo "ERROR: Backup file is empty or too small. Check credentials."
+          # For each table, get CREATE statement and data
+          for TABLE in $TABLES; do
+            echo "Backing up table: $TABLE"
+
+            # Get CREATE TABLE statement
+            CREATE=$(curl -s "${HTTP_URL}/v2/pipeline" \
+              -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"requests\":[{\"type\":\"execute\",\"stmt\":{\"sql\":\"SELECT sql FROM sqlite_master WHERE type='table' AND name='${TABLE}'\"}}]}" \
+              | jq -r '.results[0].response.result.rows[0][]? | .value // empty')
+
+            if [ -n "$CREATE" ]; then
+              echo "$CREATE;" >> "$BACKUP_FILE"
+              echo "" >> "$BACKUP_FILE"
+            fi
+
+            # Get all rows as INSERT statements
+            ROWS_JSON=$(curl -s "${HTTP_URL}/v2/pipeline" \
+              -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"requests\":[{\"type\":\"execute\",\"stmt\":{\"sql\":\"SELECT * FROM \\\"${TABLE}\\\"\"}}]}")
+
+            # Extract column names and rows, generate INSERT statements
+            echo "$ROWS_JSON" | jq -r --arg table "$TABLE" '
+              .results[0].response.result as $r |
+              ($r.cols | map(.name)) as $cols |
+              $r.rows[]? |
+              "INSERT INTO \"\($table)\" (\($cols | map("\"" + . + "\"") | join(", "))) VALUES (" +
+              ([.[] | if .type == "null" then "NULL"
+                elif .type == "text" then ("'\''") + (.value | gsub("'\''"; "'\'''\''")) + ("'\''")
+                elif .type == "integer" then (.value | tostring)
+                elif .type == "float" then (.value | tostring)
+                elif .type == "blob" then "X'\''" + .value + "'\''";
+                else ("'\''") + (.value | tostring | gsub("'\''"; "'\'''\''")) + ("'\''")
+                end] | join(", ")) +
+              ");"
+            ' >> "$BACKUP_FILE" 2>/dev/null
+
+            echo "" >> "$BACKUP_FILE"
+          done
+
+          echo "BACKUP_FILE=${BACKUP_FILE}" >> $GITHUB_ENV
+
+          FILE_SIZE=$(wc -c < "$BACKUP_FILE")
+          TABLE_COUNT=$(echo "$TABLES" | wc -w | tr -d ' ')
+          echo "Backup complete: ${FILE_SIZE} bytes, ${TABLE_COUNT} tables"
+
+          # Fail if backup is too small (just the header = ~80 bytes)
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "ERROR: Backup file is too small. Check credentials."
+            cat "$BACKUP_FILE"
             exit 1
           fi
 
