@@ -25,6 +25,23 @@ async function downloadAndStoreProfilePicture(
   userId: string
 ): Promise<string | null> {
   try {
+    // Validate URL is from LinkedIn CDN to prevent SSRF
+    try {
+      const parsedUrl = new URL(imageUrl);
+      const allowedHosts = ['media.licdn.com', 'media-exp1.licdn.com', 'media-exp2.licdn.com', 'platform-lookaside.fbsbx.com'];
+      if (!allowedHosts.some(host => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`))) {
+        console.warn('Rejected non-LinkedIn profile picture URL:', parsedUrl.hostname);
+        return null;
+      }
+      if (parsedUrl.protocol !== 'https:') {
+        console.warn('Rejected non-HTTPS profile picture URL');
+        return null;
+      }
+    } catch {
+      console.warn('Invalid profile picture URL');
+      return null;
+    }
+
     if (!isR2Configured()) {
       console.warn('R2 not configured, using original LinkedIn URL');
       return imageUrl;

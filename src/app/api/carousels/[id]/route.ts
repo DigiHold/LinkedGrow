@@ -87,7 +87,12 @@ export async function PUT(
     await db
       .update(savedCarousels)
       .set(updates)
-      .where(eq(savedCarousels.id, id));
+      .where(
+        and(
+          eq(savedCarousels.id, id),
+          eq(savedCarousels.userId, session.user.id)
+        )
+      );
 
     return NextResponse.json({ message: "Carousel updated successfully" });
   } catch (error) {

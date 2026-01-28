@@ -150,7 +150,11 @@ function SettingsContent() {
           ?.split("=")[1];
         if (linkedInProfileName) {
           setLinkedInConnected(true);
-          setLinkedInName(decodeURIComponent(linkedInProfileName));
+          try {
+            setLinkedInName(decodeURIComponent(linkedInProfileName));
+          } catch {
+            setLinkedInName(linkedInProfileName);
+          }
         }
       }
     };
@@ -166,6 +170,9 @@ function SettingsContent() {
 
     // Listen for popup messages
     const handleMessage = (event: MessageEvent) => {
+      const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
+      if (event.origin !== allowedOrigin) return;
+
       if (event.data?.type === "linkedin-success") {
         setLinkedInConnected(true);
         setLinkedInName(event.data.name || "");

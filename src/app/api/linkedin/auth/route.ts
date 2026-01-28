@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
                 window.opener.postMessage({ type: 'linkedin-error', error: '${errorMessage}' }, '${appOrigin}');
                 window.close();
               } else {
-                document.body.innerHTML = '<p>${errorMessage}</p>';
+                document.body.textContent = '${errorMessage}';
               }
             </script>
           </body>

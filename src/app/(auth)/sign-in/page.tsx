@@ -105,6 +105,9 @@ function SignInForm() {
 
     // Listen for messages from the popup
     const handleMessage = async (event: MessageEvent) => {
+      const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://linkedgrow.ai';
+      if (event.origin !== allowedOrigin) return;
+
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
