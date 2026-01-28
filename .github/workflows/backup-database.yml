@@ -20,9 +20,22 @@ jobs:
         run: |
           export PATH="$HOME/.turso:$PATH"
           TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-          turso db shell linkedgrow --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup_${TIMESTAMP}.sql"
+
+          # Convert libsql:// URL to https:// for the Turso CLI
+          HTTP_URL=$(echo "$TURSO_DATABASE_URL" | sed 's|libsql://|https://|')
+
+          turso db shell "$HTTP_URL" --auth-token "$TURSO_AUTH_TOKEN" ".dump" > "backup_${TIMESTAMP}.sql"
+
           echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> $GITHUB_ENV
-          echo "Backup size: $(wc -c < "backup_${TIMESTAMP}.sql") bytes"
+
+          FILE_SIZE=$(wc -c < "backup_${TIMESTAMP}.sql")
+          echo "Backup size: ${FILE_SIZE} bytes"
+
+          # Fail if backup is empty (likely auth error)
+          if [ "$FILE_SIZE" -lt 10 ]; then
+            echo "ERROR: Backup file is empty or too small. Check credentials."
+            exit 1
+          fi
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
