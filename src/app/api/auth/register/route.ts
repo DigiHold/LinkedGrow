@@ -49,6 +49,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!/[A-Z]/.test(password)) {
+      return NextResponse.json(
+        { error: "Password must contain at least one uppercase letter" },
+        { status: 400 }
+      );
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return NextResponse.json(
+        { error: "Password must contain at least one number" },
+        { status: 400 }
+      );
+    }
+
     // Check if user already exists
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email),
@@ -56,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Email already registered" },
+        { error: "Unable to create account. Please try a different email or sign in." },
         { status: 400 }
       );
     }

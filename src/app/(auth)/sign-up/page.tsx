@@ -50,7 +50,7 @@ function SignUpContent() {
   useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
-      setErrorMessage(decodeURIComponent(error));
+      setErrorMessage(error);
     }
   }, [searchParams]);
 
