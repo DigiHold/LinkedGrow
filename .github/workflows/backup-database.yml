@@ -10,84 +10,38 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Export database via HTTP API
+      - name: Dump database
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: |
-          TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+          DB_HOST=$(echo "$TURSO_DATABASE_URL" | sed 's|libsql://||')
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%S")
+          FILENAME="backup_${TIMESTAMP}.sql"
 
-          # Convert libsql:// to https:// for the HTTP API
-          HTTP_URL=$(echo "$TURSO_DATABASE_URL" | sed 's|libsql://|https://|')
+          echo "Dumping database from ${DB_HOST}..."
+          HTTP_CODE=$(curl -s -o "$FILENAME" -w "%{http_code}" \
+            "https://${DB_HOST}/dump" \
+            -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}")
 
-          # Get all table names
-          TABLES=$(curl -s "${HTTP_URL}/v2/pipeline" \
-            -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d '{"requests":[{"type":"execute","stmt":{"sql":"SELECT name FROM sqlite_master WHERE type='\''table'\'' AND name NOT LIKE '\''sqlite_%'\'' AND name NOT LIKE '\''_litestream_%'\'' ORDER BY name"}}]}' \
-            | jq -r '.results[0].response.result.rows[]?.[] | .value // empty')
+          echo "HTTP status: ${HTTP_CODE}"
 
-          echo "Found tables: $TABLES"
-
-          # Start the dump file with a header
-          BACKUP_FILE="backup_${TIMESTAMP}.sql"
-          echo "-- LinkedGrow Database Backup" > "$BACKUP_FILE"
-          echo "-- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$BACKUP_FILE"
-          echo "" >> "$BACKUP_FILE"
-
-          # For each table, get CREATE statement and data
-          for TABLE in $TABLES; do
-            echo "Backing up table: $TABLE"
-
-            # Get CREATE TABLE statement
-            CREATE=$(curl -s "${HTTP_URL}/v2/pipeline" \
-              -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -d "{\"requests\":[{\"type\":\"execute\",\"stmt\":{\"sql\":\"SELECT sql FROM sqlite_master WHERE type='table' AND name='${TABLE}'\"}}]}" \
-              | jq -r '.results[0].response.result.rows[0][]? | .value // empty')
-
-            if [ -n "$CREATE" ]; then
-              echo "$CREATE;" >> "$BACKUP_FILE"
-              echo "" >> "$BACKUP_FILE"
-            fi
-
-            # Get all rows as INSERT statements
-            ROWS_JSON=$(curl -s "${HTTP_URL}/v2/pipeline" \
-              -H "Authorization: Bearer ${TURSO_AUTH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -d "{\"requests\":[{\"type\":\"execute\",\"stmt\":{\"sql\":\"SELECT * FROM \\\"${TABLE}\\\"\"}}]}")
-
-            # Extract column names and rows, generate INSERT statements
-            echo "$ROWS_JSON" | jq -r --arg table "$TABLE" '
-              .results[0].response.result as $r |
-              ($r.cols | map(.name)) as $cols |
-              $r.rows[]? |
-              "INSERT INTO \"\($table)\" (\($cols | map("\"" + . + "\"") | join(", "))) VALUES (" +
-              ([.[] | if .type == "null" then "NULL"
-                elif .type == "text" then ("'\''") + (.value | gsub("'\''"; "'\'''\''")) + ("'\''")
-                elif .type == "integer" then (.value | tostring)
-                elif .type == "float" then (.value | tostring)
-                elif .type == "blob" then "X'\''" + .value + "'\''";
-                else ("'\''") + (.value | tostring | gsub("'\''"; "'\'''\''")) + ("'\''")
-                end] | join(", ")) +
-              ");"
-            ' >> "$BACKUP_FILE" 2>/dev/null
-
-            echo "" >> "$BACKUP_FILE"
-          done
-
-          echo "BACKUP_FILE=${BACKUP_FILE}" >> $GITHUB_ENV
-
-          FILE_SIZE=$(wc -c < "$BACKUP_FILE")
-          TABLE_COUNT=$(echo "$TABLES" | wc -w | tr -d ' ')
-          echo "Backup complete: ${FILE_SIZE} bytes, ${TABLE_COUNT} tables"
-
-          # Fail if backup is too small (just the header = ~80 bytes)
-          if [ "$FILE_SIZE" -lt 100 ]; then
-            echo "ERROR: Backup file is too small. Check credentials."
-            cat "$BACKUP_FILE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: Dump failed with HTTP ${HTTP_CODE}"
+            cat "$FILENAME"
             exit 1
           fi
+
+          SIZE=$(stat --format=%s "$FILENAME" 2>/dev/null || stat -f%z "$FILENAME" 2>/dev/null)
+          echo "Backup complete: ${SIZE} bytes -> ${FILENAME}"
+
+          if [ "$SIZE" -lt 100 ]; then
+            echo "ERROR: Backup too small (${SIZE} bytes), likely auth failure"
+            cat "$FILENAME"
+            exit 1
+          fi
+
+          echo "BACKUP_FILE=${FILENAME}" >> "$GITHUB_ENV"
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
