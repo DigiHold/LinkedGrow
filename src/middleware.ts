@@ -20,6 +20,7 @@ const authRoutes = [
 // Routes allowed during prelaunch (for non-logged-in users)
 const prelaunchAllowedRoutes = [
   "/prelaunch",
+  "/beta",
   "/sign-in",
   "/sign-up",
   "/forgot-password",
