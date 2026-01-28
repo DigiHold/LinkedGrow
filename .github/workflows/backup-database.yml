@@ -44,7 +44,7 @@ jobs:
           echo "BACKUP_FILE=${FILENAME}" >> "$GITHUB_ENV"
 
       - name: Upload backup artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: db-backup-${{ github.run_id }}
           path: ${{ env.BACKUP_FILE }}
