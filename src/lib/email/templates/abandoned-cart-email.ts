@@ -126,7 +126,7 @@ export function abandonedCartEmail1Template({
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -256,7 +256,7 @@ export function abandonedCartEmail1Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -268,7 +268,7 @@ export function abandonedCartEmail1Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -305,7 +305,7 @@ export function abandonedCartEmail1Template({
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -443,7 +443,7 @@ export function abandonedCartEmail2Template({
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -579,7 +579,7 @@ export function abandonedCartEmail2Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -591,7 +591,7 @@ export function abandonedCartEmail2Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -640,7 +640,7 @@ export function abandonedCartEmail2Template({
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -790,7 +790,7 @@ export function abandonedCartEmail3Template({
                                     </tr>
                                     <tr>
                                         <td class="row" align="center" style="padding: 0 50px;">
-                                            <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="238" style="max-width: 238px; display: inline-block;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -941,7 +941,7 @@ export function abandonedCartEmail3Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/photos.png" loading="lazy" border="0" alt="Nicolas & Maria - Founders of LinkedGrow" width="158" height="89" style="display: block; width: 158px; height: 89px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -953,7 +953,7 @@ export function abandonedCartEmail3Template({
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td class="row" style="padding: 0 50px; line-height: 1;" align="left">
-                                            <img src="https://linkedgrow.ai/images/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
+                                            <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/nicolas-maria.png" loading="lazy" border="0" alt="Nicolas & Maria" width="204" height="49" style="display: block; width: 204px; height: 49px;">
                                         </td>
                                     </tr>
                                     <tr>
@@ -1002,7 +1002,7 @@ export function abandonedCartEmail3Template({
                                             <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td align="center">
-                                                        <img src="https://linkedgrow.ai/images/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
+                                                        <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/email/logo.png" border="0" alt="LinkedGrow" width="180" style="max-width: 180px; display: inline-block;">
                                                     </td>
                                                 </tr>
                                                 <tr>
