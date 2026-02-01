@@ -135,11 +135,11 @@ Return ONLY a JSON array:
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with thinking disabled for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const requestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 4000,
+        maxOutputTokens: isProModel ? 16000 : 4000,
       },
     };
 

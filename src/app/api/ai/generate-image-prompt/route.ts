@@ -240,10 +240,11 @@ ${postContent}
 REMEMBER: Your response must be 300-450 words, extremely detailed with specific measurements, ages, camera specs, lighting, colors, textures, and composition. Return ONLY the image prompt, nothing else.`;
 
   // Check if this is a "Pro" model that has thinking enabled by default
-  // Pro models (gemini-2.5-pro, gemini-3-pro) need thinking disabled to follow instructions properly
+  // Pro models (gemini-2.5-pro, gemini-3-pro) need thinking mode with minimal budget
   const isProModel = model.includes("-pro");
 
   // Build the request body
+  // Pro models need higher maxOutputTokens because thinkingBudget is separate from output
   const requestBody: Record<string, unknown> = {
     contents: [
       {
@@ -252,7 +253,7 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
     ],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 2000,
+      maxOutputTokens: isProModel ? 8000 : 2000,
     },
   };
 

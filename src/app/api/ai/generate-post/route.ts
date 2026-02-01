@@ -264,11 +264,11 @@ Return ONLY the post text. No quotes, no explanations.`;
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with thinking disabled for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const requestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: isProModel ? 8000 : 2000,
       },
     };
 
@@ -460,18 +460,18 @@ Return ONLY a JSON array of 5 strings. Example:
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with thinking disabled for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: isProModel ? 8000 : 2000,
       },
     };
 
-    // For Pro models, disable thinking mode to ensure they follow instructions
+    // For Pro models, set minimal thinking budget
     if (isProModel) {
       (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
-        thinkingBudget: 0,
+        thinkingBudget: 1024,
       };
     }
 
@@ -659,18 +659,18 @@ Return ONLY the edited post. No quotes, no explanations.`;
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with thinking disabled for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: isProModel ? 8000 : 2000,
       },
     };
 
-    // For Pro models, disable thinking mode to ensure they follow instructions
+    // For Pro models, set minimal thinking budget
     if (isProModel) {
       (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
-        thinkingBudget: 0,
+        thinkingBudget: 1024,
       };
     }
 
@@ -941,18 +941,18 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         const googleModel = model || "gemini-3-flash-preview";
         const isProModel = googleModel.includes("-pro");
 
-        // Build request body with thinking disabled for Pro models
+        // Build request body - Pro models need higher maxOutputTokens
         const googleRequestBody: Record<string, unknown> = {
           contents: [{ parts: [{ text: carouselPrompt }] }],
           generationConfig: {
-            maxOutputTokens: 4000,
+            maxOutputTokens: isProModel ? 16000 : 4000,
           },
         };
 
-        // For Pro models, disable thinking mode to ensure they follow instructions
+        // For Pro models, set minimal thinking budget
         if (isProModel) {
           (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
-            thinkingBudget: 0,
+            thinkingBudget: 1024,
           };
         }
 

@@ -149,11 +149,11 @@ Return the edited post:`;
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with minimal thinking budget for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: isProModel ? 8000 : 2000,
       },
     };
 

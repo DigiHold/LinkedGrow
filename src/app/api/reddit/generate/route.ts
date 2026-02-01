@@ -216,11 +216,11 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body with minimal thinking budget for Pro models
+    // Build request body - Pro models need higher maxOutputTokens
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 4000,
+        maxOutputTokens: isProModel ? 16000 : 4000,
       },
     };
 
