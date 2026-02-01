@@ -1600,42 +1600,39 @@ function HeroVideoSection() {
         {/* Video container */}
         <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
           {!isPlaying ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-slate-800 to-slate-900">
-              {/* Thumbnail placeholder */}
-              <div className="absolute inset-0 bg-[url('/video-thumbnail.jpg')] bg-cover bg-center opacity-50" />
+            <button
+              onClick={() => setIsPlaying(true)}
+              className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-slate-800 to-slate-900 cursor-pointer group"
+              aria-label="Play demo video"
+            >
+              {/* Thumbnail */}
+              <img
+                src="/images/video-thumbnail.avif"
+                alt="LinkedGrow demo video thumbnail"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
 
               {/* Play button */}
-              <button
-                onClick={() => setIsPlaying(true)}
-                className="relative z-10 group"
-                aria-label="Play demo video"
-              >
+              <div className="relative z-10">
                 <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
                   <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
                 </div>
-              </button>
+              </div>
 
               {/* Duration badge */}
               <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-                2:34
+                1:54
               </div>
-            </div>
+            </button>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-              <p className="text-white text-center">
-                <span className="block text-lg font-medium mb-2">Video placeholder</span>
-                <span className="text-sm text-slate-400">Add your video URL in the code</span>
-              </p>
-              {/* Uncomment and add your video:
-              <iframe
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1"
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-              */}
-            </div>
+            <iframe
+              src="https://www.youtube.com/embed/R-IaSkiG6Zk?autoplay=1&rel=0"
+              title="LinkedGrow demo video"
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           )}
         </div>
       </div>
