@@ -214,10 +214,13 @@ async function generateWithGoogle(apiKey: string, postContent: string, model: st
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }],
+        },
         contents: [
           {
             parts: [
-              { text: `${SYSTEM_PROMPT}\n\nCreate a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
+              { text: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
             ],
           },
         ],
