@@ -85,36 +85,18 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data - client fetches via CORS proxy, backend trims
+// Fetch Reddit post data via our server-side API (avoids CORS issues)
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  // Build JSON URL from Reddit URL
-  let jsonUrl = url;
-  if (!jsonUrl.endsWith(".json")) {
-    jsonUrl = jsonUrl.replace(/\/?$/, ".json");
-  }
-
-  // Use CORS proxy to fetch Reddit JSON (same approach as DigiPlan)
-  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(jsonUrl);
-  const redditResponse = await fetch(proxyUrl);
-  if (!redditResponse.ok) {
-    if (redditResponse.status === 404) {
-      throw new Error("Reddit post not found.");
-    }
-    throw new Error("Failed to fetch Reddit post. Please try again.");
-  }
-
-  const rawJson = await redditResponse.json();
-
-  // Send raw JSON to backend for trimming
+  // Send URL to our backend which fetches Reddit server-side (no CORS issues)
   const response = await fetch("/api/reddit/fetch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rawJson }),
+    body: JSON.stringify({ url }),
   });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to process Reddit post.");
+    throw new Error(data.error || "Failed to fetch Reddit post.");
   }
 
   const data = await response.json();
