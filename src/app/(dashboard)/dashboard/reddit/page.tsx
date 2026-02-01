@@ -332,6 +332,10 @@ function RedditImportContent() {
       console.log("[Reddit Import] Fetching Reddit data for:", url);
       const postData = await fetchRedditPost(url);
       console.log("[Reddit Import] Got Reddit data:", postData.title);
+      console.log("[Reddit Import] Post selftext length:", postData.selftext?.length || 0);
+      console.log("[Reddit Import] Post selftext preview:", postData.selftext?.substring(0, 200));
+      console.log("[Reddit Import] Comments count:", postData.trimmedJson?.comments?.length || 0);
+      console.log("[Reddit Import] Full trimmedJson:", JSON.stringify(postData.trimmedJson).substring(0, 500));
       setRedditPost(postData);
 
       // Step 2: Send trimmed JSON to our API to generate hooks with AI
