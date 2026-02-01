@@ -1600,9 +1600,9 @@ function HeroVideoSection() {
         {/* Video container */}
         <div className="relative">
           <YouTubePlayer
-            videoId="R-IaSkiG6Zk"
+            videoId="u31qwQUeGuM"
             thumbnailUrl="/images/video-thumbnail.avif"
-            duration="1:00"
+            duration="0:10"
             ctaText="Join the Waitlist"
             ctaHref="#waitlist"
           />
