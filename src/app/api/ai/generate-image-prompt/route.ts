@@ -134,7 +134,7 @@ async function generateWithOpenAI(apiKey: string, postContent: string): Promise<
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "o4-mini",
+      model: "gpt-5-nano",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },

@@ -203,17 +203,25 @@ Return ONLY the post text. No quotes, no explanations.`;
   let post = "";
 
   if (provider === "openai") {
+    const openaiModel = model || "o4-mini";
+    const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+
+    // O-series models don't support temperature parameter
+    const requestBody: Record<string, unknown> = {
+      model: openaiModel,
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (!isOSeries) {
+      requestBody.temperature = 0.8;
+    }
+
     response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || "o4-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -363,17 +371,25 @@ Return ONLY a JSON array of 5 strings. Example:
   let ideas: string[] = [];
 
   if (provider === "openai") {
+    const openaiModel = model || "o4-mini";
+    const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+
+    // O-series models don't support temperature parameter
+    const requestBody: Record<string, unknown> = {
+      model: openaiModel,
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (!isOSeries) {
+      requestBody.temperature = 0.9;
+    }
+
     response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || "o4-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -535,17 +551,25 @@ Return ONLY the edited post. No quotes, no explanations.`;
   let editedPost = "";
 
   if (provider === "openai") {
+    const openaiModel = model || "o4-mini";
+    const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+
+    // O-series models don't support temperature parameter
+    const requestBody: Record<string, unknown> = {
+      model: openaiModel,
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (!isOSeries) {
+      requestBody.temperature = 0.7;
+    }
+
     response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || "o4-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -782,17 +806,25 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       let slides: CarouselSlide[] = [];
 
       if (provider === "openai") {
+        const openaiModel = model || "o4-mini";
+        const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+
+        // O-series models don't support temperature parameter
+        const requestBody: Record<string, unknown> = {
+          model: openaiModel,
+          messages: [{ role: "user", content: carouselPrompt }],
+        };
+        if (!isOSeries) {
+          requestBody.temperature = 0.8;
+        }
+
         response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${apiKey}`,
           },
-          body: JSON.stringify({
-            model: model || "o4-mini",
-            messages: [{ role: "user", content: carouselPrompt }],
-            temperature: 0.8,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {

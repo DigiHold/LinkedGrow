@@ -135,17 +135,25 @@ Example format:
   let hooks: HookPair[] = [];
 
   if (provider === "openai") {
+    const openaiModel = model || "o4-mini";
+    const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+
+    // O-series models don't support temperature parameter
+    const requestBody: Record<string, unknown> = {
+      model: openaiModel,
+      messages: [{ role: "user", content: prompt }],
+    };
+    if (!isOSeries) {
+      requestBody.temperature = 0.9;
+    }
+
     response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || "o4-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
