@@ -1179,8 +1179,8 @@ export default function AIAPISettingsPage() {
                   </div>
                 )}
 
-                {/* Resolution/Size Selector */}
-                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && (
+                {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 3 - fixed 1024px) */}
+                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-3"].includes(selectedImageModel) && (
                   <div className="mb-4">
                     <Label className="mb-2 block text-sm">Resolution / Size</Label>
                     <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>

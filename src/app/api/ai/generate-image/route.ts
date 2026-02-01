@@ -273,16 +273,28 @@ interface ImageSettings {
 async function generateWithGoogle(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
 
+  // Check if model supports imageSize parameter
+  // Only Gemini 3 Pro Image supports imageSize (1K, 2K, 4K)
+  // Gemini 2.5 Flash Image and Imagen 3 generate at fixed 1024px resolution
+  const supportsImageSize = settings.model.includes("gemini-3");
+
   try {
+    // Build imageConfig based on model capabilities
+    const imageConfig: { aspectRatio: string; imageSize?: string } = {
+      aspectRatio: settings.aspectRatio || "16:9",
+    };
+
+    // Only add imageSize for models that support it
+    if (supportsImageSize) {
+      imageConfig.imageSize = settings.resolution || "1K";
+    }
+
     const response = await ai.models.generateContent({
       model: settings.model || "gemini-3-pro-image-preview",
       contents: prompt,
       config: {
         responseModalities: ["image", "text"],
-        imageConfig: {
-          aspectRatio: settings.aspectRatio || "16:9",
-          imageSize: settings.resolution || "1K", // "1K", "2K", "4K"
-        },
+        imageConfig,
       },
     });
 
