@@ -150,8 +150,9 @@ function EditorContent() {
   const [aiInstruction, setAIInstruction] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
+  // Start loading if we're editing an existing post (prevents race condition)
+  const [isLoading, setIsLoading] = useState(!!editPostId);
+  const [currentPostId, setCurrentPostId] = useState<string | null>(editPostId);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -227,14 +228,22 @@ function EditorContent() {
               });
               setOriginalHadMedia(true);
             }
+          } else {
+            // Post not found or error - clear the ID so we create a new post
+            setCurrentPostId(null);
           }
         } catch (error) {
           console.error("Failed to load post:", error);
+          // Clear the ID on error so we create a new post
+          setCurrentPostId(null);
         } finally {
           setIsLoading(false);
         }
       };
       loadPost();
+    } else {
+      // No edit ID - we're creating a new post, ensure loading is false
+      setIsLoading(false);
     }
   }, [editPostId]);
 
