@@ -238,7 +238,6 @@ const imageProviders = [
       { id: "flux-2-pro", name: "FLUX.2 Pro", tag: "Best Quality" },
       { id: "flux-2-flex", name: "FLUX.2 Flex", tag: "High Quality + Control" },
       { id: "flux-2-dev", name: "FLUX.2 Dev", tag: "Faster" },
-      { id: "flux-kontext-pro", name: "FLUX Kontext Pro", tag: "Text/Edit" },
     ],
   },
 ];

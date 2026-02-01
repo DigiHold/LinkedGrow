@@ -414,16 +414,15 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
 /**
  * Generate image with Replicate (FLUX.2 models)
  * FLUX 2 Pro/Flex/Dev use aspect_ratio parameter (not width/height)
- * FLUX Kontext Pro is for editing, not generation
  * Cost: $0.015 + $0.015 per megapixel
  */
 async function generateWithReplicate(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
   // Map model names to Replicate model versions
+  // Note: FLUX Kontext Pro is for image editing, not text-to-image generation
   const modelMap: Record<string, string> = {
     "flux-2-pro": "black-forest-labs/flux-2-pro",
     "flux-2-flex": "black-forest-labs/flux-2-flex",
     "flux-2-dev": "black-forest-labs/flux-2-dev",
-    "flux-kontext-pro": "black-forest-labs/flux-kontext-pro",
   };
 
   const modelName = modelMap[settings.model] || "black-forest-labs/flux-2-pro";
