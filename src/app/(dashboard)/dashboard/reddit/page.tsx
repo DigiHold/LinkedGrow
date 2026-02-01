@@ -328,8 +328,10 @@ function RedditImportContent() {
     setError(null);
 
     try {
-      // Step 1: Fetch Reddit data via server-side API (includes trimmed JSON)
+      // Step 1: Fetch Reddit data via Cloudflare Worker (includes trimmed JSON)
+      console.log("[Reddit Import] Fetching Reddit data for:", url);
       const postData = await fetchRedditPost(url);
+      console.log("[Reddit Import] Got Reddit data:", postData.title);
       setRedditPost(postData);
 
       // Step 2: Send trimmed JSON to our API to generate hooks with AI
@@ -347,7 +349,15 @@ function RedditImportContent() {
       }
 
       const data = await response.json();
-      setHooks(data.hooks || []);
+      console.log("[Reddit Import] AI response:", data);
+      const generatedHooks = data.hooks || [];
+
+      if (generatedHooks.length === 0) {
+        throw new Error("No hooks were generated. Please try again.");
+      }
+
+      console.log("[Reddit Import] Generated hooks:", generatedHooks.length);
+      setHooks(generatedHooks);
       setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch Reddit post");
