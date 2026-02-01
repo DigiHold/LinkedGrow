@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatInTimezone } from "@/lib/timezone";
+import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
 import Link from "next/link";
 
 type PostStatus = "all" | "draft" | "scheduled" | "published";
@@ -251,16 +251,9 @@ export default function PostsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    if (userTimezone) {
-      return formatInTimezone(dateString, userTimezone, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    // resolveTimezone handles "auto" by returning browser timezone
+    const tz = resolveTimezone(userTimezone);
+    return formatInTimezone(dateString, tz, {
       month: "short",
       day: "numeric",
       hour: "2-digit",

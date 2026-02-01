@@ -35,7 +35,7 @@ import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { redirectToCheckout } from "@/lib/checkout";
-import { localToUTC } from "@/lib/timezone";
+import { localToUTC, resolveTimezone } from "@/lib/timezone";
 
 const postTypes = [
   { id: "actionable", label: "Actionable", description: "Tips and how-tos" },
@@ -732,9 +732,9 @@ export default function GeneratorPage() {
     }
 
     // Convert the selected date/time to UTC using user's configured timezone
-    const scheduledAtISO = userTimezone
-      ? localToUTC(scheduleDate, scheduleTime, userTimezone)
-      : new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+    // resolveTimezone handles "auto" by returning browser timezone
+    const effectiveTimezone = resolveTimezone(userTimezone);
+    const scheduledAtISO = localToUTC(scheduleDate, scheduleTime, effectiveTimezone);
 
     const scheduledAt = new Date(scheduledAtISO);
     if (scheduledAt <= new Date()) {

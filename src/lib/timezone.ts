@@ -6,6 +6,24 @@
  */
 
 /**
+ * Resolve timezone value - handles "auto" by returning browser timezone
+ *
+ * @param timezone - IANA timezone or "auto"
+ * @returns Resolved IANA timezone string
+ */
+export function resolveTimezone(timezone: string | null | undefined): string {
+  if (!timezone || timezone === "auto") {
+    // Get browser timezone
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return "UTC";
+    }
+  }
+  return timezone;
+}
+
+/**
  * Convert a local date/time string in a specific timezone to UTC ISO string
  *
  * @param dateStr - Date string in YYYY-MM-DD format

@@ -45,7 +45,7 @@ import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import { localToUTC, formatInTimezone } from "@/lib/timezone";
+import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -342,24 +342,18 @@ export function CalendarContent() {
   }
 
   const formatTime = (dateStr: string) => {
-    if (userTimezone) {
-      return formatInTimezone(dateStr, userTimezone, { hour: "numeric", minute: "2-digit", hour12: true });
-    }
-    return new Date(dateStr).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    const tz = resolveTimezone(userTimezone);
+    return formatInTimezone(dateStr, tz, { hour: "numeric", minute: "2-digit", hour12: true });
   };
 
   const formatFullDate = (dateStr: string) => {
-    if (userTimezone) {
-      return formatInTimezone(dateStr, userTimezone, { day: "numeric", month: "long", year: "numeric" });
-    }
-    return new Date(dateStr).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+    const tz = resolveTimezone(userTimezone);
+    return formatInTimezone(dateStr, tz, { day: "numeric", month: "long", year: "numeric" });
   };
 
   const formatShortDate = (dateStr: string) => {
-    if (userTimezone) {
-      return formatInTimezone(dateStr, userTimezone, { day: "2-digit", month: "2-digit", year: "numeric" });
-    }
-    return new Date(dateStr).toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const tz = resolveTimezone(userTimezone);
+    return formatInTimezone(dateStr, tz, { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
   const getPostPreview = (content: string, maxLength = 60) => {
@@ -452,17 +446,12 @@ export function CalendarContent() {
   };
 
   // Get scheduled time as UTC ISO string, respecting user's configured timezone
+  // resolveTimezone handles "auto" by returning browser timezone
   const getScheduledAtUTC = () => {
     const dateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`;
     const timeStr = `${String(get24Hour()).padStart(2, '0')}:${scheduleMinute}`;
-
-    if (userTimezone) {
-      return localToUTC(dateStr, timeStr, userTimezone);
-    }
-    // Fallback: create date in local browser timezone
-    const localDate = new Date(scheduleDate);
-    localDate.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
-    return localDate.toISOString();
+    const tz = resolveTimezone(userTimezone);
+    return localToUTC(dateStr, timeStr, tz);
   };
 
   const handleCreatePost = async (publish: boolean = false) => {
@@ -718,14 +707,9 @@ export function CalendarContent() {
     setIsSaving(true);
     try {
       // Convert the selected date/time to UTC using user's configured timezone
-      const scheduledAtISO = userTimezone
-        ? localToUTC(editScheduleDate, editScheduleTime, userTimezone)
-        : (() => {
-            const [year, month, day] = editScheduleDate.split('-').map(Number);
-            const [hours, minutes] = editScheduleTime.split(':').map(Number);
-            return new Date(year, month - 1, day, hours, minutes, 0, 0).toISOString();
-          })();
-
+      // resolveTimezone handles "auto" by returning browser timezone
+      const tz = resolveTimezone(userTimezone);
+      const scheduledAtISO = localToUTC(editScheduleDate, editScheduleTime, tz);
       const scheduledAt = new Date(scheduledAtISO);
 
       // Ensure the scheduled time is in the future for scheduled posts

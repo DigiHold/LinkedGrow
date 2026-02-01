@@ -25,7 +25,7 @@ import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import { localToUTC, getNowInTimezone } from "@/lib/timezone";
+import { localToUTC, getNowInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -416,22 +416,14 @@ function EditorContent() {
   };
 
   const handleOpenScheduleModal = () => {
-    // If user has a configured timezone, use it for defaults
-    if (userTimezone) {
-      const { date } = getNowInTimezone(userTimezone);
-      // Set to tomorrow at 9 AM in user's timezone
-      const tomorrow = new Date(date);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setScheduleDate(tomorrow.toISOString().split("T")[0]);
-      setScheduleTime("09:00");
-    } else {
-      // Fallback to browser timezone
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(9, 0, 0, 0);
-      setScheduleDate(tomorrow.toISOString().split("T")[0]);
-      setScheduleTime("09:00");
-    }
+    // Get the effective timezone (resolves "auto" to browser timezone)
+    const effectiveTimezone = resolveTimezone(userTimezone);
+    const { date } = getNowInTimezone(effectiveTimezone);
+    // Set to tomorrow at 9 AM in user's timezone
+    const tomorrow = new Date(date);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setScheduleDate(tomorrow.toISOString().split("T")[0]);
+    setScheduleTime("09:00");
     setScheduleModal(true);
   };
 
@@ -441,10 +433,9 @@ function EditorContent() {
 
     try {
       // Convert the selected date/time to UTC using user's configured timezone
-      // If no timezone configured, fall back to browser's local time
-      const scheduledAt = userTimezone
-        ? localToUTC(scheduleDate, scheduleTime, userTimezone)
-        : new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      // resolveTimezone handles "auto" by returning browser timezone
+      const effectiveTimezone = resolveTimezone(userTimezone);
+      const scheduledAt = localToUTC(scheduleDate, scheduleTime, effectiveTimezone);
 
       const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
       const mediaInfo = hasNewMedia ? {

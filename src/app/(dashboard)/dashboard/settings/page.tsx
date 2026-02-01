@@ -151,7 +151,8 @@ function SettingsContent() {
   });
 
   // Timezone settings
-  const [timezone, setTimezone] = useState("");
+  const [timezone, setTimezone] = useState("auto");
+  const [browserTimezone, setBrowserTimezone] = useState("");
   const [isSavingTimezone, setIsSavingTimezone] = useState(false);
   const [timezoneMessage, setTimezoneMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [newSamplePost, setNewSamplePost] = useState("");
@@ -181,6 +182,14 @@ function SettingsContent() {
 
   useEffect(() => {
     setMounted(true);
+
+    // Detect browser timezone
+    try {
+      const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setBrowserTimezone(detected);
+    } catch {
+      setBrowserTimezone("UTC");
+    }
 
     // Fetch LinkedIn settings from API
     const fetchLinkedInSettings = async () => {
@@ -293,8 +302,8 @@ function SettingsContent() {
             topics: data.businessTopics || "",
             context: data.businessContext || "",
           });
-          // Load timezone
-          setTimezone(data.timezone || "");
+          // Load timezone (default to "auto" if not set)
+          setTimezone(data.timezone || "auto");
         }
       } catch (error) {
         console.error("Failed to fetch voice settings:", error);
@@ -1010,6 +1019,18 @@ function SettingsContent() {
                 </div>
               </SelectTrigger>
               <SelectContent>
+                {/* Auto-detect option */}
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                  Recommended
+                </div>
+                <SelectItem value="auto">
+                  <div className="flex flex-col">
+                    <span>Your device timezone</span>
+                    <span className="text-xs text-muted-foreground">{browserTimezone || "Detecting..."}</span>
+                  </div>
+                </SelectItem>
+                <div className="my-1 border-t border-border" />
+                {/* Popular timezones by region */}
                 {["Americas", "Europe", "Asia & Pacific", "Africa"].map((region) => (
                   <div key={region}>
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
@@ -1027,7 +1048,9 @@ function SettingsContent() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              When you schedule a post for 9:00 AM, it will be published at 9:00 AM in this timezone
+              {timezone === "auto"
+                ? `Posts will be scheduled using your device timezone (${browserTimezone || "detecting..."})`
+                : "When you schedule a post for 9:00 AM, it will be published at 9:00 AM in this timezone"}
             </p>
           </div>
 

@@ -19,7 +19,7 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
-import { formatInTimezone } from "@/lib/timezone";
+import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const quickActions = [
   {
@@ -161,17 +161,11 @@ export default function DashboardPage() {
     const diffMs = date.getTime() - now.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    const formatTime = userTimezone
-      ? formatInTimezone(dateString, userTimezone, { hour: "numeric", minute: "2-digit" })
-      : date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-    const formatWeekday = userTimezone
-      ? formatInTimezone(dateString, userTimezone, { weekday: "short" })
-      : date.toLocaleDateString("en-US", { weekday: "short" });
-
-    const formatShortDate = userTimezone
-      ? formatInTimezone(dateString, userTimezone, { month: "short", day: "numeric" })
-      : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    // resolveTimezone handles "auto" by returning browser timezone
+    const tz = resolveTimezone(userTimezone);
+    const formatTime = formatInTimezone(dateString, tz, { hour: "numeric", minute: "2-digit" });
+    const formatWeekday = formatInTimezone(dateString, tz, { weekday: "short" });
+    const formatShortDate = formatInTimezone(dateString, tz, { month: "short", day: "numeric" });
 
     if (diffDays === 0) {
       return `Today at ${formatTime}`;
