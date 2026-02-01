@@ -39,7 +39,8 @@ function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
   return { post, comments };
 }
 
-// This endpoint fetches Reddit data server-side (no CORS issues) and trims it
+// This endpoint receives raw Reddit JSON from the client and trims it
+// The client fetches Reddit via proxy (user's browser), backend trims the data
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -48,37 +49,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { url } = await request.json();
+    const { rawJson } = await request.json();
 
-    if (!url || !url.includes("reddit.com")) {
-      return NextResponse.json({ error: "Valid Reddit URL is required" }, { status: 400 });
+    if (!rawJson) {
+      return NextResponse.json({ error: "rawJson is required" }, { status: 400 });
     }
-
-    // Build JSON URL from Reddit URL
-    let jsonUrl = url;
-    if (!jsonUrl.endsWith(".json")) {
-      jsonUrl = jsonUrl.replace(/\/?$/, ".json");
-    }
-
-    // Fetch from Reddit server-side (no CORS issues)
-    const redditResponse = await fetch(jsonUrl, {
-      headers: {
-        "User-Agent": "LinkedGrow/1.0 (content aggregator)",
-        "Accept": "application/json",
-      },
-    });
-
-    if (!redditResponse.ok) {
-      if (redditResponse.status === 404) {
-        return NextResponse.json({ error: "Reddit post not found" }, { status: 404 });
-      }
-      if (redditResponse.status === 403) {
-        return NextResponse.json({ error: "Reddit blocked the request. Please try again later." }, { status: 403 });
-      }
-      return NextResponse.json({ error: "Failed to fetch Reddit post" }, { status: 500 });
-    }
-
-    const rawJson = await redditResponse.json();
 
     // Trim the Reddit JSON to reduce token count
     const trimmedData = trimRedditData(rawJson);
@@ -96,7 +71,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Reddit fetch error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch Reddit data" },
+      { error: error instanceof Error ? error.message : "Failed to parse Reddit data" },
       { status: 500 }
     );
   }

@@ -85,18 +85,37 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data via our server-side API (avoids CORS issues)
+// Fetch Reddit post data via user's browser using allorigins proxy
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  // Send URL to our backend which fetches Reddit server-side (no CORS issues)
+  // Build JSON URL from Reddit URL
+  let jsonUrl = url;
+  if (!jsonUrl.endsWith(".json")) {
+    jsonUrl = jsonUrl.replace(/\/?$/, ".json");
+  }
+
+  // Use allorigins.win proxy - fetches via user's browser, not blocked by Reddit
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(jsonUrl)}`;
+  const redditResponse = await fetch(proxyUrl);
+
+  if (!redditResponse.ok) {
+    if (redditResponse.status === 404) {
+      throw new Error("Reddit post not found.");
+    }
+    throw new Error("Failed to fetch Reddit post. Please try again.");
+  }
+
+  const rawJson = await redditResponse.json();
+
+  // Send raw JSON to backend for trimming
   const response = await fetch("/api/reddit/fetch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ rawJson }),
   });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to fetch Reddit post.");
+    throw new Error(data.error || "Failed to process Reddit post.");
   }
 
   const data = await response.json();
