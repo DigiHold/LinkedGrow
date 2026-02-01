@@ -1585,14 +1585,12 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
 // ============================================
 
 function HeroVideoSection() {
-  const handleWatchProgress = (percentWatched: number, secondsWatched: number) => {
-    // Track watch progress - you can send this to analytics
-    console.log(`Video progress: ${percentWatched.toFixed(1)}% (${secondsWatched.toFixed(0)}s)`);
+  const handleWatchProgress = (_percentWatched: number, _secondsWatched: number) => {
+    // Track watch progress - send to analytics when ready
   };
 
   const handleVideoEnd = () => {
-    // Track video completion
-    console.log("Video completed");
+    // Track video completion - send to analytics when ready
   };
 
   return (
