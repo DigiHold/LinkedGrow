@@ -227,9 +227,8 @@ export function YouTubePlayer({
                 </Button>
                 <Button
                   onClick={handleReplay}
-                  variant="outline"
                   size="lg"
-                  className="border-slate-600 text-white hover:bg-slate-800"
+                  className="border border-slate-600 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white"
                 >
                   <Play className="mr-2 w-4 h-4" />
                   Watch again
