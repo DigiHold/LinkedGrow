@@ -208,20 +208,25 @@ async function generateWithAnthropic(apiKey: string, postContent: string, model:
 }
 
 async function generateWithGoogle(apiKey: string, postContent: string, model: string): Promise<string> {
+  // For Gemini models, concatenate system prompt with user content
+  // The REST API's system_instruction field is unreliable across model versions
+  const fullPrompt = `${SYSTEM_PROMPT}
+
+---
+
+Create a detailed image prompt for this LinkedIn post:
+
+${postContent}`;
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
         contents: [
           {
-            parts: [
-              { text: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
-            ],
+            parts: [{ text: fullPrompt }],
           },
         ],
         generationConfig: {
@@ -238,7 +243,20 @@ async function generateWithGoogle(apiKey: string, postContent: string, model: st
   }
 
   const data = await response.json();
-  return data.candidates[0].content.parts[0].text.trim();
+
+  // Handle missing candidates (Gemini 2.5 Pro and other models may have different response structure)
+  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    console.error("Gemini response:", JSON.stringify(data, null, 2));
+    throw new Error("No valid response from Gemini. The model may have blocked the request or returned an empty response.");
+  }
+
+  const parts = data.candidates[0].content.parts;
+  if (!parts || !parts[0] || !parts[0].text) {
+    console.error("Gemini response parts:", JSON.stringify(data.candidates[0], null, 2));
+    throw new Error("No text content in Gemini response.");
+  }
+
+  return parts[0].text.trim();
 }
 
 async function generateWithGrok(apiKey: string, postContent: string, model: string): Promise<string> {
