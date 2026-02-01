@@ -946,6 +946,15 @@ export default function AIAPISettingsPage() {
                         {isDeletingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
+                    <a
+                      href={viewingProviderDetails.apiKeyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
+                    >
+                      Manage your {viewingProviderDetails.name} API keys
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                     {/* Save Model button - show when model changed */}
                     {textModelHasChanged && (
                       <Button
@@ -1306,6 +1315,15 @@ export default function AIAPISettingsPage() {
                         {isDeletingImageApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
+                    <a
+                      href={viewingImageProviderDetails.apiKeyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      Manage your {viewingImageProviderDetails.name} API keys
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                     {/* Save Settings button - show when settings changed */}
                     {imageSettingsHaveChanged && (
                       <Button
