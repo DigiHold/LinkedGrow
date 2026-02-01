@@ -1242,8 +1242,8 @@ export default function AIAPISettingsPage() {
                   </div>
                 )}
 
-                {/* Style Selector (OpenAI) */}
-                {viewingImageProviderDetails.hasStyle && styleOptions[viewingImageProvider as keyof typeof styleOptions] && (
+                {/* Style Selector (OpenAI DALL-E 3 only - GPT Image models don't support style) */}
+                {viewingImageProviderDetails.hasStyle && styleOptions[viewingImageProvider as keyof typeof styleOptions] && selectedImageModel === "dall-e-3" && (
                   <div className="mb-4">
                     <Label className="mb-2 block text-sm">Style</Label>
                     <Select value={selectedStyle} onValueChange={setSelectedStyle} disabled={!hasImageAccess}>

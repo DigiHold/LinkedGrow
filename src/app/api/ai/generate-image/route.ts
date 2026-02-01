@@ -340,37 +340,56 @@ async function generateWithGoogle(apiKey: string, prompt: string, settings: Imag
 }
 
 /**
- * Generate image with OpenAI (GPT Image 1.5, DALL-E 3)
- * Cost: $0.04-0.08 per image depending on resolution and quality
+ * Generate image with OpenAI (GPT Image 1.5, GPT Image 1, DALL-E 3)
+ * GPT Image: quality (high/medium/low), size (1024x1024, 1536x1024, 1024x1536)
+ * DALL-E 3: quality (standard/hd), style (vivid/natural), size (1024x1024, 1792x1024, 1024x1792)
  */
 async function generateWithOpenAI(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
-  // Map resolution to OpenAI size format
-  const sizeMap: Record<string, string> = {
-    "1024x1024": "1024x1024",
-    "1792x1024": "1792x1024",
-    "1024x1792": "1024x1792",
-  };
-  const size = sizeMap[settings.resolution] || "1792x1024";
-
-  // Use GPT Image models or DALL-E 3
   const isGptImage = settings.model.startsWith("gpt-image");
+  const isDallE3 = settings.model === "dall-e-3";
   const model = settings.model || "gpt-image-1.5";
+
+  // Map resolution based on model type
+  // GPT Image supports: 1024x1024, 1536x1024, 1024x1536
+  // DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
+  let size: string;
+  if (isDallE3) {
+    const dalleSizeMap: Record<string, string> = {
+      "1024x1024": "1024x1024",
+      "1792x1024": "1792x1024",
+      "1024x1792": "1024x1792",
+      "1536x1024": "1792x1024", // Map to closest DALL-E 3 size
+      "1024x1536": "1024x1792", // Map to closest DALL-E 3 size
+    };
+    size = dalleSizeMap[settings.resolution] || "1792x1024";
+  } else {
+    const gptImageSizeMap: Record<string, string> = {
+      "1024x1024": "1024x1024",
+      "1536x1024": "1536x1024",
+      "1024x1536": "1024x1536",
+      "1792x1024": "1536x1024", // Map to closest GPT Image size
+      "1024x1792": "1024x1536", // Map to closest GPT Image size
+    };
+    size = gptImageSizeMap[settings.resolution] || "1536x1024";
+  }
 
   const requestBody: Record<string, unknown> = {
     model: model,
     prompt: prompt,
     n: 1,
     size: size,
-    response_format: "b64_json",
   };
 
-  // Add quality and style for supported models
-  if (isGptImage) {
-    requestBody.quality = settings.quality || "high";
-  } else {
-    // DALL-E 3 uses "standard" or "hd"
+  if (isDallE3) {
+    // DALL-E 3 specific parameters
+    requestBody.response_format = "b64_json";
     requestBody.quality = settings.quality === "high" ? "hd" : "standard";
     requestBody.style = settings.style || "vivid";
+  } else if (isGptImage) {
+    // GPT Image specific parameters
+    // GPT Image uses "high", "medium", "low" for quality (NOT style parameter)
+    requestBody.quality = settings.quality || "high";
+    // Note: GPT Image does NOT support style parameter
   }
 
   const response = await fetch("https://api.openai.com/v1/images/generations", {
@@ -388,12 +407,15 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
   }
 
   const data = await response.json();
+  // Both GPT Image and DALL-E 3 return b64_json when requested
   return data.data[0].b64_json;
 }
 
 /**
  * Generate image with Replicate (FLUX.2 models)
- * Cost: $0.015-0.03 per image depending on resolution
+ * FLUX 2 Pro/Flex/Dev use aspect_ratio parameter (not width/height)
+ * FLUX Kontext Pro is for editing, not generation
+ * Cost: $0.015 + $0.015 per megapixel
  */
 async function generateWithReplicate(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
   // Map model names to Replicate model versions
@@ -406,16 +428,17 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
 
   const modelName = modelMap[settings.model] || "black-forest-labs/flux-2-pro";
 
-  // Parse resolution to width/height
-  const resolutionMap: Record<string, { width: number; height: number }> = {
-    "1024x1024": { width: 1024, height: 1024 },
-    "1536x1024": { width: 1536, height: 1024 },
-    "1024x1536": { width: 1024, height: 1536 },
-    "2048x2048": { width: 2048, height: 2048 },
+  // FLUX 2 models use aspect_ratio parameter (e.g., "16:9", "1:1", "9:16")
+  // Map resolution setting to aspect ratio
+  const resolutionToAspectRatio: Record<string, string> = {
+    "1024x1024": "1:1",
+    "1536x1024": "3:2",
+    "1024x1536": "2:3",
+    "2048x2048": "1:1",
   };
-  const dimensions = resolutionMap[settings.resolution] || { width: 1536, height: 1024 };
+  const aspectRatio = settings.aspectRatio || resolutionToAspectRatio[settings.resolution] || "16:9";
 
-  // Create prediction
+  // Create prediction with FLUX 2 parameters
   const response = await fetch("https://api.replicate.com/v1/predictions", {
     method: "POST",
     headers: {
@@ -426,10 +449,9 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
       model: modelName,
       input: {
         prompt: prompt,
-        width: dimensions.width,
-        height: dimensions.height,
-        num_inference_steps: 30,
-        guidance_scale: 7.5,
+        aspect_ratio: aspectRatio,
+        output_format: "webp",
+        output_quality: 90,
       },
     }),
   });
