@@ -1585,14 +1585,6 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
 // ============================================
 
 function HeroVideoSection() {
-  const handleWatchProgress = (_percentWatched: number, _secondsWatched: number) => {
-    // Track watch progress - send to analytics when ready
-  };
-
-  const handleVideoEnd = () => {
-    // Track video completion - send to analytics when ready
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -1610,8 +1602,6 @@ function HeroVideoSection() {
             videoId="R-IaSkiG6Zk"
             thumbnailUrl="/images/video-thumbnail.avif"
             duration="1:00"
-            onWatchProgress={handleWatchProgress}
-            onVideoEnd={handleVideoEnd}
             ctaText="Join the Waitlist"
             ctaHref="#waitlist"
           />

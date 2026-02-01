@@ -15,17 +15,12 @@ declare global {
           events?: {
             onReady?: (event: { target: YTPlayer }) => void;
             onStateChange?: (event: { data: number; target: YTPlayer }) => void;
-            onError?: (event: { data: number }) => void;
           };
         }
       ) => YTPlayer;
       PlayerState: {
-        UNSTARTED: number;
         ENDED: number;
         PLAYING: number;
-        PAUSED: number;
-        BUFFERING: number;
-        CUED: number;
       };
     };
     onYouTubeIframeAPIReady: () => void;
@@ -34,11 +29,6 @@ declare global {
 
 interface YTPlayer {
   playVideo: () => void;
-  pauseVideo: () => void;
-  stopVideo: () => void;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-  getPlayerState: () => number;
   destroy: () => void;
   getIframe: () => HTMLIFrameElement;
 }
@@ -47,8 +37,6 @@ interface YouTubePlayerProps {
   videoId: string;
   thumbnailUrl: string;
   duration: string;
-  onVideoEnd?: () => void;
-  onWatchProgress?: (percentWatched: number, secondsWatched: number) => void;
   ctaText?: string;
   ctaAction?: () => void;
   ctaHref?: string;
@@ -58,8 +46,6 @@ export function YouTubePlayer({
   videoId,
   thumbnailUrl,
   duration,
-  onVideoEnd,
-  onWatchProgress,
   ctaText = "Get Started",
   ctaAction,
   ctaHref,
@@ -69,8 +55,6 @@ export function YouTubePlayer({
   const [apiReady, setApiReady] = useState(false);
   const playerRef = useRef<YTPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const maxWatchedRef = useRef(0);
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -93,36 +77,7 @@ export function YouTubePlayer({
     window.onYouTubeIframeAPIReady = () => setApiReady(true);
 
     document.body.appendChild(script);
-
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
   }, []);
-
-  // Track watch progress
-  const startProgressTracking = useCallback(() => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-    }
-
-    progressIntervalRef.current = setInterval(() => {
-      if (playerRef.current) {
-        const currentTime = playerRef.current.getCurrentTime();
-        const videoDuration = playerRef.current.getDuration();
-
-        if (videoDuration > 0) {
-          const percentWatched = (currentTime / videoDuration) * 100;
-
-          if (currentTime > maxWatchedRef.current) {
-            maxWatchedRef.current = currentTime;
-            onWatchProgress?.(percentWatched, currentTime);
-          }
-        }
-      }
-    }, 1000);
-  }, [onWatchProgress]);
 
   // Initialize player when API is ready and user clicks play
   const initializePlayer = useCallback(() => {
@@ -147,7 +102,6 @@ export function YouTubePlayer({
       events: {
         onReady: (event) => {
           event.target.playVideo();
-          startProgressTracking();
 
           // Request fullscreen on mobile
           if (isMobile) {
@@ -160,24 +114,13 @@ export function YouTubePlayer({
         onStateChange: (event) => {
           if (event.data === window.YT.PlayerState.ENDED) {
             setShowCTA(true);
-            onVideoEnd?.();
-
-            if (progressIntervalRef.current) {
-              clearInterval(progressIntervalRef.current);
-            }
-
-            // Report final watch progress
-            const finalDuration = playerRef.current?.getDuration() || 0;
-            if (finalDuration > 0) {
-              onWatchProgress?.(100, finalDuration);
-            }
           } else if (event.data === window.YT.PlayerState.PLAYING) {
             setShowCTA(false);
           }
         },
       },
     });
-  }, [apiReady, videoId, onVideoEnd, onWatchProgress, startProgressTracking]);
+  }, [apiReady, videoId]);
 
   const handlePlayClick = () => {
     setIsPlaying(true);
@@ -197,10 +140,8 @@ export function YouTubePlayer({
 
   const handleReplay = () => {
     setShowCTA(false);
-    maxWatchedRef.current = 0;
     if (playerRef.current) {
       playerRef.current.playVideo();
-      startProgressTracking();
     }
   };
 
@@ -216,9 +157,6 @@ export function YouTubePlayer({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
       if (playerRef.current) {
         playerRef.current.destroy();
       }
