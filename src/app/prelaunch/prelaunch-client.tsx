@@ -1627,10 +1627,10 @@ function HeroVideoSection() {
             </button>
           ) : (
             <iframe
-              src="https://www.youtube-nocookie.com/embed/R-IaSkiG6Zk?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&color=white&playsinline=1"
+              src="https://www.youtube-nocookie.com/embed/R-IaSkiG6Zk?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0&controls=1&color=white"
               title="LinkedGrow demo video"
               className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           )}
