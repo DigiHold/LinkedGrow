@@ -36,19 +36,35 @@ async function editPost(
   provider: string,
   model: string
 ): Promise<string> {
+  // Map common quick actions to detailed instructions
+  const instructionMap: Record<string, string> = {
+    "Make Shorter": "Shorten the post while keeping the key message. Remove filler words, combine similar points, make it punchier. Keep the hook (first 2 lines) intact.",
+    "Add Emojis": "Add relevant emojis to make the post more engaging. Use them sparingly at the start of key points or sections. Don't overdo it - 3-5 emojis max.",
+    "Stronger Hook": "Rewrite ONLY the first 2 lines (the hook) to be more attention-grabbing and scroll-stopping. The hook should create curiosity or make a bold statement. Keep the rest of the post exactly the same.",
+    "Add CTA": "Add a clear call-to-action at the end. Ask a question, invite comments, or encourage engagement. Make it feel natural, not salesy.",
+    "More Casual": "Make the tone more conversational and casual. Use contractions, shorter sentences, and a friendly voice. Remove any corporate jargon.",
+  };
+
+  const detailedInstruction = instructionMap[instruction] || instruction;
+
   const prompt = `You are editing a LinkedIn post. Apply the following instruction to improve the post.
 
 ORIGINAL POST:
 ${content}
 
-INSTRUCTION: ${instruction}
+INSTRUCTION: ${detailedInstruction}
+
+LinkedIn post structure reminder:
+- First 2 lines = the HOOK (most important - this is what shows before "see more")
+- Short paragraphs with line breaks between them
+- Easy to scan and read on mobile
 
 Requirements:
-- Keep the same overall message and structure unless the instruction says otherwise
+- Keep the same overall message unless the instruction says otherwise
 - Maintain LinkedIn best practices (short paragraphs, line breaks for readability)
 - NO emojis unless the instruction specifically asks for them
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
-- Return ONLY the edited post text, nothing else
+- Return ONLY the edited post text, nothing else - no explanations, no quotes around it
 
 Return the edited post:`;
 
