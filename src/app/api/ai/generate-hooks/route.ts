@@ -233,7 +233,15 @@ Example format:
     }
 
     const data = await response.json();
-    const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
+    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    let content = "[]";
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i]?.text) {
+        content = parts[i].text;
+        break;
+      }
+    }
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     hooks = JSON.parse(cleanContent);
   } else if (provider === "grok") {

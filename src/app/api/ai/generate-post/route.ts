@@ -297,7 +297,15 @@ Return ONLY the post text. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    post = data.candidates[0]?.content?.parts[0]?.text || "";
+    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    post = "";
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i]?.text) {
+        post = parts[i].text;
+        break;
+      }
+    }
   } else if (provider === "grok") {
     // xAI Grok uses OpenAI-compatible API
     response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -495,7 +503,15 @@ Return ONLY a JSON array of 5 strings. Example:
     }
 
     const data = await response.json();
-    const googleContent = data.candidates[0]?.content?.parts[0]?.text || "[]";
+    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+    const gParts = data.candidates?.[0]?.content?.parts || [];
+    let googleContent = "[]";
+    for (let i = gParts.length - 1; i >= 0; i--) {
+      if (gParts[i]?.text) {
+        googleContent = gParts[i].text;
+        break;
+      }
+    }
     const cleanContent = googleContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "grok") {
@@ -697,7 +713,15 @@ Return ONLY the edited post. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    editedPost = data.candidates[0]?.content?.parts[0]?.text || "";
+    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+    const editParts = data.candidates?.[0]?.content?.parts || [];
+    editedPost = "";
+    for (let i = editParts.length - 1; i >= 0; i--) {
+      if (editParts[i]?.text) {
+        editedPost = editParts[i].text;
+        break;
+      }
+    }
   } else if (provider === "grok") {
     response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
@@ -982,7 +1006,15 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         }
 
         const data = await response.json();
-        const jsonContent = data.candidates[0]?.content?.parts[0]?.text || "[]";
+        // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+        const carouselParts = data.candidates?.[0]?.content?.parts || [];
+        let jsonContent = "[]";
+        for (let i = carouselParts.length - 1; i >= 0; i--) {
+          if (carouselParts[i]?.text) {
+            jsonContent = carouselParts[i].text;
+            break;
+          }
+        }
         const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         slides = JSON.parse(cleanContent);
       } else if (provider === "grok") {

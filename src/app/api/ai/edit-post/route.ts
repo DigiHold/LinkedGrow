@@ -182,7 +182,15 @@ Return the edited post:`;
     }
 
     const data = await response.json();
-    editedContent = data.candidates[0]?.content?.parts[0]?.text || "";
+    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    editedContent = "";
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i]?.text) {
+        editedContent = parts[i].text;
+        break;
+      }
+    }
   } else if (provider === "grok") {
     response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
