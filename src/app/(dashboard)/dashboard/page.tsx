@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
+import { formatInTimezone } from "@/lib/timezone";
 
 const quickActions = [
   {
@@ -72,6 +73,7 @@ interface SettingsResponse {
   hasApiKey: boolean;
   aiProvider: string | null;
   linkedinConnected: boolean;
+  timezone: string | null;
 }
 
 interface DashboardStats {
@@ -93,6 +95,7 @@ export default function DashboardPage() {
   });
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get user's first name
@@ -138,6 +141,9 @@ export default function DashboardPage() {
           const settingsData: SettingsResponse = await settingsRes.json();
           setHasApiKey(settingsData.hasApiKey);
           setLinkedinConnected(settingsData.linkedinConnected);
+          if (settingsData.timezone) {
+            setUserTimezone(settingsData.timezone);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -155,14 +161,26 @@ export default function DashboardPage() {
     const diffMs = date.getTime() - now.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+    const formatTime = userTimezone
+      ? formatInTimezone(dateString, userTimezone, { hour: "numeric", minute: "2-digit" })
+      : date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+    const formatWeekday = userTimezone
+      ? formatInTimezone(dateString, userTimezone, { weekday: "short" })
+      : date.toLocaleDateString("en-US", { weekday: "short" });
+
+    const formatShortDate = userTimezone
+      ? formatInTimezone(dateString, userTimezone, { month: "short", day: "numeric" })
+      : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
     if (diffDays === 0) {
-      return `Today at ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+      return `Today at ${formatTime}`;
     } else if (diffDays === 1) {
-      return `Tomorrow at ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+      return `Tomorrow at ${formatTime}`;
     } else if (diffDays > 1 && diffDays < 7) {
-      return `${date.toLocaleDateString("en-US", { weekday: "short" })} at ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+      return `${formatWeekday} at ${formatTime}`;
     } else {
-      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return formatShortDate;
     }
   };
 

@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatInTimezone } from "@/lib/timezone";
 import Link from "next/link";
 
 type PostStatus = "all" | "draft" | "scheduled" | "published";
@@ -77,6 +78,7 @@ export default function PostsPage() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
 
   // LinkedIn profile data for preview
   const [linkedInProfile, setLinkedInProfile] = useState<{
@@ -96,11 +98,29 @@ export default function PostsPage() {
             image: data.image || null,
           });
         }
-      } catch (error) {
+      } catch {
         // Silently fail - will use default values
       }
     };
     fetchProfile();
+  }, []);
+
+  // Fetch user timezone
+  useEffect(() => {
+    const fetchTimezone = async () => {
+      try {
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.timezone) {
+            setUserTimezone(data.timezone);
+          }
+        }
+      } catch {
+        // Silently fail - will use browser timezone
+      }
+    };
+    fetchTimezone();
   }, []);
 
   // Fetch posts from API
@@ -231,6 +251,14 @@ export default function PostsPage() {
   };
 
   const formatDate = (dateString: string) => {
+    if (userTimezone) {
+      return formatInTimezone(dateString, userTimezone, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       month: "short",

@@ -45,7 +45,7 @@ import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import { localToUTC } from "@/lib/timezone";
+import { localToUTC, formatInTimezone } from "@/lib/timezone";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -342,14 +342,23 @@ export function CalendarContent() {
   }
 
   const formatTime = (dateStr: string) => {
+    if (userTimezone) {
+      return formatInTimezone(dateStr, userTimezone, { hour: "numeric", minute: "2-digit", hour12: true });
+    }
     return new Date(dateStr).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   };
 
   const formatFullDate = (dateStr: string) => {
+    if (userTimezone) {
+      return formatInTimezone(dateStr, userTimezone, { day: "numeric", month: "long", year: "numeric" });
+    }
     return new Date(dateStr).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
   };
 
   const formatShortDate = (dateStr: string) => {
+    if (userTimezone) {
+      return formatInTimezone(dateStr, userTimezone, { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
     return new Date(dateStr).toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
