@@ -77,7 +77,7 @@ Return ONLY a JSON array:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-5-mini",
+        model: model || "o4-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -117,7 +117,7 @@ Return ONLY a JSON array:
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -144,7 +144,7 @@ Return ONLY a JSON array:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini-beta",
+        model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -245,11 +245,11 @@ export async function POST(request: NextRequest) {
       perplexity: aiSettingsUser.perplexityModel,
     };
 
-    const defaultModel = provider === "openai" ? "gpt-5-mini" :
+    const defaultModel = provider === "openai" ? "o4-mini" :
                          provider === "anthropic" ? "claude-sonnet-4-5-20250929" :
                          provider === "google" ? "gemini-3-flash-preview" :
-                         provider === "grok" ? "grok-3-mini-beta" :
-                         provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
+                         provider === "grok" ? "grok-4-1-fast-reasoning" :
+                         provider === "perplexity" ? "sonar-pro" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     // Generate ideas using AI with voice settings (from owner for team members)

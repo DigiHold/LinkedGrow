@@ -134,7 +134,7 @@ async function generateWithOpenAI(apiKey: string, postContent: string): Promise<
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-5-mini",
+      model: "o4-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
@@ -182,7 +182,7 @@ async function generateWithAnthropic(apiKey: string, postContent: string): Promi
 
 async function generateWithGoogle(apiKey: string, postContent: string): Promise<string> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -219,7 +219,7 @@ async function generateWithGrok(apiKey: string, postContent: string): Promise<st
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "grok-3-mini-beta",
+      model: "grok-4-1-fast-reasoning",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },

@@ -144,6 +144,7 @@ const aiProviders = [
     models: [
       { id: "sonar-deep-research", name: "Sonar Deep Research", tag: "Best Research", price: "$0.02/post", monthly: "~$0.60/mo" },
       { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", tag: "Deep Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "sonar-reasoning", name: "Sonar Reasoning", tag: "Reasoning", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "sonar-pro", name: "Sonar Pro", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "sonar", name: "Sonar", tag: "Fastest", price: "$0.002/post", monthly: "~$0.06/mo" },
     ],

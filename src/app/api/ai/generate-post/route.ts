@@ -210,7 +210,7 @@ Return ONLY the post text. No quotes, no explanations.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-5-mini",
+        model: model || "o4-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
       }),
@@ -246,7 +246,7 @@ Return ONLY the post text. No quotes, no explanations.`;
     const data = await response.json();
     post = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -272,7 +272,7 @@ Return ONLY the post text. No quotes, no explanations.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini-beta",
+        model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
       }),
@@ -370,7 +370,7 @@ Return ONLY a JSON array of 5 strings. Example:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-5-mini",
+        model: model || "o4-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -410,7 +410,7 @@ Return ONLY a JSON array of 5 strings. Example:
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -438,7 +438,7 @@ Return ONLY a JSON array of 5 strings. Example:
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini-beta",
+        model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.9,
       }),
@@ -542,7 +542,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-5-mini",
+        model: model || "o4-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
@@ -578,7 +578,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
     const data = await response.json();
     editedPost = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -603,7 +603,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini-beta",
+        model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
@@ -789,7 +789,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
             "Authorization": `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: model || "gpt-5-mini",
+            model: model || "o4-mini",
             messages: [{ role: "user", content: carouselPrompt }],
             temperature: 0.8,
           }),
@@ -829,7 +829,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         slides = JSON.parse(cleanContent);
       } else if (provider === "google") {
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -856,7 +856,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
             "Authorization": `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: model || "grok-3-mini-beta",
+            model: model || "grok-4-1-fast-reasoning",
             messages: [{ role: "user", content: carouselPrompt }],
             temperature: 0.8,
           }),

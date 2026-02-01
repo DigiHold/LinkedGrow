@@ -95,7 +95,7 @@ Return the edited post:`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "gpt-4o-mini",
+        model: model || "o4-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
@@ -131,7 +131,7 @@ Return the edited post:`;
     const data = await response.json();
     editedContent = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-2.0-flash"}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -156,7 +156,7 @@ Return the edited post:`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-3-mini-beta",
+        model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
