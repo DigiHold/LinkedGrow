@@ -76,6 +76,7 @@ Return ONLY a JSON array:
 
     // O-series and GPT-5 models don't support temperature parameter
     // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -84,7 +85,8 @@ Return ONLY a JSON array:
       requestBody.temperature = 0.9;
     }
     if (isGPT5) {
-      requestBody.max_completion_tokens = 4096;
+      requestBody.max_completion_tokens = 8000;
+      requestBody.reasoning_effort = "low";
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -130,14 +132,30 @@ Return ONLY a JSON array:
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body with thinking disabled for Pro models
+    const requestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 4000,
+      },
+    };
+
+    // For Pro models, disable thinking mode to ensure they follow instructions
+    if (isProModel) {
+      (requestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 0,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

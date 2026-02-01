@@ -148,6 +148,7 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
 
   // O-series and GPT-5 models don't support temperature parameter
   // GPT-5 models use max_completion_tokens instead of max_tokens
+  // GPT-5 models need reasoning_effort set to low to ensure they return content
   const requestBody: Record<string, unknown> = {
     model,
     messages: [
@@ -159,7 +160,11 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
     requestBody.temperature = 0.7;
     requestBody.max_tokens = 1500;
   } else if (isGPT5) {
-    requestBody.max_completion_tokens = 1500;
+    // GPT-5 models require max_completion_tokens and reasoning_effort
+    // Setting reasoning_effort to "low" ensures the model focuses on generating content
+    // rather than spending tokens on internal reasoning that doesn't produce output
+    requestBody.max_completion_tokens = 4000;
+    requestBody.reasoning_effort = "low";
   }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -234,22 +239,38 @@ ${postContent}
 
 REMEMBER: Your response must be 300-450 words, extremely detailed with specific measurements, ages, camera specs, lighting, colors, textures, and composition. Return ONLY the image prompt, nothing else.`;
 
+  // Check if this is a "Pro" model that has thinking enabled by default
+  // Pro models (gemini-2.5-pro, gemini-3-pro) need thinking disabled to follow instructions properly
+  const isProModel = model.includes("-pro");
+
+  // Build the request body
+  const requestBody: Record<string, unknown> = {
+    contents: [
+      {
+        parts: [{ text: userPrompt }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2000,
+    },
+  };
+
+  // For Pro models, disable thinking mode to ensure they follow instructions
+  // Setting thinkingBudget to 0 turns off the "thinking" feature that causes Pro models
+  // to not follow instructions properly
+  if (isProModel) {
+    (requestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+      thinkingBudget: 0,
+    };
+  }
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: userPrompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     }
   );
 

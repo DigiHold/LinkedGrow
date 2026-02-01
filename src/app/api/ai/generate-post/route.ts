@@ -209,6 +209,7 @@ Return ONLY the post text. No quotes, no explanations.`;
 
     // O-series and GPT-5 models don't support temperature parameter
     // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -217,7 +218,8 @@ Return ONLY the post text. No quotes, no explanations.`;
       requestBody.temperature = 0.8;
     }
     if (isGPT5) {
-      requestBody.max_completion_tokens = 2048;
+      requestBody.max_completion_tokens = 4000;
+      requestBody.reasoning_effort = "low";
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -259,14 +261,30 @@ Return ONLY the post text. No quotes, no explanations.`;
     const data = await response.json();
     post = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body with thinking disabled for Pro models
+    const requestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+      },
+    };
+
+    // For Pro models, disable thinking mode to ensure they follow instructions
+    if (isProModel) {
+      (requestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 0,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -382,6 +400,7 @@ Return ONLY a JSON array of 5 strings. Example:
 
     // O-series and GPT-5 models don't support temperature parameter
     // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -390,7 +409,8 @@ Return ONLY a JSON array of 5 strings. Example:
       requestBody.temperature = 0.9;
     }
     if (isGPT5) {
-      requestBody.max_completion_tokens = 1024;
+      requestBody.max_completion_tokens = 4000;
+      requestBody.reasoning_effort = "low";
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -436,14 +456,30 @@ Return ONLY a JSON array of 5 strings. Example:
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body with thinking disabled for Pro models
+    const googleRequestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+      },
+    };
+
+    // For Pro models, disable thinking mode to ensure they follow instructions
+    if (isProModel) {
+      (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 0,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(googleRequestBody),
     });
 
     if (!response.ok) {
@@ -452,8 +488,8 @@ Return ONLY a JSON array of 5 strings. Example:
     }
 
     const data = await response.json();
-    const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const googleContent = data.candidates[0]?.content?.parts[0]?.text || "[]";
+    const cleanContent = googleContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "grok") {
     // xAI Grok uses OpenAI-compatible API
@@ -567,6 +603,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
 
     // O-series and GPT-5 models don't support temperature parameter
     // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -575,7 +612,8 @@ Return ONLY the edited post. No quotes, no explanations.`;
       requestBody.temperature = 0.7;
     }
     if (isGPT5) {
-      requestBody.max_completion_tokens = 2048;
+      requestBody.max_completion_tokens = 4000;
+      requestBody.reasoning_effort = "low";
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -617,14 +655,30 @@ Return ONLY the edited post. No quotes, no explanations.`;
     const data = await response.json();
     editedPost = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body with thinking disabled for Pro models
+    const googleRequestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+      },
+    };
+
+    // For Pro models, disable thinking mode to ensure they follow instructions
+    if (isProModel) {
+      (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 0,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(googleRequestBody),
     });
 
     if (!response.ok) {
@@ -827,6 +881,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
         // O-series and GPT-5 models don't support temperature parameter
         // GPT-5 models use max_completion_tokens instead of max_tokens
+        // GPT-5 models need reasoning_effort set to low to ensure they return content
         const requestBody: Record<string, unknown> = {
           model: openaiModel,
           messages: [{ role: "user", content: carouselPrompt }],
@@ -835,7 +890,8 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
           requestBody.temperature = 0.8;
         }
         if (isGPT5) {
-          requestBody.max_completion_tokens = 4096;
+          requestBody.max_completion_tokens = 8000;
+          requestBody.reasoning_effort = "low";
         }
 
         response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -881,14 +937,30 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         slides = JSON.parse(cleanContent);
       } else if (provider === "google") {
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+        const googleModel = model || "gemini-3-flash-preview";
+        const isProModel = googleModel.includes("-pro");
+
+        // Build request body with thinking disabled for Pro models
+        const googleRequestBody: Record<string, unknown> = {
+          contents: [{ parts: [{ text: carouselPrompt }] }],
+          generationConfig: {
+            maxOutputTokens: 4000,
+          },
+        };
+
+        // For Pro models, disable thinking mode to ensure they follow instructions
+        if (isProModel) {
+          (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+            thinkingBudget: 0,
+          };
+        }
+
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: carouselPrompt }] }],
-          }),
+          body: JSON.stringify(googleRequestBody),
         });
 
         if (!response.ok) {
