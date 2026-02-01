@@ -25,6 +25,7 @@ import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { canAccessFeature, PlanId } from "@/lib/plans";
+import { localToUTC, getNowInTimezone } from "@/lib/timezone";
 
 const LINKEDIN_MAX_CHARS = 3000;
 
@@ -169,6 +170,7 @@ function EditorContent() {
     storageKey?: string;
   } | null>(null);
   const [originalHadMedia, setOriginalHadMedia] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -178,6 +180,24 @@ function EditorContent() {
   });
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Load user timezone from settings
+  useEffect(() => {
+    const fetchTimezone = async () => {
+      try {
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.timezone) {
+            setUserTimezone(data.timezone);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch timezone:", error);
+      }
+    };
+    fetchTimezone();
+  }, []);
 
   // Load initial content from query param (from hooks page, etc.)
   useEffect(() => {
@@ -396,11 +416,22 @@ function EditorContent() {
   };
 
   const handleOpenScheduleModal = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    setScheduleDate(tomorrow.toISOString().split("T")[0]);
-    setScheduleTime("09:00");
+    // If user has a configured timezone, use it for defaults
+    if (userTimezone) {
+      const { date } = getNowInTimezone(userTimezone);
+      // Set to tomorrow at 9 AM in user's timezone
+      const tomorrow = new Date(date);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setScheduleDate(tomorrow.toISOString().split("T")[0]);
+      setScheduleTime("09:00");
+    } else {
+      // Fallback to browser timezone
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      setScheduleDate(tomorrow.toISOString().split("T")[0]);
+      setScheduleTime("09:00");
+    }
     setScheduleModal(true);
   };
 
@@ -409,7 +440,11 @@ function EditorContent() {
     setIsScheduling(true);
 
     try {
-      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      // Convert the selected date/time to UTC using user's configured timezone
+      // If no timezone configured, fall back to browser's local time
+      const scheduledAt = userTimezone
+        ? localToUTC(scheduleDate, scheduleTime, userTimezone)
+        : new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
 
       const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
       const mediaInfo = hasNewMedia ? {

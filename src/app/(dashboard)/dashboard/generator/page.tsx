@@ -35,6 +35,7 @@ import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { redirectToCheckout } from "@/lib/checkout";
+import { localToUTC } from "@/lib/timezone";
 
 const postTypes = [
   { id: "actionable", label: "Actionable", description: "Tips and how-tos" },
@@ -307,6 +308,7 @@ export default function GeneratorPage() {
   const [showScheduler, setShowScheduler] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [linkPreviewUrl, setLinkPreviewUrl] = useState("");
@@ -337,6 +339,9 @@ export default function GeneratorPage() {
           const settings = await settingsRes.json();
           setHasApiKey(settings.hasApiKey || false);
           setHasImageApiKey(settings.hasImageApiKey || false);
+          if (settings.timezone) {
+            setUserTimezone(settings.timezone);
+          }
         }
 
         if (postsRes.ok) {
@@ -726,7 +731,12 @@ export default function GeneratorPage() {
       return;
     }
 
-    const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
+    // Convert the selected date/time to UTC using user's configured timezone
+    const scheduledAtISO = userTimezone
+      ? localToUTC(scheduleDate, scheduleTime, userTimezone)
+      : new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+
+    const scheduledAt = new Date(scheduledAtISO);
     if (scheduledAt <= new Date()) {
       showToast("Please select a future date and time");
       return;
@@ -746,7 +756,7 @@ export default function GeneratorPage() {
         body: JSON.stringify({
           content: currentPost,
           status: "scheduled",
-          scheduledAt: scheduledAt.toISOString(),
+          scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
           mediaData,
           metadata: {

@@ -45,6 +45,7 @@ import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { canAccessFeature, PlanId } from "@/lib/plans";
+import { localToUTC } from "@/lib/timezone";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -142,6 +143,9 @@ export function CalendarContent() {
     image: string | null;
   } | null>(null);
 
+  // User timezone for scheduling
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
+
   const showError = (message: string) => {
     setErrorMessage(message);
     setShowErrorToast(true);
@@ -223,6 +227,24 @@ export function CalendarContent() {
       }
     };
     fetchProfile();
+  }, []);
+
+  // Fetch user timezone for scheduling
+  useEffect(() => {
+    const fetchTimezone = async () => {
+      try {
+        const response = await fetch("/api/user/settings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.timezone) {
+            setUserTimezone(data.timezone);
+          }
+        }
+      } catch {
+        // Silently fail - will use browser timezone as fallback
+      }
+    };
+    fetchTimezone();
   }, []);
 
   // Set schedule date when selecting a day
@@ -420,13 +442,28 @@ export function CalendarContent() {
     return hour;
   };
 
+  // Get scheduled time as UTC ISO string, respecting user's configured timezone
+  const getScheduledAtUTC = () => {
+    const dateStr = `${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`;
+    const timeStr = `${String(get24Hour()).padStart(2, '0')}:${scheduleMinute}`;
+
+    if (userTimezone) {
+      return localToUTC(dateStr, timeStr, userTimezone);
+    }
+    // Fallback: create date in local browser timezone
+    const localDate = new Date(scheduleDate);
+    localDate.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
+    return localDate.toISOString();
+  };
+
   const handleCreatePost = async (publish: boolean = false) => {
     if (!newPostContent.trim()) return;
 
     setIsSaving(true);
     try {
-      const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
+      // Get scheduled time in UTC, respecting user's configured timezone
+      const scheduledAtISO = getScheduledAtUTC();
+      const scheduledAt = new Date(scheduledAtISO);
 
       // For scheduled posts, ensure the time is in the future
       if (!publish) {
@@ -455,7 +492,7 @@ export function CalendarContent() {
         body: JSON.stringify({
           content: newPostContent,
           status: publish ? "draft" : "scheduled",
-          scheduledAt: publish ? undefined : scheduledAt.toISOString(),
+          scheduledAt: publish ? undefined : scheduledAtISO,
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
         }),
@@ -502,8 +539,9 @@ export function CalendarContent() {
 
     setIsSaving(true);
     try {
-      const scheduledAt = new Date(scheduleDate);
-      scheduledAt.setHours(get24Hour(), parseInt(scheduleMinute), 0, 0);
+      // Get scheduled time in UTC, respecting user's configured timezone
+      const scheduledAtISO = getScheduledAtUTC();
+      const scheduledAt = new Date(scheduledAtISO);
 
       // Ensure the scheduled time is at least 1 minute in the future
       const now = new Date();
@@ -518,7 +556,7 @@ export function CalendarContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "scheduled",
-          scheduledAt: scheduledAt.toISOString(),
+          scheduledAt: scheduledAtISO,
         }),
       });
 
@@ -670,9 +708,16 @@ export function CalendarContent() {
     if (!selectedPost || !editPostContent.trim()) return;
     setIsSaving(true);
     try {
-      const [year, month, day] = editScheduleDate.split('-').map(Number);
-      const [hours, minutes] = editScheduleTime.split(':').map(Number);
-      const scheduledAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
+      // Convert the selected date/time to UTC using user's configured timezone
+      const scheduledAtISO = userTimezone
+        ? localToUTC(editScheduleDate, editScheduleTime, userTimezone)
+        : (() => {
+            const [year, month, day] = editScheduleDate.split('-').map(Number);
+            const [hours, minutes] = editScheduleTime.split(':').map(Number);
+            return new Date(year, month - 1, day, hours, minutes, 0, 0).toISOString();
+          })();
+
+      const scheduledAt = new Date(scheduledAtISO);
 
       // Ensure the scheduled time is in the future for scheduled posts
       if (selectedPost.status === "scheduled") {
@@ -692,7 +737,7 @@ export function CalendarContent() {
       // Build request body
       const requestBody: Record<string, unknown> = {
         content: editPostContent,
-        scheduledAt: scheduledAt.toISOString(),
+        scheduledAt: scheduledAtISO,
       };
 
       // If user removed media (had media before, now doesn't)

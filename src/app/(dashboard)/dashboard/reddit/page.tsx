@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PlanId, canAccessFeature } from "@/lib/plans";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
+import { localToUTC } from "@/lib/timezone";
 import Link from "next/link";
 
 // Reddit icon component (same as sidebar)
@@ -57,6 +58,7 @@ interface SettingsResponse {
   hasApiKey: boolean;
   hasImageApiKey: boolean;
   aiProvider: string | null;
+  timezone: string | null;
 }
 
 // Cloudflare Worker CORS proxy - distributed IPs worldwide, no rate limit risk
@@ -199,6 +201,7 @@ function RedditImportContent() {
   const [showScheduler, setShowScheduler] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
+  const [userTimezone, setUserTimezone] = useState<string | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -298,15 +301,18 @@ function RedditImportContent() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  // Check if user has API key configured
+  // Check if user has API key configured and fetch timezone
   useEffect(() => {
     const checkApiKey = async () => {
       try {
         const response = await fetch("/api/user/settings");
         if (response.ok) {
-          const data: SettingsResponse = await response.json();
+          const data = await response.json();
           setHasApiKey(data.hasApiKey);
           setHasImageApiKey(data.hasImageApiKey);
+          if (data.timezone) {
+            setUserTimezone(data.timezone);
+          }
         } else {
           setHasApiKey(false);
           setHasImageApiKey(false);
@@ -532,7 +538,12 @@ function RedditImportContent() {
       return;
     }
 
-    const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
+    // Convert the selected date/time to UTC using user's configured timezone
+    const scheduledAtISO = userTimezone
+      ? localToUTC(scheduleDate, scheduleTime, userTimezone)
+      : new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+
+    const scheduledAt = new Date(scheduledAtISO);
     if (scheduledAt <= new Date()) {
       showToast("Please select a future date and time");
       return;
@@ -552,7 +563,7 @@ function RedditImportContent() {
         body: JSON.stringify({
           content: currentPost,
           status: "scheduled",
-          scheduledAt: scheduledAt.toISOString(),
+          scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
           mediaData,
           metadata: {
@@ -573,7 +584,6 @@ function RedditImportContent() {
       showToast(`Post scheduled for ${scheduledAt.toLocaleString()}`, "success");
       setTimeout(() => router.push("/dashboard/calendar"), 1500);
     } catch (error) {
-      console.error("Schedule error:", error);
       showToast(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsSaving(false);
