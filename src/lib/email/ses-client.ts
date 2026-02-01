@@ -39,7 +39,6 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
     const data = await response.json();
 
     if (response.ok) {
-      console.log("Email sent successfully:", data.messageId);
       return { success: true, messageId: data.messageId };
     }
 

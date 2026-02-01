@@ -233,8 +233,6 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now().toString(36); // Short unique identifier
     const filename = `${keywords}-${timestamp}.webp`;
 
-    console.log(`Image optimized: ${optimized.sizeKB}KB, filename: ${filename}, provider: ${imageProvider}`);
-
     return NextResponse.json({
       success: true,
       imageUrl: `data:image/webp;base64,${optimized.base64}`,
@@ -243,7 +241,6 @@ export async function POST(request: NextRequest) {
       sizeKB: optimized.sizeKB,
     });
   } catch (error) {
-    console.error("Image generation error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate image" },
       { status: 500 }
@@ -336,7 +333,6 @@ async function generateWithGoogle(apiKey: string, prompt: string, settings: Imag
 
       // Extract base64 image from response with error handling
       if (!response.candidates || !response.candidates[0]) {
-        console.error("Google AI Response:", JSON.stringify(response, null, 2));
         throw new Error("No candidates in response - image may have been blocked by safety filters");
       }
 
@@ -349,7 +345,6 @@ async function generateWithGoogle(apiKey: string, prompt: string, settings: Imag
       }
 
       if (!candidate.content || !candidate.content.parts) {
-        console.error("Google AI Candidate:", JSON.stringify(candidate, null, 2));
         throw new Error(`No content parts in response. Finish reason: ${candidate.finishReason || "unknown"}`);
       }
 

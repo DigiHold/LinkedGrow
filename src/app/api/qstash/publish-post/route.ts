@@ -173,8 +173,6 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(posts.id, postId));
 
-    console.log(`Post ${postId} published successfully to LinkedIn`);
-
     return NextResponse.json({
       success: true,
       postId,

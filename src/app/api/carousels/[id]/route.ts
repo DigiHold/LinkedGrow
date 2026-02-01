@@ -220,18 +220,8 @@ export async function DELETE(
     if (imageKeysToDelete.length > 0) {
       // Use Promise.allSettled to not fail if some deletions fail
       Promise.allSettled(
-        imageKeysToDelete.map(key => {
-          console.log('Deleting R2 image:', key);
-          return deleteFromR2(key);
-        })
-      ).then(results => {
-        const failed = results.filter(r => r.status === 'rejected');
-        if (failed.length > 0) {
-          console.error(`Failed to delete ${failed.length}/${imageKeysToDelete.length} R2 images`);
-        } else {
-          console.log(`Successfully deleted ${imageKeysToDelete.length} R2 images`);
-        }
-      });
+        imageKeysToDelete.map(key => deleteFromR2(key))
+      );
     }
 
     return NextResponse.json({ message: "Carousel deleted successfully" });

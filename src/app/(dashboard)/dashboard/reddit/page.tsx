@@ -288,8 +288,7 @@ function RedditImportContent() {
           localStorage.removeItem(STORAGE_KEY);
         }
       }
-    } catch (error) {
-      console.error("Failed to restore reddit import state:", error);
+    } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
@@ -329,13 +328,7 @@ function RedditImportContent() {
 
     try {
       // Step 1: Fetch Reddit data via Cloudflare Worker (includes trimmed JSON)
-      console.log("[Reddit Import] Fetching Reddit data for:", url);
       const postData = await fetchRedditPost(url);
-      console.log("[Reddit Import] Got Reddit data:", postData.title);
-      console.log("[Reddit Import] Post selftext length:", postData.selftext?.length || 0);
-      console.log("[Reddit Import] Post selftext preview:", postData.selftext?.substring(0, 200));
-      console.log("[Reddit Import] Comments count:", postData.trimmedJson?.comments?.length || 0);
-      console.log("[Reddit Import] Full trimmedJson:", JSON.stringify(postData.trimmedJson).substring(0, 500));
       setRedditPost(postData);
 
       // Step 2: Send trimmed JSON to our API to generate hooks with AI
@@ -353,14 +346,12 @@ function RedditImportContent() {
       }
 
       const data = await response.json();
-      console.log("[Reddit Import] AI response:", data);
       const generatedHooks = data.hooks || [];
 
       if (generatedHooks.length === 0) {
         throw new Error("No hooks were generated. Please try again.");
       }
 
-      console.log("[Reddit Import] Generated hooks:", generatedHooks.length);
       setHooks(generatedHooks);
       setStep(2);
     } catch (err) {

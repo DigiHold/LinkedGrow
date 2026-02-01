@@ -495,12 +495,6 @@ export async function GET(request: NextRequest) {
 
         // If user has organizations, signal the parent to show selection modal
         if (hasOrganizations) {
-          console.log('LinkedIn connected with organizations:', {
-            userId: profile.id,
-            name: fullName,
-            organizationCount: organizations.length,
-          });
-
           // Handle popup mode with organizations - send message to show selection modal
           if (isPopup) {
             const response = createPopupResponse(true, { name: fullName, showSelection: true });
@@ -522,12 +516,6 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-
-    console.log('LinkedIn connected successfully:', {
-      userId: profile.id,
-      name: fullName,
-      appType,
-    });
 
     // Handle popup mode (no organizations case)
     if (isPopup) {

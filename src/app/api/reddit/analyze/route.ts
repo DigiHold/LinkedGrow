@@ -108,18 +108,15 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("[Reddit Analyze] OpenAI error:", response.status, errorData);
       throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    console.log("[Reddit Analyze] OpenAI raw response:", content.substring(0, 200));
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
       hooks = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("[Reddit Analyze] Failed to parse OpenAI response:", cleanContent);
+    } catch {
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "anthropic") {
@@ -139,18 +136,15 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("[Reddit Analyze] Anthropic error:", response.status, errorData);
       throw new Error(errorData.error?.message || `Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.content[0]?.text || "[]";
-    console.log("[Reddit Analyze] Anthropic raw response:", content.substring(0, 200));
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
       hooks = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("[Reddit Analyze] Failed to parse Anthropic response:", cleanContent);
+    } catch {
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "google") {
@@ -182,18 +176,15 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("[Reddit Analyze] Google AI error:", response.status, errorData);
       throw new Error(errorData.error?.message || `Google AI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.candidates[0]?.content?.parts[0]?.text || "[]";
-    console.log("[Reddit Analyze] Google raw response:", content.substring(0, 200));
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
       hooks = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("[Reddit Analyze] Failed to parse Google response:", cleanContent);
+    } catch {
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "grok") {
@@ -212,18 +203,15 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("[Reddit Analyze] Grok error:", response.status, errorData);
       throw new Error(errorData.error?.message || `Grok API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    console.log("[Reddit Analyze] Grok raw response:", content.substring(0, 200));
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
       hooks = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("[Reddit Analyze] Failed to parse Grok response:", cleanContent);
+    } catch {
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "perplexity") {
@@ -242,18 +230,15 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("[Reddit Analyze] Perplexity error:", response.status, errorData);
       throw new Error(errorData.error?.message || `Perplexity API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    console.log("[Reddit Analyze] Perplexity raw response:", content.substring(0, 200));
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
       hooks = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("[Reddit Analyze] Failed to parse Perplexity response:", cleanContent);
+    } catch {
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else {
@@ -324,26 +309,12 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    console.log("[Reddit Analyze] Generating hooks with provider:", provider, "model:", model);
-    console.log("[Reddit Analyze] Post title:", trimmedJson.post?.title);
-    console.log("[Reddit Analyze] Post selftext length:", trimmedJson.post?.selftext?.length || 0);
-    console.log("[Reddit Analyze] Comments count:", trimmedJson.comments?.length || 0);
-
-    let hooks: string[];
-    try {
-      hooks = await generateHooks(
-        trimmedJson,
-        apiKey,
-        provider,
-        model
-      );
-    } catch (genError) {
-      console.error("[Reddit Analyze] generateHooks threw error:", genError);
-      throw genError;
-    }
-
-    console.log("[Reddit Analyze] Generated hooks count:", hooks.length);
-    console.log("[Reddit Analyze] Hooks preview:", hooks.slice(0, 2));
+    const hooks = await generateHooks(
+      trimmedJson,
+      apiKey,
+      provider,
+      model
+    );
 
     return NextResponse.json({ hooks });
   } catch (error) {

@@ -134,7 +134,6 @@ export async function POST(request: NextRequest) {
       prompt: generatedPrompt,
     });
   } catch (error) {
-    console.error("Image prompt generation error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate image prompt" },
       { status: 500 }
@@ -181,12 +180,10 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    console.error("OpenAI error response:", JSON.stringify(error, null, 2));
     throw new Error(error.error?.message || "OpenAI request failed");
   }
 
   const data = await response.json();
-  console.log("OpenAI response:", JSON.stringify(data, null, 2));
 
   // Handle different response formats
   if (!data.choices || !data.choices[0]) {
@@ -195,7 +192,6 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
 
   const message = data.choices[0].message;
   if (!message || !message.content) {
-    console.error("OpenAI message:", JSON.stringify(data.choices[0], null, 2));
     throw new Error("No content in OpenAI response message");
   }
 
@@ -280,27 +276,18 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    console.error("Gemini error response:", JSON.stringify(error, null, 2));
     throw new Error(error.error?.message || "Google AI request failed");
   }
 
   const data = await response.json();
-  console.log("Gemini response structure:", JSON.stringify({
-    hasPromptFeedback: !!data.promptFeedback,
-    hasCandidates: !!data.candidates,
-    candidatesLength: data.candidates?.length,
-    firstCandidateHasContent: !!data.candidates?.[0]?.content
-  }, null, 2));
 
   // Handle missing candidates (Gemini 2.5 Pro and other models may have different response structure)
   if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-    console.error("Gemini full response:", JSON.stringify(data, null, 2));
     throw new Error("No valid response from Gemini. The model may have blocked the request or returned an empty response.");
   }
 
   const parts = data.candidates[0].content.parts;
   if (!parts || !parts[0] || !parts[0].text) {
-    console.error("Gemini response parts:", JSON.stringify(data.candidates[0], null, 2));
     throw new Error("No text content in Gemini response.");
   }
 
@@ -327,7 +314,6 @@ async function generateWithGrok(apiKey: string, postContent: string, model: stri
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Grok error response:", errorText);
     try {
       const error = JSON.parse(errorText);
       throw new Error(error.error?.message || error.message || `Grok request failed with status ${response.status}`);
@@ -337,7 +323,6 @@ async function generateWithGrok(apiKey: string, postContent: string, model: stri
   }
 
   const data = await response.json();
-  console.log("Grok response:", JSON.stringify(data, null, 2));
 
   if (!data.choices || !data.choices[0] || !data.choices[0].message) {
     throw new Error("No choices in Grok response");
