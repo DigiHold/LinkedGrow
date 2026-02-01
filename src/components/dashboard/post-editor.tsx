@@ -230,10 +230,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
       const file = event.target.files?.[0];
       if (!file) return;
 
-      // LinkedIn only supports JPG, PNG, and GIF for posts
-      const validTypes = ["image/jpeg", "image/png", "image/gif"];
+      // LinkedIn supports JPG, PNG, GIF, and WebP for posts
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
-        onError?.("LinkedIn only supports JPG, PNG, and GIF images. WebP and AVIF are not supported.");
+        onError?.("Please upload a valid image file (JPEG, PNG, GIF, or WebP)");
         return;
       }
 
@@ -661,7 +661,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/gif"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       className="hidden"
                       onChange={handleImageUpload}
                     />

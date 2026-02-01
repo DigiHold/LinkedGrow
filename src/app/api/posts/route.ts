@@ -7,6 +7,8 @@ import { eq, desc, and, inArray, or, count, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { schedulePost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
+import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
+import sharp from "sharp";
 
 // GET /api/posts - Get all posts for current user
 export async function GET(request: NextRequest) {
@@ -203,6 +205,7 @@ export async function POST(request: NextRequest) {
       scheduledAt,
       metadata,
       mediaInfo, // { storageUrl, storageKey, mimeType, fileSize } - image already uploaded to R2
+      mediaData, // { base64, mimeType } - image to be uploaded to R2 (from Reddit/Generator pages)
     } = body;
 
     if (!content || content.trim() === "") {
@@ -272,12 +275,65 @@ export async function POST(request: NextRequest) {
       qstashMessageId = await schedulePost(postId, scheduleDate);
     }
 
+    // Handle mediaData (base64) by uploading to R2 first
+    // This supports Reddit/Generator pages that send base64 images directly
+    let processedMediaInfo = mediaInfo;
+    if (mediaData?.base64 && !mediaInfo?.storageUrl) {
+      if (!isR2Configured()) {
+        return NextResponse.json(
+          { error: "Storage not configured" },
+          { status: 503 }
+        );
+      }
+
+      try {
+        // Decode base64 and optimize
+        const base64Data = mediaData.base64.replace(/^data:[^;]+;base64,/, "");
+        const inputBuffer = Buffer.from(base64Data, "base64");
+
+        // Validate size (max 10MB)
+        if (inputBuffer.length > 10 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: "Image too large (max 10MB)" },
+            { status: 400 }
+          );
+        }
+
+        // Optimize with sharp and convert to WebP
+        const optimizedBuffer = await sharp(inputBuffer)
+          .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 85 })
+          .toBuffer();
+
+        const fileName = `post-image-${nanoid()}.webp`;
+
+        const uploadResult = await uploadToR2(optimizedBuffer, {
+          fileName,
+          contentType: "image/webp",
+          userId: user.id,
+        });
+
+        processedMediaInfo = {
+          storageUrl: uploadResult.url,
+          storageKey: uploadResult.key,
+          mimeType: "image/webp",
+          fileSize: uploadResult.size,
+        };
+      } catch (uploadError) {
+        console.error("Failed to upload image:", uploadError);
+        return NextResponse.json(
+          { error: "Failed to upload image" },
+          { status: 500 }
+        );
+      }
+    }
+
     // Determine post type based on media
     let actualPostType = postType;
-    if (mediaInfo?.storageUrl) {
-      if (mediaInfo.mimeType === "application/pdf") {
+    if (processedMediaInfo?.storageUrl) {
+      if (processedMediaInfo.mimeType === "application/pdf") {
         actualPostType = "document";
-      } else if (mediaInfo.mimeType?.startsWith("video/")) {
+      } else if (processedMediaInfo.mimeType?.startsWith("video/")) {
         actualPostType = "video";
       } else {
         actualPostType = "image";
@@ -299,18 +355,18 @@ export async function POST(request: NextRequest) {
 
     // Link already-uploaded R2 media to this post
     let uploadedMedia: typeof media.$inferSelect | null = null;
-    if (mediaInfo?.storageUrl && mediaInfo?.storageKey) {
+    if (processedMediaInfo?.storageUrl && processedMediaInfo?.storageKey) {
       const mediaId = nanoid();
-      const ext = mediaInfo.mimeType?.split("/")[1] || "png";
+      const ext = processedMediaInfo.mimeType?.split("/")[1] || "png";
       await db.insert(media).values({
         id: mediaId,
         userId: user.id,
         postId,
-        storageKey: mediaInfo.storageKey,
-        storageUrl: mediaInfo.storageUrl,
+        storageKey: processedMediaInfo.storageKey,
+        storageUrl: processedMediaInfo.storageUrl,
         fileName: `post-image-${postId}.${ext}`,
-        mimeType: mediaInfo.mimeType || "image/png",
-        fileSize: mediaInfo.fileSize || 0,
+        mimeType: processedMediaInfo.mimeType || "image/png",
+        fileSize: processedMediaInfo.fileSize || 0,
         status: "ready",
         createdAt: now,
       });

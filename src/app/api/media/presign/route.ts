@@ -5,7 +5,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getPresignedUploadUrl, isR2Configured } from "@/lib/storage/r2";
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime"];
 const ALLOWED_DOCUMENT_TYPES = ["application/pdf"];
 const ALL_ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES, ...ALLOWED_DOCUMENT_TYPES];
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (!ALL_ALLOWED_TYPES.includes(contentType)) {
       return NextResponse.json(
-        { error: "Unsupported file type. Allowed: JPG, PNG, GIF, MP4, MOV, PDF" },
+        { error: "Unsupported file type. Allowed: JPG, PNG, GIF, WebP, MP4, MOV, PDF" },
         { status: 400 }
       );
     }
