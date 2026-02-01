@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Play, ArrowRight } from "lucide-react";
+import { Play, ArrowRight, Maximize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 declare global {
@@ -204,6 +204,15 @@ export function YouTubePlayer({
     }
   };
 
+  const handleFullscreen = () => {
+    if (playerRef.current) {
+      const iframe = playerRef.current.getIframe();
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      }
+    }
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -248,6 +257,17 @@ export function YouTubePlayer({
         <>
           {/* Player container */}
           <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+
+          {/* Fullscreen button */}
+          {!showCTA && (
+            <button
+              onClick={handleFullscreen}
+              className="absolute bottom-4 right-4 z-10 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white transition-colors"
+              aria-label="Enter fullscreen"
+            >
+              <Maximize className="w-5 h-5" />
+            </button>
+          )}
 
           {/* CTA Overlay */}
           {showCTA && (
