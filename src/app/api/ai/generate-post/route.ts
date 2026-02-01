@@ -205,14 +205,19 @@ Return ONLY the post text. No quotes, no explanations.`;
   if (provider === "openai") {
     const openaiModel = model || "o4-mini";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+    const isGPT5 = openaiModel.startsWith("gpt-5");
 
-    // O-series models don't support temperature parameter
+    // O-series and GPT-5 models don't support temperature parameter
+    // GPT-5 models use max_completion_tokens instead of max_tokens
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
     };
-    if (!isOSeries) {
+    if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
+    }
+    if (isGPT5) {
+      requestBody.max_completion_tokens = 2048;
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -373,14 +378,19 @@ Return ONLY a JSON array of 5 strings. Example:
   if (provider === "openai") {
     const openaiModel = model || "o4-mini";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+    const isGPT5 = openaiModel.startsWith("gpt-5");
 
-    // O-series models don't support temperature parameter
+    // O-series and GPT-5 models don't support temperature parameter
+    // GPT-5 models use max_completion_tokens instead of max_tokens
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
     };
-    if (!isOSeries) {
+    if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.9;
+    }
+    if (isGPT5) {
+      requestBody.max_completion_tokens = 1024;
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -553,14 +563,19 @@ Return ONLY the edited post. No quotes, no explanations.`;
   if (provider === "openai") {
     const openaiModel = model || "o4-mini";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+    const isGPT5 = openaiModel.startsWith("gpt-5");
 
-    // O-series models don't support temperature parameter
+    // O-series and GPT-5 models don't support temperature parameter
+    // GPT-5 models use max_completion_tokens instead of max_tokens
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
     };
-    if (!isOSeries) {
+    if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.7;
+    }
+    if (isGPT5) {
+      requestBody.max_completion_tokens = 2048;
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -808,14 +823,19 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       if (provider === "openai") {
         const openaiModel = model || "o4-mini";
         const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
+        const isGPT5 = openaiModel.startsWith("gpt-5");
 
-        // O-series models don't support temperature parameter
+        // O-series and GPT-5 models don't support temperature parameter
+        // GPT-5 models use max_completion_tokens instead of max_tokens
         const requestBody: Record<string, unknown> = {
           model: openaiModel,
           messages: [{ role: "user", content: carouselPrompt }],
         };
-        if (!isOSeries) {
+        if (!isOSeries && !isGPT5) {
           requestBody.temperature = 0.8;
+        }
+        if (isGPT5) {
+          requestBody.max_completion_tokens = 4096;
         }
 
         response = await fetch("https://api.openai.com/v1/chat/completions", {

@@ -82,12 +82,10 @@ const aiProviders = [
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
     models: [
-      { id: "gpt-5.2-pro", name: "GPT-5.2 Pro", tag: "Best Quality", price: "$0.35/post", monthly: "~$10.50/mo" },
       { id: "gpt-5.2", name: "GPT-5.2", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "gpt-5", name: "GPT-5", tag: "Balanced", price: "$0.02/post", monthly: "~$0.60/mo" },
       { id: "gpt-5-nano", name: "GPT-5 Nano", tag: "Fastest", price: "$0.002/post", monthly: "~$0.06/mo" },
       { id: "o4-mini", name: "o4-mini", tag: "Recommended", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "o3-pro", name: "o3-pro", tag: "Best Reasoning", price: "$0.15/post", monthly: "~$4.50/mo" },
       { id: "o3", name: "o3", tag: "Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
       { id: "o3-mini", name: "o3-mini", tag: "Fast Reasoning", price: "$0.005/post", monthly: "~$0.15/mo" },
     ],

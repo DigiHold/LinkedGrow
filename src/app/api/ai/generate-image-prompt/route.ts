@@ -144,8 +144,10 @@ export async function POST(request: NextRequest) {
 
 async function generateWithOpenAI(apiKey: string, postContent: string, model: string): Promise<string> {
   const isOSeries = model.startsWith("o3") || model.startsWith("o4");
+  const isGPT5 = model.startsWith("gpt-5");
 
-  // O-series models don't support temperature parameter
+  // O-series and GPT-5 models don't support temperature parameter
+  // GPT-5 models use max_completion_tokens instead of max_tokens
   const requestBody: Record<string, unknown> = {
     model,
     messages: [
@@ -153,9 +155,11 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
       { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
     ],
   };
-  if (!isOSeries) {
+  if (!isOSeries && !isGPT5) {
     requestBody.temperature = 0.7;
     requestBody.max_tokens = 1500;
+  } else if (isGPT5) {
+    requestBody.max_completion_tokens = 1500;
   }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
