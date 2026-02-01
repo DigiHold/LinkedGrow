@@ -30,37 +30,46 @@ async function generateHooks(
   // Get current year for accurate data
   const currentYear = new Date().getFullYear();
 
-  const prompt = `I will give you JSON metadata from Reddit like this:
+  const prompt = `I will give you a viral Reddit post:
+
 TITLE: ${trimmedJson.post.title}
-JSON: ${JSON.stringify(trimmedJson, null, 2)}
 
-IMPORTANT: Current year is ${currentYear}. Never reference outdated tools, models, statistics, or data. If mentioning AI models, use YOUR OWN current knowledge to cite accurate latest model names - never use old names like GPT-4, Claude 3, etc.
+CONTENT: ${trimmedJson.post.selftext}
 
-You'll extract the pain points from both the post and top comments, make 5 viral hooks (2 lines in one hook) on the same.
+TOP COMMENTS: ${trimmedJson.comments.slice(0, 10).map(c => c.body).join('\n---\n')}
 
-The viral hooks should be on the same format, style and tone as these 3 hooks that got results:
+Your task: Create 5 viral LinkedIn hooks based on THIS SPECIFIC STORY.
 
-Hook 1:
+CRITICAL: The hooks must be about the ACTUAL content of this post. If it's a success story, the hooks should capture the journey, transformation, or surprising elements. If it's advice, capture the core insight. DO NOT generate generic marketing hooks.
+
+For a story about someone going from baker to millionaire, good hooks would be:
+- "I dropped out at 16 to become a baker. 8 years later I'd made $1.5M from code."
+- "Everyone said giving it away free was insane. It made me a millionaire."
+
+BAD hooks (too generic, not about the story):
+- "You're shipping features nobody asked for."
+- "Your free product is too good."
+
+Hook format examples that work:
+
 "3 seconds.
 That's all it takes to lose half your visitors."
 
-Hook 2:
-"Stop collecting compliments.
-Your testimonials are useless. And I can prove it."
+"I woke up at 4am to bake bread.
+After work, I taught myself to code. Here's what happened."
 
-Hook 3:
-"It's ${currentYear}. STOP using page builders!
-I've seen 500,000+ sites. The pattern is always the same."
+"Everyone told me to charge $59.
+I gave it away free. Then 500,000 websites chose me."
 
 Requirements:
 - Each hook is EXACTLY 2 lines
 - Line 1: Short, punchy, stops the scroll (max 8 words)
-- Line 2: Builds curiosity, makes them click "see more" (max 15 words)
+- Line 2: Builds curiosity, teases the story (max 15 words)
 - NO emojis
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
-- Be specific to the Reddit content pain points
-- Sound human, raw, authentic
-- Controversial or contrarian angles work best
+- Be SPECIFIC to THIS post's story, numbers, journey, or insights
+- Sound human, raw, authentic - like you're telling YOUR story
+- Use specific details from the post (numbers, job titles, timeframes, etc.)
 
 Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n):
 ["Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2"]`;
