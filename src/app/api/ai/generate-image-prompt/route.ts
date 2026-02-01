@@ -172,12 +172,26 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error("OpenAI error response:", JSON.stringify(error, null, 2));
     throw new Error(error.error?.message || "OpenAI request failed");
   }
 
   const data = await response.json();
-  return data.choices[0].message.content.trim();
+  console.log("OpenAI response:", JSON.stringify(data, null, 2));
+
+  // Handle different response formats
+  if (!data.choices || !data.choices[0]) {
+    throw new Error("No choices in OpenAI response");
+  }
+
+  const message = data.choices[0].message;
+  if (!message || !message.content) {
+    console.error("OpenAI message:", JSON.stringify(data.choices[0], null, 2));
+    throw new Error("No content in OpenAI response message");
+  }
+
+  return message.content.trim();
 }
 
 async function generateWithAnthropic(apiKey: string, postContent: string, model: string): Promise<string> {
@@ -208,15 +222,17 @@ async function generateWithAnthropic(apiKey: string, postContent: string, model:
 }
 
 async function generateWithGoogle(apiKey: string, postContent: string, model: string): Promise<string> {
-  // For Gemini models, concatenate system prompt with user content
-  // The REST API's system_instruction field is unreliable across model versions
-  const fullPrompt = `${SYSTEM_PROMPT}
+  // Create a strong, explicit prompt that forces the model to follow instructions
+  const userPrompt = `You MUST follow these instructions EXACTLY. This is MANDATORY.
 
----
+INSTRUCTIONS:
+${SYSTEM_PROMPT}
 
-Create a detailed image prompt for this LinkedIn post:
+NOW CREATE THE IMAGE PROMPT FOR THIS LINKEDIN POST:
 
-${postContent}`;
+${postContent}
+
+REMEMBER: Your response must be 300-450 words, extremely detailed with specific measurements, ages, camera specs, lighting, colors, textures, and composition. Return ONLY the image prompt, nothing else.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -226,27 +242,34 @@ ${postContent}`;
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: fullPrompt }],
+            parts: [{ text: userPrompt }],
           },
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1500,
+          maxOutputTokens: 2000,
         },
       }),
     }
   );
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error("Gemini error response:", JSON.stringify(error, null, 2));
     throw new Error(error.error?.message || "Google AI request failed");
   }
 
   const data = await response.json();
+  console.log("Gemini response structure:", JSON.stringify({
+    hasPromptFeedback: !!data.promptFeedback,
+    hasCandidates: !!data.candidates,
+    candidatesLength: data.candidates?.length,
+    firstCandidateHasContent: !!data.candidates?.[0]?.content
+  }, null, 2));
 
   // Handle missing candidates (Gemini 2.5 Pro and other models may have different response structure)
   if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-    console.error("Gemini response:", JSON.stringify(data, null, 2));
+    console.error("Gemini full response:", JSON.stringify(data, null, 2));
     throw new Error("No valid response from Gemini. The model may have blocked the request or returned an empty response.");
   }
 
@@ -260,6 +283,7 @@ ${postContent}`;
 }
 
 async function generateWithGrok(apiKey: string, postContent: string, model: string): Promise<string> {
+  // xAI Grok API - Chat Completions endpoint (still works despite deprecation notice)
   const response = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -273,16 +297,27 @@ async function generateWithGrok(apiKey: string, postContent: string, model: stri
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
       ],
       temperature: 0.7,
-      max_tokens: 1500,
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Grok request failed");
+    const errorText = await response.text();
+    console.error("Grok error response:", errorText);
+    try {
+      const error = JSON.parse(errorText);
+      throw new Error(error.error?.message || error.message || `Grok request failed with status ${response.status}`);
+    } catch {
+      throw new Error(`Grok request failed with status ${response.status}: ${errorText.substring(0, 200)}`);
+    }
   }
 
   const data = await response.json();
+  console.log("Grok response:", JSON.stringify(data, null, 2));
+
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error("No choices in Grok response");
+  }
+
   return data.choices[0].message.content.trim();
 }
 
