@@ -158,7 +158,7 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
     // O-series and GPT-5 models don't support temperature parameter
-    // GPT-5 models use max_completion_tokens instead of max_tokens
+    // O-series and GPT-5 models require max_completion_tokens instead of max_tokens
     // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
@@ -167,8 +167,11 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 8000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 

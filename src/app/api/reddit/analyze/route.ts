@@ -84,7 +84,7 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
     // O-series and GPT-5 models don't support temperature parameter
-    // GPT-5 models use max_completion_tokens instead of max_tokens
+    // O-series and GPT-5 models require max_completion_tokens instead of max_tokens
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -92,7 +92,8 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 2048;
     }
 
@@ -106,7 +107,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate hooks with OpenAI");
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Reddit Analyze] OpenAI error:", response.status, errorData);
+      throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -135,7 +138,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate hooks with Anthropic");
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Reddit Analyze] Anthropic error:", response.status, errorData);
+      throw new Error(errorData.error?.message || `Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -160,7 +165,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate hooks with Google AI");
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Reddit Analyze] Google AI error:", response.status, errorData);
+      throw new Error(errorData.error?.message || `Google AI API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -188,7 +195,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate hooks with Grok");
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Reddit Analyze] Grok error:", response.status, errorData);
+      throw new Error(errorData.error?.message || `Grok API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -216,7 +225,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate hooks with Perplexity");
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[Reddit Analyze] Perplexity error:", response.status, errorData);
+      throw new Error(errorData.error?.message || `Perplexity API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -299,16 +310,24 @@ export async function POST(request: NextRequest) {
 
     console.log("[Reddit Analyze] Generating hooks with provider:", provider, "model:", model);
     console.log("[Reddit Analyze] Post title:", trimmedJson.post?.title);
+    console.log("[Reddit Analyze] Post selftext length:", trimmedJson.post?.selftext?.length || 0);
     console.log("[Reddit Analyze] Comments count:", trimmedJson.comments?.length || 0);
 
-    const hooks = await generateHooks(
-      trimmedJson,
-      apiKey,
-      provider,
-      model
-    );
+    let hooks: string[];
+    try {
+      hooks = await generateHooks(
+        trimmedJson,
+        apiKey,
+        provider,
+        model
+      );
+    } catch (genError) {
+      console.error("[Reddit Analyze] generateHooks threw error:", genError);
+      throw genError;
+    }
 
     console.log("[Reddit Analyze] Generated hooks count:", hooks.length);
+    console.log("[Reddit Analyze] Hooks preview:", hooks.slice(0, 2));
 
     return NextResponse.json({ hooks });
   } catch (error) {
