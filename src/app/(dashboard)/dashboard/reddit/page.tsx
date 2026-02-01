@@ -260,7 +260,7 @@ function RedditImportContent() {
         const hoursSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
 
         if (hoursSinceSave < 24) {
-          if (state.step) setStep(state.step);
+          // Restore data first
           if (state.url) setUrl(state.url);
           if (state.hooks?.length > 0) setHooks(state.hooks);
           if (state.selectedHook !== null && state.selectedHook !== undefined) setSelectedHook(state.selectedHook);
@@ -269,6 +269,20 @@ function RedditImportContent() {
           if (state.redditPost) setRedditPost(state.redditPost);
           if (state.editedPost) setEditedPost(state.editedPost);
           if (state.attachedImage) setAttachedImage(state.attachedImage);
+
+          // Only restore step if the required data for that step exists
+          // Step 2 needs hooks, Step 3+ needs posts
+          if (state.step) {
+            if (state.step >= 3 && (!state.posts || state.posts.length === 0)) {
+              // Can't be at step 3+ without posts, reset to step 2 if hooks exist
+              setStep(state.hooks?.length > 0 ? 2 : 1);
+            } else if (state.step >= 2 && (!state.hooks || state.hooks.length === 0)) {
+              // Can't be at step 2+ without hooks, reset to step 1
+              setStep(1);
+            } else {
+              setStep(state.step);
+            }
+          }
         } else {
           // Clear stale data
           localStorage.removeItem(STORAGE_KEY);
