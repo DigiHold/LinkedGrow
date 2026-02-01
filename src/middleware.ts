@@ -35,6 +35,12 @@ const prelaunchAllowedRoutes = [
 
 export default auth((req) => {
   const { nextUrl } = req;
+
+  // Allow OPTIONS requests to pass through (CORS preflight)
+  if (req.method === "OPTIONS") {
+    return NextResponse.next();
+  }
+
   const isLoggedIn = !!req.auth;
   const isAdmin = req.auth?.user?.isAdmin === true;
 
