@@ -126,7 +126,7 @@ const aiProviders = [
     description: "Grok 4, Grok 3, Grok 3 Mini",
     placeholder: "xai-...",
     icon: GrokIcon,
-    apiKeyUrl: "https://console.x.ai/team/default/api-keys",
+    apiKeyUrl: "https://console.x.ai",
     models: [
       { id: "grok-4-1-fast-reasoning", name: "Grok 4.1 Fast", tag: "Most Capable", price: "$0.15/post", monthly: "~$4.50/mo" },
       { id: "grok-3-beta", name: "Grok 3", tag: "Recommended", price: "$0.10/post", monthly: "~$3.00/mo" },
