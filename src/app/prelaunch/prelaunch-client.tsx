@@ -1622,7 +1622,7 @@ function HeroVideoSection() {
 
               {/* Duration badge */}
               <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-                1:54
+                1:00
               </div>
             </button>
           ) : (
