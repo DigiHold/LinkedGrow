@@ -413,7 +413,7 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
 
 /**
  * Generate image with Replicate (FLUX.2 models)
- * FLUX 2 Pro/Flex/Dev use aspect_ratio parameter (not width/height)
+ * FLUX 2 Pro/Flex/Dev use aspect_ratio and resolution (megapixels) parameters
  * Cost: $0.015 + $0.015 per megapixel
  */
 async function generateWithReplicate(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
@@ -427,8 +427,8 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
 
   const modelName = modelMap[settings.model] || "black-forest-labs/flux-2-pro";
 
-  // FLUX 2 models use aspect_ratio parameter (e.g., "16:9", "1:1", "9:16")
-  // Map resolution setting to aspect ratio
+  // FLUX 2 models use aspect_ratio (e.g., "16:9", "1:1") and resolution in megapixels
+  // Map pixel resolution to aspect ratio if not provided
   const resolutionToAspectRatio: Record<string, string> = {
     "1024x1024": "1:1",
     "1536x1024": "3:2",
@@ -436,6 +436,16 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
     "2048x2048": "1:1",
   };
   const aspectRatio = settings.aspectRatio || resolutionToAspectRatio[settings.resolution] || "16:9";
+
+  // Map pixel resolution to megapixels for FLUX 2 API
+  // FLUX 2 supports: 0.5 MP, 1 MP, 2 MP, 4 MP
+  const resolutionToMegapixels: Record<string, string> = {
+    "1024x1024": "1 MP",    // ~1 megapixel
+    "1536x1024": "2 MP",    // ~1.5 megapixels, round up to 2 MP for better quality
+    "1024x1536": "2 MP",    // ~1.5 megapixels, round up to 2 MP for better quality
+    "2048x2048": "4 MP",    // ~4 megapixels
+  };
+  const megapixelResolution = resolutionToMegapixels[settings.resolution] || "1 MP";
 
   // Create prediction with FLUX 2 parameters
   const response = await fetch("https://api.replicate.com/v1/predictions", {
@@ -449,6 +459,7 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
       input: {
         prompt: prompt,
         aspect_ratio: aspectRatio,
+        resolution: megapixelResolution,
         output_format: "webp",
         output_quality: 90,
       },
