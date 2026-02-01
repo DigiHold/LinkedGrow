@@ -27,23 +27,40 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 
 ## Deployment
 
-### Vercel Auto-Deploy
+### Branching Strategy
 
-The project is connected to Vercel via GitHub. Any push to the `main` branch triggers automatic deployment.
+LinkedGrow uses a two-branch deployment model:
 
-**To deploy:**
+- **`staging`** - Development/testing branch, deploys to https://staging.linkedgrow.ai
+- **`main`** - Production branch, deploys to https://linkedgrow.ai
+
+**IMPORTANT: Always push changes to `staging` first by default.** Only push to `main` when the user explicitly requests a production deploy (e.g., "deploy live", "push to production", "deploy to main").
+
+### Deploy to Staging (Default)
 
 ```bash
+git checkout staging
 git add .
 git commit -m "Your commit message"
+git push origin staging
+```
+
+### Deploy to Production
+
+Only when explicitly requested by the user:
+
+```bash
+git checkout main
+git merge staging
 git push origin main
 ```
 
-Vercel will automatically:
+### Vercel Auto-Deploy
 
-1. Detect the push
-2. Build the Next.js project
-3. Deploy to production at https://linkedgrow.ai
+The project is connected to Vercel via GitHub. Pushes trigger automatic deployment:
+
+- Push to `staging` -> deploys to https://staging.linkedgrow.ai
+- Push to `main` -> deploys to https://linkedgrow.ai
 
 ### GitHub SSH Access
 
@@ -53,7 +70,7 @@ SSH key is configured for Claude Code. The remote uses SSH:
 git@github.com:DigiHold/LinkedGrow.git
 ```
 
-Always use `git push origin main` - SSH authentication is automatic.
+SSH authentication is automatic.
 
 ## Caching Strategy
 
