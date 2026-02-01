@@ -517,23 +517,22 @@ export default function GeneratorPage() {
 
     setIsApplyingAI(true);
     try {
-      // Map action IDs to AI instructions
-      const actionInstructions: Record<string, string> = {
-        emojis: "Add relevant emojis throughout the post to make it more engaging. Use 3-5 emojis strategically placed.",
-        shorter: "Make this post more concise. Reduce the length by about 30% while keeping the main message and impact.",
-        hook: "Rewrite the first two lines to create a stronger, more attention-grabbing hook that makes people want to read more.",
-        cta: "Add or improve the call-to-action at the end to encourage more engagement (likes, comments, shares).",
-        professional: "Rewrite this post to sound more professional and polished while maintaining authenticity.",
-        casual: "Rewrite this post to sound more casual and conversational while staying professional.",
+      // Map action IDs to the labels expected by /api/ai/edit-post
+      const actionLabels: Record<string, string> = {
+        shorter: "Make Shorter",
+        emojis: "Add Emojis",
+        hook: "Stronger Hook",
+        cta: "Better CTA",
+        formal: "More Formal",
+        casual: "More Casual",
       };
 
-      const instruction = actionInstructions[actionId] || `Apply the following style: ${actionId}`;
+      const instruction = actionLabels[actionId] || actionId;
 
-      const response = await fetch("/api/ai/generate-post", {
+      const response = await fetch("/api/ai/edit-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "edit",
           content: currentContent,
           instruction: instruction,
         }),

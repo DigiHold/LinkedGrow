@@ -594,11 +594,10 @@ export function CalendarContent() {
     if (!aiInstruction.trim() || !newPostContent.trim()) return;
     setIsProcessingAI(true);
     try {
-      const response = await fetch("/api/ai/generate-post", {
+      const response = await fetch("/api/ai/edit-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "edit",
           content: newPostContent,
           instruction: aiInstruction,
         }),
@@ -1343,10 +1342,11 @@ Tips for viral posts:
                           />
                           <div className="flex flex-wrap gap-2 mt-3">
                             {[
-                              "Make it shorter",
-                              "Add emojis",
-                              "Stronger hook",
+                              "Make Shorter",
+                              "Add Emojis",
+                              "Stronger Hook",
                               "Add CTA",
+                              "More Casual",
                             ].map((suggestion) => (
                               <button
                                 key={suggestion}

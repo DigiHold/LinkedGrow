@@ -253,11 +253,10 @@ function EditorContent() {
     if (!aiInstruction.trim() || !content.trim()) return;
     setIsProcessing(true);
     try {
-      const response = await fetch("/api/ai/generate-post", {
+      const response = await fetch("/api/ai/edit-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "edit",
           content: content,
           instruction: aiInstruction,
         }),
@@ -581,7 +580,7 @@ Tips for viral posts:
                     className="min-h-25"
                   />
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {["Make it shorter", "Add emojis", "Stronger hook", "Add CTA"].map(
+                    {["Make Shorter", "Add Emojis", "Stronger Hook", "Add CTA", "More Casual"].map(
                       (suggestion) => (
                         <button
                           key={suggestion}

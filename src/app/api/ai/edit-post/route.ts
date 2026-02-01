@@ -36,16 +36,32 @@ async function editPost(
   provider: string,
   model: string
 ): Promise<string> {
-  // Map common quick actions to detailed instructions
+  // Map common quick actions to detailed instructions (handle all variations)
   const instructionMap: Record<string, string> = {
-    "Make Shorter": "Shorten the post while keeping the key message. Remove filler words, combine similar points, make it punchier. Keep the hook (first 2 lines) intact.",
-    "Add Emojis": "Add relevant emojis to make the post more engaging. Use them sparingly at the start of key points or sections. Don't overdo it - 3-5 emojis max.",
-    "Stronger Hook": "Rewrite ONLY the first 2 lines (the hook) to be more attention-grabbing and scroll-stopping. The hook should create curiosity or make a bold statement. Keep the rest of the post exactly the same.",
-    "Add CTA": "Add a clear call-to-action at the end. Ask a question, invite comments, or encourage engagement. Make it feel natural, not salesy.",
-    "More Casual": "Make the tone more conversational and casual. Use contractions, shorter sentences, and a friendly voice. Remove any corporate jargon.",
+    // Shorter variations
+    "Make Shorter": "Shorten the post significantly while keeping the key message and impact. Remove filler words, redundant phrases, and unnecessary details. Combine similar points. Keep the hook (first 2 lines) powerful. Target 30-40% shorter.",
+    "Make it shorter": "Shorten the post significantly while keeping the key message and impact. Remove filler words, redundant phrases, and unnecessary details. Combine similar points. Keep the hook (first 2 lines) powerful. Target 30-40% shorter.",
+
+    // Emoji variations
+    "Add Emojis": "Add relevant emojis to make the post more engaging and scannable. Place them at the start of key bullet points or sections to create visual breaks. Use 4-6 emojis total, spread throughout. Match emoji to content meaning.",
+    "Add emojis": "Add relevant emojis to make the post more engaging and scannable. Place them at the start of key bullet points or sections to create visual breaks. Use 4-6 emojis total, spread throughout. Match emoji to content meaning.",
+
+    // Hook variations
+    "Stronger Hook": "Rewrite ONLY the first 2 lines (the hook) to be dramatically more attention-grabbing. Use one of these patterns: 1) Bold controversial statement, 2) Surprising number/statistic, 3) Personal vulnerable admission, 4) Direct challenge to reader. The hook must make people STOP scrolling. Keep the rest of the post exactly the same.",
+    "Stronger hook": "Rewrite ONLY the first 2 lines (the hook) to be dramatically more attention-grabbing. Use one of these patterns: 1) Bold controversial statement, 2) Surprising number/statistic, 3) Personal vulnerable admission, 4) Direct challenge to reader. The hook must make people STOP scrolling. Keep the rest of the post exactly the same.",
+
+    // CTA variations
+    "Add CTA": "Add a compelling call-to-action at the end that drives engagement. Use one of these: 1) A specific question that invites comments, 2) Ask for opinions/experiences, 3) Challenge readers to take action, 4) Invite DMs for specific help. Make it feel natural and relevant to the post content.",
+    "Better CTA": "Improve or add a compelling call-to-action at the end that drives engagement. Use one of these: 1) A specific question that invites comments, 2) Ask for opinions/experiences, 3) Challenge readers to take action, 4) Invite DMs for specific help. Make it feel natural and relevant to the post content.",
+
+    // Tone variations
+    "More Casual": "Make the tone more conversational and relatable. Use contractions (I'm, you're, don't). Add personal touches and informal language. Remove corporate jargon. Write like you're talking to a friend over coffee. Keep it professional but warm.",
+    "More Formal": "Make the tone more professional and polished. Remove slang and overly casual phrases. Use complete sentences. Add authority and credibility. Keep it warm but business-appropriate. Good for B2B or executive audiences.",
   };
 
-  const detailedInstruction = instructionMap[instruction] || instruction;
+  // Normalize instruction to handle case variations
+  const normalizedInstruction = instruction.trim();
+  const detailedInstruction = instructionMap[normalizedInstruction] || instruction;
 
   const prompt = `You are editing a LinkedIn post. Apply the following instruction to improve the post.
 
