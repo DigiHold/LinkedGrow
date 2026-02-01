@@ -1631,6 +1631,7 @@ function HeroVideoSection() {
               title="LinkedGrow demo video"
               className="absolute inset-0 w-full h-full"
               allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           )}
