@@ -85,7 +85,7 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data via user's browser using allorigins proxy
+// Fetch Reddit post data via user's browser - direct fetch to Reddit .json endpoint
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
   // Build JSON URL from Reddit URL
   let jsonUrl = url;
@@ -93,9 +93,8 @@ async function fetchRedditPost(url: string): Promise<RedditPostData> {
     jsonUrl = jsonUrl.replace(/\/?$/, ".json");
   }
 
-  // Use allorigins.win proxy - fetches via user's browser, not blocked by Reddit
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(jsonUrl)}`;
-  const redditResponse = await fetch(proxyUrl);
+  // Fetch directly from Reddit - .json endpoints allow CORS
+  const redditResponse = await fetch(jsonUrl);
 
   if (!redditResponse.ok) {
     if (redditResponse.status === 404) {
