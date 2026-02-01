@@ -39,8 +39,8 @@ function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
   return { post, comments };
 }
 
-// This endpoint receives raw Reddit JSON from the client and trims it
-// The client fetches Reddit via user's browser (no CORS issues), backend trims the data
+// This endpoint fetches Reddit data server-side (no CORS issues) and trims it
+// Server-side fetch bypasses browser CORS restrictions entirely
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -49,11 +49,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { rawJson } = await request.json();
+    const body = await request.json();
+    const { url } = body;
 
-    if (!rawJson) {
-      return NextResponse.json({ error: "rawJson is required" }, { status: 400 });
+    if (!url) {
+      return NextResponse.json({ error: "Reddit URL is required" }, { status: 400 });
     }
+
+    // Validate it's a Reddit URL
+    if (!url.includes("reddit.com")) {
+      return NextResponse.json({ error: "Invalid Reddit URL" }, { status: 400 });
+    }
+
+    // Normalize and build JSON URL
+    let jsonUrl = url
+      .replace("old.reddit.com", "www.reddit.com")
+      .replace(/^(https?:\/\/)reddit\.com/, "$1www.reddit.com");
+
+    if (!jsonUrl.endsWith(".json")) {
+      jsonUrl = jsonUrl.replace(/\/?$/, ".json");
+    }
+
+    // Fetch from Reddit server-side with browser-like headers to avoid bot detection
+    const redditResponse = await fetch(jsonUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+      },
+    });
+
+    if (!redditResponse.ok) {
+      if (redditResponse.status === 404) {
+        return NextResponse.json({ error: "Reddit post not found" }, { status: 404 });
+      }
+      if (redditResponse.status === 403) {
+        return NextResponse.json(
+          { error: "Reddit blocked this request. Please try again in a few seconds." },
+          { status: 403 }
+        );
+      }
+      if (redditResponse.status === 429) {
+        return NextResponse.json(
+          { error: "Too many requests to Reddit. Please wait a moment and try again." },
+          { status: 429 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Failed to fetch Reddit post. Please try again." },
+        { status: 502 }
+      );
+    }
+
+    const rawJson = await redditResponse.json();
 
     // Trim the Reddit JSON to reduce token count
     const trimmedData = trimRedditData(rawJson);
@@ -71,7 +120,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Reddit fetch error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to parse Reddit data" },
+      { error: error instanceof Error ? error.message : "Failed to fetch Reddit data" },
       { status: 500 }
     );
   }

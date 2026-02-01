@@ -85,48 +85,19 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data via user's browser - direct fetch to Reddit .json endpoint
-// Reddit .json endpoints support CORS for browser requests
+// Fetch Reddit post data via server-side proxy to avoid CORS issues
+// Browser fetch to Reddit doesn't work due to CORS - server-side fetch always works
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  // Build JSON URL from Reddit URL
-  // Use old.reddit.com which has better CORS support
-  let jsonUrl = url
-    .replace("www.reddit.com", "old.reddit.com")
-    .replace("reddit.com", "old.reddit.com");
-
-  if (!jsonUrl.endsWith(".json")) {
-    jsonUrl = jsonUrl.replace(/\/?$/, ".json");
-  }
-
-  // Fetch from user's browser - this works because it's a real browser request
-  const redditResponse = await fetch(jsonUrl, {
-    headers: {
-      "Accept": "application/json",
-    },
-  });
-
-  if (!redditResponse.ok) {
-    if (redditResponse.status === 404) {
-      throw new Error("Reddit post not found.");
-    }
-    if (redditResponse.status === 403 || redditResponse.status === 429) {
-      throw new Error("Reddit is temporarily blocking requests. Please try again in a few seconds.");
-    }
-    throw new Error("Failed to fetch Reddit post. Please try again.");
-  }
-
-  const rawJson = await redditResponse.json();
-
-  // Send raw JSON to backend for trimming
+  // Send URL to our server-side proxy which fetches Reddit and trims the data
   const response = await fetch("/api/reddit/fetch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rawJson }),
+    body: JSON.stringify({ url }),
   });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to process Reddit post.");
+    throw new Error(data.error || "Failed to fetch Reddit post.");
   }
 
   const data = await response.json();
