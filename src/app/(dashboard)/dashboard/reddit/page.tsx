@@ -86,19 +86,31 @@ interface RedditPostData {
 }
 
 // Fetch Reddit post data via user's browser - direct fetch to Reddit .json endpoint
+// Reddit .json endpoints support CORS for browser requests
 async function fetchRedditPost(url: string): Promise<RedditPostData> {
   // Build JSON URL from Reddit URL
-  let jsonUrl = url;
+  // Use old.reddit.com which has better CORS support
+  let jsonUrl = url
+    .replace("www.reddit.com", "old.reddit.com")
+    .replace("reddit.com", "old.reddit.com");
+
   if (!jsonUrl.endsWith(".json")) {
     jsonUrl = jsonUrl.replace(/\/?$/, ".json");
   }
 
-  // Fetch directly from Reddit - .json endpoints allow CORS
-  const redditResponse = await fetch(jsonUrl);
+  // Fetch from user's browser - this works because it's a real browser request
+  const redditResponse = await fetch(jsonUrl, {
+    headers: {
+      "Accept": "application/json",
+    },
+  });
 
   if (!redditResponse.ok) {
     if (redditResponse.status === 404) {
       throw new Error("Reddit post not found.");
+    }
+    if (redditResponse.status === 403 || redditResponse.status === 429) {
+      throw new Error("Reddit is temporarily blocking requests. Please try again in a few seconds.");
     }
     throw new Error("Failed to fetch Reddit post. Please try again.");
   }

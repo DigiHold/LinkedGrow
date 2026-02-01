@@ -40,7 +40,7 @@ function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
 }
 
 // This endpoint receives raw Reddit JSON from the client and trims it
-// The client fetches Reddit via proxy (user's browser), backend trims the data
+// The client fetches Reddit via user's browser (no CORS issues), backend trims the data
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
