@@ -43,6 +43,7 @@ import {
 import dynamic from "next/dynamic";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
+import { YouTubePlayer } from "@/components/youtube-player";
 
 const ActivityToast = dynamic(
   () => import("@/components/prelaunch/activity-toast").then((m) => m.ActivityToast),
@@ -1584,7 +1585,15 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
 // ============================================
 
 function HeroVideoSection() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const handleWatchProgress = (percentWatched: number, secondsWatched: number) => {
+    // Track watch progress - you can send this to analytics
+    console.log(`Video progress: ${percentWatched.toFixed(1)}% (${secondsWatched.toFixed(0)}s)`);
+  };
+
+  const handleVideoEnd = () => {
+    // Track video completion
+    console.log("Video completed");
+  };
 
   return (
     <motion.div
@@ -1598,43 +1607,16 @@ function HeroVideoSection() {
         <div className="absolute -inset-4 bg-linear-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
 
         {/* Video container */}
-        <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
-          {!isPlaying ? (
-            <button
-              onClick={() => setIsPlaying(true)}
-              className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-slate-800 to-slate-900 cursor-pointer group"
-              aria-label="Play demo video"
-            >
-              {/* Thumbnail */}
-              <img
-                src="/images/video-thumbnail.avif"
-                alt="LinkedGrow demo video thumbnail"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-
-              {/* Play button */}
-              <div className="relative z-10">
-                <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
-                  <Play className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" fill="white" />
-                </div>
-              </div>
-
-              {/* Duration badge */}
-              <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-                1:00
-              </div>
-            </button>
-          ) : (
-            <iframe
-              src="https://www.youtube-nocookie.com/embed/R-IaSkiG6Zk?autoplay=1&mute=1&controls=1&rel=0&iv_load_policy=3"
-              title="LinkedGrow demo video"
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          )}
+        <div className="relative">
+          <YouTubePlayer
+            videoId="R-IaSkiG6Zk"
+            thumbnailUrl="/images/video-thumbnail.avif"
+            duration="1:00"
+            onWatchProgress={handleWatchProgress}
+            onVideoEnd={handleVideoEnd}
+            ctaText="Join the Waitlist"
+            ctaHref="#waitlist"
+          />
         </div>
       </div>
     </motion.div>
