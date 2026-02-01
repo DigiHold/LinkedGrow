@@ -325,11 +325,11 @@ export async function POST(request: NextRequest) {
       perplexity: aiSettingsUser.perplexityModel,
     };
 
-    const defaultModel = provider === "openai" ? "gpt-5-mini" :
+    const defaultModel = provider === "openai" ? "o4-mini" :
                          provider === "anthropic" ? "claude-sonnet-4-5-20250929" :
                          provider === "google" ? "gemini-3-flash-preview" :
-                         provider === "grok" ? "grok-3-mini-beta" :
-                         provider === "perplexity" ? "sonar-pro" : "gpt-5-mini";
+                         provider === "grok" ? "grok-4-1-fast-reasoning" :
+                         provider === "perplexity" ? "sonar-pro" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     // Parse sample posts from JSON if stored (from owner for team members)
