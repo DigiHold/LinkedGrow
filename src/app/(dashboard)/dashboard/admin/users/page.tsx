@@ -285,16 +285,13 @@ export default function AdminUsersPage() {
       {/* Search and Stats */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <Input
+            type="text"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            icon={<Search className="w-4 h-4" />}
+          />
           <Button type="submit">Search</Button>
         </form>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

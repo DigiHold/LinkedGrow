@@ -1608,6 +1608,7 @@ function HeroVideoSection() {
               <button
                 onClick={() => setIsPlaying(true)}
                 className="relative z-10 group"
+                aria-label="Play demo video"
               >
                 <div className="absolute inset-0 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
