@@ -84,8 +84,11 @@ Return ONLY a JSON array:
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.9;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 8000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 

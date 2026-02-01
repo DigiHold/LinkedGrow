@@ -159,11 +159,14 @@ async function generateWithOpenAI(apiKey: string, postContent: string, model: st
   if (!isOSeries && !isGPT5) {
     requestBody.temperature = 0.7;
     requestBody.max_tokens = 1500;
-  } else if (isGPT5) {
-    // GPT-5 models require max_completion_tokens and reasoning_effort
-    // Setting reasoning_effort to "low" ensures the model focuses on generating content
-    // rather than spending tokens on internal reasoning that doesn't produce output
+  }
+  // O-series and GPT-5 require max_completion_tokens instead of max_tokens
+  if (isOSeries || isGPT5) {
     requestBody.max_completion_tokens = 4000;
+  }
+  if (isGPT5) {
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
+    // rather than spending tokens on internal reasoning that doesn't produce output
     requestBody.reasoning_effort = "low";
   }
 

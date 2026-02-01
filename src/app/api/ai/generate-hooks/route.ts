@@ -149,8 +149,11 @@ Example format:
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.9;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 4000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 

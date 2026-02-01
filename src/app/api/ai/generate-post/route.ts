@@ -217,8 +217,11 @@ Return ONLY the post text. No quotes, no explanations.`;
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 4000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 
@@ -409,8 +412,11 @@ Return ONLY a JSON array of 5 strings. Example:
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.9;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 4000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 
@@ -612,8 +618,11 @@ Return ONLY the edited post. No quotes, no explanations.`;
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.7;
     }
-    if (isGPT5) {
+    // O-series and GPT-5 require max_completion_tokens
+    if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 4000;
+    }
+    if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
 
@@ -890,8 +899,11 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         if (!isOSeries && !isGPT5) {
           requestBody.temperature = 0.8;
         }
-        if (isGPT5) {
+        // O-series and GPT-5 require max_completion_tokens
+        if (isOSeries || isGPT5) {
           requestBody.max_completion_tokens = 8000;
+        }
+        if (isGPT5) {
           requestBody.reasoning_effort = "low";
         }
 
