@@ -154,14 +154,30 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body - Pro models need higher maxOutputTokens and thinkingConfig
+    const googleRequestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: isProModel ? 8000 : 2000,
+      },
+    };
+
+    // For Pro models, set minimal thinking budget to reduce reasoning overhead
+    if (isProModel) {
+      (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 1024,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(googleRequestBody),
     });
 
     if (!response.ok) {
