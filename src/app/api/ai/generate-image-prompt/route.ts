@@ -256,12 +256,12 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
     },
   };
 
-  // For Pro models, disable thinking mode to ensure they follow instructions
-  // Setting thinkingBudget to 0 turns off the "thinking" feature that causes Pro models
-  // to not follow instructions properly
+  // For Pro models, set minimal thinking budget to reduce reasoning overhead
+  // Pro models require thinking mode, so we use the minimum budget (1024 tokens)
+  // This ensures the model focuses more on following instructions rather than extensive reasoning
   if (isProModel) {
     (requestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
-      thinkingBudget: 0,
+      thinkingBudget: 1024,
     };
   }
 

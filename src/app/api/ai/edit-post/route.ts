@@ -94,6 +94,7 @@ Return the edited post:`;
 
     // O-series and GPT-5 models don't support temperature parameter
     // GPT-5 models use max_completion_tokens instead of max_tokens
+    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -102,7 +103,8 @@ Return the edited post:`;
       requestBody.temperature = 0.7;
     }
     if (isGPT5) {
-      requestBody.max_completion_tokens = 2048;
+      requestBody.max_completion_tokens = 4000;
+      requestBody.reasoning_effort = "low";
     }
 
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -144,14 +146,31 @@ Return the edited post:`;
     const data = await response.json();
     editedContent = data.content[0]?.text || "";
   } else if (provider === "google") {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || "gemini-3-flash-preview"}:generateContent?key=${apiKey}`, {
+    const googleModel = model || "gemini-3-flash-preview";
+    const isProModel = googleModel.includes("-pro");
+
+    // Build request body with minimal thinking budget for Pro models
+    const googleRequestBody: Record<string, unknown> = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+      },
+    };
+
+    // For Pro models, set minimal thinking budget to reduce reasoning overhead
+    // Pro models require thinking mode, so we use the minimum budget (1024 tokens)
+    if (isProModel) {
+      (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
+        thinkingBudget: 1024,
+      };
+    }
+
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+      body: JSON.stringify(googleRequestBody),
     });
 
     if (!response.ok) {

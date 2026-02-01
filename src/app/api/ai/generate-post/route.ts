@@ -272,10 +272,11 @@ Return ONLY the post text. No quotes, no explanations.`;
       },
     };
 
-    // For Pro models, disable thinking mode to ensure they follow instructions
+    // For Pro models, set minimal thinking budget to reduce reasoning overhead
+    // Pro models require thinking mode, so we use the minimum budget (1024 tokens)
     if (isProModel) {
       (requestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
-        thinkingBudget: 0,
+        thinkingBudget: 1024,
       };
     }
 
