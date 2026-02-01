@@ -277,6 +277,7 @@ async function generateWithGoogle(apiKey: string, prompt: string, settings: Imag
       // Imagen 4 uses the generateImages method
       // Map our model IDs to actual Imagen model names
       const imagenModelMap: Record<string, string> = {
+        "imagen-4-ultra-generate": "imagen-4.0-ultra-generate-001",
         "imagen-4-generate": "imagen-4.0-generate-001",
         "imagen-4-fast-generate": "imagen-4.0-fast-generate-001",
       };

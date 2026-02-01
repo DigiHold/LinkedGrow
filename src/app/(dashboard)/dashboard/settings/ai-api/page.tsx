@@ -199,8 +199,9 @@ const imageProviders = [
     models: [
       { id: "gemini-3-pro-image-preview", name: "Nano Banana Pro", tag: "Best Quality" },
       { id: "gemini-2.5-flash-image", name: "Nano Banana", tag: "Faster" },
-      { id: "imagen-4-generate", name: "Imagen 4", tag: "Standard" },
-      { id: "imagen-4-fast-generate", name: "Imagen 4 Fast", tag: "Fastest" },
+      { id: "imagen-4-ultra-generate", name: "Imagen 4 Ultra", tag: "Best Quality ($0.06)" },
+      { id: "imagen-4-generate", name: "Imagen 4", tag: "Standard ($0.04)" },
+      { id: "imagen-4-fast-generate", name: "Imagen 4 Fast", tag: "10x Faster ($0.02)" },
     ],
   },
   {
@@ -1176,7 +1177,7 @@ export default function AIAPISettingsPage() {
                 )}
 
                 {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 4 - fixed 1024px) */}
-                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-4-generate", "imagen-4-fast-generate"].includes(selectedImageModel) && (
+                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-4-ultra-generate", "imagen-4-generate", "imagen-4-fast-generate"].includes(selectedImageModel) && (
                   <div className="mb-4">
                     <Label className="mb-2 block text-sm">Resolution / Size</Label>
                     <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
