@@ -59,6 +59,9 @@ interface SettingsResponse {
   aiProvider: string | null;
 }
 
+// Cloudflare Worker CORS proxy - distributed IPs worldwide, no rate limit risk
+const REDDIT_PROXY = "https://reddit-proxy.digihold-account.workers.dev";
+
 // Trimmed JSON structure for AI processing
 interface TrimmedRedditJson {
   post: {
@@ -85,30 +88,83 @@ interface RedditPostData {
   trimmedJson: TrimmedRedditJson;
 }
 
-// Fetch Reddit post data via server-side proxy to avoid CORS issues
-// Browser fetch to Reddit doesn't work due to CORS - server-side fetch always works
-async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  // Send URL to our server-side proxy which fetches Reddit and trims the data
-  const response = await fetch("/api/reddit/fetch", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
+// Trim Reddit JSON to reduce token count for AI processing
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function trimRedditData(rawJson: any[]): TrimmedRedditJson {
+  // rawJson is an array: [0] = post data, [1] = comments
+  const postData = rawJson[0]?.data?.children?.[0]?.data;
+  const commentsData = rawJson[1]?.data?.children || [];
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to fetch Reddit post.");
+  if (!postData) {
+    throw new Error("Invalid Reddit JSON structure");
   }
 
-  const data = await response.json();
+  // Extract only essential post fields
+  const post = {
+    title: postData.title,
+    selftext: postData.selftext ? postData.selftext.substring(0, 2000) : "",
+    score: postData.score,
+    upvote_ratio: postData.upvote_ratio,
+    num_comments: postData.num_comments,
+    subreddit: postData.subreddit,
+    author: postData.author,
+  };
+
+  // Extract top 60 comments by score, only keep essential fields
+  const comments = commentsData
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .filter((c: any) => c.kind === "t1" && c.data?.body)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .sort((a: any, b: any) => (b.data?.score || 0) - (a.data?.score || 0))
+    .slice(0, 60)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((c: any) => ({
+      body: c.data.body.substring(0, 500),
+      score: c.data.score,
+    }));
+
+  return { post, comments };
+}
+
+// Fetch Reddit post data via Cloudflare Worker (CORS proxy with distributed IPs)
+// Each request goes through a different Cloudflare edge location IP
+async function fetchRedditPost(url: string): Promise<RedditPostData> {
+  // Normalize and build JSON URL
+  let jsonUrl = url
+    .replace("old.reddit.com", "www.reddit.com")
+    .replace(/^(https?:\/\/)reddit\.com/, "$1www.reddit.com");
+
+  if (!jsonUrl.endsWith(".json")) {
+    jsonUrl = jsonUrl.replace(/\/?$/, ".json");
+  }
+
+  // Fetch via Cloudflare Worker proxy (bypasses CORS, distributed IPs)
+  const proxyUrl = `${REDDIT_PROXY}?url=${encodeURIComponent(jsonUrl)}`;
+  const response = await fetch(proxyUrl);
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Reddit post not found");
+    }
+    if (response.status === 403) {
+      throw new Error("Reddit blocked this request. Please try again in a few seconds.");
+    }
+    if (response.status === 429) {
+      throw new Error("Too many requests to Reddit. Please wait a moment and try again.");
+    }
+    throw new Error("Failed to fetch Reddit post. Please try again.");
+  }
+
+  const rawJson = await response.json();
+  const trimmedJson = trimRedditData(rawJson);
 
   return {
-    title: data.title || "",
-    selftext: data.selftext || "",
-    subreddit: data.subreddit || "",
-    score: data.score || 0,
-    num_comments: data.num_comments || 0,
-    trimmedJson: data.trimmedJson,
+    title: trimmedJson.post.title || "",
+    selftext: trimmedJson.post.selftext || "",
+    subreddit: trimmedJson.post.subreddit || "",
+    score: trimmedJson.post.score || 0,
+    num_comments: trimmedJson.post.num_comments || 0,
+    trimmedJson,
   };
 }
 
