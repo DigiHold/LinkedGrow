@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import { ImageIcon, Sparkles, Crown } from "lucide-react";
+import { ImageIcon, Sparkles, Crown, ExternalLink } from "lucide-react";
 
 // SVG icons for AI providers
 const OpenAIIcon = () => (
@@ -80,6 +80,7 @@ const aiProviders = [
     description: "GPT-5.2, GPT-5, o4-mini, o3",
     placeholder: "sk-...",
     icon: OpenAIIcon,
+    apiKeyUrl: "https://platform.openai.com/api-keys",
     models: [
       { id: "gpt-5.2", name: "GPT-5.2", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
       { id: "gpt-5.2-pro", name: "GPT-5.2 Pro", tag: "Best Quality", price: "$0.40/post", monthly: "~$12.00/mo" },
@@ -95,6 +96,7 @@ const aiProviders = [
     description: "Claude Opus 4.5, Sonnet 4.5, Haiku 4.5",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
+    apiKeyUrl: "https://console.anthropic.com/settings/keys",
     models: [
       { id: "claude-opus-4-5-20250514", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.20/post", monthly: "~$6.00/mo" },
       { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", tag: "Recommended", price: "$0.04/post", monthly: "~$1.20/mo" },
@@ -109,6 +111,7 @@ const aiProviders = [
     description: "Gemini 3 Pro, Flash, 2.5 Pro",
     placeholder: "AIza...",
     icon: GeminiIcon,
+    apiKeyUrl: "https://aistudio.google.com/apikey",
     models: [
       { id: "gemini-3-pro-preview", name: "Gemini 3 Pro", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", tag: "Recommended", price: "$0.001/post", monthly: "~$0.03/mo" },
@@ -123,6 +126,7 @@ const aiProviders = [
     description: "Grok 4, Grok 3, Grok 3 Mini",
     placeholder: "xai-...",
     icon: GrokIcon,
+    apiKeyUrl: "https://console.x.ai/team/default/api-keys",
     models: [
       { id: "grok-4-1-fast-reasoning", name: "Grok 4.1 Fast", tag: "Most Capable", price: "$0.15/post", monthly: "~$4.50/mo" },
       { id: "grok-3-beta", name: "Grok 3", tag: "Recommended", price: "$0.10/post", monthly: "~$3.00/mo" },
@@ -135,6 +139,7 @@ const aiProviders = [
     description: "Sonar Pro, Sonar Reasoning",
     placeholder: "pplx-...",
     icon: PerplexityIcon,
+    apiKeyUrl: "https://www.perplexity.ai/settings/api",
     models: [
       { id: "sonar-pro", name: "Sonar Pro", tag: "Recommended", price: "$0.01/post", monthly: "~$0.30/mo" },
       { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", tag: "Deep Research", price: "$0.02/post", monthly: "~$0.60/mo" },
@@ -193,6 +198,7 @@ const imageProviders = [
     description: "Nano Banana Pro, Imagen 3",
     placeholder: "AIza...",
     icon: GeminiIcon,
+    apiKeyUrl: "https://aistudio.google.com/apikey",
     note: "Nano Banana Pro (Gemini 3 Pro Image) - state-of-the-art image generation up to 4K",
     price: "$0.13/image (4K: $0.24)",
     monthly: "~$4.00/mo (30 images)",
@@ -210,6 +216,7 @@ const imageProviders = [
     description: "GPT Image 1.5, DALL-E 3",
     placeholder: "sk-...",
     icon: OpenAIIcon,
+    apiKeyUrl: "https://platform.openai.com/api-keys",
     note: "GPT Image models with transparency support - DALL-E 3 deprecated May 2026",
     price: "$0.04-0.08/image",
     monthly: "~$1.20/mo (30 images)",
@@ -228,6 +235,7 @@ const imageProviders = [
     description: "FLUX.2 Pro, FLUX.2 Flex",
     placeholder: "r8_...",
     icon: ReplicateIcon,
+    apiKeyUrl: "https://replicate.com/account/api-tokens",
     note: "FLUX.2 - best open-source model, up to 4MP, multi-image references",
     price: "$0.015-0.03/image",
     monthly: "~$0.45/mo (30 images)",
@@ -984,6 +992,15 @@ export default function AIAPISettingsPage() {
                         {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    <a
+                      href={viewingProviderDetails.apiKeyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
+                    >
+                      Get your {viewingProviderDetails.name} API key
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                     <Button
                       type="button"
                       onClick={handleSaveApiKey}
@@ -1337,6 +1354,15 @@ export default function AIAPISettingsPage() {
                         {showImageApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    <a
+                      href={viewingImageProviderDetails.apiKeyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      Get your {viewingImageProviderDetails.name} API key
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                     <Button
                       type="button"
                       onClick={handleSaveImageApiKey}
