@@ -119,6 +119,8 @@ export async function GET() {
       brandLogoUrl: user.brandLogoUrl,
       brandAvatarUrl: user.image,
       brandHandle: aiUser.linkedinProfileName,
+      // Timezone
+      timezone: user.timezone,
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
@@ -176,6 +178,7 @@ export async function PUT(request: NextRequest) {
       businessContext,
       targetAudience,
       writingTone,
+      timezone,
     } = body;
 
     const updateData: Record<string, unknown> = {
@@ -304,6 +307,10 @@ export async function PUT(request: NextRequest) {
 
     if (writingTone !== undefined) {
       updateData.writingTone = writingTone || null;
+    }
+
+    if (timezone !== undefined) {
+      updateData.timezone = timezone || null;
     }
 
     await db

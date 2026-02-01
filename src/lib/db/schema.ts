@@ -96,6 +96,9 @@ export const users = sqliteTable("users", {
   brandPrimaryColor: text("brand_primary_color"), // hex color
   brandSecondaryColor: text("brand_secondary_color"), // hex color
   brandFontFamily: text("brand_font_family"),
+
+  // Timezone (for scheduling posts)
+  timezone: text("timezone"), // IANA timezone (e.g., "America/Los_Angeles", "Europe/Paris")
 });
 
 // Sessions table for NextAuth

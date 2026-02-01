@@ -37,8 +37,69 @@ import {
   Mic,
   Plus,
   X,
+  Clock,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+// Common timezones grouped by region
+const timezones = [
+  // Americas
+  { value: "America/New_York", label: "Eastern Time (New York)", region: "Americas" },
+  { value: "America/Chicago", label: "Central Time (Chicago)", region: "Americas" },
+  { value: "America/Denver", label: "Mountain Time (Denver)", region: "Americas" },
+  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)", region: "Americas" },
+  { value: "America/Anchorage", label: "Alaska Time", region: "Americas" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time", region: "Americas" },
+  { value: "America/Toronto", label: "Toronto", region: "Americas" },
+  { value: "America/Vancouver", label: "Vancouver", region: "Americas" },
+  { value: "America/Mexico_City", label: "Mexico City", region: "Americas" },
+  { value: "America/Sao_Paulo", label: "Sao Paulo", region: "Americas" },
+  { value: "America/Buenos_Aires", label: "Buenos Aires", region: "Americas" },
+  // Europe
+  { value: "Europe/London", label: "London (GMT/BST)", region: "Europe" },
+  { value: "Europe/Paris", label: "Paris (CET)", region: "Europe" },
+  { value: "Europe/Berlin", label: "Berlin (CET)", region: "Europe" },
+  { value: "Europe/Amsterdam", label: "Amsterdam (CET)", region: "Europe" },
+  { value: "Europe/Brussels", label: "Brussels (CET)", region: "Europe" },
+  { value: "Europe/Madrid", label: "Madrid (CET)", region: "Europe" },
+  { value: "Europe/Rome", label: "Rome (CET)", region: "Europe" },
+  { value: "Europe/Zurich", label: "Zurich (CET)", region: "Europe" },
+  { value: "Europe/Vienna", label: "Vienna (CET)", region: "Europe" },
+  { value: "Europe/Stockholm", label: "Stockholm (CET)", region: "Europe" },
+  { value: "Europe/Oslo", label: "Oslo (CET)", region: "Europe" },
+  { value: "Europe/Copenhagen", label: "Copenhagen (CET)", region: "Europe" },
+  { value: "Europe/Helsinki", label: "Helsinki (EET)", region: "Europe" },
+  { value: "Europe/Dublin", label: "Dublin (GMT/IST)", region: "Europe" },
+  { value: "Europe/Lisbon", label: "Lisbon (WET)", region: "Europe" },
+  { value: "Europe/Warsaw", label: "Warsaw (CET)", region: "Europe" },
+  { value: "Europe/Prague", label: "Prague (CET)", region: "Europe" },
+  { value: "Europe/Athens", label: "Athens (EET)", region: "Europe" },
+  { value: "Europe/Moscow", label: "Moscow (MSK)", region: "Europe" },
+  // Asia & Pacific
+  { value: "Asia/Tokyo", label: "Tokyo (JST)", region: "Asia & Pacific" },
+  { value: "Asia/Seoul", label: "Seoul (KST)", region: "Asia & Pacific" },
+  { value: "Asia/Shanghai", label: "Shanghai (CST)", region: "Asia & Pacific" },
+  { value: "Asia/Hong_Kong", label: "Hong Kong (HKT)", region: "Asia & Pacific" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)", region: "Asia & Pacific" },
+  { value: "Asia/Kolkata", label: "Mumbai / New Delhi (IST)", region: "Asia & Pacific" },
+  { value: "Asia/Dubai", label: "Dubai (GST)", region: "Asia & Pacific" },
+  { value: "Asia/Jerusalem", label: "Jerusalem (IST)", region: "Asia & Pacific" },
+  { value: "Australia/Sydney", label: "Sydney (AEST)", region: "Asia & Pacific" },
+  { value: "Australia/Melbourne", label: "Melbourne (AEST)", region: "Asia & Pacific" },
+  { value: "Australia/Perth", label: "Perth (AWST)", region: "Asia & Pacific" },
+  { value: "Pacific/Auckland", label: "Auckland (NZST)", region: "Asia & Pacific" },
+  // Africa
+  { value: "Africa/Johannesburg", label: "Johannesburg (SAST)", region: "Africa" },
+  { value: "Africa/Cairo", label: "Cairo (EET)", region: "Africa" },
+  { value: "Africa/Lagos", label: "Lagos (WAT)", region: "Africa" },
+];
 
 function SettingsContent() {
   const { theme, setTheme } = useTheme();
@@ -88,6 +149,11 @@ function SettingsContent() {
     neverMention: "",
     writingTone: "",
   });
+
+  // Timezone settings
+  const [timezone, setTimezone] = useState("");
+  const [isSavingTimezone, setIsSavingTimezone] = useState(false);
+  const [timezoneMessage, setTimezoneMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [newSamplePost, setNewSamplePost] = useState("");
   const [isSavingVoice, setIsSavingVoice] = useState(false);
   const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -227,6 +293,8 @@ function SettingsContent() {
             topics: data.businessTopics || "",
             context: data.businessContext || "",
           });
+          // Load timezone
+          setTimezone(data.timezone || "");
         }
       } catch (error) {
         console.error("Failed to fetch voice settings:", error);
@@ -489,6 +557,30 @@ function SettingsContent() {
       setVoiceMessage({ type: "error", text: "Failed to save voice settings" });
     } finally {
       setIsSavingVoice(false);
+    }
+  };
+
+  const handleSaveTimezone = async () => {
+    setIsSavingTimezone(true);
+    setTimezoneMessage(null);
+
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timezone }),
+      });
+
+      if (response.ok) {
+        setTimezoneMessage({ type: "success", text: "Timezone saved successfully" });
+      } else {
+        const data = await response.json();
+        setTimezoneMessage({ type: "error", text: data.error || "Failed to save timezone" });
+      }
+    } catch {
+      setTimezoneMessage({ type: "error", text: "Failed to save timezone" });
+    } finally {
+      setIsSavingTimezone(false);
     }
   };
 
@@ -880,6 +972,70 @@ function SettingsContent() {
           >
             {isSavingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save Changes
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Timezone */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-600" />
+            Timezone
+          </CardTitle>
+          <CardDescription>
+            Set your timezone for scheduling posts at the right time
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {timezoneMessage && (
+            <div className={cn(
+              "p-3 rounded-lg text-sm flex items-center gap-2",
+              timezoneMessage.type === "success"
+                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+            )}>
+              {timezoneMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {timezoneMessage.text}
+            </div>
+          )}
+
+          <div className="max-w-md space-y-2">
+            <Label htmlFor="timezone">Your Timezone</Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger id="timezone" className="w-full">
+                <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Select your timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {["Americas", "Europe", "Asia & Pacific", "Africa"].map((region) => (
+                  <div key={region}>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      {region}
+                    </div>
+                    {timezones
+                      .filter((tz) => tz.region === region)
+                      .map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                  </div>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              When you schedule a post for 9:00 AM, it will be published at 9:00 AM in this timezone
+            </p>
+          </div>
+
+          <Button
+            onClick={handleSaveTimezone}
+            disabled={isSavingTimezone}
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+          >
+            {isSavingTimezone ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Timezone
           </Button>
         </CardContent>
       </Card>

@@ -28,6 +28,7 @@ import {
   Crown,
   Shield,
   Database,
+  CreditCard,
 } from "lucide-react";
 
 // Reddit icon component
@@ -456,6 +457,19 @@ export function Sidebar() {
                 <Settings className="w-4 h-4" />
                 Account Settings
               </button>
+              {/* Billing - only for paid users (not free, not team members) */}
+              {session?.user?.plan !== "free" && !isTeamMember && (
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    router.push("/dashboard/settings/billing");
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Billing & Invoices
+                </button>
+              )}
               {session?.user?.isAdmin && (
                 <>
                   <div className="border-t border-border my-1" />
