@@ -110,10 +110,10 @@ export function YouTubePlayer({
     progressIntervalRef.current = setInterval(() => {
       if (playerRef.current) {
         const currentTime = playerRef.current.getCurrentTime();
-        const duration = playerRef.current.getDuration();
+        const videoDuration = playerRef.current.getDuration();
 
-        if (duration > 0) {
-          const percentWatched = (currentTime / duration) * 100;
+        if (videoDuration > 0) {
+          const percentWatched = (currentTime / videoDuration) * 100;
 
           if (currentTime > maxWatchedRef.current) {
             maxWatchedRef.current = currentTime;
@@ -135,12 +135,14 @@ export function YouTubePlayer({
       playerVars: {
         autoplay: 1,
         mute: 1,
-        controls: 1,
+        controls: 0,
         rel: 0,
         iv_load_policy: 3,
-        playsinline: isMobile ? 0 : 1, // 0 = fullscreen on mobile
+        fs: 1,
+        playsinline: isMobile ? 0 : 1,
         origin: window.location.origin,
         enablejsapi: 1,
+        disablekb: 1,
       },
       events: {
         onReady: (event) => {
@@ -173,16 +175,12 @@ export function YouTubePlayer({
             setShowCTA(false);
           }
         },
-        onError: (event) => {
-          console.error("YouTube player error:", event.data);
-        },
       },
     });
   }, [apiReady, videoId, onVideoEnd, onWatchProgress, startProgressTracking]);
 
   const handlePlayClick = () => {
     setIsPlaying(true);
-    // Small delay to ensure container is rendered
     setTimeout(initializePlayer, 100);
   };
 
