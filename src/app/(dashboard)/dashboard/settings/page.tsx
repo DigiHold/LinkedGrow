@@ -1000,12 +1000,14 @@ function SettingsContent() {
             </div>
           )}
 
-          <div className="max-w-md space-y-2">
+          <div className="max-w-sm space-y-2">
             <Label htmlFor="timezone">Your Timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger id="timezone" className="w-full">
-                <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Select your timezone" />
+              <SelectTrigger id="timezone" className="w-full text-left">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Select your timezone" />
+                </div>
               </SelectTrigger>
               <SelectContent>
                 {["Americas", "Europe", "Asia & Pacific", "Africa"].map((region) => (

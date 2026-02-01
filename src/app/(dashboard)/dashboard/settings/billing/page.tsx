@@ -263,7 +263,7 @@ export default function BillingPage() {
 
         <Button
           onClick={handleManageBilling}
-          disabled={isPortalLoading || !billing?.hasSubscription}
+          disabled={isPortalLoading}
           className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
         >
           {isPortalLoading ? (
