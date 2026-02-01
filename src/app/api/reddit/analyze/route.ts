@@ -38,22 +38,17 @@ CONTENT: ${trimmedJson.post.selftext}
 
 TOP COMMENTS: ${trimmedJson.comments.slice(0, 10).map(c => c.body).join('\n---\n')}
 
-Your task: Create 5 viral LinkedIn hooks based on THIS SPECIFIC STORY.
+Your task: Create 5 viral LinkedIn hooks based on THIS SPECIFIC POST.
 
-CRITICAL: The hooks must be about the ACTUAL content of this post. If it's a success story, the hooks should capture the journey, transformation, or surprising elements. If it's advice, capture the core insight. DO NOT generate generic marketing hooks.
+CRITICAL: The hooks must be about the ACTUAL content. Extract the key insight, story, advice, or controversial take from the post. Use specific details (numbers, names, timeframes, job titles, etc.) from the content. DO NOT generate generic hooks.
 
-For a story about someone going from baker to millionaire, good hooks would be:
-- "I dropped out at 16 to become a baker. 8 years later I'd made $1.5M from code."
-- "Everyone said giving it away free was insane. It made me a millionaire."
+Adapt to the content type:
+- Personal story? Capture the journey, transformation, specific numbers
+- Advice post? Extract the contrarian or surprising insight
+- Question/Discussion? Turn the most interesting angle into a hook
+- Tutorial/How-to? Lead with the surprising result or counterintuitive method
 
-BAD hooks (too generic, not about the story):
-- "You're shipping features nobody asked for."
-- "Your free product is too good."
-
-Hook format examples that work:
-
-"3 seconds.
-That's all it takes to lose half your visitors."
+Hook format (EXACTLY 2 lines each):
 
 "I woke up at 4am to bake bread.
 After work, I taught myself to code. Here's what happened."
@@ -61,15 +56,21 @@ After work, I taught myself to code. Here's what happened."
 "Everyone told me to charge $59.
 I gave it away free. Then 500,000 websites chose me."
 
+"3 seconds.
+That's all it takes to lose half your visitors."
+
+"Stop optimizing your LinkedIn profile.
+The algorithm rewards something completely different now."
+
 Requirements:
 - Each hook is EXACTLY 2 lines
 - Line 1: Short, punchy, stops the scroll (max 8 words)
-- Line 2: Builds curiosity, teases the story (max 15 words)
+- Line 2: Builds curiosity, makes them want to read more (max 15 words)
 - NO emojis
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
-- Be SPECIFIC to THIS post's story, numbers, journey, or insights
-- Sound human, raw, authentic - like you're telling YOUR story
-- Use specific details from the post (numbers, job titles, timeframes, etc.)
+- Be SPECIFIC - use actual details, numbers, facts from the post
+- Sound human and authentic
+- If the post has a personal element, write hooks in first person
 
 Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n):
 ["Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2"]`;
