@@ -183,19 +183,11 @@ const qualityOptions = {
   ],
 };
 
-// Style options for OpenAI
-const styleOptions = {
-  openai: [
-    { id: "vivid", name: "Vivid", description: "Hyper-real, dramatic" },
-    { id: "natural", name: "Natural", description: "More natural, less hyper-real" },
-  ],
-};
-
 const imageProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Nano Banana Pro, Imagen 3",
+    description: "Nano Banana Pro, Imagen 4",
     placeholder: "AIza...",
     icon: GeminiIcon,
     apiKeyUrl: "https://aistudio.google.com/apikey",
@@ -207,26 +199,25 @@ const imageProviders = [
     models: [
       { id: "gemini-3-pro-image-preview", name: "Nano Banana Pro", tag: "Best Quality" },
       { id: "gemini-2.5-flash-image", name: "Nano Banana", tag: "Faster" },
-      { id: "imagen-3", name: "Imagen 3", tag: "Standard" },
+      { id: "imagen-4-generate", name: "Imagen 4", tag: "Standard" },
+      { id: "imagen-4-fast-generate", name: "Imagen 4 Fast", tag: "Fastest" },
     ],
   },
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT Image 1.5, DALL-E 3",
+    description: "GPT Image 1.5, GPT Image 1",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
-    note: "GPT Image models with transparency support - DALL-E 3 deprecated May 2026",
+    note: "GPT Image models with transparency support and base64 output",
     price: "$0.04-0.08/image",
     monthly: "~$1.20/mo (30 images)",
     hasResolution: true,
     hasQuality: true,
-    hasStyle: true,
     models: [
       { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Best Quality" },
       { id: "gpt-image-1", name: "GPT Image 1", tag: "Standard" },
-      { id: "dall-e-3", name: "DALL-E 3", tag: "Legacy (until May 2026)" },
     ],
   },
   {
@@ -262,7 +253,6 @@ interface ImageProviderSettings {
   resolution: string | null;
   aspectRatio: string | null;
   quality: string | null;
-  style: string | null;
 }
 
 export default function AIAPISettingsPage() {
@@ -313,7 +303,6 @@ export default function AIAPISettingsPage() {
   const [selectedImageResolution, setSelectedImageResolution] = useState("1K");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("16:9");
   const [selectedQuality, setSelectedQuality] = useState("high");
-  const [selectedStyle, setSelectedStyle] = useState("vivid");
   const [imageApiKey, setImageApiKey] = useState("");
   const [showImageApiKey, setShowImageApiKey] = useState(false);
   // Per-provider image settings
@@ -375,9 +364,6 @@ export default function AIAPISettingsPage() {
             if (providerSettings?.quality) {
               setSelectedQuality(providerSettings.quality);
             }
-            if (providerSettings?.style) {
-              setSelectedStyle(providerSettings.style);
-            }
           }
         }
       } catch (error) {
@@ -430,12 +416,6 @@ export default function AIAPISettingsPage() {
       setSelectedQuality(providerSettings.quality);
     } else {
       setSelectedQuality("high");
-    }
-
-    if (providerSettings?.style) {
-      setSelectedStyle(providerSettings.style);
-    } else {
-      setSelectedStyle("vivid");
     }
   }, [viewingImageProvider, imageProviderSettings]);
 
@@ -612,9 +592,6 @@ export default function AIAPISettingsPage() {
       if (provider?.hasQuality) {
         imageSettings[`${providerPrefix}ImageQuality`] = selectedQuality;
       }
-      if (provider?.hasStyle) {
-        imageSettings[`${providerPrefix}ImageStyle`] = selectedStyle;
-      }
 
       const response = await fetch("/api/user/settings", {
         method: "PUT",
@@ -630,7 +607,6 @@ export default function AIAPISettingsPage() {
             resolution: selectedImageResolution,
             aspectRatio: selectedAspectRatio,
             quality: selectedQuality,
-            style: selectedStyle,
           }
         }));
         setImageApiMessage({ type: "success", text: "Image settings saved!" });
@@ -670,9 +646,6 @@ export default function AIAPISettingsPage() {
       if (provider?.hasQuality) {
         imageSettings[`${providerPrefix}ImageQuality`] = selectedQuality;
       }
-      if (provider?.hasStyle) {
-        imageSettings[`${providerPrefix}ImageStyle`] = selectedStyle;
-      }
 
       // If no active image provider yet, set this one as active
       if (!activeImageProvider || !imageProviderSettings[activeImageProvider]?.hasKey) {
@@ -694,7 +667,6 @@ export default function AIAPISettingsPage() {
             resolution: selectedImageResolution,
             aspectRatio: selectedAspectRatio,
             quality: selectedQuality,
-            style: selectedStyle,
           }
         }));
         // Set as active if it was set
@@ -764,8 +736,7 @@ export default function AIAPISettingsPage() {
     selectedImageModel !== savedImageSettings?.model ||
     selectedImageResolution !== savedImageSettings?.resolution ||
     selectedAspectRatio !== savedImageSettings?.aspectRatio ||
-    selectedQuality !== savedImageSettings?.quality ||
-    selectedStyle !== savedImageSettings?.style
+    selectedQuality !== savedImageSettings?.quality
   );
 
   return (
@@ -1204,8 +1175,8 @@ export default function AIAPISettingsPage() {
                   </div>
                 )}
 
-                {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 3 - fixed 1024px) */}
-                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-3"].includes(selectedImageModel) && (
+                {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 4 - fixed 1024px) */}
+                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-4-generate", "imagen-4-fast-generate"].includes(selectedImageModel) && (
                   <div className="mb-4">
                     <Label className="mb-2 block text-sm">Resolution / Size</Label>
                     <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
@@ -1259,28 +1230,6 @@ export default function AIAPISettingsPage() {
                             <div className="flex items-center justify-between w-full gap-3">
                               <span>{q.name}</span>
                               <span className="text-xs text-muted-foreground">{q.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Style Selector (OpenAI DALL-E 3 only - GPT Image models don't support style) */}
-                {viewingImageProviderDetails.hasStyle && styleOptions[viewingImageProvider as keyof typeof styleOptions] && selectedImageModel === "dall-e-3" && (
-                  <div className="mb-4">
-                    <Label className="mb-2 block text-sm">Style</Label>
-                    <Select value={selectedStyle} onValueChange={setSelectedStyle} disabled={!hasImageAccess}>
-                      <SelectTrigger className="bg-white dark:bg-slate-800">
-                        <SelectValue placeholder="Select style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {styleOptions[viewingImageProvider as keyof typeof styleOptions].map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            <div className="flex items-center justify-between w-full gap-3">
-                              <span>{s.name}</span>
-                              <span className="text-xs text-muted-foreground">{s.description}</span>
                             </div>
                           </SelectItem>
                         ))}

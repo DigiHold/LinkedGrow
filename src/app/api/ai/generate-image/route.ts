@@ -178,33 +178,28 @@ export async function POST(request: NextRequest) {
             model: aiSettingsUser.googleImageModel || "gemini-3-pro-image-preview",
             resolution: aiSettingsUser.googleImageResolution || "1K",
             aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
-            quality: "high", // Google doesn't use quality setting
-            style: "vivid", // Google doesn't use style setting
+            quality: "high",
           };
         case "openai":
           return {
             model: aiSettingsUser.openaiImageModel || "gpt-image-1.5",
             resolution: aiSettingsUser.openaiImageResolution || "1792x1024",
-            aspectRatio: "16:9", // OpenAI uses resolution instead of aspect ratio
+            aspectRatio: "16:9",
             quality: aiSettingsUser.openaiImageQuality || "high",
-            style: aiSettingsUser.openaiImageStyle || "vivid",
           };
         case "replicate":
           return {
             model: aiSettingsUser.replicateImageModel || "flux-2-pro",
             resolution: aiSettingsUser.replicateImageResolution || "1536x1024",
             aspectRatio: aiSettingsUser.replicateImageAspectRatio || "16:9",
-            quality: "high", // Replicate doesn't use quality setting
-            style: "vivid", // Replicate doesn't use style setting
+            quality: "high",
           };
         default:
-          // Default to Google settings
           return {
             model: aiSettingsUser.googleImageModel || "gemini-3-pro-image-preview",
             resolution: aiSettingsUser.googleImageResolution || "1K",
             aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
             quality: "high",
-            style: "vivid",
           };
       }
     };
@@ -262,69 +257,110 @@ interface ImageSettings {
   resolution: string;
   aspectRatio: string;
   quality: string;
-  style: string;
 }
 
 /**
- * Generate image with Google AI (Nano Banana Pro, Nano Banana, Imagen 3)
+ * Generate image with Google AI (Nano Banana Pro, Nano Banana, Imagen 4)
  * Uses the @google/genai SDK
- * Cost: $0.13 per 1K/2K image, $0.24 per 4K image
+ * - Nano Banana (Gemini) models use generateContent with responseModalities: ["image", "text"]
+ * - Imagen 4 models use generateImages method
+ * Cost: $0.03-0.13 per image depending on model
  */
 async function generateWithGoogle(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
 
-  // Check if model supports imageSize parameter
-  // Only Gemini 3 Pro Image supports imageSize (1K, 2K, 4K)
-  // Gemini 2.5 Flash Image and Imagen 3 generate at fixed 1024px resolution
-  const supportsImageSize = settings.model.includes("gemini-3");
+  // Check if this is an Imagen model (uses different API)
+  const isImagenModel = settings.model.startsWith("imagen-");
 
   try {
-    // Build imageConfig based on model capabilities
-    const imageConfig: { aspectRatio: string; imageSize?: string } = {
-      aspectRatio: settings.aspectRatio || "16:9",
-    };
+    if (isImagenModel) {
+      // Imagen 4 uses the generateImages method
+      // Map our model IDs to actual Imagen model names
+      const imagenModelMap: Record<string, string> = {
+        "imagen-4-generate": "imagen-4.0-generate-001",
+        "imagen-4-fast-generate": "imagen-4.0-fast-generate-001",
+      };
+      const modelName = imagenModelMap[settings.model] || "imagen-4.0-generate-001";
 
-    // Only add imageSize for models that support it
-    if (supportsImageSize) {
-      imageConfig.imageSize = settings.resolution || "1K";
-    }
+      const response = await ai.models.generateImages({
+        model: modelName,
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          aspectRatio: settings.aspectRatio || "16:9",
+        },
+      });
 
-    const response = await ai.models.generateContent({
-      model: settings.model || "gemini-3-pro-image-preview",
-      contents: prompt,
-      config: {
-        responseModalities: ["image", "text"],
-        imageConfig,
-      },
-    });
-
-    // Extract base64 image from response with error handling
-    if (!response.candidates || !response.candidates[0]) {
-      console.error("Google AI Response:", JSON.stringify(response, null, 2));
-      throw new Error("No candidates in response - image may have been blocked by safety filters");
-    }
-
-    const candidate = response.candidates[0];
-
-    // Check for blocked content
-    const finishReason = String(candidate.finishReason || "");
-    if (finishReason.includes("SAFETY") || finishReason.includes("BLOCKED")) {
-      throw new Error(`Image blocked by safety filter: ${finishReason}. Try a different prompt.`);
-    }
-
-    if (!candidate.content || !candidate.content.parts) {
-      console.error("Google AI Candidate:", JSON.stringify(candidate, null, 2));
-      throw new Error(`No content parts in response. Finish reason: ${candidate.finishReason || "unknown"}`);
-    }
-
-    // Find the image part in the response
-    for (const part of candidate.content.parts) {
-      if (part.inlineData && part.inlineData.data) {
-        return part.inlineData.data; // Already base64
+      // Extract base64 from Imagen response
+      if (!response.generatedImages || response.generatedImages.length === 0) {
+        throw new Error("No images generated by Imagen 4");
       }
-    }
 
-    throw new Error("No image data found in Google AI response");
+      const generatedImage = response.generatedImages[0];
+      if (!generatedImage.image || !generatedImage.image.imageBytes) {
+        throw new Error("No image data in Imagen 4 response");
+      }
+
+      // Convert to base64 - imageBytes can be Uint8Array or string
+      const imageBytes = generatedImage.image.imageBytes;
+      if (typeof imageBytes === "string") {
+        return imageBytes;
+      }
+      // It's a Uint8Array-like object, convert to Buffer then base64
+      return Buffer.from(imageBytes as ArrayBuffer).toString("base64");
+    } else {
+      // Nano Banana (Gemini) models use generateContent
+      // Only Gemini 3 Pro Image supports imageSize (1K, 2K, 4K)
+      // Gemini 2.5 Flash Image generates at fixed 1024px resolution
+      const supportsImageSize = settings.model.includes("gemini-3");
+
+      // Build imageConfig based on model capabilities
+      const imageConfig: { aspectRatio: string; imageSize?: string } = {
+        aspectRatio: settings.aspectRatio || "16:9",
+      };
+
+      // Only add imageSize for models that support it
+      if (supportsImageSize) {
+        imageConfig.imageSize = settings.resolution || "1K";
+      }
+
+      const response = await ai.models.generateContent({
+        model: settings.model || "gemini-3-pro-image-preview",
+        contents: prompt,
+        config: {
+          responseModalities: ["image", "text"],
+          imageConfig,
+        },
+      });
+
+      // Extract base64 image from response with error handling
+      if (!response.candidates || !response.candidates[0]) {
+        console.error("Google AI Response:", JSON.stringify(response, null, 2));
+        throw new Error("No candidates in response - image may have been blocked by safety filters");
+      }
+
+      const candidate = response.candidates[0];
+
+      // Check for blocked content
+      const finishReason = String(candidate.finishReason || "");
+      if (finishReason.includes("SAFETY") || finishReason.includes("BLOCKED")) {
+        throw new Error(`Image blocked by safety filter: ${finishReason}. Try a different prompt.`);
+      }
+
+      if (!candidate.content || !candidate.content.parts) {
+        console.error("Google AI Candidate:", JSON.stringify(candidate, null, 2));
+        throw new Error(`No content parts in response. Finish reason: ${candidate.finishReason || "unknown"}`);
+      }
+
+      // Find the image part in the response
+      for (const part of candidate.content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          return part.inlineData.data; // Already base64
+        }
+      }
+
+      throw new Error("No image data found in Google AI response");
+    }
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("API key")) {
@@ -340,57 +376,22 @@ async function generateWithGoogle(apiKey: string, prompt: string, settings: Imag
 }
 
 /**
- * Generate image with OpenAI (GPT Image 1.5, GPT Image 1, DALL-E 3)
+ * Generate image with OpenAI (GPT Image 1.5, GPT Image 1)
  * GPT Image: quality (high/medium/low), size (1024x1024, 1536x1024, 1024x1536)
- * DALL-E 3: quality (standard/hd), style (vivid/natural), size (1024x1024, 1792x1024, 1024x1792)
+ * GPT Image models always return base64-encoded images directly
  */
 async function generateWithOpenAI(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
-  const isGptImage = settings.model.startsWith("gpt-image");
-  const isDallE3 = settings.model === "dall-e-3";
   const model = settings.model || "gpt-image-1.5";
 
-  // Map resolution based on model type
   // GPT Image supports: 1024x1024, 1536x1024, 1024x1536
-  // DALL-E 3 supports: 1024x1024, 1792x1024, 1024x1792
-  let size: string;
-  if (isDallE3) {
-    const dalleSizeMap: Record<string, string> = {
-      "1024x1024": "1024x1024",
-      "1792x1024": "1792x1024",
-      "1024x1792": "1024x1792",
-      "1536x1024": "1792x1024", // Map to closest DALL-E 3 size
-      "1024x1536": "1024x1792", // Map to closest DALL-E 3 size
-    };
-    size = dalleSizeMap[settings.resolution] || "1792x1024";
-  } else {
-    const gptImageSizeMap: Record<string, string> = {
-      "1024x1024": "1024x1024",
-      "1536x1024": "1536x1024",
-      "1024x1536": "1024x1536",
-      "1792x1024": "1536x1024", // Map to closest GPT Image size
-      "1024x1792": "1024x1536", // Map to closest GPT Image size
-    };
-    size = gptImageSizeMap[settings.resolution] || "1536x1024";
-  }
-
-  const requestBody: Record<string, unknown> = {
-    model: model,
-    prompt: prompt,
-    n: 1,
-    size: size,
+  const gptImageSizeMap: Record<string, string> = {
+    "1024x1024": "1024x1024",
+    "1536x1024": "1536x1024",
+    "1024x1536": "1024x1536",
+    "1792x1024": "1536x1024", // Map to closest GPT Image size
+    "1024x1792": "1024x1536", // Map to closest GPT Image size
   };
-
-  if (isDallE3) {
-    // DALL-E 3 specific parameters
-    requestBody.response_format = "b64_json";
-    requestBody.quality = settings.quality === "high" ? "hd" : "standard";
-    requestBody.style = settings.style || "vivid";
-  } else if (isGptImage) {
-    // GPT Image specific parameters
-    // GPT Image uses "high", "medium", "low" for quality (NOT style parameter)
-    requestBody.quality = settings.quality || "high";
-    // Note: GPT Image does NOT support style parameter
-  }
+  const size = gptImageSizeMap[settings.resolution] || "1536x1024";
 
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -398,7 +399,13 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      model: model,
+      prompt: prompt,
+      n: 1,
+      size: size,
+      quality: settings.quality || "high",
+    }),
   });
 
   if (!response.ok) {
@@ -407,7 +414,7 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
   }
 
   const data = await response.json();
-  // Both GPT Image and DALL-E 3 return b64_json when requested
+  // GPT Image models always return base64-encoded images
   return data.data[0].b64_json;
 }
 
