@@ -270,6 +270,9 @@
       "title": "Blog",
       "description": "Actionable strategies for LinkedIn growth, AI content creation, and building your personal brand.",
       "all": "All",
+      "searchPlaceholder": "Search articles...",
+      "noResults": "No articles match your search",
+      "noResultsSub": "Try a different keyword or browse all categories.",
       "noArticles": "No articles yet",
       "noArticlesSub": "Stay tuned - our first articles are coming soon!",
       "minRead": "{count} min read"

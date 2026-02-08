@@ -94,6 +94,9 @@ export function PrelaunchFooter() {
         <div className="flex flex-col items-center gap-4 sm:hidden">
           {/* Navigation */}
           <nav className="flex flex-wrap items-center justify-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Blog
+            </Link>
             <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               About
             </Link>
@@ -132,6 +135,9 @@ export function PrelaunchFooter() {
 
           {/* Navigation - Right */}
           <nav className="flex flex-wrap items-center justify-end gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              Blog
+            </Link>
             <Link href="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               About
             </Link>

@@ -29,6 +29,13 @@ const prelaunchAllowedRoutes = [
   "/cookies",
   "/terms",
   "/about",
+  "/blog",
+  "/for",
+  "/features",
+  "/free-tools",
+  "/use-cases",
+  "/industries",
+  "/compare",
   "/api",
   "/team/invite",
 ];
