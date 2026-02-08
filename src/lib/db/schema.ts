@@ -490,7 +490,7 @@ export const blogComments = sqliteTable("blog_comments", {
   authorName: text("author_name").notNull(),
   authorEmail: text("author_email").notNull(),
   content: text("content").notNull(),
-  isApproved: integer("is_approved", { mode: "boolean" }).default(true),
+  isApproved: integer("is_approved", { mode: "boolean" }).default(false),
   createdAt: text("created_at"),
 });
 
