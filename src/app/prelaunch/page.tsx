@@ -1,17 +1,37 @@
-import type { Metadata } from "next";
+import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { generateCMSMetadata } from "@/components/cms/cms-page";
-import { getPublishedPage } from "@/lib/cms";
 import PrelaunchClient from "./prelaunch-client";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPublishedPage("prelaunch");
-  if (page) return generateCMSMetadata(page);
-  return {
+export const metadata: Metadata = {
+  title: "LinkedGrow - AI-Powered LinkedIn Content Creation | Early Access",
+  description:
+    "Join the waitlist for LinkedGrow - the AI-powered LinkedIn content platform. Get 30% off for 12 months as an early member. Create viral posts, schedule content, and grow your audience.",
+  keywords: [
+    "LinkedIn AI tool",
+    "LinkedIn content creator",
+    "AI post generator",
+    "LinkedIn scheduler",
+    "social media automation",
+    "BYOK AI",
+  ],
+  openGraph: {
     title: "LinkedGrow - AI-Powered LinkedIn Content Creation | Early Access",
-    description: "Join the waitlist for LinkedGrow - the AI-powered LinkedIn content platform. Get 30% off for 12 months as an early member.",
-  };
-}
+    description:
+      "Join the waitlist and get 30% off for 12 months. Create viral LinkedIn posts with AI, schedule content, and grow your audience.",
+    url: "https://linkedgrow.ai/prelaunch",
+    siteName: "LinkedGrow",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LinkedGrow - AI-Powered LinkedIn Content Creation",
+    description:
+      "Join the waitlist and get 30% off for 12 months. Create viral LinkedIn posts with AI.",
+  },
+  alternates: {
+    canonical: "https://linkedgrow.ai/prelaunch",
+  },
+};
 
 export default async function PrelaunchPage() {
   // Get all translation namespaces

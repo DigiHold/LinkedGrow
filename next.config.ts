@@ -117,16 +117,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      {
-        // CMS pages (marketing, features, blog, etc.) - CDN cache 1 hour
-        source: "/:path(for|features|blog|free-tools|use-cases|industries|compare)/:slug*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=600",
-          },
-        ],
-      },
     ];
   },
   // Rewrite IndexNow key files to the API route

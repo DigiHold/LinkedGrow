@@ -13,17 +13,17 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 
 ## Tech Stack
 
-- **Framework:** Next.js 16.1.1 (App Router, Turbopack)
-- **Language:** TypeScript 5.9.3
-- **Styling:** Tailwind CSS 4.1.8 + shadcn/ui components
-- **Authentication:** NextAuth.js v5 (beta) with Credentials Provider + 2FA/TOTP
-- **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM (schema only, no migrations)
-- **Payments:** Stripe (subscriptions)
-- **File Storage:** Cloudflare R2 (S3-compatible)
-- **Email:** Brevo (marketing + transactional)
-- **Hosting:** Vercel
-- **Scheduling:** QStash (Upstash) for exact-time post publishing
-- **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI
+-   **Framework:** Next.js 16.1.1 (App Router, Turbopack)
+-   **Language:** TypeScript 5.9.3
+-   **Styling:** Tailwind CSS 4.1.8 + shadcn/ui components
+-   **Authentication:** NextAuth.js v5 (beta) with Credentials Provider + 2FA/TOTP
+-   **Database:** Turso (LibSQL edge SQLite) + Drizzle ORM (schema only, no migrations)
+-   **Payments:** Stripe (subscriptions)
+-   **File Storage:** Cloudflare R2 (S3-compatible)
+-   **Email:** Brevo (marketing + transactional)
+-   **Hosting:** Vercel
+-   **Scheduling:** QStash (Upstash) for exact-time post publishing
+-   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI
 
 ## Deployment
 
@@ -78,13 +78,13 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 
 ### Cache Rules
 
-| Resource                                                                                                 | Cache Duration                                                | Strategy                                                                   |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `/_next/static/*` (JS, CSS)                                                                              | 1 year, immutable                                             | Content-hashed filenames - new deploy = new URLs                           |
-| `/images/*` (public images)                                                                              | 30 days + 1 day stale-while-revalidate                        | Long cache for static marketing images                                     |
-| `/favicon.ico`, `/icon.svg`, `/robots.txt`, `/sitemap.xml`                                               | 1 day + 12 hour stale-while-revalidate                        | Moderate cache for root files                                              |
+| Resource | Cache Duration | Strategy |
+| --- | --- | --- |
+| `/_next/static/*` (JS, CSS) | 1 year, immutable | Content-hashed filenames - new deploy = new URLs |
+| `/images/*` (public images) | 30 days + 1 day stale-while-revalidate | Long cache for static marketing images |
+| `/favicon.ico`, `/icon.svg`, `/robots.txt`, `/sitemap.xml` | 1 day + 12 hour stale-while-revalidate | Moderate cache for root files |
 | Public pages (`/prelaunch`, `/about`, `/privacy`, `/terms`, `/cookies`, `/beta`, `/sign-in`, `/sign-up`) | CDN: 1 hour (`s-maxage=3600`) + 10 min stale-while-revalidate | Browser gets fresh response, CDN serves cached. Only for logged-out pages. |
-| Dashboard/API routes                                                                                     | No custom cache headers                                       | Authenticated content - not cached at CDN                                  |
+| Dashboard/API routes | No custom cache headers | Authenticated content - not cached at CDN |
 
 ### How It Works
 
@@ -162,25 +162,25 @@ Main tables in `src/lib/db/schema.ts`:
 
 ### Core Tables
 
-- **users** - Auth, subscription, LinkedIn tokens, AI keys, voice settings, branding
-- **sessions** - NextAuth sessions
-- **accounts** - OAuth providers
-- **verification_tokens** - Email verification
-- **posts** - LinkedIn posts (draft/scheduled/published/failed)
-- **media** - Images/carousels stored in R2
-- **ideas** - Content ideas (Reddit-sourced or manual)
-- **waitlist** - Pre-launch email collection
-- **password_reset_tokens** - Password reset flow
+-   **users** - Auth, subscription, LinkedIn tokens, AI keys, voice settings, branding
+-   **sessions** - NextAuth sessions
+-   **accounts** - OAuth providers
+-   **verification_tokens** - Email verification
+-   **posts** - LinkedIn posts (draft/scheduled/published/failed)
+-   **media** - Images/carousels stored in R2
+-   **ideas** - Content ideas (Reddit-sourced or manual)
+-   **waitlist** - Pre-launch email collection
+-   **password_reset_tokens** - Password reset flow
 
 ### Business Plan Tables
 
-- **ab_tests** - A/B testing for posts
-- **teams** - Team management
-- **team_members** - Team membership with roles (owner/admin/member)
-- **team_invites** - Email invitations with tokens
-- **api_keys** - REST API key management
-- **api_logs** - API request logging
-- **post_analytics** - Engagement metrics per post
+-   **ab_tests** - A/B testing for posts
+-   **teams** - Team management
+-   **team_members** - Team membership with roles (owner/admin/member)
+-   **team_invites** - Email invitations with tokens
+-   **api_keys** - REST API key management
+-   **api_logs** - API request logging
+-   **post_analytics** - Engagement metrics per post
 
 ### User Fields
 
@@ -198,17 +198,17 @@ Branding: brandLogoUrl, brandPrimaryColor, brandSecondaryColor, brandFontFamily
 
 **Using NextAuth.js v5 (beta) - NOT Clerk**
 
-- Email/Password authentication (credentials provider)
-- 2FA/TOTP support (QR code generation with `qrcode`, verification with `otplib`)
-- Password hashing: bcryptjs
-- Session strategy: JWT
-- DrizzleAdapter for database integration
+-   Email/Password authentication (credentials provider)
+-   2FA/TOTP support (QR code generation with `qrcode`, verification with `otplib`)
+-   Password hashing: bcryptjs
+-   Session strategy: JWT
+-   DrizzleAdapter for database integration
 
 Key files:
 
-- `src/lib/auth.ts` - NextAuth configuration
-- `src/app/api/auth/register/route.ts` - User registration
-- `src/app/api/auth/2fa/*` - 2FA setup/verify/disable
+-   `src/lib/auth.ts` - NextAuth configuration
+-   `src/app/api/auth/register/route.ts` - User registration
+-   `src/app/api/auth/2fa/*` - 2FA setup/verify/disable
 
 ## Stripe Configuration
 
@@ -222,8 +222,8 @@ STRIPE_BUSINESS_PRICE_ID=price_1SoL0rDZ5QtFd12c7kcCeiyu
 
 ### Coupon System
 
-- **PRELAUNCH30**: 30% off for 12 months (founder's discount)
-- Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
+-   **PRELAUNCH30**: 30% off for 12 months (founder's discount)
+-   Applied via URL: `https://linkedgrow.ai/?coupon=PRELAUNCH30`
 
 ## Environment Variables
 
@@ -371,28 +371,23 @@ src/
 
 ### Theme: Light & Modern
 
-- **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
-- **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
-- **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
-- **Accents:** Emerald (success), Amber (warnings/BYOK), Violet (Pro plan)
+-   **Primary:** Cyan/Blue gradient (`from-cyan-500 to-blue-600`)
+-   **Background:** White/Light gray (`bg-white`, `bg-slate-50`)
+-   **Text:** Slate scale (`text-slate-900`, `text-slate-600`)
+-   **Accents:** Emerald (success), Amber (warnings/BYOK), Violet (Pro plan)
 
 ### Key Design Patterns
 
-- Rounded corners: `rounded-2xl` for cards
-- Subtle shadows: `shadow-lg shadow-slate-200/50`
-- Gradient text: `text-transparent bg-clip-text bg-linear-to-r`
-- Animations: Framer Motion for scroll animations
-- Dark mode: Supported via `next-themes`
-
-## SEO Page Creation Guide
-
-**MANDATORY: Read `SEO-GUIDE.md` before creating any marketing, feature, audience, use-case, industry, free-tool, or blog page.** It contains the complete checklist for metadata, JSON-LD schemas, internal linking, AI search optimization, translation readiness, and page structure requirements.
-
-**Blog content plan:** See `BLOG-CONTENT-PLAN.md` for the 20-article content strategy with keywords, internal links, and publishing priority.
+-   Rounded corners: `rounded-2xl` for cards
+-   Subtle shadows: `shadow-lg shadow-slate-200/50`
+-   Gradient text: `text-transparent bg-clip-text bg-linear-to-r`
+-   Animations: Framer Motion for scroll animations
+-   Dark mode: Supported via `next-themes`
 
 ## Code Style Rules
 
 1. **No em dashes**: Never use em dashes in any text or code. Use regular dashes with spaces `-` instead.
+
     - Wrong: `"no hidden costs—just results"`
     - Correct: `"no hidden costs - just results"`
 
@@ -401,10 +396,12 @@ src/
 3. **useSearchParams Hook**: Must be wrapped in `<Suspense>` boundary (Next.js 16 requirement)
 
 4. **NEVER USE INLINE STYLES**: Use Tailwind CSS exclusively.
+
     - Wrong: `style={{ fontSize: "clamp(2.5rem, 8vw, 5rem)" }}`
     - Correct: `className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl"`
 
 5. **Font weights**: Use Tailwind's font weight classes
+
     - `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` (700), `font-black` (900)
 
 6. **No Co-Author Attribution in Git Commits**: NEVER add "Co-Authored-By" lines to git commit messages. No attribution, no credits, no signatures of any kind.
@@ -413,90 +410,90 @@ src/
 
 ### Text Generation Models
 
-- **OpenAI**: GPT-5.2 Pro, GPT-5, o4-mini, o3-pro, o3-mini
-- **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude 4.1, Claude 4
-- **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 3 Deep Think, Gemini 2.5 Pro, Gemini 2.5 Flash
-- **Groq**: Llama 4 Maverick, Llama 4 Scout, Llama 3.3 70B, Llama 3.1 8B, Llama-3-Groq-70B-Tool-Use (ultra fast)
-- **Together AI**: Qwen3-Coder-480B, Qwen3-235B-A22B-Thinking, DeepSeek-R1, Llama 4 Behemoth, DeepSeek-V3
+-   **OpenAI**: GPT-5.2 Pro, GPT-5, o4-mini, o3-pro, o3-mini
+-   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude 4.1, Claude 4
+-   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 3 Deep Think, Gemini 2.5 Pro, Gemini 2.5 Flash
+-   **Groq**: Llama 4 Maverick, Llama 4 Scout, Llama 3.3 70B, Llama 3.1 8B, Llama-3-Groq-70B-Tool-Use (ultra fast)
+-   **Together AI**: Qwen3-Coder-480B, Qwen3-235B-A22B-Thinking, DeepSeek-R1, Llama 4 Behemoth, DeepSeek-V3
 
 ### Image Generation Models
 
-- **OpenAI**: DALL-E 3, GPT-5 (native image generation)
-- **Google**: Nano Banana Pro (Gemini 3 Pro Image), Nano Banana (Gemini 2.5 Flash Image), Imagen 3
-- **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX Kontext Pro, FLUX Kontext Max
+-   **OpenAI**: DALL-E 3, GPT-5 (native image generation)
+-   **Google**: Nano Banana Pro (Gemini 3 Pro Image), Nano Banana (Gemini 2.5 Flash Image), Imagen 3
+-   **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX Kontext Pro, FLUX Kontext Max
 
 ### Typical User API Costs
 
-- Light usage: $2-3/month
-- Regular posting: $4-6/month
-- Heavy usage: $8-15/month
+-   Light usage: $2-3/month
+-   Regular posting: $4-6/month
+-   Heavy usage: $8-15/month
 
 ## Marketing Numbers
 
-- "179+ founders" - Trusted by count (update as waitlist grows)
-- "30% off" - Early adopter discount for 12 months
-- "$2-4/month" - Typical AI API costs
-- "96% less" - Savings vs competitors ($19 + $2 API vs $49 competitors)
+-   "179+ founders" - Trusted by count (update as waitlist grows)
+-   "30% off" - Early adopter discount for 12 months
+-   "$2-4/month" - Typical AI API costs
+-   "96% less" - Savings vs competitors ($19 + $2 API vs $49 competitors)
 
 ## LinkedGrow Features (Complete List)
 
 ### Content Creation
 
-- **Post Editor** - Rich text editor with formatting, emoji support, character count (3000 char limit)
-- **AI Post Generator** - Generate posts from topics/ideas using user's AI API key (BYOK)
-- **Ideas Generator** - AI-powered content ideas based on user's niche/industry
-- **Hooks Generator** - Generate viral opening hooks to boost engagement
-- **Carousel Generator** - Create multi-slide carousels for LinkedIn (Pro+)
-- **Reddit Importer** - Turn any viral Reddit post URL into LinkedIn content ideas
+-   **Post Editor** - Rich text editor with formatting, emoji support, character count (3000 char limit)
+-   **AI Post Generator** - Generate posts from topics/ideas using user's AI API key (BYOK)
+-   **Ideas Generator** - AI-powered content ideas based on user's niche/industry
+-   **Hooks Generator** - Generate viral opening hooks to boost engagement
+-   **Carousel Generator** - Create multi-slide carousels for LinkedIn (Pro+)
+-   **Reddit Importer** - Turn any viral Reddit post URL into LinkedIn content ideas
 
 ### Voice & Personalization
 
-- **Voice Training** - Analyze user's sample posts to match their writing style
-- **Business Description** - Context about user's business for more relevant content
-- **Target Audience** - Define ideal reader persona
-- **Writing Tone** - Set preferred tone (professional, casual, inspirational, etc.)
-- **Never Mention** - List of topics/competitors to avoid in generated content
+-   **Voice Training** - Analyze user's sample posts to match their writing style
+-   **Business Description** - Context about user's business for more relevant content
+-   **Target Audience** - Define ideal reader persona
+-   **Writing Tone** - Set preferred tone (professional, casual, inspirational, etc.)
+-   **Never Mention** - List of topics/competitors to avoid in generated content
 
 ### LinkedIn Integration
 
-- **OAuth Connection** - Connect LinkedIn account securely
-- **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
-- **Company Page Publishing** - Post to company pages user manages
-- **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
-- **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
-- **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
+-   **OAuth Connection** - Connect LinkedIn account securely
+-   **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
+-   **Company Page Publishing** - Post to company pages user manages
+-   **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
+-   **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
+-   **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
 
 ### Scheduling & Calendar
 
-- **Post Scheduling** - Schedule posts for future dates/times
-- **Content Calendar** - Visual calendar view of all scheduled posts
-- **Optimal Time Suggestions** - AI-recommended posting times based on audience
-- **Timezone Support** - Schedule in user's local timezone
+-   **Post Scheduling** - Schedule posts for future dates/times
+-   **Content Calendar** - Visual calendar view of all scheduled posts
+-   **Optimal Time Suggestions** - AI-recommended posting times based on audience
+-   **Timezone Support** - Schedule in user's local timezone
 
 ### Analytics
 
-- **Basic Analytics** - Post performance metrics (Pro+)
-- **Advanced Analytics** - Detailed engagement trends, charts, best times (Business)
-- **Engagement Rate** - Track likes, comments, shares, impressions
-- **Export Reports** - Export analytics data to CSV/PDF (Business)
+-   **Basic Analytics** - Post performance metrics (Pro+)
+-   **Advanced Analytics** - Detailed engagement trends, charts, best times (Business)
+-   **Engagement Rate** - Track likes, comments, shares, impressions
+-   **Export Reports** - Export analytics data to CSV/PDF (Business)
 
 ### Business Plan Features
 
-- **A/B Testing** - Test different post versions to find best performers
-- **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
-- **Custom Branding** - Upload logo, set colors, choose fonts for exports
-- **API Access** - REST API for integrations with custom applications
-- **API Key Management** - Create/revoke API keys with scopes
-- **Priority Support** - Dedicated support channel
+-   **A/B Testing** - Test different post versions to find best performers
+-   **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
+-   **Custom Branding** - Upload logo, set colors, choose fonts for exports
+-   **API Access** - REST API for integrations with custom applications
+-   **API Key Management** - Create/revoke API keys with scopes
+-   **Priority Support** - Dedicated support channel
 
 ### Account & Settings
 
-- **Email/Password Auth** - Traditional registration with password
-- **Social Login** - Sign in with LinkedIn or Google
-- **Two-Factor Authentication (2FA)** - TOTP-based security with QR code setup
-- **Password Reset** - Secure password recovery flow
-- **Plan Management** - Upgrade/downgrade via Stripe Customer Portal
-- **BYOK Configuration** - Configure AI provider and API keys
+-   **Email/Password Auth** - Traditional registration with password
+-   **Social Login** - Sign in with LinkedIn or Google
+-   **Two-Factor Authentication (2FA)** - TOTP-based security with QR code setup
+-   **Password Reset** - Secure password recovery flow
+-   **Plan Management** - Upgrade/downgrade via Stripe Customer Portal
+-   **BYOK Configuration** - Configure AI provider and API keys
 
 ## LinkedIn API Requirements
 
@@ -504,23 +501,23 @@ LinkedGrow requires the following LinkedIn Developer products:
 
 ### 1. Sign In with LinkedIn using OpenID Connect
 
-- **Purpose:** Social login (Sign in with LinkedIn button)
-- **Scopes:** `openid`, `profile`, `email`
-- **Usage:** Authentication only, get user's name/email/picture
+-   **Purpose:** Social login (Sign in with LinkedIn button)
+-   **Scopes:** `openid`, `profile`, `email`
+-   **Usage:** Authentication only, get user's name/email/picture
 
 ### 2. Share on LinkedIn
 
-- **Purpose:** Publish posts to LinkedIn
-- **Scopes:** `w_member_social`
-- **Usage:** Create posts on user's personal profile and company pages they manage
-- **Critical for:** Core posting functionality
+-   **Purpose:** Publish posts to LinkedIn
+-   **Scopes:** `w_member_social`
+-   **Usage:** Create posts on user's personal profile and company pages they manage
+-   **Critical for:** Core posting functionality
 
 ### 3. Community Management API
 
-- **Purpose:** Engagement features (feed viewing, liking, commenting)
-- **Scopes:** `r_organization_social`, `w_organization_social`
-- **Usage:** View feed, like posts, comment on posts from dashboard
-- **Required for:** Pro/Business engagement tools
+-   **Purpose:** Engagement features (feed viewing, liking, commenting)
+-   **Scopes:** `r_organization_social`, `w_organization_social`
+-   **Usage:** View feed, like posts, comment on posts from dashboard
+-   **Required for:** Pro/Business engagement tools
 
 ### LinkedIn App Configuration
 
@@ -535,37 +532,37 @@ This separation is required because Community Management API has stricter approv
 
 ### Implemented
 
-- [x] User authentication (email/password + 2FA)
-- [x] Social login (Google + LinkedIn OAuth)
-- [x] BYOK key management (text + image AI)
-- [x] Post editor with AI generation
-- [x] Post scheduling
-- [x] LinkedIn OAuth integration
-- [x] LinkedIn post publishing
-- [x] File upload (R2 storage)
-- [x] Voice training settings
-- [x] Pricing page with Stripe checkout
-- [x] Pre-launch waitlist
-- [x] Dashboard UI for all features
-- [x] A/B testing pages (Business)
-- [x] Team collaboration pages (Business)
-- [x] Custom branding pages (Business)
-- [x] API key management pages (Business)
-- [x] REST API endpoints (Business)
-- [x] Database schema for all features
-- [x] Transactional emails (Brevo)
-- [x] Welcome emails on registration
+-   [x] User authentication (email/password + 2FA)
+-   [x] Social login (Google + LinkedIn OAuth)
+-   [x] BYOK key management (text + image AI)
+-   [x] Post editor with AI generation
+-   [x] Post scheduling
+-   [x] LinkedIn OAuth integration
+-   [x] LinkedIn post publishing
+-   [x] File upload (R2 storage)
+-   [x] Voice training settings
+-   [x] Pricing page with Stripe checkout
+-   [x] Pre-launch waitlist
+-   [x] Dashboard UI for all features
+-   [x] A/B testing pages (Business)
+-   [x] Team collaboration pages (Business)
+-   [x] Custom branding pages (Business)
+-   [x] API key management pages (Business)
+-   [x] REST API endpoints (Business)
+-   [x] Database schema for all features
+-   [x] Transactional emails (Brevo)
+-   [x] Welcome emails on registration
 
 ### TODO
 
-- [ ] Weekly report emails
-- [ ] LinkedIn analytics sync (requires Advertising API or manual input)
-- [ ] Content calendar improvements
-- [ ] Company page management UI
+-   [ ] Weekly report emails
+-   [ ] LinkedIn analytics sync (requires Advertising API or manual input)
+-   [ ] Content calendar improvements
+-   [ ] Company page management UI
 
 ## Founders
 
-- **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
-- **Maria Lecocq** - Operations & Community
+-   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
+-   **Maria Lecocq** - Operations & Community
 
 Based in Paris, France.
