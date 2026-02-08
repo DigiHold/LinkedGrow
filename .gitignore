@@ -78,6 +78,9 @@ logs/
 *.tsbuildinfo
 next-env.d.ts
 
+# Blog image generation scripts (contain API keys)
+scripts/generate-blog-images.js
+
 # Misc
 *.bak
 *.tmp
