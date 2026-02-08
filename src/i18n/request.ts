@@ -14,9 +14,9 @@ import itMessages from "@/messages/it.json";
 const messagesMap: Record<string, any> = {
   en: enMessages,
   fr: frMessages,
-  de: { ...deMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
-  es: { ...esMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
-  it: { ...itMessages, privacy: enMessages.privacy, cookies: enMessages.cookies },
+  de: { ...deMessages, privacy: enMessages.privacy, cookies: enMessages.cookies, blog: enMessages.blog },
+  es: { ...esMessages, privacy: enMessages.privacy, cookies: enMessages.cookies, blog: enMessages.blog },
+  it: { ...itMessages, privacy: enMessages.privacy, cookies: enMessages.cookies, blog: enMessages.blog },
 };
 
 export default getRequestConfig(async () => {

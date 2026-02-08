@@ -265,6 +265,68 @@
       "company": "Vayalis - 78 Avenue Des Champs-Elysees, 75008 Paris, France"
     }
   },
+  "blog": {
+    "listing": {
+      "title": "Blog",
+      "description": "Actionable strategies for LinkedIn growth, AI content creation, and building your personal brand.",
+      "all": "All",
+      "noArticles": "No articles yet",
+      "noArticlesSub": "Stay tuned - our first articles are coming soon!",
+      "minRead": "{count} min read"
+    },
+    "layout": {
+      "home": "Home",
+      "blog": "Blog",
+      "share": "Share",
+      "shareArticle": "Share this article",
+      "minRead": "{count} min read",
+      "ctaTitle": "Ready to grow on LinkedIn?",
+      "ctaDescription": "Create viral posts, schedule content, and build your audience with AI-powered tools. Bring your own API key and pay 96% less.",
+      "startFree": "Start Free",
+      "seePricing": "See Pricing"
+    },
+    "author": {
+      "writtenBy": "Written by"
+    },
+    "newsletter": {
+      "title": "Get weekly LinkedIn growth tips",
+      "description": "Join 179+ founders getting actionable strategies for content creation, AI tools, and LinkedIn growth. Free, no spam.",
+      "emailPlaceholder": "Enter your email",
+      "subscribe": "Subscribe",
+      "subscribing": "Subscribing...",
+      "successTitle": "You are subscribed!",
+      "successDescription": "You will receive our weekly LinkedIn growth tips. Check your inbox to confirm.",
+      "errorDefault": "Something went wrong. Please try again.",
+      "networkError": "Network error. Please try again.",
+      "unsubscribe": "Unsubscribe anytime. No spam, ever."
+    },
+    "comments": {
+      "title": "Comments",
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailNotPublished": "(not published)",
+      "emailPlaceholder": "your@email.com",
+      "comment": "Comment",
+      "commentPlaceholder": "Share your thoughts...",
+      "postComment": "Post Comment",
+      "posting": "Posting...",
+      "successMessage": "Thank you! Your comment will be displayed after review.",
+      "noComments": "No comments yet. Be the first to share your thoughts!",
+      "errorDefault": "Failed to post comment.",
+      "networkError": "Network error. Please try again."
+    },
+    "related": {
+      "title": "Related articles",
+      "minRead": "{count} min"
+    },
+    "share": {
+      "linkedin": "Share on LinkedIn",
+      "x": "Share on X",
+      "facebook": "Share on Facebook",
+      "copyLink": "Copy link"
+    }
+  },
   "cookies": {
     "title": "Cookie Policy",
     "lastUpdated": "Last updated: January 2026",
