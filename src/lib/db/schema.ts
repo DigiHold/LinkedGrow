@@ -480,6 +480,39 @@ export const savedCarousels = sqliteTable("saved_carousels", {
 });
 
 // ============================================
+// CMS PAGES (Admin headless CMS)
+// ============================================
+
+// CMS pages table for marketing, blog, feature pages
+export const cmsPages = sqliteTable("cms_pages", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // e.g. "for/solopreneurs", "blog/linkedin-hooks"
+  pageType: text("page_type", {
+    enum: ["audience", "feature", "free-tool", "use-case", "industry", "blog", "comparison"],
+  }).notNull(),
+  status: text("status", { enum: ["draft", "published"] }).default("draft"),
+  // SEO fields
+  seoTitle: text("seo_title"), // Meta title (50-60 chars)
+  seoDescription: text("seo_description"), // Meta description (150-160 chars)
+  seoKeywords: text("seo_keywords"), // Comma-separated
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"), // URL to R2
+  canonicalUrl: text("canonical_url"),
+  // Content blocks (JSON array)
+  content: text("content").notNull(), // JSON string of ContentBlock[]
+  // FAQ (separate for JSON-LD)
+  faq: text("faq"), // JSON string of {question, answer}[]
+  // Translations - JSON object with content+faq per language code
+  // e.g. {"fr":{"content":[...],"faq":[...],"seoTitle":"..."},"de":{...}}
+  translations: text("translations"),
+  // Timestamps
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -525,3 +558,5 @@ export type BetaUser = typeof betaUsers.$inferSelect;
 export type NewBetaUser = typeof betaUsers.$inferInsert;
 export type AbandonedCheckout = typeof abandonedCheckouts.$inferSelect;
 export type NewAbandonedCheckout = typeof abandonedCheckouts.$inferInsert;
+export type CmsPage = typeof cmsPages.$inferSelect;
+export type NewCmsPage = typeof cmsPages.$inferInsert;

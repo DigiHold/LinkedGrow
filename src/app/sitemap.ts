@@ -1,6 +1,9 @@
 import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
+import { db } from "@/lib/db";
+import { cmsPages } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 const BASE_URL = "https://linkedgrow.ai";
 
@@ -8,6 +11,7 @@ const BASE_URL = "https://linkedgrow.ai";
 const EXCLUDED_PATHS = [
   "/dashboard",
   "/api",
+  "/admin",
   "/onboarding",
   "/checkout",
   "/maintenance",
@@ -78,19 +82,29 @@ function findAllPages(dir: string, basePath: string = ""): string[] {
   return pages;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// CMS page type priorities
+const CMS_PRIORITY: Record<string, { priority: number; changeFrequency: "weekly" | "monthly" }> = {
+  audience: { priority: 0.8, changeFrequency: "monthly" },
+  feature: { priority: 0.8, changeFrequency: "monthly" },
+  blog: { priority: 0.7, changeFrequency: "weekly" },
+  "free-tool": { priority: 0.7, changeFrequency: "monthly" },
+  "use-case": { priority: 0.6, changeFrequency: "monthly" },
+  industry: { priority: 0.6, changeFrequency: "monthly" },
+  comparison: { priority: 0.6, changeFrequency: "monthly" },
+};
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date().toISOString();
 
   // Get the app directory path
   const appDir = path.join(process.cwd(), "src", "app");
 
-  // Find all pages automatically
+  // Find all static pages automatically
   const allPages = findAllPages(appDir);
 
   // Filter out excluded paths and build sitemap entries
-  const sitemapEntries: MetadataRoute.Sitemap = allPages
+  const staticEntries: MetadataRoute.Sitemap = allPages
     .filter((pagePath) => {
-      // Check if this path should be excluded
       return !EXCLUDED_PATHS.some((excluded) => pagePath.startsWith(excluded));
     })
     .map((pagePath) => {
@@ -102,9 +116,29 @@ export default function sitemap(): MetadataRoute.Sitemap {
         changeFrequency: config.changeFrequency,
         priority: config.priority,
       };
-    })
-    // Sort by priority (highest first)
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    });
 
-  return sitemapEntries;
+  // Fetch published CMS pages from database
+  let cmsEntries: MetadataRoute.Sitemap = [];
+  try {
+    const publishedPages = await db
+      .select({ slug: cmsPages.slug, pageType: cmsPages.pageType, updatedAt: cmsPages.updatedAt })
+      .from(cmsPages)
+      .where(eq(cmsPages.status, "published"));
+
+    cmsEntries = publishedPages.map((page) => {
+      const config = CMS_PRIORITY[page.pageType] || { priority: 0.5, changeFrequency: "monthly" as const };
+      return {
+        url: `${BASE_URL}/${page.slug}`,
+        lastModified: page.updatedAt ? new Date(page.updatedAt).toISOString() : currentDate,
+        changeFrequency: config.changeFrequency,
+        priority: config.priority,
+      };
+    });
+  } catch {
+    // DB might not have the table yet during build
+  }
+
+  // Combine and sort by priority
+  return [...staticEntries, ...cmsEntries].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 }
