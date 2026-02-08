@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
+import { getAllPosts } from "@/lib/blog";
 
 const BASE_URL = "https://linkedgrow.ai";
 
@@ -25,6 +26,7 @@ const PRIORITY_CONFIG: Record<string, { priority: number; changeFrequency: "alwa
   "/sign-in": { priority: 0.5, changeFrequency: "monthly" },
   "/sign-up": { priority: 0.6, changeFrequency: "monthly" },
   "/forgot-password": { priority: 0.4, changeFrequency: "monthly" },
+  "/blog": { priority: 0.9, changeFrequency: "weekly" },
 };
 
 // Default priority for pages not in config
@@ -105,6 +107,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
     // Sort by priority (highest first)
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+  // Add blog post entries
+  const blogPosts = getAllPosts();
+  for (const post of blogPosts) {
+    sitemapEntries.push({
+      url: `${BASE_URL}/blog/${post.slug}`,
+      lastModified: post.updatedAt || post.publishedAt,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
 
   return sitemapEntries;
 }

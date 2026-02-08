@@ -212,6 +212,74 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
   );
 }
 
+interface BlogPostingJsonLdProps {
+  headline: string;
+  description: string;
+  image: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName: string;
+  authorUrl: string;
+  wordCount?: number;
+  articleSection?: string;
+  keywords?: string[];
+  url: string;
+}
+
+export function BlogPostingJsonLd({
+  headline,
+  description,
+  image,
+  datePublished,
+  dateModified,
+  authorName,
+  authorUrl,
+  wordCount,
+  articleSection,
+  keywords,
+  url,
+}: BlogPostingJsonLdProps) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline,
+    description,
+    image,
+    datePublished,
+    dateModified: dateModified || datePublished,
+    url,
+    author: {
+      "@type": "Person",
+      name: authorName,
+      url: authorUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: APP_NAME,
+      url: APP_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${APP_URL}/logo.png`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    ...(wordCount && { wordCount }),
+    ...(articleSection && { articleSection }),
+    ...(keywords && keywords.length > 0 && { keywords: keywords.join(", ") }),
+  };
+
+  return (
+    <Script
+      id={`blogposting-jsonld-${headline.slice(0, 20).replace(/\s/g, "-").toLowerCase()}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 // LinkedGrow FAQs for JSON-LD (must match the FAQ component content)
 export const linkedGrowFAQs = [
   {

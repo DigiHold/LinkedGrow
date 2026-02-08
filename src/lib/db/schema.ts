@@ -480,6 +480,21 @@ export const savedCarousels = sqliteTable("saved_carousels", {
 });
 
 // ============================================
+// BLOG
+// ============================================
+
+// Blog comments table
+export const blogComments = sqliteTable("blog_comments", {
+  id: text("id").primaryKey(),
+  blogSlug: text("blog_slug").notNull(),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  content: text("content").notNull(),
+  isApproved: integer("is_approved", { mode: "boolean" }).default(true),
+  createdAt: text("created_at"),
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -525,3 +540,5 @@ export type BetaUser = typeof betaUsers.$inferSelect;
 export type NewBetaUser = typeof betaUsers.$inferInsert;
 export type AbandonedCheckout = typeof abandonedCheckouts.$inferSelect;
 export type NewAbandonedCheckout = typeof abandonedCheckouts.$inferInsert;
+export type BlogComment = typeof blogComments.$inferSelect;
+export type NewBlogComment = typeof blogComments.$inferInsert;
