@@ -488,7 +488,7 @@ export const cmsPages = sqliteTable("cms_pages", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(), // e.g. "for/solopreneurs", "blog/linkedin-hooks"
   pageType: text("page_type", {
-    enum: ["audience", "feature", "free-tool", "use-case", "industry", "blog", "comparison"],
+    enum: ["audience", "feature", "free-tool", "use-case", "industry", "blog", "comparison", "static"],
   }).notNull(),
   status: text("status", { enum: ["draft", "published"] }).default("draft"),
   // SEO fields

@@ -126,7 +126,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from(cmsPages)
       .where(eq(cmsPages.status, "published"));
 
-    cmsEntries = publishedPages.map((page) => {
+    cmsEntries = publishedPages.filter((page) => page.pageType !== "static").map((page) => {
       const config = CMS_PRIORITY[page.pageType] || { priority: 0.5, changeFrequency: "monthly" as const };
       return {
         url: `${BASE_URL}/${page.slug}`,

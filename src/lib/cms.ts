@@ -27,7 +27,8 @@ export type PageType =
   | "use-case"
   | "industry"
   | "blog"
-  | "comparison";
+  | "comparison"
+  | "static";
 
 export type PageStatus = "draft" | "published";
 
@@ -198,6 +199,7 @@ export const PAGE_TYPE_LABELS: Record<PageType, string> = {
   industry: "Industry",
   blog: "Blog Post",
   comparison: "Comparison",
+  static: "Static Page",
 };
 
 /**
@@ -211,4 +213,5 @@ export const PAGE_TYPE_PREFIXES: Record<PageType, string> = {
   industry: "industries",
   blog: "blog",
   comparison: "compare",
+  static: "",
 };

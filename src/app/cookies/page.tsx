@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { generateCMSMetadata } from "@/components/cms/cms-page";
+import { getPublishedPage } from "@/lib/cms";
 import CookiesClient from "./cookies-client";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPublishedPage("cookies");
+  if (page) return generateCMSMetadata(page);
+  return {
+    title: "Cookie Policy - LinkedGrow",
+    description: "Learn about how LinkedGrow uses cookies and similar technologies.",
+  };
+}
 
 export default async function CookiesPage() {
   const t = await getTranslations("cookies");
