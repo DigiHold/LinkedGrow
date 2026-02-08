@@ -5,7 +5,6 @@ import { getPublishedPage, getCanonicalUrl } from "@/lib/cms";
 import type { CMSPageData } from "@/lib/cms";
 import type { Metadata } from "next";
 import { CMSRenderer } from "./cms-renderer";
-import { AdminToolbar } from "@/components/admin/admin-toolbar";
 import { FAQJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
 import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
@@ -67,22 +66,21 @@ export async function CMSPage({ slug }: CMSPageProps) {
 
   return (
     <>
-      <AdminToolbar slug={page.slug} status={page.status} />
       <BreadcrumbJsonLd items={breadcrumbs} />
       {page.faq && page.faq.length > 0 && <FAQJsonLd questions={page.faq} />}
 
-      <PrelaunchHeader />
+      <PrelaunchHeader editSlug={page.slug} pageStatus={page.status} />
 
       <main className="pt-20">
         {/* Hero area with page title */}
         {page.seoTitle && (
-          <section className="py-16 sm:py-20 bg-gradient-to-br from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+          <section className="py-16 sm:py-20">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white">
                 {page.seoTitle.replace(" | LinkedGrow", "").replace(" - LinkedGrow", "")}
               </h1>
               {page.seoDescription && (
-                <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                <p className="mt-4 text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
                   {page.seoDescription}
                 </p>
               )}

@@ -14,13 +14,59 @@ interface PrelaunchHeaderProps {
     minutes: number;
     seconds: number;
   };
+  /** For CMS pages: slug to show "Edit Page" link */
+  editSlug?: string;
+  /** For CMS pages: page status badge */
+  pageStatus?: "draft" | "published";
 }
 
-export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHeaderProps) {
+export function PrelaunchHeader({ showCountdown = false, timeLeft, editSlug, pageStatus }: PrelaunchHeaderProps) {
   const { data: session, status } = useSession();
+  const isAdmin = session?.user?.isAdmin;
 
   return (
-    <header className="relative z-[9990] py-6 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800">
+    <>
+      {/* Admin Toolbar - only visible to admin users */}
+      {isAdmin && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-slate-900 text-white text-sm h-10 flex items-center px-4 gap-4 shadow-lg">
+          <span className="font-semibold text-cyan-400">Admin</span>
+          <div className="h-4 w-px bg-slate-700" />
+          {editSlug && (
+            <>
+              <Link
+                href={`/admin/pages/${encodeURIComponent(editSlug)}`}
+                className="hover:text-cyan-400 transition-colors"
+              >
+                Edit Page
+              </Link>
+              <div className="h-4 w-px bg-slate-700" />
+            </>
+          )}
+          {pageStatus && (
+            <>
+              <span
+                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  pageStatus === "published"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-amber-500/20 text-amber-400"
+                }`}
+              >
+                {pageStatus === "published" ? "Published" : "Draft"}
+              </span>
+              <div className="h-4 w-px bg-slate-700" />
+            </>
+          )}
+          <Link href="/admin/pages/new" className="hover:text-cyan-400 transition-colors">
+            New Page
+          </Link>
+          <div className="flex-1" />
+          <Link href="/admin/pages" className="hover:text-cyan-400 transition-colors">
+            All Pages
+          </Link>
+        </div>
+      )}
+
+      <header className={`relative z-[9990] py-6 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800 ${isAdmin ? "mt-10" : ""}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <Link href="/prelaunch" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
@@ -73,6 +119,7 @@ export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHe
           )}
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
