@@ -72,6 +72,18 @@ git@github.com:DigiHold/LinkedGrow.git
 
 SSH authentication is automatic.
 
+## Default OG Image
+
+A default Open Graph image is set in `src/app/layout.tsx` and applies to **all pages** automatically:
+
+```
+https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.avif
+```
+
+- Blog articles override this with their own featured image via `openGraph.images` in the article's metadata
+- To set a custom OG image for a specific page, add `openGraph.images` to that page's metadata export
+- **Never remove the default** from `layout.tsx` - it's the fallback for every page
+
 ## Caching Strategy
 
 Cache headers are configured in `next.config.ts` via the `headers()` function. Vercel's CDN automatically invalidates all cached content on every deploy - no manual cache clearing is needed.
