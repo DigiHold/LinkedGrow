@@ -1601,7 +1601,7 @@ function HeroVideoSection() {
         <div className="relative">
           <YouTubePlayer
             videoId="u31qwQUeGuM"
-            thumbnailUrl="/images/video-thumbnail.avif"
+            thumbnailUrl="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail.avif"
             duration="0:10"
             ctaText="Join the Waitlist"
             ctaHref="#waitlist"
