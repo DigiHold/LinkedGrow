@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
-import { getAllPosts } from "@/lib/blog";
+import { getAllPostsWithStatus } from "@/lib/blog";
 
 const BASE_URL = "https://linkedgrow.ai";
 
@@ -80,7 +80,7 @@ function findAllPages(dir: string, basePath: string = ""): string[] {
   return pages;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date().toISOString();
 
   // Get the app directory path
@@ -108,8 +108,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Sort by priority (highest first)
     .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-  // Add blog post entries
-  const blogPosts = getAllPosts();
+  // Add blog post entries (published only)
+  const blogPosts = await getAllPostsWithStatus(false);
   for (const post of blogPosts) {
     sitemapEntries.push({
       url: `${BASE_URL}/blog/${post.slug}`,

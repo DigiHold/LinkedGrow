@@ -542,3 +542,17 @@ export type AbandonedCheckout = typeof abandonedCheckouts.$inferSelect;
 export type NewAbandonedCheckout = typeof abandonedCheckouts.$inferInsert;
 export type BlogComment = typeof blogComments.$inferSelect;
 export type NewBlogComment = typeof blogComments.$inferInsert;
+
+// Blog post status tracking (content stays in static page.tsx files)
+export const blogPosts = sqliteTable("blog_posts", {
+  slug: text("slug").primaryKey(),
+  status: text("status", { enum: ["draft", "scheduled", "published"] }).default("draft").notNull(),
+  scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+  qstashMessageId: text("qstash_message_id"),
+  createdAt: integer("created_at", { mode: "timestamp" }),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+export type BlogPostStatus = typeof blogPosts.$inferSelect;
+export type NewBlogPostStatus = typeof blogPosts.$inferInsert;
