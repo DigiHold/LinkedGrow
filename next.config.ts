@@ -88,16 +88,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Images in /public - 30 days cache, revalidate after
-        source: "/images/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, stale-while-revalidate=86400",
-          },
-        ],
-      },
-      {
         // Favicon and other root static files
         source: "/:path(favicon.ico|icon.svg|robots.txt|sitemap.xml)",
         headers: [

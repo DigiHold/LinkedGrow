@@ -426,7 +426,7 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
                 style={{ zIndex: 6 - i }}
               >
                 <Image
-                  src={`/images/person${num}.avif`}
+                  src={`https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person${num}.avif`}
                   alt=""
                   width={44}
                   height={44}
@@ -1298,7 +1298,7 @@ function ComparisonSection() {
                     {[1, 2, 3].map((num) => (
                       <div key={num} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 overflow-hidden">
                         <Image
-                          src={`/images/person${num}.avif`}
+                          src={`https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person${num}.avif`}
                           alt=""
                           width={32}
                           height={32}
