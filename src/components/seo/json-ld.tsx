@@ -280,6 +280,32 @@ export function BlogPostingJsonLd({
   );
 }
 
+interface PersonJsonLdProps {
+  name: string;
+  jobTitle: string;
+  url: string;
+  sameAs?: string[];
+}
+
+export function PersonJsonLd({ name, jobTitle, url, sameAs = [] }: PersonJsonLdProps) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    jobTitle,
+    url,
+    ...(sameAs.length > 0 && { sameAs }),
+  };
+
+  return (
+    <Script
+      id={`person-jsonld-${name.replace(/\s/g, "-").toLowerCase()}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 // LinkedGrow FAQs for JSON-LD (must match the FAQ component content)
 export const linkedGrowFAQs = [
   {
