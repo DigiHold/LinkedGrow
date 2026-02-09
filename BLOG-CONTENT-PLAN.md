@@ -4,8 +4,24 @@
 
 ---
 
+## Categories
+
+Every article must use one of these 4 categories. Do NOT create new categories.
+
+| Category | Description | Posts |
+|---|---|---|
+| **Content Strategy** | How to create, format, and plan LinkedIn content | #1, #3, #6, #9, #17, #18 |
+| **LinkedIn Growth** | Growing your audience, algorithm, analytics, leads, social selling | #2, #7, #11, #14, #15, #20 |
+| **Industry Guides** | Guides for specific audiences, industries, and team setups | #5, #8, #12, #13, #16, #19 |
+| **AI & Tools** | AI tool comparisons, BYOK, pricing, tool reviews | #4, #10 |
+
+When proposing new articles, assign one of these 4 categories. Aim to keep them balanced.
+
+---
+
 ## Blog Post #1: The Ultimate Guide to LinkedIn Hooks That Go Viral
 
+**Category:** Content Strategy
 **Target keyword:** "LinkedIn hooks" / "LinkedIn hook examples"
 **Search volume:** High - thousands of monthly searches
 **Slug:** `/blog/linkedin-hooks-guide`
@@ -26,6 +42,7 @@
 
 ## Blog Post #2: How to Build a Personal Brand on LinkedIn in 2026
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn personal branding" / "how to build personal brand LinkedIn"
 **Search volume:** High
 **Slug:** `/blog/linkedin-personal-branding-guide`
@@ -47,6 +64,7 @@
 
 ## Blog Post #3: LinkedIn Scheduling - Best Times to Post in 2026
 
+**Category:** Content Strategy
 **Target keyword:** "best time to post on LinkedIn" / "LinkedIn scheduling"
 **Search volume:** Very high
 **Slug:** `/blog/best-time-to-post-linkedin`
@@ -68,6 +86,7 @@
 
 ## Blog Post #4: BYOK Explained - Why Bring Your Own AI Key Saves You Hundreds
 
+**Category:** AI & Tools
 **Target keyword:** "bring your own API key" / "cheapest AI LinkedIn tool"
 **Search volume:** Medium - growing as BYOK awareness increases
 **Slug:** `/blog/byok-bring-your-own-key-explained`
@@ -89,6 +108,7 @@
 
 ## Blog Post #5: LinkedIn Content Strategy for Coaches and Consultants
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn content strategy coaches" / "LinkedIn for coaches"
 **Search volume:** Medium
 **Slug:** `/blog/linkedin-content-strategy-coaches`
@@ -110,6 +130,7 @@
 
 ## Blog Post #6: How to Create LinkedIn Carousels That Get Saved and Shared
 
+**Category:** Content Strategy
 **Target keyword:** "LinkedIn carousel" / "how to make LinkedIn carousel"
 **Search volume:** High
 **Slug:** `/blog/linkedin-carousel-guide`
@@ -130,6 +151,7 @@
 
 ## Blog Post #7: LinkedIn Algorithm 2026 - How It Actually Works
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn algorithm" / "how LinkedIn algorithm works 2026"
 **Search volume:** Very high
 **Slug:** `/blog/linkedin-algorithm-2026`
@@ -152,6 +174,7 @@
 
 ## Blog Post #8: Agency Guide - Managing LinkedIn Content for Multiple Clients
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn management agency" / "LinkedIn tool for agencies"
 **Search volume:** Medium
 **Slug:** `/blog/linkedin-content-management-agencies`
@@ -173,6 +196,7 @@
 
 ## Blog Post #9: Reddit to LinkedIn - How to Turn Viral Reddit Posts Into LinkedIn Content
 
+**Category:** Content Strategy
 **Target keyword:** "Reddit to LinkedIn content" / "repurpose Reddit posts LinkedIn"
 **Search volume:** Low-medium (niche, but no competition)
 **Slug:** `/blog/reddit-to-linkedin-content`
@@ -193,6 +217,7 @@
 
 ## Blog Post #10: LinkedIn AI Tools Compared - The Complete 2026 Guide
 
+**Category:** AI & Tools
 **Target keyword:** "LinkedIn AI tools" / "best AI tool for LinkedIn"
 **Search volume:** High
 **Slug:** `/blog/best-linkedin-ai-tools-2026`
@@ -215,6 +240,7 @@
 
 ## Blog Post #11: How to Write LinkedIn Posts That Generate Leads
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn posts for leads" / "LinkedIn lead generation content"
 **Search volume:** High
 **Slug:** `/blog/linkedin-posts-generate-leads`
@@ -237,6 +263,7 @@
 
 ## Blog Post #12: LinkedIn Employee Advocacy - A Complete Playbook
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn employee advocacy" / "employee advocacy program"
 **Search volume:** Medium-high
 **Slug:** `/blog/linkedin-employee-advocacy-playbook`
@@ -258,6 +285,7 @@
 
 ## Blog Post #13: The LinkedIn Ghostwriter's Toolkit - Tools, Tips, and Workflows
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn ghostwriter" / "LinkedIn ghostwriting tools"
 **Search volume:** Medium (growing niche)
 **Slug:** `/blog/linkedin-ghostwriter-toolkit`
@@ -280,6 +308,7 @@
 
 ## Blog Post #14: LinkedIn Analytics - Which Metrics Actually Matter
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn analytics" / "LinkedIn post metrics"
 **Search volume:** High
 **Slug:** `/blog/linkedin-analytics-metrics-guide`
@@ -301,6 +330,7 @@
 
 ## Blog Post #15: A/B Testing LinkedIn Posts - The Data-Driven Approach
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn A/B testing" / "test LinkedIn posts"
 **Search volume:** Low-medium (niche)
 **Slug:** `/blog/linkedin-ab-testing-guide`
@@ -322,6 +352,7 @@
 
 ## Blog Post #16: LinkedIn for SaaS Companies - Content That Drives Signups
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn for SaaS" / "SaaS LinkedIn marketing"
 **Search volume:** Medium
 **Slug:** `/blog/linkedin-for-saas-companies`
@@ -343,6 +374,7 @@
 
 ## Blog Post #17: How to Use AI to Write LinkedIn Posts Without Sounding Like a Robot
 
+**Category:** Content Strategy
 **Target keyword:** "AI LinkedIn posts" / "use AI for LinkedIn"
 **Search volume:** Very high
 **Slug:** `/blog/ai-linkedin-posts-without-sounding-robotic`
@@ -365,6 +397,7 @@
 
 ## Blog Post #18: LinkedIn Content Calendar - How to Plan a Month in 30 Minutes
 
+**Category:** Content Strategy
 **Target keyword:** "LinkedIn content calendar" / "LinkedIn content planning"
 **Search volume:** High
 **Slug:** `/blog/linkedin-content-calendar-planning`
@@ -387,6 +420,7 @@
 
 ## Blog Post #19: LinkedIn for Real Estate Agents - Stand Out in a Crowded Market
 
+**Category:** Industry Guides
 **Target keyword:** "LinkedIn for real estate" / "real estate LinkedIn marketing"
 **Search volume:** Medium
 **Slug:** `/blog/linkedin-for-real-estate-agents`
@@ -408,6 +442,7 @@
 
 ## Blog Post #20: Social Selling on LinkedIn - Convert Connections Into Customers
 
+**Category:** LinkedIn Growth
 **Target keyword:** "LinkedIn social selling" / "social selling strategy"
 **Search volume:** High
 **Slug:** `/blog/linkedin-social-selling-strategy`
