@@ -491,6 +491,7 @@ export const blogComments = sqliteTable("blog_comments", {
   authorEmail: text("author_email").notNull(),
   content: text("content").notNull(),
   isApproved: integer("is_approved", { mode: "boolean" }).default(false),
+  parentId: text("parent_id"),
   createdAt: text("created_at"),
 });
 

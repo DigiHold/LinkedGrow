@@ -317,7 +317,10 @@
       "successMessage": "Thank you! Your comment will be displayed after review.",
       "noComments": "No comments yet. Be the first to share your thoughts!",
       "errorDefault": "Failed to post comment.",
-      "networkError": "Network error. Please try again."
+      "networkError": "Network error. Please try again.",
+      "reply": "Reply",
+      "replyPlaceholder": "Write a reply...",
+      "cancelReply": "Cancel"
     },
     "related": {
       "title": "Related articles",
