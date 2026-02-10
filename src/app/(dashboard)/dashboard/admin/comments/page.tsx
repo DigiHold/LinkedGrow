@@ -98,7 +98,19 @@ function CommentsContent() {
       if (res.ok) {
         const data = await res.json();
         if (data.comment) {
-          setComments((prev) => [data.comment, ...prev]);
+          setComments((prev) => {
+            // Insert reply right after the parent and its existing replies
+            const parentIndex = prev.findIndex((c) => c.id === parentId);
+            if (parentIndex === -1) return [data.comment, ...prev];
+            // Find last reply belonging to this parent
+            let insertAt = parentIndex + 1;
+            while (insertAt < prev.length && prev[insertAt].parentId === parentId) {
+              insertAt++;
+            }
+            const updated = [...prev];
+            updated.splice(insertAt, 0, data.comment);
+            return updated;
+          });
         }
         setReplyContent("");
         setReplyingTo(null);
@@ -135,7 +147,29 @@ function CommentsContent() {
     return parent?.authorName || null;
   }
 
-  const filteredComments = comments.filter((c) => {
+  // Build threaded structure: top-level comments with replies grouped underneath
+  const threadedComments: AdminComment[] = [];
+  const replyMap = new Map<string, AdminComment[]>();
+
+  for (const comment of comments) {
+    if (comment.parentId) {
+      const existing = replyMap.get(comment.parentId) || [];
+      existing.push(comment);
+      replyMap.set(comment.parentId, existing);
+    }
+  }
+
+  for (const comment of comments) {
+    if (!comment.parentId) {
+      threadedComments.push(comment);
+      const replies = replyMap.get(comment.id);
+      if (replies) {
+        threadedComments.push(...replies);
+      }
+    }
+  }
+
+  const filteredComments = threadedComments.filter((c) => {
     if (filter === "pending") return !c.isApproved;
     if (filter === "approved") return c.isApproved;
     return true;
