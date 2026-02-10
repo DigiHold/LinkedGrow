@@ -20,56 +20,102 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Competitors to analyze for content gaps
-const KNOWN_COMPETITORS = [
+// Direct competitors: AI LinkedIn writing/growth tools
+const ALL_COMPETITORS = [
   "taplio.com",
-  "buffer.com",
-  "hootsuite.com",
-  "sproutsocial.com",
-  "later.com",
+  "supergrow.ai",
+  "kleo.so",
+  "typefully.com",
   "publer.io",
   "socialbee.io",
-  "typefully.com",
   "postwise.ai",
-  "authorityhacker.com",
+  "contentdrips.com",
+  "letterdrop.com",
+  "tribescaler.com",
+  "redactai.io",
+  "inlytics.com",
+  "shield-app.com",
+  "perfectpost.fr",
+  "engage-ai.co",
 ];
 
-// Competitors auto-analyzed on button click (top 5 most relevant)
+// 5 most direct competitors auto-analyzed each click
 const AUTO_COMPETITORS = [
   "taplio.com",
-  "buffer.com",
-  "hootsuite.com",
-  "later.com",
-  "authorityhacker.com",
+  "supergrow.ai",
+  "kleo.so",
+  "typefully.com",
+  "publer.io",
 ];
 
-// Seed keywords auto-analyzed on button click
-const AUTO_SEEDS = [
+// Full keyword pool (50 keywords) - 5 random ones picked each analysis
+const ALL_KEYWORDS = [
+  // AI LinkedIn tools
   "linkedin post generator",
-  "linkedin content tool",
-  "linkedin scheduling tool",
   "ai linkedin writer",
-  "linkedin algorithm",
-];
-
-// All suggested keywords for manual drill-down
-const SEED_SUGGESTIONS = [
-  "linkedin post generator",
   "linkedin content tool",
+  "linkedin ai tool",
+  "linkedin content generator",
+  "ai linkedin post generator",
+  "linkedin writing tool",
+  "linkedin post writer ai",
+  "linkedin content creator ai",
+  "ai social media writer",
+  // Scheduling
   "linkedin scheduling tool",
-  "ai linkedin writer",
-  "linkedin algorithm",
-  "linkedin engagement tips",
-  "linkedin automation tool",
-  "linkedin post ideas",
-  "linkedin analytics tool",
-  "best time to post linkedin",
-  "linkedin carousel maker",
-  "linkedin content strategy",
-  "linkedin hook examples",
-  "linkedin personal branding",
+  "linkedin post scheduler",
+  "schedule linkedin posts",
+  "linkedin content calendar",
+  "best linkedin scheduler",
+  // Growth
+  "linkedin growth tool",
+  "how to grow on linkedin",
   "linkedin growth strategy",
+  "linkedin growth hacks",
+  "grow linkedin followers",
+  // Content strategy
+  "linkedin content strategy",
+  "linkedin content ideas",
+  "linkedin post ideas",
+  "linkedin post examples",
+  "linkedin post template",
+  // Engagement
+  "linkedin engagement tips",
+  "increase linkedin engagement",
+  "linkedin engagement strategy",
+  "linkedin engagement rate",
+  "linkedin algorithm",
+  // Features
+  "linkedin carousel maker",
+  "linkedin carousel generator",
+  "linkedin hook generator",
+  "linkedin hook examples",
+  "linkedin headline generator",
+  // Topics
+  "linkedin personal branding",
+  "linkedin thought leadership",
+  "linkedin b2b marketing",
+  "linkedin marketing strategy",
+  "linkedin lead generation",
+  // Analytics
+  "linkedin analytics tool",
+  "linkedin post analytics",
+  "best time to post linkedin",
+  "best time to post on linkedin",
+  "linkedin impressions",
+  // Alternatives / comparisons
+  "taplio alternative",
+  "buffer alternative linkedin",
+  "hootsuite alternative",
+  "linkedin automation tool",
+  "linkedin management tool",
 ];
+
+// Pick N random unique items from array
+function pickRandom<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
 
 // Types
 
@@ -148,6 +194,7 @@ export default function SeoIntelligencePage() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   const [lastLoaded, setLastLoaded] = useState<string | null>(null);
+  const [analyzedSeeds, setAnalyzedSeeds] = useState<string[]>([]);
   const isAdmin = session?.user?.isAdmin;
 
   useEffect(() => {
@@ -170,7 +217,11 @@ export default function SeoIntelligencePage() {
     setSingleGaps(null);
     setSingleSuggestions(null);
     setSeedKeyword("");
-    setLoadingProgress("Fetching rankings, competitors, content gaps, and keywords...");
+
+    // Pick 5 random keywords from the pool of 50
+    const selectedSeeds = pickRandom(ALL_KEYWORDS, 5);
+    setAnalyzedSeeds(selectedSeeds);
+    setLoadingProgress(`Analyzing ${AUTO_COMPETITORS.length} competitors + 5 random keywords...`);
 
     try {
       // Run everything in parallel
@@ -181,7 +232,7 @@ export default function SeoIntelligencePage() {
           .then((r) => r.json())
           .then((json) => ({ competitor: comp, json }))
       );
-      const kwPs = AUTO_SEEDS.map((seed) =>
+      const kwPs = selectedSeeds.map((seed) =>
         postApi({ action: "keyword-suggestions", keyword: seed })
           .then((r) => r.json())
           .then((json) => ({ seed, json }))
@@ -349,8 +400,13 @@ export default function SeoIntelligencePage() {
               <span>~$0.12 per full analysis (12 API calls)</span>
             </div>
             <p className="text-xs text-muted-foreground max-w-lg">
-              Analyzes {AUTO_COMPETITORS.length} competitors ({AUTO_COMPETITORS.join(", ")}) + {AUTO_SEEDS.length} keyword topics
+              Analyzes {AUTO_COMPETITORS.length} competitors ({AUTO_COMPETITORS.join(", ")}) + 5 random keywords from pool of {ALL_KEYWORDS.length}
             </p>
+            {analyzedSeeds.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Last keywords: {analyzedSeeds.join(", ")}
+              </p>
+            )}
             {lastLoaded ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
@@ -386,7 +442,7 @@ export default function SeoIntelligencePage() {
         <div className="py-16 flex flex-col items-center justify-center gap-3 text-muted-foreground border rounded-xl">
           <Brain className="w-10 h-10 text-violet-300" />
           <p className="text-sm text-center max-w-md">
-            Click &quot;Run Full SEO Analysis&quot; to analyze {AUTO_COMPETITORS.length} competitors and {AUTO_SEEDS.length} keyword topics. You&apos;ll see exactly what pages and articles to create.
+            Click &quot;Run Full SEO Analysis&quot; to analyze {AUTO_COMPETITORS.length} direct competitors and 5 random keywords from a pool of {ALL_KEYWORDS.length}. You&apos;ll see exactly what pages and articles to create.
           </p>
         </div>
       )}
@@ -513,7 +569,7 @@ function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedComp
   singleGaps: ContentGap[] | null; singleGapsTotal: number; loading: boolean;
 }) {
   const autoDetected = competitors.map((c) => c.domain);
-  const allCompetitors = [...autoDetected, ...KNOWN_COMPETITORS.filter((kc) => !autoDetected.includes(kc))];
+  const allCompetitors = [...autoDetected, ...ALL_COMPETITORS.filter((kc) => !autoDetected.includes(kc))];
 
   const displayGaps = selectedCompetitor && singleGaps ? singleGaps : mergedGaps;
   const displayTotal = selectedCompetitor && singleGaps ? singleGapsTotal : mergedGapsTotal;
@@ -609,8 +665,8 @@ function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKey
       {mergedSuggestions && mergedSuggestions.length > 0 && isMerged && (
         <div className="border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/20 rounded-xl p-4">
           <p className="text-sm font-medium text-violet-700 dark:text-violet-400">
-            {mergedSuggestions.length.toLocaleString()} unique keywords from {AUTO_SEEDS.length} topics.
-            Each keyword is a potential page or article opportunity!
+            {mergedSuggestions.length.toLocaleString()} unique keywords from 5 random topics (pool of {ALL_KEYWORDS.length}).
+            Run again for different keywords! Each is a potential page or article.
           </p>
         </div>
       )}
@@ -634,7 +690,7 @@ function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKey
                 Show all topics (merged)
               </button>
             )}
-            {SEED_SUGGESTIONS.map((seed) => (
+            {ALL_KEYWORDS.map((seed) => (
               <button key={seed} onClick={() => onSearch(seed)} disabled={loading}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                   seedKeyword === seed ? "bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700 dark:text-violet-400"
@@ -656,7 +712,7 @@ function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKey
           <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
             <h2 className="font-semibold flex items-center gap-2">
               <Lightbulb className="w-4 h-4" />
-              {isMerged ? `Keywords from ${AUTO_SEEDS.length} topics` : `Keywords for "${seedKeyword}"`}
+              {isMerged ? "Keywords from 5 random topics" : `Keywords for "${seedKeyword}"`}
               <span className="text-xs font-normal text-muted-foreground ml-1">({displayTotal.toLocaleString()} total, {displaySuggestions.length} shown)</span>
             </h2>
             <p className="text-xs text-muted-foreground mt-1">Target high volume + low difficulty for quick wins</p>
