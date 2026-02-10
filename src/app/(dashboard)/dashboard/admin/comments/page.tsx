@@ -132,7 +132,7 @@ function CommentsContent() {
         body: JSON.stringify({ id }),
       });
       if (res.ok) {
-        setComments((prev) => prev.filter((c) => c.id !== id));
+        setComments((prev) => prev.filter((c) => c.id !== id && c.parentId !== id));
       }
     } catch {
       console.error("Failed to delete comment");
