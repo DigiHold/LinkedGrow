@@ -292,16 +292,34 @@
       "writtenBy": "Written by"
     },
     "newsletter": {
-      "title": "Get weekly LinkedIn growth tips",
-      "description": "Join 100+ founders getting actionable strategies for content creation, AI tools, and LinkedIn growth. Free, no spam.",
+      "title": "Get 50 Viral LinkedIn Hooks",
+      "subtitle": "Free swipe file - copy, paste, post.",
+      "description": "Proven hooks used by top LinkedIn creators to get thousands of impressions. Delivered straight to your inbox as a PDF.",
+      "bullet1": "50 ready-to-use opening hooks sorted by category",
+      "bullet2": "Real examples from posts with 100K+ impressions",
+      "bullet3": "Weekly LinkedIn growth tips included with every email",
       "emailPlaceholder": "Enter your email",
-      "subscribe": "Subscribe",
-      "subscribing": "Subscribing...",
-      "successTitle": "You are subscribed!",
-      "successDescription": "You will receive our weekly LinkedIn growth tips. Check your inbox to confirm.",
+      "subscribe": "Send Me the Hooks",
+      "subscribing": "Sending...",
+      "successTitle": "Check your inbox!",
+      "successDescription": "Your free swipe file is on its way. Check your email (and spam folder, just in case) to download the 50 Viral LinkedIn Hooks PDF.",
       "errorDefault": "Something went wrong. Please try again.",
       "networkError": "Network error. Please try again.",
-      "unsubscribe": "Unsubscribe anytime. No spam, ever."
+      "unsubscribe": "Unsubscribe anytime. No spam, ever.",
+      "socialProof": "Join 500+ LinkedIn creators"
+    },
+    "exitIntent": {
+      "title": "Before you go...",
+      "subtitle": "Grab your free swipe file",
+      "description": "50 viral LinkedIn hooks used by top creators. Copy, paste, and watch your impressions grow.",
+      "emailPlaceholder": "Enter your email",
+      "subscribe": "Get the Free Hooks",
+      "subscribing": "Sending...",
+      "successTitle": "Check your inbox!",
+      "successDescription": "Your free swipe file is on its way.",
+      "errorDefault": "Something went wrong. Please try again.",
+      "networkError": "Network error. Please try again.",
+      "trust": "Free PDF - No spam - Unsubscribe anytime"
     },
     "comments": {
       "title": "Comments",
