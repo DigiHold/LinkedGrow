@@ -5,14 +5,15 @@ import { usePathname } from "next/navigation";
 
 /**
  * Scrolls to top on every client-side route change.
- * Next.js App Router should do this by default, but some layouts
- * with fixed headers and overflow settings can interfere.
+ * Uses behavior: 'instant' to override the CSS scroll-behavior: smooth
+ * which otherwise turns scrollTo into an animation that gets interrupted
+ * by browser scroll restoration, leaving the user mid-page.
  */
 export function ScrollToTop() {
   const pathname = usePathname();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
 
   return null;
