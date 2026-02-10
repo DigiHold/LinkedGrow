@@ -17,6 +17,9 @@ import {
   ExternalLink,
   Zap,
   Settings2,
+  MousePointerClick,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -56,6 +59,37 @@ interface SeoData {
   totalPages: number;
 }
 
+interface SearchConsoleData {
+  dateRange: { start: string; end: string };
+  totals: {
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  };
+  dailyTrend: {
+    date: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }[];
+  pages: {
+    page: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }[];
+  topQueries: {
+    query: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }[];
+}
+
 export default function AdminSeoPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
@@ -63,6 +97,9 @@ export default function AdminSeoPage() {
   const [indexingUrls, setIndexingUrls] = useState<Set<string>>(new Set());
   const [indexingAll, setIndexingAll] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [scData, setScData] = useState<SearchConsoleData | null>(null);
+  const [scLoading, setScLoading] = useState(false);
+  const [scError, setScError] = useState<string | null>(null);
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -82,8 +119,31 @@ export default function AdminSeoPage() {
     }
   };
 
+  const fetchSearchConsole = async () => {
+    setScLoading(true);
+    setScError(null);
+    try {
+      const res = await fetch("/api/admin/seo/search-console");
+      if (res.ok) {
+        const json = await res.json();
+        setScData(json);
+      } else {
+        const json = await res.json();
+        setScError(json.error || "Failed to load");
+      }
+    } catch (error) {
+      console.error("Failed to fetch Search Console data:", error);
+      setScError("Failed to connect");
+    } finally {
+      setScLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (isAdmin) fetchData();
+    if (isAdmin) {
+      fetchData();
+      fetchSearchConsole();
+    }
   }, [isAdmin]);
 
   const triggerIndexing = async (urls: string[]) => {
@@ -198,11 +258,16 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <StatCard
-          label="Total Pages"
+          label="Total URLs"
           value={data.totalPages}
           icon={<Globe className="w-4 h-4" />}
+        />
+        <StatCard
+          label="Live Pages"
+          value={data.pages.length}
+          icon={<Globe className="w-4 h-4 text-blue-600" />}
         />
         <StatCard
           label="Healthy"
@@ -217,17 +282,17 @@ export default function AdminSeoPage() {
           color={errorPages.length > 0 ? "red" : undefined}
         />
         <StatCard
-          label="Published"
+          label="Published Posts"
           value={data.publishedPosts}
           icon={<Eye className="w-4 h-4 text-cyan-600" />}
         />
         <StatCard
-          label="Drafts"
+          label="Draft Posts"
           value={data.draftPosts}
           icon={<FileText className="w-4 h-4 text-amber-600" />}
         />
         <StatCard
-          label="Scheduled"
+          label="Scheduled Posts"
           value={data.scheduledPosts}
           icon={<Clock className="w-4 h-4 text-violet-600" />}
         />
@@ -249,6 +314,205 @@ export default function AdminSeoPage() {
             configured={data.indexingConfig.googleIndexingApi}
           />
         </div>
+      </div>
+
+      {/* Search Console Performance */}
+      <div className="border rounded-xl p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Google Search Performance
+            {scData && (
+              <span className="text-xs font-normal text-muted-foreground">
+                {scData.dateRange.start} to {scData.dateRange.end}
+              </span>
+            )}
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchSearchConsole}
+            disabled={scLoading}
+          >
+            {scLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+          </Button>
+        </div>
+
+        {scLoading && !scData && (
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Loading Search Console data...</span>
+          </div>
+        )}
+
+        {scError && (
+          <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
+            {scError}
+          </div>
+        )}
+
+        {scData && (
+          <>
+            {/* Performance Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="border rounded-lg p-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                  <MousePointerClick className="w-3.5 h-3.5 text-blue-600" />
+                  Total Clicks
+                </div>
+                <p className="text-2xl font-bold text-blue-600">
+                  {scData.totals.clicks.toLocaleString()}
+                </p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                  <Eye className="w-3.5 h-3.5 text-violet-600" />
+                  Impressions
+                </div>
+                <p className="text-2xl font-bold text-violet-600">
+                  {scData.totals.impressions.toLocaleString()}
+                </p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                  Avg CTR
+                </div>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {(scData.totals.ctr * 100).toFixed(1)}%
+                </p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                  <BarChart3 className="w-3.5 h-3.5 text-amber-600" />
+                  Avg Position
+                </div>
+                <p className="text-2xl font-bold text-amber-600">
+                  {scData.totals.position.toFixed(1)}
+                </p>
+              </div>
+            </div>
+
+            {/* Top Search Queries */}
+            {scData.topQueries.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Top Search Queries
+                </h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                        <th className="text-left p-2 pl-3">Query</th>
+                        <th className="text-right p-2">Clicks</th>
+                        <th className="text-right p-2">Impressions</th>
+                        <th className="text-right p-2 hidden sm:table-cell">
+                          CTR
+                        </th>
+                        <th className="text-right p-2 pr-3 hidden sm:table-cell">
+                          Position
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {scData.topQueries.slice(0, 15).map((q) => (
+                        <tr
+                          key={q.query}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                        >
+                          <td className="p-2 pl-3 font-medium truncate max-w-50 sm:max-w-75">
+                            {q.query}
+                          </td>
+                          <td className="p-2 text-right text-blue-600 font-medium">
+                            {q.clicks}
+                          </td>
+                          <td className="p-2 text-right text-muted-foreground">
+                            {q.impressions.toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
+                            {(q.ctr * 100).toFixed(1)}%
+                          </td>
+                          <td className="p-2 pr-3 text-right hidden sm:table-cell">
+                            <PositionBadge position={q.position} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Per-Page Performance */}
+            {scData.pages.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Pages Search Performance
+                </h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                        <th className="text-left p-2 pl-3">Page</th>
+                        <th className="text-right p-2">Clicks</th>
+                        <th className="text-right p-2">Impressions</th>
+                        <th className="text-right p-2 hidden sm:table-cell">
+                          CTR
+                        </th>
+                        <th className="text-right p-2 pr-3 hidden sm:table-cell">
+                          Position
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {scData.pages.map((p) => (
+                        <tr
+                          key={p.page}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                        >
+                          <td className="p-2 pl-3 truncate max-w-50 sm:max-w-75">
+                            <a
+                              href={p.page}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {p.page.replace("https://linkedgrow.ai", "") ||
+                                "/"}
+                            </a>
+                          </td>
+                          <td className="p-2 text-right text-blue-600 font-medium">
+                            {p.clicks}
+                          </td>
+                          <td className="p-2 text-right text-muted-foreground">
+                            {p.impressions.toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
+                            {(p.ctr * 100).toFixed(1)}%
+                          </td>
+                          <td className="p-2 pr-3 text-right hidden sm:table-cell">
+                            <PositionBadge position={p.position} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {scData.topQueries.length === 0 && scData.pages.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No search data available yet. Data appears 2-3 days after pages
+                are indexed.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       {/* Error Pages Alert */}
@@ -582,4 +846,16 @@ function PublishBadge({
   return (
     <span className={`text-xs px-1.5 py-0.5 rounded ${color}`}>{label}</span>
   );
+}
+
+function PositionBadge({ position }: { position: number }) {
+  const rounded = position.toFixed(1);
+  const color =
+    position <= 10
+      ? "text-emerald-600 font-medium"
+      : position <= 20
+        ? "text-amber-600"
+        : "text-muted-foreground";
+
+  return <span className={`text-xs ${color}`}>{rounded}</span>;
 }
