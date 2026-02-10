@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { db, users, engagementActions, engagementObjectives } from '@/lib/db';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { canAccessFeature, type PlanId } from '@/lib/plans';
 
 // GET /api/linkedin/engagement - Get today's engagement stats and objectives
 export async function GET() {
@@ -11,6 +12,16 @@ export async function GET() {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check plan access - engagement requires Pro+
+    const [planCheck] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
+    const userPlan = (planCheck?.plan || 'free') as PlanId;
+    if (!canAccessFeature(userPlan, 'engagement')) {
+      return NextResponse.json(
+        { error: 'Engagement tools require a Pro plan or higher. Please upgrade to access this feature.' },
+        { status: 403 }
+      );
     }
 
     const userId = session.user.id;
@@ -92,6 +103,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check plan access - engagement requires Pro+
+    const [postUser] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
+    const postUserPlan = (postUser?.plan || 'free') as PlanId;
+    if (!canAccessFeature(postUserPlan, 'engagement')) {
+      return NextResponse.json(
+        { error: 'Engagement tools require a Pro plan or higher. Please upgrade to access this feature.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { type, linkedinPostId, commentContent } = body;
 
@@ -162,6 +183,16 @@ export async function PUT(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check plan access - engagement requires Pro+
+    const [putUser] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
+    const putUserPlan = (putUser?.plan || 'free') as PlanId;
+    if (!canAccessFeature(putUserPlan, 'engagement')) {
+      return NextResponse.json(
+        { error: 'Engagement tools require a Pro plan or higher. Please upgrade to access this feature.' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

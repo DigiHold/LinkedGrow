@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { savedCarousels } from "@/lib/db/schema";
+import { savedCarousels, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 // GET - Get a single carousel with full slide data
 export async function GET(
@@ -51,6 +52,16 @@ export async function PUT(
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check plan access - carouselGenerator requires Business
+    const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
+    const userPlan = (user?.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "carouselGenerator")) {
+      return NextResponse.json(
+        { error: "Carousel Generator requires a Business plan. Please upgrade to access this feature." },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;

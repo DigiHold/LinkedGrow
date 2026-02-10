@@ -215,6 +215,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check monthly post creation limit for Free plan
+    const userPlan = (user.plan || "free") as PlanId;
+    const postsPerMonthLimit = PLANS[userPlan].limits.postsPerMonth;
+
+    if (postsPerMonthLimit !== -1) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const [postCount] = await db
+        .select({ count: count() })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, user.id),
+            gte(posts.createdAt, startOfMonth)
+          )
+        );
+
+      if (postCount.count >= postsPerMonthLimit) {
+        return NextResponse.json(
+          {
+            error: `You've reached your monthly limit of ${postsPerMonthLimit} posts. Upgrade to Starter for unlimited posts.`,
+            limitReached: true,
+            currentPlan: userPlan,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
       if (!scheduledAt) {

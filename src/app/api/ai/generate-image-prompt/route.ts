@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 // System prompt for generating detailed image prompts (like Blog agent's claude-prompt-generator.js)
 const SYSTEM_PROMPT = `You are an expert at creating highly detailed image generation prompts for Gemini 3 Pro Image and DALL-E 3.
@@ -54,6 +55,16 @@ export async function POST(request: NextRequest) {
     }
 
     const { aiSettingsUser } = result;
+
+    // Check plan access - imageGeneration requires Pro+
+    const userPlan = (aiSettingsUser.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "imageGeneration")) {
+      return NextResponse.json(
+        { error: "Image generation requires a Pro plan or higher. Please upgrade to access this feature." },
+        { status: 403 }
+      );
+    }
+
     const provider = aiSettingsUser.aiProvider || "openai";
 
     // Get per-provider API key based on selected provider (from owner for team members)
@@ -266,10 +277,10 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
   }
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify(requestBody),
     }
   );

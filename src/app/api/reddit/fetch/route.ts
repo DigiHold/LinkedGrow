@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 // Trim Reddit JSON to reduce token count for AI processing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +51,16 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check plan access - redditIdeas requires Starter+
+    const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
+    const userPlan = (user?.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "redditIdeas")) {
+      return NextResponse.json(
+        { error: "Reddit features require a Starter plan or higher. Please upgrade to access this feature." },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

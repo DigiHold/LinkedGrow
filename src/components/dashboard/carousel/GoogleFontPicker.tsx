@@ -124,9 +124,7 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
   if (fontsCache) return fontsCache;
   if (fontsCachePromise) return fontsCachePromise;
 
-  fontsCachePromise = fetch(
-    "https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBwIX97bVWr3-6AIUvGkcNnmFgirefZ6Sw&sort=popularity&subset=latin"
-  )
+  fontsCachePromise = fetch("/api/fonts/google")
     .then((res) => res.json())
     .then((data) => {
       const fonts = data.items

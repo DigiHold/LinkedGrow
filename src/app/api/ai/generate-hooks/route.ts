@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 interface HookPair {
   firstLine: string;
@@ -219,10 +220,11 @@ Example format:
       };
     }
 
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(requestBody),
     });
@@ -325,6 +327,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { user, aiSettingsUser } = result;
+
+    // Check plan access - hooksGenerator requires Pro+
+    const userPlan = (aiSettingsUser.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "hooksGenerator")) {
+      return NextResponse.json(
+        { error: "Hooks Generator requires a Pro plan or higher. Please upgrade to access this feature." },
+        { status: 403 }
+      );
+    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

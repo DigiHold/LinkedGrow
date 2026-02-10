@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 // Define trimmed JSON type
 interface TrimmedRedditJson {
@@ -235,10 +236,11 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
       };
     }
 
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent?key=${apiKey}`, {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(googleRequestBody),
     });
@@ -336,6 +338,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { aiSettingsUser } = result;
+
+    // Check plan access - redditIdeas requires Starter+
+    const userPlan = (aiSettingsUser.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "redditIdeas")) {
+      return NextResponse.json(
+        { error: "Reddit content generation requires a Starter plan or higher. Please upgrade to access this feature." },
+        { status: 403 }
+      );
+    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

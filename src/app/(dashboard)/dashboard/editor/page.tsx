@@ -343,7 +343,10 @@ function EditorContent() {
             mediaInfo,
           }),
         });
-        if (!response.ok) throw new Error("Failed to save draft");
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          throw new Error(err?.error || "Failed to save draft");
+        }
         const data = await response.json();
         setCurrentPostId(data.post.id);
       }
@@ -475,7 +478,10 @@ function EditorContent() {
             mediaInfo,
           }),
         });
-        if (!response.ok) throw new Error("Failed to schedule post");
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          throw new Error(err?.error || "Failed to schedule post");
+        }
       }
 
       setScheduleModal(false);
