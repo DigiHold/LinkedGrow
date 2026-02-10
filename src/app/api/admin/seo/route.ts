@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { BLOG_POSTS } from "@/lib/blog";
 import { getAllPostsWithStatus } from "@/lib/blog";
 import { notifySearchEngines } from "@/lib/search-indexing";
+import fs from "fs";
+import path from "path";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
 
@@ -123,20 +125,69 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Get all public pages that should appear in sitemap
+// Paths to exclude from public page listing (same as sitemap)
+const EXCLUDED_PATHS = [
+  "/dashboard",
+  "/api",
+  "/onboarding",
+  "/checkout",
+  "/maintenance",
+  "/reset-password",
+  "/team/invite",
+];
+
+// Recursively find all page.tsx files and convert to URL paths
+function findAllPages(dir: string, basePath: string = ""): string[] {
+  const pages: string[] = [];
+  try {
+    const items = fs.readdirSync(dir);
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+      const stat = fs.statSync(fullPath);
+      if (stat.isDirectory()) {
+        if (item.startsWith("_") || item === "api" || item === "node_modules") continue;
+        let urlSegment = item;
+        if (item.startsWith("(") && item.endsWith(")")) urlSegment = "";
+        if (item.startsWith("[")) continue;
+        const newBasePath = urlSegment ? `${basePath}/${urlSegment}` : basePath;
+        pages.push(...findAllPages(fullPath, newBasePath));
+      } else if (item === "page.tsx" || item === "page.ts") {
+        pages.push(basePath || "/");
+      }
+    }
+  } catch {
+    // ignore read errors
+  }
+  return pages;
+}
+
+// Convert path to readable label
+function pathToLabel(pagePath: string): string {
+  if (pagePath === "/") return "Homepage";
+  return pagePath
+    .split("/")
+    .filter(Boolean)
+    .map((seg) => seg.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "))
+    .join(" > ");
+}
+
+// Get all public pages by scanning the filesystem (same approach as sitemap.ts)
 function getPublicPages(): { url: string; label: string }[] {
-  return [
-    { url: BASE_URL, label: "Homepage" },
-    { url: `${BASE_URL}/prelaunch`, label: "Pre-launch" },
-    { url: `${BASE_URL}/about`, label: "About" },
-    { url: `${BASE_URL}/blog`, label: "Blog" },
-    { url: `${BASE_URL}/privacy`, label: "Privacy Policy" },
-    { url: `${BASE_URL}/terms`, label: "Terms of Service" },
-    { url: `${BASE_URL}/cookies`, label: "Cookie Policy" },
-    { url: `${BASE_URL}/sign-in`, label: "Sign In" },
-    { url: `${BASE_URL}/sign-up`, label: "Sign Up" },
-    { url: `${BASE_URL}/beta`, label: "Beta" },
-  ];
+  const appDir = path.join(process.cwd(), "src", "app");
+  const allPages = findAllPages(appDir);
+
+  return allPages
+    .filter((pagePath) => {
+      if (EXCLUDED_PATHS.some((excluded) => pagePath.startsWith(excluded))) return false;
+      // Skip individual blog articles - they are tracked separately via blog posts section
+      if (pagePath.startsWith("/blog/")) return false;
+      return true;
+    })
+    .map((pagePath) => ({
+      url: pagePath === "/" ? BASE_URL : `${BASE_URL}${pagePath}`,
+      label: pathToLabel(pagePath),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 // Check if URLs are live (not 404)

@@ -13,6 +13,7 @@ const EXCLUDED_PATHS = [
   "/checkout",
   "/maintenance",
   "/reset-password", // Has dynamic token
+  "/team/invite", // Private team invite page
 ];
 
 // Priority configuration for different page types
@@ -27,6 +28,14 @@ const PRIORITY_CONFIG: Record<string, { priority: number; changeFrequency: "alwa
   "/sign-up": { priority: 0.6, changeFrequency: "monthly" },
   "/forgot-password": { priority: 0.4, changeFrequency: "monthly" },
   "/blog": { priority: 0.9, changeFrequency: "weekly" },
+  "/pricing": { priority: 0.8, changeFrequency: "monthly" },
+};
+
+// Priority for page path prefixes (matched if exact config not found)
+const PREFIX_PRIORITY: Record<string, { priority: number; changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never" }> = {
+  "/for/": { priority: 0.7, changeFrequency: "monthly" },
+  "/use-cases/": { priority: 0.7, changeFrequency: "monthly" },
+  "/industries/": { priority: 0.7, changeFrequency: "monthly" },
 };
 
 // Default priority for pages not in config
@@ -89,14 +98,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Find all pages automatically
   const allPages = findAllPages(appDir);
 
-  // Filter out excluded paths and build sitemap entries
+  // Filter out excluded paths and blog article pages (blog posts are added from DB below)
   const sitemapEntries: MetadataRoute.Sitemap = allPages
     .filter((pagePath) => {
       // Check if this path should be excluded
-      return !EXCLUDED_PATHS.some((excluded) => pagePath.startsWith(excluded));
+      if (EXCLUDED_PATHS.some((excluded) => pagePath.startsWith(excluded))) return false;
+      // Skip individual blog article pages - they are managed via DB (published only)
+      if (pagePath.startsWith("/blog/")) return false;
+      return true;
     })
     .map((pagePath) => {
-      const config = PRIORITY_CONFIG[pagePath] || DEFAULT_CONFIG;
+      const config = PRIORITY_CONFIG[pagePath]
+        || Object.entries(PREFIX_PRIORITY).find(([prefix]) => pagePath.startsWith(prefix))?.[1]
+        || DEFAULT_CONFIG;
 
       return {
         url: pagePath === "/" ? BASE_URL : `${BASE_URL}${pagePath}`,
