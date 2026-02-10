@@ -9,7 +9,7 @@ import { redirectToCheckout } from "@/lib/checkout";
 interface UsageLimitProps {
   userPlan: PlanId;
   currentUsage: number;
-  limitType: "postsPerMonth" | "scheduledPosts" | "savedIdeas" | "imagesPerMonth";
+  limitType: "postsPerMonth" | "scheduledPosts" | "imagesPerMonth";
   userEmail?: string;
   onLimitReached?: () => void;
 }
@@ -17,7 +17,6 @@ interface UsageLimitProps {
 const limitLabels: Record<UsageLimitProps["limitType"], string> = {
   postsPerMonth: "Posts",
   scheduledPosts: "Scheduled Posts",
-  savedIdeas: "Saved Ideas",
   imagesPerMonth: "Images",
 };
 
@@ -118,7 +117,7 @@ export function UsageLimit({
 // Blocking overlay when limit is reached
 interface LimitReachedOverlayProps {
   userPlan: PlanId;
-  limitType: "postsPerMonth" | "scheduledPosts" | "savedIdeas" | "imagesPerMonth";
+  limitType: "postsPerMonth" | "scheduledPosts" | "imagesPerMonth";
   userEmail?: string;
 }
 

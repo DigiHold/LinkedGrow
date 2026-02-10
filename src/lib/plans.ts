@@ -23,7 +23,6 @@ export interface PlanFeatures {
 export interface PlanLimits {
   postsPerMonth: number; // -1 = unlimited
   scheduledPosts: number; // -1 = unlimited
-  savedIdeas: number; // -1 = unlimited
   imagesPerMonth: number; // -1 = unlimited
   features: PlanFeatures;
 }
@@ -46,7 +45,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     limits: {
       postsPerMonth: 3,
       scheduledPosts: 0,
-      savedIdeas: 5,
       imagesPerMonth: 0,
       features: {
         postGeneration: true,
@@ -76,7 +74,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     limits: {
       postsPerMonth: -1, // Unlimited with BYOK
       scheduledPosts: 10,
-      savedIdeas: 50,
       imagesPerMonth: 0,
       features: {
         postGeneration: true,
@@ -107,7 +104,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     limits: {
       postsPerMonth: -1,
       scheduledPosts: -1,
-      savedIdeas: -1,
       imagesPerMonth: -1, // Unlimited with BYOK
       features: {
         postGeneration: true,
@@ -137,7 +133,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     limits: {
       postsPerMonth: -1,
       scheduledPosts: -1,
-      savedIdeas: -1,
       imagesPerMonth: -1,
       features: {
         postGeneration: true,
@@ -263,7 +258,7 @@ export function getRequiredPlanForFeature(
 
 export function isWithinLimit(
   userPlan: PlanId,
-  limitType: "postsPerMonth" | "scheduledPosts" | "savedIdeas" | "imagesPerMonth",
+  limitType: "postsPerMonth" | "scheduledPosts" | "imagesPerMonth",
   currentUsage: number
 ): boolean {
   const limit = PLANS[userPlan].limits[limitType];

@@ -137,12 +137,12 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 
 ## Pricing Plans (from src/lib/plans.ts)
 
-| Plan         | Price  | Posts/Month | Scheduled | Saved Ideas | Images    |
-| ------------ | ------ | ----------- | --------- | ----------- | --------- |
-| **Free**     | $0     | 3           | 0         | 5           | 0         |
-| **Starter**  | $19/mo | Unlimited   | 10        | 50          | 0         |
-| **Pro**      | $39/mo | Unlimited   | Unlimited | Unlimited   | Unlimited |
-| **Business** | $79/mo | Unlimited   | Unlimited | Unlimited   | Unlimited |
+| Plan         | Price  | Posts/Month | Scheduled | Images    |
+| ------------ | ------ | ----------- | --------- | --------- |
+| **Free**     | $0     | 3           | 0         | 0         |
+| **Starter**  | $19/mo | Unlimited   | 10        | 0         |
+| **Pro**      | $39/mo | Unlimited   | Unlimited | Unlimited |
+| **Business** | $79/mo | Unlimited   | Unlimited | Unlimited |
 
 ### Feature Matrix (Accurate from plans.ts)
 
@@ -517,7 +517,6 @@ src/
 
 -   **A/B Testing** - Test different post versions to find best performers
 -   **Team Collaboration** - Invite team members with role-based access (owner/admin/member)
--   **Custom Branding** - Upload logo, set colors, choose fonts for exports
 -   **API Access** - REST API for integrations with custom applications
 -   **API Key Management** - Create/revoke API keys with scopes
 -   **Priority Support** - Dedicated support channel
