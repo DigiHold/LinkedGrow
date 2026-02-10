@@ -495,6 +495,16 @@ export const blogComments = sqliteTable("blog_comments", {
 });
 
 // ============================================
+// SEO Intelligence Cache
+// ============================================
+
+export const seoCache = sqliteTable("seo_cache", {
+  id: text("id").primaryKey(),
+  data: text("data").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 

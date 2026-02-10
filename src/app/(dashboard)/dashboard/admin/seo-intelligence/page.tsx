@@ -224,10 +224,26 @@ export default function SeoIntelligencePage() {
   const [hideCovered, setHideCovered] = useState(true);
   const isAdmin = session?.user?.isAdmin;
 
+  // Restore cached data from database on mount
   useEffect(() => {
-    const saved = localStorage.getItem("seo-intel-last-loaded");
-    if (saved) setLastLoaded(saved);
-  }, []);
+    if (!isAdmin) return;
+    fetch("/api/admin/seo-intelligence/cache")
+      .then((r) => r.json())
+      .then((res) => {
+        if (!res.cached || !res.data) return;
+        const d = res.data;
+        if (d.lastLoaded) setLastLoaded(d.lastLoaded);
+        if (d.overview) setOverview(d.overview);
+        if (d.siteKeywords) setSiteKeywords(d.siteKeywords);
+        if (d.mergedGaps) setMergedGaps(d.mergedGaps);
+        if (d.mergedGapsTotal) setMergedGapsTotal(d.mergedGapsTotal);
+        if (d.mergedSuggestions) setMergedSuggestions(d.mergedSuggestions);
+        if (d.mergedSuggestionsTotal) setMergedSuggestionsTotal(d.mergedSuggestionsTotal);
+        if (d.analyzedSeeds) setAnalyzedSeeds(d.analyzedSeeds);
+        if (d.activeTab) setActiveTab(d.activeTab);
+      })
+      .catch(() => {});
+  }, [isAdmin]);
 
   const postApi = async (body: Record<string, string>) =>
     fetch("/api/admin/seo-intelligence", {
@@ -276,8 +292,10 @@ export default function SeoIntelligencePage() {
       const kwResults = rest.slice(AUTO_COMPETITORS.length) as { seed: string; json: Record<string, unknown> }[];
 
       // Overview
+      let overviewData: OverviewData;
       if (overviewRes.ok) {
-        setOverview(await overviewRes.json());
+        overviewData = await overviewRes.json();
+        setOverview(overviewData);
       } else {
         const json = await overviewRes.json();
         setError(json.error || "Failed to load");
@@ -286,9 +304,11 @@ export default function SeoIntelligencePage() {
       }
 
       // Site keywords
+      let siteKwData: KeywordSuggestion[] | null = null;
       const siteKwJson = await siteKwRes.json();
       if (siteKwJson.success) {
-        setSiteKeywords(siteKwJson.suggestions.suggestions);
+        siteKwData = siteKwJson.suggestions.suggestions;
+        setSiteKeywords(siteKwData);
       }
 
       // Merge content gaps (deduplicate by keyword, track which competitors)
@@ -310,7 +330,8 @@ export default function SeoIntelligencePage() {
           }
         }
       }
-      setMergedGaps(Array.from(gapMap.values()).sort((a, b) => b.searchVolume - a.searchVolume));
+      const sortedGaps = Array.from(gapMap.values()).sort((a, b) => b.searchVolume - a.searchVolume);
+      setMergedGaps(sortedGaps);
       setMergedGapsTotal(totalGaps);
 
       // Merge keyword suggestions (deduplicate by keyword)
@@ -326,13 +347,30 @@ export default function SeoIntelligencePage() {
           }
         }
       }
-      setMergedSuggestions(Array.from(kwMap.values()).sort((a, b) => b.searchVolume - a.searchVolume));
+      const sortedSuggestions = Array.from(kwMap.values()).sort((a, b) => b.searchVolume - a.searchVolume);
+      setMergedSuggestions(sortedSuggestions);
       setMergedSuggestionsTotal(totalKw);
 
       setActiveTab("gaps");
       const now = new Date().toISOString();
       setLastLoaded(now);
-      localStorage.setItem("seo-intel-last-loaded", now);
+
+      // Persist all results to database
+      fetch("/api/admin/seo-intelligence/cache", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lastLoaded: now,
+          overview: overviewData,
+          siteKeywords: siteKwData,
+          mergedGaps: sortedGaps,
+          mergedGapsTotal: totalGaps,
+          mergedSuggestions: sortedSuggestions,
+          mergedSuggestionsTotal: totalKw,
+          analyzedSeeds: selectedSeeds,
+          activeTab: "gaps",
+        }),
+      }).catch(() => {});
     } catch {
       setError("Failed to connect to API");
     } finally {
