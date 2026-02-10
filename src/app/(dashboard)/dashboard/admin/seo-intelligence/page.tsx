@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   Brain,
@@ -8,14 +8,15 @@ import {
   Target,
   Users,
   TrendingUp,
-  ExternalLink,
   Loader2,
-  RefreshCw,
   ChevronRight,
   Lightbulb,
   BarChart3,
   FileText,
   Globe,
+  Zap,
+  Clock,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -69,8 +70,11 @@ interface OverviewData {
 
 export default function SeoIntelligencePage() {
   const { data: session } = useSession();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [siteKeywords, setSiteKeywords] = useState<KeywordSuggestion[] | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
     "overview" | "gaps" | "research"
@@ -90,31 +94,54 @@ export default function SeoIntelligencePage() {
   const [suggestionsTotal, setSuggestionsTotal] = useState(0);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
-  // Site keywords state
-  const [siteKeywords, setSiteKeywords] = useState<KeywordSuggestion[] | null>(
-    null
-  );
-  const [siteKeywordsLoading, setSiteKeywordsLoading] = useState(false);
+  // Last loaded timestamp (persisted in localStorage)
+  const [lastLoaded, setLastLoaded] = useState<string | null>(null);
 
   const isAdmin = session?.user?.isAdmin;
 
-  const fetchOverview = async () => {
+  // Load last fetched date from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("seo-intel-last-loaded");
+    if (saved) setLastLoaded(saved);
+  }, []);
+
+  // Single button: fetches overview + site keywords in parallel
+  const runFullAnalysis = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/seo-intelligence");
-      if (res.ok) {
-        setOverview(await res.json());
+      const [overviewRes, siteKwRes] = await Promise.all([
+        fetch("/api/admin/seo-intelligence"),
+        fetch("/api/admin/seo-intelligence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "keywords-for-site" }),
+        }),
+      ]);
+
+      if (overviewRes.ok) {
+        setOverview(await overviewRes.json());
       } else {
-        const json = await res.json();
-        setError(json.error || "Failed to load");
+        const json = await overviewRes.json();
+        setError(json.error || "Failed to load overview");
+        setLoading(false);
+        return;
       }
+
+      const siteKwJson = await siteKwRes.json();
+      if (siteKwJson.success) {
+        setSiteKeywords(siteKwJson.suggestions.suggestions);
+      }
+
+      const now = new Date().toISOString();
+      setLastLoaded(now);
+      localStorage.setItem("seo-intel-last-loaded", now);
     } catch {
-      setError("Failed to connect");
+      setError("Failed to connect to API");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchContentGaps = async (competitor: string) => {
     setGapsLoading(true);
@@ -156,29 +183,6 @@ export default function SeoIntelligencePage() {
     }
   };
 
-  const fetchSiteKeywords = async () => {
-    setSiteKeywordsLoading(true);
-    try {
-      const res = await fetch("/api/admin/seo-intelligence", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "keywords-for-site" }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setSiteKeywords(json.suggestions.suggestions);
-      }
-    } catch {
-      console.error("Failed to fetch site keywords");
-    } finally {
-      setSiteKeywordsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAdmin) fetchOverview();
-  }, [isAdmin]);
-
   if (!isAdmin) {
     return (
       <div className="p-8 text-center">
@@ -187,25 +191,21 @@ export default function SeoIntelligencePage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span>Analyzing your SEO landscape...</span>
-      </div>
-    );
-  }
+  const formatLastLoaded = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-  if (error) {
-    return (
-      <div className="p-8 text-center space-y-4">
-        <p className="text-red-500">{error}</p>
-        <Button onClick={fetchOverview}>Retry</Button>
-      </div>
-    );
-  }
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago (${d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })})`;
+  };
 
-  if (!overview) return null;
+  const hasData = overview !== null;
 
   const tabs = [
     { id: "overview" as const, label: "Overview", icon: BarChart3 },
@@ -216,66 +216,129 @@ export default function SeoIntelligencePage() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Brain className="w-6 h-6 text-violet-600" />
-            SEO Intelligence
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Keyword research, competitor analysis, and content recommendations
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={fetchOverview}>
-          <RefreshCw className="w-4 h-4 mr-1" />
-          Refresh
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Brain className="w-6 h-6 text-violet-600" />
+          SEO Intelligence
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Keyword rankings, competitor analysis, and content recommendations
+        </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "border-violet-600 text-violet-600"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+      {/* Analysis Button */}
+      <div className="border rounded-xl p-5 bg-linear-to-r from-violet-50 to-blue-50 dark:from-violet-950/30 dark:to-blue-950/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <DollarSign className="w-4 h-4" />
+              <span>Estimated cost: ~$0.07 per analysis</span>
+            </div>
+            {lastLoaded && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span>Last analysis: {formatLastLoaded(lastLoaded)}</span>
+              </div>
+            )}
+            {!lastLoaded && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span>No analysis run yet</span>
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={runFullAnalysis}
+            disabled={loading}
+            className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-2.5 h-auto"
           >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                {hasData ? "Refresh Analysis" : "Run SEO Analysis"}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "overview" && (
-        <OverviewTab overview={overview} onFetchSiteKeywords={fetchSiteKeywords} siteKeywords={siteKeywords} siteKeywordsLoading={siteKeywordsLoading} />
+      {/* Error */}
+      {error && (
+        <div className="border border-red-200 bg-red-50 dark:bg-red-950/20 rounded-xl p-4 text-red-600 text-sm">
+          {error}
+        </div>
       )}
-      {activeTab === "gaps" && (
-        <ContentGapsTab
-          competitors={overview.competitors}
-          selectedCompetitor={selectedCompetitor}
-          onSelectCompetitor={(c) => {
-            setSelectedCompetitor(c);
-            fetchContentGaps(c);
-          }}
-          gaps={gaps}
-          gapsTotal={gapsTotal}
-          loading={gapsLoading}
-        />
+
+      {/* Loading state */}
+      {loading && !hasData && (
+        <div className="py-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+          <span className="text-sm">Running full SEO analysis - this takes 10-20 seconds...</span>
+        </div>
       )}
-      {activeTab === "research" && (
-        <KeywordResearchTab
-          seedKeyword={seedKeyword}
-          onSeedChange={setSeedKeyword}
-          onSearch={() => fetchKeywordSuggestions(seedKeyword)}
-          suggestions={suggestions}
-          suggestionsTotal={suggestionsTotal}
-          loading={suggestionsLoading}
-        />
+
+      {/* No data yet */}
+      {!hasData && !loading && !error && (
+        <div className="py-16 flex flex-col items-center justify-center gap-3 text-muted-foreground border rounded-xl">
+          <Brain className="w-10 h-10 text-violet-300" />
+          <p className="text-sm">Click &quot;Run SEO Analysis&quot; to load your keyword rankings, competitors, and site keyword opportunities.</p>
+        </div>
+      )}
+
+      {/* Data loaded - show tabs */}
+      {hasData && (
+        <>
+          {/* Tabs */}
+          <div className="flex gap-1 border-b">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? "border-violet-600 text-violet-600"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === "overview" && (
+            <OverviewTab overview={overview} siteKeywords={siteKeywords} />
+          )}
+          {activeTab === "gaps" && (
+            <ContentGapsTab
+              competitors={overview.competitors}
+              selectedCompetitor={selectedCompetitor}
+              onSelectCompetitor={(c) => {
+                setSelectedCompetitor(c);
+                fetchContentGaps(c);
+              }}
+              gaps={gaps}
+              gapsTotal={gapsTotal}
+              loading={gapsLoading}
+            />
+          )}
+          {activeTab === "research" && (
+            <KeywordResearchTab
+              seedKeyword={seedKeyword}
+              onSeedChange={setSeedKeyword}
+              onSearch={() => fetchKeywordSuggestions(seedKeyword)}
+              suggestions={suggestions}
+              suggestionsTotal={suggestionsTotal}
+              loading={suggestionsLoading}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -285,14 +348,10 @@ export default function SeoIntelligencePage() {
 
 function OverviewTab({
   overview,
-  onFetchSiteKeywords,
   siteKeywords,
-  siteKeywordsLoading,
 }: {
   overview: OverviewData;
-  onFetchSiteKeywords: () => void;
   siteKeywords: KeywordSuggestion[] | null;
-  siteKeywordsLoading: boolean;
 }) {
   const { rankedKeywords, competitors } = overview;
 
@@ -456,39 +515,17 @@ function OverviewTab({
 
       {/* Keyword Opportunities for Site */}
       <div className="border rounded-xl overflow-hidden">
-        <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+        <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
           <h2 className="font-semibold flex items-center gap-2">
             <Lightbulb className="w-4 h-4" />
             Keyword Opportunities for linkedgrow.ai
           </h2>
-          {!siteKeywords && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onFetchSiteKeywords}
-              disabled={siteKeywordsLoading}
-            >
-              {siteKeywordsLoading ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5 mr-1" />
-              )}
-              Discover Keywords
-            </Button>
-          )}
         </div>
-        {siteKeywordsLoading && !siteKeywords && (
-          <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Finding keyword opportunities...</span>
-          </div>
-        )}
-        {siteKeywords && (
+        {siteKeywords && siteKeywords.length > 0 ? (
           <KeywordTable keywords={siteKeywords} />
-        )}
-        {!siteKeywords && !siteKeywordsLoading && (
-          <p className="p-6 text-center text-sm text-muted-foreground">
-            Click &quot;Discover Keywords&quot; to find keyword opportunities relevant to your site. (~$0.03 per run)
+        ) : (
+          <p className="p-6 text-center text-muted-foreground">
+            No keyword opportunities found yet. This data improves as your site gains more content.
           </p>
         )}
       </div>
@@ -522,7 +559,7 @@ function ContentGapsTab({
         </h2>
         <p className="text-sm text-muted-foreground">
           Select a competitor to see keywords they rank for that you
-          don&apos;t. These are opportunities for new pages or articles.
+          don&apos;t. These are opportunities for new pages or articles. (~$0.02 per query)
         </p>
         <div className="flex flex-wrap gap-2">
           {competitors.slice(0, 10).map((comp) => (
@@ -669,7 +706,7 @@ function KeywordResearchTab({
         </h2>
         <p className="text-sm text-muted-foreground">
           Enter a seed keyword to find related keywords with search volume,
-          difficulty, and intent data.
+          difficulty, and intent data. (~$0.02 per search)
         </p>
         <div className="flex gap-2">
           <input
@@ -694,9 +731,6 @@ function KeywordResearchTab({
             )}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          ~$0.02 per search. Results show related keywords containing your seed term.
-        </p>
       </div>
 
       {loading && (
