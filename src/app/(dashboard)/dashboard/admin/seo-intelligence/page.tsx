@@ -17,6 +17,9 @@ import {
   Zap,
   Clock,
   DollarSign,
+  Check,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -159,9 +162,32 @@ interface KeywordSuggestion {
   intent: string;
 }
 
+interface ExistingContent {
+  slug: string;
+  title: string;
+  url: string;
+  keywords: string[];
+}
+
 interface OverviewData {
   rankedKeywords: { total: number; keywords: RankedKeyword[] };
   competitors: Competitor[];
+  existingContent: ExistingContent[];
+}
+
+// Check if a keyword is covered by existing content
+function findCoveringPage(keyword: string, content: ExistingContent[]): ExistingContent | null {
+  const kw = keyword.toLowerCase().trim();
+  for (const page of content) {
+    // Check exact keyword match
+    for (const pk of page.keywords) {
+      if (pk === kw || kw.includes(pk) || pk.includes(kw)) return page;
+    }
+    // Check slug match (e.g. "linkedin-algorithm" matches "linkedin algorithm")
+    const slugWords = page.slug.replace(/-\d{4}$/, "").replace(/-/g, " ");
+    if (kw === slugWords || kw.includes(slugWords) || slugWords.includes(kw)) return page;
+  }
+  return null;
 }
 
 // Main Page
@@ -195,6 +221,7 @@ export default function SeoIntelligencePage() {
 
   const [lastLoaded, setLastLoaded] = useState<string | null>(null);
   const [analyzedSeeds, setAnalyzedSeeds] = useState<string[]>([]);
+  const [hideCovered, setHideCovered] = useState(true);
   const isAdmin = session?.user?.isAdmin;
 
   useEffect(() => {
@@ -458,6 +485,20 @@ export default function SeoIntelligencePage() {
             ))}
           </div>
 
+          {/* Hide covered toggle */}
+          {(activeTab === "gaps" || activeTab === "research") && overview.existingContent.length > 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {overview.existingContent.length} existing pages tracked - keywords already covered are {hideCovered ? "hidden" : "shown with badge"}
+              </p>
+              <button onClick={() => setHideCovered(!hideCovered)}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
+                {hideCovered ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                {hideCovered ? "Show covered keywords" : "Hide covered keywords"}
+              </button>
+            </div>
+          )}
+
           {activeTab === "overview" && <OverviewTab overview={overview} siteKeywords={siteKeywords} />}
           {activeTab === "gaps" && (
             <ContentGapsTab
@@ -466,6 +507,7 @@ export default function SeoIntelligencePage() {
               onSelectCompetitor={(c) => { setSelectedCompetitor(c); fetchContentGaps(c); }}
               onShowMerged={() => { setSelectedCompetitor(""); setSingleGaps(null); }}
               singleGaps={singleGaps} singleGapsTotal={singleGapsTotal} loading={gapsLoading}
+              existingContent={overview.existingContent} hideCovered={hideCovered}
             />
           )}
           {activeTab === "research" && (
@@ -476,6 +518,7 @@ export default function SeoIntelligencePage() {
               onShowMerged={() => { setSeedKeyword(""); setSingleSuggestions(null); }}
               singleSuggestions={singleSuggestions} singleSuggestionsTotal={singleSuggestionsTotal}
               loading={suggestionsLoading}
+              existingContent={overview.existingContent} hideCovered={hideCovered}
             />
           )}
         </>
@@ -563,17 +606,20 @@ function OverviewTab({ overview, siteKeywords }: { overview: OverviewData; siteK
 
 // ====== Content Gaps Tab ======
 
-function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedCompetitor, onSelectCompetitor, onShowMerged, singleGaps, singleGapsTotal, loading }: {
+function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedCompetitor, onSelectCompetitor, onShowMerged, singleGaps, singleGapsTotal, loading, existingContent, hideCovered }: {
   mergedGaps: ContentGap[] | null; mergedGapsTotal: number; competitors: Competitor[];
   selectedCompetitor: string; onSelectCompetitor: (d: string) => void; onShowMerged: () => void;
   singleGaps: ContentGap[] | null; singleGapsTotal: number; loading: boolean;
+  existingContent: ExistingContent[]; hideCovered: boolean;
 }) {
   const autoDetected = competitors.map((c) => c.domain);
   const allCompetitors = [...autoDetected, ...ALL_COMPETITORS.filter((kc) => !autoDetected.includes(kc))];
 
-  const displayGaps = selectedCompetitor && singleGaps ? singleGaps : mergedGaps;
+  const rawGaps = selectedCompetitor && singleGaps ? singleGaps : mergedGaps;
   const displayTotal = selectedCompetitor && singleGaps ? singleGapsTotal : mergedGapsTotal;
   const isMerged = !selectedCompetitor || !singleGaps;
+  const displayGaps = rawGaps && hideCovered ? rawGaps.filter((g) => !findCoveringPage(g.keyword, existingContent)) : rawGaps;
+  const coveredCount = rawGaps ? rawGaps.length - (displayGaps?.length || 0) : 0;
 
   return (
     <div className="space-y-6">
@@ -620,7 +666,10 @@ function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedComp
               {isMerged ? `Gaps vs ${AUTO_COMPETITORS.length} competitors` : `Gaps vs ${selectedCompetitor}`}
               <span className="text-xs font-normal text-muted-foreground ml-1">({displayTotal.toLocaleString()} total, {displayGaps.length} shown)</span>
             </h2>
-            <p className="text-xs text-muted-foreground mt-1">Target high volume + low difficulty for quick wins</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Target high volume + low difficulty for quick wins
+              {coveredCount > 0 && hideCovered && <span className="ml-2 text-emerald-600">({coveredCount} covered keywords hidden)</span>}
+            </p>
           </div>
           {displayGaps.length > 0 ? (
             <div className="overflow-x-auto">
@@ -630,16 +679,22 @@ function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedComp
                   <th className="text-right p-2 hidden sm:table-cell">Intent</th><th className="text-right p-2 hidden md:table-cell">CPC</th>
                   <th className="text-left p-2 pl-3 hidden lg:table-cell">Source</th>
                 </tr></thead>
-                <tbody className="divide-y">{displayGaps.map((gap) => (
-                  <tr key={gap.keyword} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-                    <td className="p-2 pl-3 font-medium">{gap.keyword}</td>
+                <tbody className="divide-y">{displayGaps.map((gap) => {
+                  const coverPage = findCoveringPage(gap.keyword, existingContent);
+                  return (
+                  <tr key={gap.keyword} className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 ${coverPage ? "opacity-60" : ""}`}>
+                    <td className="p-2 pl-3 font-medium">
+                      <span>{gap.keyword}</span>
+                      {coverPage && <CoveredBadge page={coverPage} />}
+                    </td>
                     <td className="p-2 text-right font-medium text-blue-600">{gap.searchVolume.toLocaleString()}</td>
                     <td className="p-2 text-right"><DifficultyBadge difficulty={gap.difficulty} /></td>
                     <td className="p-2 text-right hidden sm:table-cell"><IntentBadge intent={gap.intent} /></td>
                     <td className="p-2 text-right text-muted-foreground hidden md:table-cell">${gap.cpc.toFixed(2)}</td>
                     <td className="p-2 pl-3 hidden lg:table-cell text-xs text-muted-foreground truncate max-w-40">{gap.source || selectedCompetitor}</td>
                   </tr>
-                ))}</tbody>
+                  );
+                })}</tbody>
               </table>
             </div>
           ) : <p className="p-6 text-center text-muted-foreground">No gaps found. Try a different competitor.</p>}
@@ -651,14 +706,17 @@ function ContentGapsTab({ mergedGaps, mergedGapsTotal, competitors, selectedComp
 
 // ====== Keyword Research Tab ======
 
-function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKeyword, onSeedChange, onSearch, onShowMerged, singleSuggestions, singleSuggestionsTotal, loading }: {
+function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKeyword, onSeedChange, onSearch, onShowMerged, singleSuggestions, singleSuggestionsTotal, loading, existingContent, hideCovered }: {
   mergedSuggestions: KeywordSuggestion[] | null; mergedSuggestionsTotal: number;
   seedKeyword: string; onSeedChange: (v: string) => void; onSearch: (kw: string) => void; onShowMerged: () => void;
   singleSuggestions: KeywordSuggestion[] | null; singleSuggestionsTotal: number; loading: boolean;
+  existingContent: ExistingContent[]; hideCovered: boolean;
 }) {
-  const displaySuggestions = singleSuggestions || mergedSuggestions;
+  const rawSuggestions = singleSuggestions || mergedSuggestions;
   const displayTotal = singleSuggestions ? singleSuggestionsTotal : mergedSuggestionsTotal;
   const isMerged = !singleSuggestions;
+  const displaySuggestions = rawSuggestions && hideCovered ? rawSuggestions.filter((s) => !findCoveringPage(s.keyword, existingContent)) : rawSuggestions;
+  const coveredCount = rawSuggestions ? rawSuggestions.length - (displaySuggestions?.length || 0) : 0;
 
   return (
     <div className="space-y-6">
@@ -715,9 +773,12 @@ function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKey
               {isMerged ? "Keywords from 5 random topics" : `Keywords for "${seedKeyword}"`}
               <span className="text-xs font-normal text-muted-foreground ml-1">({displayTotal.toLocaleString()} total, {displaySuggestions.length} shown)</span>
             </h2>
-            <p className="text-xs text-muted-foreground mt-1">Target high volume + low difficulty for quick wins</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Target high volume + low difficulty for quick wins
+              {coveredCount > 0 && hideCovered && <span className="ml-2 text-emerald-600">({coveredCount} covered keywords hidden)</span>}
+            </p>
           </div>
-          <KeywordTable keywords={displaySuggestions} />
+          <KeywordTable keywords={displaySuggestions} existingContent={existingContent} />
         </div>
       )}
     </div>
@@ -726,7 +787,7 @@ function KeywordResearchTab({ mergedSuggestions, mergedSuggestionsTotal, seedKey
 
 // ====== Shared Components ======
 
-function KeywordTable({ keywords }: { keywords: KeywordSuggestion[] }) {
+function KeywordTable({ keywords, existingContent }: { keywords: KeywordSuggestion[]; existingContent?: ExistingContent[] }) {
   if (!keywords.length) return <p className="p-6 text-center text-muted-foreground">No keywords found.</p>;
   return (
     <div className="overflow-x-auto">
@@ -736,16 +797,22 @@ function KeywordTable({ keywords }: { keywords: KeywordSuggestion[] }) {
           <th className="text-right p-2 hidden sm:table-cell">Competition</th><th className="text-right p-2 hidden md:table-cell">Intent</th>
           <th className="text-right p-2 pr-3 hidden md:table-cell">CPC</th>
         </tr></thead>
-        <tbody className="divide-y">{keywords.map((kw) => (
-          <tr key={kw.keyword} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-            <td className="p-2 pl-3 font-medium">{kw.keyword}</td>
+        <tbody className="divide-y">{keywords.map((kw) => {
+          const coverPage = existingContent ? findCoveringPage(kw.keyword, existingContent) : null;
+          return (
+          <tr key={kw.keyword} className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 ${coverPage ? "opacity-60" : ""}`}>
+            <td className="p-2 pl-3 font-medium">
+              <span>{kw.keyword}</span>
+              {coverPage && <CoveredBadge page={coverPage} />}
+            </td>
             <td className="p-2 text-right font-medium text-blue-600">{kw.searchVolume.toLocaleString()}</td>
             <td className="p-2 text-right"><DifficultyBadge difficulty={kw.difficulty} /></td>
             <td className="p-2 text-right hidden sm:table-cell"><CompetitionBadge level={kw.competition} /></td>
             <td className="p-2 text-right hidden md:table-cell"><IntentBadge intent={kw.intent} /></td>
             <td className="p-2 pr-3 text-right text-muted-foreground hidden md:table-cell">${kw.cpc.toFixed(2)}</td>
           </tr>
-        ))}</tbody>
+          );
+        })}</tbody>
       </table>
     </div>
   );
@@ -787,4 +854,13 @@ function IntentBadge({ intent }: { intent: string }) {
 function CompetitionBadge({ level }: { level: string }) {
   const color = level === "LOW" ? "text-emerald-600" : level === "MEDIUM" ? "text-amber-600" : level === "HIGH" ? "text-red-600" : "text-muted-foreground";
   return <span className={`text-xs ${color}`}>{level}</span>;
+}
+
+function CoveredBadge({ page }: { page: ExistingContent }) {
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" title={page.title}>
+      <Check className="w-3 h-3" />
+      <a href={`https://linkedgrow.ai${page.url}`} target="_blank" rel="noopener noreferrer" className="hover:underline truncate max-w-32">{page.url}</a>
+    </span>
+  );
 }

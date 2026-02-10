@@ -8,10 +8,11 @@ import {
   getKeywordsForSite,
   isConfigured,
 } from "@/lib/dataforseo";
+import { BLOG_POSTS } from "@/lib/blog";
 
 const OUR_DOMAIN = "linkedgrow.ai";
 
-// GET - Fetch overview data (ranked keywords + competitors)
+// GET - Fetch overview data (ranked keywords + competitors + existing content)
 export async function GET() {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -31,9 +32,18 @@ export async function GET() {
       getCompetitors(OUR_DOMAIN, 20),
     ]);
 
+    // Return existing content so frontend can cross-reference
+    const existingContent = BLOG_POSTS.map((post) => ({
+      slug: post.slug,
+      title: post.title,
+      url: `/blog/${post.slug}`,
+      keywords: post.keywords.map((k) => k.toLowerCase()),
+    }));
+
     return NextResponse.json({
       rankedKeywords: rankedData,
       competitors,
+      existingContent,
     });
   } catch (error) {
     console.error("SEO Intelligence GET error:", error);
