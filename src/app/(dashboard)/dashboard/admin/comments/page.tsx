@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Suspense } from "react";
 import { MessageSquare, Check, Trash2, X, ExternalLink, Mail, User, Reply, Send } from "lucide-react";
 
@@ -13,12 +14,15 @@ interface AdminComment {
   content: string;
   isApproved: boolean;
   parentId: string | null;
+  isTeam: boolean | null;
   createdAt: string;
 }
 
 function CommentsContent() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const highlightId = searchParams.get("highlight");
+  const adminName = session?.user?.name || "Admin";
 
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +196,7 @@ function CommentsContent() {
           {filteredComments.map((comment) => {
             const isPending = !comment.isApproved;
             const isHighlighted = comment.id === highlightId;
-            const isTeam = comment.authorName === "LinkedGrow Team";
+            const isTeam = !!comment.isTeam;
             const parentAuthor = getParentAuthor(comment.parentId);
 
             return (
@@ -335,7 +339,7 @@ function CommentsContent() {
                     <div className="rounded-lg border border-cyan-200 dark:border-cyan-800 p-3 bg-cyan-50/50 dark:bg-cyan-950/20">
                       <div className="flex items-center gap-2 mb-2 text-xs font-medium text-cyan-700 dark:text-cyan-400">
                         <Reply className="w-3.5 h-3.5" />
-                        Replying as LinkedGrow Team
+                        Replying as {adminName} (LinkedGrow Team)
                       </div>
                       <textarea
                         value={replyContent}
