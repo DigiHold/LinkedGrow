@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/language-selector";
 import { User } from "lucide-react";
 
 interface PrelaunchHeaderProps {
@@ -39,7 +38,6 @@ export function PrelaunchHeader({ showCountdown = false, timeLeft }: PrelaunchHe
               <span>{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s</span>
             </div>
           )}
-          <LanguageSelector />
           {status === "authenticated" && session?.user ? (
             // User is logged in - show avatar/icon linking to dashboard
             <Link href="/dashboard" className="flex items-center">
