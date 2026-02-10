@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { notifySearchEngines } from "@/lib/search-indexing";
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
@@ -65,12 +66,20 @@ export async function POST(request: NextRequest) {
     revalidatePath(`/blog/${slug}`);
     revalidatePath("/blog");
 
-    console.log(`Blog post published: ${slug}`);
+    // Notify search engines for instant indexing
+    const BASE_URL =
+      process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
+    const indexingResult = await notifySearchEngines([
+      `${BASE_URL}/blog/${slug}`,
+    ]);
+
+    console.log(`Blog post published: ${slug}`, indexingResult);
 
     return NextResponse.json({
       success: true,
       slug,
       publishedAt: now.toISOString(),
+      indexing: indexingResult,
     });
   } catch (error) {
     console.error("QStash publish-blog error:", error);

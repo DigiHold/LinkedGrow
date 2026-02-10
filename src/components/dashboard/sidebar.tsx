@@ -29,6 +29,7 @@ import {
   Shield,
   Database,
   CreditCard,
+  Search,
 } from "lucide-react";
 
 // Reddit icon component
@@ -488,6 +489,16 @@ export function Sidebar() {
                   >
                     <Users className="w-4 h-4" />
                     Users
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/seo");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                    SEO
                   </button>
                   <button
                     onClick={() => {
