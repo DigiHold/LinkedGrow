@@ -241,11 +241,12 @@ export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): s
             <!-- Footer -->
             <div class="email-footer">
               <div class="social-links">
-                <a href="https://linkedin.com/company/linkedgrow" class="social-link">
-                  <img src="https://linkedgrow.ai/email/linkedin-icon.png" alt="LinkedIn" width="24" height="24" style="display: inline-block;">
+                <a href="https://linkedin.com/company/linkedgrow" class="social-link" style="color: #06B6D4; text-decoration: none; font-size: 14px; font-weight: 600;">
+                  LinkedIn
                 </a>
-                <a href="https://twitter.com/linkedgrow" class="social-link">
-                  <img src="https://linkedgrow.ai/email/x-icon.png" alt="X" width="24" height="24" style="display: inline-block;">
+                <span style="color: #cbd5e1; margin: 0 4px;">|</span>
+                <a href="https://twitter.com/linkedgrow" class="social-link" style="color: #06B6D4; text-decoration: none; font-size: 14px; font-weight: 600;">
+                  X (Twitter)
                 </a>
               </div>
               <p class="footer-text">
