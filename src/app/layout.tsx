@@ -55,8 +55,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
-        width: 1920,
-        height: 1080,
+        width: 1200,
+        height: 630,
         alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
       },
     ],

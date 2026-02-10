@@ -77,12 +77,36 @@ SSH authentication is automatic.
 A default Open Graph image is set in `src/app/layout.tsx` and applies to **all pages** automatically:
 
 ```
-https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.avif
+https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp
 ```
 
 - Blog articles override this with their own featured image via `openGraph.images` in the article's metadata
 - To set a custom OG image for a specific page, add `openGraph.images` to that page's metadata export
 - **Never remove the default** from `layout.tsx` - it's the fallback for every page
+
+### CRITICAL: Every new page MUST include OG + Twitter images
+
+When creating ANY new page with `export const metadata`, you MUST always include `images` in both the `openGraph` and `twitter` sections. The `layout.tsx` default is NOT enough - social platforms often only read page-level meta tags when sharing links.
+
+```typescript
+openGraph: {
+  // ...title, description, url, siteName, type
+  images: [
+    {
+      url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+      width: 1200,
+      height: 630,
+      alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
+    },
+  ],
+},
+twitter: {
+  // ...card, title, description
+  images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
+},
+```
+
+**Never skip this.** If a page has no custom OG image, use the default URL above.
 
 ## Caching Strategy
 
