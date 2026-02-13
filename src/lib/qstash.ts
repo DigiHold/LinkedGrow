@@ -3,6 +3,7 @@ import { Client } from "@upstash/qstash";
 // Initialize QStash client
 const qstash = new Client({
   token: process.env.QSTASH_TOKEN!,
+  baseUrl: process.env.QSTASH_URL,
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
