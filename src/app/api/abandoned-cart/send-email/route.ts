@@ -51,16 +51,26 @@ export async function POST(request: NextRequest) {
     // Verify the request is from QStash
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
+      console.error("QStash abandoned-cart: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
-    const isValid = await receiver.verify({
-      signature,
-      body,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/abandoned-cart/send-email`,
-    });
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/abandoned-cart/send-email`;
+
+    let isValid = false;
+    try {
+      isValid = await receiver.verify({ signature, body, url: verifyUrl });
+    } catch (verifyError) {
+      console.error("QStash abandoned-cart signature verification failed:", {
+        verifyUrl,
+        error: verifyError instanceof Error ? verifyError.message : verifyError,
+        bodyPreview: body.substring(0, 200),
+      });
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
     if (!isValid) {
+      console.error("QStash abandoned-cart: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 

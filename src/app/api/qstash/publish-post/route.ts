@@ -19,16 +19,26 @@ export async function POST(request: NextRequest) {
     // Verify the request is from QStash
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
+      console.error("QStash publish-post: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
-    const isValid = await receiver.verify({
-      signature,
-      body,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/qstash/publish-post`,
-    });
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qstash/publish-post`;
+
+    let isValid = false;
+    try {
+      isValid = await receiver.verify({ signature, body, url: verifyUrl });
+    } catch (verifyError) {
+      console.error("QStash publish-post signature verification failed:", {
+        verifyUrl,
+        error: verifyError instanceof Error ? verifyError.message : verifyError,
+        bodyPreview: body.substring(0, 200),
+      });
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
     if (!isValid) {
+      console.error("QStash publish-post: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
