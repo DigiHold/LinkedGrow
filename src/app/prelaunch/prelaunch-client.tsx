@@ -1330,12 +1330,12 @@ function ComparisonSection() {
 
 function TestimonialsCarousel() {
   const testimonials = [
-    { quote: "I went from 200 to 15K followers in 3 months. The viral analysis is insane.", author: "Sarah M.", role: "Marketing Director", metric: "+7,400%" },
+    { quote: "The voice training nailed my style from just 5 sample posts. Clients think I write every post myself. The BYOK model means I pay $3/month for unlimited generations.", author: "Laura W.", role: "Freelance Writer", metric: "+1,200%" },
     { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings" },
     { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%" },
     { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%" },
     { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%" },
-    { quote: "The scheduling AI is scary accurate. Posts always hit peak engagement.", author: "David K.", role: "Consultant", metric: "+210%" },
+    { quote: "The Reddit importer is a goldmine. I find trending topics, turn them into LinkedIn posts in seconds, and never run out of content ideas.", author: "Daniel F.", role: "Growth Marketer", metric: "+180%" },
     { quote: "Saved 15 hours per week on content creation. ROI is incredible.", author: "Lisa T.", role: "Agency Owner", metric: "15h saved" },
     { quote: "Best investment for my LinkedIn growth. Paid for itself in the first week.", author: "Tom R.", role: "B2B Sales", metric: "5x ROI" },
   ];
