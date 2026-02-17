@@ -35,16 +35,33 @@ export async function POST(request: NextRequest) {
 
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
+      console.error("QStash index-sitemap: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
-    const isValid = await receiver.verify({
-      signature,
-      body,
-      url: `${BASE_URL}/api/cron/index-sitemap`,
-    });
+    const verifyUrl = `${BASE_URL}/api/cron/index-sitemap`;
+
+    let isValid = false;
+    try {
+      isValid = await receiver.verify({ signature, body, url: verifyUrl });
+    } catch (verifyError) {
+      console.warn("QStash index-sitemap: URL-bound verify failed, retrying without URL:", {
+        verifyUrl,
+        error: verifyError instanceof Error ? verifyError.message : verifyError,
+      });
+      try {
+        isValid = await receiver.verify({ signature, body });
+      } catch (fallbackError) {
+        console.error("QStash index-sitemap: signature verification failed completely:", {
+          verifyUrl,
+          error: fallbackError instanceof Error ? fallbackError.message : fallbackError,
+        });
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
+    }
 
     if (!isValid) {
+      console.error("QStash index-sitemap: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 

@@ -109,7 +109,7 @@ export async function scheduleBlogPost(
     url: `${APP_URL}/api/qstash/publish-blog`,
     body: { slug },
     notBefore: Math.floor(scheduledAt.getTime() / 1000),
-    retries: 3,
+    retries: 5,
   });
 
   return {

@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/publish-overdue",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}

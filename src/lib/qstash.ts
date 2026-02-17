@@ -1,9 +1,10 @@
 import { Client } from "@upstash/qstash";
 
-// Initialize QStash client
+// Initialize QStash client - US East 1 region
+const QSTASH_BASE_URL = process.env.QSTASH_URL || "https://qstash-us-east-1.upstash.io";
 const qstash = new Client({
   token: process.env.QSTASH_TOKEN!,
-  baseUrl: process.env.QSTASH_URL,
+  baseUrl: QSTASH_BASE_URL,
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
@@ -19,7 +20,7 @@ export async function schedulePost(postId: string, scheduledAt: Date): Promise<s
     url: `${APP_URL}/api/qstash/publish-post`,
     body: { postId },
     notBefore: Math.floor(scheduledAt.getTime() / 1000), // Unix timestamp in seconds
-    retries: 3,
+    retries: 5,
   });
 
   return response.messageId;

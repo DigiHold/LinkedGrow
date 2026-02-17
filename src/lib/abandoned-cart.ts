@@ -31,7 +31,7 @@ export async function scheduleAbandonedCartEmails(
         emailNumber: 1,
       },
       notBefore: now + EMAIL_1_DELAY_DAYS * DAYS_TO_SECONDS,
-      retries: 3,
+      retries: 5,
     });
 
     // Schedule Email 2: Day 5 - Value reminder
@@ -42,7 +42,7 @@ export async function scheduleAbandonedCartEmails(
         emailNumber: 2,
       },
       notBefore: now + EMAIL_2_DELAY_DAYS * DAYS_TO_SECONDS,
-      retries: 3,
+      retries: 5,
     });
 
     // Schedule Email 3: Day 8 - Final push with discount
@@ -53,7 +53,7 @@ export async function scheduleAbandonedCartEmails(
         emailNumber: 3,
       },
       notBefore: now + EMAIL_3_DELAY_DAYS * DAYS_TO_SECONDS,
-      retries: 3,
+      retries: 5,
     });
 
     // Store QStash message IDs for potential cancellation

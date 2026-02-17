@@ -61,12 +61,21 @@ export async function POST(request: NextRequest) {
     try {
       isValid = await receiver.verify({ signature, body, url: verifyUrl });
     } catch (verifyError) {
-      console.error("QStash abandoned-cart signature verification failed:", {
+      // URL mismatch is the most common cause - retry without URL binding
+      console.warn("QStash abandoned-cart: URL-bound verify failed, retrying without URL:", {
         verifyUrl,
         error: verifyError instanceof Error ? verifyError.message : verifyError,
-        bodyPreview: body.substring(0, 200),
       });
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      try {
+        isValid = await receiver.verify({ signature, body });
+      } catch (fallbackError) {
+        console.error("QStash abandoned-cart: signature verification failed completely:", {
+          verifyUrl,
+          error: fallbackError instanceof Error ? fallbackError.message : fallbackError,
+          bodyPreview: body.substring(0, 200),
+        });
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
     }
 
     if (!isValid) {
