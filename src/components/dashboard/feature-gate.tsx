@@ -155,7 +155,7 @@ export function FeatureGate({
             {/* All Plans Link */}
             <div className="mt-4">
               <a
-                href="/#pricing"
+                href="/dashboard/upgrade"
                 className="text-sm text-linkedin hover:underline inline-flex items-center gap-1"
               >
                 Compare all plans
