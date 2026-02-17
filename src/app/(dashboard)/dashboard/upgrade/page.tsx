@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PLANS, PlanId, PlanFeatures, FEATURE_INFO } from "@/lib/plans";
+import { PLANS, type PlanId, type PlanFeatures, FEATURE_INFO } from "@/lib/plans";
 
 // Only show paid plans - Free plan is shown via "Current plan" badge
 const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
@@ -90,6 +90,7 @@ export default function UpgradePage() {
   const userPlan = (session?.user?.plan || "free") as PlanId;
   const userEmail = session?.user?.email || "";
 
+  const [isYearly, setIsYearly] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
@@ -113,6 +114,7 @@ export default function UpgradePage() {
         body: JSON.stringify({
           planId,
           email: userEmail,
+          interval: isYearly ? "year" : "month",
         }),
       });
 
@@ -188,7 +190,7 @@ export default function UpgradePage() {
       </div>
 
       {/* Current Plan Badge */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
           <span className="text-sm">Current plan:</span>
           <span className="font-semibold text-slate-900 dark:text-white">
@@ -197,6 +199,42 @@ export default function UpgradePage() {
           <span className="text-sm text-slate-500">
             (${PLANS[userPlan].price}/mo)
           </span>
+        </div>
+      </div>
+
+      {/* Billing Toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setIsYearly(false)}
+            className={cn(
+              "px-5 py-2 rounded-full text-sm font-medium transition-all",
+              !isYearly
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setIsYearly(true)}
+            className={cn(
+              "px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+              isYearly
+                ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            Yearly
+            <span className={cn(
+              "px-2 py-0.5 rounded-full text-xs font-semibold",
+              isYearly
+                ? "bg-white/20 text-white"
+                : "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400"
+            )}>
+              Save 30%
+            </span>
+          </button>
         </div>
       </div>
 
@@ -251,12 +289,22 @@ export default function UpgradePage() {
                 <div className="mt-4 mb-5">
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-bold text-slate-900 dark:text-white">
-                      ${plan.price}
+                      ${isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400">
-                      /month
+                      /mo
                     </span>
                   </div>
+                  {isYearly && plan.yearlyPrice > 0 && (
+                    <div className="mt-1">
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        Billed ${plan.yearlyPrice}/year
+                      </span>
+                      <span className="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        Save ${plan.price * 12 - plan.yearlyPrice}/yr
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Features */}

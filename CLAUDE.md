@@ -254,7 +254,18 @@ STRIPE_WEBHOOK_SECRET=whsec_xxxxx
 STRIPE_STARTER_PRICE_ID=price_1SoKzYDZ5QtFd12cEZHEDn5Q
 STRIPE_PRO_PRICE_ID=price_1SoL05DZ5QtFd12capBIf37Q
 STRIPE_BUSINESS_PRICE_ID=price_1SoL0rDZ5QtFd12c7kcCeiyu
+STRIPE_STARTER_YEARLY_PRICE_ID=price_xxxxx
+STRIPE_PRO_YEARLY_PRICE_ID=price_xxxxx
+STRIPE_BUSINESS_YEARLY_PRICE_ID=price_xxxxx
 ```
+
+### Yearly Pricing (30% off)
+
+| Plan | Monthly | Yearly (total) | Yearly (per month) | Savings |
+|------|---------|----------------|-------------------|---------|
+| Starter | $19/mo | $160/year | ~$13/mo | Save $68 |
+| Pro | $39/mo | $328/year | ~$27/mo | Save $140 |
+| Business | $79/mo | $664/year | ~$55/mo | Save $284 |
 
 ### Coupon System
 

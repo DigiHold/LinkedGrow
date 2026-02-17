@@ -32,6 +32,7 @@ export interface PlanInfo {
   name: string;
   description: string;
   price: number; // Monthly price in USD
+  yearlyPrice: number; // Yearly total in USD (30% off monthly x 12)
   limits: PlanLimits;
   popular?: boolean;
 }
@@ -42,6 +43,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Free",
     description: "Try LinkedGrow with basic features",
     price: 0,
+    yearlyPrice: 0,
     limits: {
       postsPerMonth: 3,
       scheduledPosts: 0,
@@ -71,6 +73,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Starter",
     description: "Perfect for getting started",
     price: 19,
+    yearlyPrice: 160,
     limits: {
       postsPerMonth: -1, // Unlimited with BYOK
       scheduledPosts: 10,
@@ -100,6 +103,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Pro",
     description: "For serious content creators",
     price: 39,
+    yearlyPrice: 328,
     popular: true,
     limits: {
       postsPerMonth: -1,
@@ -130,6 +134,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Business",
     description: "Everything unlocked",
     price: 79,
+    yearlyPrice: 664,
     limits: {
       postsPerMonth: -1,
       scheduledPosts: -1,

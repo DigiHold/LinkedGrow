@@ -1397,13 +1397,16 @@ function TestimonialsCarousel() {
 
 function PricingPreview({ translations }: { translations: PrelaunchTranslations }) {
   const [showAllPlans, setShowAllPlans] = useState(false);
+  const [isYearly, setIsYearly] = useState(true);
 
-  // Original prices - then show 30% discount (3 paid plans only)
+  // Original prices with yearly option - then show 30% early access discount
   const plans = [
     {
       name: translations.pricing.starter.name,
-      actualPrice: 19,
-      discountedPrice: 13, // 19 * 0.7 = 13.3 rounded to 13
+      actualPrice: isYearly ? Math.round(160 / 12) : 19,
+      discountedPrice: isYearly ? Math.round(Math.round(160 / 12) * 0.7) : 13,
+      yearlyTotal: 160,
+      monthlyPrice: 19,
       period: translations.pricing.perMonth,
       description: translations.pricing.starter.description,
       features: translations.pricing.starter.features,
@@ -1411,8 +1414,10 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
     },
     {
       name: translations.pricing.pro.name,
-      actualPrice: 39,
-      discountedPrice: 27, // 39 * 0.7 = 27.3 rounded to 27
+      actualPrice: isYearly ? Math.round(328 / 12) : 39,
+      discountedPrice: isYearly ? Math.round(Math.round(328 / 12) * 0.7) : 27,
+      yearlyTotal: 328,
+      monthlyPrice: 39,
       period: translations.pricing.perMonth,
       description: translations.pricing.pro.description,
       features: translations.pricing.pro.features,
@@ -1421,8 +1426,10 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
     },
     {
       name: translations.pricing.business.name,
-      actualPrice: 79,
-      discountedPrice: 55, // 79 * 0.7 = 55.3 rounded to 55
+      actualPrice: isYearly ? Math.round(664 / 12) : 79,
+      discountedPrice: isYearly ? Math.round(Math.round(664 / 12) * 0.7) : 55,
+      yearlyTotal: 664,
+      monthlyPrice: 79,
       period: translations.pricing.perMonth,
       description: translations.pricing.business.description,
       features: translations.pricing.business.features,
@@ -1445,6 +1452,44 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
           <Key className="w-4 h-4" />
           <span>All plans + ~$2-4/month in AI API costs (you pay the AI provider directly)</span>
+        </div>
+      </motion.div>
+
+      {/* Billing Toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="flex justify-center mb-8"
+      >
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setIsYearly(false)}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+              !isYearly
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setIsYearly(true)}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+              isYearly
+                ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            Yearly
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              isYearly
+                ? "bg-white/20 text-white"
+                : "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400"
+            }`}>
+              Save 30%
+            </span>
+          </button>
         </div>
       </motion.div>
 
@@ -1472,14 +1517,14 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
                 <p className="text-slate-600 dark:text-slate-400 mb-4">Plans starting at</p>
 
                 <div className="flex items-center justify-center gap-3 mb-4">
-                  <span className="text-2xl text-slate-400 line-through">$19</span>
-                  <span className="text-6xl font-black text-slate-900 dark:text-white">$13</span>
+                  <span className="text-2xl text-slate-400 line-through">${isYearly ? Math.round(160 / 12) : 19}</span>
+                  <span className="text-6xl font-black text-slate-900 dark:text-white">${isYearly ? Math.round(Math.round(160 / 12) * 0.7) : 13}</span>
                   <span className="text-slate-500 dark:text-slate-400 text-xl">/mo</span>
                 </div>
 
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-6">
                   <Sparkles className="w-4 h-4" />
-                  Save 30% with early access
+                  Save 30% with early access{isYearly ? " + yearly billing" : ""}
                 </div>
 
                 <div className="flex items-center justify-center gap-2 text-cyan-600 dark:text-cyan-400 font-medium group-hover:gap-3 transition-all">
@@ -1569,7 +1614,7 @@ function PricingPreview({ translations }: { translations: PrelaunchTranslations 
         className="text-center mt-8"
       >
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">Early access pricing shown.</span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">Early access pricing shown{isYearly ? " (billed yearly)" : ""}.</span>
           {" "}Join the waitlist to lock in 30% off for your first year.
         </p>
       </motion.div>
