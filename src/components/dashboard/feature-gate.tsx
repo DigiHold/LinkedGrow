@@ -150,6 +150,7 @@ export function FeatureGate({
               userEmail={userEmail}
               planName={planInfo.name}
               planPrice={planInfo.price}
+              currentPlan={userPlan}
             />
 
             {/* All Plans Link */}
@@ -232,6 +233,7 @@ export function FeatureGateInline({
           userEmail={userEmail}
           planName={planInfo.name}
           planPrice={planInfo.price}
+          currentPlan={userPlan}
           variant="inline"
         />
       </div>

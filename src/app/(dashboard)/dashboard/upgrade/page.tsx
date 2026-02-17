@@ -338,7 +338,8 @@ export default function UpgradePage() {
                     <Check className="w-4 h-4 mr-2" />
                     Current Plan
                   </Button>
-                ) : action.type === "upgrade" ? (
+                ) : action.type === "upgrade" && userPlan === "free" ? (
+                  // Free → Paid: Stripe Checkout (creates new subscription)
                   <Button
                     className={cn(
                       "w-full",
@@ -361,7 +362,32 @@ export default function UpgradePage() {
                       </>
                     )}
                   </Button>
+                ) : action.type === "upgrade" ? (
+                  // Paid → Higher Paid: Stripe Portal (upgrades existing subscription with proration)
+                  <Button
+                    className={cn(
+                      "w-full",
+                      isPopular
+                        ? "bg-violet-600 hover:bg-violet-700 text-white"
+                        : "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white"
+                    )}
+                    onClick={handleManageSubscription}
+                    disabled={loadingPlan === "manage"}
+                  >
+                    {loadingPlan === "manage" ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        {action.label}
+                      </>
+                    )}
+                  </Button>
                 ) : (
+                  // Downgrade: Stripe Portal
                   <Button
                     variant="outline"
                     className="w-full"

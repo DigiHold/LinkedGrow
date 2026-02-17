@@ -34,6 +34,17 @@ import {
 } from "@/lib/plans";
 import { redirectToCheckout } from "@/lib/checkout";
 
+async function redirectToPortal() {
+  const response = await fetch("/api/stripe/portal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await response.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
+
 interface UpgradePromptProps {
   feature?: keyof PlanFeatures;
   currentPlan?: PlanId;
@@ -70,6 +81,17 @@ export function UpgradePrompt({
   const requiredPlan = feature ? getRequiredPlanForFeature(feature) : nextPlan || "starter";
   const featureInfo = feature ? FEATURE_INFO[feature] : null;
   const planInfo = PLANS[requiredPlan];
+  const isPaidUser = currentPlan !== "free";
+
+  // Paid users go to Stripe Portal (upgrades existing subscription with proration)
+  // Free users go to Stripe Checkout (creates new subscription)
+  const handleUpgrade = (planId: PlanId) => {
+    if (isPaidUser) {
+      redirectToPortal();
+    } else {
+      redirectToCheckout(planId, userEmail);
+    }
+  };
 
   // Get missing features for full page variant
   const missingFeatures = nextPlan ? getMissingFeatures(currentPlan, nextPlan) : [];
@@ -91,7 +113,7 @@ export function UpgradePrompt({
             variant="linkedin"
             size="lg"
             className="shadow-lg text-white"
-            onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+            onClick={() => handleUpgrade(requiredPlan)}
           >
             <Crown className="w-4 h-4 mr-2" />
             Upgrade to {planInfo.name} - ${planInfo.price}/mo
@@ -118,7 +140,7 @@ export function UpgradePrompt({
         <Button
           size="sm"
           className="bg-amber-600 hover:bg-amber-700 text-white"
-          onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+          onClick={() => handleUpgrade(requiredPlan)}
         >
           Upgrade
           <ArrowRight className="w-3 h-3 ml-1" />
@@ -183,7 +205,7 @@ export function UpgradePrompt({
             {nextPlan && nextPlan !== "business" && (
               <div
                 className="p-5 rounded-xl border-2 border-border hover:border-linkedin/50 transition-all bg-white dark:bg-gray-800 cursor-pointer"
-                onClick={() => redirectToCheckout(nextPlan, userEmail)}
+                onClick={() => handleUpgrade(nextPlan!)}
               >
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-bold">{PLANS[nextPlan].name}</h3>
@@ -202,7 +224,7 @@ export function UpgradePrompt({
             )}
             <div
               className="p-5 rounded-xl border-2 border-linkedin bg-linkedin/5 hover:bg-linkedin/10 transition-all relative overflow-hidden cursor-pointer"
-              onClick={() => redirectToCheckout("pro", userEmail)}
+              onClick={() => handleUpgrade("pro")}
             >
               <div className="absolute top-0 right-0 bg-linkedin text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
                 POPULAR
@@ -267,7 +289,7 @@ export function UpgradePrompt({
               variant="linkedin"
               size="sm"
               className="shadow-md text-white"
-              onClick={() => redirectToCheckout(requiredPlan, userEmail)}
+              onClick={() => handleUpgrade(requiredPlan)}
             >
               <Crown className="w-4 h-4 mr-2" />
               Upgrade to {planInfo.name}
