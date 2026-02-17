@@ -306,6 +306,53 @@ export function PersonJsonLd({ name, jobTitle, url, sameAs = [] }: PersonJsonLdP
   );
 }
 
+interface WebApplicationJsonLdProps {
+  name: string;
+  url: string;
+  description: string;
+  applicationCategory?: string;
+  operatingSystem?: string;
+  browserRequirements?: string;
+}
+
+export function WebApplicationJsonLd({
+  name,
+  url,
+  description,
+  applicationCategory = "UtilityApplication",
+  operatingSystem = "All",
+  browserRequirements = "Requires JavaScript. Requires HTML5.",
+}: WebApplicationJsonLdProps) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name,
+    url,
+    description,
+    applicationCategory,
+    operatingSystem,
+    browserRequirements,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    provider: {
+      "@type": "Organization",
+      name: APP_NAME,
+      url: APP_URL,
+    },
+  };
+
+  return (
+    <Script
+      id={`webapplication-jsonld-${name.slice(0, 20).replace(/\s/g, "-").toLowerCase()}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 // LinkedGrow FAQs for JSON-LD (must match the FAQ component content)
 export const linkedGrowFAQs = [
   {
