@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { redirectToCheckout } from "@/lib/checkout";
+
 import {
   Key,
   Check,
@@ -1021,13 +1021,14 @@ export default function AIAPISettingsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 AI Image Generation is available on the Pro plan and above
               </p>
-              <Button
-                className="bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
-                onClick={() => redirectToCheckout("pro", session?.user?.email || "")}
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Upgrade to Pro
-              </Button>
+              <a href="/dashboard/upgrade">
+                <Button
+                  className="bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Upgrade to Pro
+                </Button>
+              </a>
             </div>
           </div>
         )}

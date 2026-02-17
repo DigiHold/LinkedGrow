@@ -73,7 +73,6 @@ export function FeatureGate({
   }
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
-  const userEmail = session?.user?.email || "";
   const hasAccess = canAccessFeature(userPlan, feature);
 
   if (hasAccess) {
@@ -146,11 +145,7 @@ export function FeatureGate({
 
             {/* CTA Button */}
             <UpgradeButton
-              requiredPlan={requiredPlan}
-              userEmail={userEmail}
               planName={planInfo.name}
-              planPrice={planInfo.price}
-              currentPlan={userPlan}
             />
 
             {/* All Plans Link */}
@@ -207,7 +202,6 @@ export function FeatureGateInline({
   }
 
   const userPlan = (session?.user?.plan as PlanId) || "free";
-  const userEmail = session?.user?.email || "";
   const hasAccess = canAccessFeature(userPlan, feature);
 
   if (hasAccess) {
@@ -229,11 +223,7 @@ export function FeatureGateInline({
           Available on {planInfo.name} plan
         </p>
         <UpgradeButton
-          requiredPlan={requiredPlan}
-          userEmail={userEmail}
           planName={planInfo.name}
-          planPrice={planInfo.price}
-          currentPlan={userPlan}
           variant="inline"
         />
       </div>

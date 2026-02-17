@@ -21,7 +21,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { PlanId, canAccessFeature } from "@/lib/plans";
-import { redirectToCheckout } from "@/lib/checkout";
 
 interface ImageGeneratorModalProps {
   open: boolean;
@@ -212,12 +211,11 @@ export function ImageGeneratorModal({
             <p className="text-sm text-muted-foreground mb-4">
               AI image generation is available on the Pro plan and above. Upgrade to create stunning visuals for your LinkedIn posts.
             </p>
-            <Button
-              variant="linkedin"
-              onClick={() => redirectToCheckout("pro", userEmail)}
-            >
-              Upgrade to Pro - $39/mo
-            </Button>
+            <a href="/dashboard/upgrade">
+              <Button variant="linkedin">
+                Upgrade to Pro
+              </Button>
+            </a>
           </div>
         </DialogContent>
       </Dialog>

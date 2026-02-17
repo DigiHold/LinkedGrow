@@ -32,23 +32,10 @@ import {
   getMissingFeatures,
   getUpgradePath,
 } from "@/lib/plans";
-import { redirectToCheckout } from "@/lib/checkout";
-
-async function redirectToPortal() {
-  const response = await fetch("/api/stripe/portal", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  const data = await response.json();
-  if (data.url) {
-    window.location.href = data.url;
-  }
-}
 
 interface UpgradePromptProps {
   feature?: keyof PlanFeatures;
   currentPlan?: PlanId;
-  userEmail?: string;
   variant?: "card" | "inline" | "overlay" | "fullPage";
 }
 
@@ -74,24 +61,12 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 export function UpgradePrompt({
   feature,
   currentPlan = "free",
-  userEmail = "",
   variant = "card",
 }: UpgradePromptProps) {
   const nextPlan = getUpgradePath(currentPlan);
   const requiredPlan = feature ? getRequiredPlanForFeature(feature) : nextPlan || "starter";
   const featureInfo = feature ? FEATURE_INFO[feature] : null;
   const planInfo = PLANS[requiredPlan];
-  const isPaidUser = currentPlan !== "free";
-
-  // Paid users go to Stripe Portal (upgrades existing subscription with proration)
-  // Free users go to Stripe Checkout (creates new subscription)
-  const handleUpgrade = (planId: PlanId) => {
-    if (isPaidUser) {
-      redirectToPortal();
-    } else {
-      redirectToCheckout(planId, userEmail);
-    }
-  };
 
   // Get missing features for full page variant
   const missingFeatures = nextPlan ? getMissingFeatures(currentPlan, nextPlan) : [];
@@ -109,15 +84,16 @@ export function UpgradePrompt({
           <p className="text-muted-foreground mb-6">
             {featureInfo?.description || `This feature requires the ${planInfo.name} plan or higher.`}
           </p>
-          <Button
-            variant="linkedin"
-            size="lg"
-            className="shadow-lg text-white"
-            onClick={() => handleUpgrade(requiredPlan)}
-          >
-            <Crown className="w-4 h-4 mr-2" />
-            Upgrade to {planInfo.name} - ${planInfo.price}/mo
-          </Button>
+          <a href="/dashboard/upgrade">
+            <Button
+              variant="linkedin"
+              size="lg"
+              className="shadow-lg text-white"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to {planInfo.name}
+            </Button>
+          </a>
         </div>
       </div>
     );
@@ -137,14 +113,15 @@ export function UpgradePrompt({
             Available on {planInfo.name} plan
           </p>
         </div>
-        <Button
-          size="sm"
-          className="bg-amber-600 hover:bg-amber-700 text-white"
-          onClick={() => handleUpgrade(requiredPlan)}
-        >
-          Upgrade
-          <ArrowRight className="w-3 h-3 ml-1" />
-        </Button>
+        <a href="/dashboard/upgrade">
+          <Button
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            Upgrade
+            <ArrowRight className="w-3 h-3 ml-1" />
+          </Button>
+        </a>
       </div>
     );
   }
@@ -200,49 +177,18 @@ export function UpgradePrompt({
             })}
           </div>
 
-          {/* Upgrade Options */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {nextPlan && nextPlan !== "business" && (
-              <div
-                className="p-5 rounded-xl border-2 border-border hover:border-linkedin/50 transition-all bg-white dark:bg-gray-800 cursor-pointer"
-                onClick={() => handleUpgrade(nextPlan!)}
+          {/* Upgrade CTA */}
+          <div className="text-center">
+            <a href="/dashboard/upgrade">
+              <Button
+                variant="linkedin"
+                size="lg"
+                className="shadow-lg text-white"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold">{PLANS[nextPlan].name}</h3>
-                  <span className="text-lg font-bold text-linkedin">
-                    ${PLANS[nextPlan].price}/mo
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {PLANS[nextPlan].description}
-                </p>
-                <Button variant="outline" className="w-full">
-                  Upgrade to {PLANS[nextPlan].name}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            )}
-            <div
-              className="p-5 rounded-xl border-2 border-linkedin bg-linkedin/5 hover:bg-linkedin/10 transition-all relative overflow-hidden cursor-pointer"
-              onClick={() => handleUpgrade("pro")}
-            >
-              <div className="absolute top-0 right-0 bg-linkedin text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
-                POPULAR
-              </div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">{PLANS.pro.name}</h3>
-                <span className="text-lg font-bold text-linkedin">
-                  ${PLANS.pro.price}/mo
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {PLANS.pro.description}
-              </p>
-              <Button variant="linkedin" className="w-full text-white">
-                <Crown className="w-4 h-4 mr-2" />
-                Go Pro
+                <Crown className="w-5 h-5 mr-2" />
+                View Plans & Upgrade
               </Button>
-            </div>
+            </a>
           </div>
 
           {/* What you get */}
@@ -284,20 +230,16 @@ export function UpgradePrompt({
           <p className="text-sm text-muted-foreground mb-4">
             {featureInfo?.description || `Upgrade to ${planInfo.name} to unlock this feature and more.`}
           </p>
-          <div className="flex items-center gap-3">
+          <a href="/dashboard/upgrade">
             <Button
               variant="linkedin"
               size="sm"
               className="shadow-md text-white"
-              onClick={() => handleUpgrade(requiredPlan)}
             >
               <Crown className="w-4 h-4 mr-2" />
               Upgrade to {planInfo.name}
             </Button>
-            <span className="text-sm text-muted-foreground">
-              ${planInfo.price}/mo
-            </span>
-          </div>
+          </a>
         </div>
       </div>
     </div>
