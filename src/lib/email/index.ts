@@ -18,6 +18,18 @@ export {
   abandonedCartEmail3Template,
   abandonedCartEmail3Text,
 } from "./templates/abandoned-cart-email";
+export {
+  affiliateApplicationEmailTemplate,
+  affiliateApplicationEmailText,
+} from "./templates/affiliate-application-email";
+export {
+  affiliateApprovedEmailTemplate,
+  affiliateApprovedEmailText,
+} from "./templates/affiliate-approved-email";
+export {
+  affiliateRejectedEmailTemplate,
+  affiliateRejectedEmailText,
+} from "./templates/affiliate-rejected-email";
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
@@ -30,6 +42,18 @@ import {
   teamInviteEmailTemplate,
   teamInviteEmailText,
 } from "./templates/team-invite-email";
+import {
+  affiliateApplicationEmailTemplate,
+  affiliateApplicationEmailText,
+} from "./templates/affiliate-application-email";
+import {
+  affiliateApprovedEmailTemplate,
+  affiliateApprovedEmailText,
+} from "./templates/affiliate-approved-email";
+import {
+  affiliateRejectedEmailTemplate,
+  affiliateRejectedEmailText,
+} from "./templates/affiliate-rejected-email";
 
 interface SendWelcomeEmailParams {
   to: string;
@@ -88,5 +112,54 @@ export async function sendTeamInviteEmail({
     subject: `${inviterName} invited you to join ${teamName} on LinkedGrow`,
     html: teamInviteEmailTemplate({ inviterName, teamName, role, inviteUrl }),
     text: teamInviteEmailText({ inviterName, teamName, role, inviteUrl }),
+  });
+}
+
+export async function sendAffiliateApplicationEmail({
+  applicantName,
+  applicantEmail,
+  promotionPlan,
+}: {
+  applicantName: string;
+  applicantEmail: string;
+  promotionPlan: string;
+}) {
+  return sendEmail({
+    to: "contact@linkedgrow.ai",
+    subject: `New Affiliate Application: ${applicantName}`,
+    html: affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan }),
+    text: affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan }),
+  });
+}
+
+export async function sendAffiliateApprovedEmail({
+  to,
+  name,
+  referralCode,
+}: {
+  to: string;
+  name: string;
+  referralCode: string;
+}) {
+  return sendEmail({
+    to,
+    subject: "Your LinkedGrow Affiliate Application Has Been Approved!",
+    html: affiliateApprovedEmailTemplate({ name, referralCode }),
+    text: affiliateApprovedEmailText({ name, referralCode }),
+  });
+}
+
+export async function sendAffiliateRejectedEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string;
+}) {
+  return sendEmail({
+    to,
+    subject: "Update on Your LinkedGrow Affiliate Application",
+    html: affiliateRejectedEmailTemplate({ name }),
+    text: affiliateRejectedEmailText({ name }),
   });
 }

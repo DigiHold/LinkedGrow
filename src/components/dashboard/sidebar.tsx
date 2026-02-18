@@ -32,6 +32,7 @@ import {
   Search,
   Brain,
   MessageSquare,
+  Handshake,
 } from "lucide-react";
 
 // Reddit icon component
@@ -453,6 +454,16 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
+                  router.push("/dashboard/affiliate");
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <Handshake className="w-4 h-4" />
+                Affiliate
+              </button>
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
                   router.push("/dashboard/settings");
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
@@ -521,6 +532,16 @@ export function Sidebar() {
                   >
                     <Brain className="w-4 h-4" />
                     SEO Intelligence
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/affiliates");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <Handshake className="w-4 h-4" />
+                    Affiliates
                   </button>
                   <button
                     onClick={() => {

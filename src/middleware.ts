@@ -36,6 +36,7 @@ const prelaunchAllowedRoutes = [
   "/use-cases",
   "/industries",
   "/compare",
+  "/affiliate",
   "/api",
   "/team/invite",
 ];
@@ -46,6 +47,22 @@ export default auth((req) => {
   // Allow OPTIONS requests to pass through (CORS preflight)
   if (req.method === "OPTIONS") {
     return NextResponse.next();
+  }
+
+  // Affiliate referral tracking: set a 30-day cookie when ?ref= is present
+  const refCode = nextUrl.searchParams.get("ref");
+  if (refCode) {
+    const cleanUrl = new URL(nextUrl);
+    cleanUrl.searchParams.delete("ref");
+    const response = NextResponse.redirect(cleanUrl);
+    response.cookies.set("lg_ref", refCode, {
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+    return response;
   }
 
   const isLoggedIn = !!req.auth;

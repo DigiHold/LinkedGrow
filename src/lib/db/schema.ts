@@ -21,6 +21,7 @@ export const users = sqliteTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   couponCode: text("coupon_code"), // Stored coupon code (e.g., "WELCOME10" for 10% off 3 months)
+  referredBy: text("referred_by"), // Affiliate referral code that referred this user
 
   // LinkedIn connection (Posting App)
   linkedinAccessToken: text("linkedin_access_token"),
@@ -507,6 +508,76 @@ export const seoCache = sqliteTable("seo_cache", {
 });
 
 // ============================================
+// AFFILIATE PROGRAM
+// ============================================
+
+// Affiliates table - partners who earn commission
+export const affiliates = sqliteTable("affiliates", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  referralCode: text("referral_code").notNull().unique(),
+  status: text("status", { enum: ["pending", "approved", "rejected", "suspended"] }).default("pending"),
+  promotionPlan: text("promotion_plan"), // How they plan to promote LinkedGrow
+  paypalEmail: text("paypal_email"),
+  totalClicks: integer("total_clicks").default(0),
+  totalSignups: integer("total_signups").default(0),
+  totalConversions: integer("total_conversions").default(0),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Affiliate referrals - users who signed up via an affiliate link
+export const affiliateReferrals = sqliteTable("affiliate_referrals", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id, { onDelete: "cascade" }),
+  referredUserId: text("referred_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["signed_up", "converted", "churned"] }).default("signed_up"),
+  convertedAt: integer("converted_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Affiliate commissions - earnings per invoice payment (actual amount paid)
+export const affiliateCommissions = sqliteTable("affiliate_commissions", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id, { onDelete: "cascade" }),
+  referralId: text("referral_id")
+    .notNull()
+    .references(() => affiliateReferrals.id, { onDelete: "cascade" }),
+  stripeInvoiceId: text("stripe_invoice_id").notNull(),
+  invoiceAmount: integer("invoice_amount").notNull(), // cents - actual amount paid after discounts
+  commissionAmount: integer("commission_amount").notNull(), // cents (30% of invoiceAmount)
+  commissionRate: integer("commission_rate").default(30),
+  availableAt: integer("available_at", { mode: "timestamp" }).notNull(), // 30 days after payment
+  paidOut: integer("paid_out", { mode: "boolean" }).default(false),
+  paidOutAt: integer("paid_out_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Affiliate payouts - manual PayPal payouts
+export const affiliatePayouts = sqliteTable("affiliate_payouts", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // cents
+  method: text("method").default("paypal"),
+  paypalEmail: text("paypal_email").notNull(),
+  status: text("status", { enum: ["pending", "completed", "failed"] }).default("pending"),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -568,3 +639,11 @@ export const blogPosts = sqliteTable("blog_posts", {
 
 export type BlogPostStatus = typeof blogPosts.$inferSelect;
 export type NewBlogPostStatus = typeof blogPosts.$inferInsert;
+export type Affiliate = typeof affiliates.$inferSelect;
+export type NewAffiliate = typeof affiliates.$inferInsert;
+export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;
+export type NewAffiliateReferral = typeof affiliateReferrals.$inferInsert;
+export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
+export type NewAffiliateCommission = typeof affiliateCommissions.$inferInsert;
+export type AffiliatePayout = typeof affiliatePayouts.$inferSelect;
+export type NewAffiliatePayout = typeof affiliatePayouts.$inferInsert;

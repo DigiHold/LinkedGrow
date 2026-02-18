@@ -29,6 +29,7 @@ const PRIORITY_CONFIG: Record<string, { priority: number; changeFrequency: "alwa
   "/forgot-password": { priority: 0.4, changeFrequency: "monthly" },
   "/blog": { priority: 0.9, changeFrequency: "weekly" },
   "/pricing": { priority: 0.8, changeFrequency: "monthly" },
+  "/affiliate": { priority: 0.7, changeFrequency: "monthly" },
 };
 
 // Priority for page path prefixes (matched if exact config not found)

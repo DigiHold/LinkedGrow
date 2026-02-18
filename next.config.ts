@@ -99,7 +99,7 @@ const nextConfig: NextConfig = {
       },
       {
         // Public marketing pages only (logged-out) - CDN cache 1 hour, stale-while-revalidate
-        source: "/:path(prelaunch|about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*)",
+        source: "/:path(prelaunch|about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*)",
         headers: [
           {
             key: "Cache-Control",
