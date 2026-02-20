@@ -120,7 +120,7 @@ export function FreePostGeneratorContent() {
             icon: Brain,
             title: "All 20+ AI Models",
             description:
-              "The free plan gives you access to every supported AI model: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Llama 4, DeepSeek-R1, and more. No model restrictions. The same quality paid users get.",
+              "The free plan gives you access to every supported AI model: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. No model restrictions. The same quality paid users get.",
             highlights: ["GPT-5 included", "Claude included", "Gemini included"],
             badge: "Free",
             color: "from-cyan-500 to-blue-600",
@@ -300,7 +300,7 @@ export function FreePostGeneratorContent() {
           {
             question: "What AI models are on the free plan?",
             answer:
-              "All 20+ models: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Llama 4, DeepSeek-R1, and more. No model restrictions on the free plan.",
+              "All 20+ models: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. No model restrictions on the free plan.",
           },
           {
             question: "Is voice training available for free?",

@@ -120,7 +120,7 @@ export function PostGeneratorFreeContent() {
             icon: Brain,
             title: "20+ AI Models to Choose From",
             description:
-              "GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4 Maverick, DeepSeek-R1, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
+              "GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
             highlights: ["6 AI providers", "20+ models", "Your choice"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -237,7 +237,7 @@ export function PostGeneratorFreeContent() {
           benefits: [
             { text: "Free plan with 3 generations per month to start" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
-            { text: "20+ AI models - GPT-5, Claude, Gemini, Llama, and more" },
+            { text: "20+ AI models - GPT-5, Claude, Gemini, Grok, and more" },
             { text: "Voice training matches your writing style on all plans" },
             { text: "AI costs average $2 to $4 per month with zero markup" },
           ],
@@ -295,7 +295,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "What AI models are available?",
             answer:
-              "20+ models including GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4 Maverick, DeepSeek-R1, and more. Switch between models anytime based on your preference.",
+              "20+ models including GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. Switch between models anytime based on your preference.",
           },
           {
             question: "How does voice training work?",

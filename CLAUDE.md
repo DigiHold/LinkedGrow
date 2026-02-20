@@ -23,7 +23,7 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 -   **Email:** Brevo (marketing + transactional)
 -   **Hosting:** Vercel
 -   **Scheduling:** QStash (Upstash) for exact-time post publishing
--   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Groq, Replicate, Together AI
+-   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity (text) + Google, OpenAI, Replicate (images)
 
 ## Deployment
 
@@ -455,19 +455,21 @@ src/
 
 ## AI Models Supported (BYOK)
 
-### Text Generation Models
+### Text Generation Models (5 providers, 24 models)
 
--   **OpenAI**: GPT-5.2 Pro, GPT-5, o4-mini, o3-pro, o3-mini
--   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude 4.1, Claude 4
--   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 3 Deep Think, Gemini 2.5 Pro, Gemini 2.5 Flash
--   **Groq**: Llama 4 Maverick, Llama 4 Scout, Llama 3.3 70B, Llama 3.1 8B, Llama-3-Groq-70B-Tool-Use (ultra fast)
--   **Together AI**: Qwen3-Coder-480B, Qwen3-235B-A22B-Thinking, DeepSeek-R1, Llama 4 Behemoth, DeepSeek-V3
+-   **OpenAI**: GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
+-   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
+-   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
+-   **Grok (xAI)**: Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
+-   **Perplexity**: Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar
 
-### Image Generation Models
+### Image Generation Models (3 providers, 14 models)
 
--   **OpenAI**: DALL-E 3, GPT-5 (native image generation)
--   **Google**: Nano Banana Pro (Gemini 3 Pro Image), Nano Banana (Gemini 2.5 Flash Image), Imagen 3
--   **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX Kontext Pro, FLUX Kontext Max
+-   **Google**: Nano Banana Pro (Gemini 3 Pro Image), Nano Banana (Gemini 2.5 Flash Image), Imagen 4 Ultra, Imagen 4, Imagen 4 Fast
+-   **OpenAI**: GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
+-   **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, FLUX 1.1 Pro, FLUX Schnell
+
+> **IMPORTANT**: Always check `src/app/(dashboard)/dashboard/settings/ai-api/page.tsx` for the actual current model list before referencing models anywhere. Never guess or use outdated names. The models listed above are the source of truth as of February 2026.
 
 ### Typical User API Costs
 

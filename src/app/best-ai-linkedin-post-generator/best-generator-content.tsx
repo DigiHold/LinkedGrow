@@ -44,7 +44,7 @@ export function BestPostGeneratorContent() {
           gradient: "with 20+ models",
         }}
         descriptionBold="Not all AI LinkedIn tools are created equal."
-        description="LinkedGrow gives you access to 20+ AI models - GPT-5, Claude, Gemini, Llama 4, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
+        description="LinkedGrow gives you access to 20+ AI models - GPT-5, Claude, Gemini, Grok 4, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
         valuePropBadges={[
           { icon: Award, text: "20+ AI models" },
           { icon: Mic, text: "Voice training" },
@@ -120,7 +120,7 @@ export function BestPostGeneratorContent() {
             icon: Brain,
             title: "20+ AI Models",
             description:
-              "GPT-5, GPT-5.2 Pro, Claude Opus 4.5, Gemini 3 Pro, Llama 4 Maverick, DeepSeek-R1, and 15+ more. Each model has different strengths. Use Claude for nuanced thought leadership, GPT-5 for storytelling, Gemini for speed. Switch between models per post.",
+              "GPT-5, GPT-5.2, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more. Each model has different strengths. Use Claude for nuanced thought leadership, GPT-5 for storytelling, Gemini for speed. Switch between models per post.",
             highlights: ["6 AI providers", "20+ models", "Switch per post"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -204,7 +204,7 @@ export function BestPostGeneratorContent() {
             number: "03",
             title: "Add visuals if you want",
             description:
-              "Optionally generate a custom AI photo with DALL-E 3, FLUX, or Gemini directly in the editor. Or build a carousel. Attach to your post in one click - no separate tools needed.",
+              "Optionally generate a custom AI photo with Nano Banana Pro, GPT Image 1.5, or FLUX directly in the editor. Or build a carousel. Attach to your post in one click - no separate tools needed.",
             icon: Sparkles,
             color: "from-emerald-500 to-green-500",
             time: "30 sec",
@@ -244,7 +244,7 @@ export function BestPostGeneratorContent() {
           price: "$19-39/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "20+ AI models - GPT-5, Claude, Gemini, Llama, DeepSeek, and more" },
+            { text: "20+ AI models - GPT-5, Claude, Gemini, Grok, Sonar, and more" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "Voice training that matches your exact writing style" },
             { text: "Images, scheduling, analytics, hooks, carousels all included" },
@@ -324,7 +324,7 @@ export function BestPostGeneratorContent() {
           {
             question: "What AI models are available?",
             answer:
-              "GPT-5, GPT-5.2 Pro, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4 Maverick, Llama 4 Scout, DeepSeek-R1, and 10+ more text models. Plus 10+ image models.",
+              "GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more text models. Plus 14 image models.",
           },
           {
             question: "How much does it cost?",

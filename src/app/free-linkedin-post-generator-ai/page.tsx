@@ -58,7 +58,7 @@ const freeGenFAQs = [
   {
     question: "What AI models can I use on the free plan?",
     answer:
-      "The free plan gives you access to all supported models: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4 Maverick, DeepSeek-R1, and 15+ more. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
+      "The free plan gives you access to all supported models: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
   },
   {
     question: "How does voice training work on the free plan?",

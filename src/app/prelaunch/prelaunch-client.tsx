@@ -262,7 +262,7 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
           </svg>
         </motion.div>
 
-        {/* Meta Llama Icon */}
+        {/* Grok Icon */}
         <motion.div
           animate={{
             y: [0, 14, 0],

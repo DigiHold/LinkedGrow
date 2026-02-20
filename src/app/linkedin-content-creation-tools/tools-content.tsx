@@ -129,7 +129,7 @@ export function ContentCreationToolsContent() {
             icon: Image,
             title: "AI Photo Generator",
             description:
-              "Create unique photos for your posts with DALL-E 3, FLUX, Gemini, and Imagen 3. Generate directly from the post editor and attach in one click. No design skills needed, no stock photo subscriptions.",
+              "Create unique photos for your posts with Nano Banana Pro, FLUX, GPT Image 1.5, and Imagen 4. Generate directly from the post editor and attach in one click. No design skills needed, no stock photo subscriptions.",
             highlights: ["10+ image models", "In-editor generation", "$0.02-0.08 per photo"],
             badge: "Pro",
             color: "from-emerald-500 to-green-600",
@@ -309,7 +309,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Can I generate unlimited LinkedIn posts?",
             answer:
-              "Yes. Every paid plan includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Groq, or Together AI, and generate as many posts as you need with no monthly caps.",
+              "Yes. Every paid plan includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), or Perplexity, and generate as many posts as you need with no monthly caps.",
           },
           {
             question: "Do I need separate tools for writing, images, and scheduling?",
@@ -319,7 +319,7 @@ export function ContentCreationToolsContent() {
           {
             question: "What AI models power the content creation tools?",
             answer:
-              "For text: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4, and 15+ more. For images: DALL-E 3, GPT-5, FLUX.2 Pro, Gemini, and Imagen 3. Switch between models anytime.",
+              "For text: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, and 15+ more. For images: GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. Switch between models anytime.",
           },
           {
             question: "Is there a free plan available?",

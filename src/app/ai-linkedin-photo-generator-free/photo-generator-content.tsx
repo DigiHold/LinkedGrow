@@ -44,7 +44,7 @@ export function PhotoGeneratorContent() {
           gradient: "your LinkedIn posts",
         }}
         descriptionBold="Stop wasting hours searching for the right stock photo."
-        description="LinkedGrow's AI photo generator creates unique, professional visuals for your LinkedIn posts in seconds. Choose from 10+ AI models - DALL-E 3, FLUX, Gemini, and more. Describe what you want and the AI delivers. Photos cost pennies each with zero markup."
+        description="LinkedGrow's AI photo generator creates unique, professional visuals for your LinkedIn posts in seconds. Choose from 10+ AI models - Nano Banana Pro, FLUX, GPT Image 1.5, and more. Describe what you want and the AI delivers. Photos cost pennies each with zero markup."
         valuePropBadges={[
           { icon: Sparkles, text: "10+ AI photo models" },
           { icon: Zap, text: "Generate in seconds" },
@@ -120,7 +120,7 @@ export function PhotoGeneratorContent() {
             icon: Layers,
             title: "10+ AI Photo Models",
             description:
-              "Choose the best AI model for every photo. DALL-E 3 excels at creative compositions, FLUX models deliver photorealistic results, and Gemini produces fast high-quality output. Switch between models anytime based on what you need.",
+              "Choose the best AI model for every photo. GPT Image 1.5 excels at creative compositions, FLUX models deliver photorealistic results, and Gemini produces fast high-quality output. Switch between models anytime based on what you need.",
             highlights: ["3 AI providers", "10+ models", "Switch anytime"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -196,7 +196,7 @@ export function PhotoGeneratorContent() {
             number: "02",
             title: "AI generates your photo",
             description:
-              "Choose your preferred AI model and hit generate. DALL-E 3 and GPT-5 excel at creative compositions, FLUX models deliver photorealistic photos, and Gemini models offer fast high-quality output. Preview the result instantly in the editor.",
+              "Choose your preferred AI model and hit generate. GPT Image 1.5 and Nano Banana Pro excel at creative compositions, FLUX models deliver photorealistic photos, and Gemini models offer fast high-quality output. Preview the result instantly in the editor.",
             icon: Wand2,
             color: "from-violet-500 to-purple-500",
             time: "10-30 sec",
@@ -237,7 +237,7 @@ export function PhotoGeneratorContent() {
           apiCost: "$0.50-1.50/month",
           benefits: [
             { text: "Unique AI photos tailored to every single post topic" },
-            { text: "10+ models - DALL-E 3, GPT-5, Gemini, FLUX, Imagen 3" },
+            { text: "10+ models - GPT Image 1.5, Nano Banana Pro, Imagen 4, FLUX" },
             { text: "Built into the editor - generate and attach in one click" },
             { text: "Photo AI costs average $0.50 to $1.50 per month - zero markup" },
             { text: "Custom resolution, aspect ratio, quality, and style settings" },
@@ -296,7 +296,7 @@ export function PhotoGeneratorContent() {
           {
             question: "What AI models can I use to generate LinkedIn photos?",
             answer:
-              "LinkedGrow supports 10+ AI photo generation models across three providers. From OpenAI you get DALL-E 3 and GPT-5 native image generation. From Google you get Nano Banana Pro (Gemini 3 Pro), Nano Banana (Gemini 2.5 Flash), and Imagen 3. From Replicate you get FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX Kontext Pro, and FLUX Kontext Max.",
+              "LinkedGrow supports 10+ AI photo generation models across three providers. From OpenAI you get GPT Image 1.5, GPT Image 1, and GPT Image 1 Mini. From Google you get Nano Banana Pro (Gemini 3 Pro), Nano Banana (Gemini 2.5 Flash), and Imagen 4. From Replicate you get FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, and FLUX 1.1 Pro.",
           },
           {
             question: "How do I create a LinkedIn photo with AI?",

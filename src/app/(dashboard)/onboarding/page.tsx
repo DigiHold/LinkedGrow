@@ -64,8 +64,8 @@ const aiProviders = [
   },
   {
     id: "groq",
-    name: "Groq",
-    description: "Llama 3.3 (Ultra Fast)",
+    name: "Grok",
+    description: "Grok 4 (Ultra Fast)",
     placeholder: "gsk_...",
     icon: "⚡",
     docsUrl: "https://console.groq.com/keys",
@@ -76,7 +76,7 @@ const aiProviders = [
 const imageAiProviders = [
   {
     id: "openai-dalle",
-    name: "DALL-E 3",
+    name: "GPT Image 1.5",
     description: "OpenAI's best image model",
     placeholder: "sk-... (same as OpenAI)",
     icon: "🎨",
@@ -94,8 +94,8 @@ const imageAiProviders = [
   },
   {
     id: "together",
-    name: "Together AI",
-    description: "Flux Schnell (Fast & Cheap)",
+    name: "Perplexity",
+    description: "Sonar Pro (Fast & Cheap)",
     placeholder: "...",
     icon: "🚀",
     docsUrl: "https://api.together.xyz/settings/api-keys",
@@ -461,7 +461,7 @@ export default function OnboardingPage() {
                       <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-center">
                         <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
                         <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                          Using your OpenAI key for DALL-E 3
+                          Using your OpenAI key for GPT Image 1.5
                         </p>
                         <p className="text-xs text-green-600 dark:text-green-400">
                           No additional API key needed!

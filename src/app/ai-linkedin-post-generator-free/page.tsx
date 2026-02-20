@@ -53,7 +53,7 @@ const postGenFreeFAQs = [
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
     answer:
-      "LinkedGrow supports 20+ AI text models including GPT-5, GPT-5.2 Pro, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Gemini 3 Flash, Llama 4 Maverick, Llama 4 Scout, and DeepSeek-R1. You choose which model to use based on your preference and can switch between models at any time.",
+      "LinkedGrow supports 20+ AI text models including GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Gemini 3 Flash, Grok 4, Grok 3, and Sonar Pro. You choose which model to use based on your preference and can switch between models at any time.",
   },
   {
     question: "How does the AI generate a LinkedIn post?",

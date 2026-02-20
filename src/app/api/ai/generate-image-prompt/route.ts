@@ -5,7 +5,7 @@ import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 // System prompt for generating detailed image prompts (like Blog agent's claude-prompt-generator.js)
-const SYSTEM_PROMPT = `You are an expert at creating highly detailed image generation prompts for Gemini 3 Pro Image and DALL-E 3.
+const SYSTEM_PROMPT = `You are an expert at creating highly detailed image generation prompts for Gemini 3 Pro Image and GPT Image 1.5.
 
 Your task: Given a LinkedIn post content, create ONE perfect image prompt that visually represents the post's message.
 

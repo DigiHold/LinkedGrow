@@ -713,7 +713,7 @@ function RedditImportContent() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground mt-6">
-                We support OpenAI, Anthropic, Google AI, and Groq. Your key is encrypted and stored securely.
+                We support OpenAI, Anthropic, Google AI, Grok (xAI), and Perplexity. Your key is encrypted and stored securely.
               </p>
             </div>
           </CardContent>

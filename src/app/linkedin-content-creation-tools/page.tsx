@@ -58,7 +58,7 @@ const toolsFAQs = [
   {
     question: "Can I generate unlimited LinkedIn posts with these tools?",
     answer:
-      "Yes. Every paid plan on LinkedGrow includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Groq, or Together AI, and generate as many posts as you need. There are no monthly caps, credit limits, or token restrictions on post generation.",
+      "Yes. Every paid plan on LinkedGrow includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), or Perplexity, and generate as many posts as you need. There are no monthly caps, credit limits, or token restrictions on post generation.",
   },
   {
     question: "Do I need separate tools for writing, images, and scheduling?",
@@ -68,7 +68,7 @@ const toolsFAQs = [
   {
     question: "What AI models power the content creation tools?",
     answer:
-      "For text generation, LinkedGrow supports GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Llama 4, and 15+ more models. For image generation, it supports DALL-E 3, GPT-5, FLUX.2 Pro, Gemini, and Imagen 3. You choose which models to use and can switch between them at any time.",
+      "For text generation, LinkedGrow supports GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, and 15+ more models. For image generation, it supports GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. You choose which models to use and can switch between them at any time.",
   },
   {
     question: "Is there a free plan available?",
