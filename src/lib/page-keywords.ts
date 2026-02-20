@@ -367,7 +367,7 @@ export function analyzeCanonicals(): CanonicalIssue[] {
         issue: "missing",
         type: page.type,
       });
-    } else if (page.canonical !== expected) {
+    } else if (page.canonical.replace(/\/$/, "") !== expected.replace(/\/$/, "")) {
       results.push({
         path: page.path,
         title: page.title,
