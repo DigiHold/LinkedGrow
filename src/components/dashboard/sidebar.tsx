@@ -619,7 +619,7 @@ export function Sidebar() {
       {tooltip && isCollapsed && !isMobileOpen && (
         <div
           className="fixed pointer-events-none z-50 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap shadow-lg"
-          style={{ top: tooltip.top, left: 82, transform: "translateY(-50%)" }}
+          style={{ top: tooltip.top, left: 72, transform: "translateY(-50%)" }}
         >
           {tooltip.text}
         </div>
