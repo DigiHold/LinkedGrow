@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
+import { db } from "@/lib/db";
+import { affiliates } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 
 // Check if we're in prelaunch mode
 const PRELAUNCH_MODE = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === "true";
@@ -41,7 +44,7 @@ const prelaunchAllowedRoutes = [
   "/team/invite",
 ];
 
-export default auth((req) => {
+export default auth(async (req) => {
   const { nextUrl } = req;
 
   // Allow OPTIONS requests to pass through (CORS preflight)
@@ -52,6 +55,24 @@ export default auth((req) => {
   // Affiliate referral tracking: set a 30-day cookie when ?ref= is present
   const refCode = nextUrl.searchParams.get("ref");
   if (refCode) {
+    // Track the click on the affiliate record
+    try {
+      await db
+        .update(affiliates)
+        .set({
+          totalClicks: sql`${affiliates.totalClicks} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(affiliates.referralCode, refCode),
+            eq(affiliates.status, "approved")
+          )
+        );
+    } catch {
+      // Silently fail - don't block the redirect
+    }
+
     const cleanUrl = new URL(nextUrl);
     cleanUrl.searchParams.delete("ref");
     const response = NextResponse.redirect(cleanUrl);
