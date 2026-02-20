@@ -784,15 +784,15 @@ export default function AIAPISettingsPage() {
 
           {/* Active Provider Banner */}
           {activeProvider && textProviderSettings[activeProvider]?.hasKey && (
-            <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white">
+            <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
                   {(() => {
                     const ActiveIcon = aiProviders.find(p => p.id === activeProvider)?.icon;
                     return ActiveIcon ? <ActiveIcon /> : null;
                   })()}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
                     Active Provider: {aiProviders.find(p => p.id === activeProvider)?.name}
                   </p>
@@ -801,7 +801,7 @@ export default function AIAPISettingsPage() {
                   </p>
                 </div>
               </div>
-              <span className="flex items-center gap-1 text-xs text-cyan-700 dark:text-cyan-300 font-medium bg-cyan-100 dark:bg-cyan-800/50 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-xs text-cyan-700 dark:text-cyan-300 font-medium bg-cyan-100 dark:bg-cyan-800/50 px-2.5 py-1 rounded-full shrink-0 self-start sm:self-auto">
                 <Check className="w-3 h-3" />
                 Active
               </span>
@@ -845,19 +845,19 @@ export default function AIAPISettingsPage() {
           {viewingProviderDetails && (
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
                       <viewingProviderDetails.icon />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h4 className="font-medium">{viewingProviderDetails.name}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         {viewingProviderDetails.description}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {viewingProvider === activeProvider && viewingProviderHasKey && (
                       <span className="flex items-center gap-1 text-xs text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 px-2.5 py-1 rounded-full font-medium">
                         <Check className="w-3 h-3" />
