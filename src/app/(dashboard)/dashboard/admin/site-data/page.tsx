@@ -223,7 +223,7 @@ export default function AdminSiteDataPage() {
           </Button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-border sm:overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-x-auto">
           {consentRecords.length === 0 ? (
             <div className="px-4 py-12 text-center text-muted-foreground">
               <Cookie className="w-8 h-8 mx-auto mb-3 opacity-50" />

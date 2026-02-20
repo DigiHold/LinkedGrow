@@ -300,7 +300,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border sm:overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-x-auto">
           <table className="w-full responsive-table">
             <thead>
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">

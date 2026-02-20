@@ -484,8 +484,8 @@ html[style] {
   );
 }
 
-/* Responsive table - stacks rows as cards on mobile */
-@media (max-width: 639px) {
+/* Responsive table - stacks rows as cards on mobile/tablet */
+@media (max-width: 1023px) {
   .responsive-table thead {
     display: none;
   }
