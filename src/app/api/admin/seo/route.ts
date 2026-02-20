@@ -61,11 +61,11 @@ export async function GET() {
       googleIndexingApi: !!process.env.GOOGLE_INDEXING_CREDENTIALS,
     };
 
-    // Keyword cannibalization analysis
-    const keywordOverlaps = analyzeKeywordCannibalization();
-
-    // Canonical URL analysis (auto-scans all page files)
-    const canonicalStatuses = analyzeCanonicals();
+    // Keyword cannibalization analysis (GSC-powered) + canonical analysis in parallel
+    const [keywordOverlaps, canonicalStatuses] = await Promise.all([
+      analyzeKeywordCannibalization(),
+      Promise.resolve(analyzeCanonicals()),
+    ]);
 
     return NextResponse.json({
       pages: pageStatuses,

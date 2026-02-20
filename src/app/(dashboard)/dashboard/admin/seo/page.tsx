@@ -52,8 +52,18 @@ interface IndexingConfig {
 
 interface KeywordOverlap {
   keyword: string;
-  pages: { path: string; title: string; type: string }[];
+  pages: {
+    path: string;
+    title: string;
+    type: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }[];
   severity: "high" | "medium" | "low";
+  totalImpressions: number;
+  totalClicks: number;
 }
 
 interface CanonicalIssue {
@@ -552,18 +562,21 @@ export default function AdminSeoPage() {
         )}
       </div>
 
-      {/* Keyword Cannibalization */}
-      {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
-        <div className="border rounded-xl p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Target className="w-4 h-4 text-amber-600" />
-              Keyword Cannibalization
-              <span className="text-xs font-normal text-muted-foreground">
-                ({data.keywordOverlaps.filter((o) => o.severity === "high").length} high,{" "}
-                {data.keywordOverlaps.filter((o) => o.severity === "medium").length} medium)
-              </span>
-            </h2>
+      {/* Keyword Cannibalization (GSC-powered) */}
+      <div className="border rounded-xl p-4 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 className="font-semibold flex items-center gap-2 flex-wrap">
+            <Target className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Keyword Cannibalization</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              GSC last 28 days
+              {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
+                <> - {data.keywordOverlaps.filter((o) => o.severity === "high").length} high,{" "}
+                {data.keywordOverlaps.filter((o) => o.severity === "medium").length} medium</>
+              )}
+            </span>
+          </h2>
+          {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -577,13 +590,21 @@ export default function AdminSeoPage() {
                 <ChevronDown className="w-3.5 h-3.5 ml-1" />
               )}
             </Button>
-          </div>
+          )}
+        </div>
 
+        {(!data.keywordOverlaps || data.keywordOverlaps.length === 0) ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No queries with multiple ranking pages detected in the last 28 days.
+          </p>
+        ) : (
           <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm min-w-125">
+            <table className="w-full text-sm min-w-150">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                  <th className="text-left p-2 pl-3">Keyword</th>
+                  <th className="text-left p-2 pl-3">Query</th>
+                  <th className="text-right p-2">Impressions</th>
+                  <th className="text-right p-2 hidden sm:table-cell">Clicks</th>
                   <th className="text-left p-2">Pages</th>
                   <th className="text-center p-2 pr-3 w-24">Severity</th>
                 </tr>
@@ -596,7 +617,7 @@ export default function AdminSeoPage() {
                     return (
                       <tr
                         key={overlap.keyword}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer"
+                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer align-top"
                         onClick={() => {
                           const next = new Set(expandedKeywords);
                           if (isExpanded) {
@@ -614,20 +635,33 @@ export default function AdminSeoPage() {
                             ) : (
                               <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
                             )}
-                            {overlap.keyword}
+                            <span className="truncate max-w-50 sm:max-w-75">{overlap.keyword}</span>
                           </div>
+                        </td>
+                        <td className="p-2 text-right text-muted-foreground">
+                          {overlap.totalImpressions.toLocaleString()}
+                        </td>
+                        <td className="p-2 text-right text-blue-600 font-medium hidden sm:table-cell">
+                          {overlap.totalClicks}
                         </td>
                         <td className="p-2">
                           {isExpanded ? (
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                               {overlap.pages.map((page) => (
                                 <div
                                   key={page.path}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 flex-wrap"
                                 >
                                   <TypeBadge type={page.type} />
-                                  <span className="text-xs truncate max-w-60">
+                                  <span className="text-xs truncate max-w-40">
                                     {page.path}
+                                  </span>
+                                  <PositionBadge position={page.position} />
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {page.impressions.toLocaleString()} imp
+                                  </span>
+                                  <span className="text-[10px] text-blue-600">
+                                    {page.clicks} clicks
                                   </span>
                                 </div>
                               ))}
@@ -652,8 +686,8 @@ export default function AdminSeoPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Canonical URL Monitor */}
       {data.canonicalStatuses && data.canonicalStatuses.length > 0 && (

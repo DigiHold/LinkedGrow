@@ -173,6 +173,21 @@ export async function getTopQueries(startDate: string, endDate: string) {
 }
 
 /**
+ * Get all (query, page) pairs - used for keyword cannibalization detection.
+ * Each row is a unique combination of a search query and a page that appeared for it.
+ * By grouping results by query, we can find queries where multiple pages compete.
+ */
+export async function getQueryPagePairs(startDate: string, endDate: string) {
+  return querySearchAnalytics({
+    startDate,
+    endDate,
+    dimensions: ["query", "page"],
+    rowLimit: 25000,
+    dataState: "all",
+  });
+}
+
+/**
  * Get top queries for a specific page
  */
 export async function getPageTopQueries(
