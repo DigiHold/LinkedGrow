@@ -20,6 +20,10 @@ import {
   MousePointerClick,
   TrendingUp,
   BarChart3,
+  Target,
+  Link2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -46,6 +50,21 @@ interface IndexingConfig {
   googleIndexingApi: boolean;
 }
 
+interface KeywordOverlap {
+  keyword: string;
+  pages: { path: string; title: string; type: string }[];
+  severity: "high" | "medium" | "low";
+}
+
+interface CanonicalIssue {
+  path: string;
+  title: string;
+  canonical: string | null;
+  expected: string;
+  issue: "missing" | "mismatch" | "ok";
+  type: string;
+}
+
 interface SeoData {
   pages: UrlStatus[];
   blogPosts: BlogPostData[];
@@ -57,6 +76,8 @@ interface SeoData {
   draftPosts: number;
   scheduledPosts: number;
   totalPages: number;
+  keywordOverlaps: KeywordOverlap[];
+  canonicalStatuses: CanonicalIssue[];
 }
 
 interface SearchConsoleData {
@@ -100,6 +121,9 @@ export default function AdminSeoPage() {
   const [scData, setScData] = useState<SearchConsoleData | null>(null);
   const [scLoading, setScLoading] = useState(false);
   const [scError, setScError] = useState<string | null>(null);
+  const [showAllOverlaps, setShowAllOverlaps] = useState(false);
+  const [showAllCanonicals, setShowAllCanonicals] = useState(false);
+  const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -258,7 +282,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-9 gap-3 sm:gap-4">
         <StatCard
           label="Total URLs"
           value={data.totalPages}
@@ -280,6 +304,18 @@ export default function AdminSeoPage() {
           value={errorPages.length}
           icon={<XCircle className="w-4 h-4 text-red-600" />}
           color={errorPages.length > 0 ? "red" : undefined}
+        />
+        <StatCard
+          label="Keyword Overlaps"
+          value={data.keywordOverlaps?.length || 0}
+          icon={<Target className="w-4 h-4 text-amber-600" />}
+          color={data.keywordOverlaps?.some((o) => o.severity === "high") ? "amber" : undefined}
+        />
+        <StatCard
+          label="Canonical Issues"
+          value={data.canonicalStatuses?.filter((c) => c.issue !== "ok").length || 0}
+          icon={<Link2 className="w-4 h-4 text-red-600" />}
+          color={data.canonicalStatuses?.some((c) => c.issue !== "ok") ? "red" : undefined}
         />
         <StatCard
           label="Published Posts"
@@ -516,6 +552,215 @@ export default function AdminSeoPage() {
         )}
       </div>
 
+      {/* Keyword Cannibalization */}
+      {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
+        <div className="border rounded-xl p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Target className="w-4 h-4 text-amber-600" />
+              Keyword Cannibalization
+              <span className="text-xs font-normal text-muted-foreground">
+                ({data.keywordOverlaps.filter((o) => o.severity === "high").length} high,{" "}
+                {data.keywordOverlaps.filter((o) => o.severity === "medium").length} medium)
+              </span>
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllOverlaps(!showAllOverlaps)}
+              className="shrink-0 self-end sm:self-auto"
+            >
+              {showAllOverlaps ? "High/Medium only" : "Show all"}
+              {showAllOverlaps ? (
+                <ChevronUp className="w-3.5 h-3.5 ml-1" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 ml-1" />
+              )}
+            </Button>
+          </div>
+
+          <div className="border rounded-lg overflow-x-auto">
+            <table className="w-full text-sm min-w-125">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                  <th className="text-left p-2 pl-3">Keyword</th>
+                  <th className="text-left p-2">Pages</th>
+                  <th className="text-center p-2 pr-3 w-24">Severity</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {data.keywordOverlaps
+                  .filter((o) => showAllOverlaps || o.severity !== "low")
+                  .map((overlap) => {
+                    const isExpanded = expandedKeywords.has(overlap.keyword);
+                    return (
+                      <tr
+                        key={overlap.keyword}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer"
+                        onClick={() => {
+                          const next = new Set(expandedKeywords);
+                          if (isExpanded) {
+                            next.delete(overlap.keyword);
+                          } else {
+                            next.add(overlap.keyword);
+                          }
+                          setExpandedKeywords(next);
+                        }}
+                      >
+                        <td className="p-2 pl-3 font-medium">
+                          <div className="flex items-center gap-1.5">
+                            {isExpanded ? (
+                              <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+                            )}
+                            {overlap.keyword}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          {isExpanded ? (
+                            <div className="space-y-1">
+                              {overlap.pages.map((page) => (
+                                <div
+                                  key={page.path}
+                                  className="flex items-center gap-2"
+                                >
+                                  <TypeBadge type={page.type} />
+                                  <span className="text-xs truncate max-w-60">
+                                    {page.path}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {overlap.pages.map((page) => (
+                                <TypeBadge key={page.path} type={page.type} />
+                              ))}
+                              <span className="text-xs text-muted-foreground">
+                                {overlap.pages.length} pages
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-2 pr-3 text-center">
+                          <SeverityBadge severity={overlap.severity} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Canonical URL Monitor */}
+      {data.canonicalStatuses && data.canonicalStatuses.length > 0 && (
+        <div className="border rounded-xl p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-cyan-600" />
+              Canonical URLs
+            </h2>
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  {data.canonicalStatuses.filter((c) => c.issue === "ok").length} OK
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  {data.canonicalStatuses.filter((c) => c.issue === "missing").length} Missing
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  {data.canonicalStatuses.filter((c) => c.issue === "mismatch").length} Mismatch
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllCanonicals(!showAllCanonicals)}
+                className="shrink-0"
+              >
+                {showAllCanonicals ? "Issues only" : "Show all"}
+                {showAllCanonicals ? (
+                  <ChevronUp className="w-3.5 h-3.5 ml-1" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {(() => {
+            const filtered = showAllCanonicals
+              ? data.canonicalStatuses
+              : data.canonicalStatuses.filter((c) => c.issue !== "ok");
+
+            if (filtered.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  All canonical URLs are correctly configured.
+                </p>
+              );
+            }
+
+            return (
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm min-w-125">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                      <th className="text-left p-2 pl-3">Page</th>
+                      <th className="text-left p-2">Canonical URL</th>
+                      <th className="text-center p-2 pr-3 w-24">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filtered.map((item) => (
+                      <tr
+                        key={item.path}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                      >
+                        <td className="p-2 pl-3">
+                          <div className="flex items-center gap-2">
+                            <TypeBadge type={item.type} />
+                            <span className="text-xs font-medium truncate max-w-40 sm:max-w-60">
+                              {item.path}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <span className="text-xs text-muted-foreground truncate block max-w-60">
+                            {item.canonical || "Not set"}
+                          </span>
+                        </td>
+                        <td className="p-2 pr-3 text-center">
+                          {item.issue === "ok" ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              OK
+                            </span>
+                          ) : item.issue === "missing" ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                              Missing
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                              Mismatch
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Error Pages Alert */}
       {errorPages.length > 0 && (
         <div className="border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 rounded-xl p-4 space-y-3">
@@ -641,7 +886,9 @@ function StatCard({
       ? "border-red-200 dark:border-red-800"
       : color === "green"
         ? "border-green-200 dark:border-green-800"
-        : "";
+        : color === "amber"
+          ? "border-amber-200 dark:border-amber-800"
+          : "";
 
   return (
     <div className={`border rounded-xl p-3 ${colorClasses}`}>
@@ -846,6 +1093,72 @@ function PublishBadge({
   const { label, color } = config[status];
   return (
     <span className={`text-xs px-1.5 py-0.5 rounded ${color}`}>{label}</span>
+  );
+}
+
+function TypeBadge({ type }: { type: string }) {
+  const config: Record<string, { label: string; color: string }> = {
+    blog: {
+      label: "Blog",
+      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    },
+    feature: {
+      label: "Feature",
+      color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
+    },
+    audience: {
+      label: "Audience",
+      color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    },
+    "use-case": {
+      label: "Use Case",
+      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    },
+    industry: {
+      label: "Industry",
+      color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    },
+    "free-tool": {
+      label: "Tool",
+      color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+    },
+    marketing: {
+      label: "Marketing",
+      color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+    },
+  };
+
+  const { label, color } = config[type] || {
+    label: type,
+    color: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  };
+
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${color}`}>
+      {label}
+    </span>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: "high" | "medium" | "low" }) {
+  const config = {
+    high: {
+      label: "High",
+      color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    },
+    medium: {
+      label: "Medium",
+      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    },
+    low: {
+      label: "Low",
+      color: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    },
+  };
+
+  const { label, color } = config[severity];
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full ${color}`}>{label}</span>
   );
 }
 

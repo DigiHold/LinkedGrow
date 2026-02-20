@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { BLOG_POSTS } from "@/lib/blog";
 import { getAllPostsWithStatus } from "@/lib/blog";
 import { notifySearchEngines } from "@/lib/search-indexing";
+import {
+  analyzeKeywordCannibalization,
+  analyzeCanonicals,
+} from "@/lib/page-keywords";
 import fs from "fs";
 import path from "path";
 
@@ -57,6 +61,12 @@ export async function GET() {
       googleIndexingApi: !!process.env.GOOGLE_INDEXING_CREDENTIALS,
     };
 
+    // Keyword cannibalization analysis
+    const keywordOverlaps = analyzeKeywordCannibalization();
+
+    // Canonical URL analysis (auto-scans all page files)
+    const canonicalStatuses = analyzeCanonicals();
+
     return NextResponse.json({
       pages: pageStatuses,
       blogPosts: blogData,
@@ -68,6 +78,8 @@ export async function GET() {
       draftPosts: allPosts.filter((p) => p.status === "draft").length,
       scheduledPosts: allPosts.filter((p) => p.status === "scheduled").length,
       totalPages: pageStatuses.length + publishedBlogUrls.length,
+      keywordOverlaps,
+      canonicalStatuses,
     });
   } catch (error) {
     console.error("Admin SEO API error:", error);
