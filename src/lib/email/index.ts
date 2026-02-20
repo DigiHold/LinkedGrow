@@ -127,16 +127,18 @@ export async function sendAffiliateApplicationEmail({
   applicantName,
   applicantEmail,
   promotionPlan,
+  affiliateId,
 }: {
   applicantName: string;
   applicantEmail: string;
   promotionPlan: string;
+  affiliateId: string;
 }) {
   return sendEmail({
     to: "contact@linkedgrow.ai",
     subject: `New Affiliate Application: ${applicantName}`,
-    html: affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan }),
-    text: affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan }),
+    html: affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan, affiliateId }),
+    text: affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan, affiliateId }),
   });
 }
 

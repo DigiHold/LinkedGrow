@@ -1,11 +1,16 @@
 // Affiliate application email template - sent to admin when someone applies
+import { getAffiliateActionUrl } from "@/lib/affiliate";
+
 interface AffiliateApplicationEmailParams {
   applicantName: string;
   applicantEmail: string;
   promotionPlan: string;
+  affiliateId: string;
 }
 
-export function affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan }: AffiliateApplicationEmailParams): string {
+export function affiliateApplicationEmailTemplate({ applicantName, applicantEmail, promotionPlan, affiliateId }: AffiliateApplicationEmailParams): string {
+  const approveUrl = getAffiliateActionUrl(affiliateId, "approve");
+  const rejectUrl = getAffiliateActionUrl(affiliateId, "reject");
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -124,34 +129,27 @@ export function affiliateApplicationEmailTemplate({ applicantName, applicantEmai
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0" style="color: #45556C;">
                                     <tr>
                                         <td class="row" style="padding: 0 50px;">
-                                            <div style="background-color: #F8FAFC; border-radius: 8px; padding: 16px;">
-                                                <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 15px; line-height: 175%; margin: 0;">
+                                            <div style="background-color: #F8FAFC; border-radius: 8px; padding: 20px;">
+                                                <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 15px; line-height: 200%; margin: 0;">
                                                     <strong>Name:</strong> ${applicantName}<br>
-                                                    <strong>Email:</strong> ${applicantEmail}<br>
-                                                    <strong>Promotion Plan:</strong> ${promotionPlan}
+                                                    <strong>Email:</strong> ${applicantEmail}
                                                 </p>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
+                                        <td height="16" style="line-height: 16px;"></td>
                                     </tr>
                                 </table>
 
-                                <!-- CTA Button - Full Width -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
+                                <!-- Promotion Plan -->
+                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0" style="color: #45556C;">
                                     <tr>
-                                        <td height="10" style="line-height: 10px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="row" align="center" style="padding: 0 50px;">
-                                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
-                                                <tr>
-                                                    <td align="center" bgcolor="#0182f2" style="border-radius: 8px;">
-                                                        <a href="https://linkedgrow.ai/dashboard/admin/affiliates" target="_blank" style="display: block; padding: 16px 32px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; text-align: center;">Review Application</a>
-                                                    </td>
-                                                </tr>
-                                            </table>
+                                        <td class="row" style="padding: 0 50px;">
+                                            <p style="font-family: 'Inter', sans-serif; color: #0F172B; font-size: 15px; font-weight: 600; line-height: 165%; margin: 0 0 8px 0;">How they plan to promote LinkedGrow:</p>
+                                            <div style="background-color: #F8FAFC; border-radius: 8px; padding: 20px; border-left: 4px solid #0182f2;">
+                                                <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 15px; line-height: 175%; margin: 0;">${promotionPlan}</p>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr>
@@ -159,16 +157,33 @@ export function affiliateApplicationEmailTemplate({ applicantName, applicantEmai
                                     </tr>
                                 </table>
 
-                                <!-- Divider -->
+                                <!-- Approve Button -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
+                                        <td class="row" align="center" style="padding: 0 50px;">
+                                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                                                <tr>
+                                                    <td align="center" bgcolor="#16a34a" style="border-radius: 8px;">
+                                                        <a href="${approveUrl}" target="_blank" style="display: block; padding: 16px 32px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; text-align: center;">Approve Affiliate</a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td class="row" style="padding: 0 50px;" align="center">
-                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" width="100%">
+                                        <td height="12" style="line-height: 12px;"></td>
+                                    </tr>
+                                </table>
+
+                                <!-- Reject Button -->
+                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
+                                    <tr>
+                                        <td class="row" align="center" style="padding: 0 50px;">
+                                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                 <tr>
-                                                    <td style="border-top: 1px solid #EAECED;"></td>
+                                                    <td align="center" style="border-radius: 8px; border: 2px solid #dc2626;">
+                                                        <a href="${rejectUrl}" target="_blank" style="display: block; padding: 14px 32px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #dc2626; text-decoration: none; border-radius: 6px; text-align: center;">Reject Affiliate</a>
+                                                    </td>
                                                 </tr>
                                             </table>
                                         </td>
@@ -178,16 +193,12 @@ export function affiliateApplicationEmailTemplate({ applicantName, applicantEmai
                                     </tr>
                                 </table>
 
-                                <!-- Fallback URL -->
+                                <!-- Info note -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0" style="color: #45556C;">
                                     <tr>
                                         <td class="row" style="padding: 0 50px;">
-                                            <p style="font-family: 'Inter', sans-serif; color: #64748B; font-size: 14px; line-height: 150%; margin-top: 0; margin-bottom: 8px;">If the button above doesn't work, copy and paste this URL into your browser:</p>
-                                            <p style="font-family: 'Inter', sans-serif; color: #0182f2; font-size: 14px; line-height: 150%; margin-top: 0; margin-bottom: 0; word-break: break-all;">https://linkedgrow.ai/dashboard/admin/affiliates</p>
+                                            <p style="font-family: 'Inter', sans-serif; color: #64748B; font-size: 14px; line-height: 165%; margin-top: 0; margin-bottom: 0;">Clicking a button above will instantly approve or reject the affiliate and send them a notification email. You can also manage affiliates from the <a href="https://linkedgrow.ai/dashboard/admin/affiliates" style="color: #0182f2; text-decoration: underline;">admin dashboard</a>.</p>
                                         </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="20" style="line-height: 20px;"></td>
                                     </tr>
                                 </table>
 
@@ -328,16 +339,29 @@ export function affiliateApplicationEmailTemplate({ applicantName, applicantEmai
 </html>`;
 }
 
-export function affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan }: AffiliateApplicationEmailParams): string {
+export function affiliateApplicationEmailText({ applicantName, applicantEmail, promotionPlan, affiliateId }: AffiliateApplicationEmailParams): string {
+  const approveUrl = getAffiliateActionUrl(affiliateId, "approve");
+  const rejectUrl = getAffiliateActionUrl(affiliateId, "reject");
+
   return `New Affiliate Application
 
 A new affiliate application has been submitted. Here are the details:
 
 Name: ${applicantName}
 Email: ${applicantEmail}
-Promotion Plan: ${promotionPlan}
 
-Review the application here:
+How they plan to promote LinkedGrow:
+${promotionPlan}
+
+APPROVE this affiliate:
+${approveUrl}
+
+REJECT this affiliate:
+${rejectUrl}
+
+Clicking a link above will instantly approve or reject the affiliate and send them a notification email.
+
+You can also manage affiliates from the admin dashboard:
 https://linkedgrow.ai/dashboard/admin/affiliates
 
 See you soon,
