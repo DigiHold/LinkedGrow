@@ -163,6 +163,13 @@ export default function AdminSeoPage() {
   const [showVitals, setShowVitals] = useState(false);
   const [vitals, setVitals] = useState<VitalsResult[] | null>(null);
   const [vitalsLoading, setVitalsLoading] = useState(false);
+  const [vitalsStrategy, setVitalsStrategy] = useState<"mobile" | "desktop">("mobile");
+  const [showIndexingConfig, setShowIndexingConfig] = useState(false);
+  const [showGscPerformance, setShowGscPerformance] = useState(false);
+  const [showCannibalization, setShowCannibalization] = useState(false);
+  const [showCanonicals, setShowCanonicals] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+  const [showSlowPages, setShowSlowPages] = useState(false);
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -389,27 +396,44 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Indexing Configuration */}
-      <div className="border rounded-xl p-4 space-y-3">
-        <h2 className="font-semibold flex items-center gap-2">
-          <Settings2 className="w-4 h-4" />
-          Indexing Configuration
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ConfigStatus
-            label="IndexNow (Bing, Yandex, Naver)"
-            configured={data.indexingConfig.indexnow}
-          />
-          <ConfigStatus
-            label="Google Indexing API"
-            configured={data.indexingConfig.googleIndexingApi}
-          />
-        </div>
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowIndexingConfig(!showIndexingConfig)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <Settings2 className="w-4 h-4 shrink-0" />
+            Indexing Configuration
+          </h2>
+          {showIndexingConfig ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showIndexingConfig && (
+          <div className="p-4 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ConfigStatus
+                label="IndexNow (Bing, Yandex, Naver)"
+                configured={data.indexingConfig.indexnow}
+              />
+              <ConfigStatus
+                label="Google Indexing API"
+                configured={data.indexingConfig.googleIndexingApi}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search Console Performance */}
-      <div className="border rounded-xl p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h2 className="font-semibold flex items-center gap-2 flex-wrap">
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowGscPerformance(!showGscPerformance)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2 flex-wrap">
             <BarChart3 className="w-4 h-4 shrink-0" />
             <span>Google Search Performance</span>
             {scData && (
@@ -417,425 +441,478 @@ export default function AdminSeoPage() {
                 {scData.dateRange.start} to {scData.dateRange.end}
               </span>
             )}
+            {scLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
           </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchSearchConsole}
-            disabled={scLoading}
-            className="shrink-0 self-end sm:self-auto"
-          >
-            {scLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
-            )}
-          </Button>
-        </div>
-
-        {scLoading && !scData && (
-          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Loading Search Console data...</span>
-          </div>
-        )}
-
-        {scError && (
-          <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
-            {scError}
-          </div>
-        )}
-
-        {scData && (
-          <>
-            {/* Performance Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <MousePointerClick className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  Total Clicks
-                </div>
-                <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                  {scData.totals.clicks.toLocaleString()}
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <Eye className="w-3.5 h-3.5 text-violet-600 shrink-0" />
-                  Impressions
-                </div>
-                <p className="text-xl sm:text-2xl font-bold text-violet-600">
-                  {scData.totals.impressions.toLocaleString()}
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  Avg CTR
-                </div>
-                <p className="text-xl sm:text-2xl font-bold text-emerald-600">
-                  {(scData.totals.ctr * 100).toFixed(1)}%
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <BarChart3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  Avg Position
-                </div>
-                <p className="text-xl sm:text-2xl font-bold text-amber-600">
-                  {scData.totals.position.toFixed(1)}
-                </p>
-              </div>
+          {showGscPerformance ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showGscPerformance && (
+          <div className="p-4 border-t space-y-4">
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchSearchConsole}
+                disabled={scLoading}
+                className="shrink-0"
+              >
+                {scLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+              </Button>
             </div>
 
-            {/* Top Search Queries */}
-            {scData.topQueries.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Top Search Queries
-                </h3>
-                <div className="border rounded-lg overflow-x-auto">
-                  <table className="w-full text-sm min-w-[400px]">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                        <th className="text-left p-2 pl-3">Query</th>
-                        <th className="text-right p-2">Clicks</th>
-                        <th className="text-right p-2">Impressions</th>
-                        <th className="text-right p-2 hidden sm:table-cell">
-                          CTR
-                        </th>
-                        <th className="text-right p-2 pr-3 hidden sm:table-cell">
-                          Position
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {scData.topQueries.slice(0, 15).map((q) => (
-                        <tr
-                          key={q.query}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
-                        >
-                          <td className="p-2 pl-3 font-medium truncate max-w-50 sm:max-w-75">
-                            {q.query}
-                          </td>
-                          <td className="p-2 text-right text-blue-600 font-medium">
-                            {q.clicks}
-                          </td>
-                          <td className="p-2 text-right text-muted-foreground">
-                            {q.impressions.toLocaleString()}
-                          </td>
-                          <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
-                            {(q.ctr * 100).toFixed(1)}%
-                          </td>
-                          <td className="p-2 pr-3 text-right hidden sm:table-cell">
-                            <PositionBadge position={q.position} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {scLoading && !scData && (
+              <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Loading Search Console data...</span>
               </div>
             )}
 
-            {/* Per-Page Performance */}
-            {scData.pages.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Pages Search Performance
-                </h3>
-                <div className="border rounded-lg overflow-x-auto">
-                  <table className="w-full text-sm min-w-[400px]">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                        <th className="text-left p-2 pl-3">Page</th>
-                        <th className="text-right p-2">Clicks</th>
-                        <th className="text-right p-2">Impressions</th>
-                        <th className="text-right p-2 hidden sm:table-cell">
-                          CTR
-                        </th>
-                        <th className="text-right p-2 pr-3 hidden sm:table-cell">
-                          Position
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {scData.pages.map((p) => (
-                        <tr
-                          key={p.page}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
-                        >
-                          <td className="p-2 pl-3 truncate max-w-50 sm:max-w-75">
-                            <a
-                              href={p.page}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+            {scError && (
+              <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
+                {scError}
+              </div>
+            )}
+
+            {scData && (
+              <>
+                {/* Performance Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                      <MousePointerClick className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      Total Clicks
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                      {scData.totals.clicks.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                      <Eye className="w-3.5 h-3.5 text-violet-600 shrink-0" />
+                      Impressions
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold text-violet-600">
+                      {scData.totals.impressions.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      Avg CTR
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold text-emerald-600">
+                      {(scData.totals.ctr * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                      <BarChart3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      Avg Position
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold text-amber-600">
+                      {scData.totals.position.toFixed(1)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Top Search Queries */}
+                {scData.topQueries.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Top Search Queries
+                    </h3>
+                    <div className="border rounded-lg overflow-x-auto">
+                      <table className="w-full text-sm min-w-[400px]">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                            <th className="text-left p-2 pl-3">Query</th>
+                            <th className="text-right p-2">Clicks</th>
+                            <th className="text-right p-2">Impressions</th>
+                            <th className="text-right p-2 hidden sm:table-cell">
+                              CTR
+                            </th>
+                            <th className="text-right p-2 pr-3 hidden sm:table-cell">
+                              Position
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {scData.topQueries.slice(0, 15).map((q) => (
+                            <tr
+                              key={q.query}
+                              className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
                             >
-                              {p.page.replace("https://linkedgrow.ai", "") ||
-                                "/"}
-                            </a>
-                          </td>
-                          <td className="p-2 text-right text-blue-600 font-medium">
-                            {p.clicks}
-                          </td>
-                          <td className="p-2 text-right text-muted-foreground">
-                            {p.impressions.toLocaleString()}
-                          </td>
-                          <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
-                            {(p.ctr * 100).toFixed(1)}%
-                          </td>
-                          <td className="p-2 pr-3 text-right hidden sm:table-cell">
-                            <PositionBadge position={p.position} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+                              <td className="p-2 pl-3 font-medium truncate max-w-50 sm:max-w-75">
+                                {q.query}
+                              </td>
+                              <td className="p-2 text-right text-blue-600 font-medium">
+                                {q.clicks}
+                              </td>
+                              <td className="p-2 text-right text-muted-foreground">
+                                {q.impressions.toLocaleString()}
+                              </td>
+                              <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
+                                {(q.ctr * 100).toFixed(1)}%
+                              </td>
+                              <td className="p-2 pr-3 text-right hidden sm:table-cell">
+                                <PositionBadge position={q.position} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
-            {scData.topQueries.length === 0 && scData.pages.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No search data available yet. Data appears 2-3 days after pages
-                are indexed.
-              </p>
+                {/* Per-Page Performance */}
+                {scData.pages.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Pages Search Performance
+                    </h3>
+                    <div className="border rounded-lg overflow-x-auto">
+                      <table className="w-full text-sm min-w-[400px]">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                            <th className="text-left p-2 pl-3">Page</th>
+                            <th className="text-right p-2">Clicks</th>
+                            <th className="text-right p-2">Impressions</th>
+                            <th className="text-right p-2 hidden sm:table-cell">
+                              CTR
+                            </th>
+                            <th className="text-right p-2 pr-3 hidden sm:table-cell">
+                              Position
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {scData.pages.map((p) => (
+                            <tr
+                              key={p.page}
+                              className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                            >
+                              <td className="p-2 pl-3 truncate max-w-50 sm:max-w-75">
+                                <a
+                                  href={p.page}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {p.page.replace("https://linkedgrow.ai", "") ||
+                                    "/"}
+                                </a>
+                              </td>
+                              <td className="p-2 text-right text-blue-600 font-medium">
+                                {p.clicks}
+                              </td>
+                              <td className="p-2 text-right text-muted-foreground">
+                                {p.impressions.toLocaleString()}
+                              </td>
+                              <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
+                                {(p.ctr * 100).toFixed(1)}%
+                              </td>
+                              <td className="p-2 pr-3 text-right hidden sm:table-cell">
+                                <PositionBadge position={p.position} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {scData.topQueries.length === 0 && scData.pages.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No search data available yet. Data appears 2-3 days after pages
+                    are indexed.
+                  </p>
+                )}
+              </>
             )}
-          </>
+          </div>
         )}
       </div>
 
       {/* Keyword Cannibalization (GSC-powered) */}
-      <div className="border rounded-xl p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h2 className="font-semibold flex items-center gap-2 flex-wrap">
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowCannibalization(!showCannibalization)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2 flex-wrap">
             <Target className="w-4 h-4 text-amber-600 shrink-0" />
             <span>Keyword Cannibalization</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              GSC last 28 days
-              {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
-                <> - {data.keywordOverlaps.filter((o) => o.severity === "high").length} high,{" "}
-                {data.keywordOverlaps.filter((o) => o.severity === "medium").length} medium</>
-              )}
-            </span>
+            {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
+              <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                {data.keywordOverlaps.length}
+              </span>
+            )}
+            <span className="text-xs font-normal text-muted-foreground">GSC 28d</span>
           </h2>
-          {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAllOverlaps(!showAllOverlaps)}
-              className="shrink-0 self-end sm:self-auto"
-            >
-              {showAllOverlaps ? "High/Medium only" : "Show all"}
-              {showAllOverlaps ? (
-                <ChevronUp className="w-3.5 h-3.5 ml-1" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 ml-1" />
-              )}
-            </Button>
+          {showCannibalization ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
           )}
-        </div>
+        </button>
+        {showCannibalization && (
+          <div className="p-4 border-t space-y-4">
+            {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {data.keywordOverlaps.filter((o) => o.severity === "high").length} high,{" "}
+                  {data.keywordOverlaps.filter((o) => o.severity === "medium").length} medium
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllOverlaps(!showAllOverlaps)}
+                  className="shrink-0"
+                >
+                  {showAllOverlaps ? "High/Medium only" : "Show all"}
+                  {showAllOverlaps ? (
+                    <ChevronUp className="w-3.5 h-3.5 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                  )}
+                </Button>
+              </div>
+            )}
 
-        {(!data.keywordOverlaps || data.keywordOverlaps.length === 0) ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No queries with multiple ranking pages detected in the last 28 days.
-          </p>
-        ) : (
-          <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm min-w-150">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                  <th className="text-left p-2 pl-3">Query</th>
-                  <th className="text-right p-2">Impressions</th>
-                  <th className="text-right p-2 hidden sm:table-cell">Clicks</th>
-                  <th className="text-left p-2">Pages</th>
-                  <th className="text-center p-2 pr-3 w-24">Severity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {data.keywordOverlaps
-                  .filter((o) => showAllOverlaps || o.severity !== "low")
-                  .map((overlap) => {
-                    const isExpanded = expandedKeywords.has(overlap.keyword);
-                    return (
-                      <tr
-                        key={overlap.keyword}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer align-top"
-                        onClick={() => {
-                          const next = new Set(expandedKeywords);
-                          if (isExpanded) {
-                            next.delete(overlap.keyword);
-                          } else {
-                            next.add(overlap.keyword);
-                          }
-                          setExpandedKeywords(next);
-                        }}
-                      >
-                        <td className="p-2 pl-3 font-medium">
-                          <div className="flex items-center gap-1.5">
-                            {isExpanded ? (
-                              <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" />
-                            ) : (
-                              <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
-                            )}
-                            <span className="truncate max-w-50 sm:max-w-75">{overlap.keyword}</span>
-                          </div>
-                        </td>
-                        <td className="p-2 text-right text-muted-foreground">
-                          {overlap.totalImpressions.toLocaleString()}
-                        </td>
-                        <td className="p-2 text-right text-blue-600 font-medium hidden sm:table-cell">
-                          {overlap.totalClicks}
-                        </td>
-                        <td className="p-2">
-                          {isExpanded ? (
-                            <div className="space-y-1.5">
-                              {overlap.pages.map((page) => (
-                                <div
-                                  key={page.path}
-                                  className="flex items-center gap-2 flex-wrap"
-                                >
-                                  <TypeBadge type={page.type} />
-                                  <span className="text-xs truncate max-w-40">
-                                    {page.path}
-                                  </span>
-                                  <PositionBadge position={page.position} />
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {page.impressions.toLocaleString()} imp
-                                  </span>
-                                  <span className="text-[10px] text-blue-600">
-                                    {page.clicks} clicks
+            {(!data.keywordOverlaps || data.keywordOverlaps.length === 0) ? (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                No queries with multiple ranking pages detected in the last 28 days.
+              </p>
+            ) : (
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm min-w-150">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                      <th className="text-left p-2 pl-3">Query</th>
+                      <th className="text-right p-2">Impressions</th>
+                      <th className="text-right p-2 hidden sm:table-cell">Clicks</th>
+                      <th className="text-left p-2">Pages</th>
+                      <th className="text-center p-2 pr-3 w-24">Severity</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {data.keywordOverlaps
+                      .filter((o) => showAllOverlaps || o.severity !== "low")
+                      .map((overlap) => {
+                        const isExpanded = expandedKeywords.has(overlap.keyword);
+                        return (
+                          <tr
+                            key={overlap.keyword}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer align-top"
+                            onClick={() => {
+                              const next = new Set(expandedKeywords);
+                              if (isExpanded) {
+                                next.delete(overlap.keyword);
+                              } else {
+                                next.add(overlap.keyword);
+                              }
+                              setExpandedKeywords(next);
+                            }}
+                          >
+                            <td className="p-2 pl-3 font-medium">
+                              <div className="flex items-center gap-1.5">
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+                                )}
+                                <span className="truncate max-w-50 sm:max-w-75">{overlap.keyword}</span>
+                              </div>
+                            </td>
+                            <td className="p-2 text-right text-muted-foreground">
+                              {overlap.totalImpressions.toLocaleString()}
+                            </td>
+                            <td className="p-2 text-right text-blue-600 font-medium hidden sm:table-cell">
+                              {overlap.totalClicks}
+                            </td>
+                            <td className="p-2">
+                              {isExpanded ? (
+                                <div className="space-y-1.5">
+                                  {overlap.pages.map((page) => (
+                                    <div
+                                      key={page.path}
+                                      className="flex items-center gap-2 flex-wrap"
+                                    >
+                                      <TypeBadge type={page.type} />
+                                      <span className="text-xs truncate max-w-40">
+                                        {page.path}
+                                      </span>
+                                      <PositionBadge position={page.position} />
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {page.impressions.toLocaleString()} imp
+                                      </span>
+                                      <span className="text-[10px] text-blue-600">
+                                        {page.clicks} clicks
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {overlap.pages.map((page) => (
+                                    <TypeBadge key={page.path} type={page.type} />
+                                  ))}
+                                  <span className="text-xs text-muted-foreground">
+                                    {overlap.pages.length} pages
                                   </span>
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {overlap.pages.map((page) => (
-                                <TypeBadge key={page.path} type={page.type} />
-                              ))}
-                              <span className="text-xs text-muted-foreground">
-                                {overlap.pages.length} pages
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2 pr-3 text-center">
-                          <SeverityBadge severity={overlap.severity} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+                              )}
+                            </td>
+                            <td className="p-2 pr-3 text-center">
+                              <SeverityBadge severity={overlap.severity} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Canonical URL Monitor */}
       {data.canonicalStatuses && data.canonicalStatuses.length > 0 && (
-        <div className="border rounded-xl p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-cyan-600" />
+        <div className="border rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowCanonicals(!showCanonicals)}
+            className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+          >
+            <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-cyan-600 shrink-0" />
               Canonical URLs
-            </h2>
-            <div className="flex items-center gap-3 self-end sm:self-auto">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  {data.canonicalStatuses.filter((c) => c.issue === "ok").length} OK
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  {data.canonicalStatuses.filter((c) => c.issue === "missing").length} Missing
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  {data.canonicalStatuses.filter((c) => c.issue === "mismatch").length} Mismatch
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAllCanonicals(!showAllCanonicals)}
-                className="shrink-0"
-              >
-                {showAllCanonicals ? "Issues only" : "Show all"}
-                {showAllCanonicals ? (
-                  <ChevronUp className="w-3.5 h-3.5 ml-1" />
+              {(() => {
+                const issues = data.canonicalStatuses.filter((c) => c.issue !== "ok").length;
+                return issues > 0 ? (
+                  <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    {issues} issues
+                  </span>
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5 ml-1" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {(() => {
-            const filtered = showAllCanonicals
-              ? data.canonicalStatuses
-              : data.canonicalStatuses.filter((c) => c.issue !== "ok");
-
-            if (filtered.length === 0) {
-              return (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  All canonical URLs are correctly configured.
-                </p>
-              );
-            }
-
-            return (
-              <div className="border rounded-lg overflow-x-auto">
-                <table className="w-full text-sm min-w-125">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                      <th className="text-left p-2 pl-3">Page</th>
-                      <th className="text-left p-2">Canonical URL</th>
-                      <th className="text-center p-2 pr-3 w-24">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {filtered.map((item) => (
-                      <tr
-                        key={item.path}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
-                      >
-                        <td className="p-2 pl-3">
-                          <div className="flex items-center gap-2">
-                            <TypeBadge type={item.type} />
-                            <span className="text-xs font-medium truncate max-w-40 sm:max-w-60">
-                              {item.path}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <span className="text-xs text-muted-foreground truncate block max-w-60">
-                            {item.canonical || "Not set"}
-                          </span>
-                        </td>
-                        <td className="p-2 pr-3 text-center">
-                          {item.issue === "ok" ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              OK
-                            </span>
-                          ) : item.issue === "missing" ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                              Missing
-                            </span>
-                          ) : (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                              Mismatch
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    All OK
+                  </span>
+                );
+              })()}
+            </h2>
+            {showCanonicals ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+            )}
+          </button>
+          {showCanonicals && (
+            <div className="p-4 border-t space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    {data.canonicalStatuses.filter((c) => c.issue === "ok").length} OK
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    {data.canonicalStatuses.filter((c) => c.issue === "missing").length} Missing
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    {data.canonicalStatuses.filter((c) => c.issue === "mismatch").length} Mismatch
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllCanonicals(!showAllCanonicals)}
+                  className="shrink-0"
+                >
+                  {showAllCanonicals ? "Issues only" : "Show all"}
+                  {showAllCanonicals ? (
+                    <ChevronUp className="w-3.5 h-3.5 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                  )}
+                </Button>
               </div>
-            );
-          })()}
+
+              {(() => {
+                const filtered = showAllCanonicals
+                  ? data.canonicalStatuses
+                  : data.canonicalStatuses.filter((c) => c.issue !== "ok");
+
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      All canonical URLs are correctly configured.
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm min-w-125">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                          <th className="text-left p-2 pl-3">Page</th>
+                          <th className="text-left p-2">Canonical URL</th>
+                          <th className="text-center p-2 pr-3 w-24">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {filtered.map((item) => (
+                          <tr
+                            key={item.path}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                          >
+                            <td className="p-2 pl-3">
+                              <div className="flex items-center gap-2">
+                                <TypeBadge type={item.type} />
+                                <span className="text-xs font-medium truncate max-w-40 sm:max-w-60">
+                                  {item.path}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-2">
+                              <span className="text-xs text-muted-foreground truncate block max-w-60">
+                                {item.canonical || "Not set"}
+                              </span>
+                            </td>
+                            <td className="p-2 pr-3 text-center">
+                              {item.issue === "ok" ? (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                  OK
+                                </span>
+                              ) : item.issue === "missing" ? (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                  Missing
+                                </span>
+                              ) : (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                  Mismatch
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
       )}
 
@@ -1013,7 +1090,6 @@ export default function AdminSeoPage() {
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <Gauge className="w-4 h-4 text-emerald-600 shrink-0" />
             Core Web Vitals
-            <span className="text-xs font-normal text-muted-foreground">Mobile</span>
           </h2>
           {showVitals ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -1026,7 +1102,7 @@ export default function AdminSeoPage() {
             {vitalsLoading && (
               <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Running PageSpeed Insights (takes 30-60s)...</span>
+                <span className="text-sm">Running PageSpeed Insights for mobile + desktop (takes 30-60s)...</span>
               </div>
             )}
             {!vitalsLoading && !vitals && (
@@ -1037,131 +1113,201 @@ export default function AdminSeoPage() {
                 </Button>
               </div>
             )}
-            {vitals && vitals.length > 0 && (
-              <>
-                <div className="border rounded-lg overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                        <th className="text-left p-2 pl-3">Page</th>
-                        <th className="text-center p-2">Score</th>
-                        <th className="text-right p-2">LCP</th>
-                        <th className="text-right p-2">CLS</th>
-                        <th className="text-right p-2 hidden sm:table-cell">FCP</th>
-                        <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {vitals.map((v) => (
-                        <tr key={v.url} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-                          <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
-                          <td className="p-2 text-center">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                              v.score >= 90
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : v.score >= 50
-                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            }`}>
-                              {v.score}
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs">
-                            <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
-                              {(v.lcp / 1000).toFixed(1)}s
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs">
-                            <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
-                              {v.cls.toFixed(3)}
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs hidden sm:table-cell">
-                            <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
-                              {(v.fcp / 1000).toFixed(1)}s
-                            </span>
-                          </td>
-                          <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
-                            <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
-                              {Math.round(v.tbt)}ms
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="flex items-center justify-between">
+            {!vitalsLoading && vitals && vitals.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                PageSpeed API returned no results. Try again later.
+              </p>
+            )}
+            {vitals && vitals.length > 0 && (() => {
+              const mobileVitals = vitals.filter((v) => v.strategy === "mobile");
+              const desktopVitals = vitals.filter((v) => v.strategy === "desktop");
+              const currentVitals = vitalsStrategy === "mobile" ? mobileVitals : desktopVitals;
+
+              return (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setVitalsStrategy("mobile")}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                          vitalsStrategy === "mobile"
+                            ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Mobile
+                      </button>
+                      <button
+                        onClick={() => setVitalsStrategy("desktop")}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                          vitalsStrategy === "desktop"
+                            ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Desktop
+                      </button>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={fetchVitals} disabled={vitalsLoading}>
+                      {vitalsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                  {currentVitals.length > 0 ? (
+                    <div className="border rounded-lg overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                            <th className="text-left p-2 pl-3">Page</th>
+                            <th className="text-center p-2">Score</th>
+                            <th className="text-right p-2">LCP</th>
+                            <th className="text-right p-2">CLS</th>
+                            <th className="text-right p-2 hidden sm:table-cell">FCP</th>
+                            <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {currentVitals.map((v) => (
+                            <tr key={`${v.url}-${v.strategy}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                              <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
+                              <td className="p-2 text-center">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                  v.score >= 90
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : v.score >= 50
+                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                }`}>
+                                  {v.score}
+                                </span>
+                              </td>
+                              <td className="p-2 text-right text-xs">
+                                <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
+                                  {(v.lcp / 1000).toFixed(1)}s
+                                </span>
+                              </td>
+                              <td className="p-2 text-right text-xs">
+                                <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
+                                  {v.cls.toFixed(3)}
+                                </span>
+                              </td>
+                              <td className="p-2 text-right text-xs hidden sm:table-cell">
+                                <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
+                                  {(v.fcp / 1000).toFixed(1)}s
+                                </span>
+                              </td>
+                              <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
+                                <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
+                                  {Math.round(v.tbt)}ms
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      No {vitalsStrategy} results available.
+                    </p>
+                  )}
                   <p className="text-[10px] text-muted-foreground">
                     LCP &le; 2.5s, CLS &le; 0.1, FCP &le; 1.8s, TBT &le; 200ms = good
                   </p>
-                  <Button variant="ghost" size="sm" onClick={fetchVitals} disabled={vitalsLoading}>
-                    {vitalsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                  </Button>
-                </div>
-              </>
-            )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
 
       {/* Error Pages Alert */}
       {errorPages.length > 0 && (
-        <div className="border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 rounded-xl p-4 space-y-3">
-          <h2 className="font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            Pages with Errors ({errorPages.length})
-          </h2>
-          <div className="space-y-2">
-            {errorPages.map((page) => (
-              <div
-                key={page.url}
-                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shrink-0">
-                    {page.status || "ERR"}
-                  </span>
-                  <span className="text-xs sm:text-sm truncate">
-                    {page.url.replace("https://linkedgrow.ai", "")}
-                  </span>
-                </div>
-                <a
-                  href={page.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+        <div className="border border-red-200 dark:border-red-800 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowErrors(!showErrors)}
+            className="w-full p-3 sm:p-4 bg-red-50 dark:bg-red-950/30 flex items-center justify-between hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+          >
+            <h2 className="text-sm sm:text-base font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              Pages with Errors
+              <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {errorPages.length}
+              </span>
+            </h2>
+            {showErrors ? (
+              <ChevronUp className="w-4 h-4 text-red-400 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-red-400 shrink-0" />
+            )}
+          </button>
+          {showErrors && (
+            <div className="p-4 border-t border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 space-y-2">
+              {errorPages.map((page) => (
+                <div
+                  key={page.url}
+                  className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shrink-0">
+                      {page.status || "ERR"}
+                    </span>
+                    <span className="text-xs sm:text-sm truncate">
+                      {page.url.replace("https://linkedgrow.ai", "")}
+                    </span>
+                  </div>
+                  <a
+                    href={page.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Slow Pages Warning */}
       {slowPages.length > 0 && (
-        <div className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-4 space-y-3">
-          <h2 className="font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Slow Pages ({slowPages.length}) - over 3s response
-          </h2>
-          <div className="space-y-2">
-            {slowPages.map((page) => (
-              <div
-                key={page.url}
-                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
-              >
-                <span className="text-xs sm:text-sm truncate min-w-0">
-                  {page.url.replace("https://linkedgrow.ai", "")}
-                </span>
-                <span className="text-xs font-mono text-amber-600 shrink-0">
-                  {(page.responseTime / 1000).toFixed(1)}s
-                </span>
-              </div>
-            ))}
-          </div>
+        <div className="border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowSlowPages(!showSlowPages)}
+            className="w-full p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-between hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+          >
+            <h2 className="text-sm sm:text-base font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <Clock className="w-4 h-4 shrink-0" />
+              Slow Pages
+              <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                {slowPages.length}
+              </span>
+              <span className="text-xs font-normal text-amber-600">over 3s</span>
+            </h2>
+            {showSlowPages ? (
+              <ChevronUp className="w-4 h-4 text-amber-400 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-amber-400 shrink-0" />
+            )}
+          </button>
+          {showSlowPages && (
+            <div className="p-4 border-t border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+              {slowPages.map((page) => (
+                <div
+                  key={page.url}
+                  className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
+                >
+                  <span className="text-xs sm:text-sm truncate min-w-0">
+                    {page.url.replace("https://linkedgrow.ai", "")}
+                  </span>
+                  <span className="text-xs font-mono text-amber-600 shrink-0">
+                    {(page.responseTime / 1000).toFixed(1)}s
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

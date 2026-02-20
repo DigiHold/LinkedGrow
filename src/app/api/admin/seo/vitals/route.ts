@@ -25,7 +25,7 @@ interface PageSpeedResult {
 
 /**
  * GET /api/admin/seo/vitals
- * Runs PageSpeed Insights for key pages (mobile strategy)
+ * Runs PageSpeed Insights for key pages (both mobile and desktop)
  * Free API - no key required for basic usage
  */
 export async function GET() {
@@ -35,9 +35,10 @@ export async function GET() {
   }
 
   try {
-    const results = await Promise.allSettled(
-      KEY_PAGES.map((page) => checkPageSpeed(page.path, page.label))
-    );
+    const results = await Promise.allSettled([
+      ...KEY_PAGES.map((page) => checkPageSpeed(page.path, page.label, "mobile")),
+      ...KEY_PAGES.map((page) => checkPageSpeed(page.path, page.label, "desktop")),
+    ]);
 
     const vitals: PageSpeedResult[] = [];
     for (const result of results) {
@@ -58,10 +59,11 @@ export async function GET() {
 
 async function checkPageSpeed(
   pagePath: string,
-  label: string
+  label: string,
+  strategy: "mobile" | "desktop"
 ): Promise<PageSpeedResult | null> {
   const url = pagePath === "/" ? BASE_URL : `${BASE_URL}${pagePath}`;
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=mobile`;
+  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=${strategy}`;
 
   try {
     const res = await fetch(apiUrl, {
@@ -83,7 +85,7 @@ async function checkPageSpeed(
       fcp: audit?.["first-contentful-paint"]?.numericValue ?? 0,
       si: audit?.["speed-index"]?.numericValue ?? 0,
       tbt: audit?.["total-blocking-time"]?.numericValue ?? 0,
-      strategy: "mobile",
+      strategy,
     };
   } catch {
     return null;

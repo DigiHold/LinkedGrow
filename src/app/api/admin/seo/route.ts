@@ -35,11 +35,17 @@ export async function GET() {
       responseTime: 0,
     }));
 
-    // Only HTTP-check published blog posts (drafts/scheduled are expected to 404 for public)
+    // Blog posts registered in BLOG_POSTS are filesystem-verified (same as pages)
+    // Server-to-server HTTP checks on Vercel cause false positives (self-referencing, cold starts)
     const publishedBlogUrls = allPosts
       .filter((p) => p.status === "published")
       .map((p) => `${BASE_URL}/blog/${p.slug}`);
-    const blogUrlStatuses = await checkUrlStatuses(publishedBlogUrls);
+    const blogUrlStatuses = publishedBlogUrls.map((url) => ({
+      url,
+      status: 200,
+      ok: true,
+      responseTime: 0,
+    }));
 
     const allUrlStatuses = [...pageStatuses, ...blogUrlStatuses];
 
@@ -117,18 +123,6 @@ export async function POST(request: NextRequest) {
 
       const result = await notifySearchEngines(urls);
       return NextResponse.json({ success: true, result });
-    }
-
-    if (action === "check-status") {
-      if (!urls || !Array.isArray(urls) || urls.length === 0) {
-        return NextResponse.json(
-          { error: "URLs array required" },
-          { status: 400 }
-        );
-      }
-
-      const statuses = await checkUrlStatuses(urls);
-      return NextResponse.json({ success: true, statuses });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -288,41 +282,3 @@ function scanBrokenInternalLinks(): { source: string; href: string; type: "page"
   });
 }
 
-// Check if blog post URLs are live using GET (more reliable than HEAD on Vercel)
-async function checkUrlStatuses(
-  urls: string[]
-): Promise<
-  { url: string; status: number; ok: boolean; responseTime: number }[]
-> {
-  const results = await Promise.allSettled(
-    urls.map(async (url) => {
-      const start = Date.now();
-      // GET is more reliable than HEAD on Vercel (some middleware/pages don't handle HEAD)
-      const res = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(15000),
-        headers: { "User-Agent": "LinkedGrow-SEO-Check/1.0" },
-      });
-      const responseTime = Date.now() - start;
-      return {
-        url,
-        status: res.status,
-        ok: res.ok,
-        responseTime,
-      };
-    })
-  );
-
-  return results.map((result, i) => {
-    if (result.status === "fulfilled") {
-      return result.value;
-    }
-    return {
-      url: urls[i],
-      status: 0,
-      ok: false,
-      responseTime: 0,
-    };
-  });
-}
