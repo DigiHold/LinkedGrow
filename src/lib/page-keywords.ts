@@ -128,15 +128,32 @@ function findPagesWithMetadata(
           continue;
         if (pagePath.startsWith("/blog/")) continue;
 
-        // Read the file and extract metadata
+        // Read page file and extract metadata
         try {
           const content = fs.readFileSync(fullPath, "utf-8");
-          const canonical = extractCanonical(content);
-          const title = extractTitle(content) || prettifyPath(pagePath);
+
+          // Skip noindex pages (e.g. /beta)
+          if (content.includes("index: false")) continue;
+
+          let canonical = extractCanonical(content);
+          let title = extractTitle(content);
+
+          // Also check layout.tsx in the same directory for metadata
+          // (some pages use "use client" in page.tsx and put metadata in layout.tsx)
+          if (!canonical || !title) {
+            const layoutPath = path.join(dir, "layout.tsx");
+            try {
+              const layoutContent = fs.readFileSync(layoutPath, "utf-8");
+              if (!canonical) canonical = extractCanonical(layoutContent);
+              if (!title) title = extractTitle(layoutContent);
+            } catch {
+              // No layout.tsx, that's fine
+            }
+          }
 
           pages.push({
             path: pagePath,
-            title,
+            title: title || prettifyPath(pagePath),
             canonical,
             type: getPageType(pagePath),
           });

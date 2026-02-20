@@ -60,6 +60,9 @@ export const metadata: Metadata = {
       "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
   },
+  alternates: {
+    canonical: "https://linkedgrow.ai",
+  },
 };
 
 export const viewport: Viewport = {
