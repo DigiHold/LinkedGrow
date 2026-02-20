@@ -24,6 +24,9 @@ import {
   Link2,
   ChevronDown,
   ChevronUp,
+  Unlink,
+  Gauge,
+  SearchX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +78,24 @@ interface CanonicalIssue {
   type: string;
 }
 
+interface BrokenLink {
+  source: string;
+  href: string;
+  type: "page" | "blog";
+}
+
+interface VitalsResult {
+  url: string;
+  label: string;
+  score: number;
+  lcp: number;
+  cls: number;
+  fcp: number;
+  si: number;
+  tbt: number;
+  strategy: string;
+}
+
 interface SeoData {
   pages: UrlStatus[];
   blogPosts: BlogPostData[];
@@ -88,6 +109,7 @@ interface SeoData {
   totalPages: number;
   keywordOverlaps: KeywordOverlap[];
   canonicalStatuses: CanonicalIssue[];
+  brokenLinks: BrokenLink[];
 }
 
 interface SearchConsoleData {
@@ -136,6 +158,11 @@ export default function AdminSeoPage() {
   const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
   const [showPublicPages, setShowPublicPages] = useState(false);
   const [showBlogPosts, setShowBlogPosts] = useState(false);
+  const [showUnindexed, setShowUnindexed] = useState(false);
+  const [showBrokenLinks, setShowBrokenLinks] = useState(false);
+  const [showVitals, setShowVitals] = useState(false);
+  const [vitals, setVitals] = useState<VitalsResult[] | null>(null);
+  const [vitalsLoading, setVitalsLoading] = useState(false);
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -172,6 +199,21 @@ export default function AdminSeoPage() {
       setScError("Failed to connect");
     } finally {
       setScLoading(false);
+    }
+  };
+
+  const fetchVitals = async () => {
+    setVitalsLoading(true);
+    try {
+      const res = await fetch("/api/admin/seo/vitals");
+      if (res.ok) {
+        const json = await res.json();
+        setVitals(json.vitals);
+      }
+    } catch (error) {
+      console.error("Failed to fetch vitals:", error);
+    } finally {
+      setVitalsLoading(false);
     }
   };
 
@@ -796,6 +838,272 @@ export default function AdminSeoPage() {
           })()}
         </div>
       )}
+
+      {/* Unindexed Pages Detection */}
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowUnindexed(!showUnindexed)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <SearchX className="w-4 h-4 text-amber-600 shrink-0" />
+            Unindexed Pages
+            {scData && data && (() => {
+              const knownUrls = new Set([
+                ...data.pages.map((p) => p.url.replace("https://linkedgrow.ai", "") || "/"),
+                ...data.blogPosts.filter((p) => p.status === "published").map((p) => `/blog/${p.slug}`),
+              ]);
+              const gscPaths = new Set(scData.pages.map((p) => p.page.replace("https://linkedgrow.ai", "") || "/"));
+              const unindexed = [...knownUrls].filter((u) => !gscPaths.has(u));
+              return unindexed.length > 0 ? (
+                <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  {unindexed.length}
+                </span>
+              ) : (
+                <span className="text-xs font-normal px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  0
+                </span>
+              );
+            })()}
+          </h2>
+          {showUnindexed ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showUnindexed && (
+          <div className="p-4 border-t space-y-3">
+            {!scData ? (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                GSC data required. Wait for Search Console data to load.
+              </p>
+            ) : (() => {
+              const knownUrls = [
+                ...data.pages.map((p) => ({ path: p.url.replace("https://linkedgrow.ai", "") || "/", url: p.url })),
+                ...data.blogPosts.filter((p) => p.status === "published").map((p) => ({ path: `/blog/${p.slug}`, url: p.url })),
+              ];
+              const gscPaths = new Set(scData.pages.map((p) => p.page.replace("https://linkedgrow.ai", "") || "/"));
+              const unindexed = knownUrls.filter((u) => !gscPaths.has(u.path));
+
+              if (unindexed.length === 0) {
+                return (
+                  <p className="text-sm text-green-600 text-center py-2">
+                    All pages appear in Google Search results.
+                  </p>
+                );
+              }
+
+              return (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Pages with 0 impressions in GSC (last 28 days) - likely not indexed yet.
+                  </p>
+                  <div className="space-y-1.5">
+                    {unindexed.map((page) => (
+                      <div
+                        key={page.path}
+                        className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg gap-2"
+                      >
+                        <span className="text-xs sm:text-sm truncate min-w-0">{page.path}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => triggerIndexing([page.url])}
+                          disabled={indexingUrls.has(page.url)}
+                          title="Request indexing"
+                          className="shrink-0"
+                        >
+                          {indexingUrls.has(page.url) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => triggerIndexing(unindexed.map((u) => u.url))}
+                    disabled={indexingAll}
+                    className="w-full"
+                  >
+                    <Zap className="w-3.5 h-3.5 mr-1.5" />
+                    Index All Unindexed ({unindexed.length})
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+
+      {/* Broken Internal Links */}
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowBrokenLinks(!showBrokenLinks)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <Unlink className="w-4 h-4 text-red-600 shrink-0" />
+            Broken Internal Links
+            {data.brokenLinks && (
+              <span className={`text-xs font-normal px-1.5 py-0.5 rounded-full ${
+                data.brokenLinks.length > 0
+                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+              }`}>
+                {data.brokenLinks.length}
+              </span>
+            )}
+          </h2>
+          {showBrokenLinks ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showBrokenLinks && (
+          <div className="p-4 border-t">
+            {!data.brokenLinks || data.brokenLinks.length === 0 ? (
+              <p className="text-sm text-green-600 text-center py-2">
+                No broken internal links found.
+              </p>
+            ) : (
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                      <th className="text-left p-2 pl-3">Source Page</th>
+                      <th className="text-left p-2">Broken Link</th>
+                      <th className="text-center p-2 pr-3 w-20">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {data.brokenLinks.map((link, i) => (
+                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                        <td className="p-2 pl-3 text-xs truncate max-w-40">{link.source}</td>
+                        <td className="p-2 text-xs text-red-600 truncate max-w-50">{link.href}</td>
+                        <td className="p-2 pr-3 text-center">
+                          <TypeBadge type={link.type} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Core Web Vitals */}
+      <div className="border rounded-xl overflow-hidden">
+        <button
+          onClick={() => {
+            setShowVitals(!showVitals);
+            if (!showVitals && !vitals && !vitalsLoading) {
+              fetchVitals();
+            }
+          }}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <Gauge className="w-4 h-4 text-emerald-600 shrink-0" />
+            Core Web Vitals
+            <span className="text-xs font-normal text-muted-foreground">Mobile</span>
+          </h2>
+          {showVitals ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showVitals && (
+          <div className="p-4 border-t space-y-3">
+            {vitalsLoading && (
+              <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Running PageSpeed Insights (takes 30-60s)...</span>
+              </div>
+            )}
+            {!vitalsLoading && !vitals && (
+              <div className="text-center py-4">
+                <Button variant="outline" size="sm" onClick={fetchVitals}>
+                  <Gauge className="w-3.5 h-3.5 mr-1.5" />
+                  Run Check
+                </Button>
+              </div>
+            )}
+            {vitals && vitals.length > 0 && (
+              <>
+                <div className="border rounded-lg overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                        <th className="text-left p-2 pl-3">Page</th>
+                        <th className="text-center p-2">Score</th>
+                        <th className="text-right p-2">LCP</th>
+                        <th className="text-right p-2">CLS</th>
+                        <th className="text-right p-2 hidden sm:table-cell">FCP</th>
+                        <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {vitals.map((v) => (
+                        <tr key={v.url} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                          <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
+                          <td className="p-2 text-center">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              v.score >= 90
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : v.score >= 50
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            }`}>
+                              {v.score}
+                            </span>
+                          </td>
+                          <td className="p-2 text-right text-xs">
+                            <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
+                              {(v.lcp / 1000).toFixed(1)}s
+                            </span>
+                          </td>
+                          <td className="p-2 text-right text-xs">
+                            <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
+                              {v.cls.toFixed(3)}
+                            </span>
+                          </td>
+                          <td className="p-2 text-right text-xs hidden sm:table-cell">
+                            <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
+                              {(v.fcp / 1000).toFixed(1)}s
+                            </span>
+                          </td>
+                          <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
+                            <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
+                              {Math.round(v.tbt)}ms
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground">
+                    LCP &le; 2.5s, CLS &le; 0.1, FCP &le; 1.8s, TBT &le; 200ms = good
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={fetchVitals} disabled={vitalsLoading}>
+                    {vitalsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Error Pages Alert */}
       {errorPages.length > 0 && (

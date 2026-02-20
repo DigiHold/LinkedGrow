@@ -61,10 +61,11 @@ export async function GET() {
       googleIndexingApi: !!process.env.GOOGLE_INDEXING_CREDENTIALS,
     };
 
-    // Keyword cannibalization analysis (GSC-powered) + canonical analysis in parallel
-    const [keywordOverlaps, canonicalStatuses] = await Promise.all([
+    // Keyword cannibalization analysis (GSC-powered) + canonical analysis + broken links in parallel
+    const [keywordOverlaps, canonicalStatuses, brokenLinks] = await Promise.all([
       analyzeKeywordCannibalization(),
       Promise.resolve(analyzeCanonicals()),
+      Promise.resolve(scanBrokenInternalLinks()),
     ]);
 
     return NextResponse.json({
@@ -80,6 +81,7 @@ export async function GET() {
       totalPages: pageStatuses.length + publishedBlogUrls.length,
       keywordOverlaps,
       canonicalStatuses,
+      brokenLinks,
     });
   } catch (error) {
     console.error("Admin SEO API error:", error);
@@ -205,6 +207,85 @@ function getPublicPages(): { url: string; label: string }[] {
       label: pathToLabel(pagePath),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// Scan all page files for broken internal links
+function scanBrokenInternalLinks(): { source: string; href: string; type: "page" | "blog" }[] {
+  const appDir = path.join(process.cwd(), "src", "app");
+  const allPages = findAllPages(appDir);
+  const allPagePaths = new Set(allPages);
+
+  // Also add blog article slugs as valid paths
+  for (const post of Object.values(BLOG_POSTS)) {
+    allPagePaths.add(`/blog/${post.slug}`);
+  }
+
+  // Add known special paths that resolve but aren't page.tsx files
+  allPagePaths.add("/blog"); // blog listing
+
+  const broken: { source: string; href: string; type: "page" | "blog" }[] = [];
+
+  // Scan all page.tsx and content files for internal links
+  function scanDir(dir: string, basePath: string = "") {
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory()) {
+          if (item.startsWith("_") || item === "api" || item === "node_modules" || item === ".next") continue;
+          let urlSegment = item;
+          if (item.startsWith("(") && item.endsWith(")")) urlSegment = "";
+          if (item.startsWith("[")) continue;
+          const newBasePath = urlSegment ? `${basePath}/${urlSegment}` : basePath;
+          scanDir(fullPath, newBasePath);
+        } else if (item.endsWith(".tsx") || item.endsWith(".ts")) {
+          // Skip non-page utility files
+          if (item.startsWith("_")) continue;
+          try {
+            const content = fs.readFileSync(fullPath, "utf-8");
+            const sourcePage = basePath || "/";
+
+            // Match href="/path" and href={"/path"} patterns (internal links only)
+            const hrefRegex = /href=(?:{?"|\{")(\/?(?:blog|features|for|use-cases|industries|free-tools|pricing|about|sign-up|sign-in|affiliate|prelaunch)[^"'}]*)/g;
+            let match;
+            while ((match = hrefRegex.exec(content)) !== null) {
+              let href = match[1];
+              // Ensure leading slash
+              if (!href.startsWith("/")) href = `/${href}`;
+              // Strip trailing slash and hash fragments
+              href = href.replace(/\/+$/, "").replace(/#.*$/, "");
+              if (!href) continue;
+              // Check if the path exists
+              if (!allPagePaths.has(href)) {
+                broken.push({
+                  source: sourcePage,
+                  href,
+                  type: href.startsWith("/blog/") ? "blog" : "page",
+                });
+              }
+            }
+          } catch {
+            // Skip unreadable files
+          }
+        }
+      }
+    } catch {
+      // Ignore directory errors
+    }
+  }
+
+  scanDir(appDir);
+
+  // Deduplicate
+  const seen = new Set<string>();
+  return broken.filter((b) => {
+    const key = `${b.source}:${b.href}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // Check if blog post URLs are live using GET (more reliable than HEAD on Vercel)
