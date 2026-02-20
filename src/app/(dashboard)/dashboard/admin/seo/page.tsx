@@ -134,6 +134,8 @@ export default function AdminSeoPage() {
   const [showAllOverlaps, setShowAllOverlaps] = useState(false);
   const [showAllCanonicals, setShowAllCanonicals] = useState(false);
   const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
+  const [showPublicPages, setShowPublicPages] = useState(false);
+  const [showBlogPosts, setShowBlogPosts] = useState(false);
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -857,48 +859,68 @@ export default function AdminSeoPage() {
 
       {/* Public Pages */}
       <div className="border rounded-xl overflow-hidden">
-        <div className="p-3 sm:p-4 border-b bg-slate-50 dark:bg-slate-900/50">
+        <button
+          onClick={() => setShowPublicPages(!showPublicPages)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <Globe className="w-4 h-4 shrink-0" />
-            Public Pages
+            Public Pages ({data.pages.length})
           </h2>
-        </div>
-        <div className="divide-y">
-          {data.pages.map((page) => (
-            <PageRow
-              key={page.url}
-              page={page}
-              onIndex={() => triggerIndexing([page.url])}
-              isIndexing={indexingUrls.has(page.url)}
-            />
-          ))}
-        </div>
+          {showPublicPages ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showPublicPages && (
+          <div className="divide-y border-t">
+            {data.pages.map((page) => (
+              <PageRow
+                key={page.url}
+                page={page}
+                onIndex={() => triggerIndexing([page.url])}
+                isIndexing={indexingUrls.has(page.url)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Blog Posts */}
       <div className="border rounded-xl overflow-hidden">
-        <div className="p-3 sm:p-4 border-b bg-slate-50 dark:bg-slate-900/50">
+        <button
+          onClick={() => setShowBlogPosts(!showBlogPosts)}
+          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
+        >
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <FileText className="w-4 h-4 shrink-0" />
             Blog Posts ({data.totalPosts})
           </h2>
-        </div>
-        <div className="divide-y">
-          {data.blogPosts.map((post) => {
-            const urlStatus = data.blogUrlStatuses.find(
-              (u) => u.url === post.url
-            );
-            return (
-              <BlogPostRow
-                key={post.slug}
-                post={post}
-                urlStatus={urlStatus}
-                onIndex={() => triggerIndexing([post.url])}
-                isIndexing={indexingUrls.has(post.url)}
-              />
-            );
-          })}
-        </div>
+          {showBlogPosts ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        {showBlogPosts && (
+          <div className="divide-y border-t">
+            {data.blogPosts.map((post) => {
+              const urlStatus = data.blogUrlStatuses.find(
+                (u) => u.url === post.url
+              );
+              return (
+                <BlogPostRow
+                  key={post.slug}
+                  post={post}
+                  urlStatus={urlStatus}
+                  onIndex={() => triggerIndexing([post.url])}
+                  isIndexing={indexingUrls.has(post.url)}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
