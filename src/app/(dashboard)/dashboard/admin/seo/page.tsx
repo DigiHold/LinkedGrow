@@ -209,10 +209,11 @@ export default function AdminSeoPage() {
     }
   };
 
-  const fetchVitals = async () => {
+  const fetchVitals = async (strategy?: "mobile" | "desktop") => {
+    const s = strategy || vitalsStrategy;
     setVitalsLoading(true);
     try {
-      const res = await fetch("/api/admin/seo/vitals");
+      const res = await fetch(`/api/admin/seo/vitals?strategy=${s}`);
       if (res.ok) {
         const json = await res.json();
         setVitals(json.vitals);
@@ -1102,14 +1103,14 @@ export default function AdminSeoPage() {
             {vitalsLoading && (
               <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Running PageSpeed Insights for mobile + desktop (takes 30-60s)...</span>
+                <span className="text-sm">Running PageSpeed Insights ({vitalsStrategy}) - takes 30-60s...</span>
               </div>
             )}
             {!vitalsLoading && !vitals && (
               <div className="text-center py-4">
-                <Button variant="outline" size="sm" onClick={fetchVitals}>
+                <Button variant="outline" size="sm" onClick={() => fetchVitals()}>
                   <Gauge className="w-3.5 h-3.5 mr-1.5" />
-                  Run Check
+                  Run Check (Mobile)
                 </Button>
               </div>
             )}
@@ -1118,17 +1119,13 @@ export default function AdminSeoPage() {
                 PageSpeed API returned no results. Try again later.
               </p>
             )}
-            {vitals && vitals.length > 0 && (() => {
-              const mobileVitals = vitals.filter((v) => v.strategy === "mobile");
-              const desktopVitals = vitals.filter((v) => v.strategy === "desktop");
-              const currentVitals = vitalsStrategy === "mobile" ? mobileVitals : desktopVitals;
-
-              return (
+            {vitals && vitals.length > 0 && (
                 <>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
                       <button
-                        onClick={() => setVitalsStrategy("mobile")}
+                        onClick={() => { setVitalsStrategy("mobile"); fetchVitals("mobile"); }}
+                        disabled={vitalsLoading}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                           vitalsStrategy === "mobile"
                             ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
@@ -1138,7 +1135,8 @@ export default function AdminSeoPage() {
                         Mobile
                       </button>
                       <button
-                        onClick={() => setVitalsStrategy("desktop")}
+                        onClick={() => { setVitalsStrategy("desktop"); fetchVitals("desktop"); }}
+                        disabled={vitalsLoading}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                           vitalsStrategy === "desktop"
                             ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
@@ -1148,74 +1146,67 @@ export default function AdminSeoPage() {
                         Desktop
                       </button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={fetchVitals} disabled={vitalsLoading}>
+                    <Button variant="ghost" size="sm" onClick={() => fetchVitals()} disabled={vitalsLoading}>
                       {vitalsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                     </Button>
                   </div>
-                  {currentVitals.length > 0 ? (
-                    <div className="border rounded-lg overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                            <th className="text-left p-2 pl-3">Page</th>
-                            <th className="text-center p-2">Score</th>
-                            <th className="text-right p-2">LCP</th>
-                            <th className="text-right p-2">CLS</th>
-                            <th className="text-right p-2 hidden sm:table-cell">FCP</th>
-                            <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
+                  <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
+                          <th className="text-left p-2 pl-3">Page</th>
+                          <th className="text-center p-2">Score</th>
+                          <th className="text-right p-2">LCP</th>
+                          <th className="text-right p-2">CLS</th>
+                          <th className="text-right p-2 hidden sm:table-cell">FCP</th>
+                          <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {vitals.map((v) => (
+                          <tr key={`${v.url}-${v.strategy}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
+                            <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
+                            <td className="p-2 text-center">
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                v.score >= 90
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : v.score >= 50
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              }`}>
+                                {v.score}
+                              </span>
+                            </td>
+                            <td className="p-2 text-right text-xs">
+                              <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
+                                {(v.lcp / 1000).toFixed(1)}s
+                              </span>
+                            </td>
+                            <td className="p-2 text-right text-xs">
+                              <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
+                                {v.cls.toFixed(3)}
+                              </span>
+                            </td>
+                            <td className="p-2 text-right text-xs hidden sm:table-cell">
+                              <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
+                                {(v.fcp / 1000).toFixed(1)}s
+                              </span>
+                            </td>
+                            <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
+                              <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
+                                {Math.round(v.tbt)}ms
+                              </span>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {currentVitals.map((v) => (
-                            <tr key={`${v.url}-${v.strategy}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-                              <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
-                              <td className="p-2 text-center">
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                  v.score >= 90
-                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                    : v.score >= 50
-                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                }`}>
-                                  {v.score}
-                                </span>
-                              </td>
-                              <td className="p-2 text-right text-xs">
-                                <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
-                                  {(v.lcp / 1000).toFixed(1)}s
-                                </span>
-                              </td>
-                              <td className="p-2 text-right text-xs">
-                                <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
-                                  {v.cls.toFixed(3)}
-                                </span>
-                              </td>
-                              <td className="p-2 text-right text-xs hidden sm:table-cell">
-                                <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
-                                  {(v.fcp / 1000).toFixed(1)}s
-                                </span>
-                              </td>
-                              <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
-                                <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
-                                  {Math.round(v.tbt)}ms
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      No {vitalsStrategy} results available.
-                    </p>
-                  )}
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   <p className="text-[10px] text-muted-foreground">
                     LCP &le; 2.5s, CLS &le; 0.1, FCP &le; 1.8s, TBT &le; 200ms = good
                   </p>
                 </>
-              );
-            })()}
+            )}
           </div>
         )}
       </div>

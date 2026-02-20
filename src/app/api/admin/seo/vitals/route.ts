@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+
+// Allow up to 120s for sequential PageSpeed API calls
+export const maxDuration = 120;
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
 
@@ -24,26 +27,25 @@ interface PageSpeedResult {
 }
 
 /**
- * GET /api/admin/seo/vitals
- * Runs PageSpeed Insights for key pages (both mobile and desktop)
- * Free API - no key required for basic usage
+ * GET /api/admin/seo/vitals?strategy=mobile|desktop
+ * Runs PageSpeed Insights for key pages (one strategy at a time)
+ * Calls run sequentially to avoid Google API rate limits
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const results = await Promise.allSettled([
-      ...KEY_PAGES.map((page) => checkPageSpeed(page.path, page.label, "mobile")),
-      ...KEY_PAGES.map((page) => checkPageSpeed(page.path, page.label, "desktop")),
-    ]);
+  const strategy = (request.nextUrl.searchParams.get("strategy") || "mobile") as "mobile" | "desktop";
 
+  try {
+    // Run sequentially to avoid PageSpeed API rate limiting
     const vitals: PageSpeedResult[] = [];
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value) {
-        vitals.push(result.value);
+    for (const page of KEY_PAGES) {
+      const result = await checkPageSpeed(page.path, page.label, strategy);
+      if (result) {
+        vitals.push(result);
       }
     }
 
@@ -63,14 +65,21 @@ async function checkPageSpeed(
   strategy: "mobile" | "desktop"
 ): Promise<PageSpeedResult | null> {
   const url = pagePath === "/" ? BASE_URL : `${BASE_URL}${pagePath}`;
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=${strategy}`;
+  const apiKey = process.env.PAGESPEED_API_KEY;
+  let apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=${strategy}`;
+  if (apiKey) {
+    apiUrl += `&key=${apiKey}`;
+  }
 
   try {
     const res = await fetch(apiUrl, {
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(30000),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`PageSpeed API error for ${pagePath} (${strategy}): ${res.status} ${res.statusText}`);
+      return null;
+    }
 
     const data = await res.json();
     const audit = data.lighthouseResult?.audits;
@@ -87,7 +96,8 @@ async function checkPageSpeed(
       tbt: audit?.["total-blocking-time"]?.numericValue ?? 0,
       strategy,
     };
-  } catch {
+  } catch (error) {
+    console.error(`PageSpeed API exception for ${pagePath} (${strategy}):`, error);
     return null;
   }
 }
