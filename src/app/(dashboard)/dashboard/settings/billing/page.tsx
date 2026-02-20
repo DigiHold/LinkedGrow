@@ -207,7 +207,16 @@ function BillingContent() {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-4">
+        {fromPortal && (
+          <Link
+            href="/dashboard/settings/billing"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Billing
+          </Link>
+        )}
         <Card className="border-red-200 dark:border-red-800">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
