@@ -219,7 +219,7 @@ export default function AdminSeoPage() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 overflow-hidden">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -318,10 +318,10 @@ export default function AdminSeoPage() {
 
       {/* Search Console Performance */}
       <div className="border rounded-xl p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Google Search Performance
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 className="font-semibold flex items-center gap-2 flex-wrap">
+            <BarChart3 className="w-4 h-4 shrink-0" />
+            <span>Google Search Performance</span>
             {scData && (
               <span className="text-xs font-normal text-muted-foreground">
                 {scData.dateRange.start} to {scData.dateRange.end}
@@ -333,6 +333,7 @@ export default function AdminSeoPage() {
             size="sm"
             onClick={fetchSearchConsole}
             disabled={scLoading}
+            className="shrink-0 self-end sm:self-auto"
           >
             {scLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -358,40 +359,40 @@ export default function AdminSeoPage() {
         {scData && (
           <>
             {/* Performance Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="border rounded-lg p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <MousePointerClick className="w-3.5 h-3.5 text-blue-600" />
+                  <MousePointerClick className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   Total Clicks
                 </div>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">
                   {scData.totals.clicks.toLocaleString()}
                 </p>
               </div>
               <div className="border rounded-lg p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <Eye className="w-3.5 h-3.5 text-violet-600" />
+                  <Eye className="w-3.5 h-3.5 text-violet-600 shrink-0" />
                   Impressions
                 </div>
-                <p className="text-2xl font-bold text-violet-600">
+                <p className="text-xl sm:text-2xl font-bold text-violet-600">
                   {scData.totals.impressions.toLocaleString()}
                 </p>
               </div>
               <div className="border rounded-lg p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   Avg CTR
                 </div>
-                <p className="text-2xl font-bold text-emerald-600">
+                <p className="text-xl sm:text-2xl font-bold text-emerald-600">
                   {(scData.totals.ctr * 100).toFixed(1)}%
                 </p>
               </div>
               <div className="border rounded-lg p-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                  <BarChart3 className="w-3.5 h-3.5 text-amber-600" />
+                  <BarChart3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   Avg Position
                 </div>
-                <p className="text-2xl font-bold text-amber-600">
+                <p className="text-xl sm:text-2xl font-bold text-amber-600">
                   {scData.totals.position.toFixed(1)}
                 </p>
               </div>
@@ -526,13 +527,13 @@ export default function AdminSeoPage() {
             {errorPages.map((page) => (
               <div
                 key={page.url}
-                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg"
+                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  <span className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shrink-0">
                     {page.status || "ERR"}
                   </span>
-                  <span className="text-sm truncate">
+                  <span className="text-xs sm:text-sm truncate">
                     {page.url.replace("https://linkedgrow.ai", "")}
                   </span>
                 </div>
@@ -540,7 +541,7 @@ export default function AdminSeoPage() {
                   href={page.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -561,12 +562,12 @@ export default function AdminSeoPage() {
             {slowPages.map((page) => (
               <div
                 key={page.url}
-                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg"
+                className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg gap-2"
               >
-                <span className="text-sm truncate">
+                <span className="text-xs sm:text-sm truncate min-w-0">
                   {page.url.replace("https://linkedgrow.ai", "")}
                 </span>
-                <span className="text-xs font-mono text-amber-600">
+                <span className="text-xs font-mono text-amber-600 shrink-0">
                   {(page.responseTime / 1000).toFixed(1)}s
                 </span>
               </div>
@@ -577,9 +578,9 @@ export default function AdminSeoPage() {
 
       {/* Public Pages */}
       <div className="border rounded-xl overflow-hidden">
-        <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
-          <h2 className="font-semibold flex items-center gap-2">
-            <Globe className="w-4 h-4" />
+        <div className="p-3 sm:p-4 border-b bg-slate-50 dark:bg-slate-900/50">
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <Globe className="w-4 h-4 shrink-0" />
             Public Pages
           </h2>
         </div>
@@ -597,9 +598,9 @@ export default function AdminSeoPage() {
 
       {/* Blog Posts */}
       <div className="border rounded-xl overflow-hidden">
-        <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
-          <h2 className="font-semibold flex items-center gap-2">
-            <FileText className="w-4 h-4" />
+        <div className="p-3 sm:p-4 border-b bg-slate-50 dark:bg-slate-900/50">
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <FileText className="w-4 h-4 shrink-0" />
             Blog Posts ({data.totalPosts})
           </h2>
         </div>
@@ -648,7 +649,7 @@ function StatCard({
         {icon}
         {label}
       </div>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold">{value}</p>
     </div>
   );
 }

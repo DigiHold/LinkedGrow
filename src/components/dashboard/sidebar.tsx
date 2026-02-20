@@ -227,7 +227,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300 overflow-x-clip",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
           isCollapsed ? "lg:w-20" : "lg:w-64",
           isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         )}
@@ -619,7 +619,7 @@ export function Sidebar() {
       {tooltip && isCollapsed && !isMobileOpen && (
         <div
           className="fixed pointer-events-none z-50 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap shadow-lg"
-          style={{ top: tooltip.top, left: 92, transform: "translateY(-50%)" }}
+          style={{ top: tooltip.top, left: 84, transform: "translateY(-50%)" }}
         >
           {tooltip.text}
         </div>

@@ -12,7 +12,7 @@ export default function DashboardLayout({
         <Sidebar />
 
         {/* Main Content - relative for overlay positioning */}
-        <main className="flex-1 min-h-screen relative">
+        <main className="flex-1 min-w-0 min-h-screen relative">
           {children}
         </main>
       </div>
