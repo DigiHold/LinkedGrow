@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
 import { db, users, accounts, betaUsers } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { affiliates, affiliateReferrals } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 import { sendWelcomeEmail } from '@/lib/email';
@@ -139,6 +140,21 @@ export async function GET(request: NextRequest) {
       const isBetaTester = betaUser && !betaUser.converted;
       const userPlan = isBetaTester ? 'business' : 'free';
 
+      // Check for affiliate referral cookie
+      const refCode = request.cookies.get('lg_ref')?.value;
+      let validAffiliate: { id: string; referralCode: string } | null = null;
+      if (refCode) {
+        const aff = await db.query.affiliates.findFirst({
+          where: and(
+            eq(affiliates.referralCode, refCode),
+            eq(affiliates.status, 'approved'),
+          ),
+        });
+        if (aff) {
+          validAffiliate = { id: aff.id, referralCode: aff.referralCode };
+        }
+      }
+
       await db.insert(users).values({
         id: userId,
         email: googleUser.email,
@@ -147,9 +163,28 @@ export async function GET(request: NextRequest) {
         emailVerified: googleUser.verified_email ? new Date() : null,
         plan: userPlan,
         twoFactorEnabled: false,
+        referredBy: validAffiliate?.referralCode || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+
+      // Track affiliate referral
+      if (validAffiliate) {
+        await db.insert(affiliateReferrals).values({
+          id: randomUUID(),
+          affiliateId: validAffiliate.id,
+          referredUserId: userId,
+          status: 'signed_up',
+          createdAt: new Date(),
+        });
+        await db
+          .update(affiliates)
+          .set({
+            totalSignups: sql`${affiliates.totalSignups} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(affiliates.id, validAffiliate.id));
+      }
 
       // Mark beta user as converted if applicable
       if (isBetaTester) {

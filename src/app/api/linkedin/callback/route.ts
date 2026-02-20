@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLinkedInProfile, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { db, users, accounts, betaUsers } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { affiliates, affiliateReferrals } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
@@ -218,6 +219,21 @@ export async function GET(request: NextRequest) {
           storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, userId);
         }
 
+        // Check for affiliate referral cookie
+        const refCode = request.cookies.get('lg_ref')?.value;
+        let validAffiliate: { id: string; referralCode: string } | null = null;
+        if (refCode) {
+          const aff = await db.query.affiliates.findFirst({
+            where: and(
+              eq(affiliates.referralCode, refCode),
+              eq(affiliates.status, 'approved'),
+            ),
+          });
+          if (aff) {
+            validAffiliate = { id: aff.id, referralCode: aff.referralCode };
+          }
+        }
+
         await db.insert(users).values({
           id: userId,
           email: linkedInEmail,
@@ -226,6 +242,7 @@ export async function GET(request: NextRequest) {
           emailVerified: new Date(), // LinkedIn emails are verified
           plan: userPlan,
           twoFactorEnabled: false,
+          referredBy: validAffiliate?.referralCode || null,
           // Auto-connect LinkedIn for posting
           linkedinAccessToken: tokenData.access_token,
           linkedinRefreshToken: tokenData.refresh_token || null,
@@ -237,6 +254,24 @@ export async function GET(request: NextRequest) {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+
+        // Track affiliate referral
+        if (validAffiliate) {
+          await db.insert(affiliateReferrals).values({
+            id: randomUUID(),
+            affiliateId: validAffiliate.id,
+            referredUserId: userId,
+            status: 'signed_up',
+            createdAt: new Date(),
+          });
+          await db
+            .update(affiliates)
+            .set({
+              totalSignups: sql`${affiliates.totalSignups} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(affiliates.id, validAffiliate.id));
+        }
 
         // Mark beta user as converted if applicable
         if (isBetaTester) {

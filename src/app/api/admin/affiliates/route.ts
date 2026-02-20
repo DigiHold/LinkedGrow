@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { affiliates, affiliateCommissions, users } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, lte, sql } from "drizzle-orm";
 import {
   sendAffiliateApprovedEmail,
   sendAffiliateRejectedEmail,
@@ -49,9 +49,31 @@ export async function GET() {
     earnings.map((e) => [e.affiliateId, e.totalEarned || 0])
   );
 
+  // Get available balance per affiliate (unpaid commissions past hold period)
+  const now = new Date();
+  const available = await db
+    .select({
+      affiliateId: affiliateCommissions.affiliateId,
+      availableBalance:
+        sql<number>`SUM(${affiliateCommissions.commissionAmount})`,
+    })
+    .from(affiliateCommissions)
+    .where(
+      and(
+        eq(affiliateCommissions.paidOut, false),
+        lte(affiliateCommissions.availableAt, now)
+      )
+    )
+    .groupBy(affiliateCommissions.affiliateId);
+
+  const availableMap = new Map(
+    available.map((e) => [e.affiliateId, e.availableBalance || 0])
+  );
+
   const result = allAffiliates.map((a) => ({
     ...a,
     totalEarned: earningsMap.get(a.id) || 0,
+    availableBalance: availableMap.get(a.id) || 0,
   }));
 
   return NextResponse.json({ affiliates: result });
