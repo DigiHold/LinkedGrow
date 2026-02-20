@@ -101,7 +101,7 @@ export function FreePostGeneratorContent() {
             stat: "$49+",
             title: "After the free trial ends",
             description:
-              "The free trial funnels you into plans starting at $49 to $99 per month with generation caps. Even after paying, you still get one AI model and no voice training. The free offer is just a hook for an overpriced subscription.",
+              "The free trial funnels you into plans starting at $49 to $199 per month with generation caps. Even after paying, you still get one AI model and no voice training. The free offer is just a hook for an overpriced subscription.",
             color: "from-rose-500 to-red-600",
           },
         ]}
@@ -222,12 +222,12 @@ export function FreePostGeneratorContent() {
         description="Start free and upgrade when you need unlimited generations. Even then, LinkedGrow's BYOK model keeps your costs dramatically lower than any competitor."
         competitor={{
           name: "Other Free LinkedIn Tools",
-          price: "$0 then $49-99/month",
+          price: "$0 then $49-199/month",
           issues: [
             { text: "Free tier limited to 1 generation or 24-hour trial" },
             { text: "Outdated AI model (GPT-3.5 or older) on free tier" },
             { text: "No voice training on any tier - generic output only" },
-            { text: "Jumps to $49 to $99 per month after free trial" },
+            { text: "Jumps to $49 to $199 per month after free trial" },
             { text: "Still caps generations at 30 to 100 per month on paid plans" },
           ],
         }}
@@ -238,7 +238,7 @@ export function FreePostGeneratorContent() {
             { text: "Free plan with 3 real generations per month - no trial expiration" },
             { text: "All 20+ AI models on free plan including GPT-5 and Claude" },
             { text: "Voice training included on free plan" },
-            { text: "Upgrade to unlimited at $19 per month - not $49 to $99" },
+            { text: "Upgrade to unlimited at $19 per month - not $49 to $199" },
             { text: "BYOK AI costs of $2 to $4 per month with zero markup" },
           ],
         }}
@@ -315,7 +315,7 @@ export function FreePostGeneratorContent() {
           {
             question: "How much is the paid plan?",
             answer:
-              "Starter is $19 per month unlimited. Pro is $39 per month with images and analytics. BYOK AI costs average $2 to $4 per month.",
+              "Starter is $19 per month unlimited. Pro is $39 per month with images and analytics. Business is $79 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month.",
           },
           {
             question: "What is BYOK?",

@@ -70,7 +70,7 @@ export function BestPostGeneratorContent() {
           gradient: "limited, and generic.",
         }}
         descriptionBold="You deserve better than one model, capped generations, and robotic output."
-        description="The typical LinkedIn AI tool locks you into a single AI model, caps your generations at 30 to 100 per month, charges $49 to $99, and produces content that sounds like every other AI-written post on the platform. That is not the best. That is the status quo."
+        description="The typical LinkedIn AI tool locks you into a single AI model, caps your generations at 30 to 100 per month, charges $49 to $199, and produces content that sounds like every other AI-written post on the platform. That is not the best. That is the status quo."
         problems={[
           {
             icon: Layers,
@@ -90,10 +90,10 @@ export function BestPostGeneratorContent() {
           },
           {
             icon: CircleDollarSign,
-            stat: "$49-99",
+            stat: "$49-199",
             title: "Monthly cost for basic functionality",
             description:
-              "The standard price for LinkedIn AI tools is $49 to $99 per month. For that price you get capped generations, one model, and often no image generation, analytics, or scheduling. The value proposition is poor.",
+              "The standard price for LinkedIn AI tools is $49 to $199 per month. For that price you get capped generations, one model, and often no image generation, analytics, or scheduling. The value proposition is poor.",
             color: "from-red-500 to-orange-600",
           },
           {
@@ -231,7 +231,7 @@ export function BestPostGeneratorContent() {
         description="The best AI LinkedIn post generator is also the most affordable. BYOK pricing eliminates the markup that makes other tools so expensive."
         competitor={{
           name: "Typical LinkedIn AI Tools",
-          price: "$49-99/month",
+          price: "$49-199/month",
           issues: [
             { text: "1 AI model with no alternatives or choice" },
             { text: "30 to 100 generation caps with premium overage fees" },
@@ -241,7 +241,7 @@ export function BestPostGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-39/month",
+          price: "$19-79/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "20+ AI models - GPT-5, Claude, Gemini, Grok, Sonar, and more" },
@@ -304,7 +304,7 @@ export function BestPostGeneratorContent() {
           {
             question: "How does it compare to Taplio, AuthoredUp, or Supergrow?",
             answer:
-              "Most competitors offer 1 model, cap generations, and charge $49 to $99. LinkedGrow offers 20+ models, unlimited generations, voice training, and integrated tools for $19 to $39 plus $2 to $4 in BYOK AI costs.",
+              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 20+ models, unlimited generations, voice training, and integrated tools for $19 to $79 plus $2 to $4 in BYOK AI costs.",
           },
           {
             question: "Why do 20+ AI models matter?",
@@ -329,7 +329,7 @@ export function BestPostGeneratorContent() {
           {
             question: "How much does it cost?",
             answer:
-              "Free plan available. Starter $19 per month, Pro $39 per month. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
+              "Free plan available. Starter $19 per month, Pro $39 per month, Business $79 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
           },
           {
             question: "Can I publish directly to LinkedIn?",

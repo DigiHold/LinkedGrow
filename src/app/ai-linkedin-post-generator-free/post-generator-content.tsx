@@ -93,7 +93,7 @@ export function PostGeneratorFreeContent() {
             stat: "$49+",
             title: "Monthly cost of most AI writing tools",
             description:
-              "LinkedIn-specific AI tools typically charge $49 to $99 per month. Many also cap your generations at 30 to 100 posts, forcing you to pay overage fees or wait until next month. That is expensive for what should be a simple tool.",
+              "LinkedIn-specific AI tools typically charge $49 to $199 per month. Many also cap your generations at 30 to 100 posts, forcing you to pay overage fees or wait until next month. That is expensive for what should be a simple tool.",
             color: "from-red-500 to-orange-600",
           },
           {
@@ -222,7 +222,7 @@ export function PostGeneratorFreeContent() {
         description="Most AI LinkedIn tools charge premium prices and cap how many posts you can generate. LinkedGrow starts free and keeps costs dramatically lower with the BYOK model."
         competitor={{
           name: "Typical AI LinkedIn Tools",
-          price: "$49-99/month",
+          price: "$49-199/month",
           issues: [
             { text: "30 to 100 post generations per month with hard limits" },
             { text: "One AI model with no option to choose alternatives" },

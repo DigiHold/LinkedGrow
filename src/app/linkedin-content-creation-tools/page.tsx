@@ -43,7 +43,7 @@ const toolsFAQs = [
   {
     question: "How much do LinkedIn content creation tools typically cost?",
     answer:
-      "Most LinkedIn content tools charge $49 to $99 per month and cap your generations. LinkedGrow starts at $19 per month for Starter with unlimited post generation, or $39 per month for Pro which adds image generation, analytics, and engagement tools. With the BYOK model, your AI costs are $2 to $4 per month on average - making the total cost 60 to 80 percent less than competitors.",
+      "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow starts at $19 per month for Starter with unlimited post generation, or $39 per month for Pro which adds image generation, analytics, and engagement tools. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With the BYOK model, your AI costs are $2 to $4 per month on average - making the total cost 60 to 80 percent less than competitors.",
   },
   {
     question: "Can I generate unlimited LinkedIn posts with these tools?",
@@ -63,7 +63,7 @@ const toolsFAQs = [
   {
     question: "Is there a free plan available?",
     answer:
-      "Yes. LinkedGrow offers a free plan that includes 3 AI post generations per month. Paid plans start at $19 per month for Starter with unlimited generations, scheduling, and a content calendar. The Pro plan at $39 per month adds image generation, analytics, and engagement tools.",
+      "Yes. LinkedGrow offers a free plan that includes 3 AI post generations per month. Paid plans start at $19 per month for Starter with unlimited generations, scheduling, and a content calendar. The Pro plan at $39 per month adds image generation, analytics, and engagement tools. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support.",
   },
   {
     question: "How does the BYOK model work with content creation tools?",

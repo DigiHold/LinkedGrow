@@ -98,10 +98,10 @@ export function ContentCreationAiContent() {
           },
           {
             icon: CircleDollarSign,
-            stat: "$49-99",
+            stat: "$49-199",
             title: "Monthly cost of typical AI LinkedIn tools",
             description:
-              "Most LinkedIn AI tools charge $49 to $99 per month and still limit your generations to 30 to 100 posts. When you need more, you pay premium overage fees. The economics do not work for most professionals.",
+              "Most LinkedIn AI tools charge $49 to $199 per month and still limit your generations to 30 to 100 posts. When you need more, you pay premium overage fees. The economics do not work for most professionals.",
             color: "from-rose-500 to-red-600",
           },
         ]}
@@ -231,7 +231,7 @@ export function ContentCreationAiContent() {
         description="Most LinkedIn AI tools charge premium prices and still limit how much content you can create. LinkedGrow's BYOK model gives you unlimited generations at a fraction of the cost."
         competitor={{
           name: "Typical LinkedIn AI Tools",
-          price: "$49-99/month",
+          price: "$49-199/month",
           issues: [
             { text: "30 to 100 post generations per month with hard caps" },
             { text: "One AI model with no choice (usually GPT-3.5 or GPT-4)" },
@@ -241,7 +241,7 @@ export function ContentCreationAiContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-39/month",
+          price: "$19-79/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited post generations with zero caps on any paid plan" },
@@ -314,7 +314,7 @@ export function ContentCreationAiContent() {
           {
             question: "How much does AI content creation cost?",
             answer:
-              "Plans start at $19 per month. AI costs average $2 to $4 per month with BYOK - you pay providers directly with zero markup. That is 60 to 80 percent less than tools charging $49 to $99 per month.",
+              "Plans start at $19 per month. AI costs average $2 to $4 per month with BYOK - you pay providers directly with zero markup. That is 60 to 80 percent less than tools charging $49 to $199 per month.",
           },
           {
             question: "Can AI create images and carousels too?",

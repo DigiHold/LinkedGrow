@@ -233,7 +233,7 @@ export function CarouselGeneratorContent() {
           name: "Separate Carousel + Content Tools",
           price: "$60-130/month total",
           issues: [
-            { text: "Carousel tool ($20-40) separate from content generator ($49-99)" },
+            { text: "Carousel tool ($20-40) separate from content generator ($49-199)" },
             { text: "No AI content generation - you write every slide manually" },
             { text: "Basic templates with limited brand customization" },
             { text: "Export to LinkedIn requires manual upload and formatting" },
