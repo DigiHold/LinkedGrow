@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import {
   Users,
@@ -12,7 +12,6 @@ import {
   Calendar,
   Shield,
   ExternalLink,
-  MoreVertical,
   Pencil,
   Trash2,
   Check,
@@ -95,36 +94,6 @@ export default function AdminUsersPage() {
   const [deletingUser, setDeletingUser] = useState<UserData | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  // Dropdown state
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdownId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleDropdownToggle = (userId: string, event: React.MouseEvent<HTMLButtonElement>) => {
-    if (openDropdownId === userId) {
-      setOpenDropdownId(null);
-    } else {
-      const button = event.currentTarget;
-      const rect = button.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        left: rect.right - 160,
-      });
-      setOpenDropdownId(userId);
-    }
-  };
 
   useEffect(() => {
     fetchUsers();
@@ -401,7 +370,7 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td data-label="" className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         {user.stripeCustomerId && (
                           <a
                             href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
@@ -414,14 +383,26 @@ export default function AdminUsersPage() {
                           </a>
                         )}
                         {user.id !== session?.user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => handleDropdownToggle(user.id, e)}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => openEditModal(user)}
+                            >
+                              <Pencil className="w-3.5 h-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                              onClick={() => openDeleteModal(user)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              Delete
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -458,39 +439,6 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
-
-      {/* Dropdown Menu - Fixed position to avoid scrollbar issues */}
-      {openDropdownId && (
-        <div
-          ref={dropdownRef}
-          className="fixed z-50 w-40 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg py-1"
-          style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
-        >
-          <button
-            onClick={() => {
-              const user = users.find(u => u.id === openDropdownId);
-              if (user) openEditModal(user);
-              setOpenDropdownId(null);
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-            Edit User
-          </button>
-          <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-          <button
-            onClick={() => {
-              const user = users.find(u => u.id === openDropdownId);
-              if (user) openDeleteModal(user);
-              setOpenDropdownId(null);
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete User
-          </button>
-        </div>
-      )}
 
       {/* Edit User Modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>

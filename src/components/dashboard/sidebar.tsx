@@ -148,6 +148,7 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile sidebar on route change
@@ -181,6 +182,13 @@ export function Sidebar() {
     setIsUserMenuOpen(false);
     await signOut({ callbackUrl: "/" });
   };
+
+  const showTooltip = (e: React.MouseEvent, text: string) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltip({ text, top: rect.top + rect.height / 2 });
+  };
+
+  const hideTooltip = () => setTooltip(null);
 
   // User display info
   const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "User";
@@ -219,7 +227,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
+          "fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300 overflow-x-clip",
           isCollapsed ? "lg:w-20" : "lg:w-64",
           isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         )}
@@ -257,7 +265,7 @@ export function Sidebar() {
 
           {/* Desktop Collapse Button */}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => { setIsCollapsed(!isCollapsed); setTooltip(null); }}
             className="hidden lg:flex p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -292,8 +300,10 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 prefetch={true}
+                onMouseEnter={(e) => isCollapsed && !isMobileOpen && showTooltip(e, item.name)}
+                onMouseLeave={hideTooltip}
                 className={cn(
-                  "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                   isActive
                     ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",
@@ -313,11 +323,6 @@ export function Sidebar() {
                       {item.description}
                     </span>
                   </div>
-                )}
-                {isCollapsed && !isMobileOpen && (
-                  <span className="pointer-events-none absolute left-full ml-3 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
-                    {item.name}
-                  </span>
                 )}
               </Link>
             );
@@ -353,8 +358,10 @@ export function Sidebar() {
                     key={item.href}
                     href={item.href}
                     prefetch={true}
+                    onMouseEnter={(e) => isCollapsed && !isMobileOpen && showTooltip(e, item.name)}
+                    onMouseLeave={hideTooltip}
                     className={cn(
-                      "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                       isActive
                         ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent",
@@ -374,11 +381,6 @@ export function Sidebar() {
                           {item.description}
                         </span>
                       </div>
-                    )}
-                    {isCollapsed && !isMobileOpen && (
-                      <span className="pointer-events-none absolute left-full ml-3 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
-                        {item.name}
-                      </span>
                     )}
                   </Link>
                 );
@@ -612,6 +614,16 @@ export function Sidebar() {
           </button>
         </div>
       </aside>
+
+      {/* Fixed tooltip rendered outside sidebar to avoid overflow */}
+      {tooltip && isCollapsed && !isMobileOpen && (
+        <div
+          className="fixed pointer-events-none z-50 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap shadow-lg"
+          style={{ top: tooltip.top, left: 92, transform: "translateY(-50%)" }}
+        >
+          {tooltip.text}
+        </div>
+      )}
     </>
   );
 }

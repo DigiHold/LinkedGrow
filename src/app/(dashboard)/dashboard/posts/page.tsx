@@ -514,7 +514,7 @@ export default function PostsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -570,9 +570,9 @@ export default function PostsPage() {
 
       {/* Bulk Actions (when posts selected) */}
       {selectedPosts.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-4 z-50">
-          <span className="text-sm">
-            {selectedPosts.length} post{selectedPosts.length > 1 ? "s" : ""} selected
+        <div className="fixed bottom-20 lg:bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-gray-900 text-white px-4 sm:px-6 py-3 rounded-full shadow-xl flex items-center justify-center gap-3 sm:gap-4 z-50">
+          <span className="text-sm whitespace-nowrap">
+            {selectedPosts.length} selected
           </span>
           <div className="w-px h-4 bg-gray-700" />
           <button
@@ -581,12 +581,6 @@ export default function PostsPage() {
           >
             Delete
           </button>
-          <Link
-            href="/dashboard/calendar"
-            className="text-sm hover:text-cyan-400 transition-colors"
-          >
-            View Calendar
-          </Link>
           <button
             onClick={() => setSelectedPosts([])}
             className="text-sm text-gray-400 hover:text-white transition-colors"

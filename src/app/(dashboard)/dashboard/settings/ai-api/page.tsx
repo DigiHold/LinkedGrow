@@ -744,11 +744,11 @@ export default function AIAPISettingsPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 overflow-hidden">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
             <Key className="w-5 h-5 text-white" />
           </div>
           AI API Keys

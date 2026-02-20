@@ -171,16 +171,6 @@ export default function BillingPage() {
   if (!isLoading && session?.user?.plan === "free") {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="mb-6">
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Settings
-          </Link>
-        </div>
-
         <Card className="text-center py-12">
           <CardContent>
             <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
@@ -216,16 +206,6 @@ export default function BillingPage() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="mb-6">
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Settings
-          </Link>
-        </div>
-
         <Card className="border-red-200 dark:border-red-800">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
@@ -243,13 +223,6 @@ export default function BillingPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Settings
-          </Link>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
               <CreditCard className="w-5 h-5 text-white" />

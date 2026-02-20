@@ -799,7 +799,7 @@ function SettingsContent() {
               </div>
               {/* Profile info */}
               <div className="bg-white dark:bg-slate-900 p-5">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-4">
                     {linkedInSettings?.postingTarget === "organization" ? (
                       <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
@@ -933,9 +933,11 @@ function SettingsContent() {
 
           {/* Password Change - Inline */}
           <div className="pt-4 border-t">
-            <h4 className="font-medium mb-4 flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              Change Password
+            <h4 className="font-medium mb-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Change Password
+              </span>
               <span className="text-xs text-muted-foreground font-normal">(leave empty for no changes)</span>
             </h4>
             <div className="space-y-3">

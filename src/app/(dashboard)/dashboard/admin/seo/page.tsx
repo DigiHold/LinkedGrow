@@ -219,19 +219,19 @@ export default function AdminSeoPage() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Search className="w-6 h-6 text-cyan-600" />
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <Search className="w-5 sm:w-6 h-5 sm:h-6 text-cyan-600 shrink-0" />
             SEO Dashboard
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Monitor indexing, page health, and search engine visibility
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {lastRefresh && (
             <span className="text-xs text-muted-foreground">
               Updated {lastRefresh.toLocaleTimeString()}
@@ -252,13 +252,13 @@ export default function AdminSeoPage() {
             ) : (
               <Zap className="w-4 h-4 mr-1" />
             )}
-            Index All Pages
+            Index All
           </Button>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
         <StatCard
           label="Total URLs"
           value={data.totalPages}
@@ -403,8 +403,8 @@ export default function AdminSeoPage() {
                 <h3 className="text-sm font-medium text-muted-foreground">
                   Top Search Queries
                 </h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border rounded-lg overflow-x-auto">
+                  <table className="w-full text-sm min-w-[400px]">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
                         <th className="text-left p-2 pl-3">Query</th>
@@ -453,8 +453,8 @@ export default function AdminSeoPage() {
                 <h3 className="text-sm font-medium text-muted-foreground">
                   Pages Search Performance
                 </h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border rounded-lg overflow-x-auto">
+                  <table className="w-full text-sm min-w-[400px]">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
                         <th className="text-left p-2 pl-3">Page</th>
@@ -693,15 +693,15 @@ function PageRow({
   const path = page.url.replace("https://linkedgrow.ai", "") || "/";
 
   return (
-    <div className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30">
-      <div className="flex items-center gap-3 min-w-0">
+    <div className="flex items-center justify-between p-2 sm:p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <StatusBadge status={page.status} ok={page.ok} />
-        <span className="text-sm font-medium truncate">{path}</span>
+        <span className="text-xs sm:text-sm font-medium truncate">{path}</span>
         <span className="text-xs text-muted-foreground hidden sm:inline">
           {page.responseTime}ms
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <a
           href={page.url}
           target="_blank"
@@ -740,8 +740,8 @@ function BlogPostRow({
   isIndexing: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30">
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <div className="flex items-center justify-between p-2 sm:p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {urlStatus ? (
           <StatusBadge status={urlStatus.status} ok={urlStatus.ok} />
         ) : (
@@ -750,8 +750,8 @@ function BlogPostRow({
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">{post.title}</p>
-          <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-xs sm:text-sm font-medium truncate">{post.title}</p>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <PublishBadge status={post.status} />
             <span className="text-xs text-muted-foreground">
               {post.category}
@@ -764,7 +764,7 @@ function BlogPostRow({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <a
           href={post.url}
           target="_blank"
