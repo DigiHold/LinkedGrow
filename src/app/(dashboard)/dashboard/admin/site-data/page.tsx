@@ -223,7 +223,7 @@ export default function AdminSiteDataPage() {
           </Button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-border sm:overflow-hidden">
           {consentRecords.length === 0 ? (
             <div className="px-4 py-12 text-center text-muted-foreground">
               <Cookie className="w-8 h-8 mx-auto mb-3 opacity-50" />
@@ -232,8 +232,7 @@ export default function AdminSiteDataPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full responsive-table">
                   <thead>
                     <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
                       <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
@@ -265,7 +264,7 @@ export default function AdminSiteDataPage() {
                           key={record.id}
                           className="border-b border-border last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
-                          <td className="px-4 py-3">
+                          <td data-label="Action" className="px-4 py-3">
                             <span
                               className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}
                             >
@@ -273,7 +272,7 @@ export default function AdminSiteDataPage() {
                               {config.label}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Choices" className="px-4 py-3">
                             <div className="flex gap-2">
                               <span
                                 className={`text-xs px-1.5 py-0.5 rounded ${
@@ -295,24 +294,24 @@ export default function AdminSiteDataPage() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="IP" className="px-4 py-3">
                             <div className="flex items-center gap-2 text-sm font-mono">
                               <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
                               {record.ipAddress || "unknown"}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Country" className="px-4 py-3">
                             <div className="flex items-center gap-2 text-sm">
                               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                               {record.country || "unknown"}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Browser" className="px-4 py-3">
                             <span className="text-sm text-muted-foreground">
                               {getBrowserFromUA(record.userAgent)}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Date" className="px-4 py-3">
                             <span className="text-sm text-muted-foreground">
                               {formatDate(record.createdAt)}
                             </span>
@@ -322,7 +321,6 @@ export default function AdminSiteDataPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
 
               {/* Pagination */}
               {totalPages > 1 && (

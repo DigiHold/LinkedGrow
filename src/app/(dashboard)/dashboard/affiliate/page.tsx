@@ -488,6 +488,9 @@ export default function AffiliateDashboardPage() {
               <p className="text-lg font-bold text-amber-800 dark:text-amber-200">
                 {formatCents(earnings.pending)}
               </p>
+              <p className="text-[11px] text-amber-600/80 dark:text-amber-400/70 mt-1.5 leading-snug">
+                Commissions in the 14-day refund window - automatically available after hold period
+              </p>
             </div>
             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800">
               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-1 flex items-center gap-1.5">
@@ -500,6 +503,9 @@ export default function AffiliateDashboardPage() {
               </p>
               <p className="text-lg font-bold text-emerald-800 dark:text-emerald-200">
                 {formatCents(earnings.available)}
+              </p>
+              <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-1.5 leading-snug">
+                Ready for payout - paid monthly via PayPal when balance reaches $50+
               </p>
             </div>
             <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">

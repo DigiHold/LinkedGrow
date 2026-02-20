@@ -300,9 +300,8 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-border sm:overflow-hidden">
+          <table className="w-full responsive-table">
             <thead>
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
                 <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
@@ -346,7 +345,7 @@ export default function AdminUsersPage() {
                     key={user.id}
                     className="border-b border-border last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
-                    <td className="px-4 py-3">
+                    <td data-label="User" className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
                           {(user.name || user.email.charAt(0)).charAt(0).toUpperCase()}
@@ -366,13 +365,13 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Email" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-sm">{user.email}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Plan" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {user.plan === "business" && (
                           <Crown className="w-3.5 h-3.5 text-amber-500" />
@@ -386,7 +385,7 @@ export default function AdminUsersPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="LinkedIn" className="px-4 py-3">
                       {user.linkedinProfileName ? (
                         <span className="text-sm text-green-600 dark:text-green-400">
                           {user.linkedinProfileName}
@@ -395,13 +394,13 @@ export default function AdminUsersPage() {
                         <span className="text-sm text-muted-foreground">Not connected</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Joined" className="px-4 py-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatDate(user.createdAt)}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {user.stripeCustomerId && (
                           <a
@@ -431,7 +430,6 @@ export default function AdminUsersPage() {
               )}
             </tbody>
           </table>
-        </div>
 
         {/* Pagination */}
         {totalPages > 1 && (

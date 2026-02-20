@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { affiliates, affiliateCommissions, users } from "@/lib/db/schema";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { eq, and, lte, gt, sql } from "drizzle-orm";
 import {
   sendAffiliateApprovedEmail,
   sendAffiliateRejectedEmail,
@@ -70,10 +70,47 @@ export async function GET() {
     available.map((e) => [e.affiliateId, e.availableBalance || 0])
   );
 
+  // Get hold balance per affiliate (unpaid commissions still in hold period)
+  const hold = await db
+    .select({
+      affiliateId: affiliateCommissions.affiliateId,
+      holdBalance:
+        sql<number>`SUM(${affiliateCommissions.commissionAmount})`,
+    })
+    .from(affiliateCommissions)
+    .where(
+      and(
+        eq(affiliateCommissions.paidOut, false),
+        gt(affiliateCommissions.availableAt, now)
+      )
+    )
+    .groupBy(affiliateCommissions.affiliateId);
+
+  const holdMap = new Map(
+    hold.map((e) => [e.affiliateId, e.holdBalance || 0])
+  );
+
+  // Get total paid out per affiliate (commissions already paid)
+  const paidOut = await db
+    .select({
+      affiliateId: affiliateCommissions.affiliateId,
+      totalPaidOut:
+        sql<number>`SUM(${affiliateCommissions.commissionAmount})`,
+    })
+    .from(affiliateCommissions)
+    .where(eq(affiliateCommissions.paidOut, true))
+    .groupBy(affiliateCommissions.affiliateId);
+
+  const paidOutMap = new Map(
+    paidOut.map((e) => [e.affiliateId, e.totalPaidOut || 0])
+  );
+
   const result = allAffiliates.map((a) => ({
     ...a,
     totalEarned: earningsMap.get(a.id) || 0,
     availableBalance: availableMap.get(a.id) || 0,
+    holdBalance: holdMap.get(a.id) || 0,
+    totalPaidOut: paidOutMap.get(a.id) || 0,
   }));
 
   return NextResponse.json({ affiliates: result });
