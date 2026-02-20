@@ -36,14 +36,6 @@ export const metadata: Metadata = {
   title: "LinkedGrow - Grow Your LinkedIn Presence with AI",
   description:
     "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools. Bring your own AI API key and take control.",
-  keywords: [
-    "LinkedIn",
-    "AI",
-    "content creation",
-    "social media",
-    "marketing",
-    "post generator",
-  ],
   authors: [{ name: "LinkedGrow" }],
   openGraph: {
     title: "LinkedGrow - Grow Your LinkedIn Presence with AI",

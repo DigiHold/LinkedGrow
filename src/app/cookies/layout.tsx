@@ -4,14 +4,6 @@ export const metadata: Metadata = {
   title: "Cookie Policy - LinkedGrow",
   description:
     "Learn about how LinkedGrow uses cookies and similar technologies. Understand our cookie policy and manage your preferences.",
-  keywords: [
-    "LinkedGrow",
-    "cookie policy",
-    "cookies",
-    "privacy",
-    "tracking",
-    "GDPR",
-  ],
   openGraph: {
     title: "Cookie Policy - LinkedGrow",
     description:

@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
   description:
     "Try a free AI-powered LinkedIn post generator. 20+ models including GPT-5 and Claude. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
-  keywords: [
-    "free linkedin post generator ai",
-    "linkedin post generator ai free",
-    "free ai tool for linkedin posts",
-    "linkedin post writer free",
-    "free linkedin content generator",
-    "ai linkedin writer free",
-    "generate linkedin posts for free",
-    "free ai linkedin writing tool",
-  ],
   openGraph: {
     title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
     description:

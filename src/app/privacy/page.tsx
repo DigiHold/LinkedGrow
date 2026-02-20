@@ -7,13 +7,6 @@ export const metadata: Metadata = {
   title: "Privacy Policy - LinkedGrow",
   description:
     "Learn how LinkedGrow collects, uses, and protects your personal information. Read our comprehensive privacy policy.",
-  keywords: [
-    "LinkedGrow",
-    "privacy policy",
-    "data protection",
-    "GDPR",
-    "personal information",
-  ],
   openGraph: {
     title: "Privacy Policy - LinkedGrow",
     description:

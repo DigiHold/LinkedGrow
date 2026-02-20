@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "Best AI LinkedIn Post Generator 2026 - 20+ Models Compared | LinkedGrow",
   description:
     "The best AI LinkedIn post generator with 20+ models: GPT-5, Claude, Gemini, Grok 4. Voice training, unlimited generations, BYOK pricing from $19/month. Used by 179+ founders.",
-  keywords: [
-    "best ai linkedin post generator",
-    "best linkedin post generator ai",
-    "top ai linkedin post generator",
-    "linkedin post generator comparison",
-    "best ai tool for linkedin posts",
-    "ai linkedin post generator 2026",
-    "top linkedin content generator",
-    "best linkedin writing tool ai",
-  ],
   openGraph: {
     title: "Best AI LinkedIn Post Generator 2026 - 20+ Models Compared | LinkedGrow",
     description:

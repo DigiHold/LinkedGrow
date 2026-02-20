@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "LinkedIn Post Scheduler - Schedule and Auto-Publish Posts | LinkedGrow",
   description:
     "Schedule LinkedIn posts to publish automatically at the perfect time. Visual content calendar, optimal time suggestions, direct publishing to profiles and company pages. From $19/month.",
-  keywords: [
-    "linkedin post scheduler",
-    "schedule linkedin posts",
-    "linkedin scheduling tool",
-    "auto publish linkedin posts",
-    "linkedin content scheduler",
-    "schedule posts on linkedin",
-    "linkedin post planner",
-    "linkedin auto post scheduler",
-  ],
   openGraph: {
     title: "LinkedIn Post Scheduler - Schedule and Auto-Publish Posts | LinkedGrow",
     description:

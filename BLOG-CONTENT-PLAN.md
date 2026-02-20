@@ -536,6 +536,13 @@ The blog agent at `/Users/nicolas/Agent/Blog` contains the complete automated wo
 - Link to: feature pages, audience pages, free tools, related blog posts
 - Only link when genuinely helpful to the reader
 
+### External Backlinks
+
+- **1-2 external links per article** to authoritative sources (research, official docs, industry reports)
+- Use `<a href="..." target="_blank" rel="noopener noreferrer">` with cyan link styling
+- Only cite statistics that can be verified by fetching the source URL
+- Keep it minimal - more than 2 feels spammy and sends readers away
+
 ---
 
 ## Content Rules Summary

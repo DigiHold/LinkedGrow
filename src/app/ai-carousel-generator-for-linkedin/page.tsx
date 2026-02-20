@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "AI Carousel Generator for LinkedIn - Create Carousels That Convert | LinkedGrow",
   description:
     "Create AI-powered LinkedIn carousels that get 2x more clicks. Multi-slide builder with AI content assist, brand customization, and direct publishing. Business plan feature.",
-  keywords: [
-    "ai carousel generator for linkedin",
-    "ai carousel generator linkedin",
-    "linkedin carousel maker ai",
-    "ai linkedin carousel creator",
-    "create linkedin carousels with ai",
-    "linkedin carousel builder ai",
-    "ai powered linkedin carousel",
-    "linkedin slide generator ai",
-  ],
   openGraph: {
     title: "AI Carousel Generator for LinkedIn - Create Carousels That Convert | LinkedGrow",
     description:

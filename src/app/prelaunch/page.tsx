@@ -6,14 +6,6 @@ export const metadata: Metadata = {
   title: "LinkedGrow - AI-Powered LinkedIn Content Creation | Early Access",
   description:
     "Join the waitlist for LinkedGrow - the AI-powered LinkedIn content platform. Get 30% off for 12 months as an early member. Create viral posts, schedule content, and grow your audience.",
-  keywords: [
-    "LinkedIn AI tool",
-    "LinkedIn content creator",
-    "AI post generator",
-    "LinkedIn scheduler",
-    "social media automation",
-    "BYOK AI",
-  ],
   openGraph: {
     title: "LinkedGrow - AI-Powered LinkedIn Content Creation | Early Access",
     description:

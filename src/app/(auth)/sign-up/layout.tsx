@@ -4,14 +4,6 @@ export const metadata: Metadata = {
   title: "Sign Up - Create Your LinkedGrow Account",
   description:
     "Create your free LinkedGrow account and start growing your LinkedIn presence with AI-powered content creation. Bring your own API keys for unlimited generations.",
-  keywords: [
-    "LinkedGrow",
-    "sign up",
-    "create account",
-    "register",
-    "LinkedIn AI",
-    "free account",
-  ],
   openGraph: {
     title: "Sign Up - Create Your LinkedGrow Account",
     description:

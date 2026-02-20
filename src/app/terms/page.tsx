@@ -6,13 +6,6 @@ export const metadata: Metadata = {
   title: "Terms of Service - LinkedGrow",
   description:
     "Read the Terms of Service for LinkedGrow, the AI-powered LinkedIn content platform. Understand your rights and responsibilities.",
-  keywords: [
-    "LinkedGrow",
-    "terms of service",
-    "terms and conditions",
-    "user agreement",
-    "legal",
-  ],
   openGraph: {
     title: "Terms of Service - LinkedGrow",
     description:

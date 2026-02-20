@@ -20,7 +20,7 @@ interface IndexingResult {
 
 /**
  * Notify all search engines about new/updated URLs.
- * Call this whenever content is published (blog posts, CMS pages, etc.)
+ * Call this whenever content is published (blog posts, etc.)
  */
 export async function notifySearchEngines(
   urls: string[]

@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
   description:
     "Use AI to create LinkedIn content 10x faster. Generate posts with GPT-5, Claude, Gemini. Create photos with Nano Banana Pro, FLUX. Build carousels, schedule posts, and track analytics.",
-  keywords: [
-    "linkedin content creation ai",
-    "ai for linkedin content",
-    "ai linkedin content creator",
-    "linkedin ai writing tool",
-    "ai powered linkedin content",
-    "create linkedin content with ai",
-    "ai content creator for linkedin",
-    "linkedin ai content generator",
-  ],
   openGraph: {
     title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
     description:

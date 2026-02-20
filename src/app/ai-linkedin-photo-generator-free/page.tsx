@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
   description:
     "Generate professional photos for LinkedIn posts with AI for free. 10+ AI models including Nano Banana Pro, FLUX, and GPT Image 1.5. Create unique visuals in seconds - no design skills needed.",
-  keywords: [
-    "ai linkedin photo generator free",
-    "free ai photo generator linkedin",
-    "linkedin photo creator ai",
-    "free linkedin photo maker",
-    "ai linkedin profile photo generator",
-    "linkedin post photo generator free",
-    "create linkedin photos with ai free",
-    "free ai photo creator social media",
-  ],
   openGraph: {
     title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
     description:

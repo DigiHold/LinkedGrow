@@ -4,12 +4,6 @@ export const metadata: Metadata = {
   title: "Reset Password - LinkedGrow",
   description:
     "Create a new password for your LinkedGrow account.",
-  keywords: [
-    "LinkedGrow",
-    "reset password",
-    "new password",
-    "account recovery",
-  ],
   openGraph: {
     title: "Reset Password - LinkedGrow",
     description: "Create a new password for your LinkedGrow account.",

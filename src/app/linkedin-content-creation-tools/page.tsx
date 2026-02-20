@@ -6,16 +6,6 @@ export const metadata: Metadata = {
   title: "LinkedIn Content Creation Tools - All-in-One AI Platform | LinkedGrow",
   description:
     "Complete LinkedIn content creation toolkit with AI post generator, photo creator, carousel maker, scheduler, and analytics. Everything you need to grow on LinkedIn in one platform.",
-  keywords: [
-    "linkedin content creation tools",
-    "linkedin content tools",
-    "linkedin creator tools",
-    "content creation tools for linkedin",
-    "linkedin marketing tools",
-    "linkedin tools for creators",
-    "linkedin growth tools",
-    "best linkedin content tools 2026",
-  ],
   openGraph: {
     title: "LinkedIn Content Creation Tools - All-in-One AI Platform | LinkedGrow",
     description:
