@@ -293,13 +293,12 @@ export function Sidebar() {
                 href={item.href}
                 prefetch={true}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
+                  "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                   isActive
                     ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   isCollapsed && "lg:justify-center lg:px-2"
                 )}
-                title={isCollapsed ? item.name : undefined}
               >
                 <item.icon
                   className={cn(
@@ -314,6 +313,11 @@ export function Sidebar() {
                       {item.description}
                     </span>
                   </div>
+                )}
+                {isCollapsed && !isMobileOpen && (
+                  <span className="pointer-events-none absolute left-full ml-3 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+                    {item.name}
+                  </span>
                 )}
               </Link>
             );
@@ -350,13 +354,12 @@ export function Sidebar() {
                     href={item.href}
                     prefetch={true}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
+                      "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
                       isActive
                         ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent",
                       isCollapsed && "lg:justify-center lg:px-2"
                     )}
-                    title={isCollapsed ? item.name : undefined}
                   >
                     <item.icon
                       className={cn(
@@ -371,6 +374,11 @@ export function Sidebar() {
                           {item.description}
                         </span>
                       </div>
+                    )}
+                    {isCollapsed && !isMobileOpen && (
+                      <span className="pointer-events-none absolute left-full ml-3 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+                        {item.name}
+                      </span>
                     )}
                   </Link>
                 );
@@ -572,7 +580,7 @@ export function Sidebar() {
               "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
               isCollapsed && !isMobileOpen && "lg:justify-center lg:p-2"
             )}
-            title={isCollapsed && !isMobileOpen ? userName : undefined}
+            aria-label={userName}
           >
             {userImage ? (
               <Image
