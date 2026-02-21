@@ -250,7 +250,7 @@ Return ONLY the post text. No quotes, no explanations.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-sonnet-4-5-20250929",
+        model: model || "claude-sonnet-4-6",
         max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -456,7 +456,7 @@ Return ONLY a JSON array of 5 strings. Example:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-sonnet-4-5-20250929",
+        model: model || "claude-sonnet-4-6",
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -669,7 +669,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-sonnet-4-5-20250929",
+        model: model || "claude-sonnet-4-6",
         max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -825,7 +825,7 @@ export async function POST(request: NextRequest) {
     };
 
     const defaultModel = provider === "openai" ? "o4-mini" :
-                         provider === "anthropic" ? "claude-sonnet-4-5-20250929" :
+                         provider === "anthropic" ? "claude-sonnet-4-6" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4-1-fast-reasoning" :
                          provider === "perplexity" ? "sonar-pro" : "o4-mini";
@@ -961,7 +961,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: model || "claude-sonnet-4-5-20250929",
+            model: model || "claude-sonnet-4-6",
             max_tokens: 4096,
             messages: [{ role: "user", content: carouselPrompt }],
           }),

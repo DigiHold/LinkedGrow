@@ -119,7 +119,7 @@ Return ONLY a JSON array:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-sonnet-4-5-20250929",
+        model: model || "claude-sonnet-4-6",
         max_tokens: 4096,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
     };
 
     const defaultModel = provider === "openai" ? "o4-mini" :
-                         provider === "anthropic" ? "claude-sonnet-4-5-20250929" :
+                         provider === "anthropic" ? "claude-sonnet-4-6" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4-1-fast-reasoning" :
                          provider === "perplexity" ? "sonar-pro" : "o4-mini";

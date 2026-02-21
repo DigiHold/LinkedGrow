@@ -93,15 +93,17 @@ const aiProviders = [
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude Opus 4.5, Sonnet 4.5, Haiku 4.5",
+    description: "Claude Opus 4.6, Sonnet 4.6, Haiku 4.5",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
     models: [
-      { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Most Capable", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-opus-4-6", name: "Claude Opus 4.6", tag: "Most Capable", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Powerful", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tag: "Fastest", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
     ],
   },
   {
