@@ -402,14 +402,6 @@ export const abandonedCheckouts = sqliteTable("abandoned_checkouts", {
   planId: text("plan_id", { enum: ["starter", "pro", "business"] }).notNull(),
   recoveryUrl: text("recovery_url"), // Stripe recovery URL (valid for 30 days)
   recoveryUrlExpiresAt: integer("recovery_url_expires_at", { mode: "timestamp" }),
-  // Email sequence tracking
-  email1SentAt: integer("email1_sent_at", { mode: "timestamp" }), // Day 2 - Friendly reminder
-  email2SentAt: integer("email2_sent_at", { mode: "timestamp" }), // Day 5 - Value reminder
-  email3SentAt: integer("email3_sent_at", { mode: "timestamp" }), // Day 8 - Discount offer
-  // QStash message IDs for cancellation if user converts
-  email1QstashId: text("email1_qstash_id"),
-  email2QstashId: text("email2_qstash_id"),
-  email3QstashId: text("email3_qstash_id"),
   // Status
   status: text("status", { enum: ["pending", "recovered", "expired", "unsubscribed"] }).default("pending"),
   recoveredAt: integer("recovered_at", { mode: "timestamp" }), // When they completed checkout

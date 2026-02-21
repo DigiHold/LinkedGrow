@@ -11,14 +11,6 @@ export {
   teamInviteEmailText,
 } from "./templates/team-invite-email";
 export {
-  abandonedCartEmail1Template,
-  abandonedCartEmail1Text,
-  abandonedCartEmail2Template,
-  abandonedCartEmail2Text,
-  abandonedCartEmail3Template,
-  abandonedCartEmail3Text,
-} from "./templates/abandoned-cart-email";
-export {
   affiliateApplicationEmailTemplate,
   affiliateApplicationEmailText,
 } from "./templates/affiliate-application-email";
