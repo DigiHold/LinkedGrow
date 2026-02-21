@@ -5,7 +5,7 @@ import { BestPostGeneratorContent } from "./best-generator-content";
 export const metadata: Metadata = {
   title: "Best AI LinkedIn Post Generator 2026 - 20+ Models Compared | LinkedGrow",
   description:
-    "The best AI LinkedIn post generator with 20+ models: GPT-5, Claude, Gemini, Grok 4. Voice training, unlimited generations, BYOK pricing from $19/month. Used by 179+ founders.",
+    "The best AI LinkedIn post generator with 20+ models: ChatGPT, Claude, Gemini, Grok. Voice training, unlimited generations, BYOK pricing from $19/month. Used by 179+ founders.",
   openGraph: {
     title: "Best AI LinkedIn Post Generator 2026 - 20+ Models Compared | LinkedGrow",
     description:
@@ -38,7 +38,7 @@ const bestGenFAQs = [
   {
     question: "What makes LinkedGrow the best AI LinkedIn post generator?",
     answer:
-      "Three things set LinkedGrow apart. First, you get access to 20+ AI models (GPT-5, Claude, Gemini, Grok 4, and more) instead of being locked into one. Second, voice training analyzes your past posts so every AI-generated post matches your writing style. Third, the BYOK model means unlimited generations at $19 per month plus $2 to $4 in AI costs - 80% less than competitors charging $49 to $199 with caps.",
+      "Three things set LinkedGrow apart. First, you get access to 20+ AI models (ChatGPT, Claude, Gemini, Grok, and more) instead of being locked into one. Second, voice training analyzes your past posts so every AI-generated post matches your writing style. Third, the BYOK model means unlimited generations at $19 per month plus $2 to $4 in AI costs - 80% less than competitors charging $49 to $199 with caps.",
   },
   {
     question: "How does LinkedGrow compare to Taplio, AuthoredUp, or Supergrow?",
@@ -48,7 +48,7 @@ const bestGenFAQs = [
   {
     question: "Why does having 20+ AI models matter?",
     answer:
-      "Different AI models produce different writing styles and excel at different content types. GPT-5 is great for storytelling, Claude writes nuanced thought leadership, Gemini is fast and concise, and Grok 4 handles technical topics well. Having 20+ models means you can match the right model to each post type instead of being stuck with one.",
+      "Different AI models produce different writing styles and excel at different content types. ChatGPT is great for storytelling, Claude writes nuanced thought leadership, Gemini is fast and concise, and Grok handles technical topics well. Having 20+ models means you can match the right model to each post type instead of being stuck with one.",
   },
   {
     question: "How accurate is the voice training?",
@@ -63,7 +63,7 @@ const bestGenFAQs = [
   {
     question: "What AI models are available for post generation?",
     answer:
-      "Text models: GPT-5, GPT-5.2, o4-mini, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Gemini 3 Pro, Gemini 3 Flash, Grok 4, Grok 3, Sonar Pro, Sonar Deep Research, and more. Image models: GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4.",
+      "Text models: the latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ models in total. Image models from OpenAI, Google, and Replicate - 14 models available.",
   },
   {
     question: "How much does the best AI LinkedIn post generator cost?",
@@ -93,7 +93,7 @@ export default function BestAiLinkedinPostGeneratorPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - Best AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/best-ai-linkedin-post-generator"
-        description="The best AI LinkedIn post generator with 20+ models, voice training, and unlimited generations. GPT-5, Claude, Gemini, Grok 4. BYOK pricing from $19/month."
+        description="The best AI LinkedIn post generator with 20+ models, voice training, and unlimited generations. ChatGPT, Claude, Gemini, Grok. BYOK pricing from $19/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <BestPostGeneratorContent />

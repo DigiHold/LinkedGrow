@@ -44,7 +44,7 @@ export function BestPostGeneratorContent() {
           gradient: "with 20+ models",
         }}
         descriptionBold="Not all AI LinkedIn tools are created equal."
-        description="LinkedGrow gives you access to 20+ AI models - GPT-5, Claude, Gemini, Grok 4, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
+        description="LinkedGrow gives you access to 20+ AI models - ChatGPT, Claude, Gemini, Grok, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
         valuePropBadges={[
           { icon: Award, text: "20+ AI models" },
           { icon: Mic, text: "Voice training" },
@@ -120,7 +120,7 @@ export function BestPostGeneratorContent() {
             icon: Brain,
             title: "20+ AI Models",
             description:
-              "GPT-5, GPT-5.2, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more. Each model has different strengths. Use Claude for nuanced thought leadership, GPT-5 for storytelling, Gemini for speed. Switch between models per post.",
+              "The latest models from OpenAI, Anthropic, Google, xAI, and Perplexity. Each model has different strengths. Use Claude for nuanced thought leadership, ChatGPT for storytelling, Gemini for speed. Switch between models per post.",
             highlights: ["6 AI providers", "20+ models", "Switch per post"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -204,7 +204,7 @@ export function BestPostGeneratorContent() {
             number: "03",
             title: "Add visuals if you want",
             description:
-              "Optionally generate a custom AI photo with Nano Banana Pro, GPT Image 1.5, or FLUX directly in the editor. Or build a carousel. Attach to your post in one click - no separate tools needed.",
+              "Optionally generate a custom AI image with the latest models from Google, OpenAI, or Replicate directly in the editor. Or build a carousel. Attach to your post in one click - no separate tools needed.",
             icon: Sparkles,
             color: "from-emerald-500 to-green-500",
             time: "30 sec",
@@ -244,7 +244,7 @@ export function BestPostGeneratorContent() {
           price: "$19-79/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "20+ AI models - GPT-5, Claude, Gemini, Grok, Sonar, and more" },
+            { text: "20+ AI models - ChatGPT, Claude, Gemini, Grok, Perplexity, and more" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "Voice training that matches your exact writing style" },
             { text: "Images, scheduling, analytics, hooks, carousels all included" },
@@ -276,7 +276,7 @@ export function BestPostGeneratorContent() {
           },
           {
             quote:
-              "Having 20+ models is not a gimmick - it genuinely matters. I use Claude for my leadership posts and GPT-5 for casual storytelling. Different models, different voices, better content. And the BYOK pricing is unbeatable.",
+              "Having 20+ models is not a gimmick - it genuinely matters. I use Claude for my leadership posts and ChatGPT for casual storytelling. Different models, different voices, better content. And the BYOK pricing is unbeatable.",
             author: "Amara J.",
             role: "Executive Coach, 45K Followers",
           },
@@ -309,7 +309,7 @@ export function BestPostGeneratorContent() {
           {
             question: "Why do 20+ AI models matter?",
             answer:
-              "Different models excel at different content types. GPT-5 for storytelling, Claude for thought leadership, Gemini for speed. Having choice means better content for every post type.",
+              "Different models excel at different content types. ChatGPT for storytelling, Claude for thought leadership, Gemini for speed. Having choice means better content for every post type.",
           },
           {
             question: "How accurate is voice training?",
@@ -324,7 +324,7 @@ export function BestPostGeneratorContent() {
           {
             question: "What AI models are available?",
             answer:
-              "GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more text models. Plus 14 image models.",
+              "The latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ text models in total. Plus 14 image models from OpenAI, Google, and Replicate.",
           },
           {
             question: "How much does it cost?",

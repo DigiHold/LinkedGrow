@@ -38,7 +38,7 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-4o, GPT-4, o1",
+    description: "ChatGPT & latest models",
     placeholder: "sk-...",
     icon: "🤖",
     docsUrl: "https://platform.openai.com/api-keys",
@@ -47,7 +47,7 @@ const aiProviders = [
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude 3.5 Sonnet, Opus",
+    description: "Claude & latest models",
     placeholder: "sk-ant-...",
     icon: "🧠",
     docsUrl: "https://console.anthropic.com/settings/keys",
@@ -56,7 +56,7 @@ const aiProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Gemini 2.0, 1.5 Pro",
+    description: "Gemini & latest models",
     placeholder: "AIza...",
     icon: "✨",
     docsUrl: "https://aistudio.google.com/apikey",
@@ -65,7 +65,7 @@ const aiProviders = [
   {
     id: "groq",
     name: "Grok",
-    description: "Grok 4 (Ultra Fast)",
+    description: "Grok (Ultra Fast)",
     placeholder: "gsk_...",
     icon: "⚡",
     docsUrl: "https://console.groq.com/keys",
@@ -76,8 +76,8 @@ const aiProviders = [
 const imageAiProviders = [
   {
     id: "openai-dalle",
-    name: "GPT Image 1.5",
-    description: "OpenAI's best image model",
+    name: "OpenAI Images",
+    description: "ChatGPT image generation",
     placeholder: "sk-... (same as OpenAI)",
     icon: "🎨",
     docsUrl: "https://platform.openai.com/api-keys",
@@ -86,7 +86,7 @@ const imageAiProviders = [
   {
     id: "replicate",
     name: "Replicate",
-    description: "Flux, Stable Diffusion",
+    description: "Flux & latest models",
     placeholder: "r8_...",
     icon: "🖼️",
     docsUrl: "https://replicate.com/account/api-tokens",
@@ -95,7 +95,7 @@ const imageAiProviders = [
   {
     id: "together",
     name: "Perplexity",
-    description: "Sonar Pro (Fast & Cheap)",
+    description: "Sonar (Fast & Cheap)",
     placeholder: "...",
     icon: "🚀",
     docsUrl: "https://api.together.xyz/settings/api-keys",
@@ -104,7 +104,7 @@ const imageAiProviders = [
   {
     id: "fal",
     name: "Fal.ai",
-    description: "Flux Pro, SDXL Lightning",
+    description: "Flux & latest models",
     placeholder: "...",
     icon: "⚡",
     docsUrl: "https://fal.ai/dashboard/keys",
@@ -336,7 +336,7 @@ export default function OnboardingPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <Sparkles className="w-3 h-3" />
-                      <strong>Choose your model</strong> - GPT-4o, Claude, Gemini...
+                      <strong>Choose your model</strong> - ChatGPT, Claude, Gemini...
                     </li>
                   </ul>
                 </div>
@@ -461,7 +461,7 @@ export default function OnboardingPage() {
                       <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-center">
                         <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
                         <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                          Using your OpenAI key for GPT Image 1.5
+                          Using your OpenAI key for image generation
                         </p>
                         <p className="text-xs text-green-600 dark:text-green-400">
                           No additional API key needed!

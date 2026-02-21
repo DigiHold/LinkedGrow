@@ -5,7 +5,7 @@ import { ContentCreationAiContent } from "./ai-content";
 export const metadata: Metadata = {
   title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
   description:
-    "Use AI to create LinkedIn content 10x faster. Generate posts with GPT-5, Claude, Gemini. Create photos with Nano Banana Pro, FLUX. Build carousels, schedule posts, and track analytics.",
+    "Use AI to create LinkedIn content 10x faster. Generate posts with ChatGPT, Claude, Gemini. Create photos with the latest AI image models. Build carousels, schedule posts, and track analytics.",
   openGraph: {
     title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
     description:
@@ -38,7 +38,7 @@ const aiContentFAQs = [
   {
     question: "What AI models does LinkedGrow use for LinkedIn content creation?",
     answer:
-      "LinkedGrow supports 20+ AI text models including GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Gemini 3 Flash, Grok 4, and Sonar Pro. For image generation it supports GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. You choose which model to use for each generation.",
+      "LinkedGrow supports 20+ AI text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions available. For image generation it supports 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
   },
   {
     question: "How does AI content creation work for LinkedIn?",
@@ -93,7 +93,7 @@ export default function LinkedinContentCreationAiPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - AI LinkedIn Content Creator"
         url="https://linkedgrow.ai/linkedin-content-creation-ai"
-        description="AI-powered LinkedIn content creation platform. Generate posts with GPT-5, Claude, Gemini. Create photos with Nano Banana Pro, FLUX. Schedule and publish directly to LinkedIn."
+        description="AI-powered LinkedIn content creation platform. Generate posts with ChatGPT, Claude, Gemini. Create photos with the latest AI image models. Schedule and publish directly to LinkedIn."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <ContentCreationAiContent />

@@ -58,7 +58,7 @@ const toolsFAQs = [
   {
     question: "What AI models power the content creation tools?",
     answer:
-      "For text generation, LinkedGrow supports GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, and 15+ more models. For image generation, it supports GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. You choose which models to use and can switch between them at any time.",
+      "For text generation, LinkedGrow supports the latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ models in total. For image generation, it supports the latest models from OpenAI, Google, and Replicate - 10+ models in total. You choose which models to use and can switch between them at any time.",
   },
   {
     question: "Is there a free plan available?",

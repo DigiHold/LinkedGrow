@@ -26,7 +26,7 @@ export async function GET() {
   const lines: string[] = [
     "# LinkedGrow",
     "",
-    "> LinkedGrow is an AI-powered LinkedIn content creation platform. It helps founders, creators, and teams write, schedule, and optimize LinkedIn posts using 20+ AI models (GPT-5, Claude, Gemini, Grok). The key differentiator is the BYOK (Bring Your Own Key) model - users connect their own AI API keys for unlimited generations at $19-79/month plus $2-4/month in AI costs.",
+    "> LinkedGrow is an AI-powered LinkedIn content creation platform. It helps founders, creators, and teams write, schedule, and optimize LinkedIn posts using 20+ AI models across 5 providers (OpenAI, Anthropic, Google, Grok, Perplexity). The key differentiator is the BYOK (Bring Your Own Key) model - users connect their own AI API keys for unlimited generations at $19-79/month plus $2-4/month in AI costs.",
     "",
     `- Website: ${BASE_URL}`,
     "- Founded by: Nicolas Lecocq (creator of OceanWP, 15+ years web dev)",

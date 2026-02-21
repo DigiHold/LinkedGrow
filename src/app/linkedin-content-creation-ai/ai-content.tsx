@@ -44,7 +44,7 @@ export function ContentCreationAiContent() {
           gradient: "with AI",
         }}
         descriptionBold="LinkedIn rewards consistency. AI makes it possible."
-        description="LinkedGrow uses 20+ AI models to generate posts, photos, and carousels that match your unique writing voice. GPT-5, Claude, Gemini, FLUX, and more - all accessible through one dashboard. Publish 3 to 5 posts per week without spending hours writing."
+        description="LinkedGrow uses 20+ AI models to generate posts, photos, and carousels that match your unique writing voice. ChatGPT, Claude, Gemini, and more - all accessible through one dashboard. Publish 3 to 5 posts per week without spending hours writing."
         valuePropBadges={[
           { icon: Bot, text: "20+ AI models" },
           { icon: Mic, text: "Voice training" },
@@ -120,7 +120,7 @@ export function ContentCreationAiContent() {
             icon: Sparkles,
             title: "20+ AI Text Models",
             description:
-              "Choose from GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Gemini 3 Flash, Grok 4, Sonar Pro, and more. Each model has different strengths for different content types. Switch between models anytime.",
+              "Choose from the latest models by OpenAI, Anthropic, Google, xAI, and Perplexity. Each model has different strengths for different content types. Switch between models anytime.",
             highlights: ["6 AI providers", "20+ models", "Switch anytime"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -138,7 +138,7 @@ export function ContentCreationAiContent() {
             icon: Image,
             title: "AI Photo Generation",
             description:
-              "Generate custom photos for every post with Nano Banana Pro, GPT Image 1.5, FLUX, Imagen 4. Describe the visual you want, generate it in the editor, and attach to your post in one click. No stock photos needed.",
+              "Generate custom photos for every post with the latest AI image models from OpenAI, Google, and Replicate. Describe the visual you want, generate it in the editor, and attach to your post in one click. No stock photos needed.",
             highlights: ["10+ image models", "In-editor creation", "$0.02-0.08 per photo"],
             badge: "Pro",
             color: "from-amber-500 to-yellow-600",
@@ -234,7 +234,7 @@ export function ContentCreationAiContent() {
           price: "$49-199/month",
           issues: [
             { text: "30 to 100 post generations per month with hard caps" },
-            { text: "One AI model with no choice (usually GPT-3.5 or GPT-4)" },
+            { text: "One AI model with no choice - you get whatever they provide" },
             { text: "No voice training - generic output that sounds like everyone else" },
             { text: "Extra fees for image generation, scheduling, or analytics" },
             { text: "Premium overage charges when you hit the monthly limit" },
@@ -245,7 +245,7 @@ export function ContentCreationAiContent() {
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited post generations with zero caps on any paid plan" },
-            { text: "20+ AI models - switch between GPT-5, Claude, Gemini, Grok, and more" },
+            { text: "20+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and more" },
             { text: "Voice training that matches your exact writing style and tone" },
             { text: "AI costs average $2 to $4 per month at provider rates - zero markup" },
             { text: "Photos, scheduling, analytics, and hooks all included" },
@@ -276,7 +276,7 @@ export function ContentCreationAiContent() {
           },
           {
             quote:
-              "Having 20+ models to choose from is a game changer. I use Claude for thought leadership pieces and GPT-5 for storytelling posts. Different models, different strengths. And my total AI cost last month was $3.20.",
+              "Having 20+ models to choose from is a game changer. I use Claude for thought leadership pieces and ChatGPT for storytelling posts. Different models, different strengths. And my total AI cost last month was $3.20.",
             author: "Priya S.",
             role: "Tech Founder, 19K Followers",
           },
@@ -299,7 +299,7 @@ export function ContentCreationAiContent() {
           {
             question: "What AI models does LinkedGrow use for content creation?",
             answer:
-              "LinkedGrow supports 20+ text models including GPT-5, Claude Opus 4.5, Gemini 3 Pro, Grok 4, and Sonar Pro. For images: GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. You choose which model to use for each generation.",
+              "LinkedGrow supports 20+ text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions. For images: 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
           },
           {
             question: "How does AI content creation work for LinkedIn?",

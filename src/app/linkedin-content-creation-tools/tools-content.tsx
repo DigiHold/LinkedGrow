@@ -120,7 +120,7 @@ export function ContentCreationToolsContent() {
             icon: PenTool,
             title: "AI Post Generator",
             description:
-              "Generate complete LinkedIn posts with 20+ AI models including GPT-5, Claude, and Gemini. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
+              "Generate complete LinkedIn posts with 20+ AI models from OpenAI, Anthropic, Google, xAI, and Perplexity. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
             highlights: ["20+ AI models", "Voice training", "Unlimited generations"],
             badge: "Core",
             color: "from-cyan-500 to-blue-600",
@@ -129,7 +129,7 @@ export function ContentCreationToolsContent() {
             icon: Image,
             title: "AI Photo Generator",
             description:
-              "Create unique photos for your posts with Nano Banana Pro, FLUX, GPT Image 1.5, and Imagen 4. Generate directly from the post editor and attach in one click. No design skills needed, no stock photo subscriptions.",
+              "Create unique photos for your posts with the latest AI image models from OpenAI, Google, and Replicate. Generate directly from the post editor and attach in one click. No design skills needed, no stock photo subscriptions.",
             highlights: ["10+ image models", "In-editor generation", "$0.02-0.08 per photo"],
             badge: "Pro",
             color: "from-emerald-500 to-green-600",
@@ -319,7 +319,7 @@ export function ContentCreationToolsContent() {
           {
             question: "What AI models power the content creation tools?",
             answer:
-              "For text: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, and 15+ more. For images: GPT Image 1.5, Nano Banana Pro, FLUX.2 Pro, Imagen 4. Switch between models anytime.",
+              "For text: the latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ models in total. For images: the latest models from OpenAI, Google, and Replicate - 10+ models in total. Switch between models anytime.",
           },
           {
             question: "Is there a free plan available?",

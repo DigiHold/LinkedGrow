@@ -44,7 +44,7 @@ export function PostGeneratorFreeContent() {
           gradient: "with AI",
         }}
         descriptionBold="Create professional LinkedIn posts without spending a dollar."
-        description="LinkedGrow's free plan gives you 3 AI post generations per month with access to 20+ models including GPT-5, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
+        description="LinkedGrow's free plan gives you 3 AI post generations per month with access to 20+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
         valuePropBadges={[
           { icon: Gift, text: "Free plan available" },
           { icon: Brain, text: "20+ AI models" },
@@ -120,7 +120,7 @@ export function PostGeneratorFreeContent() {
             icon: Brain,
             title: "20+ AI Models to Choose From",
             description:
-              "GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
+              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
             highlights: ["6 AI providers", "20+ models", "Your choice"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
@@ -237,7 +237,7 @@ export function PostGeneratorFreeContent() {
           benefits: [
             { text: "Free plan with 3 generations per month to start" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
-            { text: "20+ AI models - GPT-5, Claude, Gemini, Grok, and more" },
+            { text: "20+ AI models from OpenAI, Anthropic, Google, xAI, and more" },
             { text: "Voice training matches your writing style on all plans" },
             { text: "AI costs average $2 to $4 per month with zero markup" },
           ],
@@ -295,7 +295,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "What AI models are available?",
             answer:
-              "20+ models including GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. Switch between models anytime based on your preference.",
+              "20+ models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions. Switch between models anytime based on your preference.",
           },
           {
             question: "How does voice training work?",

@@ -44,7 +44,7 @@ export function FreePostGeneratorContent() {
           gradient: "powered by AI",
         }}
         descriptionBold="Generate your first LinkedIn posts without paying anything."
-        description="LinkedGrow's free plan gives you 3 AI-powered post generations per month. Access all 20+ AI models including GPT-5, Claude, and Gemini. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
+        description="LinkedGrow's free plan gives you 3 AI-powered post generations per month. Access all 20+ AI models from OpenAI, Anthropic, Google, Grok, and Perplexity. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
         valuePropBadges={[
           { icon: Gift, text: "3 free generations" },
           { icon: CreditCard, text: "No card required" },
@@ -120,8 +120,8 @@ export function FreePostGeneratorContent() {
             icon: Brain,
             title: "All 20+ AI Models",
             description:
-              "The free plan gives you access to every supported AI model: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. No model restrictions. The same quality paid users get.",
-            highlights: ["GPT-5 included", "Claude included", "Gemini included"],
+              "The free plan gives you access to every supported AI model from OpenAI, Anthropic, Google, Grok, and Perplexity. No model restrictions. The same quality paid users get.",
+            highlights: ["ChatGPT included", "Claude included", "Gemini included"],
             badge: "Free",
             color: "from-cyan-500 to-blue-600",
           },
@@ -236,7 +236,7 @@ export function FreePostGeneratorContent() {
           apiCost: "$2-4/month",
           benefits: [
             { text: "Free plan with 3 real generations per month - no trial expiration" },
-            { text: "All 20+ AI models on free plan including GPT-5 and Claude" },
+            { text: "All 20+ AI models on the free plan" },
             { text: "Voice training included on free plan" },
             { text: "Upgrade to unlimited at $19 per month - not $49 to $199" },
             { text: "BYOK AI costs of $2 to $4 per month with zero markup" },
@@ -261,7 +261,7 @@ export function FreePostGeneratorContent() {
         testimonials={[
           {
             quote:
-              "I tried 3 free LinkedIn generators before LinkedGrow. The others used outdated AI and had no voice training. LinkedGrow's free plan gave me GPT-5, voice matching, and 3 posts that actually sounded like me. Upgraded to Starter the same week.",
+              "I tried 3 free LinkedIn generators before LinkedGrow. The others used outdated AI and had no voice training. LinkedGrow's free plan gave me the latest models, voice matching, and 3 posts that actually sounded like me. Upgraded to Starter the same week.",
             author: "Nina R.",
             role: "Freelance Consultant, 4K Followers",
           },
@@ -300,7 +300,7 @@ export function FreePostGeneratorContent() {
           {
             question: "What AI models are on the free plan?",
             answer:
-              "All 20+ models: GPT-5, Claude Opus 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and more. No model restrictions on the free plan.",
+              "All 20+ models from OpenAI, Anthropic, Google, Grok, and Perplexity. No model restrictions on the free plan.",
           },
           {
             question: "Is voice training available for free?",

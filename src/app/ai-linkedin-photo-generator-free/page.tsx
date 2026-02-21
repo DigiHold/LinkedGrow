@@ -5,7 +5,7 @@ import { PhotoGeneratorContent } from "./photo-generator-content";
 export const metadata: Metadata = {
   title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
   description:
-    "Generate professional photos for LinkedIn posts with AI for free. 10+ AI models including Nano Banana Pro, FLUX, and GPT Image 1.5. Create unique visuals in seconds - no design skills needed.",
+    "Generate professional photos for LinkedIn posts with AI for free. 10+ AI image models from OpenAI, Google, and Replicate. Create unique visuals in seconds - no design skills needed.",
   openGraph: {
     title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
     description:
@@ -43,7 +43,7 @@ const photoGenFAQs = [
   {
     question: "What AI models can I use to generate LinkedIn photos?",
     answer:
-      "LinkedGrow supports 10+ AI photo generation models across three providers. From OpenAI you get GPT Image 1.5, GPT Image 1, and GPT Image 1 Mini. From Google you get Nano Banana Pro (Gemini 3 Pro), Nano Banana (Gemini 2.5 Flash), and Imagen 4. From Replicate you get FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, and FLUX 1.1 Pro. Each model produces different visual styles so you can pick the best one for your content.",
+      "LinkedGrow supports 10+ AI photo generation models across three providers. From OpenAI you get the latest GPT Image models. From Google you get the latest Gemini and Imagen models. From Replicate you get the latest FLUX models. Each model produces different visual styles so you can pick the best one for your content.",
   },
   {
     question: "How do I create a LinkedIn photo with AI?",
@@ -68,7 +68,7 @@ const photoGenFAQs = [
   {
     question: "What does BYOK mean for photo generation costs?",
     answer:
-      "BYOK stands for Bring Your Own Key. You connect your own API key from OpenAI, Google, or Replicate and pay the provider directly at their standard rates. LinkedGrow adds zero markup. GPT Image 1.5 costs about $0.04 to $0.08 per photo, FLUX models cost $0.03 to $0.05, and Google Imagen 4 costs $0.02 to $0.04. Most users spend less than $1.50 per month on photo generation.",
+      "BYOK stands for Bring Your Own Key. You connect your own API key from OpenAI, Google, or Replicate and pay the provider directly at their standard rates. LinkedGrow adds zero markup. Most photos cost $0.02 to $0.08 each depending on the model and provider. Most users spend less than $1.50 per month on photo generation.",
   },
   {
     question: "Where are the generated photos stored?",
@@ -93,7 +93,7 @@ export default function AiLinkedinPhotoGeneratorFreePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow AI Photo Generator for LinkedIn"
         url="https://linkedgrow.ai/ai-linkedin-photo-generator-free"
-        description="Generate professional AI photos for LinkedIn posts. 10+ AI models including Nano Banana Pro, GPT Image 1.5, Imagen 4, FLUX. Create unique visuals in seconds with BYOK pricing."
+        description="Generate professional AI photos for LinkedIn posts. 10+ AI image models from OpenAI, Google, and Replicate. Create unique visuals in seconds with BYOK pricing."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <PhotoGeneratorContent />

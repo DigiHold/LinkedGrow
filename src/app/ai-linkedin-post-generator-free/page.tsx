@@ -5,7 +5,7 @@ import { PostGeneratorFreeContent } from "./post-generator-content";
 export const metadata: Metadata = {
   title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
   description:
-    "Generate LinkedIn posts for free with AI. 20+ models including GPT-5, Claude, Gemini. Voice training matches your writing style. Free plan available - no credit card needed.",
+    "Generate LinkedIn posts for free with AI. 20+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan available - no credit card needed.",
   openGraph: {
     title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
     description:
@@ -43,7 +43,7 @@ const postGenFreeFAQs = [
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
     answer:
-      "LinkedGrow supports 20+ AI text models including GPT-5, GPT-5.2, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Gemini 3 Flash, Grok 4, Grok 3, and Sonar Pro. You choose which model to use based on your preference and can switch between models at any time.",
+      "LinkedGrow supports 20+ AI text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions available. You choose which model to use based on your preference and can switch between models at any time.",
   },
   {
     question: "How does the AI generate a LinkedIn post?",
@@ -93,7 +93,7 @@ export default function AiLinkedinPostGeneratorFreePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/ai-linkedin-post-generator-free"
-        description="Generate LinkedIn posts for free with AI. 20+ models including GPT-5, Claude, Gemini. Voice training matches your writing style. Free plan with no credit card required."
+        description="Generate LinkedIn posts for free with AI. 20+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan with no credit card required."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <PostGeneratorFreeContent />

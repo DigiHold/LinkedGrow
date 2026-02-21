@@ -5,7 +5,7 @@ import { FreePostGeneratorContent } from "./free-generator-content";
 export const metadata: Metadata = {
   title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
   description:
-    "Try a free AI-powered LinkedIn post generator. 20+ models including GPT-5 and Claude. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
+    "Try a free AI-powered LinkedIn post generator. 20+ models from OpenAI, Anthropic, Google, Grok, and Perplexity. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
   openGraph: {
     title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
     description:
@@ -48,7 +48,7 @@ const freeGenFAQs = [
   {
     question: "What AI models can I use on the free plan?",
     answer:
-      "The free plan gives you access to all supported models: GPT-5, Claude Opus 4.5, Claude Sonnet 4.5, Gemini 3 Pro, Grok 4, Sonar Pro, and 15+ more. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
+      "The free plan gives you access to all 20+ supported models from OpenAI, Anthropic, Google, Grok, and Perplexity. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
   },
   {
     question: "How does voice training work on the free plan?",
