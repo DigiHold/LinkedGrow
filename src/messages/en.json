@@ -275,7 +275,9 @@
       "noResultsSub": "Try a different keyword or browse all categories.",
       "noArticles": "No articles yet",
       "noArticlesSub": "Stay tuned - our first articles are coming soon!",
-      "minRead": "{count} min read"
+      "minRead": "{count} min read",
+      "loadMore": "Load More Articles",
+      "showing": "Showing {visible} of {total} articles"
     },
     "layout": {
       "home": "Home",
