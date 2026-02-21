@@ -25,7 +25,6 @@ import {
   ChevronDown,
   ChevronUp,
   Unlink,
-  Gauge,
   SearchX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,18 +81,6 @@ interface BrokenLink {
   source: string;
   href: string;
   type: "page" | "blog";
-}
-
-interface VitalsResult {
-  url: string;
-  label: string;
-  score: number;
-  lcp: number;
-  cls: number;
-  fcp: number;
-  si: number;
-  tbt: number;
-  strategy: string;
 }
 
 interface SeoData {
@@ -160,10 +147,6 @@ export default function AdminSeoPage() {
   const [showBlogPosts, setShowBlogPosts] = useState(false);
   const [showUnindexed, setShowUnindexed] = useState(false);
   const [showBrokenLinks, setShowBrokenLinks] = useState(false);
-  const [showVitals, setShowVitals] = useState(false);
-  const [vitals, setVitals] = useState<VitalsResult[] | null>(null);
-  const [vitalsLoading, setVitalsLoading] = useState(false);
-  const [vitalsStrategy, setVitalsStrategy] = useState<"mobile" | "desktop">("mobile");
   const [showIndexingConfig, setShowIndexingConfig] = useState(false);
   const [showGscPerformance, setShowGscPerformance] = useState(false);
   const [showCannibalization, setShowCannibalization] = useState(false);
@@ -209,33 +192,6 @@ export default function AdminSeoPage() {
     }
   };
 
-  const VITALS_PAGES = [
-    { path: "/", label: "Homepage" },
-    { path: "/blog", label: "Blog Listing" },
-    { path: "/pricing", label: "Pricing" },
-    { path: "/features/ai-post-generator", label: "AI Post Generator" },
-  ];
-
-  const fetchVitals = async (strategy?: "mobile" | "desktop") => {
-    const s = strategy || vitalsStrategy;
-    setVitalsLoading(true);
-    setVitals([]);
-
-    for (const page of VITALS_PAGES) {
-      try {
-        const params = new URLSearchParams({ strategy: s, path: page.path, label: page.label });
-        const res = await fetch(`/api/admin/seo/vitals?${params}`);
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (data.vital) {
-          setVitals((prev) => [...(prev || []), data.vital]);
-        }
-      } catch (error) {
-        console.error(`PageSpeed failed for ${page.path}:`, error);
-      }
-    }
-    setVitalsLoading(false);
-  };
 
   useEffect(() => {
     if (isAdmin) {
@@ -1084,139 +1040,6 @@ export default function AdminSeoPage() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Core Web Vitals */}
-      <div className="border rounded-xl overflow-hidden">
-        <button
-          onClick={() => {
-            setShowVitals(!showVitals);
-            if (!showVitals && (!vitals || vitals.length === 0) && !vitalsLoading) {
-              fetchVitals();
-            }
-          }}
-          className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
-        >
-          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
-            <Gauge className="w-4 h-4 text-emerald-600 shrink-0" />
-            Core Web Vitals
-          </h2>
-          {showVitals ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-          )}
-        </button>
-        {showVitals && (
-          <div className="p-4 border-t space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
-                  <button
-                    onClick={() => { setVitalsStrategy("mobile"); fetchVitals("mobile"); }}
-                    disabled={vitalsLoading}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      vitalsStrategy === "mobile"
-                        ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Mobile
-                  </button>
-                  <button
-                    onClick={() => { setVitalsStrategy("desktop"); fetchVitals("desktop"); }}
-                    disabled={vitalsLoading}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      vitalsStrategy === "desktop"
-                        ? "bg-white dark:bg-slate-700 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Desktop
-                  </button>
-                </div>
-                {vitalsLoading && (
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {vitals ? vitals.length : 0}/{VITALS_PAGES.length}
-                  </span>
-                )}
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => fetchVitals()} disabled={vitalsLoading}>
-                {vitalsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              </Button>
-            </div>
-            {vitals && vitals.length > 0 && (
-              <>
-                <div className="border rounded-lg overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
-                        <th className="text-left p-2 pl-3">Page</th>
-                        <th className="text-center p-2">Score</th>
-                        <th className="text-right p-2">LCP</th>
-                        <th className="text-right p-2">CLS</th>
-                        <th className="text-right p-2 hidden sm:table-cell">FCP</th>
-                        <th className="text-right p-2 pr-3 hidden sm:table-cell">TBT</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {vitals.map((v) => (
-                        <tr key={`${v.url}-${v.strategy}`} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-                          <td className="p-2 pl-3 text-xs font-medium">{v.label}</td>
-                          <td className="p-2 text-center">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                              v.score >= 90
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : v.score >= 50
-                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            }`}>
-                              {v.score}
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs">
-                            <span className={v.lcp <= 2500 ? "text-green-600" : v.lcp <= 4000 ? "text-amber-600" : "text-red-600"}>
-                              {(v.lcp / 1000).toFixed(1)}s
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs">
-                            <span className={v.cls <= 0.1 ? "text-green-600" : v.cls <= 0.25 ? "text-amber-600" : "text-red-600"}>
-                              {v.cls.toFixed(3)}
-                            </span>
-                          </td>
-                          <td className="p-2 text-right text-xs hidden sm:table-cell">
-                            <span className={v.fcp <= 1800 ? "text-green-600" : v.fcp <= 3000 ? "text-amber-600" : "text-red-600"}>
-                              {(v.fcp / 1000).toFixed(1)}s
-                            </span>
-                          </td>
-                          <td className="p-2 pr-3 text-right text-xs hidden sm:table-cell">
-                            <span className={v.tbt <= 200 ? "text-green-600" : v.tbt <= 600 ? "text-amber-600" : "text-red-600"}>
-                              {Math.round(v.tbt)}ms
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  LCP &le; 2.5s, CLS &le; 0.1, FCP &le; 1.8s, TBT &le; 200ms = good
-                </p>
-              </>
-            )}
-            {vitalsLoading && (!vitals || vitals.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Checking pages...
-              </p>
-            )}
-            {!vitalsLoading && vitals && vitals.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                PageSpeed API returned no results. Try again later.
-              </p>
             )}
           </div>
         )}
