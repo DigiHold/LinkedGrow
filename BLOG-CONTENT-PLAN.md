@@ -28,7 +28,6 @@ When proposing new articles, assign one of these 4 categories. Aim to keep them 
 
 **Internal links to include:**
 - /features/hook-generator (primary)
-- /free-tools/linkedin-hooks-generator
 - /features/ai-post-generator
 - /for/creators
 
@@ -137,7 +136,6 @@ When proposing new articles, assign one of these 4 categories. Aim to keep them 
 
 **Internal links to include:**
 - /features/carousel-generator (primary)
-- /free-tools/linkedin-carousel-generator
 - /features/ai-image-generation
 - /for/creators
 
@@ -382,7 +380,6 @@ When proposing new articles, assign one of these 4 categories. Aim to keep them 
 **Internal links to include:**
 - /features/voice-training (primary)
 - /features/ai-post-generator
-- /free-tools/linkedin-post-generator
 - /for/solopreneurs
 - Blog #4 (BYOK)
 
@@ -539,6 +536,7 @@ The blog agent at `/Users/nicolas/Agent/Blog` contains the complete automated wo
 ### External Backlinks
 
 - **1-2 external links per article** to authoritative sources (research, official docs, industry reports)
+- **NEVER link to competitors or SaaS tools that sell similar features** (no Taplio, PostUnreel, AuthoredUp, Supergrow, ContentIn, Socialsonic, aiCarousels, PostNitro, etc.). Linking to a competitor gives them SEO juice and sends our readers to their product. Use non-competitor sources instead: analytics platforms (Dataslayer, Agorapulse blog), research firms, official LinkedIn docs, general marketing blogs (Buffer, HubSpot, Hootsuite are acceptable as general social media platforms).
 - Use `<a href="..." target="_blank" rel="noopener noreferrer">` with cyan link styling
 - Only cite statistics that can be verified by fetching the source URL
 - Keep it minimal - more than 2 feels spammy and sends readers away
@@ -557,3 +555,24 @@ The blog agent at `/Users/nicolas/Agent/Blog` contains the complete automated wo
 8. Every blog post needs proper metadata (title, description, keywords, OG, canonical)
 9. Generate AI images for featured image + each H2 section (see image generation above)
 10. Target 30% or lower AI detection - sound human, not robotic
+
+---
+
+## When All 20 Articles Are Done
+
+When all 20 blog posts above have been written and deployed, the "write post" command should trigger the following workflow instead of saying there's nothing left:
+
+1. **Announce completion**: Tell the user "All 20 planned articles are published. Searching for the next batch of high-potential topics..."
+2. **Research 30 new article ideas** by searching the web for:
+   - High-volume LinkedIn-related keywords with low-to-medium competition (SEO potential)
+   - Trending LinkedIn topics and emerging questions in 2026 (GEO potential - AI search visibility)
+   - Content gaps: topics competitors rank for that LinkedGrow doesn't cover yet
+   - Long-tail keywords related to LinkedGrow's features (scheduling, BYOK, voice training, carousels, etc.)
+   - "People Also Ask" and related searches on Google for existing article keywords
+3. **Deduplicate**: Exclude any topic that overlaps with the 20 existing articles
+4. **Format each idea** exactly like the existing entries in this file:
+   - Blog Post number, title, category (use existing 4 categories), target keyword, search volume estimate, slug, internal links, and content outline
+5. **Assign publishing priority** (Phase 4, Phase 5, etc.) based on traffic potential and strategic value
+6. **Present the 30 ideas** to the user for review and approval before adding them to this file
+7. Once approved, **remove all completed articles** from this file and **replace them with the 30 new ones**. This file should always contain only the upcoming/unwritten articles (max 30). Completed articles already exist in `src/lib/blog.ts` as the permanent registry - no need to keep them here.
+8. Resume the normal "write post" workflow with the new article list
