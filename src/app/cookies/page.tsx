@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import CookiesClient from "./cookies-client";
 
 export default async function CookiesPage() {
@@ -81,5 +82,15 @@ export default async function CookiesPage() {
     },
   };
 
-  return <CookiesClient translations={translations} />;
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://linkedgrow.ai" },
+          { name: "Cookie Policy", url: "https://linkedgrow.ai/cookies" },
+        ]}
+      />
+      <CookiesClient translations={translations} />
+    </>
+  );
 }

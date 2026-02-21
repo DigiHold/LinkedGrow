@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
+import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
@@ -14,12 +15,21 @@ export const metadata: Metadata = {
     url: "https://linkedgrow.ai/privacy",
     siteName: "LinkedGrow",
     type: "website",
+    images: [
+      {
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+        width: 1200,
+        height: 630,
+        alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: "Privacy Policy - LinkedGrow",
     description:
       "Learn how LinkedGrow collects, uses, and protects your personal information.",
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/privacy",
@@ -31,6 +41,12 @@ export default async function PrivacyPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-slate-900">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://linkedgrow.ai" },
+          { name: "Privacy Policy", url: "https://linkedgrow.ai/privacy" },
+        ]}
+      />
       <PrelaunchHeader />
 
       <div className="py-16 md:py-24">

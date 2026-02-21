@@ -108,6 +108,55 @@ twitter: {
 
 **Never skip this.** If a page has no custom OG image, use the default URL above.
 
+## Schema Markup (JSON-LD Structured Data)
+
+All schema components live in `src/components/seo/json-ld.tsx`. The system uses `@id` references to connect entities across schemas.
+
+### Global Schemas (in `layout.tsx` - every page gets these automatically)
+
+- `OrganizationJsonLd` - Company identity with `@id: https://linkedgrow.ai/#organization`
+- `WebsiteJsonLd` - Site identity with `@id: https://linkedgrow.ai/#website`
+- `SoftwareApplicationJsonLd` - WebApplication schema with all pricing tiers, `@id: https://linkedgrow.ai/#software`
+
+### When Creating a New Page - Schema Checklist
+
+Every new **public-facing, indexed page** MUST include:
+
+1. **`BreadcrumbJsonLd`** - Always. Example:
+   ```tsx
+   <BreadcrumbJsonLd
+     items={[
+       { name: "Home", url: "https://linkedgrow.ai" },
+       { name: "Page Name", url: "https://linkedgrow.ai/page-slug" },
+     ]}
+   />
+   ```
+
+2. **Page-specific schema** based on page type:
+
+   | Page Type | Required Schema Components |
+   |-----------|---------------------------|
+   | Feature page | `BreadcrumbJsonLd` + `SoftwareApplicationJsonLd` (with custom name/url/description/offers) + `FAQJsonLd` |
+   | Free tool | `BreadcrumbJsonLd` + `WebApplicationJsonLd` + `FAQJsonLd` |
+   | Landing/comparison page | `BreadcrumbJsonLd` + `SoftwareApplicationJsonLd` + `FAQJsonLd` |
+   | Industry/use-case/for page | `BreadcrumbJsonLd` + `FAQJsonLd` |
+   | Blog article | `BreadcrumbJsonLd` + `BlogPostingJsonLd` + `FAQJsonLd` (handled by blog article layout) |
+   | Blog listing | `BreadcrumbJsonLd` + `CollectionPageJsonLd` |
+   | About page | `BreadcrumbJsonLd` + `AboutPageJsonLd` + `PersonJsonLd` |
+   | Legal page (privacy/terms/cookies) | `BreadcrumbJsonLd` only |
+   | Auth pages (sign-in/sign-up) | None (noindex pages) |
+   | Dashboard pages | None (behind auth, not indexed) |
+
+3. **FAQJsonLd** - Add whenever the page has a FAQ section with Q&A content.
+
+### Important Rules
+
+- **Never add `aggregateRating`** unless real, verified user reviews exist (Google penalizes fake ratings)
+- **No `SearchAction`** in WebSite schema (deprecated Jan 2026, and we have no search page)
+- Use `@id` references (e.g., `{ "@id": "https://linkedgrow.ai/#organization" }`) to connect schemas instead of duplicating Organization data
+- The global `SoftwareApplicationJsonLd` (no props) uses `WebApplication` type with `AggregateOffer` containing all 4 plan tiers
+- Feature page `SoftwareApplicationJsonLd` (with props) uses a single `Offer` with the relevant starting price
+
 ## Caching Strategy
 
 Cache headers are configured in `next.config.ts` via the `headers()` function. Vercel's CDN automatically invalidates all cached content on every deploy - no manual cache clearing is needed.

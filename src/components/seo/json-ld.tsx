@@ -1,5 +1,5 @@
 // JSON-LD Structured Data Components for SEO
-// Helps search engines understand your content better
+// Helps search engines and AI systems understand your content better
 
 import Script from "next/script";
 
@@ -7,41 +7,56 @@ const APP_NAME = "LinkedGrow";
 const APP_URL = "https://linkedgrow.ai";
 const COMPANY_NAME = "Vayalis SARL";
 
-interface OrganizationJsonLdProps {
-  name?: string;
-  url?: string;
-  logo?: string;
-  description?: string;
-}
+// Stable @id anchors for cross-referencing between schemas
+const ORG_ID = `${APP_URL}/#organization`;
+const WEBSITE_ID = `${APP_URL}/#website`;
+const SOFTWARE_ID = `${APP_URL}/#software`;
 
-export function OrganizationJsonLd({
-  name = APP_NAME,
-  url = APP_URL,
-  logo = `${APP_URL}/logo.png`,
-  description = "AI-powered LinkedIn content creation and scheduling platform",
-}: OrganizationJsonLdProps) {
+export function OrganizationJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name,
-    url,
-    logo,
-    description,
-    foundingDate: "2024",
-    founder: {
-      "@type": "Organization",
-      name: COMPANY_NAME,
+    "@id": ORG_ID,
+    name: APP_NAME,
+    legalName: COMPANY_NAME,
+    url: APP_URL,
+    logo: {
+      "@type": "ImageObject",
+      "@id": `${APP_URL}/#logo`,
+      url: `${APP_URL}/logo.png`,
+      width: 512,
+      height: 512,
     },
+    description: "AI-powered LinkedIn content creation and scheduling platform",
+    foundingDate: "2024",
+    founder: [
+      {
+        "@type": "Person",
+        name: "Nicolas Lecocq",
+        jobTitle: "Founder & Developer",
+      },
+      {
+        "@type": "Person",
+        name: "Maria Lecocq",
+        jobTitle: "Operations & Community",
+      },
+    ],
     address: {
       "@type": "PostalAddress",
-      streetAddress: "78 Avenue Des Champs-Élysées",
+      streetAddress: "78 Avenue Des Champs-Elysees",
       addressLocality: "Paris",
       postalCode: "75008",
       addressCountry: "FR",
     },
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "contact@linkedgrow.ai",
+      contactType: "customer support",
+    },
     sameAs: [
       "https://twitter.com/linkedgrow",
       "https://linkedin.com/company/linkedgrow",
+      "https://www.youtube.com/@LinkedGrow",
     ],
   };
 
@@ -54,31 +69,16 @@ export function OrganizationJsonLd({
   );
 }
 
-interface WebsiteJsonLdProps {
-  name?: string;
-  url?: string;
-  description?: string;
-}
-
-export function WebsiteJsonLd({
-  name = APP_NAME,
-  url = APP_URL,
-  description = "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools",
-}: WebsiteJsonLdProps) {
+export function WebsiteJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name,
-    url,
-    description,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${url}/search?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
+    "@id": WEBSITE_ID,
+    name: APP_NAME,
+    url: APP_URL,
+    description:
+      "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools",
+    publisher: { "@id": ORG_ID },
   };
 
   return (
@@ -95,59 +95,113 @@ interface SoftwareApplicationJsonLdProps {
   url?: string;
   description?: string;
   applicationCategory?: string;
-  operatingSystem?: string;
   offers?: {
     price: string;
     priceCurrency: string;
   };
-  aggregateRating?: {
-    ratingValue: number;
-    ratingCount: number;
-  };
 }
 
 export function SoftwareApplicationJsonLd({
-  name = APP_NAME,
-  url = APP_URL,
-  description = "AI-powered LinkedIn content creation platform. Generate engaging posts, analyze viral content, and schedule your LinkedIn presence.",
+  name,
+  url,
+  description,
   applicationCategory = "BusinessApplication",
-  operatingSystem = "Web",
-  offers = { price: "0", priceCurrency: "USD" },
-  aggregateRating = { ratingValue: 4.8, ratingCount: 127 },
-}: SoftwareApplicationJsonLdProps) {
+  offers,
+}: SoftwareApplicationJsonLdProps = {}) {
+  // When called with custom props (feature pages), use single Offer
+  // When called with defaults (global layout), use AggregateOffer with all plans
+  const isGlobal = !name;
+
+  const offersData = offers
+    ? {
+        "@type": "Offer" as const,
+        price: offers.price,
+        priceCurrency: offers.priceCurrency,
+      }
+    : {
+        "@type": "AggregateOffer" as const,
+        lowPrice: "0",
+        highPrice: "79",
+        priceCurrency: "USD",
+        offerCount: 4,
+        offers: [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "USD",
+          },
+          {
+            "@type": "Offer",
+            name: "Starter",
+            price: "19",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "19",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+          },
+          {
+            "@type": "Offer",
+            name: "Pro",
+            price: "39",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "39",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+          },
+          {
+            "@type": "Offer",
+            name: "Business",
+            price: "79",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "79",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+          },
+        ],
+      };
+
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name,
-    url,
-    description,
+    "@type": "WebApplication",
+    ...(isGlobal && { "@id": SOFTWARE_ID }),
+    name: name || APP_NAME,
+    url: url || APP_URL,
+    description:
+      description ||
+      "AI-powered LinkedIn content creation platform. Generate engaging posts, analyze viral content, and schedule your LinkedIn presence.",
     applicationCategory,
-    operatingSystem,
-    offers: {
-      "@type": "Offer",
-      price: offers.price,
-      priceCurrency: offers.priceCurrency,
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: aggregateRating.ratingValue,
-      ratingCount: aggregateRating.ratingCount,
-      bestRating: "5",
-      worstRating: "1",
-    },
+    operatingSystem: "All",
+    browserRequirements: "Requires a modern web browser with JavaScript enabled",
+    offers: offersData,
     featureList: [
-      "AI Content Generation",
-      "Viral Post Analysis",
-      "Smart Scheduling",
+      "AI Post Generation (BYOK)",
+      "LinkedIn Post Scheduling",
+      "Content Calendar",
+      "AI Image Generation",
       "Carousel Generator",
-      "LinkedIn Analytics",
-      "Bring Your Own API Key",
+      "Hooks Generator",
+      "Reddit to LinkedIn",
+      "Voice Training",
+      "A/B Testing",
+      "Team Collaboration",
+      "Analytics Dashboard",
     ],
+    provider: { "@id": ORG_ID },
   };
 
   return (
     <Script
-      id="software-jsonld"
+      id={isGlobal ? "software-jsonld" : `software-jsonld-${(name || "").slice(0, 30).replace(/\s/g, "-").toLowerCase()}`}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
@@ -252,16 +306,10 @@ export function BlogPostingJsonLd({
       "@type": "Person",
       name: authorName,
       url: authorUrl,
+      sameAs: [authorUrl],
     },
-    publisher: {
-      "@type": "Organization",
-      name: APP_NAME,
-      url: APP_URL,
-      logo: {
-        "@type": "ImageObject",
-        url: `${APP_URL}/logo.png`,
-      },
-    },
+    publisher: { "@id": ORG_ID },
+    isPartOf: { "@id": WEBSITE_ID },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": url,
@@ -294,6 +342,7 @@ export function PersonJsonLd({ name, jobTitle, url, sameAs = [] }: PersonJsonLdP
     name,
     jobTitle,
     url,
+    worksFor: { "@id": ORG_ID },
     ...(sameAs.length > 0 && { sameAs }),
   };
 
@@ -337,16 +386,56 @@ export function WebApplicationJsonLd({
       price: "0",
       priceCurrency: "USD",
     },
-    provider: {
-      "@type": "Organization",
-      name: APP_NAME,
-      url: APP_URL,
-    },
+    provider: { "@id": ORG_ID },
   };
 
   return (
     <Script
       id={`webapplication-jsonld-${name.slice(0, 20).replace(/\s/g, "-").toLowerCase()}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
+// AboutPage schema for the about page
+export function AboutPageJsonLd() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: `About ${APP_NAME}`,
+    url: `${APP_URL}/about`,
+    description:
+      "Learn about LinkedGrow, the AI-powered LinkedIn content creation platform. Founded by Nicolas Lecocq, creator of OceanWP. Based in Paris, France.",
+    isPartOf: { "@id": WEBSITE_ID },
+    about: { "@id": ORG_ID },
+  };
+
+  return (
+    <Script
+      id="aboutpage-jsonld"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
+// CollectionPage schema for the blog listing page
+export function CollectionPageJsonLd() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Blog - LinkedIn Growth Tips & AI Content Strategies",
+    url: `${APP_URL}/blog`,
+    description:
+      "Actionable LinkedIn growth strategies, AI content creation tips, and social selling guides. Learn how to build your personal brand and grow your audience.",
+    isPartOf: { "@id": WEBSITE_ID },
+    provider: { "@id": ORG_ID },
+  };
+
+  return (
+    <Script
+      id="collectionpage-jsonld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />

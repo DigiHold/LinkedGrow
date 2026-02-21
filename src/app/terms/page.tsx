@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
+import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: "Terms of Service - LinkedGrow",
@@ -13,12 +14,21 @@ export const metadata: Metadata = {
     url: "https://linkedgrow.ai/terms",
     siteName: "LinkedGrow",
     type: "website",
+    images: [
+      {
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+        width: 1200,
+        height: 630,
+        alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: "Terms of Service - LinkedGrow",
     description:
       "Read the Terms of Service for LinkedGrow, the AI-powered LinkedIn content platform.",
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/terms",
@@ -28,6 +38,12 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <main className="min-h-screen bg-white dark:bg-slate-900">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://linkedgrow.ai" },
+          { name: "Terms of Service", url: "https://linkedgrow.ai/terms" },
+        ]}
+      />
       <PrelaunchHeader />
 
       <div className="py-16 md:py-24">
