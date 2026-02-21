@@ -2,6 +2,7 @@
 // Helps search engines and AI systems understand your content better
 
 import Script from "next/script";
+import { PLANS } from "@/lib/plans";
 
 const APP_NAME = "LinkedGrow";
 const APP_URL = "https://linkedgrow.ai";
@@ -112,6 +113,10 @@ export function SoftwareApplicationJsonLd({
   // When called with defaults (global layout), use AggregateOffer with all plans
   const isGlobal = !name;
 
+  // Build offers dynamically from plans.ts so schema stays in sync with pricing
+  const planList = Object.values(PLANS);
+  const prices = planList.map((p) => p.price);
+
   const offersData = offers
     ? {
         "@type": "Offer" as const,
@@ -120,54 +125,24 @@ export function SoftwareApplicationJsonLd({
       }
     : {
         "@type": "AggregateOffer" as const,
-        lowPrice: "0",
-        highPrice: "79",
+        lowPrice: String(Math.min(...prices)),
+        highPrice: String(Math.max(...prices)),
         priceCurrency: "USD",
-        offerCount: 4,
-        offers: [
-          {
-            "@type": "Offer",
-            name: "Free",
-            price: "0",
-            priceCurrency: "USD",
-          },
-          {
-            "@type": "Offer",
-            name: "Starter",
-            price: "19",
-            priceCurrency: "USD",
+        offerCount: planList.length,
+        offers: planList.map((plan) => ({
+          "@type": "Offer",
+          name: plan.name,
+          price: String(plan.price),
+          priceCurrency: "USD",
+          ...(plan.price > 0 && {
             priceSpecification: {
               "@type": "UnitPriceSpecification",
-              price: "19",
+              price: String(plan.price),
               priceCurrency: "USD",
               billingDuration: "P1M",
             },
-          },
-          {
-            "@type": "Offer",
-            name: "Pro",
-            price: "39",
-            priceCurrency: "USD",
-            priceSpecification: {
-              "@type": "UnitPriceSpecification",
-              price: "39",
-              priceCurrency: "USD",
-              billingDuration: "P1M",
-            },
-          },
-          {
-            "@type": "Offer",
-            name: "Business",
-            price: "79",
-            priceCurrency: "USD",
-            priceSpecification: {
-              "@type": "UnitPriceSpecification",
-              price: "79",
-              priceCurrency: "USD",
-              billingDuration: "P1M",
-            },
-          },
-        ],
+          }),
+        })),
       };
 
   const jsonLd = {
