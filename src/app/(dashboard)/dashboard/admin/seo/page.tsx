@@ -220,29 +220,16 @@ export default function AdminSeoPage() {
     const s = strategy || vitalsStrategy;
     setVitalsLoading(true);
     setVitals([]);
-    const baseUrl = "https://linkedgrow.ai";
 
     for (const page of VITALS_PAGES) {
       try {
-        const url = page.path === "/" ? baseUrl : `${baseUrl}${page.path}`;
-        const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&strategy=${s}`;
-        const res = await fetch(apiUrl);
+        const params = new URLSearchParams({ strategy: s, path: page.path, label: page.label });
+        const res = await fetch(`/api/admin/seo/vitals?${params}`);
         if (!res.ok) continue;
         const data = await res.json();
-        const audit = data.lighthouseResult?.audits;
-        const score = data.lighthouseResult?.categories?.performance?.score ?? 0;
-        const result: VitalsResult = {
-          url: page.path,
-          label: page.label,
-          score: Math.round(score * 100),
-          lcp: audit?.["largest-contentful-paint"]?.numericValue ?? 0,
-          cls: audit?.["cumulative-layout-shift"]?.numericValue ?? 0,
-          fcp: audit?.["first-contentful-paint"]?.numericValue ?? 0,
-          si: audit?.["speed-index"]?.numericValue ?? 0,
-          tbt: audit?.["total-blocking-time"]?.numericValue ?? 0,
-          strategy: s,
-        };
-        setVitals((prev) => [...(prev || []), result]);
+        if (data.vital) {
+          setVitals((prev) => [...(prev || []), data.vital]);
+        }
       } catch (error) {
         console.error(`PageSpeed failed for ${page.path}:`, error);
       }
