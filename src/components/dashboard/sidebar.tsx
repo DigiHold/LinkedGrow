@@ -33,6 +33,7 @@ import {
   Brain,
   MessageSquare,
   Handshake,
+  ShoppingCart,
 } from "lucide-react";
 
 // Reddit icon component
@@ -562,6 +563,16 @@ export function Sidebar() {
                   >
                     <Database className="w-4 h-4" />
                     Site Data
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/abandoned-carts");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Abandoned Carts
                   </button>
                 </>
               )}
