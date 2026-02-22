@@ -102,22 +102,99 @@ function parseCaptionXml(xml: string): CaptionSegment[] {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyJson = any;
 
+// Diagnostic info collector - tracks what each method sees
+interface DiagnosticInfo {
+  method1: string;
+  method2: string;
+  method3: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Method 1: /next + /get_transcript endpoint
-// This is the most reliable method from datacenter IPs. Instead of asking
-// /player for caption URLs (which YouTube blocks), we ask /next for the
-// transcript engagement panel, then call /get_transcript for the actual text.
-// Based on youtube-caption-extractor's approach.
+// Method 1: /player + /next + /get_transcript
+// Matches youtube-caption-extractor's flow exactly:
+// 1. Call /player first (to get video status + potentially captions)
+// 2. Call /next with SAME session (to get transcript engagement panel)
+// 3. Call /get_transcript with the panel's continuation token
 // ─────────────────────────────────────────────────────────────────────────────
-async function tryGetTranscript(
-  videoId: string
+async function tryTranscriptApi(
+  videoId: string,
+  diag: DiagnosticInfo
 ): Promise<{ captions: CaptionSegment[]; title: string } | null> {
   try {
     const visitorData = generateVisitorData();
     const headers = makeHeaders(visitorData);
     const context = makeContext(visitorData);
 
-    // Step 1: Call /next to get engagement panels (always, not just on LOGIN_REQUIRED)
+    // Step 1: Call /player first (same session)
+    const playerResponse = await fetch(
+      `${INNERTUBE_BASE}/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          videoId,
+          context,
+          visitorData,
+          playbackContext: {
+            contentPlaybackContext: {
+              vis: 0,
+              splay: false,
+              lactMilliseconds: "-1",
+            },
+          },
+          racyCheckOk: true,
+          contentCheckOk: true,
+        }),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+
+    if (!playerResponse.ok) {
+      diag.method1 = `player HTTP ${playerResponse.status}`;
+      return null;
+    }
+
+    const playerData = await playerResponse.json();
+    const playabilityStatus = playerData?.playabilityStatus?.status || "unknown";
+    const title = playerData?.videoDetails?.title || "";
+
+    // If player has captions, use them directly
+    const captionTracks =
+      playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    if (captionTracks && captionTracks.length > 0) {
+      let track = captionTracks.find(
+        (t: AnyJson) => t.vssId === ".en" || t.vssId === "a.en"
+      );
+      if (!track) track = captionTracks.find((t: AnyJson) => t.languageCode === "en");
+      if (!track) track = captionTracks[0];
+
+      if (track?.baseUrl) {
+        const captionUrl = track.baseUrl.replace("&fmt=srv3", "");
+        try {
+          const captionResponse = await fetch(captionUrl, {
+            headers: {
+              "User-Agent": headers["User-Agent"],
+              Referer: `https://www.youtube.com/watch?v=${videoId}`,
+            },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (captionResponse.ok) {
+            const xml = await captionResponse.text();
+            const captions = parseCaptionXml(xml);
+            if (captions.length > 0) {
+              diag.method1 = `player captions OK (${captions.length} segments)`;
+              return { captions, title };
+            }
+          }
+        } catch {
+          // Caption XML fetch failed, continue to /next
+        }
+      }
+    }
+
+    diag.method1 = `player status=${playabilityStatus}, tracks=${captionTracks?.length || 0}`;
+
+    // Step 2: Call /next with SAME session to get engagement panels
     const nextResponse = await fetch(
       `${INNERTUBE_BASE}/next?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
       {
@@ -128,66 +205,68 @@ async function tryGetTranscript(
       }
     );
 
-    if (!nextResponse.ok) return null;
+    if (!nextResponse.ok) {
+      diag.method1 += ` -> next HTTP ${nextResponse.status}`;
+      return null;
+    }
+
     const nextData = await nextResponse.json();
 
-    // Extract title
-    let title = "";
-    const titleRuns =
-      nextData?.contents?.twoColumnWatchNextResults?.results?.results
-        ?.contents?.[0]?.videoPrimaryInfoRenderer?.title?.runs;
-    if (titleRuns) {
-      title = titleRuns
-        .map((r: { text: string }) => r.text)
-        .join("");
-    }
-    if (!title) {
-      title =
-        nextData?.metadata?.videoMetadataRenderer?.title?.simpleText || "";
+    // Extract title from next if player didn't have it
+    let videoTitle = title;
+    if (!videoTitle) {
+      const titleRuns =
+        nextData?.contents?.twoColumnWatchNextResults?.results?.results
+          ?.contents?.[0]?.videoPrimaryInfoRenderer?.title?.runs;
+      if (titleRuns) {
+        videoTitle = titleRuns.map((r: { text: string }) => r.text).join("");
+      }
+      if (!videoTitle) {
+        videoTitle = nextData?.metadata?.videoMetadataRenderer?.title?.simpleText || "";
+      }
     }
 
     // Find transcript engagement panel
     const engagementPanels: AnyJson[] = nextData?.engagementPanels || [];
+    const panelIds = engagementPanels
+      .map((p: AnyJson) => p?.engagementPanelSectionListRenderer?.panelIdentifier)
+      .filter(Boolean);
+
     const transcriptPanel = engagementPanels.find(
       (panel: AnyJson) =>
         panel?.engagementPanelSectionListRenderer?.panelIdentifier ===
         "engagement-panel-searchable-transcript"
     );
 
-    if (!transcriptPanel) return null;
+    if (!transcriptPanel) {
+      diag.method1 += ` -> next OK, panels=[${panelIds.join(",")}], NO transcript panel`;
+      return null;
+    }
 
     const panelContent =
       transcriptPanel.engagementPanelSectionListRenderer?.content;
     let token: string | null = null;
+    let tokenSource = "";
 
     // Token extraction Method A: Direct continuationItemRenderer
     const directItem = panelContent?.continuationItemRenderer;
     if (directItem?.continuationEndpoint?.getTranscriptEndpoint?.params) {
-      token =
-        directItem.continuationEndpoint.getTranscriptEndpoint.params;
-    } else if (
-      directItem?.continuationEndpoint?.continuationCommand?.token
-    ) {
+      token = directItem.continuationEndpoint.getTranscriptEndpoint.params;
+      tokenSource = "A-getTranscript";
+    } else if (directItem?.continuationEndpoint?.continuationCommand?.token) {
       token = directItem.continuationEndpoint.continuationCommand.token;
+      tokenSource = "A-continuation";
     }
 
     // Token extraction Method B: Inside sectionListRenderer
-    if (
-      !token &&
-      panelContent?.sectionListRenderer?.contents?.[0]
-        ?.continuationItemRenderer
-    ) {
-      const nested =
-        panelContent.sectionListRenderer.contents[0]
-          .continuationItemRenderer;
+    if (!token && panelContent?.sectionListRenderer?.contents?.[0]?.continuationItemRenderer) {
+      const nested = panelContent.sectionListRenderer.contents[0].continuationItemRenderer;
       if (nested?.continuationEndpoint?.getTranscriptEndpoint?.params) {
-        token =
-          nested.continuationEndpoint.getTranscriptEndpoint.params;
-      } else if (
-        nested?.continuationEndpoint?.continuationCommand?.token
-      ) {
-        token =
-          nested.continuationEndpoint.continuationCommand.token;
+        token = nested.continuationEndpoint.getTranscriptEndpoint.params;
+        tokenSource = "B-getTranscript";
+      } else if (nested?.continuationEndpoint?.continuationCommand?.token) {
+        token = nested.continuationEndpoint.continuationCommand.token;
+        tokenSource = "B-continuation";
       }
     }
 
@@ -202,14 +281,11 @@ async function tryGetTranscript(
             const selected =
               menuItems.find(
                 (m: AnyJson) =>
-                  m?.title?.toLowerCase().includes("english") ||
-                  m?.selected
+                  m?.title?.toLowerCase().includes("english") || m?.selected
               ) || menuItems[0];
-            if (
-              selected?.continuation?.reloadContinuationData?.continuation
-            ) {
-              token =
-                selected.continuation.reloadContinuationData.continuation;
+            if (selected?.continuation?.reloadContinuationData?.continuation) {
+              token = selected.continuation.reloadContinuationData.continuation;
+              tokenSource = "C-languageMenu";
               break;
             }
           }
@@ -217,9 +293,16 @@ async function tryGetTranscript(
       }
     }
 
-    if (!token) return null;
+    if (!token) {
+      // Log the panel content structure to understand why no token was found
+      const contentKeys = panelContent ? Object.keys(panelContent) : [];
+      diag.method1 += ` -> transcript panel found, contentKeys=[${contentKeys.join(",")}], NO token`;
+      return null;
+    }
 
-    // Step 2: Call /get_transcript with a fresh session
+    diag.method1 += ` -> token via ${tokenSource}`;
+
+    // Step 3: Call /get_transcript with a fresh session (matching library behavior)
     const transcriptVisitorData = generateVisitorData();
     const transcriptHeaders = makeHeaders(transcriptVisitorData);
     const transcriptContext = makeContext(transcriptVisitorData);
@@ -238,7 +321,11 @@ async function tryGetTranscript(
       }
     );
 
-    if (!transcriptResponse.ok) return null;
+    if (!transcriptResponse.ok) {
+      diag.method1 += ` -> get_transcript HTTP ${transcriptResponse.status}`;
+      return null;
+    }
+
     const transcriptData = await transcriptResponse.json();
 
     // Parse transcript segments from the response
@@ -247,7 +334,14 @@ async function tryGetTranscript(
         ?.transcriptRenderer?.content?.transcriptSearchPanelRenderer?.body
         ?.transcriptSegmentListRenderer?.initialSegments;
 
-    if (!segments || !Array.isArray(segments)) return null;
+    if (!segments || !Array.isArray(segments)) {
+      // Log what we got to understand the structure
+      const actionKeys = transcriptData?.actions?.[0]
+        ? Object.keys(transcriptData.actions[0])
+        : [];
+      diag.method1 += ` -> get_transcript OK, actionKeys=[${actionKeys.join(",")}], no segments`;
+      return null;
+    }
 
     const captions: CaptionSegment[] = [];
     for (const segment of segments) {
@@ -276,95 +370,27 @@ async function tryGetTranscript(
       }
     }
 
-    return captions.length > 0 ? { captions, title } : null;
-  } catch {
-    return null;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Method 2: /player API for caption track XML URLs
-// Traditional approach - asks YouTube for caption track URLs, then fetches XML.
-// May not work from datacenter IPs as YouTube blocks caption data in responses.
-// ─────────────────────────────────────────────────────────────────────────────
-async function tryPlayerCaptions(
-  videoId: string
-): Promise<{ captions: CaptionSegment[]; title: string } | null> {
-  try {
-    const visitorData = generateVisitorData();
-    const headers = makeHeaders(visitorData);
-    const context = makeContext(visitorData);
-
-    const response = await fetch(
-      `${INNERTUBE_BASE}/player?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          videoId,
-          context,
-          visitorData,
-          playbackContext: {
-            contentPlaybackContext: {
-              vis: 0,
-              splay: false,
-              lactMilliseconds: "-1",
-            },
-          },
-          racyCheckOk: true,
-          contentCheckOk: true,
-        }),
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-
-    if (!response.ok) return null;
-    const playerData = await response.json();
-
-    const captionTracks =
-      playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    if (!captionTracks || captionTracks.length === 0) return null;
-
-    // Prefer English, then auto-generated English, then first available
-    let track = captionTracks.find(
-      (t: AnyJson) => t.vssId === ".en" || t.vssId === "a.en"
-    );
-    if (!track) {
-      track = captionTracks.find(
-        (t: AnyJson) => t.languageCode === "en"
-      );
+    if (captions.length > 0) {
+      diag.method1 += ` -> ${captions.length} segments OK`;
+      return { captions, title: videoTitle };
     }
-    if (!track) track = captionTracks[0];
-    if (!track?.baseUrl) return null;
 
-    // Strip srv3 format to get plain XML
-    const captionUrl = track.baseUrl.replace("&fmt=srv3", "");
-    const captionResponse = await fetch(captionUrl, {
-      headers: {
-        "User-Agent": headers["User-Agent"],
-        Referer: `https://www.youtube.com/watch?v=${videoId}`,
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!captionResponse.ok) return null;
-    const xml = await captionResponse.text();
-    const captions = parseCaptionXml(xml);
-    const title = playerData?.videoDetails?.title || "";
-
-    return captions.length > 0 ? { captions, title } : null;
-  } catch {
+    diag.method1 += ` -> ${segments.length} raw segments, 0 parsed`;
+    return null;
+  } catch (err) {
+    diag.method1 = `error: ${err instanceof Error ? err.message : String(err)}`;
     return null;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Method 3: Watch page scraping with consent cookies
-// Last resort - fetches the full watch page HTML and extracts
-// ytInitialPlayerResponse. Never throws - returns null on any failure.
+// Method 2: Watch page scraping + caption XML
+// Fetches the watch page HTML, extracts ytInitialPlayerResponse,
+// then fetches the caption track XML.
 // ─────────────────────────────────────────────────────────────────────────────
 async function tryPageScraping(
-  videoId: string
+  videoId: string,
+  diag: DiagnosticInfo
 ): Promise<{ captions: CaptionSegment[]; title: string } | null> {
   try {
     const response = await fetch(
@@ -383,8 +409,13 @@ async function tryPageScraping(
       }
     );
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      diag.method2 = `page HTTP ${response.status}`;
+      return null;
+    }
+
     const html = await response.text();
+    diag.method2 = `page ${(html.length / 1024).toFixed(0)}KB`;
 
     // Extract title
     let title = "";
@@ -398,10 +429,16 @@ async function tryPageScraping(
     // Extract ytInitialPlayerResponse using brace counting
     const marker = "ytInitialPlayerResponse";
     const markerIdx = html.indexOf(marker);
-    if (markerIdx === -1) return null;
+    if (markerIdx === -1) {
+      diag.method2 += ", no ytInitialPlayerResponse marker";
+      return null;
+    }
 
     const braceStart = html.indexOf("{", markerIdx + marker.length);
-    if (braceStart === -1) return null;
+    if (braceStart === -1) {
+      diag.method2 += ", no brace after marker";
+      return null;
+    }
 
     let depth = 0;
     let inString = false;
@@ -410,97 +447,152 @@ async function tryPageScraping(
 
     for (let i = braceStart; i < html.length; i++) {
       const char = html[i];
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (char === "\\" && inString) {
-        escaped = true;
-        continue;
-      }
-      if (char === '"' && !escaped) {
-        inString = !inString;
-        continue;
-      }
+      if (escaped) { escaped = false; continue; }
+      if (char === "\\" && inString) { escaped = true; continue; }
+      if (char === '"' && !escaped) { inString = !inString; continue; }
       if (inString) continue;
       if (char === "{") depth++;
       else if (char === "}") {
         depth--;
-        if (depth === 0) {
-          braceEnd = i;
-          break;
-        }
+        if (depth === 0) { braceEnd = i; break; }
       }
     }
 
-    if (braceEnd === -1) return null;
-
-    let playerResponse: AnyJson;
-    try {
-      playerResponse = JSON.parse(
-        html.substring(braceStart, braceEnd + 1)
-      );
-    } catch {
+    if (braceEnd === -1) {
+      diag.method2 += ", brace counting failed";
       return null;
     }
 
-    // Try caption tracks from the page player response
+    let playerResponse: AnyJson;
+    try {
+      playerResponse = JSON.parse(html.substring(braceStart, braceEnd + 1));
+    } catch {
+      diag.method2 += ", JSON parse failed";
+      return null;
+    }
+
+    const playabilityStatus = playerResponse?.playabilityStatus?.status || "unknown";
     const captionTracks =
-      playerResponse?.captions?.playerCaptionsTracklistRenderer
-        ?.captionTracks;
-    if (!captionTracks || captionTracks.length === 0) return null;
+      playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+
+    if (!captionTracks || captionTracks.length === 0) {
+      diag.method2 += `, status=${playabilityStatus}, no caption tracks`;
+      return null;
+    }
 
     let track = captionTracks.find(
       (t: AnyJson) => t.vssId === ".en" || t.vssId === "a.en"
     );
-    if (!track) {
-      track = captionTracks.find(
-        (t: AnyJson) => t.languageCode === "en"
-      );
-    }
+    if (!track) track = captionTracks.find((t: AnyJson) => t.languageCode === "en");
     if (!track) track = captionTracks[0];
-    if (!track?.baseUrl) return null;
+    if (!track?.baseUrl) {
+      diag.method2 += `, ${captionTracks.length} tracks but no baseUrl`;
+      return null;
+    }
 
     const captionResponse = await fetch(track.baseUrl, {
       signal: AbortSignal.timeout(10000),
     });
-    if (!captionResponse.ok) return null;
+
+    if (!captionResponse.ok) {
+      diag.method2 += `, caption XML HTTP ${captionResponse.status}`;
+      return null;
+    }
 
     const xml = await captionResponse.text();
     const captions = parseCaptionXml(xml);
 
-    return captions.length > 0
-      ? { captions, title: playerResponse?.videoDetails?.title || title }
-      : null;
-  } catch {
+    if (captions.length > 0) {
+      diag.method2 += `, ${captions.length} segments OK`;
+      return { captions, title: playerResponse?.videoDetails?.title || title };
+    }
+
+    diag.method2 += `, caption XML empty (${xml.length} bytes)`;
+    return null;
+  } catch (err) {
+    diag.method2 = `error: ${err instanceof Error ? err.message : String(err)}`;
     return null;
   }
 }
 
-// Main extraction: tries all methods in order, never throws except NO_CAPTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+// Method 3: Direct timedtext URL
+// Tries to fetch caption XML directly without any API call.
+// This URL format sometimes works without authentication.
+// ─────────────────────────────────────────────────────────────────────────────
+async function tryDirectTimedtext(
+  videoId: string,
+  diag: DiagnosticInfo
+): Promise<{ captions: CaptionSegment[]; title: string } | null> {
+  try {
+    // Try common caption languages
+    const langs = ["en", "a.en", "fr", "a.fr"];
+    for (const lang of langs) {
+      const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=srv1`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+          Referer: `https://www.youtube.com/watch?v=${videoId}`,
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!response.ok) continue;
+
+      const xml = await response.text();
+      if (!xml || xml.length < 50 || !xml.includes("<text")) continue;
+
+      const captions = parseCaptionXml(xml);
+      if (captions.length > 0) {
+        diag.method3 = `timedtext lang=${lang}, ${captions.length} segments OK`;
+        return { captions, title: "" };
+      }
+    }
+
+    diag.method3 = "timedtext all langs empty";
+    return null;
+  } catch (err) {
+    diag.method3 = `error: ${err instanceof Error ? err.message : String(err)}`;
+    return null;
+  }
+}
+
+// Main extraction: tries all methods in order
 async function extractCaptions(
   videoId: string
-): Promise<{ captions: CaptionSegment[]; title: string }> {
-  // Method 1: /next + /get_transcript (best for datacenter/serverless IPs)
-  const transcriptResult = await tryGetTranscript(videoId);
+): Promise<{ captions: CaptionSegment[]; title: string; debug?: string }> {
+  const diag: DiagnosticInfo = {
+    method1: "not tried",
+    method2: "not tried",
+    method3: "not tried",
+  };
+
+  // Method 1: /player + /next + /get_transcript (best for datacenter IPs)
+  const transcriptResult = await tryTranscriptApi(videoId, diag);
   if (transcriptResult && transcriptResult.captions.length > 0) {
     return transcriptResult;
   }
 
-  // Method 2: /player API for caption track XML
-  const playerResult = await tryPlayerCaptions(videoId);
-  if (playerResult && playerResult.captions.length > 0) {
-    return playerResult;
-  }
-
-  // Method 3: Watch page scraping with consent cookies
-  const scrapingResult = await tryPageScraping(videoId);
+  // Method 2: Watch page scraping + caption XML
+  const scrapingResult = await tryPageScraping(videoId, diag);
   if (scrapingResult && scrapingResult.captions.length > 0) {
     return scrapingResult;
   }
 
-  // All methods failed
-  throw new Error("NO_CAPTIONS");
+  // Method 3: Direct timedtext URL
+  const timedtextResult = await tryDirectTimedtext(videoId, diag);
+  if (timedtextResult && timedtextResult.captions.length > 0) {
+    return timedtextResult;
+  }
+
+  // All methods failed - include diagnostic info
+  const debugInfo = `M1: ${diag.method1} | M2: ${diag.method2} | M3: ${diag.method3}`;
+  console.error(`YouTube caption extraction failed for ${videoId}: ${debugInfo}`);
+
+  const error = new Error("NO_CAPTIONS") as Error & { debug?: string };
+  error.debug = debugInfo;
+  throw error;
 }
 
 export async function POST(request: NextRequest) {
@@ -552,12 +644,16 @@ export async function POST(request: NextRequest) {
       result = await extractCaptions(videoId);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "";
+      const debugInfo = (err as Error & { debug?: string })?.debug || "";
 
       if (errorMsg === "NO_CAPTIONS") {
+        // Include debug info for admin users so we can diagnose
+        const isAdmin = session.user.isAdmin;
         return NextResponse.json(
           {
-            error:
-              "This video doesn't have captions. YouTube auto-generates captions for most videos, but some (music, very short clips, non-speech content) may not have them. Try a different video.",
+            error: isAdmin
+              ? `Caption extraction failed. Debug: ${debugInfo}`
+              : "This video doesn't have captions. YouTube auto-generates captions for most videos, but some (music, very short clips, non-speech content) may not have them. Try a different video.",
           },
           { status: 400 }
         );
