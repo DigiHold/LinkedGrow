@@ -171,7 +171,15 @@ Write in this exact order (highest search volume / closest competitors first):
 
 ---
 
-## Pricing to VERIFY Before Writing Each Page
+## MANDATORY: Data & Price Verification Before Writing Each Page
+
+**CRITICAL RULE: Before writing ANY versus page, you MUST:**
+
+1. **Visit the competitor's official pricing page** and verify EVERY price, plan name, and feature limit
+2. **Visit the competitor's official features page** and verify platform type (web app, extension, mobile), analytics export capabilities, and all feature claims
+3. **Cross-check every data point** in the comparison table against the competitor's actual website - never guess or use stale data
+4. **If a feature is ambiguous** (e.g., competitor has both Chrome extension AND web dashboard), represent it accurately - never oversimplify to make the competitor look worse
+5. **After writing**, re-read every competitor data point and ask: "Is this 100% accurate based on what I verified?"
 
 Prices marked as verified above were confirmed from official sources in February 2026. Before writing any page, re-check the competitor's pricing page to ensure nothing changed.
 
