@@ -27,6 +27,48 @@ function detectContentType(url: string): "blog" | "webpage" {
   return "webpage";
 }
 
+// Extract content between matching HTML tags using brace-like counting
+function extractTagContent(html: string, tagName: string): string | null {
+  const openPattern = new RegExp(`<${tagName}[\\s>]`, "i");
+  const openMatch = openPattern.exec(html);
+  if (!openMatch) return null;
+
+  const openTag = new RegExp(`<${tagName}[\\s>]`, "gi");
+  const closeTag = new RegExp(`</${tagName}>`, "gi");
+
+  // Find the content start (after the opening tag's >)
+  const tagStart = openMatch.index;
+  const contentStart = html.indexOf(">", tagStart) + 1;
+  if (contentStart === 0) return null;
+
+  // Count nested tags to find matching close
+  let depth = 1;
+  let searchPos = contentStart;
+
+  while (depth > 0 && searchPos < html.length) {
+    openTag.lastIndex = searchPos;
+    closeTag.lastIndex = searchPos;
+
+    const nextOpen = openTag.exec(html);
+    const nextClose = closeTag.exec(html);
+
+    if (!nextClose) break;
+
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++;
+      searchPos = nextOpen.index + nextOpen[0].length;
+    } else {
+      depth--;
+      if (depth === 0) {
+        return html.substring(contentStart, nextClose.index);
+      }
+      searchPos = nextClose.index + nextClose[0].length;
+    }
+  }
+
+  return null;
+}
+
 // Lightweight HTML-to-text extraction (no DOM dependencies)
 function extractTextFromHtml(html: string): { title: string; textContent: string; excerpt: string } | null {
   // Extract title
@@ -36,52 +78,23 @@ function extractTextFromHtml(html: string): { title: string; textContent: string
   const titleTagMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
   title = (ogTitleMatch ? ogTitleMatch[1] : titleTagMatch ? titleTagMatch[1] : "").trim();
 
-  // Remove scripts, styles, and hidden elements
-  let cleaned = html
+  // Remove only scripts and styles (keep everything else to avoid losing content)
+  const cleaned = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
-    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
-    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
-    .replace(/<header[\s\S]*?<\/header>/gi, "");
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
 
-  // Try to find article content in semantic elements first
-  let articleContent = "";
+  // Try to find article content using proper tag matching (handles nesting)
+  let articleContent = extractTagContent(cleaned, "article");
 
-  // Look for <article> content
-  const articleMatch = cleaned.match(/<article[\s\S]*?>([\s\S]*?)<\/article>/i);
-  if (articleMatch) {
-    articleContent = articleMatch[1];
-  }
-
-  // Look for <main> if no article found
   if (!articleContent) {
-    const mainMatch = cleaned.match(/<main[\s\S]*?>([\s\S]*?)<\/main>/i);
-    if (mainMatch) {
-      articleContent = mainMatch[1];
-    }
+    articleContent = extractTagContent(cleaned, "main");
   }
 
-  // Look for common article containers
-  if (!articleContent) {
-    const containerPatterns = [
-      /<div[^>]*class="[^"]*(?:article|post|entry|content|story)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-      /<div[^>]*id="[^"]*(?:article|post|entry|content|story)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-      /<div[^>]*role="article"[^>]*>([\s\S]*?)<\/div>/i,
-    ];
-    for (const pattern of containerPatterns) {
-      const match = cleaned.match(pattern);
-      if (match && match[1].length > 500) {
-        articleContent = match[1];
-        break;
-      }
-    }
-  }
-
-  // Use article content if found, otherwise use the full cleaned HTML
+  // Use article/main content if found, otherwise use full cleaned HTML
   const contentToProcess = articleContent || cleaned;
 
-  // Strip all remaining HTML tags and clean whitespace
+  // Strip all HTML tags and clean whitespace
   const textContent = contentToProcess
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")

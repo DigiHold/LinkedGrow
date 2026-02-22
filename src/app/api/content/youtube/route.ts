@@ -92,46 +92,87 @@ async function fetchCaptionsFromPlayerResponse(
   return { captions, title };
 }
 
-// Method 1: InnerTube API (most reliable from server environments)
+// Client configs to try - ordered by likelihood of working from datacenter IPs
+interface ClientConfig {
+  clientName: string;
+  clientVersion: string;
+  userAgent: string;
+  extraContext?: Record<string, unknown>;
+  extraBody?: Record<string, unknown>;
+}
+
+const INNERTUBE_CLIENTS: ClientConfig[] = [
+  // Embedded player - designed for third-party sites, bypasses most login requirements
+  {
+    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    clientVersion: "2.0",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    extraBody: {
+      thirdParty: { embedUrl: "https://www.google.com" },
+    },
+  },
+  // WEB client with content restriction bypass
+  {
+    clientName: "WEB",
+    clientVersion: "2.20250101.00.00",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  },
+  // IOS client - often bypasses restrictions that block WEB/ANDROID
+  {
+    clientName: "IOS",
+    clientVersion: "19.45.4",
+    userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)",
+    extraContext: {
+      deviceMake: "Apple",
+      deviceModel: "iPhone16,2",
+      osName: "iPhone",
+      osVersion: "18.1.0.22B83",
+    },
+  },
+  // ANDROID client
+  {
+    clientName: "ANDROID",
+    clientVersion: "19.02.37",
+    userAgent: "com.google.android.youtube/19.02.37 (Linux; U; Android 11) gzip",
+    extraContext: {
+      androidSdkVersion: 30,
+    },
+  },
+];
+
+// Method 1: InnerTube API with multiple client configs
 async function tryInnerTubeApi(
   videoId: string
 ): Promise<{ captions: CaptionSegment[]; title: string } | null> {
-  // Try multiple client configs - some work better from datacenter IPs
-  const clients = [
-    {
-      clientName: "WEB",
-      clientVersion: "2.20250101.00.00",
-    },
-    {
-      clientName: "ANDROID",
-      clientVersion: "19.02.37",
-      androidSdkVersion: 30,
-    },
-  ];
-
-  for (const client of clients) {
+  for (const client of INNERTUBE_CLIENTS) {
     try {
+      const body: Record<string, unknown> = {
+        videoId,
+        context: {
+          client: {
+            hl: "en",
+            gl: "US",
+            clientName: client.clientName,
+            clientVersion: client.clientVersion,
+            ...client.extraContext,
+          },
+        },
+        ...client.extraBody,
+      };
+
       const response = await fetch(
-        "https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
+        "https://www.youtube.com/youtubei/v1/player?key=REMOVED&prettyPrint=false",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "User-Agent":
-              client.clientName === "ANDROID"
-                ? "com.google.android.youtube/19.02.37 (Linux; U; Android 11) gzip"
-                : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": client.userAgent,
+            "X-Youtube-Client-Name": client.clientName === "WEB" ? "1" : "85",
+            "X-Youtube-Client-Version": client.clientVersion,
+            "Origin": "https://www.youtube.com",
+            "Referer": "https://www.youtube.com/",
           },
-          body: JSON.stringify({
-            videoId,
-            context: {
-              client: {
-                hl: "en",
-                gl: "US",
-                ...client,
-              },
-            },
-          }),
+          body: JSON.stringify(body),
           signal: AbortSignal.timeout(10000),
         }
       );
@@ -167,7 +208,92 @@ async function tryInnerTubeApi(
   return null;
 }
 
-// Method 2: Page scraping with consent cookies (fallback)
+// Method 2: Embed page scraping (embed pages bypass login requirements)
+async function tryEmbedPage(
+  videoId: string
+): Promise<{ captions: CaptionSegment[]; title: string } | null> {
+  try {
+    const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    const response = await fetch(embedUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+
+    // Extract player config from embed page - look for ytInitialPlayerResponse or player config
+    const configMarkers = ["ytInitialPlayerResponse", "ytcfg.set("];
+    let playerJson: string | null = null;
+
+    for (const marker of configMarkers) {
+      const idx = html.indexOf(marker);
+      if (idx === -1) continue;
+
+      const braceStart = html.indexOf("{", idx + marker.length);
+      if (braceStart === -1) continue;
+
+      // Brace-counting extraction
+      let depth = 0;
+      let inStr = false;
+      let esc = false;
+      let end = -1;
+
+      for (let i = braceStart; i < html.length; i++) {
+        const c = html[i];
+        if (esc) { esc = false; continue; }
+        if (c === "\\" && inStr) { esc = true; continue; }
+        if (c === '"' && !esc) { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (c === "{") depth++;
+        else if (c === "}") {
+          depth--;
+          if (depth === 0) { end = i; break; }
+        }
+      }
+
+      if (end !== -1) {
+        playerJson = html.substring(braceStart, end + 1);
+        break;
+      }
+    }
+
+    if (!playerJson) return null;
+
+    let playerResponse: PlayerResponse;
+    try {
+      playerResponse = JSON.parse(playerJson);
+    } catch {
+      return null;
+    }
+
+    // For ytcfg.set, the player response might be nested
+    const actualResponse = playerResponse.PLAYER_VARS?.embedded_player_response
+      ? JSON.parse(playerResponse.PLAYER_VARS.embedded_player_response)
+      : playerResponse;
+
+    const result = await fetchCaptionsFromPlayerResponse(actualResponse);
+    if (result && result.captions.length > 0) {
+      // Get title from embed page
+      const titleMatch = html.match(/<title>([^<]*)<\/title>/);
+      const title = result.title || (titleMatch ? titleMatch[1].replace(" - YouTube", "").trim() : "");
+      return { captions: result.captions, title };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Method 3: Page scraping with consent cookies (fallback)
 async function tryPageScraping(
   videoId: string
 ): Promise<{ captions: CaptionSegment[]; title: string } | null> {
@@ -277,13 +403,19 @@ async function extractCaptions(
     return innerTubeResult;
   }
 
-  // Method 2: Page scraping with consent cookies
+  // Method 2: Embed page scraping (bypasses login walls)
+  const embedResult = await tryEmbedPage(videoId);
+  if (embedResult && embedResult.captions.length > 0) {
+    return embedResult;
+  }
+
+  // Method 3: Watch page scraping with consent cookies
   const scrapingResult = await tryPageScraping(videoId);
   if (scrapingResult && scrapingResult.captions.length > 0) {
     return scrapingResult;
   }
 
-  // Both methods failed
+  // All methods failed
   throw new Error("NO_CAPTIONS");
 }
 
