@@ -63,7 +63,7 @@ const planHighlights: Record<PlanId, string[]> = {
     "Advanced editor",
     "10 scheduled posts",
     "Content calendar",
-    "Reddit ideas finder",
+    "Content repurposing",
   ],
   pro: [
     "Everything in Starter",

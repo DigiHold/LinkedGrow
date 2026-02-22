@@ -88,7 +88,7 @@ export interface PrelaunchTranslations {
     voice: { title: string; description: string; stat: string; statLabel: string };
     viral: { title: string; description: string; stat: string; statLabel: string };
     schedule: { title: string; description: string; stat: string; statLabel: string };
-    reddit: { title: string; description: string; stat: string; statLabel: string };
+    repurpose: { title: string; description: string; stat: string; statLabel: string };
     carousel: { title: string; description: string };
   };
   howItWorks: {
@@ -886,10 +886,10 @@ function BentoFeatures({ translations }: { translations: PrelaunchTranslations }
     },
     {
       icon: Globe,
-      title: translations.features.reddit.title,
-      description: translations.features.reddit.description,
-      stat: translations.features.reddit.stat,
-      statLabel: translations.features.reddit.statLabel,
+      title: translations.features.repurpose.title,
+      description: translations.features.repurpose.description,
+      stat: translations.features.repurpose.stat,
+      statLabel: translations.features.repurpose.statLabel,
       color: "blue",
       iconBg: "from-blue-500 to-indigo-500",
     },
@@ -1335,7 +1335,7 @@ function TestimonialsCarousel() {
     { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%" },
     { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%" },
     { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%" },
-    { quote: "The Reddit importer is a goldmine. I find trending topics, turn them into LinkedIn posts in seconds, and never run out of content ideas.", author: "Daniel F.", role: "Growth Marketer", metric: "+180%" },
+    { quote: "The content repurposing is a goldmine. I paste a YouTube video or Reddit thread, and it turns into a LinkedIn post in seconds. Never run out of ideas.", author: "Daniel F.", role: "Growth Marketer", metric: "+180%" },
     { quote: "Saved 15 hours per week on content creation. ROI is incredible.", author: "Lisa T.", role: "Agency Owner", metric: "15h saved" },
     { quote: "Best investment for my LinkedIn growth. Paid for itself in the first week.", author: "Tom R.", role: "B2B Sales", metric: "5x ROI" },
   ];

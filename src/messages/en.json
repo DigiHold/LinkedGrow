@@ -63,11 +63,11 @@
       "stat": "3x",
       "statLabel": "engagement"
     },
-    "reddit": {
-      "title": "Reddit Idea Finder",
-      "description": "Turn trending Reddit discussions into viral LinkedIn posts.",
-      "stat": "100+",
-      "statLabel": "ideas/day"
+    "repurpose": {
+      "title": "Content Repurposing",
+      "description": "Turn any YouTube video, blog article, Reddit thread, or web page into a viral LinkedIn post.",
+      "stat": "4",
+      "statLabel": "sources"
     },
     "carousel": {
       "title": "Carousel Creator",

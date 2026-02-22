@@ -102,11 +102,11 @@ export default async function PrelaunchPage() {
         stat: tFeatures("schedule.stat"),
         statLabel: tFeatures("schedule.statLabel"),
       },
-      reddit: {
-        title: tFeatures("reddit.title"),
-        description: tFeatures("reddit.description"),
-        stat: tFeatures("reddit.stat"),
-        statLabel: tFeatures("reddit.statLabel"),
+      repurpose: {
+        title: tFeatures("repurpose.title"),
+        description: tFeatures("repurpose.description"),
+        stat: tFeatures("repurpose.stat"),
+        statLabel: tFeatures("repurpose.statLabel"),
       },
       carousel: {
         title: tFeatures("carousel.title"),
