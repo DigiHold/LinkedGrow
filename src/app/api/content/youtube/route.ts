@@ -156,8 +156,8 @@ async function tryInnerTubeApi(
             clientVersion: client.clientVersion,
             ...client.extraContext,
           },
+          ...client.extraBody,
         },
-        ...client.extraBody,
       };
 
       const response = await fetch(
@@ -181,26 +181,14 @@ async function tryInnerTubeApi(
 
       const playerResponse = await response.json();
 
-      // Check playability
-      const status = playerResponse?.playabilityStatus?.status;
-      if (status === "ERROR") {
-        throw new Error("VIDEO_NOT_FOUND");
-      }
-
-      // Try to get captions even if status is LOGIN_REQUIRED
+      // Try to get captions regardless of playability status
       const result = await fetchCaptionsFromPlayerResponse(playerResponse);
       if (result && result.captions.length > 0) {
         return result;
       }
 
-      // If status indicates unavailable and no captions, try next client
-      if (status === "UNPLAYABLE" || status === "LOGIN_REQUIRED") {
-        continue;
-      }
-    } catch (err) {
-      if (err instanceof Error && err.message === "VIDEO_NOT_FOUND") {
-        throw err;
-      }
+      // No captions from this client, try next
+    } catch {
       // Try next client
     }
   }

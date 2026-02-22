@@ -85,13 +85,28 @@ function extractTextFromHtml(html: string): { title: string; textContent: string
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
 
   // Try to find article content using proper tag matching (handles nesting)
-  let articleContent = extractTagContent(cleaned, "article");
+  // Only use it if it has substantial content (some sites use <article> for small cards)
+  let articleContent: string | null = null;
 
-  if (!articleContent) {
-    articleContent = extractTagContent(cleaned, "main");
+  const articleCandidate = extractTagContent(cleaned, "article");
+  if (articleCandidate) {
+    const strippedArticle = articleCandidate.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (strippedArticle.split(/\s+/).length > 150) {
+      articleContent = articleCandidate;
+    }
   }
 
-  // Use article/main content if found, otherwise use full cleaned HTML
+  if (!articleContent) {
+    const mainCandidate = extractTagContent(cleaned, "main");
+    if (mainCandidate) {
+      const strippedMain = mainCandidate.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (strippedMain.split(/\s+/).length > 150) {
+        articleContent = mainCandidate;
+      }
+    }
+  }
+
+  // Use article/main content if substantial, otherwise use full cleaned HTML
   const contentToProcess = articleContent || cleaned;
 
   // Strip all HTML tags and clean whitespace
