@@ -37,6 +37,7 @@ const PREFIX_PRIORITY: Record<string, { priority: number; changeFrequency: "alwa
   "/for/": { priority: 0.7, changeFrequency: "monthly" },
   "/use-cases/": { priority: 0.7, changeFrequency: "monthly" },
   "/industries/": { priority: 0.7, changeFrequency: "monthly" },
+  "/compare/": { priority: 0.7, changeFrequency: "monthly" },
 };
 
 // Default priority for pages not in config
