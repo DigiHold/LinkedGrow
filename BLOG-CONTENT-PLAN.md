@@ -497,8 +497,13 @@ The blog agent at `/Users/nicolas/Agent/Blog` contains the complete automated wo
 - Include specific details, real examples, tool names
 - NO em dashes (use periods, commas, or semicolons)
 - NO sentence fragments for dramatic effect
-- Maximum 3-5 statistics in entire article - never "According to [study]" more than twice
+- **MAXIMUM 3-4 statistics in the ENTIRE article** - count them, if more than 4 you MUST cut
 - Most paragraphs should have ZERO statistics - use practical explanations instead
+- NEVER write "According to [source]" more than once - ideally zero times
+- NEVER stack multiple stats in the same paragraph - pick ONE or explain without numbers
+- NEVER use "research shows", "studies found", "data reveals", "reports indicate" - these are research paper phrases, not blog writing
+- **The research phase is for YOUR knowledge, not the reader's** - internalize the data, then write from understanding, not from citations
+- Explain through experience and logic, not stat dumps - the article is a conversation, not a thesis
 
 ### Article Structure (from Blog Agent)
 
