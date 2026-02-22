@@ -50,13 +50,28 @@ function RedditIcon({ className }: { className?: string }) {
   );
 }
 
-type SourceType = "reddit" | "youtube" | "webpage" | null;
+type SourceType = "reddit" | "youtube" | "webpage" | "blog" | null;
+
+const BLOG_DOMAINS = ["medium.com", "substack.com", "dev.to", "hashnode.dev", "wordpress.com", "ghost.io", "beehiiv.com", "mirror.xyz"];
+const BLOG_PATH_INDICATORS = ["/blog/", "/post/", "/article/", "/posts/", "/articles/", "/p/", "/note/"];
 
 function detectSourceType(url: string): SourceType {
   try {
-    const hostname = new URL(url).hostname.replace("www.", "");
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace("www.", "");
     if (hostname.includes("reddit.com") || hostname.includes("old.reddit.com")) return "reddit";
     if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) return "youtube";
+
+    // Check for blog domains
+    for (const domain of BLOG_DOMAINS) {
+      if (hostname.includes(domain)) return "blog";
+    }
+    // Check for blog path indicators
+    const lowerPath = parsed.pathname.toLowerCase();
+    for (const indicator of BLOG_PATH_INDICATORS) {
+      if (lowerPath.includes(indicator)) return "blog";
+    }
+
     return "webpage";
   } catch {
     return null;
@@ -182,8 +197,14 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
   });
 
   if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || "Failed to extract YouTube content");
+    let errorMsg = "Failed to extract YouTube content";
+    try {
+      const data = await response.json();
+      errorMsg = data.error || errorMsg;
+    } catch {
+      // Server returned non-JSON error
+    }
+    throw new Error(errorMsg);
   }
 
   return response.json();
@@ -197,8 +218,14 @@ async function fetchWebpageContent(url: string): Promise<ContentData & { warning
   });
 
   if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error || "Failed to extract page content");
+    let errorMsg = "Failed to extract page content";
+    try {
+      const data = await response.json();
+      errorMsg = data.error || errorMsg;
+    } catch {
+      // Server returned non-JSON error
+    }
+    throw new Error(errorMsg);
   }
 
   return response.json();
@@ -415,6 +442,7 @@ function ContentRepurposingContent() {
       } else if (detectedSource === "youtube") {
         extracted = await fetchYoutubeContent(url);
       } else {
+        // Both "blog" and "webpage" use the same extraction endpoint
         extracted = await fetchWebpageContent(url);
       }
 

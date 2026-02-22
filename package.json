@@ -66,8 +66,7 @@
     "sharp": "^0.34.5",
     "stripe": "^20.2.0",
     "tailwind-merge": "^3.4.0",
-    "vaul": "^1.1.2",
-    "youtube-caption-extractor": "^1.9.1"
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
