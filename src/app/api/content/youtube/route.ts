@@ -302,31 +302,44 @@ async function tryTranscriptApi(
 
     diag.method1 += ` -> token via ${tokenSource}`;
 
-    // Step 3: Call /get_transcript with a fresh session (matching library behavior)
-    const transcriptVisitorData = generateVisitorData();
-    const transcriptHeaders = makeHeaders(transcriptVisitorData);
-    const transcriptContext = makeContext(transcriptVisitorData);
+    // Step 3: Call /get_transcript - try SAME session first, then new session
+    // The token may be bound to the session that created it
+    const sessions = [
+      { vis: visitorData, hdr: headers, ctx: context, label: "same-session" },
+      { vis: generateVisitorData(), hdr: makeHeaders(generateVisitorData()), ctx: makeContext(generateVisitorData()), label: "new-session" },
+    ];
 
-    const transcriptResponse = await fetch(
-      `${INNERTUBE_BASE}/get_transcript?key=${INNERTUBE_API_KEY}&prettyPrint=false`,
-      {
-        method: "POST",
-        headers: transcriptHeaders,
-        body: JSON.stringify({
-          params: token,
-          context: transcriptContext,
-          visitorData: transcriptVisitorData,
-        }),
-        signal: AbortSignal.timeout(10000),
+    let transcriptData: AnyJson = null;
+    for (const s of sessions) {
+      const transcriptResponse = await fetch(
+        `${INNERTUBE_BASE}/get_transcript?key=${INNERTUBE_API_KEY}`,
+        {
+          method: "POST",
+          headers: s.hdr,
+          body: JSON.stringify({
+            context: s.ctx,
+            visitorData: s.vis,
+            params: token,
+          }),
+          signal: AbortSignal.timeout(10000),
+        }
+      );
+
+      if (transcriptResponse.ok) {
+        transcriptData = await transcriptResponse.json();
+        diag.method1 += ` -> get_transcript OK (${s.label})`;
+        break;
       }
-    );
 
-    if (!transcriptResponse.ok) {
-      diag.method1 += ` -> get_transcript HTTP ${transcriptResponse.status}`;
-      return null;
+      // Read error body for diagnostics
+      let errorBody = "";
+      try { errorBody = (await transcriptResponse.text()).substring(0, 200); } catch { /* */ }
+      diag.method1 += ` -> get_transcript ${s.label} HTTP ${transcriptResponse.status} [${errorBody}]`;
     }
 
-    const transcriptData = await transcriptResponse.json();
+    if (!transcriptData) {
+      return null;
+    }
 
     // Parse transcript segments from the response
     const segments: AnyJson[] | undefined =
