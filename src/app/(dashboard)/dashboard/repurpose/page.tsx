@@ -341,12 +341,9 @@ function ContentRepurposingContent() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      // Also try migrating old Reddit draft
-      const oldSaved = localStorage.getItem("linkedgrow_reddit_draft");
-      const data = saved || oldSaved;
 
-      if (data) {
-        const state = JSON.parse(data);
+      if (saved) {
+        const state = JSON.parse(saved);
         const savedAt = new Date(state.savedAt);
         const hoursSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
 
@@ -357,19 +354,6 @@ function ContentRepurposingContent() {
           if (state.posts?.length > 0) setPosts(state.posts);
           if (state.selectedPost !== null && state.selectedPost !== undefined) setSelectedPost(state.selectedPost);
           if (state.contentData) setContentData(state.contentData);
-          // Support old Reddit format
-          if (state.redditPost && !state.contentData) {
-            setContentData({
-              source: "reddit",
-              title: state.redditPost.title || "",
-              content: state.redditPost.selftext || "",
-              metadata: {
-                subreddit: state.redditPost.subreddit,
-                score: state.redditPost.score,
-                commentCount: state.redditPost.num_comments,
-              },
-            });
-          }
           if (state.editedPost) setEditedPost(state.editedPost);
           if (state.attachedImage) setAttachedImage(state.attachedImage);
 
@@ -384,22 +368,16 @@ function ContentRepurposingContent() {
           }
         } else {
           localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem("linkedgrow_reddit_draft");
         }
-
-        // Clean up old key
-        if (oldSaved) localStorage.removeItem("linkedgrow_reddit_draft");
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("linkedgrow_reddit_draft");
     }
   }, []);
 
   // Clear draft after successful publish or save
   const clearDraft = () => {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem("linkedgrow_reddit_draft");
   };
 
   // Check if user has API key configured and fetch timezone

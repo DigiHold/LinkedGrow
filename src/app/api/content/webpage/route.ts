@@ -64,6 +64,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Please enter a valid URL" }, { status: 400 });
     }
 
+    // SSRF protection: only allow http/https and block internal/private IPs
+    if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+      return NextResponse.json({ error: "Only HTTP and HTTPS URLs are supported." }, { status: 400 });
+    }
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const blockedPatterns = [
+      /^localhost$/i,
+      /^127\./,
+      /^10\./,
+      /^172\.(1[6-9]|2\d|3[01])\./,
+      /^192\.168\./,
+      /^169\.254\./,
+      /^0\./,
+      /^\[::1\]$/,
+      /^\[fc/i,
+      /^\[fd/i,
+      /^\[fe80:/i,
+      /\.local$/i,
+      /\.internal$/i,
+    ];
+    if (blockedPatterns.some(p => p.test(hostname))) {
+      return NextResponse.json({ error: "This URL is not allowed." }, { status: 400 });
+    }
+
     // Fetch the page HTML with browser-like headers to avoid bot blocking
     let response: Response;
     try {

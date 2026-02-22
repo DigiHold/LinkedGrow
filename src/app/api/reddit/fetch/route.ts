@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check plan access - redditIdeas requires Starter+
+    // Check plan access - contentRepurposing requires Starter+
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
     const userPlan = (user?.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "contentRepurposing")) {
