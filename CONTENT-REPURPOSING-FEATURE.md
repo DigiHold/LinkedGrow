@@ -1,20 +1,21 @@
 # Content Repurposing Feature - Implementation Guide
 
-> **Goal**: Add YouTube, blog, and web page content repurposing alongside the existing Reddit importer.
-> Users paste a URL, the system extracts content, and AI generates LinkedIn posts from it.
-> Place this feature below the Reddit importer in the dashboard (`/dashboard/reddit`).
+> **Goal**: Replace the standalone Reddit importer with a unified "Content Repurposing" feature.
+> Users paste any URL (Reddit, YouTube, blog, web page), the system auto-detects the source,
+> extracts content, and AI generates LinkedIn posts from it.
+> This replaces `/dashboard/reddit` - one page, one input, auto-detection.
 
 ---
 
 ## Architecture Overview
 
-All three sources follow the same pattern:
+All four sources follow the same pattern:
 
 ```
-User pastes URL → Backend extracts text content → AI generates hooks → AI generates posts
+User pastes URL → Auto-detect source → Backend extracts text content → AI generates hooks → AI generates posts
 ```
 
-The existing Reddit flow already handles Steps 2-4 (hook selection, post generation, edit & publish). The new features only need a **content extraction layer** per source type, then feed into the same AI pipeline.
+The existing Reddit flow already handles Steps 2-4 (hook selection, post generation, edit & publish). The new sources only need a **content extraction layer**, then feed into the same AI pipeline. The Reddit importer becomes one of four extraction methods inside a single unified page.
 
 ---
 
@@ -219,34 +220,33 @@ This distinction helps the AI adapt its approach (blog = extract insights and op
 
 ## UI Integration
 
-### Where to Place
+### Unified Page - Replace Reddit Importer
 
-Add a **source selector** at Step 1 of the existing Reddit flow at `/dashboard/reddit`. The page should be renamed or given a broader title like "Content Repurposing" or "Import Content".
+Move `/dashboard/reddit` to `/dashboard/repurpose`. The page title changes from "Reddit Ideas" to "Content Repurposing". Update sidebar navigation, feature gate references, and any internal links accordingly.
 
-### Source Selector UI
+### Single Input, Auto-Detection
+
+No source selector tabs needed. Just one URL input field:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Import content from:                                │
-│                                                      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │
-│  │ 🔗 Reddit│ │ ▶ YouTube│ │ 📝 Blog  │ │ 🌐 Web │ │
-│  └──────────┘ └──────────┘ └──────────┘ └────────┘ │
+│  Paste any URL to turn it into a LinkedIn post       │
 │                                                      │
 │  ┌─────────────────────────────────────────────────┐ │
-│  │ Paste URL here...                               │ │
+│  │ Paste a Reddit, YouTube, blog, or web page URL  │ │
 │  └─────────────────────────────────────────────────┘ │
 │                                                      │
 │  [Extract Content]                                   │
+│                                                      │
+│  Supported: Reddit threads, YouTube videos,          │
+│  blog articles, web pages                            │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Auto-Detection
-
-Instead of requiring the user to pick a source type, auto-detect from the URL:
+The backend auto-detects the source type from the URL:
 
 ```typescript
-function detectSourceType(url: string): "reddit" | "youtube" | "blog" | "webpage" {
+function detectSourceType(url: string): "reddit" | "youtube" | "webpage" {
   const hostname = new URL(url).hostname.replace("www.", "");
 
   if (hostname.includes("reddit.com") || hostname.includes("old.reddit.com")) {
@@ -255,40 +255,62 @@ function detectSourceType(url: string): "reddit" | "youtube" | "blog" | "webpage
   if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
     return "youtube";
   }
-  // Common blog platforms
-  if (hostname.includes("medium.com") || hostname.includes("substack.com") ||
-      url.includes("/blog/") || url.includes("/post/") || url.includes("/article/")) {
-    return "blog";
-  }
+  // Everything else (blogs, articles, web pages) uses the same extraction
   return "webpage";
 }
 ```
 
-The tabs can still be shown for visual clarity, but auto-select the right one when a URL is pasted.
+After pasting, show a small detected-source badge below the input (e.g., "Detected: YouTube video" or "Detected: Reddit thread") so the user knows it was recognized correctly.
 
-### Flow After Extraction
+### Flow (same for all sources)
 
-Once content is extracted (from any source), it feeds into the **same pipeline** as Reddit:
+1. **User pastes URL** → auto-detect source type
+2. **Extract content** (source-specific API call):
+   - Reddit → existing `/api/reddit/fetch` (Cloudflare Worker proxy + trim)
+   - YouTube → new `/api/content/youtube` (caption extraction)
+   - Blog/Web → new `/api/content/webpage` (Readability extraction)
+3. **Generate 5 hooks** (refactored `/api/content/analyze` - accepts generic content)
+4. **User selects hook**
+5. **Generate 3 posts** (refactored `/api/content/generate` - accepts generic content)
+6. **Edit & publish** (existing Step 4, unchanged)
 
-1. **Extract content** (source-specific) → returns `{ title, content, source }`
-2. **Generate 5 hooks** (existing `/api/reddit/analyze` logic, adapted for generic content)
-3. **User selects hook**
-4. **Generate 3 posts** (existing `/api/reddit/generate` logic)
-5. **Edit & publish** (existing Step 4, unchanged)
+Steps 3-6 are identical regardless of source. Only the extraction in Step 2 differs.
 
-The analyze and generate API routes need minor updates to accept a generic content object instead of Reddit-specific `trimmedJson`. Consider renaming to `/api/content/analyze` and `/api/content/generate` (keep old Reddit routes as aliases for backward compat during transition).
+### Refactoring the Reddit API Routes
+
+The existing `/api/reddit/analyze` and `/api/reddit/generate` routes accept Reddit-specific `trimmedJson`. Refactor them to accept a generic content object:
+
+```typescript
+// Generic content input (replaces Reddit-specific trimmedJson)
+interface ContentInput {
+  source: "reddit" | "youtube" | "webpage";
+  title: string;          // Post title / video title / article title
+  content: string;        // Trimmed text content (max 4,000 words)
+  metadata?: {
+    subreddit?: string;   // Reddit only
+    score?: number;       // Reddit only
+    commentCount?: number; // Reddit only
+    duration?: number;    // YouTube only (seconds)
+    excerpt?: string;     // Webpage only
+  };
+}
+```
+
+Move to `/api/content/analyze` and `/api/content/generate`. Delete the old Reddit-specific routes since there are zero users (pre-launch, no backward compatibility needed per CLAUDE.md).
 
 ---
 
 ## API Route Summary
 
-| Route | Method | Purpose | New? |
-|-------|--------|---------|------|
-| `/api/content/youtube` | POST | Extract YouTube transcript | Yes |
-| `/api/content/webpage` | POST | Extract blog/web page content | Yes |
-| `/api/reddit/fetch` | POST | Fetch Reddit post (existing) | No |
+| Route | Method | Purpose | Action |
+|-------|--------|---------|--------|
+| `/api/content/youtube` | POST | Extract YouTube transcript | New |
+| `/api/content/webpage` | POST | Extract blog/web page content | New |
 | `/api/content/analyze` | POST | Generate hooks from any content | Refactor from `/api/reddit/analyze` |
 | `/api/content/generate` | POST | Generate posts from hook + content | Refactor from `/api/reddit/generate` |
+| `/api/reddit/fetch` | POST | Fetch Reddit post | Keep as-is (extraction only) |
+| `/api/reddit/analyze` | POST | Old hook generation | Delete (replaced by `/api/content/analyze`) |
+| `/api/reddit/generate` | POST | Old post generation | Delete (replaced by `/api/content/generate`) |
 
 ---
 
@@ -310,13 +332,17 @@ All three packages run server-side in API routes only. Zero impact on client bun
 
 ## Plan Access
 
-Same as Reddit importer: **Starter+ plan required** (uses `redditIdeas` feature flag).
+Same gate as the current Reddit importer: **Starter+ plan required**.
 
-Consider renaming the feature flag from `redditIdeas` to `contentRepurposing` in plans.ts if you want cleaner naming, but functionally it's the same gate.
+Rename the feature flag from `redditIdeas` to `contentRepurposing` in `plans.ts` and update all references. Pre-launch, zero users, no backward compatibility needed.
 
 ---
 
 ## AI Prompt Templates
+
+### Reddit
+
+Existing prompts in `/api/reddit/analyze` and `/api/reddit/generate` - migrate them into the new generic routes. The Reddit prompt already works well; just wrap it in the generic `ContentInput` format.
 
 ### YouTube
 
@@ -360,8 +386,24 @@ make someone stop scrolling on LinkedIn and engage.
 
 ---
 
+## Migration Checklist
+
+- [ ] Move `/dashboard/reddit` page to `/dashboard/repurpose`
+- [ ] Rename feature flag `redditIdeas` to `contentRepurposing` in `plans.ts`
+- [ ] Update sidebar navigation link and icon
+- [ ] Refactor `/api/reddit/analyze` to `/api/content/analyze` (generic ContentInput)
+- [ ] Refactor `/api/reddit/generate` to `/api/content/generate` (generic ContentInput)
+- [ ] Keep `/api/reddit/fetch` as-is (Reddit-specific extraction)
+- [ ] Create `/api/content/youtube` (new)
+- [ ] Create `/api/content/webpage` (new)
+- [ ] Add auto-detection logic with detected-source badge in UI
+- [ ] Update placeholder text to "Paste a Reddit, YouTube, blog, or web page URL"
+- [ ] Delete old `/api/reddit/analyze` and `/api/reddit/generate` routes
+
 ## Testing Checklist
 
+- [ ] Reddit: Existing Reddit URL flow still works end-to-end
+- [ ] Reddit: Auto-detected as "Reddit thread" from URL
 - [ ] YouTube: Video with auto-generated English captions
 - [ ] YouTube: Video with manually uploaded captions
 - [ ] YouTube: Video with no captions at all (should show clear error)
@@ -375,6 +417,9 @@ make someone stop scrolling on LinkedIn and engage.
 - [ ] Web: General web page (landing page, documentation, etc.)
 - [ ] Web: JavaScript-heavy SPA (should show error about JS rendering)
 - [ ] Web: 404 page (should show error)
+- [ ] Auto-detect: Reddit URL correctly detected
+- [ ] Auto-detect: YouTube URL correctly detected (youtube.com and youtu.be)
+- [ ] Auto-detect: Any other URL falls back to webpage extraction
 - [ ] All sources: Generated hooks are relevant to the content
 - [ ] All sources: Generated posts maintain user's voice settings
 - [ ] All sources: Full flow from URL paste to LinkedIn publish works end-to-end
