@@ -49,7 +49,7 @@ No neutral "choose them if" garbage. LinkedGrow is better, period. Show it with 
 - Feature cards grouped by category
 
 **Feature categories to compare (every page):**
-- Content Creation: AI post generation (unlimited vs capped), AI models (26 vs 1-2), voice training, hooks generator
+- Content Creation: AI post generation (unlimited vs capped), AI models (26 vs 1-2), voice training, hooks generator, content repurposing (YouTube, blogs, web pages, Reddit)
 - Scheduling & Publishing: post scheduling, content calendar, direct LinkedIn publishing, first comment
 - LinkedIn Integration: OAuth vs cookie-based auth, account safety, connection reliability
 - Visual Content: AI image generation (14 models vs none/limited), carousel generator
