@@ -4,50 +4,65 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
-// Define trimmed JSON type
-interface TrimmedRedditJson {
-  post: {
-    title: string;
-    selftext: string;
-    score: number;
-    upvote_ratio?: number;
-    num_comments: number;
-    subreddit: string;
-    author?: string;
+// Generic content input (replaces Reddit-specific trimmedJson)
+interface ContentInput {
+  source: "reddit" | "youtube" | "webpage" | "blog";
+  title: string;
+  content: string;
+  metadata?: {
+    subreddit?: string;
+    score?: number;
+    commentCount?: number;
+    duration?: number;
+    excerpt?: string;
+    comments?: Array<{ body: string; score: number }>;
   };
-  comments: Array<{
-    body: string;
-    score: number;
-  }>;
 }
 
-// Generate hooks from Reddit post using AI
-async function generateHooks(
-  trimmedJson: TrimmedRedditJson,
-  apiKey: string,
-  provider: string,
-  model: string
-): Promise<string[]> {
-  // Get current year for accurate data
-  const currentYear = new Date().getFullYear();
+function buildPrompt(input: ContentInput): string {
+  let sourceContext = "";
+  let contentBlock = "";
 
-  const prompt = `I will give you a viral Reddit post:
+  if (input.source === "reddit") {
+    sourceContext = `Source: Viral Reddit post from r/${input.metadata?.subreddit || "unknown"} (Score: ${input.metadata?.score || 0}, ${input.metadata?.commentCount || 0} comments)`;
+    contentBlock = `TITLE: ${input.title}\n\nCONTENT: ${input.content}`;
+    if (input.metadata?.comments && input.metadata.comments.length > 0) {
+      contentBlock += `\n\nTOP COMMENTS: ${input.metadata.comments.slice(0, 10).map(c => c.body).join('\n---\n')}`;
+    }
+  } else if (input.source === "youtube") {
+    const durationMin = input.metadata?.duration ? Math.round(input.metadata.duration / 60) : 0;
+    sourceContext = `Source: YouTube video transcript${durationMin ? ` (~${durationMin} minutes)` : ""}`;
+    contentBlock = `VIDEO TITLE: ${input.title}\n\nTRANSCRIPT: ${input.content}`;
+  } else {
+    // blog or webpage
+    const label = input.source === "blog" ? "blog article" : "web page";
+    sourceContext = `Source: ${label}`;
+    contentBlock = `ARTICLE TITLE: ${input.title}\n\nCONTENT: ${input.content}`;
+  }
 
-TITLE: ${trimmedJson.post.title}
+  return `I will give you content from a ${input.source === "reddit" ? "viral Reddit post" : input.source === "youtube" ? "YouTube video" : input.source === "blog" ? "blog article" : "web page"}:
 
-CONTENT: ${trimmedJson.post.selftext}
+${sourceContext}
 
-TOP COMMENTS: ${trimmedJson.comments.slice(0, 10).map(c => c.body).join('\n---\n')}
+${contentBlock}
 
-Your task: Create 5 viral LinkedIn hooks based on THIS SPECIFIC POST.
+Your task: Create 5 viral LinkedIn hooks based on THIS SPECIFIC CONTENT.
 
-CRITICAL: The hooks must be about the ACTUAL content. Extract the key insight, story, advice, or controversial take from the post. Use specific details (numbers, names, timeframes, job titles, etc.) from the content. DO NOT generate generic hooks.
+CRITICAL: The hooks must be about the ACTUAL content. Extract the key insight, story, advice, or controversial take from the content. Use specific details (numbers, names, timeframes, job titles, etc.) from the content. DO NOT generate generic hooks.
 
 Adapt to the content type:
-- Personal story? Capture the journey, transformation, specific numbers
+${input.source === "reddit" ? `- Personal story? Capture the journey, transformation, specific numbers
 - Advice post? Extract the contrarian or surprising insight
 - Question/Discussion? Turn the most interesting angle into a hook
-- Tutorial/How-to? Lead with the surprising result or counterintuitive method
+- Tutorial/How-to? Lead with the surprising result or counterintuitive method` :
+input.source === "youtube" ? `- Focus on the speaker's most counterintuitive or surprising claim
+- Extract specific data points, numbers, or frameworks mentioned
+- Find actionable advice that LinkedIn professionals can apply immediately
+- Personal stories or anecdotes that resonate with a professional audience` :
+`- Focus on the author's most original or contrarian point
+- Extract statistics, data, or research findings
+- Find frameworks or methodologies that readers can apply
+- Surprising conclusions or counterintuitive advice`}
 
 Hook format (EXACTLY 2 lines each):
 
@@ -69,13 +84,20 @@ Requirements:
 - Line 2: Builds curiosity, makes them want to read more (max 15 words)
 - NO emojis
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
-- Be SPECIFIC - use actual details, numbers, facts from the post
+- Be SPECIFIC - use actual details, numbers, facts from the content
 - Sound human and authentic
-- If the post has a personal element, write hooks in first person
+- If the content has a personal element, write hooks in first person
 
 Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n):
 ["Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2", "Line1\\nLine2"]`;
+}
 
+async function generateHooks(
+  prompt: string,
+  apiKey: string,
+  provider: string,
+  model: string
+): Promise<string[]> {
   let response;
   let hooks: string[] = [];
 
@@ -84,8 +106,6 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
-    // O-series and GPT-5 models don't support temperature parameter
-    // O-series and GPT-5 models require max_completion_tokens instead of max_tokens
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -93,11 +113,9 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
-    // O-series and GPT-5 require max_completion_tokens
     if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 2048;
     }
-    // GPT-5 models need reasoning_effort set to low to ensure they return content
     if (isGPT5) {
       requestBody.reasoning_effort = "low";
     }
@@ -156,7 +174,6 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body - Pro models need higher maxOutputTokens and thinkingConfig
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
@@ -164,7 +181,6 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
       },
     };
 
-    // For Pro models, set minimal thinking budget to reduce reasoning overhead
     if (isProModel) {
       (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
         thinkingBudget: 1024,
@@ -186,7 +202,6 @@ Return ONLY a JSON array of 5 strings (each string has 2 lines separated by \\n)
     }
 
     const data = await response.json();
-    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
     const parts = data.candidates?.[0]?.content?.parts || [];
     let content = "[]";
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -270,11 +285,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Accept trimmed Reddit JSON data
-    const { trimmedJson } = await request.json();
+    const body: ContentInput = await request.json();
 
-    if (!trimmedJson || !trimmedJson.post) {
-      return NextResponse.json({ error: "No Reddit data provided" }, { status: 400 });
+    if (!body.content || !body.source) {
+      return NextResponse.json({ error: "Content and source are required" }, { status: 400 });
     }
 
     // Get user's AI settings (uses owner's settings for team members)
@@ -285,18 +299,18 @@ export async function POST(request: NextRequest) {
 
     const { aiSettingsUser } = result;
 
-    // Check plan access - redditIdeas requires Starter+
+    // Check plan access
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "redditIdeas")) {
+    if (!canAccessFeature(userPlan, "contentRepurposing")) {
       return NextResponse.json(
-        { error: "Reddit analysis requires a Starter plan or higher. Please upgrade to access this feature." },
+        { error: "Content repurposing requires a Starter plan or higher. Please upgrade to access this feature." },
         { status: 403 }
       );
     }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 
-    // Get per-provider API key (from owner for team members)
+    // Get per-provider API key
     const providerKeyMap: Record<string, string | null> = {
       openai: aiSettingsUser.openaiApiKey,
       anthropic: aiSettingsUser.anthropicApiKey,
@@ -310,13 +324,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `No API key configured for ${provider}. Please add your API key in Settings.` }, { status: 400 });
     }
 
-    // Decrypt the API key
     const apiKey = decryptApiKey(encryptedApiKey);
     if (!apiKey) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get per-provider model (from owner for team members)
+    // Get per-provider model
     const providerModelMap: Record<string, string | null> = {
       openai: aiSettingsUser.openaiModel,
       anthropic: aiSettingsUser.anthropicModel,
@@ -332,18 +345,14 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    const hooks = await generateHooks(
-      trimmedJson,
-      apiKey,
-      provider,
-      model
-    );
+    const prompt = buildPrompt(body);
+    const hooks = await generateHooks(prompt, apiKey, provider, model);
 
     return NextResponse.json({ hooks });
   } catch (error) {
-    console.error("Reddit analyze error:", error);
+    console.error("Content analyze error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to analyze Reddit post" },
+      { error: error instanceof Error ? error.message : "Failed to analyze content" },
       { status: 500 }
     );
   }

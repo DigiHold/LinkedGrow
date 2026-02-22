@@ -39,9 +39,9 @@ const quickActions = [
     bgColor: "bg-purple-500/10",
   },
   {
-    title: "Import Reddit",
-    description: "Convert viral content",
-    href: "/dashboard/reddit",
+    title: "Repurpose Content",
+    description: "Turn any URL into a post",
+    href: "/dashboard/repurpose",
     icon: Zap,
     color: "text-orange-500",
     bgColor: "bg-orange-500/10",

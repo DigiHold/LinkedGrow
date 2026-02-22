@@ -9,7 +9,7 @@ export interface PlanFeatures {
   calendar: boolean;
   scheduling: boolean;
   analytics: boolean;
-  redditIdeas: boolean;
+  contentRepurposing: boolean;
   engagement: boolean;
   algorithmOptimizer: boolean;
   // Business-only features
@@ -57,7 +57,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         calendar: false,
         scheduling: false,
         analytics: false,
-        redditIdeas: false,
+        contentRepurposing: false,
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
@@ -87,7 +87,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         calendar: true,
         scheduling: true,
         analytics: false,
-        redditIdeas: true,
+        contentRepurposing: true,
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
@@ -118,7 +118,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         calendar: true,
         scheduling: true,
         analytics: true,
-        redditIdeas: true,
+        contentRepurposing: true,
         engagement: true,
         algorithmOptimizer: true,
         abTesting: false,
@@ -148,7 +148,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         calendar: true,
         scheduling: true,
         analytics: true,
-        redditIdeas: true,
+        contentRepurposing: true,
         engagement: true,
         algorithmOptimizer: true,
         abTesting: true,
@@ -203,10 +203,10 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     description: "Track performance and optimize your content",
     icon: "chart",
   },
-  redditIdeas: {
-    name: "Reddit Ideas",
-    description: "Find trending topics from Reddit communities",
-    icon: "lightbulb",
+  contentRepurposing: {
+    name: "Content Repurposing",
+    description: "Turn Reddit, YouTube, blogs, and web pages into LinkedIn posts",
+    icon: "repeat",
   },
   engagement: {
     name: "Engagement Tools",

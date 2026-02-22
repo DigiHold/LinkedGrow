@@ -4,32 +4,28 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
-// Define trimmed JSON type
-interface TrimmedRedditJson {
-  post: {
-    title: string;
-    selftext: string;
-    score: number;
-    upvote_ratio?: number;
-    num_comments: number;
-    subreddit: string;
-    author?: string;
+// Generic content input
+interface ContentInput {
+  source: "reddit" | "youtube" | "webpage" | "blog";
+  title: string;
+  content: string;
+  metadata?: {
+    subreddit?: string;
+    score?: number;
+    commentCount?: number;
+    duration?: number;
+    excerpt?: string;
+    comments?: Array<{ body: string; score: number }>;
   };
-  comments: Array<{
-    body: string;
-    score: number;
-  }>;
 }
 
 // Sanitize AI output: remove wrapping quotes
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();
 
-  // Remove wrapping triple quotes
   if (cleaned.startsWith('"""') && cleaned.endsWith('"""')) {
     cleaned = cleaned.slice(3, -3).trim();
   }
-  // Remove wrapping single or double quotes
   if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
       (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
     cleaned = cleaned.slice(1, -1).trim();
@@ -38,20 +34,17 @@ function sanitizeAIOutput(text: string): string {
   return cleaned;
 }
 
-async function generatePosts(
+function buildPrompt(
   hook: string,
-  trimmedJson: TrimmedRedditJson,
+  input: ContentInput,
   count: number,
-  apiKey: string,
-  provider: string,
-  model: string,
   samplePosts?: string[],
   neverMention?: string,
   businessDescription?: string,
   targetAudience?: string,
   writingTone?: string
-): Promise<string[]> {
-  // Build voice instructions from sample posts
+): string {
+  // Build voice instructions
   let voiceInstructions = "";
   if (samplePosts && samplePosts.length > 0) {
     voiceInstructions = `
@@ -94,27 +87,43 @@ Writing tone: ${writingTone}`;
 NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
-  // Build Reddit context from trimmed JSON including top comments
-  const topCommentsPainPoints = trimmedJson.comments
-    .slice(0, 15)
-    .map(c => c.body)
-    .join(" | ")
-    .substring(0, 1500);
+  // Build source-specific content context
+  let sourceContext = "";
+  if (input.source === "reddit") {
+    const topCommentsPainPoints = input.metadata?.comments
+      ? input.metadata.comments.slice(0, 15).map(c => c.body).join(" | ").substring(0, 1500)
+      : "";
+    sourceContext = `Reddit Context:
+Title: ${input.title}
+Post: ${input.content}
+Subreddit: r/${input.metadata?.subreddit || "unknown"} (Score: ${input.metadata?.score || 0}, ${input.metadata?.commentCount || 0} comments)
 
-  const prompt = `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
+Top Comments Pain Points:
+${topCommentsPainPoints}`;
+  } else if (input.source === "youtube") {
+    const durationMin = input.metadata?.duration ? Math.round(input.metadata.duration / 60) : 0;
+    sourceContext = `YouTube Video Context:
+Title: ${input.title}${durationMin ? `\nApproximate length: ${durationMin} minutes` : ""}
+Transcript: ${input.content}
 
-Goal: Create ${count} compelling LinkedIn posts based on this Reddit content, using the provided hook.
+Focus on the most insightful, surprising, or actionable content from the video. Pick ONE angle and go deep.`;
+  } else {
+    const label = input.source === "blog" ? "Blog Article" : "Web Page";
+    sourceContext = `${label} Context:
+Title: ${input.title}
+Content: ${input.content}
+
+Focus on the most compelling insight from this ${label.toLowerCase()}. Find the ONE insight that would make someone stop scrolling on LinkedIn and engage.`;
+  }
+
+  return `Act like a LinkedIn ghostwriter who writes posts that get saved and shared.
+
+Goal: Create ${count} compelling LinkedIn posts based on this content, using the provided hook.
 
 Hook to use (MUST be the first 2 lines):
 "${hook}"
 
-Reddit Context:
-Title: ${trimmedJson.post.title}
-Post: ${trimmedJson.post.selftext}
-Subreddit: r/${trimmedJson.post.subreddit} (Score: ${trimmedJson.post.score}, ${trimmedJson.post.num_comments} comments)
-
-Top Comments Pain Points:
-${topCommentsPainPoints}${businessContext}
+${sourceContext}${businessContext}
 
 === CRITICAL RULES ===
 
@@ -124,9 +133,9 @@ ${topCommentsPainPoints}${businessContext}
 
 2. FORMATTING (LinkedIn-native):
    - NEVER use markdown formatting like **bold** or *italic* - LinkedIn doesn't support it
-   - USE Unicode bold characters for section headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
-   - USE emojis strategically: ✅ for list items, ✨ for highlights, 📌 for save CTA, ♻️ for repost CTA, 🔔 for follow CTA
-   - USE → arrows for bullet points when listing steps or features
+   - USE Unicode bold characters for section headers (like \u{1D5E7}\u{1D5F5}\u{1D5F6}\u{1D600} \u{1D5F6}\u{1D600} \u{1D5EE}\u{1D5FC}\u{1D5F9}\u{1D5F1})
+   - USE emojis strategically: \u2705 for list items, \u2728 for highlights, \uD83D\uDCCC for save CTA, \u267B\uFE0F for repost CTA, \uD83D\uDD14 for follow CTA
+   - USE \u2192 arrows for bullet points when listing steps or features
    - Keep lines SHORT (5-10 words max per line)
    - Add whitespace between sections for skimmability
    - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
@@ -135,12 +144,12 @@ ${topCommentsPainPoints}${businessContext}
    - Start with the provided 2-line hook exactly
    - Keep it skimmable with short lines and whitespace
    - Include 1 clear takeaway + 1 framework (steps)
-   - End with a CTA like "📌 Save this for later" or "♻️ Repost if this helped"
+   - End with a CTA like "\uD83D\uDCCC Save this for later" or "\u267B\uFE0F Repost if this helped"
    - 800-1500 characters total
    - NO hashtags
 
 4. CONTENT:
-   - Extract insights and pain points from the Reddit content
+   - Extract insights and ${input.source === "reddit" ? "pain points from the Reddit content" : input.source === "youtube" ? "key takeaways from the video transcript" : "key insights from the article"}
    - No fluff, no generic advice
    - Be specific and actionable
    - Professional but conversational tone
@@ -149,7 +158,14 @@ ${topCommentsPainPoints}${businessContext}
 
 Return ONLY a JSON array of ${count} complete post strings (no explanations):
 ["Post 1 full text...", "Post 2 full text...", "Post 3 full text..."]`;
+}
 
+async function generatePosts(
+  prompt: string,
+  apiKey: string,
+  provider: string,
+  model: string
+): Promise<string[]> {
   let response;
   let posts: string[] = [];
 
@@ -158,9 +174,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
-    // O-series and GPT-5 models don't support temperature parameter
-    // O-series and GPT-5 models require max_completion_tokens instead of max_tokens
-    // GPT-5 models need reasoning_effort set to low to ensure they return content
     const requestBody: Record<string, unknown> = {
       model: openaiModel,
       messages: [{ role: "user", content: prompt }],
@@ -168,7 +181,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
-    // O-series and GPT-5 require max_completion_tokens
     if (isOSeries || isGPT5) {
       requestBody.max_completion_tokens = 8000;
     }
@@ -220,7 +232,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
 
-    // Build request body - Pro models need higher maxOutputTokens
     const googleRequestBody: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
@@ -228,8 +239,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
       },
     };
 
-    // For Pro models, set minimal thinking budget to reduce reasoning overhead
-    // Pro models require thinking mode, so we use the minimum budget (1024 tokens)
     if (isProModel) {
       (googleRequestBody.generationConfig as Record<string, unknown>).thinkingConfig = {
         thinkingBudget: 1024,
@@ -250,7 +259,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     }
 
     const data = await response.json();
-    // For Pro models with thinking enabled, find the last text part (thinking parts come first)
     const parts = data.candidates?.[0]?.content?.parts || [];
     let content = "[]";
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -309,7 +317,6 @@ Return ONLY a JSON array of ${count} complete post strings (no explanations):
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
 
-  // Sanitize each post
   return posts.map(post => sanitizeAIOutput(post));
 }
 
@@ -321,17 +328,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { hook, trimmedJson, count = 3 } = await request.json();
+    const { hook, content: contentInput, count = 3 } = await request.json();
 
     if (!hook) {
       return NextResponse.json({ error: "Hook is required" }, { status: 400 });
     }
 
-    if (!trimmedJson || !trimmedJson.post) {
-      return NextResponse.json({ error: "Reddit data is required" }, { status: 400 });
+    if (!contentInput || !contentInput.source) {
+      return NextResponse.json({ error: "Content data is required" }, { status: 400 });
     }
 
-    // Get user's AI settings (uses owner's settings for team members)
+    // Get user's AI settings
     const result = await getAISettingsUser(session.user.id);
     if (!result) {
       return NextResponse.json({ error: "User not found or team membership invalid" }, { status: 404 });
@@ -339,18 +346,18 @@ export async function POST(request: NextRequest) {
 
     const { aiSettingsUser } = result;
 
-    // Check plan access - redditIdeas requires Starter+
+    // Check plan access
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "redditIdeas")) {
+    if (!canAccessFeature(userPlan, "contentRepurposing")) {
       return NextResponse.json(
-        { error: "Reddit content generation requires a Starter plan or higher. Please upgrade to access this feature." },
+        { error: "Content repurposing requires a Starter plan or higher. Please upgrade to access this feature." },
         { status: 403 }
       );
     }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 
-    // Get per-provider API key (from owner for team members)
+    // Get per-provider API key
     const providerKeyMap: Record<string, string | null> = {
       openai: aiSettingsUser.openaiApiKey,
       anthropic: aiSettingsUser.anthropicApiKey,
@@ -364,13 +371,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `No API key configured for ${provider}. Please add your API key in Settings.` }, { status: 400 });
     }
 
-    // Decrypt the API key
     const apiKey = decryptApiKey(encryptedApiKey);
     if (!apiKey) {
       return NextResponse.json({ error: "Failed to decrypt API key" }, { status: 500 });
     }
 
-    // Get per-provider model (from owner for team members)
+    // Get per-provider model
     const providerModelMap: Record<string, string | null> = {
       openai: aiSettingsUser.openaiModel,
       anthropic: aiSettingsUser.anthropicModel,
@@ -386,7 +392,7 @@ export async function POST(request: NextRequest) {
                          provider === "perplexity" ? "sonar-pro" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    // Parse sample posts from JSON if stored (from owner for team members)
+    // Parse sample posts
     let samplePosts: string[] | undefined;
     if (aiSettingsUser.samplePosts) {
       try {
@@ -396,14 +402,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate posts using AI with voice settings (from owner for team members)
-    const posts = await generatePosts(
+    const prompt = buildPrompt(
       hook,
-      trimmedJson,
+      contentInput as ContentInput,
       count,
-      apiKey,
-      provider,
-      model,
       samplePosts,
       aiSettingsUser.neverMention || undefined,
       aiSettingsUser.businessDescription || undefined,
@@ -411,9 +413,11 @@ export async function POST(request: NextRequest) {
       aiSettingsUser.writingTone || undefined
     );
 
+    const posts = await generatePosts(prompt, apiKey, provider, model);
+
     return NextResponse.json({ posts });
   } catch (error) {
-    console.error("Reddit generate error:", error);
+    console.error("Content generate error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate posts" },
       { status: 500 }

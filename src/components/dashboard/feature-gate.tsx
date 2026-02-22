@@ -42,7 +42,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   calendar: Calendar,
   scheduling: Calendar,
   analytics: BarChart3,
-  redditIdeas: Sparkles,
+  contentRepurposing: Sparkles,
   engagement: Users,
   algorithmOptimizer: Zap,
   abTesting: GitBranch,

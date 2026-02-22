@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import {
-  MessageSquareText,
   ArrowRight,
   Sparkles,
   RefreshCw,
@@ -27,6 +25,11 @@ import {
   Loader2,
   AlertCircle,
   Lock,
+  Repeat,
+  Youtube,
+  FileText,
+  Globe,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -35,7 +38,7 @@ import { ImageGeneratorModal } from "@/components/dashboard/image-generator-moda
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
 import Link from "next/link";
 
-// Reddit icon component (same as sidebar)
+// Reddit icon component
 function RedditIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 -40 512 512" xmlns="http://www.w3.org/2000/svg" className={className} fill="currentColor">
@@ -47,24 +50,44 @@ function RedditIcon({ className }: { className?: string }) {
   );
 }
 
-const steps = [
-  { num: 1, label: "Paste URL" },
-  { num: 2, label: "Select Hook" },
-  { num: 3, label: "Choose Post" },
-  { num: 4, label: "Edit & Publish" },
-];
+type SourceType = "reddit" | "youtube" | "webpage" | null;
 
-interface SettingsResponse {
-  hasApiKey: boolean;
-  hasImageApiKey: boolean;
-  aiProvider: string | null;
-  timezone: string | null;
+function detectSourceType(url: string): SourceType {
+  try {
+    const hostname = new URL(url).hostname.replace("www.", "");
+    if (hostname.includes("reddit.com") || hostname.includes("old.reddit.com")) return "reddit";
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) return "youtube";
+    return "webpage";
+  } catch {
+    return null;
+  }
 }
 
-// Cloudflare Worker CORS proxy - distributed IPs worldwide, no rate limit risk
+const sourceLabels: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  reddit: { label: "Reddit thread", icon: RedditIcon, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800" },
+  youtube: { label: "YouTube video", icon: Youtube, color: "text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800" },
+  webpage: { label: "Web page", icon: Globe, color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" },
+  blog: { label: "Blog article", icon: FileText, color: "text-green-500 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" },
+};
+
+// Cloudflare Worker CORS proxy
 const REDDIT_PROXY = "https://reddit-proxy.digihold-account.workers.dev";
 
-// Trimmed JSON structure for AI processing
+interface ContentData {
+  source: "reddit" | "youtube" | "webpage" | "blog";
+  title: string;
+  content: string;
+  metadata?: {
+    subreddit?: string;
+    score?: number;
+    commentCount?: number;
+    duration?: number;
+    excerpt?: string;
+    comments?: Array<{ body: string; score: number }>;
+  };
+}
+
+// Trimmed Reddit JSON structure
 interface TrimmedRedditJson {
   post: {
     title: string;
@@ -81,19 +104,9 @@ interface TrimmedRedditJson {
   }>;
 }
 
-interface RedditPostData {
-  title: string;
-  selftext: string;
-  subreddit: string;
-  score: number;
-  num_comments: number;
-  trimmedJson: TrimmedRedditJson;
-}
-
 // Trim Reddit JSON to reduce token count for AI processing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function trimRedditData(rawJson: any[]): TrimmedRedditJson {
-  // rawJson is an array: [0] = post data, [1] = comments
   const postData = rawJson[0]?.data?.children?.[0]?.data;
   const commentsData = rawJson[1]?.data?.children || [];
 
@@ -101,7 +114,6 @@ function trimRedditData(rawJson: any[]): TrimmedRedditJson {
     throw new Error("Invalid Reddit JSON structure");
   }
 
-  // Extract only essential post fields
   const post = {
     title: postData.title,
     selftext: postData.selftext ? postData.selftext.substring(0, 2000) : "",
@@ -112,7 +124,6 @@ function trimRedditData(rawJson: any[]): TrimmedRedditJson {
     author: postData.author,
   };
 
-  // Extract top 60 comments by score, only keep essential fields
   const comments = commentsData
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((c: any) => c.kind === "t1" && c.data?.body)
@@ -128,10 +139,7 @@ function trimRedditData(rawJson: any[]): TrimmedRedditJson {
   return { post, comments };
 }
 
-// Fetch Reddit post data via Cloudflare Worker (CORS proxy with distributed IPs)
-// Each request goes through a different Cloudflare edge location IP
-async function fetchRedditPost(url: string): Promise<RedditPostData> {
-  // Normalize and build JSON URL
+async function fetchRedditPost(url: string): Promise<ContentData> {
   let jsonUrl = url
     .replace("old.reddit.com", "www.reddit.com")
     .replace(/^(https?:\/\/)reddit\.com/, "$1www.reddit.com");
@@ -140,20 +148,13 @@ async function fetchRedditPost(url: string): Promise<RedditPostData> {
     jsonUrl = jsonUrl.replace(/\/?$/, ".json");
   }
 
-  // Fetch via Cloudflare Worker proxy (bypasses CORS, distributed IPs)
   const proxyUrl = `${REDDIT_PROXY}?url=${encodeURIComponent(jsonUrl)}`;
   const response = await fetch(proxyUrl);
 
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error("Reddit post not found");
-    }
-    if (response.status === 403) {
-      throw new Error("Reddit blocked this request. Please try again in a few seconds.");
-    }
-    if (response.status === 429) {
-      throw new Error("Too many requests to Reddit. Please wait a moment and try again.");
-    }
+    if (response.status === 404) throw new Error("Reddit post not found");
+    if (response.status === 403) throw new Error("Reddit blocked this request. Please try again in a few seconds.");
+    if (response.status === 429) throw new Error("Too many requests to Reddit. Please wait a moment and try again.");
     throw new Error("Failed to fetch Reddit post. Please try again.");
   }
 
@@ -161,20 +162,68 @@ async function fetchRedditPost(url: string): Promise<RedditPostData> {
   const trimmedJson = trimRedditData(rawJson);
 
   return {
+    source: "reddit",
     title: trimmedJson.post.title || "",
-    selftext: trimmedJson.post.selftext || "",
-    subreddit: trimmedJson.post.subreddit || "",
-    score: trimmedJson.post.score || 0,
-    num_comments: trimmedJson.post.num_comments || 0,
-    trimmedJson,
+    content: trimmedJson.post.selftext || "",
+    metadata: {
+      subreddit: trimmedJson.post.subreddit,
+      score: trimmedJson.post.score,
+      commentCount: trimmedJson.post.num_comments,
+      comments: trimmedJson.comments,
+    },
   };
 }
 
-function RedditImportContent() {
+async function fetchYoutubeContent(url: string): Promise<ContentData & { warning?: string }> {
+  const response = await fetch("/api/content/youtube", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || "Failed to extract YouTube content");
+  }
+
+  return response.json();
+}
+
+async function fetchWebpageContent(url: string): Promise<ContentData & { warning?: string }> {
+  const response = await fetch("/api/content/webpage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || "Failed to extract page content");
+  }
+
+  return response.json();
+}
+
+const steps = [
+  { num: 1, label: "Paste URL" },
+  { num: 2, label: "Select Hook" },
+  { num: 3, label: "Choose Post" },
+  { num: 4, label: "Edit & Publish" },
+];
+
+interface SettingsResponse {
+  hasApiKey: boolean;
+  hasImageApiKey: boolean;
+  aiProvider: string | null;
+  timezone: string | null;
+}
+
+function ContentRepurposingContent() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState("");
+  const [detectedSource, setDetectedSource] = useState<SourceType>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hooks, setHooks] = useState<string[]>([]);
   const [selectedHook, setSelectedHook] = useState<number | null>(null);
@@ -182,7 +231,8 @@ function RedditImportContent() {
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redditPost, setRedditPost] = useState<RedditPostData | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [contentData, setContentData] = useState<ContentData | null>(null);
 
   // API key state
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
@@ -229,12 +279,20 @@ function RedditImportContent() {
     return isEditing ? editedPost : posts[selectedPost];
   };
 
+  // Auto-detect source from URL
+  useEffect(() => {
+    if (url.trim()) {
+      setDetectedSource(detectSourceType(url.trim()));
+    } else {
+      setDetectedSource(null);
+    }
+  }, [url]);
+
   // Persist state to localStorage
-  const STORAGE_KEY = "linkedgrow_reddit_draft";
+  const STORAGE_KEY = "linkedgrow_repurpose_draft";
 
   // Save state to localStorage when it changes
   useEffect(() => {
-    // Only save if we have meaningful data (step > 1 or have content)
     if (step > 1 || hooks.length > 0 || posts.length > 0) {
       const stateToSave = {
         step,
@@ -243,62 +301,78 @@ function RedditImportContent() {
         selectedHook,
         posts,
         selectedPost,
-        redditPost,
+        contentData,
         editedPost,
         attachedImage,
         savedAt: new Date().toISOString(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
     }
-  }, [step, url, hooks, selectedHook, posts, selectedPost, redditPost, editedPost, attachedImage]);
+  }, [step, url, hooks, selectedHook, posts, selectedPost, contentData, editedPost, attachedImage]);
 
   // Restore state from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved);
-        // Only restore if saved within last 24 hours
+      // Also try migrating old Reddit draft
+      const oldSaved = localStorage.getItem("linkedgrow_reddit_draft");
+      const data = saved || oldSaved;
+
+      if (data) {
+        const state = JSON.parse(data);
         const savedAt = new Date(state.savedAt);
         const hoursSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
 
         if (hoursSinceSave < 24) {
-          // Restore data first
           if (state.url) setUrl(state.url);
           if (state.hooks?.length > 0) setHooks(state.hooks);
           if (state.selectedHook !== null && state.selectedHook !== undefined) setSelectedHook(state.selectedHook);
           if (state.posts?.length > 0) setPosts(state.posts);
           if (state.selectedPost !== null && state.selectedPost !== undefined) setSelectedPost(state.selectedPost);
-          if (state.redditPost) setRedditPost(state.redditPost);
+          if (state.contentData) setContentData(state.contentData);
+          // Support old Reddit format
+          if (state.redditPost && !state.contentData) {
+            setContentData({
+              source: "reddit",
+              title: state.redditPost.title || "",
+              content: state.redditPost.selftext || "",
+              metadata: {
+                subreddit: state.redditPost.subreddit,
+                score: state.redditPost.score,
+                commentCount: state.redditPost.num_comments,
+              },
+            });
+          }
           if (state.editedPost) setEditedPost(state.editedPost);
           if (state.attachedImage) setAttachedImage(state.attachedImage);
 
-          // Only restore step if the required data for that step exists
-          // Step 2 needs hooks, Step 3+ needs posts
           if (state.step) {
             if (state.step >= 3 && (!state.posts || state.posts.length === 0)) {
-              // Can't be at step 3+ without posts, reset to step 2 if hooks exist
               setStep(state.hooks?.length > 0 ? 2 : 1);
             } else if (state.step >= 2 && (!state.hooks || state.hooks.length === 0)) {
-              // Can't be at step 2+ without hooks, reset to step 1
               setStep(1);
             } else {
               setStep(state.step);
             }
           }
         } else {
-          // Clear stale data
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem("linkedgrow_reddit_draft");
         }
+
+        // Clean up old key
+        if (oldSaved) localStorage.removeItem("linkedgrow_reddit_draft");
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("linkedgrow_reddit_draft");
     }
   }, []);
 
   // Clear draft after successful publish or save
   const clearDraft = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("linkedgrow_reddit_draft");
   };
 
   // Check if user has API key configured and fetch timezone
@@ -327,31 +401,42 @@ function RedditImportContent() {
     checkApiKey();
   }, []);
 
-  const handleFetchReddit = async () => {
-    if (!url.includes("reddit.com") || !hasApiKey) return;
+  const handleExtractContent = async () => {
+    if (!url.trim() || !detectedSource || !hasApiKey) return;
     setIsLoading(true);
     setError(null);
+    setWarning(null);
 
     try {
-      // Step 1: Fetch Reddit data via Cloudflare Worker (includes trimmed JSON)
-      const postData = await fetchRedditPost(url);
-      setRedditPost(postData);
+      let extracted: ContentData & { warning?: string };
 
-      // Step 2: Send trimmed JSON to our API to generate hooks with AI
-      const response = await fetch("/api/reddit/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trimmedJson: postData.trimmedJson,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to analyze Reddit post");
+      if (detectedSource === "reddit") {
+        extracted = await fetchRedditPost(url);
+      } else if (detectedSource === "youtube") {
+        extracted = await fetchYoutubeContent(url);
+      } else {
+        extracted = await fetchWebpageContent(url);
       }
 
-      const data = await response.json();
+      if (extracted.warning) {
+        setWarning(extracted.warning);
+      }
+
+      setContentData(extracted);
+
+      // Send to analyze endpoint to generate hooks
+      const analyzeResponse = await fetch("/api/content/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(extracted),
+      });
+
+      if (!analyzeResponse.ok) {
+        const data = await analyzeResponse.json();
+        throw new Error(data.error || "Failed to analyze content");
+      }
+
+      const data = await analyzeResponse.json();
       const generatedHooks = data.hooks || [];
 
       if (generatedHooks.length === 0) {
@@ -361,24 +446,24 @@ function RedditImportContent() {
       setHooks(generatedHooks);
       setStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch Reddit post");
+      setError(err instanceof Error ? err.message : "Failed to extract content");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGeneratePosts = async () => {
-    if (selectedHook === null || !hasApiKey || !redditPost) return;
+    if (selectedHook === null || !hasApiKey || !contentData) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/reddit/generate", {
+      const response = await fetch("/api/content/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hook: hooks[selectedHook],
-          trimmedJson: redditPost.trimmedJson,
+          content: contentData,
           count: 3,
         }),
       });
@@ -417,7 +502,6 @@ function RedditImportContent() {
 
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
       const mediaData = attachedImage ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
@@ -432,9 +516,9 @@ function RedditImportContent() {
           postType: attachedImage ? "image" : "text",
           mediaData,
           metadata: {
-            source: "reddit",
-            redditUrl: url,
-            redditTitle: redditPost?.title,
+            source: contentData?.source || "unknown",
+            sourceUrl: url,
+            sourceTitle: contentData?.title,
             hook: selectedHook !== null ? hooks[selectedHook] : null,
           },
         }),
@@ -467,8 +551,6 @@ function RedditImportContent() {
     setIsPublishing(true);
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
-
-      // Build media info (images are already on R2)
       const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
       const mediaInfo = hasMedia ? {
         storageUrl: attachedImage.storageUrl,
@@ -476,7 +558,6 @@ function RedditImportContent() {
         mimeType: attachedImage.mimeType,
       } : undefined;
 
-      // Create post record
       const saveResponse = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -486,9 +567,9 @@ function RedditImportContent() {
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
           metadata: {
-            source: "reddit",
-            redditUrl: url,
-            redditTitle: redditPost?.title,
+            source: contentData?.source || "unknown",
+            sourceUrl: url,
+            sourceTitle: contentData?.title,
           },
         }),
       });
@@ -500,7 +581,6 @@ function RedditImportContent() {
 
       const { post } = await saveResponse.json();
 
-      // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -538,11 +618,8 @@ function RedditImportContent() {
       return;
     }
 
-    // Convert the selected date/time to UTC using user's configured timezone
-    // resolveTimezone handles "auto" by returning browser timezone
     const effectiveTimezone = resolveTimezone(userTimezone);
     const scheduledAtISO = localToUTC(scheduleDate, scheduleTime, effectiveTimezone);
-
     const scheduledAt = new Date(scheduledAtISO);
     if (scheduledAt <= new Date()) {
       showToast("Please select a future date and time");
@@ -551,7 +628,6 @@ function RedditImportContent() {
 
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
       const mediaData = attachedImage ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
@@ -567,9 +643,9 @@ function RedditImportContent() {
           postType: attachedImage ? "image" : "text",
           mediaData,
           metadata: {
-            source: "reddit",
-            redditUrl: url,
-            redditTitle: redditPost?.title,
+            source: contentData?.source || "unknown",
+            sourceUrl: url,
+            sourceTitle: contentData?.title,
             hook: selectedHook !== null ? hooks[selectedHook] : null,
           },
         }),
@@ -596,20 +672,17 @@ function RedditImportContent() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!validTypes.includes(file.type)) {
       showToast("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
       return;
     }
 
-    // Validate file size (max 5MB - LinkedIn limit)
     if (file.size > 5 * 1024 * 1024) {
       showToast("Image must be less than 5MB (LinkedIn limit)");
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
@@ -620,7 +693,6 @@ function RedditImportContent() {
     };
     reader.readAsDataURL(file);
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -679,20 +751,18 @@ function RedditImportContent() {
   if (!hasApiKey) {
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <RedditIcon className="w-5 h-5 text-white" />
+              <Repeat className="w-5 h-5 text-white" />
             </div>
-            Reddit Import
+            Content Repurposing
           </h1>
           <p className="text-muted-foreground mt-1">
-            Transform viral Reddit posts into LinkedIn content
+            Turn any URL into a LinkedIn post
           </p>
         </div>
 
-        {/* API Key Required Card */}
         <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
@@ -701,7 +771,7 @@ function RedditImportContent() {
               </div>
               <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
               <p className="text-muted-foreground mb-6">
-                To analyze Reddit posts and generate LinkedIn content, you need to configure your AI API key in settings.
+                To analyze content and generate LinkedIn posts, you need to configure your AI API key in settings.
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -719,7 +789,6 @@ function RedditImportContent() {
           </CardContent>
         </Card>
 
-        {/* Preview of the workflow */}
         <Card className="opacity-60">
           <CardHeader>
             <CardTitle className="text-base">How it works</CardTitle>
@@ -752,12 +821,12 @@ function RedditImportContent() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <RedditIcon className="w-5 h-5 text-white" />
-            </div>
-          Reddit Import
+            <Repeat className="w-5 h-5 text-white" />
+          </div>
+          Content Repurposing
         </h1>
         <p className="text-muted-foreground mt-1">
-          Transform viral Reddit posts into LinkedIn content
+          Turn any URL into a LinkedIn post
         </p>
       </div>
 
@@ -792,6 +861,14 @@ function RedditImportContent() {
         ))}
       </div>
 
+      {/* Warning Message */}
+      {warning && (
+        <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 text-sm flex items-start gap-2">
+          <Info className="w-5 h-5 shrink-0 mt-0.5" />
+          <span>{warning}</span>
+        </div>
+      )}
+
       {/* Error Message */}
       {error && (
         <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
@@ -804,49 +881,70 @@ function RedditImportContent() {
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Paste a Reddit URL</CardTitle>
+            <CardTitle>Paste any URL to turn it into a LinkedIn post</CardTitle>
             <CardDescription>
-              Find a viral post on Reddit and paste the URL here
+              We auto-detect the source and extract content from Reddit, YouTube, blogs, and web pages
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Input
-                placeholder="https://reddit.com/r/..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="flex-1"
-              />
+              <div className="flex-1 space-y-2">
+                <Input
+                  placeholder="Paste a Reddit, YouTube, blog, or web page URL"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && detectedSource && !isLoading) {
+                      handleExtractContent();
+                    }
+                  }}
+                  className="w-full"
+                />
+                {/* Detected source badge */}
+                {detectedSource && url.trim() && (
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const info = sourceLabels[detectedSource];
+                      const Icon = info.icon;
+                      return (
+                        <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border", info.color)}>
+                          <Icon className="w-3.5 h-3.5" />
+                          Detected: {info.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
               <Button
-                onClick={handleFetchReddit}
-                disabled={!url.includes("reddit.com") || isLoading}
-                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                onClick={handleExtractContent}
+                disabled={!detectedSource || isLoading}
+                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shrink-0"
               >
                 {isLoading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing...
+                    Extracting...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Hooks
+                    Extract Content
                   </>
                 )}
               </Button>
             </div>
 
-
-            <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
-              <h4 className="font-medium text-orange-800 dark:text-orange-200">
-                Tips for finding viral Reddit posts:
-              </h4>
-              <ul className="mt-2 text-sm text-orange-700 dark:text-orange-300 space-y-1">
-                <li>- Check r/technology, r/startups, r/entrepreneur</li>
-                <li>- Sort by &quot;Top&quot; posts of the week/month</li>
-                <li>- Look for posts with high engagement</li>
-                <li>- Personal stories often convert well</li>
-              </ul>
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {Object.entries(sourceLabels).map(([key, info]) => {
+                const Icon = info.icon;
+                return (
+                  <div key={key} className={cn("flex items-center gap-2 p-3 rounded-xl border text-sm", info.color.split(" ").slice(1).join(" "))}>
+                    <Icon className={cn("w-5 h-5 shrink-0", info.color.split(" ")[0])} />
+                    <span className="text-muted-foreground">{info.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -862,6 +960,20 @@ function RedditImportContent() {
             </CardTitle>
             <CardDescription>
               Select the hook that will grab attention
+              {contentData && (
+                <span className="ml-2">
+                  {(() => {
+                    const info = sourceLabels[contentData.source];
+                    const Icon = info.icon;
+                    return (
+                      <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ml-1", info.color)}>
+                        <Icon className="w-3 h-3" />
+                        {contentData.title ? contentData.title.substring(0, 60) + (contentData.title.length > 60 ? "..." : "") : info.label}
+                      </span>
+                    );
+                  })()}
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -888,7 +1000,7 @@ function RedditImportContent() {
                     >
                       {index + 1}
                     </span>
-                    <p className="font-medium">{hook}</p>
+                    <p className="font-medium whitespace-pre-line">{hook}</p>
                   </div>
                 </button>
               ))}
@@ -1011,7 +1123,6 @@ function RedditImportContent() {
                         <Button
                           size="sm"
                           onClick={() => {
-                            // Save the edited version
                             const newPosts = [...posts];
                             newPosts[selectedPost] = editedPost;
                             setPosts(newPosts);
@@ -1156,7 +1267,6 @@ function RedditImportContent() {
                 <CardTitle className="text-base">Publish</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* Video notice - videos cannot be stored, must be published immediately */}
                 {isVideoMedia(attachedImage) && (
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
                     Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
@@ -1236,7 +1346,6 @@ function RedditImportContent() {
                 <CardTitle className="text-base">Add Media</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* AI Image Generation - only show if has API key */}
                 {hasImageApiKey && (
                   <Button
                     variant="outline"
@@ -1334,10 +1443,10 @@ function RedditImportContent() {
   );
 }
 
-export default function RedditImportPage() {
+export default function ContentRepurposingPage() {
   return (
-    <FeatureGate feature="redditIdeas">
-      <RedditImportContent />
+    <FeatureGate feature="contentRepurposing">
+      <ContentRepurposingContent />
     </FeatureGate>
   );
 }

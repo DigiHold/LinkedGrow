@@ -9,7 +9,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/generator": "Post Generator",
   "/dashboard/editor": "Post Editor",
-  "/dashboard/reddit": "Reddit Import",
+  "/dashboard/repurpose": "Repurpose",
   "/dashboard/ideas": "Content Ideas",
   "/dashboard/posts": "My Posts",
   "/dashboard/calendar": "Calendar",
