@@ -49,8 +49,9 @@ No neutral "choose them if" garbage. LinkedGrow is better, period. Show it with 
 - Feature cards grouped by category
 
 **Feature categories to compare (every page):**
-- Content Creation: AI post generation (unlimited vs capped), AI models (24 vs 1-2), voice training, hooks generator
+- Content Creation: AI post generation (unlimited vs capped), AI models (26 vs 1-2), voice training, hooks generator
 - Scheduling & Publishing: post scheduling, content calendar, direct LinkedIn publishing, first comment
+- LinkedIn Integration: OAuth vs cookie-based auth, account safety, connection reliability
 - Visual Content: AI image generation (14 models vs none/limited), carousel generator
 - Analytics: post analytics, engagement metrics, advanced analytics
 - AI Technology: BYOK model, number of AI providers (5 vs 1), model choice
@@ -62,12 +63,24 @@ Each section is a H2 with a clear LinkedGrow advantage. Not "differences" - adva
 
 Example sections:
 - "Unlimited AI Generation with BYOK - No Credits, No Caps"
-- "24 AI Models from 5 Providers vs [Competitor]'s Single Model"
+- "26 AI Models from 5 Providers vs [Competitor]'s Single Model"
 - "AI Image Generation Built In - [Competitor] Doesn't Have It"
 - "Save 80% - Same Features, Fraction of the Price"
 - "Your API Keys, Your Data - No Vendor Lock-In"
 
 Each section: 200-400 words, concrete data, bold key phrases, internal links to relevant LinkedGrow feature pages.
+
+**WRITING STYLE RULES (apply to ALL versus pages):**
+- Write like a human, not like AI. Use varied sentence lengths and natural paragraph flow.
+- NEVER use short choppy sentences one after another. Build ideas across longer sentences that connect logically.
+- Avoid generic AI filler phrases like "That is it." or "Let that sink in." or "Here is the thing."
+- Each paragraph should be 3-6 sentences minimum. No one-sentence paragraphs except for emphasis.
+- Use contractions naturally (you are -> you're is fine in descriptions, but avoid in structured data).
+- Reference specific model names from the actual codebase (check `src/app/(dashboard)/dashboard/settings/ai-api/page.tsx`).
+- Currently: 26 text models (5 providers), 14 image models (3 providers). Update if the settings page changes.
+- Best image model = Nano Banana Pro (not "Imagen 4 Ultra"). Best text models = GPT-5.2, Claude Opus 4.6, Gemini 3 Pro.
+- Never say "DALL-E" - the actual OpenAI image models are GPT Image 1.5, GPT Image 1, GPT Image 1 Mini.
+- Cookie-based auth warning: Taplio is CONFIRMED to use cookie-based auth. Make this a prominent section.
 
 ### 5. Pricing Showdown
 
