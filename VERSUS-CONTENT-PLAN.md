@@ -139,7 +139,7 @@ Write in this exact order (highest search volume / closest competitors first):
 | 2 | **Supergrow** | `/compare/supergrow-alternative` | supergrow alternative | Best Supergrow Alternative (2026) - Unlimited AI \| LinkedGrow | Starter $19/mo, Pro $29/mo, Agency $49/mo | Same entry price but LinkedGrow = BYOK unlimited vs capped AI |
 | 3 | **MagicPost** | `/compare/magicpost-alternative` | magicpost alternative | Best MagicPost Alternative (2026) - No AI Caps \| LinkedGrow | Starter $27/mo (30 posts), Creator $39/mo (unlimited) | BYOK unlimited at $13/mo vs $27/mo for 30 posts |
 | 4 | **AuthoredUp** | `/compare/authoredup-alternative` | authoredup alternative | Best AuthoredUp Alternative (2026) - Full AI Suite \| LinkedGrow | Individual $19.95/mo, Business $14.95/profile/mo (min 3) | AuthoredUp = editor-only. LinkedGrow = AI generation + scheduling + analytics |
-| 5 | **Kleo** | `/compare/kleo-alternative` | kleo alternative | Best Kleo Alternative (2026) - Save 73% \| LinkedGrow | Creator $49/mo, Business $99/mo, Agency $199/mo | LinkedGrow $13/mo vs Kleo $49/mo. BYOK unlimited vs 1,000 credits |
+| 5 | **Kleo** | `/compare/kleo-alternative` | kleo alternative | Best Kleo Alternative (2026) - Save 87% \| LinkedGrow | Standard $99/mo ($999/year), Enterprise custom | LinkedGrow $13/mo vs Kleo $99/mo. BYOK unlimited 26 models vs single Claude model |
 
 ### Priority 2 - Strong Direct Competitors
 
@@ -148,26 +148,21 @@ Write in this exact order (highest search volume / closest competitors first):
 | 6 | **EasyGen** | `/compare/easygen-alternative` | easygen alternative | Best EasyGen Alternative (2026) - 4x Cheaper \| LinkedGrow | Free (3 posts), Premium $59.99/mo | LinkedGrow $13/mo vs EasyGen $60/mo. 4x cheaper with more features |
 | 7 | **ContentIn** | `/compare/contentin-alternative` | contentin alternative | Best ContentIn Alternative (2026) - Unlimited AI \| LinkedGrow | Free, Creator $29/mo (20 AI posts), Pro $49/mo | Similar pricing but LinkedGrow BYOK = unlimited AI + image generation |
 | 8 | **RedactAI** | `/compare/redactai-alternative` | redactai alternative | Best RedactAI Alternative (2026) - Full Platform \| LinkedGrow | Free (4 posts), Essential ~$12/mo, Creator $24/mo, Copywriter $66/mo | RedactAI = AI generation only. LinkedGrow = complete platform |
-| 9 | **Postdrips** | `/compare/postdrips-alternative` | postdrips alternative | Best Postdrips Alternative (2026) - More AI Models \| LinkedGrow | Starter $18/mo, Pro $29/mo | Similar pricing but LinkedGrow has AI image gen, 24 AI models, BYOK |
-| 10 | **Shield Analytics** | `/compare/shield-alternative` | shield analytics alternative | Best Shield Analytics Alternative (2026) - All-in-One \| LinkedGrow | Starter $8/mo, Creator $16/mo, Influencer $25/mo | Shield = analytics-only. LinkedGrow = creation + scheduling + analytics in one |
+| 9 | **Postdrips** | `/compare/postdrips-alternative` | postdrips alternative | Best Postdrips Alternative (2026) - More AI Models \| LinkedGrow | Starter $18/mo, Pro $29/mo | Similar pricing but LinkedGrow has AI image gen, 26 AI models, BYOK |
 
 ### Priority 3 - LinkedIn Adjacent Competitors
 
 | # | Competitor | Slug | Primary Keyword | Meta Title | Verified Pricing (Feb 2026) | Key Angle |
 |---|-----------|------|----------------|------------|----------------------------|-----------|
-| 11 | **Engage AI** | `/compare/engage-ai-alternative` | engage ai alternative | Best Engage AI Alternative (2026) - Full Platform \| LinkedGrow | Free, Starter $12.90/mo, Pro $30/mo, Elite $80/mo | Engage AI = commenting-only. LinkedGrow = full content creation + scheduling |
-| 12 | **Typefully** | `/compare/typefully-alternative` | typefully alternative | Best Typefully Alternative (2026) - LinkedIn-First \| LinkedGrow | Free, Creator ~$19/mo, Team ~$39/mo | Typefully = X/Twitter first. LinkedGrow = LinkedIn-first with BYOK |
-| 13 | **Highperformr** | `/compare/highperformr-alternative` | highperformr alternative | Best Highperformr Alternative (2026) - More AI \| LinkedGrow | From ~$17/mo | LinkedGrow BYOK = unlimited AI, more model choices |
-| 14 | **Socialsonic** | `/compare/socialsonic-alternative` | socialsonic alternative | Best Socialsonic Alternative (2026) - BYOK Model \| LinkedGrow | From ~$20/mo | LinkedGrow has BYOK unlimited, more AI providers, image gen |
-| 15 | **Letterdrop** | `/compare/letterdrop-alternative` | letterdrop alternative | Best Letterdrop Alternative (2026) - Affordable \| LinkedGrow | Custom (enterprise only) | Letterdrop = enterprise-only. LinkedGrow = affordable for everyone |
+| 10 | **Typefully** | `/compare/typefully-alternative` | typefully alternative | Best Typefully Alternative (2026) - LinkedIn-First \| LinkedGrow | Free, Creator ~$15/mo, Team ~$39/mo | Typefully = X/Twitter first. LinkedGrow = LinkedIn-first with BYOK |
+| 11 | **Socialsonic** | `/compare/socialsonic-alternative` | socialsonic alternative | Best Socialsonic Alternative (2026) - BYOK Model \| LinkedGrow | Pro $20/mo ($13.33 annual), Team/Agency coming soon | LinkedGrow has BYOK unlimited, more AI providers, free plan |
 
 ### Priority 4 - Multi-Platform Tools (high search volume)
 
 | # | Competitor | Slug | Primary Keyword | Meta Title | Verified Pricing (Feb 2026) | Key Angle |
 |---|-----------|------|----------------|------------|----------------------------|-----------|
-| 16 | **Buffer** | `/compare/buffer-alternative` | buffer alternative linkedin | Best Buffer Alternative for LinkedIn (2026) \| LinkedGrow | Free (3 ch), Essentials $20/mo, Team $40/mo | Buffer = generic. No LinkedIn AI, no voice training, no carousel, no hooks |
-| 17 | **Hootsuite** | `/compare/hootsuite-alternative` | hootsuite alternative linkedin | Best Hootsuite Alternative for LinkedIn (2026) \| LinkedGrow | Standard $149/mo, Advanced $399/mo | Hootsuite = 11x more expensive. LinkedGrow = LinkedIn-focused at $13/mo |
-| 18 | **Sprout Social** | `/compare/sprout-social-alternative` | sprout social alternative linkedin | Best Sprout Social Alternative for LinkedIn (2026) \| LinkedGrow | Standard $199/seat/mo, Professional $299/seat/mo | Sprout = 15x more expensive per seat. LinkedGrow = same features, fraction of cost |
+| 12 | **Buffer** | `/compare/buffer-alternative` | buffer alternative linkedin | Best Buffer Alternative for LinkedIn (2026) \| LinkedGrow | Free (3 ch), Essentials $6/ch/mo, Team $12/ch/mo | Buffer = generic multi-platform. No BYOK, no AI images, no voice training, no carousel |
+| 13 | **Hootsuite** | `/compare/hootsuite-alternative` | hootsuite alternative linkedin | Best Hootsuite Alternative for LinkedIn (2026) \| LinkedGrow | Professional $99/mo (annual), Team $249/mo (annual) | Hootsuite = 8x more expensive. LinkedGrow = LinkedIn-focused at $13/mo |
 
 ---
 
@@ -183,11 +178,8 @@ Write in this exact order (highest search volume / closest competitors first):
 
 Prices marked as verified above were confirmed from official sources in February 2026. Before writing any page, re-check the competitor's pricing page to ensure nothing changed.
 
-**Already verified (Feb 2026):**
-- Taplio, Supergrow, MagicPost, AuthoredUp, Kleo, EasyGen, ContentIn, RedactAI, Postdrips, Shield, Engage AI, Buffer, Hootsuite
-
-**Need fresh verification before writing:**
-- Typefully, Highperformr, Socialsonic, Letterdrop, Sprout Social
+**All verified (Feb 2026):**
+- Taplio, Supergrow, MagicPost, AuthoredUp, Kleo, EasyGen, ContentIn, RedactAI, Postdrips, Typefully, Socialsonic, Buffer, Hootsuite
 
 ---
 
@@ -214,14 +206,14 @@ Never show the full yearly amount. Always display as "$X/mo billed yearly".
 - **Aware** (useaware.co) shut down August 2025 - do NOT create a versus page
 - **ContentCal** acquired by Adobe - no longer exists standalone
 - NEVER link to competitor websites - no outbound links to competitors, zero, none
-- When all 18 pages are done, delete this file
+- When all 13 pages are done, delete this file
 
 ---
 
-## After All 18 Pages Are Done
+## After All 13 Pages Are Done
 
 1. Delete this `VERSUS-CONTENT-PLAN.md` file
-2. Ensure the `/compare` hub page links to all 18 versus pages
+2. Ensure the `/compare` hub page links to all 13 versus pages
 3. Update the blog article "Best LinkedIn AI Tools 2026" to link to relevant versus pages
 4. Add "Compare" to the main navigation menu
 5. Submit all new URLs to IndexNow
