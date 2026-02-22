@@ -4,8 +4,6 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
-import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
 
 function detectContentType(url: string): "blog" | "webpage" {
   const blogIndicators = ["/blog/", "/post/", "/article/", "/posts/", "/articles/", "/p/", "/note/"];
@@ -29,8 +27,109 @@ function detectContentType(url: string): "blog" | "webpage" {
   return "webpage";
 }
 
-// Max HTML size: 3MB - prevents memory issues with very large pages
-const MAX_HTML_SIZE = 3 * 1024 * 1024;
+// Lightweight HTML-to-text extraction (no DOM dependencies)
+function extractTextFromHtml(html: string): { title: string; textContent: string; excerpt: string } | null {
+  // Extract title
+  let title = "";
+  const ogTitleMatch = html.match(/<meta\s+(?:property|name)="og:title"\s+content="([^"]*)"/) ||
+                       html.match(/<meta\s+content="([^"]*)"\s+(?:property|name)="og:title"/);
+  const titleTagMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  title = (ogTitleMatch ? ogTitleMatch[1] : titleTagMatch ? titleTagMatch[1] : "").trim();
+
+  // Remove scripts, styles, and hidden elements
+  let cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+    .replace(/<header[\s\S]*?<\/header>/gi, "");
+
+  // Try to find article content in semantic elements first
+  let articleContent = "";
+
+  // Look for <article> content
+  const articleMatch = cleaned.match(/<article[\s\S]*?>([\s\S]*?)<\/article>/i);
+  if (articleMatch) {
+    articleContent = articleMatch[1];
+  }
+
+  // Look for <main> if no article found
+  if (!articleContent) {
+    const mainMatch = cleaned.match(/<main[\s\S]*?>([\s\S]*?)<\/main>/i);
+    if (mainMatch) {
+      articleContent = mainMatch[1];
+    }
+  }
+
+  // Look for common article containers
+  if (!articleContent) {
+    const containerPatterns = [
+      /<div[^>]*class="[^"]*(?:article|post|entry|content|story)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*id="[^"]*(?:article|post|entry|content|story)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*role="article"[^>]*>([\s\S]*?)<\/div>/i,
+    ];
+    for (const pattern of containerPatterns) {
+      const match = cleaned.match(pattern);
+      if (match && match[1].length > 500) {
+        articleContent = match[1];
+        break;
+      }
+    }
+  }
+
+  // Use article content if found, otherwise use the full cleaned HTML
+  const contentToProcess = articleContent || cleaned;
+
+  // Strip all remaining HTML tags and clean whitespace
+  const textContent = contentToProcess
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (textContent.length < 50) return null;
+
+  return {
+    title,
+    textContent,
+    excerpt: textContent.substring(0, 200),
+  };
+}
+
+// Try JSDOM + Readability via dynamic import (may fail in some serverless envs)
+async function extractWithReadability(
+  html: string,
+  url: string
+): Promise<{ title: string; textContent: string; excerpt: string } | null> {
+  try {
+    const { JSDOM } = await import("jsdom");
+    const { Readability } = await import("@mozilla/readability");
+    const dom = new JSDOM(html, { url });
+    const reader = new Readability(dom.window.document);
+    const parsed = reader.parse();
+    if (parsed && parsed.textContent && parsed.textContent.trim().length > 50) {
+      return {
+        title: parsed.title || "",
+        textContent: parsed.textContent || "",
+        excerpt: parsed.excerpt || "",
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("JSDOM/Readability extraction failed:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+// Max HTML size: 2MB - keeps memory usage reasonable in serverless
+const MAX_HTML_SIZE = 2 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
@@ -147,7 +246,6 @@ export async function POST(request: NextRequest) {
     try {
       const buffer = await response.arrayBuffer();
       if (buffer.byteLength > MAX_HTML_SIZE) {
-        // Truncate to MAX_HTML_SIZE - still try to parse what we have
         html = new TextDecoder().decode(buffer.slice(0, MAX_HTML_SIZE));
       } else {
         html = new TextDecoder().decode(buffer);
@@ -166,41 +264,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse with JSDOM and extract with Readability - wrapped in try/catch
-    let article: { title: string; textContent: string; excerpt: string } | null = null;
-    try {
-      const dom = new JSDOM(html, { url: parsedUrl.toString() });
-      const reader = new Readability(dom.window.document);
-      const parsed = reader.parse();
-      if (parsed) {
-        article = {
-          title: parsed.title || "",
-          textContent: parsed.textContent || "",
-          excerpt: parsed.excerpt || "",
-        };
-      }
-    } catch (parseError) {
-      console.error("JSDOM/Readability parse error:", parseError);
-      // Try a simpler extraction as fallback: strip all HTML tags
-      try {
-        const textOnly = html
-          .replace(/<script[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[\s\S]*?<\/style>/gi, "")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
+    // Extract article content - try Readability first, fall back to lightweight extraction
+    let article = await extractWithReadability(html, parsedUrl.toString());
 
-        if (textOnly.length > 200) {
-          const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-          article = {
-            title: titleMatch ? titleMatch[1].trim() : "",
-            textContent: textOnly,
-            excerpt: textOnly.substring(0, 200),
-          };
-        }
-      } catch {
-        // Fallback also failed
-      }
+    if (!article) {
+      article = extractTextFromHtml(html);
     }
 
     if (!article || !article.textContent || article.textContent.trim().length < 50) {
@@ -245,9 +313,10 @@ export async function POST(request: NextRequest) {
       warning,
     });
   } catch (error) {
-    console.error("Webpage extraction error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Webpage extraction error:", message);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to extract page content" },
+      { error: `Content extraction failed: ${message}` },
       { status: 500 }
     );
   }
