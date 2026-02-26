@@ -296,19 +296,6 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
           <span className="text-sm text-slate-600 dark:text-slate-400">{translations.hero.spotsLeft}</span>
         </motion.div>
 
-        {/* Launch Date */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="flex items-center justify-center gap-2 mb-6"
-        >
-          <Rocket className="w-5 h-5 text-cyan-500" />
-          <span className="text-base font-semibold text-slate-700 dark:text-slate-300">
-            Official launch: <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">April 5, 2026</span>
-          </span>
-        </motion.div>
-
         {/* Main Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
