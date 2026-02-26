@@ -4,19 +4,13 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PrelaunchHeader } from "@/components/prelaunch/prelaunch-header";
-import { PrelaunchFooter } from "@/components/prelaunch/prelaunch-footer";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
-
-// Check if we're in prelaunch mode
-const PRELAUNCH_MODE = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === "true";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-      {/* Header - switches based on prelaunch mode */}
-      {PRELAUNCH_MODE ? <PrelaunchHeader /> : <Header />}
+      <Header />
 
       {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -94,8 +88,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      {/* Footer - switches based on prelaunch mode */}
-      {PRELAUNCH_MODE ? <PrelaunchFooter /> : <Footer />}
+      <Footer />
     </div>
   );
 }

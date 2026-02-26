@@ -5,9 +5,6 @@ import { db } from "@/lib/db";
 import { affiliates } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
-// Check if we're in prelaunch mode
-const PRELAUNCH_MODE = process.env.NEXT_PUBLIC_PRELAUNCH_MODE === "true";
-
 // Routes that require authentication
 const protectedRoutes = [
   "/dashboard",
@@ -18,30 +15,6 @@ const protectedRoutes = [
 const authRoutes = [
   "/sign-in",
   "/sign-up",
-];
-
-// Routes allowed during prelaunch (for non-logged-in users)
-const prelaunchAllowedRoutes = [
-  "/prelaunch",
-  "/beta",
-  "/sign-in",
-  "/sign-up",
-  "/forgot-password",
-  "/reset-password",
-  "/privacy",
-  "/cookies",
-  "/terms",
-  "/about",
-  "/blog",
-  "/for",
-  "/features",
-  "/free-tools",
-  "/use-cases",
-  "/industries",
-  "/compare",
-  "/affiliate",
-  "/api",
-  "/team/invite",
 ];
 
 export default auth(async (req) => {
@@ -103,18 +76,6 @@ export default auth(async (req) => {
       }
       // Redirect to maintenance page
       return NextResponse.redirect(new URL("/maintenance", nextUrl));
-    }
-  }
-
-  // Check prelaunch mode (only if not in maintenance mode)
-  if (PRELAUNCH_MODE && !isLoggedIn && !isAdmin) {
-    const isPrelaunchAllowed = prelaunchAllowedRoutes.some((route) =>
-      nextUrl.pathname.startsWith(route) || nextUrl.pathname === route
-    );
-
-    // Redirect non-logged-in users to prelaunch page
-    if (!isPrelaunchAllowed) {
-      return NextResponse.redirect(new URL("/prelaunch", nextUrl));
     }
   }
 

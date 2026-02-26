@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
+import { Header } from "@/components/marketing/header";
+import { Footer } from "@/components/marketing/footer";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function TermsPage() {
           { name: "Terms of Service", url: "https://linkedgrow.ai/terms" },
         ]}
       />
-      <PrelaunchHeader />
+      <Header />
 
       <div className="py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -164,7 +165,7 @@ export default function TermsPage() {
         </div>
       </div>
 
-      <PrelaunchFooter />
+      <Footer />
     </main>
   );
 }

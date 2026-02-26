@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
+import { Header } from "@/components/marketing/header";
+import { Footer } from "@/components/marketing/footer";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { getTranslations } from "next-intl/server";
 
@@ -47,7 +48,7 @@ export default async function PrivacyPage() {
           { name: "Privacy Policy", url: "https://linkedgrow.ai/privacy" },
         ]}
       />
-      <PrelaunchHeader />
+      <Header />
 
       <div className="py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,7 +191,7 @@ export default async function PrivacyPage() {
         </div>
       </div>
 
-      <PrelaunchFooter />
+      <Footer />
     </main>
   );
 }

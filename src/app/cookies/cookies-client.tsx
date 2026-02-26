@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { PrelaunchHeader, PrelaunchFooter } from "@/components/prelaunch";
+import { Header } from "@/components/marketing/header";
+import { Footer } from "@/components/marketing/footer";
 import { Button } from "@/components/ui/button";
 import { clearConsent, COOKIE_CATEGORIES } from "@/lib/cookies/consent";
 import { useState } from "react";
@@ -47,7 +48,7 @@ export default function CookiesClient({ translations }: { translations: CookiesT
 
   return (
     <main className="min-h-screen bg-white dark:bg-slate-900">
-      <PrelaunchHeader />
+      <Header />
 
       <div className="py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -234,7 +235,7 @@ export default function CookiesClient({ translations }: { translations: CookiesT
         </div>
       </div>
 
-      <PrelaunchFooter />
+      <Footer />
     </main>
   );
 }
