@@ -2,30 +2,52 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { auth } from "@/lib/auth";
 import { db, docsFeedback } from "@/lib/db";
-import { desc, sql, eq, and } from "drizzle-orm";
+import { desc, sql, eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { articleSlug, categorySlug, helpful, reason } = body;
+    const { articleSlug, categorySlug, helpful } = body;
 
     if (!articleSlug || !categorySlug || typeof helpful !== "boolean") {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const id = nanoid();
     await db.insert(docsFeedback).values({
-      id: nanoid(),
+      id,
       articleSlug,
       categorySlug,
       helpful,
-      reason: reason || null,
+      reason: null,
       createdAt: new Date(),
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id });
   } catch (error) {
     console.error("Error saving docs feedback:", error);
     return NextResponse.json({ error: "Failed to save feedback" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, reason } = body;
+
+    if (!id || !reason) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    await db
+      .update(docsFeedback)
+      .set({ reason })
+      .where(eq(docsFeedback.id, id));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating docs feedback:", error);
+    return NextResponse.json({ error: "Failed to update feedback" }, { status: 500 });
   }
 }
 
@@ -65,7 +87,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Get article-level stats
+    // Get article-level stats with comment count
     const stats = await db
       .select({
         articleSlug: docsFeedback.articleSlug,
@@ -73,6 +95,7 @@ export async function GET(request: NextRequest) {
         totalVotes: sql<number>`count(*)`,
         helpfulVotes: sql<number>`sum(case when ${docsFeedback.helpful} = 1 then 1 else 0 end)`,
         notHelpfulVotes: sql<number>`sum(case when ${docsFeedback.helpful} = 0 then 1 else 0 end)`,
+        commentCount: sql<number>`sum(case when ${docsFeedback.reason} is not null and ${docsFeedback.reason} != '' then 1 else 0 end)`,
       })
       .from(docsFeedback)
       .groupBy(docsFeedback.articleSlug, docsFeedback.categorySlug)
@@ -84,13 +107,14 @@ export async function GET(request: NextRequest) {
         totalFeedback: sql<number>`count(*)`,
         totalHelpful: sql<number>`sum(case when ${docsFeedback.helpful} = 1 then 1 else 0 end)`,
         totalNotHelpful: sql<number>`sum(case when ${docsFeedback.helpful} = 0 then 1 else 0 end)`,
+        totalComments: sql<number>`sum(case when ${docsFeedback.reason} is not null and ${docsFeedback.reason} != '' then 1 else 0 end)`,
       })
       .from(docsFeedback);
 
     return NextResponse.json({
       entries,
       stats,
-      summary: summaryResult[0] || { totalFeedback: 0, totalHelpful: 0, totalNotHelpful: 0 },
+      summary: summaryResult[0] || { totalFeedback: 0, totalHelpful: 0, totalNotHelpful: 0, totalComments: 0 },
       total,
       page,
       limit,
