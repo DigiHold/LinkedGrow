@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts"
+    "db:seed-admin": "npx tsx src/lib/db/seed-admin.ts",
+    "embed-docs": "npx tsx scripts/embed-docs.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.37",
+    "@ai-sdk/react": "^3.0.107",
     "@auth/drizzle-adapter": "^1.11.1",
     "@aws-sdk/client-s3": "^3.971.0",
     "@aws-sdk/s3-request-presigner": "^3.971.0",
@@ -41,6 +44,7 @@
     "@stripe/stripe-js": "^8.6.1",
     "@tailwindcss/typography": "^0.5.19",
     "@upstash/qstash": "^2.8.4",
+    "ai": "^6.0.105",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

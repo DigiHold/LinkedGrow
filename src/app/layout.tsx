@@ -8,6 +8,7 @@ import { ScrollLockFix } from "@/components/providers/scroll-lock-fix";
 import { ScrollToTop } from "@/components/providers/scroll-to-top";
 import { CookieBanner } from "@/components/cookie-consent";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/cookie-consent";
+import { ChatWidgetLoader } from "@/components/chat/chat-widget-loader";
 import {
   OrganizationJsonLd,
   WebsiteJsonLd,
@@ -126,6 +127,9 @@ export default async function RootLayout({
 
         {/* Cookie Consent Banner */}
         <CookieBanner />
+
+        {/* AI Support Chatbot */}
+        <ChatWidgetLoader />
       </body>
     </html>
   );
