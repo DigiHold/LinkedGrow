@@ -33,15 +33,23 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, reason } = body;
+    const { id, reason, helpful } = body;
 
-    if (!id || !reason) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (typeof helpful === "boolean") updates.helpful = helpful;
+    if (typeof reason === "string") updates.reason = reason;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
     await db
       .update(docsFeedback)
-      .set({ reason })
+      .set(updates)
       .where(eq(docsFeedback.id, id));
 
     return NextResponse.json({ success: true });

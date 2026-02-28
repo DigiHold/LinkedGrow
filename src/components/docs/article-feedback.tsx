@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown, Check, Send } from "lucide-react";
 
 interface ArticleFeedbackProps {
   articleSlug: string;
   categorySlug: string;
+}
+
+function storageKey(categorySlug: string, articleSlug: string) {
+  return `docs-fb-${categorySlug}-${articleSlug}`;
 }
 
 export function ArticleFeedback({ articleSlug, categorySlug }: ArticleFeedbackProps) {
@@ -15,16 +19,46 @@ export function ArticleFeedback({ articleSlug, categorySlug }: ArticleFeedbackPr
   const [submitting, setSubmitting] = useState(false);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
 
-  async function submitFeedback(helpful: boolean) {
+  // Load existing feedback ID from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey(categorySlug, articleSlug));
+      if (stored) setFeedbackId(stored);
+    } catch {
+      // localStorage unavailable
+    }
+  }, [categorySlug, articleSlug]);
+
+  function saveFeedbackId(id: string) {
+    setFeedbackId(id);
+    try {
+      localStorage.setItem(storageKey(categorySlug, articleSlug), id);
+    } catch {
+      // localStorage unavailable
+    }
+  }
+
+  async function submitVote(helpful: boolean) {
     try {
       setSubmitting(true);
-      const res = await fetch("/api/docs/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ articleSlug, categorySlug, helpful }),
-      });
-      const data = await res.json();
-      if (data.id) setFeedbackId(data.id);
+
+      if (feedbackId) {
+        // Update existing entry
+        await fetch("/api/docs/feedback", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: feedbackId, helpful }),
+        });
+      } else {
+        // Create new entry
+        const res = await fetch("/api/docs/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ articleSlug, categorySlug, helpful }),
+        });
+        const data = await res.json();
+        if (data.id) saveFeedbackId(data.id);
+      }
     } catch {
       // Silently fail
     } finally {
@@ -51,12 +85,12 @@ export function ArticleFeedback({ articleSlug, categorySlug }: ArticleFeedbackPr
 
   async function handleYes() {
     setFeedback("yes");
-    await submitFeedback(true);
+    await submitVote(true);
   }
 
   async function handleNo() {
     setFeedback("no");
-    await submitFeedback(false);
+    await submitVote(false);
   }
 
   // After thumbs up
