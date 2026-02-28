@@ -621,6 +621,19 @@ export const blogPosts = sqliteTable("blog_posts", {
 
 export type BlogPostStatus = typeof blogPosts.$inferSelect;
 export type NewBlogPostStatus = typeof blogPosts.$inferInsert;
+
+// Docs feedback
+export const docsFeedback = sqliteTable("docs_feedback", {
+  id: text("id").primaryKey(),
+  articleSlug: text("article_slug").notNull(),
+  categorySlug: text("category_slug").notNull(),
+  helpful: integer("helpful", { mode: "boolean" }).notNull(),
+  reason: text("reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+export type DocsFeedback = typeof docsFeedback.$inferSelect;
+export type NewDocsFeedback = typeof docsFeedback.$inferInsert;
 export type Affiliate = typeof affiliates.$inferSelect;
 export type NewAffiliate = typeof affiliates.$inferInsert;
 export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;

@@ -34,6 +34,7 @@ import {
   Handshake,
   ShoppingCart,
   Repeat,
+  BookOpen,
 } from "lucide-react";
 
 import { useState, useEffect, useRef } from "react";
@@ -552,6 +553,16 @@ export function Sidebar() {
                   >
                     <ShoppingCart className="w-4 h-4" />
                     Abandoned Carts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      router.push("/dashboard/admin/docs-feedback");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    Docs Feedback
                   </button>
                 </>
               )}

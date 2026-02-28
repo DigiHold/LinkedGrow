@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { Search, X, ArrowRight, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface SearchResult {
   title: string;
@@ -23,6 +24,7 @@ export function DocsHeader({ searchIndex = [] }: DocsHeaderProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -104,13 +106,30 @@ export function DocsHeader({ searchIndex = [] }: DocsHeaderProps) {
                 <span className="text-xs">&#8984;</span>K
               </kbd>
             </button>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg transition-all"
-            >
-              Dashboard
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {status === "authenticated" && session?.user ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg transition-all"
+              >
+                Dashboard
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/sign-in"
+                  className="px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg shadow-lg shadow-cyan-500/20 transition-all"
+                >
+                  Start Free
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>

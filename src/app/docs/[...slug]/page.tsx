@@ -265,7 +265,7 @@ function ArticlePage({
                   dangerouslySetInnerHTML={{ __html: article.content }}
                 />
 
-                <ArticleFeedback />
+                <ArticleFeedback articleSlug={article.slug} categorySlug={article.category} />
 
                 {/* Prev / Next navigation */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
