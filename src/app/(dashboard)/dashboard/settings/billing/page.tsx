@@ -258,7 +258,7 @@ function BillingContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/docs/billing/pricing-plans" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/billing/pricing-plans" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>

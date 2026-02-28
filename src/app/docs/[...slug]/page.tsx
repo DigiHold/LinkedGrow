@@ -14,6 +14,7 @@ import {
 import { DocsHeader } from "@/components/docs/docs-header";
 import { TableOfContents } from "@/components/docs/table-of-contents";
 import { ArticleFeedback } from "@/components/docs/article-feedback";
+import { ProseContent } from "@/components/docs/prose-content";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 
 interface PageProps {
@@ -260,9 +261,9 @@ function ArticlePage({
                   <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">{article.description}</p>
                 )}
 
-                <div
+                <ProseContent
+                  html={article.content}
                   className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline prose-a:hover:underline prose-img:rounded-xl prose-pre:bg-slate-100 dark:prose-pre:bg-slate-800"
-                  dangerouslySetInnerHTML={{ __html: article.content }}
                 />
 
                 <ArticleFeedback articleSlug={article.slug} categorySlug={article.category} />

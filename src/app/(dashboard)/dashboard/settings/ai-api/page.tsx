@@ -769,7 +769,7 @@ export default function AIAPISettingsPage() {
             Connect your own AI providers for unlimited post and image generation
           </p>
         </div>
-        <Link href="/docs/byok" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+        <Link href="/docs/byok" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
           Help?
         </Link>
@@ -876,7 +876,7 @@ export default function AIAPISettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {providerHelpUrls[viewingProvider] && (
-                      <Link href={providerHelpUrls[viewingProvider]} className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+                      <Link href={providerHelpUrls[viewingProvider]} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
                         <HelpCircle className="w-3 h-3" />
                         Setup guide
                       </Link>
@@ -1067,7 +1067,7 @@ export default function AIAPISettingsPage() {
           </CardTitle>
           <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>Connect an image generation API for creating visuals with your posts</span>
-            <Link href="/docs/byok/image-providers" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
+            <Link href="/docs/byok/image-providers" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
               <HelpCircle className="w-3 h-3" />
               Setup guide
             </Link>

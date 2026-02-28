@@ -193,7 +193,7 @@ export default function IdeasPage() {
               Get AI-powered content ideas for your niche
             </p>
           </div>
-          <Link href="/docs/content-creation/ideas-generator" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -263,7 +263,7 @@ export default function IdeasPage() {
             Get AI-powered content ideas for your niche
           </p>
         </div>
-        <Link href="/docs/content-creation/ideas-generator" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+        <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
           Help?
         </Link>

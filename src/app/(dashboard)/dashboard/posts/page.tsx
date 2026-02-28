@@ -307,7 +307,7 @@ export default function PostsPage() {
               Manage all your LinkedIn content in one place
             </p>
           </div>
-          <Link href="/docs/scheduling/scheduling-posts" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -360,7 +360,7 @@ export default function PostsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/docs/scheduling/scheduling-posts" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>

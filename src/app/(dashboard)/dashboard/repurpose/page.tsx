@@ -770,7 +770,7 @@ function ContentRepurposingContent() {
               Turn any URL into a LinkedIn post
             </p>
           </div>
-          <Link href="/docs/content-creation/content-repurposing" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -843,7 +843,7 @@ function ContentRepurposingContent() {
             Turn any URL into a LinkedIn post
           </p>
         </div>
-        <Link href="/docs/content-creation/content-repurposing" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+        <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
           Help?
         </Link>

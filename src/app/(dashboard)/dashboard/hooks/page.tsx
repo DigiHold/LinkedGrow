@@ -149,7 +149,7 @@ export default function HooksPage() {
                 Generate scroll-stopping hooks that capture attention in the first 2 lines
               </p>
             </div>
-            <Link href="/docs/content-creation/hooks-generator" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -221,7 +221,7 @@ export default function HooksPage() {
               Generate scroll-stopping hooks that capture attention in the first 2 lines
             </p>
           </div>
-          <Link href="/docs/content-creation/hooks-generator" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
