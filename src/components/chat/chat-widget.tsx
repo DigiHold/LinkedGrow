@@ -341,12 +341,12 @@ export default function ChatWidget() {
               </button>
             </div>
             <p className="mt-2 text-center text-[10px] text-slate-400 dark:text-slate-500">
-              AI assistant - may make mistakes. For urgent help, email{" "}
+              AI assistant can make mistakes. For urgent help, visit our{" "}
               <a
-                href="mailto:contact@linkedgrow.ai"
+                href="/help"
                 className="text-cyan-500 hover:underline"
               >
-                contact@linkedgrow.ai
+                Help Center
               </a>
             </p>
           </div>
