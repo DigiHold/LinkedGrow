@@ -9,33 +9,38 @@ order: 4
 
 Your target audience setting tells the AI who you are writing for. This affects the language, examples, pain points, and tone of generated content. Posts that speak directly to a specific audience perform significantly better on LinkedIn than generic content.
 
+## Where to find it
+
+Target Audience is one of the fields in the **Business Profile** card on the **Settings** page. It sits alongside your other business details like Business Name, Niche/Industry, and Key Topics. It is not a standalone section -- it is part of your overall Business Profile.
+
+The placeholder text reads: *e.g., Startup founders, Marketing managers*
+
 ## How to set it up
 
 1. Go to **Settings**
-2. Find the **Target Audience** field
-3. Describe your ideal reader in 1-3 sentences
-4. Click **Save**
+2. Find the **Business Profile** card
+3. Locate the **Target Audience** field
+4. Describe your ideal audience -- job titles, roles, or segments
+5. Click **Save**
 
 ## Writing an effective audience description
 
-Include these elements:
+You can keep it short and list-like, or write a more detailed description. Include elements like:
 
-- **Job titles or roles** - Who are they professionally?
-- **Industry or sector** - What field do they work in?
-- **Company size or stage** - Startup founders, enterprise executives, freelancers?
-- **Pain points** - What challenges do they face?
-- **Goals** - What are they trying to achieve?
+- **Job titles or roles** -- Who are they professionally?
+- **Industry or sector** -- What field do they work in?
+- **Company size or stage** -- Startup founders, enterprise executives, freelancers?
 
 ### Examples
 
 **For a SaaS tool:**
-"B2B SaaS founders and product managers at companies with 10-100 employees. They struggle with product-market fit, user retention, and scaling without burning through funding."
+"B2B SaaS founders and product managers at companies with 10-100 employees"
 
 **For a career coach:**
-"Mid-career professionals (5-15 years experience) in corporate roles who want to transition into tech. They feel stuck in their current role and need practical strategies for making the switch."
+"Mid-career professionals (5-15 years experience) looking to transition into tech"
 
 **For a marketing agency:**
-"CMOs and marketing directors at mid-market companies ($10M-100M revenue). They need to prove marketing ROI to their leadership team and are looking for strategies that work with limited budgets."
+"CMOs and marketing directors at mid-market companies ($10M-100M revenue)"
 
 ## How the AI uses this
 
@@ -54,5 +59,5 @@ If you serve different audience segments, focus on your primary audience in this
 ## Tips
 
 - **Be specific.** "Business professionals" is too broad. "VP-level marketing leaders at B2B companies" is much more useful.
-- **Think about problems, not demographics.** What keeps your audience up at night? Include their challenges.
+- **Think about who engages with your content.** What job titles and roles do your best readers and customers hold?
 - **Update as you refine your audience.** As you learn more about who engages with your content, update this field to reflect your actual audience.

@@ -25,7 +25,7 @@ The most common format. Write your content in the editor and publish. Text posts
 
 ### Image posts
 
-Attach one or more images to your post. Images can be uploaded from your device or generated with AI (Pro+ plan). Multiple images create a gallery-style post on LinkedIn.
+Attach a single image to your post. The image can be uploaded from your device or generated with AI (Pro+ plan). The editor supports attaching one image at a time.
 
 ### Video posts
 

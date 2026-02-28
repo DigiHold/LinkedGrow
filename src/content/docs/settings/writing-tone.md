@@ -1,6 +1,6 @@
 ---
 title: "Writing Tone"
-description: "Choose your preferred writing tone to control how AI-generated content sounds on LinkedIn."
+description: "Describe your preferred writing tone so the AI generates LinkedIn content that sounds like you."
 category: "settings"
 order: 5
 ---
@@ -9,53 +9,53 @@ order: 5
 
 The writing tone controls the overall feel of AI-generated content. It determines whether your posts sound professional, casual, humorous, or somewhere in between. Combined with voice training and your business description, tone helps produce content that feels authentically yours.
 
-## Available tones
+## How it works
 
-| Tone | Best for | Writing style |
-|---|---|---|
-| **Professional** | Corporate audiences, B2B content | Polished, clear, authoritative |
-| **Casual** | Founders, creators, personal brands | Relaxed, conversational, approachable |
-| **Funny** | Engaging, memorable content | Witty, playful, uses humor strategically |
-| **Motivational** | Coaches, leaders, speakers | Uplifting, encouraging, action-oriented |
-| **Inspirational** | Personal stories, lessons learned | Thoughtful, reflective, meaningful |
-| **Educational** | How-to content, teaching | Clear, structured, informative |
-| **Provocative** | Thought leadership, debates | Bold, challenging, conversation-starting |
-| **Conversational** | Community building, engagement | Friendly, question-asking, dialogue-oriented |
+The Writing Tone setting is a free text input field where you describe, in your own words, how you want your content to sound. There are no predefined options -- you have full control over the description.
+
+The placeholder text reads:
+
+> e.g., Professional but friendly, conversational, inspiring, direct and bold
+
+You can write anything that captures the voice you want. A short phrase works, or you can be more detailed if you prefer.
 
 ## How to set your tone
 
 1. Go to **Settings**
-2. Find the **Writing Tone** dropdown
-3. Select the tone that best matches how you want to sound
+2. Find the **Writing Tone** text field
+3. Type a description of your desired tone
 4. Click **Save**
 
-Your selected tone applies to all AI-generated content going forward.
+Your tone description applies to all AI-generated content going forward.
+
+## Writing an effective tone description
+
+Be as specific as you like. Here are some examples:
+
+- **"Professional but friendly"** -- Polished without being stiff, warm without being too casual
+- **"Conversational and witty"** -- Like talking to a smart friend over coffee
+- **"Direct and bold, no fluff"** -- Straight to the point, confident, assertive
+- **"Inspiring and motivational"** -- Uplifting language that encourages action
+- **"Educational and clear, like a teacher explaining to beginners"** -- Structured, patient, jargon-free
+- **"Casual and relatable, like a founder sharing lessons"** -- Down-to-earth storytelling
+
+You can also combine qualities: "Professional but not boring, uses analogies, occasionally funny" gives the AI a nuanced picture of your voice.
 
 ## Choosing the right tone
 
 Consider your audience and goals:
 
-- **Building authority?** Professional or Educational
-- **Building community?** Conversational or Casual
-- **Standing out from the crowd?** Provocative or Funny
-- **Inspiring action?** Motivational or Inspirational
+- **Building authority?** Try "authoritative, educational, backed by data"
+- **Building community?** Try "conversational, question-asking, warm"
+- **Standing out from the crowd?** Try "bold, provocative, challenges conventional thinking"
+- **Inspiring action?** Try "motivational, story-driven, energetic"
 
-Most LinkedIn creators find that **Casual** or **Conversational** tones perform best because they feel human and approachable. Overly formal content tends to get less engagement on the platform.
-
-## Mixing tones
-
-You can change the tone for individual posts by using the tone selector in the Generator. Your Settings tone is the default, but you are not locked into it.
-
-For variety, try alternating tones throughout the week:
-
-- Monday: Educational (how-to tips)
-- Wednesday: Conversational (ask your audience a question)
-- Friday: Inspirational (share a personal story or lesson)
+Most LinkedIn creators find that a friendly, conversational tone performs best because it feels human and approachable. Overly formal content tends to get less engagement on the platform.
 
 ## How tone interacts with other settings
 
 Tone works together with:
 
-- **Voice training** - Your sample posts provide the base style, and tone adjusts the mood
-- **Business description** - Provides context for industry-appropriate language
-- **Target audience** - Ensures the tone matches what your audience expects
+- **Voice training** -- Your sample posts provide the base style, and tone adjusts the mood
+- **Business description** -- Provides context for industry-appropriate language
+- **Target audience** -- Ensures the tone matches what your audience expects

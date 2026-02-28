@@ -10,15 +10,14 @@ order: 2
 If you know your current password and want to change it:
 
 1. Go to **Settings** in the left sidebar
-2. Click on the **Account** tab
-3. Find the **Password** section
-4. Click **Change Password**
-5. Enter your current password
-6. Enter your new password
-7. Confirm your new password by typing it again
-8. Click **Save**
+2. Find the **Password** section
+3. Click **Change Password**
+4. Enter your current password
+5. Enter your new password
+6. Confirm your new password by typing it again
+7. Click **Save**
 
-Your password is updated immediately. You will stay signed in on your current device, but any other active sessions will be signed out for security.
+Your password is updated immediately.
 
 ## Forgot Your Password
 
@@ -43,12 +42,8 @@ The reset link is valid for 1 hour. If the link expires, you can request a new o
 Your LinkedGrow password must meet these requirements:
 
 - At least 8 characters long
-- Contains at least one uppercase letter
-- Contains at least one lowercase letter
-- Contains at least one number
-- Contains at least one special character (such as !, @, #, $, %, etc.)
 
-These requirements help protect your account from common password attacks.
+As long as your password meets the minimum length, it will be accepted.
 
 ## Security Best Practices
 
@@ -80,10 +75,6 @@ Do not use easily guessable passwords such as:
 LinkedGrow will never ask for your password via email, chat, or phone. If you receive a message asking for your password, do not respond and report it to [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai).
 
 Always verify that you are on the official LinkedGrow website (linkedgrow.ai) before entering your credentials.
-
-### Review Active Sessions
-
-Periodically review your account's sign-in activity. If you notice any sessions or sign-ins that you do not recognize, change your password immediately and enable 2FA if you have not already.
 
 ## Accounts Using Social Login Only
 

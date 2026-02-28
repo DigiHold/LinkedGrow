@@ -25,7 +25,13 @@ Click on any post to open it in the editor for viewing or editing.
 
 ### Creating posts from the calendar
 
-Click on any date to create a new post scheduled for that day. This opens the editor with the selected date pre-filled in the scheduler.
+Click on any date to open a dropdown menu with the following options:
+
+- **Create a post** - Opens a post creation drawer within the calendar page where you can write and save a new post
+- **Schedule a post** - Opens the scheduling flow for that date
+- **Insert an idea** - Saves a content idea for that date
+
+Choosing "Create a post" opens a side panel directly on the calendar page. It does not navigate you away to a separate editor page.
 
 ### Editing scheduled posts
 

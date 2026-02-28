@@ -17,7 +17,7 @@ You can format your posts with:
 
 - Line breaks and spacing for readability
 - Bullet points and numbered lists
-- Emojis (use the emoji picker or type them directly)
+- Emojis (type them directly using your operating system's emoji input -- for example, Cmd+Ctrl+Space on Mac or Win+. on Windows)
 
 ## AI Assist
 
@@ -47,7 +47,7 @@ Aim for a score above 70 for best performance. The score updates in real time as
 You can attach images and videos to your posts:
 
 - **Images** - Upload from your device or generate AI images (Pro+ plan). Multiple images create a gallery post.
-- **Videos** - Upload video files. Note that video posts must be published immediately and cannot be scheduled due to LinkedIn API limitations.
+- **Videos** - Upload video files. Videos are too large to be stored by LinkedGrow, so posts with videos must be published immediately. Video posts cannot be scheduled or saved as drafts.
 
 Media appears as a preview below your post content.
 
@@ -58,10 +58,6 @@ At the bottom of the editor, you have three main actions:
 - **Save as Draft** - Save your work without publishing. Access drafts anytime from the Posts library.
 - **Schedule** - Pick a future date and time for automatic publishing. A date/time picker appears with timezone support.
 - **Publish Now** - Send the post to LinkedIn immediately. Your connected LinkedIn account must be active.
-
-## LinkedIn preview
-
-The editor shows a preview card that mimics how your post will look on LinkedIn, complete with your profile name and avatar. This helps you catch formatting issues before publishing.
 
 ## Tips for high-performing posts
 

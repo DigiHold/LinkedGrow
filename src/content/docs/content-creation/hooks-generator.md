@@ -15,14 +15,14 @@ Great hooks create curiosity, promise value, or make a bold statement that deman
 
 1. Click **Hooks** in the sidebar
 2. Choose a topic from 10 popular categories:
-   - Career Growth, Leadership, Entrepreneurship, Marketing, Sales, Productivity, Technology, Personal Development, Industry Trends, Workplace Culture
+   - Career Growth, Leadership, Productivity, Hiring & Recruiting, Startups, Remote Work, Sales Tips, Marketing, AI & Tech, Personal Branding
 3. Or enter a **custom topic** for more specific results
 4. Click **Generate**
 
 The AI creates 6 two-line hooks per request. Each hook shows:
 
 - The full hook text formatted as it would appear on LinkedIn
-- Character count for the hook
+- Character count for the first line (so you can see how much text appears before the line break)
 - A **Copy** button to grab the text
 - A **Use in Editor** button to start a post with that hook
 

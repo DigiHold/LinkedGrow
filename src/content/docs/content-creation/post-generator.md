@@ -1,52 +1,81 @@
 ---
 title: "AI Post Generator"
-description: "How to use LinkedGrow's AI post generator to create engaging LinkedIn posts with customizable types, categories, and tones."
+description: "How to use LinkedGrow's AI post generator to create engaging LinkedIn posts with customizable types, categories, and AI-powered editing."
 category: "content-creation"
 order: 1
 ---
 
 ## What is the Post Generator?
 
-The Post Generator is LinkedGrow's core content creation tool. It uses your configured AI provider to generate LinkedIn posts based on your preferences, business context, and writing style. Each generation produces 3 post variations you can choose from.
+The Post Generator is LinkedGrow's core content creation tool. It uses your configured AI provider to generate LinkedIn posts based on your preferences, business context, and writing style. It walks you through a 4-step wizard to go from idea to finished post.
 
 ## How to generate a post
 
-1. Click **Generator** in the sidebar or use the "Generate Post" quick action on the dashboard
-2. Choose a **post type** from the four options:
-   - **Actionable** - Practical tips and advice your audience can use immediately
-   - **Inspiring** - Motivational stories and insights that resonate
-   - **Introspective** - Personal reflections and lessons learned
-   - **Promotional** - Content that highlights your products, services, or achievements
-3. Select a **category** that defines the format:
-   - Explanation, Best Practices, Striking Advice, List Format, Resources, Case Study, and more
-4. Choose a **tone** for the content:
-   - Professional, Casual, Funny, Motivational, Inspirational, Educational, Provocative, Conversational
-5. Optionally enter a **custom topic** to give the AI a specific direction
-6. Click **Generate**
+The generator is a 4-step wizard:
 
-The AI creates 3 different variations in seconds.
+### Step 1 - Choose post type and category
 
-## Working with generated posts
+Select a **post type** from the four options:
 
-After generation, each variation appears as a card with these options:
+- **Actionable** - Practical tips and advice your audience can use immediately
+- **Inspiring** - Motivational stories and insights that resonate
+- **Introspective** - Personal reflections and lessons learned
+- **Promotional** - Content that highlights your products, services, or achievements
 
-- **Copy** - Copy the post text to your clipboard
-- **Use in Editor** - Load the post into the full editor for refinement
-- **Regenerate** - Get 3 new variations with the same settings
+Then select a **category** that defines the format:
 
-Click **Use in Editor** on the version you like best. This opens the post in the editor where you can tweak the text, check the Algorithm Score, add images, and publish or schedule.
+- **Explanation** - Break down a concept or process
+- **Best Practices** - Share proven methods and approaches
+- **Striking Advice** - Bold, counterintuitive recommendations
+- **List Format** - Numbered or bulleted tips and takeaways
+- **Resources** - Curate useful tools, links, or references
+- **Let AI Decide** - Let the AI pick the best category for your topic
+
+### Step 2 - Enter your topic
+
+Type in a specific topic or direction for the post, then click **Generate 5 Ideas**. The AI produces 5 distinct content angles based on your post type, category, and topic.
+
+### Step 3 - Pick an idea
+
+Browse the 5 generated ideas and select the one that resonates most. Each idea represents a different angle on your topic.
+
+### Step 4 - AI generates your post
+
+The AI generates a single complete LinkedIn post based on your selected idea. The post appears in a built-in editor where you can refine it directly.
+
+**AI quick-edit buttons** let you adjust the post with one click:
+
+- **Make Shorter** - Trim the post for conciseness
+- **Add Emojis** - Insert relevant emojis throughout the post
+- **Stronger Hook** - Rewrite the opening lines for more impact
+- **Better CTA** - Improve the call-to-action at the end
+- **More Formal** - Shift the tone toward professional language
+- **More Casual** - Shift the tone toward conversational language
+
+You can also manually edit the text directly in the editor.
+
+## Publishing from the generator
+
+Once you are happy with the post, you can take action directly from Step 4:
+
+- **Attach images** to the post
+- **Publish immediately** to LinkedIn
+- **Schedule** the post for a future date and time
+- **Save as draft** for later
+
+There is no need to move the post to a separate editor -- everything happens inline.
 
 ## Tips for better results
 
-**Be specific with your custom input.** Instead of "marketing tips," try "3 counterintuitive B2B marketing strategies that work for bootstrapped SaaS companies." The more context you give, the better the output.
+**Be specific with your topic.** Instead of "marketing tips," try "3 counterintuitive B2B marketing strategies that work for bootstrapped SaaS companies." The more context you give, the better the output.
 
-**Set up your voice profile first.** Before generating, make sure you have configured your business description, target audience, writing tone, and sample posts in Settings. The AI uses all of this to produce content that matches your style.
+**Set up your voice profile first.** Before generating, make sure you have configured your business description, target audience, writing tone, and sample posts in Settings. The AI uses all of this to produce content that matches your style. Tone is configured in Settings, not in the generator itself.
 
 **Mix post types and categories.** Variety keeps your audience engaged. Alternate between actionable tips, personal stories, and promotional content throughout the week.
 
-**Use regenerate freely.** Generation costs are minimal (typically $0.01-0.03 per generation). Do not hesitate to regenerate until you find a version that feels right.
+**Use the AI quick-edit buttons.** They are a fast way to iterate on a post without rewriting it yourself. Try combining multiple edits -- for example, "Stronger Hook" followed by "Make Shorter."
 
-**Edit the output.** AI-generated posts are a starting point, not a finished product. The best results come from using AI as a first draft, then adding your personal touch in the editor.
+**Edit the output.** AI-generated posts are a starting point, not a finished product. The best results come from using AI as a first draft, then adding your personal touch.
 
 ## Plan availability
 

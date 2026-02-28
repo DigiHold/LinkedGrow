@@ -19,9 +19,9 @@ Without connecting LinkedIn, you can still generate and draft posts, but you wil
 ## How to connect
 
 1. Go to **Settings** from the dashboard sidebar
-2. Find the **LinkedIn Integration** section
+2. Find the **Connect LinkedIn** card at the top of the page
 3. Click **Connect LinkedIn**
-4. A new window opens with LinkedIn's authorization page
+4. A popup window opens with LinkedIn's authorization page
 5. Review the permissions and click **Allow**
 6. You are redirected back to LinkedGrow
 

@@ -21,11 +21,23 @@ Templates save time by handling the layout and design decisions for you. Focus o
 
 ## Branding settings
 
-The branding settings panel lets you apply your brand identity across all carousel slides:
+The branding panel lets you apply your brand identity across all carousel slides. It includes the following settings:
 
-### Logo
+### Logo toggle
 
-Upload your company or personal brand logo. It appears on carousel slides in the position defined by the template (typically top-left or bottom corner). Supported formats include PNG, JPG, and SVG.
+A toggle to show or hide your logo on carousel slides. The logo itself is set in your account-level branding settings (available on the Business plan). The carousel branding panel does not have a file upload -- it simply controls whether your account logo appears on slides.
+
+### Profile Picture (Avatar)
+
+Set the profile picture that appears on your carousel slides.
+
+### Handle
+
+Set the handle text displayed on your carousel slides.
+
+### Website
+
+Set the website URL displayed on your carousel slides.
 
 ### Brand colors
 
@@ -36,15 +48,12 @@ Set your primary and secondary brand colors using a color picker or hex codes. T
 - Shape fills and borders
 - Accent elements
 
-### Font family
-
-Choose a font family that matches your brand. The font picker includes Google Fonts, giving you access to hundreds of professional typefaces. Your selected font applies to all text elements in the carousel.
-
 ## Customizing templates
 
 After loading a template, everything is fully editable:
 
-- Change text content, fonts, sizes, and colors
+- Change text content, sizes, and colors
+- Select fonts per element using the element properties panel
 - Swap images with your own uploads or AI-generated images
 - Add, remove, or reorder slides
 - Modify layout positions and element sizes

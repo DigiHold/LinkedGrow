@@ -12,8 +12,10 @@ The Ideas Generator helps you overcome content block by providing AI-powered pos
 ## How to use it
 
 1. Click **Ideas** in the sidebar
-2. Choose a theme from 10 popular options (Career Growth, Marketing, Leadership, etc.) or enter a custom theme
-3. Click **Generate Ideas**
+2. Choose a theme from 10 popular options:
+   - Productivity, Leadership, AI & Tech, Career Growth, Startups, Remote Work, Marketing, Sales, Entrepreneurship, Personal Branding
+3. Or enter a custom theme for more specific results
+4. Click **Generate Ideas**
 
 The AI produces 10 content ideas. Each idea includes:
 

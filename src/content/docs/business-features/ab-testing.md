@@ -36,7 +36,7 @@ To create a new A/B test:
 
 Both variants should be similar enough to isolate the variable you are testing. For example, if you want to test two different hooks, keep the rest of the post content identical.
 
-**Note:** Only team owners and admins can create A/B tests. Team members with the Member role cannot create or manage tests.
+**Note:** Only team owners can create A/B tests. Team members with the Admin or Member role cannot create or manage tests.
 
 ## Test States
 

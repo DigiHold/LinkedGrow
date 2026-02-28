@@ -7,15 +7,33 @@ order: 6
 
 ## What is Reddit to LinkedIn?
 
-Reddit is full of authentic discussions, industry insights, and trending topics that make excellent LinkedIn content. The Reddit to LinkedIn feature lets you import any Reddit thread and transform it into a LinkedIn-appropriate post.
+Reddit is full of authentic discussions, industry insights, and trending topics that make excellent LinkedIn content. The Reddit to LinkedIn feature lets you import any Reddit thread and transform it into a LinkedIn-appropriate post. It uses the same repurposing tool with a Reddit URL.
 
 ## How it works
 
-1. Find an interesting Reddit thread in a subreddit relevant to your industry
-2. Copy the Reddit post URL
-3. Go to the **Repurpose** page in LinkedGrow and paste the URL
-4. LinkedGrow fetches the thread content and top comments
-5. The AI analyzes the discussion and generates a LinkedIn post
+Reddit to LinkedIn follows the same 4-step repurposing flow:
+
+### Step 1 - Paste the Reddit URL
+
+Find an interesting Reddit thread in a subreddit relevant to your industry, copy the URL, and paste it into the **Repurpose** page in LinkedGrow. The tool automatically detects it as a Reddit source and fetches the thread content along with top comments.
+
+### Step 2 - Choose a hook or angle
+
+The AI analyzes the Reddit discussion and generates multiple hooks and angles you could take for your LinkedIn post. These might focus on the original post's insight, a contrarian viewpoint from the comments, or a broader takeaway from the debate. Select the angle that fits your message.
+
+### Step 3 - Pick a post variation
+
+Based on your selected hook, the AI generates 3 post variations. Each takes a different approach -- one might be a story format, another a list of takeaways, another an opinion piece. Review them and select the one you like best.
+
+### Step 4 - Edit and publish
+
+The selected post opens in a built-in editor where you can:
+
+- Refine the text manually
+- Attach images to the post
+- Save as a draft
+- Schedule for a future date and time
+- Publish immediately to LinkedIn
 
 The AI does not simply copy the Reddit content. It extracts the core insight or debate, restructures it for a professional audience, and formats it with LinkedIn best practices (strong hook, proper length, engagement triggers).
 

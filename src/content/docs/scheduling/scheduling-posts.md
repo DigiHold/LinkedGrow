@@ -20,7 +20,7 @@ Scheduling lets you create content in batches and have it published automaticall
 3. A date and time picker appears
 4. Select the date you want the post to go live
 5. Choose the time (shown in your configured timezone)
-6. Click **Confirm**
+6. Click **Schedule**
 
 The post is saved with a "Scheduled" status and will be published automatically at the specified time. You can see all scheduled posts in your Posts library and on the Calendar.
 
@@ -67,7 +67,7 @@ This means your post will publish even if you are not logged into LinkedGrow at 
 
 ## Video scheduling limitation
 
-Posts with video attachments cannot be scheduled due to LinkedIn API restrictions. Video posts must be published immediately using the "Publish Now" button.
+Posts with video attachments cannot be scheduled. Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately and cannot be saved as drafts. Use the "Publish Now" button for video posts.
 
 ## Best practices
 

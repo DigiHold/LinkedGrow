@@ -28,30 +28,15 @@ If you already use one of these apps for other services, you can add LinkedGrow 
 Follow these steps to enable two-factor authentication on your account:
 
 1. Go to **Settings** in the left sidebar
-2. Click on the **Account** tab
-3. Find the **Two-Factor Authentication** section
-4. Click **Enable 2FA**
-5. A QR code will appear on your screen
-6. Open your authenticator app and scan the QR code
-7. Your authenticator app will generate a 6-digit verification code
-8. Enter the verification code in the confirmation field on LinkedGrow
-9. Click **Verify and Enable**
+2. Find the **Two-Factor Authentication** section
+3. Click **Enable 2FA**
+4. A QR code will appear on your screen
+5. Open your authenticator app and scan the QR code
+6. Your authenticator app will generate a 6-digit verification code
+7. Enter the verification code in the confirmation field on LinkedGrow
+8. Click **Verify and Enable**
 
 Once verified, 2FA is active on your account. You will be prompted for a verification code each time you sign in.
-
-## Save Your Backup Codes
-
-After enabling 2FA, LinkedGrow generates a set of backup codes. These are one-time-use codes that allow you to sign in if you lose access to your authenticator app.
-
-**Important:** Save your backup codes in a secure location immediately. You will not be able to view them again after closing the dialog.
-
-Recommended ways to store backup codes:
-
-- In a password manager (such as 1Password, Bitwarden, or LastPass)
-- Printed on paper and stored in a safe place
-- In an encrypted note on your device
-
-Each backup code can only be used once. After using a backup code, it is no longer valid.
 
 ## Signing In with 2FA
 
@@ -69,31 +54,23 @@ The code changes every 30 seconds, so make sure to enter the current code. If th
 
 If you need to disable two-factor authentication:
 
-1. Go to **Settings** > **Account**
+1. Go to **Settings** in the left sidebar
 2. Find the **Two-Factor Authentication** section
 3. Click **Disable 2FA**
 4. Enter your current password to confirm
-5. Enter a verification code from your authenticator app
-6. Click **Confirm** to disable 2FA
+5. Click **Confirm** to disable 2FA
 
 After disabling 2FA, you will only need your password to sign in. We recommend keeping 2FA enabled for better security.
 
 ## Lost Access to Your Authenticator
 
-If you lose your phone or cannot access your authenticator app, you can still sign in using a backup code:
+If you lose your phone or cannot access your authenticator app, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai) from the email address associated with your account. We will verify your identity and help you regain access. This process may take 1 to 2 business days for security reasons.
 
-1. On the 2FA verification screen, click **Use a backup code**
-2. Enter one of your saved backup codes
-3. Click **Verify** to sign in
-
-Once signed in, we recommend immediately setting up 2FA again with your new device or app. Go to **Settings** > **Account** to disable the old 2FA and enable it again with a new QR code.
-
-If you have lost both your authenticator and your backup codes, contact us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai) from the email address associated with your account. We will verify your identity and help you regain access. This process may take 1 to 2 business days for security reasons.
+Once you regain access, we recommend immediately setting up 2FA again with your new device or app. Go to **Settings** to disable the old 2FA and enable it again with a new QR code.
 
 ## Best Practices
 
 - **Enable 2FA as soon as you create your account** - it takes less than a minute
-- **Store backup codes securely** - treat them like passwords
 - **Use a reputable authenticator app** - avoid SMS-based 2FA when possible
 - **Keep your authenticator app updated** - older versions may have security issues
 - **If you get a new phone**, set up your authenticator on the new device before wiping the old one

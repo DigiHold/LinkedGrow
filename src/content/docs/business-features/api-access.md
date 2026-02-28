@@ -22,30 +22,47 @@ The LinkedGrow API enables you to:
 - Integrate with automation platforms like Zapier, Make, or n8n
 - Build custom dashboards or content pipelines
 
-## Generating an API Token
+## Creating an API Key
 
-To use the API, you need an authentication token:
+To use the API, you need an API key:
 
 1. Go to **Settings** in the left sidebar
-2. Click on the **API** tab
-3. Click **Generate New Token**
-4. Enter a descriptive name for the token (for example, "Zapier integration" or "Content pipeline")
-5. Click **Create Token**
-6. Copy the token immediately - it will not be shown again
+2. Click on the **API** section
+3. Click **Create API Key**
+4. Enter a descriptive **Key Name** (for example, "Zapier integration" or "Content pipeline")
+5. Select the **scopes** you want to grant this key (see below)
+6. Click **Create**
+7. Copy the API key immediately - it will not be shown again
 
-**Important:** Treat your API token like a password. Do not share it publicly, commit it to version control, or include it in client-side code. If a token is compromised, revoke it immediately and generate a new one.
+**Important:** Treat your API key like a password. Do not share it publicly, commit it to version control, or include it in client-side code. If a key is compromised, revoke it immediately and create a new one.
 
-You can create multiple tokens for different integrations. Each token can be revoked independently without affecting others.
+You can create multiple API keys for different integrations. Each key can be revoked independently without affecting others.
+
+## Scoped Permissions
+
+When creating an API key, you select which scopes (permissions) the key should have. This lets you follow the principle of least privilege by only granting the access each integration needs.
+
+Available scopes:
+
+- **posts:read** - Read and list posts
+- **posts:write** - Create and update posts
+- **posts:delete** - Delete posts
+- **ideas:read** - Read and list ideas
+- **ideas:write** - Create and update ideas
+- **analytics:read** - Read analytics data
+- **profile:read** - Read profile information
+
+For example, if you are building a read-only dashboard, you only need `posts:read` and `analytics:read`. If you are building a content pipeline that creates posts, you would also need `posts:write`.
 
 ## Authentication
 
-All API requests must include your token in the Authorization header using the Bearer scheme:
+All API requests must include your API key in the Authorization header using the Bearer scheme:
 
 ```
-Authorization: Bearer your-api-token-here
+Authorization: Bearer your-api-key-here
 ```
 
-Requests without a valid token will receive a 401 Unauthorized response.
+Requests without a valid API key will receive a 401 Unauthorized response. Requests that attempt actions outside the key's scopes will receive a 403 Forbidden response.
 
 ## Available Endpoints
 
@@ -62,6 +79,8 @@ GET /api/v1/posts
 ```
 
 Returns a list of all your posts. You can filter by status (draft, scheduled, published).
+
+Required scope: `posts:read`
 
 Query parameters:
 
@@ -96,6 +115,8 @@ GET /api/v1/posts/:id
 
 Returns the full details of a specific post.
 
+Required scope: `posts:read`
+
 #### Create a Post
 
 ```
@@ -113,6 +134,8 @@ Creates a new post. Send the content in the request body:
 
 The `status` field accepts "draft" or "scheduled". If you set it to "scheduled", you must also include a `scheduledAt` field with an ISO 8601 datetime.
 
+Required scope: `posts:write`
+
 #### Update a Post
 
 ```
@@ -127,6 +150,8 @@ Updates an existing post. Send only the fields you want to change:
 }
 ```
 
+Required scope: `posts:write`
+
 #### Delete a Post
 
 ```
@@ -135,12 +160,14 @@ DELETE /api/v1/posts/:id
 
 Permanently deletes a post. This action cannot be undone.
 
+Required scope: `posts:delete`
+
 ## Rate Limits
 
 To ensure fair usage, the API has the following rate limits:
 
-- **60 requests per minute** per token
-- **1,000 requests per hour** per token
+- **60 requests per minute** per API key
+- **1,000 requests per hour** per API key
 
 If you exceed the rate limit, you will receive a 429 Too Many Requests response with a `Retry-After` header indicating when you can make requests again.
 
@@ -151,8 +178,8 @@ The API uses standard HTTP status codes:
 - **200** - Success
 - **201** - Created (for new posts)
 - **400** - Bad request (invalid parameters)
-- **401** - Unauthorized (missing or invalid token)
-- **403** - Forbidden (insufficient permissions)
+- **401** - Unauthorized (missing or invalid API key)
+- **403** - Forbidden (insufficient scopes)
 - **404** - Not found
 - **429** - Too many requests (rate limit exceeded)
 - **500** - Internal server error
@@ -168,23 +195,24 @@ Error responses include a JSON body with details:
 }
 ```
 
-## Managing API Tokens
+## Managing API Keys
 
 From **Settings** > **API**, you can:
 
-- View all your active tokens and when they were last used
-- Generate new tokens with descriptive names
-- Revoke tokens that are no longer needed
+- View all your active API keys and when they were last used
+- Create new API keys with descriptive names and scoped permissions
+- Revoke API keys that are no longer needed
 
-Revoking a token is immediate. Any integrations using that token will stop working right away.
+Revoking an API key is immediate. Any integrations using that key will stop working right away.
 
 ## Security Best Practices
 
-- Store API tokens in environment variables, not in your code
-- Use different tokens for different integrations
-- Revoke tokens you are no longer using
-- Monitor token usage in your API settings
-- Never expose tokens in browser-side JavaScript or public repositories
+- Store API keys in environment variables, not in your code
+- Use different API keys for different integrations
+- Grant only the scopes each integration needs
+- Revoke API keys you are no longer using
+- Monitor key usage in your API settings
+- Never expose API keys in browser-side JavaScript or public repositories
 
 ## Questions?
 

@@ -1,6 +1,6 @@
 ---
 title: "Profile Settings"
-description: "Manage your name, email, profile picture, timezone, theme, and notification preferences."
+description: "Manage your name, timezone, and theme preferences in LinkedGrow."
 category: "settings"
 order: 1
 ---
@@ -17,15 +17,11 @@ Your display name appears in post previews and team views. Update it by editing 
 
 ### Email
 
-Your email address is used for login and notifications. You can update it in the account section of Settings.
-
-### Bio
-
-Add a short bio that describes who you are. This is used internally for context and does not appear on LinkedIn.
+Your email address is displayed in your profile but cannot be changed. It is locked to the email you used when signing up (via LinkedIn or Google OAuth) and is shown as disabled with the note "Email cannot be changed."
 
 ### Profile picture
 
-Upload a profile picture that appears in the LinkedGrow interface. When you connect LinkedIn, your LinkedIn avatar is synced automatically. You can also upload a custom image.
+Your profile picture is automatically imported from your LinkedIn or Google account when you sign up via OAuth. There is no manual upload option -- your avatar always reflects your connected account.
 
 ## Timezone
 
@@ -35,28 +31,17 @@ To set your timezone:
 
 1. Go to **Settings**
 2. Find the **Timezone** dropdown
-3. Select your timezone from the list of 50+ options
-4. Or choose **Auto** to detect your browser's timezone
+3. Select your timezone from the list of 37 timezones
+4. Or choose **Auto detect** to use your browser's timezone
 
-**Tip:** If your audience is in a different timezone than you, consider setting your LinkedGrow timezone to match your audience. This makes scheduling more intuitive - "9 AM" in the picker means 9 AM for your readers.
+**Tip:** If your audience is in a different timezone than you, consider setting your LinkedGrow timezone to match your audience. This makes scheduling more intuitive -- "9 AM" in the picker means 9 AM for your readers.
 
 ## Theme
 
 LinkedGrow supports three theme modes:
 
-- **Light** - Clean white background
-- **Dark** - Dark background for reduced eye strain
-- **System** - Follows your device's theme setting
+- **Light** -- Clean white background
+- **Dark** -- Dark background for reduced eye strain
+- **System** -- Follows your device's theme setting
 
 Change the theme in Settings under the appearance section. Your preference persists across sessions and devices.
-
-## Notification preferences
-
-Configure which email notifications you receive:
-
-- Account security alerts (always enabled)
-- Scheduled post reminders
-- Weekly activity summaries
-- Product updates and tips
-
-Adjust these settings to control how often LinkedGrow emails you.

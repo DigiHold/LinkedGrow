@@ -46,14 +46,15 @@ The left sidebar provides access to all features:
 | Generator | AI post generation | Free |
 | Editor | Post editing with AI assist | Free (basic), Starter+ (advanced) |
 | Ideas | AI content ideas | Free |
-| Hooks | Viral opening line generator | Pro+ |
+| Hooks | Viral opening line generator | Free (visible), Pro+ (usable) |
 | Repurpose | Convert URLs to posts | Starter+ |
 | Carousel | Multi-slide carousel creator | Business |
 | Posts | Library of all your posts | Free |
 | Calendar | Visual scheduling calendar | Starter+ |
+| Engagement | Engagement tracking tools | Pro+ |
+| Analytics | Performance analytics | Pro+ |
 | A/B Testing | Test post variations | Business |
 | Team | Team management | Business |
-| Settings | Account, AI API, billing | Free |
 
 ## Feature gating
 
@@ -61,14 +62,14 @@ LinkedGrow has four plans: Free, Starter ($19/mo), Pro ($39/mo), and Business ($
 
 - **Free** - Post generation (3/month), basic editor, ideas
 - **Starter** - Unlimited posts, advanced editor, 10 scheduled posts, calendar, Reddit ideas, content repurposing
-- **Pro** - Unlimited scheduling, image generation, hooks generator, algorithm optimizer
+- **Pro** - Unlimited scheduling, image generation, hooks generator, algorithm optimizer, analytics, engagement
 - **Business** - Carousel generator, A/B testing, team collaboration, API access, custom branding
 
 When you try to access a feature not included in your plan, you will see a friendly prompt explaining what the feature does and a link to upgrade.
 
 ## API key setup reminder
 
-If you have not configured an AI provider yet, a banner appears on the dashboard encouraging you to set up your API key. Once you add a key and select a model, the banner changes to a green success indicator showing which provider is active.
+If you have not configured an AI provider yet, a banner appears on the dashboard encouraging you to set up your API key. Once you add a key and select a model, the banner changes to a green "AI Provider Connected" confirmation message.
 
 ## Dark mode
 

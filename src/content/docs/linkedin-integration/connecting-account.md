@@ -20,7 +20,7 @@ Once connected, you can:
 
 ### 1. Open LinkedIn settings
 
-Go to **Settings** from the sidebar and find the **LinkedIn Integration** section.
+Go to **Settings** from the sidebar and find the **Connect LinkedIn** card.
 
 ### 2. Click Connect LinkedIn
 
