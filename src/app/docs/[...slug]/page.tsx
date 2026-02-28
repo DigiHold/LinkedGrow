@@ -261,7 +261,7 @@ function ArticlePage({
                 )}
 
                 <div
-                  className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-pre:bg-slate-100 dark:prose-pre:bg-slate-800"
+                  className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline prose-a:hover:underline prose-img:rounded-xl prose-pre:bg-slate-100 dark:prose-pre:bg-slate-800"
                   dangerouslySetInnerHTML={{ __html: article.content }}
                 />
 

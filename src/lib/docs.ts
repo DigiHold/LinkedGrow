@@ -7,7 +7,6 @@ import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
 const DOCS_DIR = path.join(process.cwd(), "src/content/docs");
 
@@ -129,7 +128,6 @@ export async function getArticle(categorySlug: string, articleSlug: string): Pro
     .use(remarkGfm)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
-    .use(rehypeAutolinkHeadings, { behavior: "wrap" })
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdownContent);
 
@@ -145,30 +143,18 @@ export async function getArticle(categorySlug: string, articleSlug: string): Pro
 }
 
 export function extractTableOfContents(html: string): TableOfContentsItem[] {
-  const headingRegex = /<h([2-3])\s+id="([^"]+)"[^>]*>.*?<a[^>]*>([^<]*)<\/a>.*?<\/h[2-3]>/g;
+  const headingRegex = /<h([2-3])\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/h[2-3]>/g;
   const items: TableOfContentsItem[] = [];
   let match;
 
   while ((match = headingRegex.exec(html)) !== null) {
-    items.push({
-      level: parseInt(match[1]),
-      id: match[2],
-      text: match[3].trim(),
-    });
-  }
-
-  // Fallback: if autolink wrapping didn't produce expected format, try simpler regex
-  if (items.length === 0) {
-    const simpleRegex = /<h([2-3])\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/h[2-3]>/g;
-    while ((match = simpleRegex.exec(html)) !== null) {
-      const text = match[3].replace(/<[^>]+>/g, "").trim();
-      if (text) {
-        items.push({
-          level: parseInt(match[1]),
-          id: match[2],
-          text,
-        });
-      }
+    const text = match[3].replace(/<[^>]+>/g, "").trim();
+    if (text) {
+      items.push({
+        level: parseInt(match[1]),
+        id: match[2],
+        text,
+      });
     }
   }
 
