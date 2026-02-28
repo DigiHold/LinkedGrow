@@ -1,0 +1,98 @@
+---
+title: "General FAQ"
+description: "Answers to frequently asked questions about LinkedGrow, AI costs, LinkedIn integration, security, and more."
+category: "faq"
+order: 1
+---
+
+## What is LinkedGrow?
+
+LinkedGrow is an AI-powered LinkedIn content creation and scheduling platform. It helps you write better LinkedIn posts, schedule them in advance, and grow your audience with data-driven insights. LinkedGrow uses a BYOK (Bring Your Own Key) model, which means you connect your own AI provider API key and only pay for the AI usage you actually consume.
+
+## What is BYOK (Bring Your Own Key)?
+
+BYOK stands for Bring Your Own Key. Instead of charging you a premium for built-in AI, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google, or others. This gives you full control over your AI costs, model selection, and usage. You pay the AI provider directly at their standard rates, which is significantly cheaper than platforms that bundle AI costs into their subscription.
+
+For setup instructions, see the [BYOK documentation](/docs/byok).
+
+## How much does the AI cost?
+
+With the BYOK model, most users spend between $2 and $4 per month on AI usage. The exact cost depends on how much content you generate and which AI model you use. For comparison, platforms that bundle AI into their pricing often charge $30 to $50 per month or more for similar functionality.
+
+You can monitor your AI spending directly through your AI provider's dashboard (such as the OpenAI usage page or Anthropic console).
+
+## Can I cancel my subscription anytime?
+
+Yes. LinkedGrow has no long-term contracts or commitments. You can cancel your subscription at any time from your billing settings. When you cancel, your paid plan stays active until the end of your current billing period, then your account reverts to the Free plan. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for full details.
+
+## Do I need LinkedIn Premium to use LinkedGrow?
+
+No. LinkedGrow works with any LinkedIn account, including free LinkedIn accounts. You do not need LinkedIn Premium, Sales Navigator, or any other paid LinkedIn subscription to use LinkedGrow.
+
+## Will my posts sound like they were written by AI?
+
+No, not if you use the voice training feature. LinkedGrow's voice training analyzes your existing writing style and trains the AI to match your tone, vocabulary, and patterns. The result is content that sounds authentically like you, not like generic AI output. You can also edit every post before publishing to add your personal touch.
+
+## What is the Algorithm Score?
+
+The Algorithm Score is a real-time rating (available on Pro and Business plans) that evaluates how well your post is optimized for LinkedIn's algorithm. It analyzes factors like post length, formatting, hook strength, call to action, hashtag usage, and readability. The score updates as you edit, giving you instant feedback to improve your post's potential reach before publishing.
+
+## How is LinkedGrow different from competitors?
+
+LinkedGrow stands apart in several key ways:
+
+- **BYOK model** - you bring your own AI key, so AI costs are a fraction of what competitors charge
+- **Voice training** - the AI learns to write in your voice, not a generic tone
+- **Algorithm optimizer** - real-time scoring tells you how well your post will perform before you publish
+- **All-in-one platform** - content creation, scheduling, carousel generation, analytics, and team collaboration in one tool
+- **Transparent pricing** - no hidden AI fees, you see exactly what you pay for
+
+## Do you offer refunds?
+
+Yes. LinkedGrow offers a 14-day money-back guarantee on all paid plans. If you are not satisfied within 14 days of your initial purchase, email [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai) for a full refund. After 14 days, you can cancel anytime to prevent future charges, but refunds for the current billing period are not available. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for details.
+
+## Can I use multiple AI providers?
+
+Yes. LinkedGrow supports multiple AI providers, and you can switch between them at any time. In your BYOK settings, you can configure API keys for different providers and choose which one to use for content generation. This lets you compare outputs from different models and use whichever one works best for your needs.
+
+## Is my API key secure?
+
+Yes. Your API key is encrypted at rest and in transit. It is never stored in plain text, never shared with other users, and never accessible to LinkedGrow staff. The key is only used to make API calls to your AI provider on your behalf. You can rotate or revoke your key at any time from your settings.
+
+## What happens if I downgrade my plan?
+
+When you downgrade to a lower plan, your current plan stays active until the end of the billing period. After that:
+
+- Features exclusive to your previous plan become unavailable
+- If you have more scheduled posts than your new plan allows, excess posts are unscheduled
+- Your existing posts, drafts, and content are preserved
+- Analytics data is retained (though some views may be limited)
+- Team members lose access if downgrading from Business
+- API tokens are deactivated if downgrading from Business
+
+You can always upgrade again later to regain access to those features.
+
+## How do I get support?
+
+You can reach our support team by emailing [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). Business plan users receive priority support with faster response times. We aim to respond to all support requests within 24 hours on business days.
+
+You can also browse this documentation for guides on every LinkedGrow feature.
+
+## What AI models are supported?
+
+LinkedGrow supports a wide range of AI models through the BYOK system, including:
+
+- **OpenAI** - GPT-4o, GPT-4o mini, and other available models
+- **Anthropic** - Claude Sonnet, Claude Haiku, and other available models
+- **Google** - Gemini Pro and other available models
+- **Other providers** - any provider with an OpenAI-compatible API
+
+You choose which model to use in your BYOK settings. Different models offer different balances of quality, speed, and cost. Check the [BYOK documentation](/docs/byok) for setup guides for each provider.
+
+## Can I schedule posts for LinkedIn company pages?
+
+Yes. When you connect your LinkedIn account, you can choose to post to your personal profile or any company page where you have admin access. You can set a default posting target in your settings or choose the destination for each post individually.
+
+## I have a question that is not listed here
+
+If your question is not covered in this FAQ or elsewhere in the documentation, please email us at [contact@linkedgrow.ai](mailto:contact@linkedgrow.ai). We are happy to help and may add your question to this page for others.

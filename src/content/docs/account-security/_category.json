@@ -1,0 +1,6 @@
+{
+  "title": "Account & Security",
+  "description": "Manage your account security with two-factor authentication, password management, and login options.",
+  "order": 9,
+  "icon": "shield"
+}

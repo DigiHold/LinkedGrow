@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
 import { getAllPostsWithStatus } from "@/lib/blog";
+import { getAllCategories, getArticlesForCategory } from "@/lib/docs";
 
 const BASE_URL = "https://linkedgrow.ai";
 
@@ -38,6 +39,7 @@ const PREFIX_PRIORITY: Record<string, { priority: number; changeFrequency: "alwa
   "/use-cases/": { priority: 0.7, changeFrequency: "monthly" },
   "/industries/": { priority: 0.7, changeFrequency: "monthly" },
   "/compare/": { priority: 0.7, changeFrequency: "monthly" },
+  "/docs/": { priority: 0.6, changeFrequency: "monthly" },
 };
 
 // Default priority for pages not in config
@@ -133,6 +135,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     });
+  }
+
+  // Add docs entries
+  const docsCategories = getAllCategories();
+  for (const cat of docsCategories) {
+    sitemapEntries.push({
+      url: `${BASE_URL}/docs/${cat.slug}`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
+    const articles = getArticlesForCategory(cat.slug);
+    for (const article of articles) {
+      sitemapEntries.push({
+        url: `${BASE_URL}/docs/${cat.slug}/${article.slug}`,
+        lastModified: currentDate,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
   }
 
   return sitemapEntries;
