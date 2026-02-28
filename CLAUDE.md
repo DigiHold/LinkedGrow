@@ -657,6 +657,59 @@ This separation is required because Community Management API has stricter approv
 -   [ ] Content calendar improvements
 -   [ ] Company page management UI
 
+## Documentation System (`/docs`)
+
+LinkedGrow has a `/docs` section that serves two purposes simultaneously:
+1. **Public documentation pages** at `linkedgrow.ai/docs/...` for users to browse
+2. **AI chatbot knowledge base** - the same markdown files are embedded as vectors for RAG (Retrieval Augmented Generation) so the AI support chatbot can answer user questions
+
+### Documentation Structure
+
+All documentation lives in `src/content/docs/` as markdown (`.md`) files organized by category:
+
+```
+src/content/docs/
+├── getting-started/
+│   ├── _category.json          # Category metadata (title, description, order)
+│   ├── quick-start.md
+│   ├── connecting-linkedin.md
+│   └── ...
+├── features/
+│   ├── _category.json
+│   ├── post-generator.md
+│   ├── carousel-generator.md
+│   └── ...
+├── billing/
+│   ├── _category.json
+│   ├── pricing-plans.md
+│   └── ...
+└── ...
+```
+
+### Markdown File Format
+
+Every docs article MUST follow this frontmatter format:
+
+```markdown
+---
+title: "Article Title"
+description: "Short description for SEO and chatbot context"
+category: "category-slug"
+order: 1
+---
+
+Article content here...
+```
+
+### CRITICAL Rules for Documentation Changes
+
+1. **Single source of truth**: The `.md` files in `src/content/docs/` power BOTH the website pages AND the chatbot RAG embeddings. Never create separate content for the chatbot.
+2. **When adding a new docs article**: Follow the exact same structure - create the `.md` file in the appropriate category folder with proper frontmatter. If the category doesn't exist, create a new folder with a `_category.json` file.
+3. **When editing a docs article**: Edit the `.md` file directly. The chatbot embeddings will be re-generated on the next build.
+4. **When adding a new category**: Create a folder in `src/content/docs/` with a `_category.json` containing `{ "title": "Category Name", "description": "...", "order": N }`.
+5. **Keep articles accurate**: The chatbot will use this content to answer users. Outdated or wrong information means wrong chatbot answers. When features change, update the relevant docs articles.
+6. **Do NOT write docs for unimplemented features**: Analytics, Advanced Analytics, and Engagement features are not done yet (waiting for LinkedIn API). Do not create docs articles for these until they are implemented.
+
 ## Founders
 
 -   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
