@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
+import ReactMarkdown from "react-markdown";
 import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -213,13 +214,33 @@ export default function ChatWidget() {
                     >
                       {message.parts?.map((part, i) => {
                         if (part.type === "text") {
+                          if (message.role === "user") {
+                            return (
+                              <p key={i} className="m-0 whitespace-pre-wrap">
+                                {part.text}
+                              </p>
+                            );
+                          }
                           return (
-                            <p
+                            <ReactMarkdown
                               key={i}
-                              className="m-0 whitespace-pre-wrap"
+                              components={{
+                                p: ({ children }) => <p className="m-0 mb-2 last:mb-0">{children}</p>,
+                                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                a: ({ href, children }) => (
+                                  <a href={href} className="text-cyan-600 underline hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300" target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}>
+                                    {children}
+                                  </a>
+                                ),
+                                ul: ({ children }) => <ul className="my-1 ml-4 list-disc space-y-0.5">{children}</ul>,
+                                ol: ({ children }) => <ol className="my-1 ml-4 list-decimal space-y-0.5">{children}</ol>,
+                                li: ({ children }) => <li className="m-0">{children}</li>,
+                                code: ({ children }) => <code className="rounded bg-slate-200 px-1 py-0.5 text-xs dark:bg-slate-700">{children}</code>,
+                                pre: ({ children }) => <pre className="my-1 overflow-x-auto rounded-lg bg-slate-200 p-2 text-xs dark:bg-slate-700">{children}</pre>,
+                              }}
                             >
                               {part.text}
-                            </p>
+                            </ReactMarkdown>
                           );
                         }
                         // Handle tool calls (type is "tool-createSupportTicket" etc.)
