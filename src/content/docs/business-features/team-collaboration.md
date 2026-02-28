@@ -50,7 +50,7 @@ The Owner has full access to everything in the team workspace:
 - Change member roles
 - Manage team settings and billing
 - Access all analytics and reports
-- Manage API keys and custom branding
+- Manage API keys
 
 Each team has exactly one Owner.
 

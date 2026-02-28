@@ -64,4 +64,4 @@ Your branding settings are applied to:
 
 ## Plan availability
 
-Branding settings are available on the **Business plan**. Users on other plans can upgrade to access custom branding for their carousels.
+Branding settings are part of the Carousel Generator and available on the **Business plan**.

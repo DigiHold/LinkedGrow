@@ -63,7 +63,7 @@ LinkedGrow has four plans: Free, Starter ($19/mo), Pro ($39/mo), and Business ($
 - **Free** - Post generation (3/month), basic editor, ideas
 - **Starter** - Unlimited posts, advanced editor, 10 scheduled posts, calendar, Reddit ideas, content repurposing
 - **Pro** - Unlimited scheduling, image generation, hooks generator, algorithm optimizer, analytics, engagement
-- **Business** - Carousel generator, A/B testing, team collaboration, API access, custom branding
+- **Business** - Carousel generator, A/B testing, team collaboration, API access
 
 When you try to access a feature not included in your plan, you will see a friendly prompt explaining what the feature does and a link to upgrade.
 
