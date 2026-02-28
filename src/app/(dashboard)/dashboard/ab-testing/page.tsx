@@ -155,7 +155,7 @@ export default function ABTestingPage() {
               Help?
             </Link>
             <Link href="/dashboard/ab-testing/new">
-              <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+              <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 New A/B Test
               </Button>

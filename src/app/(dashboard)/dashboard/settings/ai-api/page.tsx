@@ -959,7 +959,7 @@ export default function AIAPISettingsPage() {
                         type="button"
                         onClick={handleSaveModelOnly}
                         disabled={isSavingModel}
-                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                       >
                         {isSavingModel ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                         Save Model
@@ -971,7 +971,7 @@ export default function AIAPISettingsPage() {
                         type="button"
                         onClick={handleSetActiveProvider}
                         disabled={isSettingActive}
-                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                       >
                         {isSettingActive ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
                         Set as Active Provider
@@ -1012,7 +1012,7 @@ export default function AIAPISettingsPage() {
                       type="button"
                       onClick={handleSaveApiKey}
                       disabled={isSavingApiKey || !apiKey.trim()}
-                      className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                      className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                     >
                       {isSavingApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save API Key

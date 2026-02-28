@@ -185,7 +185,7 @@ function BillingContent() {
             </p>
             <Button
               onClick={() => router.push("/dashboard/upgrade")}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               <Crown className="w-4 h-4 mr-2" />
               View Plans & Upgrade
@@ -265,7 +265,7 @@ function BillingContent() {
           <Button
             onClick={handleManageBilling}
             disabled={isPortalLoading}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
           >
             {isPortalLoading ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

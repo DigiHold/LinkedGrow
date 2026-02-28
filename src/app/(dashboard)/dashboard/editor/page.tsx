@@ -852,7 +852,7 @@ Tips for viral posts:
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                    className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                     onClick={handleSchedulePost}
                     disabled={isScheduling || !scheduleDate || !scheduleTime}
                   >

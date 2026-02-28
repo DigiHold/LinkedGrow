@@ -213,7 +213,7 @@ export default function IdeasPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/dashboard/settings/ai-api">
-                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                     <Settings className="w-4 h-4 mr-2" />
                     Configure API Key
                   </Button>
@@ -464,7 +464,7 @@ export default function IdeasPage() {
               <Button
                 onClick={handleGeneratePost}
                 disabled={isGeneratingPost}
-                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isGeneratingPost ? (
                   <>

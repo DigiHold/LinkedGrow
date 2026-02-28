@@ -326,7 +326,7 @@ export default function PostsPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/dashboard/ideas">
-                  <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate with AI
                   </Button>
@@ -365,7 +365,7 @@ export default function PostsPage() {
             Help?
           </Link>
           <Link href="/dashboard/editor">
-            <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+            <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
               <Plus className="w-4 h-4 mr-2" />
               New Post
             </Button>
@@ -386,7 +386,7 @@ export default function PostsPage() {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
                     activeTab === tab.id
-                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                      ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                       : "text-muted-foreground hover:bg-accent"
                   )}
                 >
@@ -697,7 +697,7 @@ export default function PostsPage() {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                   onClick={handleScheduleConfirm}
                   disabled={isScheduling || !scheduleDate || !scheduleTime}
                 >

@@ -258,7 +258,7 @@ function CommentsContent() {
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 ${
                       isTeam
-                        ? "bg-linear-to-br from-cyan-500 to-blue-600"
+                        ? "bg-linear-to-br from-cyan-500 to-blue-600 text-white"
                         : "bg-linear-to-br from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600"
                     }`}>
                       {isTeam ? (

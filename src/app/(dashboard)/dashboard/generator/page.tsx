@@ -871,7 +871,7 @@ export default function GeneratorPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <a href="/dashboard/settings/ai-api">
-                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Configure API Key
                   </Button>

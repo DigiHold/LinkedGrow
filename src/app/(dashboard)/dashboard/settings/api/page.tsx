@@ -212,7 +212,7 @@ export default function ApiKeysPage() {
             </Link>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create API Key
@@ -252,7 +252,7 @@ export default function ApiKeysPage() {
             </p>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-linear-to-r from-cyan-500 to-blue-600"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create API Key
@@ -440,7 +440,7 @@ export default function ApiKeysPage() {
 
                   <Button
                     onClick={handleCloseNewKeyModal}
-                    className="w-full mt-6 bg-linear-to-r from-cyan-500 to-blue-600"
+                    className="w-full mt-6 bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                   >
                     Done
                   </Button>
@@ -506,7 +506,7 @@ export default function ApiKeysPage() {
                     <Button
                       onClick={handleCreateKey}
                       disabled={!newKeyName.trim() || selectedScopes.length === 0 || isCreating}
-                      className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600"
+                      className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 text-white"
                     >
                       {isCreating ? (
                         <>

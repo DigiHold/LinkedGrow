@@ -379,7 +379,7 @@ export default function TeamPage() {
             </Link>
             {/* Only owners can create new teams */}
             {!isTeamMember && (
-              <Button onClick={() => setShowCreateForm(true)}>
+              <Button onClick={() => setShowCreateForm(true)} className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Team
               </Button>
@@ -426,7 +426,7 @@ export default function TeamPage() {
                     className="flex-1"
                     maxLength={50}
                   />
-                  <Button type="submit" disabled={isCreating || !teamName.trim()}>
+                  <Button type="submit" disabled={isCreating || !teamName.trim()} className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                     {isCreating ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (

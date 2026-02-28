@@ -987,7 +987,7 @@ function SettingsContent() {
           <Button
             onClick={handleSaveAccount}
             disabled={isSavingAccount}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
           >
             {isSavingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save Changes
@@ -1067,7 +1067,7 @@ function SettingsContent() {
           <Button
             onClick={handleSaveTimezone}
             disabled={isSavingTimezone}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
           >
             {isSavingTimezone ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save Timezone
@@ -1135,7 +1135,7 @@ function SettingsContent() {
               <Button
                 onClick={handleSetup2FA}
                 disabled={isSettingUp2FA}
-                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isSettingUp2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
                 Enable
@@ -1201,7 +1201,7 @@ function SettingsContent() {
               <Button
                 onClick={handleVerify2FA}
                 disabled={verificationCode.length !== 6 || isSettingUp2FA}
-                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
               >
                 {isSettingUp2FA ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
                 Verify & Enable
@@ -1384,7 +1384,7 @@ function SettingsContent() {
             <Button
               onClick={handleSaveSelection}
               disabled={isSavingSelection}
-              className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isSavingSelection ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
               Confirm
@@ -1592,7 +1592,7 @@ function SettingsContent() {
             <Button
               onClick={handleSaveVoiceSettings}
               disabled={isSavingVoice}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Voice Settings
@@ -1732,7 +1732,7 @@ function SettingsContent() {
             <Button
               onClick={handleSaveBusinessProfile}
               disabled={isSavingProfile}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Business Profile

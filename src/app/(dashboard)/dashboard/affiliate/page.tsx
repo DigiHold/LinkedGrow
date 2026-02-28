@@ -283,7 +283,7 @@ export default function AffiliateDashboardPage() {
                 Join our affiliate program and earn 30% recurring commissions on every referral. Apply now to get started.
               </p>
               <Link href="/affiliate/apply">
-                <Button>
+                <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Apply to Affiliate Program
                 </Button>
