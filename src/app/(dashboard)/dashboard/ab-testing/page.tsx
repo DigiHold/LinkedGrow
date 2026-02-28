@@ -18,6 +18,7 @@ import {
   AlertCircle,
   X,
   ShieldX,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -148,12 +149,18 @@ export default function ABTestingPage() {
               Test different versions of your posts to see what works best
             </p>
           </div>
-          <Link href="/dashboard/ab-testing/new">
-            <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New A/B Test
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/docs/business-features/ab-testing" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+            <Link href="/dashboard/ab-testing/new">
+              <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                New A/B Test
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Overview */}

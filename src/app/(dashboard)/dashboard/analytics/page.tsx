@@ -12,7 +12,9 @@ import {
   PieChart,
   Calendar,
   ShieldX,
+  HelpCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AnalyticsPage() {
   const { data: session } = useSession();
@@ -44,16 +46,22 @@ export default function AnalyticsPage() {
     <FeatureGate feature="analytics">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            Analytics
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track your LinkedIn performance and growth
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              Analytics
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Track your LinkedIn performance and growth
+            </p>
+          </div>
+          <Link href="/docs/getting-started/understanding-dashboard" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
         </div>
 
         {/* Coming Soon Banner */}

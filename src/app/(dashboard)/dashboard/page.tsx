@@ -18,6 +18,7 @@ import {
   Key,
   CheckCircle2,
   Clock,
+  HelpCircle,
 } from "lucide-react";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
@@ -215,12 +216,18 @@ export default function DashboardPage() {
               : "Set up your AI API key to get started"}
           </p>
         </div>
-        <Link href="/dashboard/editor">
-          <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
-            <Sparkles className="w-4 h-4 mr-2" />
-            New Post
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/docs/getting-started/understanding-dashboard" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
+          <Link href="/dashboard/editor">
+            <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700">
+              <Sparkles className="w-4 h-4 mr-2" />
+              New Post
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}

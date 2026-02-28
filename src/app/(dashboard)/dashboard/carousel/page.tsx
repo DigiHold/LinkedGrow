@@ -44,6 +44,7 @@ import {
   Save,
   FolderOpen,
   Copy,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -901,16 +902,22 @@ export default function CarouselPage() {
     return (
       <FeatureGate feature="carouselGenerator">
         <div className="max-w-3xl mx-auto p-8 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-white" />
-              </div>
-              Carousel Editor
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Create engaging multi-slide carousels for LinkedIn
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                  <Layers className="w-5 h-5 text-white" />
+                </div>
+                Carousel Editor
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Create engaging multi-slide carousels for LinkedIn
+              </p>
+            </div>
+            <Link href="/docs/carousel/carousel-generator" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
           </div>
 
           <div className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-8">

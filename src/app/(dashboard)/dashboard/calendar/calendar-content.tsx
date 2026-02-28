@@ -29,6 +29,7 @@ import {
   Trash2,
   Sparkles,
   Wand2,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -827,7 +828,11 @@ export function CalendarContent() {
             </h1>
             <p className="text-muted-foreground mt-1">Plan and visualize your content schedule</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Link href="/docs/scheduling/content-calendar" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
             <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
           </div>
         </div>

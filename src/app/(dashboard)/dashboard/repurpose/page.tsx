@@ -30,6 +30,7 @@ import {
   FileText,
   Globe,
   Info,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -757,16 +758,22 @@ function ContentRepurposingContent() {
   if (!hasApiKey) {
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Repeat className="w-5 h-5 text-white" />
-            </div>
-            Content Repurposing
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Turn any URL into a LinkedIn post
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Repeat className="w-5 h-5 text-white" />
+              </div>
+              Content Repurposing
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Turn any URL into a LinkedIn post
+            </p>
+          </div>
+          <Link href="/docs/content-creation/content-repurposing" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
         </div>
 
         <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
@@ -824,16 +831,22 @@ function ContentRepurposingContent() {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Repeat className="w-5 h-5 text-white" />
-          </div>
-          Content Repurposing
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Turn any URL into a LinkedIn post
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+              <Repeat className="w-5 h-5 text-white" />
+            </div>
+            Content Repurposing
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Turn any URL into a LinkedIn post
+          </p>
+        </div>
+        <Link href="/docs/content-creation/content-repurposing" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <HelpCircle className="w-3.5 h-3.5" />
+          Help?
+        </Link>
       </div>
 
       {/* Progress Steps */}

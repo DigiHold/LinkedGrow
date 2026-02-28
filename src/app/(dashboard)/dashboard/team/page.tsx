@@ -17,7 +17,9 @@ import {
   Settings,
   Plus,
   ChevronDown,
+  HelpCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -370,13 +372,19 @@ export default function TeamPage() {
               Collaborate with your teams on LinkedIn content
             </p>
           </div>
-          {/* Only owners can create new teams */}
-          {!isTeamMember && (
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Team
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <Link href="/docs/business-features/team-collaboration" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+            {/* Only owners can create new teams */}
+            {!isTeamMember && (
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Team
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

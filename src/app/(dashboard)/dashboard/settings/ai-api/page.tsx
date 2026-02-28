@@ -26,7 +26,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
-import { ImageIcon, Sparkles, Crown, ExternalLink } from "lucide-react";
+import { ImageIcon, Sparkles, Crown, ExternalLink, HelpCircle } from "lucide-react";
+import Link from "next/link";
 
 // SVG icons for AI providers
 const OpenAIIcon = () => (
@@ -72,6 +73,14 @@ const ReplicateIcon = () => (
     <path d="M22 10.552v2.26h-7.932V22H11.54V10.552H22zM22 2v2.264H4.528V22H2V2h20zm0 4.276V8.54H9.296V22H6.768V6.276H22z"/>
   </svg>
 );
+
+const providerHelpUrls: Record<string, string> = {
+  openai: "/docs/byok/openai-setup",
+  anthropic: "/docs/byok/anthropic-setup",
+  google: "/docs/byok/google-ai-setup",
+  grok: "/docs/byok/grok-setup",
+  perplexity: "/docs/byok/perplexity-setup",
+};
 
 const aiProviders = [
   {
@@ -748,16 +757,22 @@ export default function AIAPISettingsPage() {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-            <Key className="w-5 h-5 text-white" />
-          </div>
-          AI API Keys
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Connect your own AI providers for unlimited post and image generation
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+              <Key className="w-5 h-5 text-white" />
+            </div>
+            AI API Keys
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Connect your own AI providers for unlimited post and image generation
+          </p>
+        </div>
+        <Link href="/docs/byok" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <HelpCircle className="w-3.5 h-3.5" />
+          Help?
+        </Link>
       </div>
 
       {/* Text AI API Keys */}
@@ -860,6 +875,12 @@ export default function AIAPISettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {providerHelpUrls[viewingProvider] && (
+                      <Link href={providerHelpUrls[viewingProvider]} className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+                        <HelpCircle className="w-3 h-3" />
+                        Setup guide
+                      </Link>
+                    )}
                     {viewingProvider === activeProvider && viewingProviderHasKey && (
                       <span className="flex items-center gap-1 text-xs text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 px-2.5 py-1 rounded-full font-medium">
                         <Check className="w-3 h-3" />
@@ -1044,8 +1065,12 @@ export default function AIAPISettingsPage() {
               </span>
             )}
           </CardTitle>
-          <CardDescription>
-            Connect an image generation API for creating visuals with your posts
+          <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span>Connect an image generation API for creating visuals with your posts</span>
+            <Link href="/docs/byok/image-providers" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
+              <HelpCircle className="w-3 h-3" />
+              Setup guide
+            </Link>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

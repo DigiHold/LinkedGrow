@@ -18,7 +18,9 @@ import {
   ExternalLink,
   X,
   ShieldX,
+  HelpCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -203,13 +205,19 @@ export default function ApiKeysPage() {
             </p>
           </div>
 
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create API Key
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/docs/business-features/api-access" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create API Key
+            </Button>
+          </div>
         </div>
 
         {/* Security Notice */}
