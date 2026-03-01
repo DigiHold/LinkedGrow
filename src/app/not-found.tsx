@@ -19,7 +19,7 @@ export default function NotFound() {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4">
+      <main className="flex-1 flex items-center justify-center px-4 pb-12">
         <div className="relative z-10 text-center max-w-xl mx-auto">
           {/* 404 Number */}
           <motion.div
