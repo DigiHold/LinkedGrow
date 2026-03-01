@@ -64,26 +64,34 @@ export default function ChatWidget() {
       const msg = PRICING_NUDGE_MESSAGES[Math.floor(Math.random() * PRICING_NUDGE_MESSAGES.length)];
       setNudgeMessage(msg);
 
-      // Play a subtle notification sound
+      // Play a subtle notification sound (two-tone chime)
       try {
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 800;
-        osc.type = "sine";
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.4);
+        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+
+        const playTone = (freq: number, startTime: number, duration: number) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0.06, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+          osc.start(startTime);
+          osc.stop(startTime + duration);
+        };
+
+        // Two-note chime like Intercom
+        playTone(880, ctx.currentTime, 0.15);
+        playTone(1175, ctx.currentTime + 0.12, 0.2);
       } catch {
-        // Audio not supported, ignore
+        // Audio not supported or blocked, ignore
       }
 
       // Auto-dismiss after 8 seconds
       setTimeout(() => setNudgeMessage(null), 8000);
-    }, 25000);
+    }, 3000);
 
     return () => {
       if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
@@ -130,7 +138,16 @@ export default function ChatWidget() {
     <>
       {/* Nudge notification bubble */}
       {nudgeMessage && !isOpen && (
-        <div className="fixed bottom-[70px] right-5 z-[9995] sm:bottom-[68px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div
+          className="fixed bottom-[52px] right-5 z-[9995] sm:bottom-[72px]"
+          style={{ animation: "chat-nudge-in 0.4s ease-out forwards" }}
+        >
+          <style>{`
+            @keyframes chat-nudge-in {
+              from { opacity: 0; transform: translateY(8px) scale(0.95); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
           <button
             onClick={handleOpen}
             className="flex items-center gap-2 rounded-2xl rounded-br-sm bg-white px-4 py-3 shadow-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:shadow-xl transition-shadow max-w-[260px]"
