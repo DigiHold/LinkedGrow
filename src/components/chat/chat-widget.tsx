@@ -91,7 +91,7 @@ export default function ChatWidget() {
 
       // Auto-dismiss after 8 seconds
       setTimeout(() => setNudgeMessage(null), 8000);
-    }, 3000);
+    }, 25000);
 
     return () => {
       if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
