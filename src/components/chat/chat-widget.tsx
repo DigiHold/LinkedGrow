@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -158,6 +158,21 @@ function InlineSupportForm({
   );
 }
 
+const CHAT_STORAGE_KEY = "linkedgrow-chat";
+
+function loadSavedMessages() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!saved) return undefined;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed) || parsed.length === 0) return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
+
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -169,8 +184,9 @@ export default function ChatWidget() {
   const nudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, setMessages } = useChat();
   const [sessionUser, setSessionUser] = useState<{ name?: string; email?: string } | null>(null);
+  const restoredRef = useRef(false);
 
   const isLoading = status === "streaming" || status === "submitted";
   const isDashboard = pathname?.startsWith("/dashboard");
@@ -178,6 +194,26 @@ export default function ChatWidget() {
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  // Restore messages from localStorage on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const saved = loadSavedMessages();
+    if (saved) {
+      setMessages(saved);
+    }
+  }, [setMessages]);
+
+  // Save messages to localStorage
+  useEffect(() => {
+    if (!restoredRef.current) return;
+    try {
+      if (messages.length > 0) {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+      }
+    } catch {}
+  }, [messages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -267,6 +303,13 @@ export default function ChatWidget() {
 
   const handleClose = () => {
     setIsOpen(false);
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    try {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch {}
   };
 
   const handleSend = () => {
@@ -374,13 +417,25 @@ export default function ChatWidget() {
                 <p className="text-xs text-white/80">Ask anything about LinkedGrow</p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-              aria-label="Close chat"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {messages.length > 0 && (
+                <button
+                  onClick={handleNewChat}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                  aria-label="New chat"
+                  title="New chat"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={handleClose}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                aria-label="Close chat"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages area */}
