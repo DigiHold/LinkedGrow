@@ -35,6 +35,7 @@ export default function ChatWidget() {
   const { messages, sendMessage, status } = useChat();
 
   const isLoading = status === "streaming" || status === "submitted";
+  const isDashboard = pathname?.startsWith("/dashboard");
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,6 +52,16 @@ export default function ChatWidget() {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  // Listen for custom event from dashboard sidebar to open chat
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true);
+      setHasInteracted(true);
+    };
+    window.addEventListener("open-chat-widget", handleOpenChat);
+    return () => window.removeEventListener("open-chat-widget", handleOpenChat);
+  }, []);
 
   // Pricing page nudge notification
   useEffect(() => {
@@ -136,8 +147,8 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Nudge notification bubble */}
-      {nudgeMessage && !isOpen && (
+      {/* Nudge notification bubble - marketing pages only */}
+      {!isDashboard && nudgeMessage && !isOpen && (
         <div
           className="fixed bottom-[52px] right-5 z-[9995] sm:bottom-[72px]"
           style={{ animation: "chat-nudge-in 0.4s ease-out forwards" }}
@@ -165,32 +176,36 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* Chat bubble button */}
-      <button
-        onClick={isOpen ? handleClose : handleOpen}
-        className={cn(
-          "fixed bottom-5 right-5 z-[9995] flex items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
-          "bg-gradient-to-r from-cyan-500 to-blue-600 text-white",
-          "h-8 w-8 sm:h-12 sm:w-12"
-        )}
-        aria-label={isOpen ? "Close chat" : "Open chat"}
-      >
-        {isOpen ? (
-          <X className="h-4 w-4 sm:h-5 sm:w-5" />
-        ) : (
-          <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-        )}
-      </button>
+      {/* Chat bubble button - marketing pages only */}
+      {!isDashboard && (
+        <button
+          onClick={isOpen ? handleClose : handleOpen}
+          className={cn(
+            "fixed bottom-5 right-5 z-[9995] flex items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
+            "bg-gradient-to-r from-cyan-500 to-blue-600 text-white",
+            "h-8 w-8 sm:h-12 sm:w-12"
+          )}
+          aria-label={isOpen ? "Close chat" : "Open chat"}
+        >
+          {isOpen ? (
+            <X className="h-4 w-4 sm:h-5 sm:w-5" />
+          ) : (
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+          )}
+        </button>
+      )}
 
       {/* Chat panel */}
-      {(isOpen || hasInteracted) && (
+      {(isOpen || (!isDashboard && hasInteracted)) && (
         <div
           className={cn(
             "fixed z-[9995] flex flex-col overflow-hidden bg-white shadow-2xl transition-all duration-300 ease-in-out dark:bg-slate-900",
             // Mobile: full screen
             "inset-0 sm:inset-auto",
             // Desktop: floating panel
-            "sm:bottom-[72px] sm:right-5 sm:h-[min(600px,calc(100vh-120px))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-slate-200 sm:dark:border-slate-700",
+            isDashboard
+              ? "sm:bottom-5 sm:right-5 sm:h-[min(600px,calc(100vh-60px))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-slate-200 sm:dark:border-slate-700"
+              : "sm:bottom-[72px] sm:right-5 sm:h-[min(600px,calc(100vh-120px))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-slate-200 sm:dark:border-slate-700",
             isOpen
               ? "translate-y-0 opacity-100"
               : "pointer-events-none translate-y-4 opacity-0"
@@ -211,7 +226,7 @@ export default function ChatWidget() {
             </div>
             <button
               onClick={handleClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white sm:hidden"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white"
               aria-label="Close chat"
             >
               <X className="h-5 w-5" />
