@@ -159,16 +159,22 @@ function InlineSupportForm({
 }
 
 const CHAT_STORAGE_KEY = "linkedgrow-chat";
+const CHAT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function loadSavedMessages() {
   if (typeof window === "undefined") return undefined;
   try {
     const saved = localStorage.getItem(CHAT_STORAGE_KEY);
     if (!saved) return undefined;
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed) || parsed.length === 0) return undefined;
-    return parsed;
+    const { messages: msgs, timestamp } = JSON.parse(saved);
+    if (!Array.isArray(msgs) || msgs.length === 0) return undefined;
+    if (timestamp && Date.now() - timestamp > CHAT_EXPIRY_MS) {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+      return undefined;
+    }
+    return msgs;
   } catch {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
     return undefined;
   }
 }
@@ -205,12 +211,12 @@ export default function ChatWidget() {
     }
   }, [setMessages]);
 
-  // Save messages to localStorage
+  // Save messages to localStorage with timestamp
   useEffect(() => {
     if (!restoredRef.current) return;
     try {
       if (messages.length > 0) {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, timestamp: Date.now() }));
       }
     } catch {}
   }, [messages]);
