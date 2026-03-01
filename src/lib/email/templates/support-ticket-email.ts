@@ -18,11 +18,36 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function formatConversationHtml(summary: string): string {
-  // Escape HTML first, then format
-  const escaped = escapeHtml(summary);
+function markdownToHtml(text: string): string {
+  let html = escapeHtml(text);
+  // Convert **bold** to <strong>
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Convert [link text](url) to <a>
+  html = html.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" style="color: #0182f2; text-decoration: none;">$1</a>'
+  );
   // Convert newlines to <br>
-  return escaped.replace(/\n/g, "<br>");
+  html = html.replace(/\n/g, "<br>");
+  return html;
+}
+
+function formatConversationHtml(summary: string): string {
+  // Split into lines, format each line with role prefix styling
+  const lines = summary.split("\n");
+  return lines
+    .map((line) => {
+      if (line.startsWith("User: ")) {
+        const content = line.substring(6);
+        return `<strong style="color: #0F172B;">User:</strong> ${markdownToHtml(content)}`;
+      }
+      if (line.startsWith("AI: ")) {
+        const content = line.substring(4);
+        return `<strong style="color: #0182f2;">AI:</strong> ${markdownToHtml(content)}`;
+      }
+      return markdownToHtml(line);
+    })
+    .join("<br>");
 }
 
 export function supportTicketEmailTemplate({
@@ -192,27 +217,6 @@ export function supportTicketEmailTemplate({
                                 </table>
                                 ` : ""}
 
-                                <!-- CTA Button -->
-                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td height="30" style="line-height: 30px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="row" align="center" style="padding: 0 50px;">
-                                            <table border="0" cellspacing="0" cellpadding="0" width="100%">
-                                                <tr>
-                                                    <td align="center" bgcolor="#0182f2" style="border-radius: 8px;">
-                                                        <a href="mailto:${escapeHtml(email)}" style="display: block; padding: 16px 32px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; text-align: center;">Reply to ${escapeHtml(name)}</a>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td height="30" style="line-height: 30px;"></td>
-                                    </tr>
-                                </table>
-
                                 <!-- Divider -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
@@ -309,8 +313,6 @@ ${isLoggedIn !== undefined ? `Status: ${isLoggedIn ? "Logged-in user" : "Visitor
 Message:
 ${message}
 ${conversationSummary ? `\nChat Context:\n${conversationSummary}` : ""}
-
-Reply to: ${email}
 
 ---
 
