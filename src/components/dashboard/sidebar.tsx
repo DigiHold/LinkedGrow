@@ -465,6 +465,16 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
+                  window.dispatchEvent(new Event("open-chat-widget"));
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Chat with AI
+              </button>
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
                   router.push("/dashboard/settings");
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
