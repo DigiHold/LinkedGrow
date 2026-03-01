@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2 } from "lucide-react";
@@ -22,9 +23,17 @@ const PRICING_NUDGE_MESSAGES = [
 ];
 
 // Inline support form rendered inside chat messages
-function InlineSupportForm({ messages }: { messages: Array<{ role: string; parts?: Array<{ type: string; text?: string }> }> }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+function InlineSupportForm({
+  messages,
+  defaultName,
+  defaultEmail,
+}: {
+  messages: Array<{ role: string; parts?: Array<{ type: string; text?: string }> }>;
+  defaultName?: string;
+  defaultEmail?: string;
+}) {
+  const [name, setName] = useState(defaultName || "");
+  const [email, setEmail] = useState(defaultEmail || "");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
 
@@ -88,7 +97,10 @@ function InlineSupportForm({ messages }: { messages: Array<{ role: string; parts
   }
 
   return (
-    <div className="my-1 flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/50">
+    <div className="my-1 flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-900">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Fill in the fields below to create a support ticket.
+      </p>
       <div>
         <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Name</label>
         <input
@@ -96,7 +108,7 @@ function InlineSupportForm({ messages }: { messages: Array<{ role: string; parts
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       <div>
@@ -106,7 +118,7 @@ function InlineSupportForm({ messages }: { messages: Array<{ role: string; parts
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       <div>
@@ -116,7 +128,7 @@ function InlineSupportForm({ messages }: { messages: Array<{ role: string; parts
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe your issue or question..."
           rows={3}
-          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500"
+          className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-500 dark:focus:bg-slate-800"
         />
       </div>
       {status === "error" && (
@@ -158,6 +170,7 @@ export default function ChatWidget() {
   const nudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
+  const { data: session } = useSession();
   const { messages, sendMessage, status } = useChat();
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -472,7 +485,14 @@ export default function ChatWidget() {
                         }
                         // Tool call: render inline support form immediately
                         if (part.type === "tool-invocation" || part.type.startsWith("tool-")) {
-                          return <InlineSupportForm key={i} messages={messages} />;
+                          return (
+                            <InlineSupportForm
+                              key={i}
+                              messages={messages}
+                              defaultName={session?.user?.name || undefined}
+                              defaultEmail={session?.user?.email || undefined}
+                            />
+                          );
                         }
                         return null;
                       })}

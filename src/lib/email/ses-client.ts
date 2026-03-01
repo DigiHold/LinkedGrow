@@ -9,9 +9,10 @@ interface SendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
+export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams) {
   if (!BREVO_API_KEY) {
     throw new Error("BREVO_API_KEY is not configured");
   }
@@ -30,6 +31,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
           email: FROM_EMAIL,
         },
         to: [{ email: to }],
+        ...(replyTo ? { replyTo: { email: replyTo } } : {}),
         subject,
         htmlContent: html,
         textContent: text,
