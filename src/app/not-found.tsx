@@ -9,7 +9,7 @@ import { Footer } from "@/components/marketing/footer";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col pt-20">
       <Header />
 
       {/* Background decoration */}
