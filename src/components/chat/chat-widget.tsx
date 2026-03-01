@@ -159,7 +159,7 @@ function InlineSupportForm({
 }
 
 const CHAT_STORAGE_KEY = "linkedgrow-chat";
-const CHAT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CHAT_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes inactivity
 
 function loadSavedMessages() {
   if (typeof window === "undefined") return undefined;
