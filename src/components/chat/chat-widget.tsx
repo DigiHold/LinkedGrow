@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
-import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2 } from "lucide-react";
@@ -170,8 +169,8 @@ export default function ChatWidget() {
   const nudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
-  const { data: session } = useSession();
   const { messages, sendMessage, status } = useChat();
+  const [sessionUser, setSessionUser] = useState<{ name?: string; email?: string } | null>(null);
 
   const isLoading = status === "streaming" || status === "submitted";
   const isDashboard = pathname?.startsWith("/dashboard");
@@ -191,6 +190,18 @@ export default function ChatWidget() {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  // Fetch session user info for form pre-fill (no SessionProvider needed)
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) {
+          setSessionUser({ name: data.user.name, email: data.user.email });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Listen for custom event from dashboard sidebar to open chat
   useEffect(() => {
@@ -489,8 +500,8 @@ export default function ChatWidget() {
                             <InlineSupportForm
                               key={i}
                               messages={messages}
-                              defaultName={session?.user?.name || undefined}
-                              defaultEmail={session?.user?.email || undefined}
+                              defaultName={sessionUser?.name || undefined}
+                              defaultEmail={sessionUser?.email || undefined}
                             />
                           );
                         }
