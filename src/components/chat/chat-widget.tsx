@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
+import { usePathname } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { MessageCircle, X, Send, ArrowDown, User, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,12 @@ const SUGGESTED_QUESTIONS = [
   "What are the pricing plans?",
 ];
 
+const PRICING_NUDGE_MESSAGES = [
+  "Questions about our plans? Let's chat!",
+  "Need help choosing a plan? I'm here!",
+  "Any questions before signing up?",
+];
+
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -21,6 +28,9 @@ export default function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [nudgeMessage, setNudgeMessage] = useState<string | null>(null);
+  const nudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pathname = usePathname();
 
   const { messages, sendMessage, status } = useChat();
 
@@ -42,9 +52,48 @@ export default function ChatWidget() {
     }
   }, [isOpen]);
 
+  // Pricing page nudge notification
+  useEffect(() => {
+    if (pathname !== "/pricing" || isOpen || hasInteracted) {
+      setNudgeMessage(null);
+      if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
+      return;
+    }
+
+    nudgeTimerRef.current = setTimeout(() => {
+      const msg = PRICING_NUDGE_MESSAGES[Math.floor(Math.random() * PRICING_NUDGE_MESSAGES.length)];
+      setNudgeMessage(msg);
+
+      // Play a subtle notification sound
+      try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } catch {
+        // Audio not supported, ignore
+      }
+
+      // Auto-dismiss after 8 seconds
+      setTimeout(() => setNudgeMessage(null), 8000);
+    }, 25000);
+
+    return () => {
+      if (nudgeTimerRef.current) clearTimeout(nudgeTimerRef.current);
+    };
+  }, [pathname, isOpen, hasInteracted]);
+
   const handleOpen = () => {
     setIsOpen(true);
     setHasInteracted(true);
+    setNudgeMessage(null);
   };
 
   const handleClose = () => {
@@ -79,20 +128,40 @@ export default function ChatWidget() {
 
   return (
     <>
+      {/* Nudge notification bubble */}
+      {nudgeMessage && !isOpen && (
+        <div className="fixed bottom-[70px] right-5 z-[9995] sm:bottom-[68px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <button
+            onClick={handleOpen}
+            className="flex items-center gap-2 rounded-2xl rounded-br-sm bg-white px-4 py-3 shadow-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:shadow-xl transition-shadow max-w-[260px]"
+          >
+            <Bot className="h-5 w-5 shrink-0 text-cyan-500" />
+            <span className="text-sm text-slate-700 dark:text-slate-300 text-left">{nudgeMessage}</span>
+          </button>
+          <button
+            onClick={() => setNudgeMessage(null)}
+            className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       {/* Chat bubble button */}
       <button
         onClick={isOpen ? handleClose : handleOpen}
         className={cn(
-          "fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
+          "fixed bottom-5 right-5 z-[9995] flex items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
           "bg-gradient-to-r from-cyan-500 to-blue-600 text-white",
-          "h-14 w-14 sm:h-[60px] sm:w-[60px]"
+          "h-8 w-8 sm:h-12 sm:w-12"
         )}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? (
-          <X className="h-6 w-6" />
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
         ) : (
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
         )}
       </button>
 
@@ -100,11 +169,11 @@ export default function ChatWidget() {
       {(isOpen || hasInteracted) && (
         <div
           className={cn(
-            "fixed z-50 flex flex-col overflow-hidden bg-white shadow-2xl transition-all duration-300 ease-in-out dark:bg-slate-900",
+            "fixed z-[9995] flex flex-col overflow-hidden bg-white shadow-2xl transition-all duration-300 ease-in-out dark:bg-slate-900",
             // Mobile: full screen
             "inset-0 sm:inset-auto",
             // Desktop: floating panel
-            "sm:bottom-24 sm:right-5 sm:h-[min(600px,calc(100vh-120px))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-slate-200 sm:dark:border-slate-700",
+            "sm:bottom-[72px] sm:right-5 sm:h-[min(600px,calc(100vh-120px))] sm:w-[400px] sm:rounded-2xl sm:border sm:border-slate-200 sm:dark:border-slate-700",
             isOpen
               ? "translate-y-0 opacity-100"
               : "pointer-events-none translate-y-4 opacity-0"
