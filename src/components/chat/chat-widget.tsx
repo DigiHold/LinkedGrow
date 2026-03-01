@@ -470,23 +470,9 @@ export default function ChatWidget() {
                             </ReactMarkdown>
                           );
                         }
-                        // Tool call: render inline support form
-                        if (part.type.startsWith("tool-")) {
-                          const toolPart = part as { type: string; state: string };
-                          if (toolPart.state === "result") {
-                            return <InlineSupportForm key={i} messages={messages} />;
-                          }
-                          if (toolPart.state !== "result") {
-                            return (
-                              <div
-                                key={i}
-                                className="my-1 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                              >
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Opening support form...
-                              </div>
-                            );
-                          }
+                        // Tool call: render inline support form immediately
+                        if (part.type === "tool-invocation" || part.type.startsWith("tool-")) {
+                          return <InlineSupportForm key={i} messages={messages} />;
                         }
                         return null;
                       })}
