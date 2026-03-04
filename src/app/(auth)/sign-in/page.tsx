@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { redirectToCheckout } from "@/lib/checkout";
 
 // LinkedIn "in" icon only
 function LinkedInIcon({ className }: { className?: string }) {
@@ -73,6 +74,14 @@ function SignInForm() {
           setErrorMessage(errorCode);
         }
       } else if (result?.ok) {
+        // If user came from pricing with a plan selected, go straight to Stripe checkout
+        const plan = searchParams.get("plan");
+        if (plan) {
+          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+          const coupon = searchParams.get("coupon") || undefined;
+          redirectToCheckout(plan, email, undefined, interval, coupon);
+          return;
+        }
         router.push(callbackUrl);
       }
     } catch {
@@ -111,7 +120,15 @@ function SignInForm() {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
-        await updateSession();
+        const session = await updateSession();
+        // If user came from pricing with a plan selected, go straight to Stripe checkout
+        const plan = searchParams.get("plan");
+        if (plan && session?.user?.email) {
+          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+          const coupon = searchParams.get("coupon") || undefined;
+          redirectToCheckout(plan, session.user.email, undefined, interval, coupon);
+          return;
+        }
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
         const redirectTo = event.data.callbackUrl || callbackUrl;
         router.push(redirectTo);
@@ -312,7 +329,16 @@ function SignInForm() {
 
           <div className="mt-6 text-center text-sm">
             <span className="text-slate-600 dark:text-slate-400">Don&apos;t have an account? </span>
-            <Link href="/sign-up" className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold">
+            <Link href={(() => {
+              const plan = searchParams.get("plan");
+              if (!plan) return "/sign-up";
+              const p = new URLSearchParams({ plan });
+              const interval = searchParams.get("interval");
+              const coupon = searchParams.get("coupon");
+              if (interval) p.set("interval", interval);
+              if (coupon) p.set("coupon", coupon);
+              return `/sign-up?${p.toString()}`;
+            })()} className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold">
               Sign up
             </Link>
           </div>

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
+import { redirectToCheckout } from "@/lib/checkout";
 
 type SocialProvider = "linkedin" | "google" | null;
 
@@ -85,8 +86,16 @@ function SignUpContent() {
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
-        await updateSession();
-        // Use callbackUrl from the OAuth response if provided, otherwise dashboard
+        const session = await updateSession();
+        // If user came from pricing with a plan selected, go straight to checkout
+        const plan = searchParams.get("plan");
+        if (plan && session?.user?.email) {
+          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+          const coupon = searchParams.get("coupon") || undefined;
+          redirectToCheckout(plan, session.user.email, undefined, interval, coupon);
+          return;
+        }
+        // Otherwise use callbackUrl from the OAuth response if provided, or dashboard
         const redirectTo = event.data.callbackUrl || callbackUrl || '/dashboard';
         router.push(redirectTo);
       } else if (event.data.type === `${provider}-error`) {
@@ -147,12 +156,19 @@ function SignUpContent() {
         return;
       }
 
-      // Redirect to sign in page, preserving callbackUrl if present
+      // Redirect to sign in page, preserving plan selection and callbackUrl
       const callbackUrl = searchParams.get("callbackUrl");
-      const signInUrl = callbackUrl
-        ? `/sign-in?registered=true&callbackUrl=${encodeURIComponent(callbackUrl)}`
-        : "/sign-in?registered=true";
-      router.push(signInUrl);
+      const plan = searchParams.get("plan");
+      const interval = searchParams.get("interval");
+      const coupon = searchParams.get("coupon");
+
+      const signInParams = new URLSearchParams({ registered: "true" });
+      if (callbackUrl) signInParams.set("callbackUrl", callbackUrl);
+      if (plan) signInParams.set("plan", plan);
+      if (interval) signInParams.set("interval", interval);
+      if (coupon) signInParams.set("coupon", coupon);
+
+      router.push(`/sign-in?${signInParams.toString()}`);
     } catch {
       setErrorMessage("An error occurred. Please try again.");
     } finally {
@@ -374,7 +390,16 @@ function SignUpContent() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-slate-600 dark:text-slate-400">Already have an account? </span>
-              <Link href="/sign-in" className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold">
+              <Link href={(() => {
+                const plan = searchParams.get("plan");
+                if (!plan) return "/sign-in";
+                const p = new URLSearchParams({ plan });
+                const interval = searchParams.get("interval");
+                const coupon = searchParams.get("coupon");
+                if (interval) p.set("interval", interval);
+                if (coupon) p.set("coupon", coupon);
+                return `/sign-in?${p.toString()}`;
+              })()} className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold">
                 Sign in
               </Link>
             </div>
