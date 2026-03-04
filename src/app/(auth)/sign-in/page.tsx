@@ -76,10 +76,13 @@ function SignInForm() {
       } else if (result?.ok) {
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
+        console.log("[sign-in] Login OK. plan:", plan, "email:", email);
         if (plan) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
+          console.log("[sign-in] Calling redirectToCheckout:", { plan, email, interval, coupon });
           const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
+          console.log("[sign-in] redirectToCheckout returned:", redirected);
           if (redirected) return;
         }
         router.push(callbackUrl);
@@ -121,13 +124,17 @@ function SignInForm() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
+        console.log("[sign-in social] updateSession returned:", session);
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
         const userEmail = session?.user?.email;
+        console.log("[sign-in social] plan:", plan, "userEmail:", userEmail);
         if (plan && userEmail) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
+          console.log("[sign-in social] Calling redirectToCheckout:", { plan, userEmail, interval, coupon });
           const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
+          console.log("[sign-in social] redirectToCheckout returned:", redirected);
           if (redirected) return;
         }
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
