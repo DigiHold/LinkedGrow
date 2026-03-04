@@ -74,13 +74,13 @@ function SignInForm() {
           setErrorMessage(errorCode);
         }
       } else if (result?.ok) {
-        // If user came from pricing with a plan selected, go straight to Stripe checkout
+        // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
         if (plan) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
-          redirectToCheckout(plan, email, undefined, interval, coupon);
-          return;
+          const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
+          if (redirected) return;
         }
         router.push(callbackUrl);
       }
@@ -121,13 +121,14 @@ function SignInForm() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
-        // If user came from pricing with a plan selected, go straight to Stripe checkout
+        // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
-        if (plan && session?.user?.email) {
+        const userEmail = session?.user?.email;
+        if (plan && userEmail) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
-          redirectToCheckout(plan, session.user.email, undefined, interval, coupon);
-          return;
+          const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
+          if (redirected) return;
         }
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
         const redirectTo = event.data.callbackUrl || callbackUrl;

@@ -87,13 +87,14 @@ function SignUpContent() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
-        // If user came from pricing with a plan selected, go straight to checkout
+        // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
-        if (plan && session?.user?.email) {
+        const userEmail = session?.user?.email;
+        if (plan && userEmail) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
-          redirectToCheckout(plan, session.user.email, undefined, interval, coupon);
-          return;
+          const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
+          if (redirected) return;
         }
         // Otherwise use callbackUrl from the OAuth response if provided, or dashboard
         const redirectTo = event.data.callbackUrl || callbackUrl || '/dashboard';
