@@ -3,6 +3,7 @@ import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWith
 import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
+import { scheduleFirstComment } from '@/lib/qstash';
 import { eq } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
@@ -168,6 +169,19 @@ export async function POST(request: NextRequest) {
         })
         .where(eq(posts.id, postId));
 
+      // Schedule first comment if present (random 1-5 min delay)
+      const updatedPost = await db.query.posts.findFirst({
+        where: eq(posts.id, postId),
+      });
+
+      if (updatedPost?.firstComment) {
+        try {
+          const delaySeconds = Math.floor(Math.random() * 241) + 60;
+          await scheduleFirstComment(postId, delaySeconds);
+        } catch (error) {
+          console.error("Failed to schedule first comment:", error);
+        }
+      }
     }
 
     const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';

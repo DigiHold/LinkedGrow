@@ -4,6 +4,7 @@ import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
+import { scheduleFirstComment } from "@/lib/qstash";
 
 // Initialize QStash receiver for signature verification
 const receiver = new Receiver({
@@ -191,6 +192,16 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(posts.id, postId));
+
+    // Schedule first comment if present (random 1-5 min delay)
+    if (post.firstComment) {
+      try {
+        const delaySeconds = Math.floor(Math.random() * 241) + 60;
+        await scheduleFirstComment(postId, delaySeconds);
+      } catch (error) {
+        console.error("Failed to schedule first comment:", error);
+      }
+    }
 
     return NextResponse.json({
       success: true,

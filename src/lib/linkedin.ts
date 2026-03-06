@@ -262,6 +262,53 @@ export async function createLinkedInPost(
 }
 
 /**
+ * Post a comment on a LinkedIn post
+ * Uses the REST API socialActions endpoint
+ * Requires w_member_social scope (already available via Poster App)
+ */
+export async function createLinkedInComment(
+  accessToken: string,
+  postUrn: string,
+  authorId: string,
+  commentText: string,
+  authorType: 'person' | 'organization' = 'person'
+): Promise<{ id: string }> {
+  const actorUrn = authorType === 'organization'
+    ? `urn:li:organization:${authorId}`
+    : `urn:li:person:${authorId}`;
+
+  const encodedPostUrn = encodeURIComponent(postUrn);
+
+  const response = await fetch(
+    `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify({
+        actor: actorUrn,
+        object: postUrn,
+        message: {
+          text: commentText,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create LinkedIn comment: ${error}`);
+  }
+
+  const data = await response.json();
+  return { id: data.id || data['$URN'] || 'comment-created' };
+}
+
+/**
  * Register an image upload with LinkedIn
  * Returns the upload URL and asset URN
  */

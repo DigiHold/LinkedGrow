@@ -58,4 +58,24 @@ export async function reschedulePost(
   return schedulePost(postId, newScheduledAt);
 }
 
+/**
+ * Schedule a first comment to be posted after publication
+ * @param postId - The ID of the post to comment on
+ * @param delaySeconds - Random delay in seconds (60-300)
+ * @returns The QStash message ID
+ */
+export async function scheduleFirstComment(
+  postId: string,
+  delaySeconds: number
+): Promise<string> {
+  const response = await qstash.publishJSON({
+    url: `${APP_URL}/api/qstash/post-first-comment`,
+    body: { postId },
+    delay: delaySeconds,
+    retries: 3,
+  });
+
+  return response.messageId;
+}
+
 export { qstash };

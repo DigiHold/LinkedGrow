@@ -164,6 +164,8 @@ export const posts = sqliteTable("posts", {
   linkedinPostUrl: text("linkedin_post_url"),
   // QStash message ID for scheduled posts (used to cancel/reschedule)
   qstashMessageId: text("qstash_message_id"),
+  // First comment to auto-post after publication (1-5 min delay)
+  firstComment: text("first_comment"),
   // Store metadata like formatting options, hashtags, etc.
   metadata: text("metadata"), // JSON string
   // Error message if publishing failed

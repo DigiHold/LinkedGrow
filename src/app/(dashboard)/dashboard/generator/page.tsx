@@ -36,6 +36,7 @@ import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { FirstComment } from "@/components/dashboard/first-comment";
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
 
 const postTypes = [
@@ -310,6 +311,7 @@ export default function GeneratorPage() {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
+  const [firstComment, setFirstComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [linkPreviewUrl, setLinkPreviewUrl] = useState("");
@@ -632,6 +634,7 @@ export default function GeneratorPage() {
           status: "draft",
           postType: attachedImage ? "image" : "text",
           mediaData,
+          firstComment: firstComment || null,
           metadata: {
             postType: selectedType,
             postCategory: selectedCategory,
@@ -685,6 +688,7 @@ export default function GeneratorPage() {
           status: "draft",
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
+          firstComment: firstComment || null,
         }),
       });
 
@@ -760,6 +764,7 @@ export default function GeneratorPage() {
           scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
           mediaData,
+          firstComment: firstComment || null,
           metadata: {
             postType: selectedType,
             postCategory: selectedCategory,
@@ -1264,6 +1269,16 @@ export default function GeneratorPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* First Comment */}
+            {currentPost.trim() && (
+              <FirstComment
+                value={firstComment}
+                onChange={setFirstComment}
+                postContent={currentPost}
+                onError={showToast}
+              />
+            )}
 
             {/* AI Quick Actions */}
             <Card className="border-linkedin/20 bg-linkedin/5">

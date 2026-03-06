@@ -206,6 +206,7 @@ export async function POST(request: NextRequest) {
       metadata,
       mediaInfo, // { storageUrl, storageKey, mimeType, fileSize } - image already uploaded to R2
       mediaData, // { base64, mimeType } - image to be uploaded to R2 (from Reddit/Generator pages)
+      firstComment, // Auto-comment to post after publication
     } = body;
 
     if (!content || content.trim() === "") {
@@ -375,6 +376,7 @@ export async function POST(request: NextRequest) {
       id: postId,
       userId: user.id,
       content: content.trim(),
+      firstComment: firstComment?.trim() || null,
       status,
       postType: actualPostType,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,

@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { FirstComment } from "@/components/dashboard/first-comment";
 import { Textarea } from "@/components/ui/textarea";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, getNowInTimezone, resolveTimezone } from "@/lib/timezone";
@@ -164,6 +165,7 @@ function EditorContent() {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [firstComment, setFirstComment] = useState("");
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [attachedImage, setAttachedImage] = useState<{
     base64: string;
@@ -219,6 +221,7 @@ function EditorContent() {
           if (response.ok) {
             const data = await response.json();
             setContent(data.post.content || "");
+            setFirstComment(data.post.firstComment || "");
             setCurrentPostId(data.post.id);
             // Load existing media if present
             if (data.post.media && data.post.media.length > 0) {
@@ -331,7 +334,7 @@ function EditorContent() {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "draft", mediaInfo, removeMedia }),
+          body: JSON.stringify({ content, status: "draft", mediaInfo, removeMedia, firstComment: firstComment || null }),
         });
         if (!response.ok) throw new Error("Failed to update post");
       } else {
@@ -343,6 +346,7 @@ function EditorContent() {
             status: "draft",
             postType: attachedImage ? "image" : "text",
             mediaInfo,
+            firstComment: firstComment || null,
           }),
         });
         if (!response.ok) {
@@ -390,6 +394,7 @@ function EditorContent() {
             status: "draft",
             postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
             mediaInfo,
+            firstComment: firstComment || null,
           }),
         });
         if (!response.ok) {
@@ -465,7 +470,7 @@ function EditorContent() {
         const response = await fetch(`/api/posts/${currentPostId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaInfo, removeMedia }),
+          body: JSON.stringify({ content, status: "scheduled", scheduledAt, mediaInfo, removeMedia, firstComment: firstComment || null }),
         });
         if (!response.ok) throw new Error("Failed to schedule post");
       } else {
@@ -478,6 +483,7 @@ function EditorContent() {
             postType: attachedImage ? "image" : "text",
             scheduledAt,
             mediaInfo,
+            firstComment: firstComment || null,
           }),
         });
         if (!response.ok) {
@@ -503,6 +509,7 @@ function EditorContent() {
 
   const handleClearContent = () => {
     setContent("");
+    setFirstComment("");
     setAttachedImage(null);
     setShowMoreMenu(false);
   };
@@ -592,6 +599,14 @@ Tips for viral posts:
               showCarouselButton={hasCarouselAccess}
               attachedImage={attachedImage}
               onImageChange={setAttachedImage}
+              onError={showError}
+            />
+
+            {/* First Comment */}
+            <FirstComment
+              value={firstComment}
+              onChange={setFirstComment}
+              postContent={content}
               onError={showError}
             />
 

@@ -165,7 +165,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { content, status, postType, scheduledAt, metadata, mediaInfo, removeMedia } = body;
+    const { content, status, postType, scheduledAt, metadata, mediaInfo, removeMedia, firstComment } = body;
 
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
@@ -227,6 +227,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     if (metadata !== undefined)
       updateData.metadata = metadata ? JSON.stringify(metadata) : null;
+    if (firstComment !== undefined)
+      updateData.firstComment = firstComment?.trim() || null;
 
     // Handle QStash scheduling changes
     const wasScheduled = existingPost.status === "scheduled";

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { FirstComment } from "@/components/dashboard/first-comment";
 import {
   ArrowRight,
   Sparkles,
@@ -274,6 +275,7 @@ function ContentRepurposingContent() {
   const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string; storageUrl?: string; storageKey?: string } | null>(null);
 
   // Save/Publish/Schedule State
+  const [firstComment, setFirstComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showScheduler, setShowScheduler] = useState(false);
@@ -522,6 +524,7 @@ function ContentRepurposingContent() {
           status: "draft",
           postType: attachedImage ? "image" : "text",
           mediaData,
+          firstComment: firstComment || null,
           metadata: {
             source: contentData?.source || "unknown",
             sourceUrl: url,
@@ -573,6 +576,7 @@ function ContentRepurposingContent() {
           status: "draft",
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
+          firstComment: firstComment || null,
           metadata: {
             source: contentData?.source || "unknown",
             sourceUrl: url,
@@ -649,6 +653,7 @@ function ContentRepurposingContent() {
           scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
           mediaData,
+          firstComment: firstComment || null,
           metadata: {
             source: contentData?.source || "unknown",
             sourceUrl: url,
@@ -1227,6 +1232,16 @@ function ContentRepurposingContent() {
                 )}
               </CardContent>
             </Card>
+
+            {/* First Comment */}
+            {getCurrentPost().trim() && (
+              <FirstComment
+                value={firstComment}
+                onChange={setFirstComment}
+                postContent={getCurrentPost()}
+                onError={showToast}
+              />
+            )}
 
             {/* AI Edit Options */}
             <Card className="border-cyan-200 bg-cyan-50/50 dark:border-cyan-800 dark:bg-cyan-950/20">

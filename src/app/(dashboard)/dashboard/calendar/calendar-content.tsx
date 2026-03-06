@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { FirstComment } from "@/components/dashboard/first-comment";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
@@ -68,6 +69,7 @@ interface Post {
   scheduledAt: string | null;
   publishedAt: string | null;
   linkedinPostUrl: string | null;
+  firstComment: string | null;
   createdAt: string;
   updatedAt: string;
   media?: PostMedia[];
@@ -100,6 +102,7 @@ export function CalendarContent() {
 
   // Create post state
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostFirstComment, setNewPostFirstComment] = useState("");
   const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string; storageUrl?: string; storageKey?: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
@@ -130,6 +133,7 @@ export function CalendarContent() {
 
   // Edit post state
   const [editPostContent, setEditPostContent] = useState("");
+  const [editPostFirstComment, setEditPostFirstComment] = useState("");
   const [editScheduleTime, setEditScheduleTime] = useState("");
   const [editScheduleDate, setEditScheduleDate] = useState("");
   const [editAttachedImage, setEditAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string } | null>(null);
@@ -494,6 +498,7 @@ export function CalendarContent() {
           scheduledAt: publish ? undefined : scheduledAtISO,
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
+          firstComment: newPostFirstComment || null,
         }),
       });
 
@@ -682,6 +687,7 @@ export function CalendarContent() {
   const openEditPost = (post: Post) => {
     setSelectedPost(post);
     setEditPostContent(post.content);
+    setEditPostFirstComment(post.firstComment || "");
     // Load existing media if present
     if (post.media && post.media.length > 0) {
       const existingMedia = post.media[0];
@@ -732,6 +738,7 @@ export function CalendarContent() {
       const requestBody: Record<string, unknown> = {
         content: editPostContent,
         scheduledAt: scheduledAtISO,
+        firstComment: editPostFirstComment || null,
       };
 
       // If user removed media (had media before, now doesn't)
@@ -1328,6 +1335,12 @@ Tips for viral posts:
                         showCarouselButton={hasCarouselAccess}
                         attachedImage={attachedImage}
                         onImageChange={setAttachedImage}
+                        onError={showError}
+                      />
+                      <FirstComment
+                        value={newPostFirstComment}
+                        onChange={setNewPostFirstComment}
+                        postContent={newPostContent}
                         onError={showError}
                       />
                       <div className="flex justify-end">
@@ -1949,6 +1962,14 @@ Tips for viral posts:
                         onImageChange={setEditAttachedImage}
                         onError={showError}
                       />
+                      <div className="mt-4">
+                        <FirstComment
+                          value={editPostFirstComment}
+                          onChange={setEditPostFirstComment}
+                          postContent={editPostContent}
+                          onError={showError}
+                        />
+                      </div>
                     </div>
                   </div>
 

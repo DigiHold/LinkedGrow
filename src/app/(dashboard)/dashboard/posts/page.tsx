@@ -21,6 +21,7 @@ import {
   Sparkles,
   X,
   HelpCircle,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
@@ -37,6 +38,7 @@ interface Post {
   publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  firstComment?: string | null;
   metadata?: Record<string, unknown> | null;
   media?: Array<{
     id: string;
@@ -521,6 +523,14 @@ export default function PostsPage() {
                         + {post.media.length} media
                       </span>
                     )}
+
+                    {/* Has First Comment */}
+                    {post.firstComment && (
+                      <span className="text-cyan-600 dark:text-cyan-400 text-xs flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />
+                        Auto-comment
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -859,6 +869,33 @@ export default function PostsPage() {
                   </div>
                 )}
               </div>
+
+              {/* First Comment Preview */}
+              {previewPost.firstComment && (
+                <div className="mt-4 bg-gray-50 dark:bg-gray-800/50 border border-border rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                    <span className="text-sm font-medium">First Comment</span>
+                    <span className="text-xs text-muted-foreground">- auto-posted 1-5 min after publication</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    {(isTeamView && previewPost.author?.image) || linkedInProfile?.image ? (
+                      <img
+                        src={(isTeamView && previewPost.author?.image) || linkedInProfile?.image || ""}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                        <span className="text-white text-xs font-semibold">
+                          {((isTeamView && previewPost.author?.name) || linkedInProfile?.name || "U").charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{previewPost.firstComment}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Character count */}
               <div className="mt-4 text-sm text-muted-foreground text-center">
