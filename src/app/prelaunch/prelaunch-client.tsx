@@ -653,8 +653,8 @@ function DemoPreview() {
     >
       <div className="absolute -inset-4 bg-linear-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl" />
 
-      <div className="relative bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
+      <div className="relative bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
@@ -2010,7 +2010,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       </div>
 
       {/* Urgency Banner */}
-      <div className="relative z-20 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-3 px-4 border-b border-slate-700">
+      <div className="relative z-20 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-3 px-4 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
           <div className="flex items-center gap-2">
             <Gift className="w-5 h-5 text-cyan-400" />

@@ -164,7 +164,7 @@ export function YouTubePlayer({
   }, []);
 
   return (
-    <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl">
+    <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
       {!isPlaying ? (
         <button
           onClick={handlePlayClick}
