@@ -7,9 +7,9 @@ import { eq, and, sql } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
-import { sendWelcomeEmail } from '@/lib/email';
+
 import { subscribeToNewsletter } from '@/lib/newsletter';
-import { hasPendingTeamInvite } from '@/lib/team-utils';
+
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
   if (!url) return undefined;
@@ -302,14 +302,6 @@ export async function GET(request: NextRequest) {
         user = await db.query.users.findFirst({
           where: eq(users.id, userId),
         });
-
-        // Send welcome email (non-blocking) - skip for team members with pending invites
-        const hasTeamInvite = await hasPendingTeamInvite(linkedInEmail);
-        if (!hasTeamInvite) {
-          sendWelcomeEmail({ to: linkedInEmail, name: profile.localizedFirstName || undefined }).catch((err) => {
-            console.error('Failed to send welcome email:', err);
-          });
-        }
 
         // Subscribe to newsletter if opted in (non-blocking)
         if (subscribeNewsletterCookie) {

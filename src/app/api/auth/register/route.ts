@@ -4,10 +4,10 @@ import { affiliates, affiliateReferrals } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
-import { sendWelcomeEmail } from "@/lib/email";
+
 import { subscribeToNewsletter } from "@/lib/newsletter";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
-import { hasPendingTeamInvite } from "@/lib/team-utils";
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -145,14 +145,6 @@ export async function POST(request: NextRequest) {
           convertedAt: new Date(),
         })
         .where(eq(betaUsers.email, normalizedEmail));
-    }
-
-    // Send welcome email (non-blocking) - skip for team members with pending invites
-    const hasTeamInvite = await hasPendingTeamInvite(email);
-    if (!hasTeamInvite) {
-      sendWelcomeEmail({ to: email, name: name || undefined }).catch((err) => {
-        console.error("Failed to send welcome email:", err);
-      });
     }
 
     // Subscribe to newsletter if opted in (non-blocking)

@@ -1,7 +1,7 @@
 // Email utilities - Brevo transactional emails
 export { sendEmail } from "./ses-client";
 export { baseEmailTemplate } from "./templates/base-template";
-export { welcomeEmailTemplate, welcomeEmailText } from "./templates/welcome-email";
+
 export {
   resetPasswordEmailTemplate,
   resetPasswordEmailText,
@@ -29,7 +29,6 @@ export {
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
-import { welcomeEmailTemplate, welcomeEmailText } from "./templates/welcome-email";
 import {
   resetPasswordEmailTemplate,
   resetPasswordEmailText,
@@ -54,20 +53,6 @@ import {
   subscriptionWelcomeEmailTemplate,
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
-
-interface SendWelcomeEmailParams {
-  to: string;
-  name?: string;
-}
-
-export async function sendWelcomeEmail({ to, name }: SendWelcomeEmailParams) {
-  return sendEmail({
-    to,
-    subject: "Welcome to LinkedGrow!",
-    html: welcomeEmailTemplate({ name, email: to }),
-    text: welcomeEmailText({ name, email: to }),
-  });
-}
 
 interface SendPasswordResetEmailParams {
   to: string;
