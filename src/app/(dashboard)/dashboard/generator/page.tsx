@@ -1277,6 +1277,7 @@ export default function GeneratorPage() {
                 onChange={setFirstComment}
                 postContent={currentPost}
                 onError={showToast}
+                hasAccess={canAccessFeature(userPlan, "firstComment")}
               />
             )}
 

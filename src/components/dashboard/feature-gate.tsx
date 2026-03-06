@@ -20,6 +20,7 @@ import {
   Headphones,
   TrendingUp,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 import {
   PlanId,
@@ -43,6 +44,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   scheduling: Calendar,
   analytics: BarChart3,
   contentRepurposing: Sparkles,
+  firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
   abTesting: GitBranch,

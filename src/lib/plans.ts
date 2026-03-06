@@ -10,6 +10,7 @@ export interface PlanFeatures {
   scheduling: boolean;
   analytics: boolean;
   contentRepurposing: boolean;
+  firstComment: boolean;
   engagement: boolean;
   algorithmOptimizer: boolean;
   // Business-only features
@@ -58,6 +59,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         scheduling: false,
         analytics: false,
         contentRepurposing: false,
+        firstComment: false,
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
@@ -88,6 +90,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         scheduling: true,
         analytics: false,
         contentRepurposing: true,
+        firstComment: false,
         engagement: false,
         algorithmOptimizer: false,
         abTesting: false,
@@ -119,6 +122,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         scheduling: true,
         analytics: true,
         contentRepurposing: true,
+        firstComment: true,
         engagement: true,
         algorithmOptimizer: true,
         abTesting: false,
@@ -149,6 +153,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         scheduling: true,
         analytics: true,
         contentRepurposing: true,
+        firstComment: true,
         engagement: true,
         algorithmOptimizer: true,
         abTesting: true,
@@ -207,6 +212,11 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     name: "Content Repurposing",
     description: "Turn Reddit, YouTube, blogs, and web pages into LinkedIn posts",
     icon: "repeat",
+  },
+  firstComment: {
+    name: "First Comment",
+    description: "Auto-post a comment after publication to boost engagement",
+    icon: "message-square",
   },
   engagement: {
     name: "Engagement Tools",

@@ -24,6 +24,7 @@ import {
   TrendingUp,
   ArrowDown,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   scheduling: Clock,
   analytics: BarChart3,
   contentRepurposing: Lightbulb,
+  firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
   abTesting: GitBranch,

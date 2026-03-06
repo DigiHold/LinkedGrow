@@ -21,6 +21,7 @@ import {
   Anchor,
   UsersRound,
   TrendingUp,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   scheduling: Clock,
   analytics: BarChart3,
   contentRepurposing: Lightbulb,
+  firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
   abTesting: GitBranch,

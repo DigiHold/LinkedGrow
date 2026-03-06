@@ -1342,6 +1342,7 @@ Tips for viral posts:
                         onChange={setNewPostFirstComment}
                         postContent={newPostContent}
                         onError={showError}
+                        hasAccess={canAccessFeature(userPlan, "firstComment")}
                       />
                       <div className="flex justify-end">
                         <Button
@@ -1968,6 +1969,7 @@ Tips for viral posts:
                           onChange={setEditPostFirstComment}
                           postContent={editPostContent}
                           onError={showError}
+                          hasAccess={canAccessFeature(userPlan, "firstComment")}
                         />
                       </div>
                     </div>

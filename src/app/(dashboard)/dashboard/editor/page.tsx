@@ -608,6 +608,7 @@ Tips for viral posts:
               onChange={setFirstComment}
               postContent={content}
               onError={showError}
+              hasAccess={canAccessFeature(userPlan, "firstComment")}
             />
 
             {/* AI Panel */}

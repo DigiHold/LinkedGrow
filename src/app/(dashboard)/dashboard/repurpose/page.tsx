@@ -1240,6 +1240,7 @@ function ContentRepurposingContent() {
                 onChange={setFirstComment}
                 postContent={getCurrentPost()}
                 onError={showToast}
+                hasAccess={canAccessFeature(userPlan, "firstComment")}
               />
             )}
 
