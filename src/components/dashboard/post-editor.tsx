@@ -582,9 +582,9 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
     };
 
     return (
-      <div className={cn("border rounded-xl overflow-hidden bg-background", className)}>
+      <div className={cn("border border-border rounded-xl overflow-hidden bg-background", className)}>
         {showToolbar && (
-          <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30">
+          <div className="flex flex-wrap items-center gap-1 p-2 border-b border-border bg-muted/30">
             <Button
               variant="ghost"
               size="icon"
@@ -757,10 +757,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
 
         {/* Media Preview (Image, Video, or PDF) */}
         {(attachedImage?.preview || isPdfMedia(attachedImage)) && (
-          <div className="relative p-3 border-t bg-muted/20">
+          <div className="relative p-3 border-t border-border bg-muted/20">
             <div className="relative inline-block">
               {isPdfMedia(attachedImage) ? (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/50">
                   <Layers className="w-8 h-8 text-muted-foreground shrink-0" />
                   <div>
                     <p className="text-sm font-medium">Carousel (PDF)</p>
@@ -770,7 +770,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
               ) : isVideoMedia(attachedImage) ? (
                 <video
                   src={attachedImage!.preview}
-                  className="max-h-32 rounded-lg border"
+                  className="max-h-32 rounded-lg border border-border"
                   controls
                   muted
                 />
@@ -778,7 +778,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                 <img
                   src={attachedImage?.preview}
                   alt="Attached"
-                  className="max-h-32 rounded-lg border"
+                  className="max-h-32 rounded-lg border border-border"
                 />
               )}
               {isUploading && (
@@ -798,7 +798,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
         )}
 
         {!showToolbar && (
-          <div className="px-3 py-2 border-t text-xs text-muted-foreground flex justify-between">
+          <div className="px-3 py-2 border-t border-border text-xs text-muted-foreground flex justify-between">
             <span>{charCount} / {LINKEDIN_MAX_CHARS}</span>
             <span>~{Math.ceil(charCount / 200)} min read</span>
           </div>

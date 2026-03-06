@@ -222,7 +222,7 @@ export function SlideManager({
   return (
     <div
       className={cn(
-        "h-40 bg-slate-50 dark:bg-slate-900 border-t flex items-center",
+        "h-40 bg-slate-50 dark:bg-slate-900 border-t border-border flex items-center",
         className
       )}
     >
@@ -311,7 +311,7 @@ export function SlideManager({
       </Button>
 
       {/* Slide Counter */}
-      <div className="px-4 text-sm text-muted-foreground shrink-0 border-l">
+      <div className="px-4 text-sm text-muted-foreground shrink-0 border-l border-border">
         <span className="font-medium text-foreground">
           {currentSlideIndex + 1}
         </span>

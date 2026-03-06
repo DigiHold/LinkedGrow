@@ -940,7 +940,7 @@ function SettingsContent() {
           </div>
 
           {/* Password Change - Inline */}
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t border-border">
             <h4 className="font-medium mb-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
               <span className="flex items-center gap-2">
                 <Lock className="w-4 h-4" />
@@ -1321,7 +1321,7 @@ function SettingsContent() {
               <>
                 <div className="relative py-1">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-white dark:bg-slate-950 px-2 text-muted-foreground">
@@ -1516,7 +1516,7 @@ function SettingsContent() {
                   {voiceSettings.samplePosts.map((post, index) => (
                     <div
                       key={index}
-                      className="relative p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border group"
+                      className="relative p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-border group"
                     >
                       <p className="text-sm pr-8 line-clamp-3 whitespace-pre-wrap">{post}</p>
                       <button

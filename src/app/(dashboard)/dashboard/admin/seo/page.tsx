@@ -365,7 +365,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Indexing Configuration */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowIndexingConfig(!showIndexingConfig)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -381,7 +381,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showIndexingConfig && (
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-border">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ConfigStatus
                 label="IndexNow (Bing, Yandex, Naver)"
@@ -397,7 +397,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Search Console Performance */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowGscPerformance(!showGscPerformance)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -419,7 +419,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showGscPerformance && (
-          <div className="p-4 border-t space-y-4">
+          <div className="p-4 border-t border-border space-y-4">
             <div className="flex justify-end">
               <Button
                 variant="ghost"
@@ -453,7 +453,7 @@ export default function AdminSeoPage() {
               <>
                 {/* Performance Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="border rounded-lg p-3">
+                  <div className="border border-border rounded-lg p-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                       <MousePointerClick className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                       Total Clicks
@@ -462,7 +462,7 @@ export default function AdminSeoPage() {
                       {scData.totals.clicks.toLocaleString()}
                     </p>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border border-border rounded-lg p-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                       <Eye className="w-3.5 h-3.5 text-violet-600 shrink-0" />
                       Impressions
@@ -471,7 +471,7 @@ export default function AdminSeoPage() {
                       {scData.totals.impressions.toLocaleString()}
                     </p>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border border-border rounded-lg p-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                       Avg CTR
@@ -480,7 +480,7 @@ export default function AdminSeoPage() {
                       {(scData.totals.ctr * 100).toFixed(1)}%
                     </p>
                   </div>
-                  <div className="border rounded-lg p-3">
+                  <div className="border border-border rounded-lg p-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                       <BarChart3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       Avg Position
@@ -497,7 +497,7 @@ export default function AdminSeoPage() {
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Top Search Queries
                     </h3>
-                    <div className="border rounded-lg overflow-x-auto">
+                    <div className="border border-border rounded-lg overflow-x-auto">
                       <table className="w-full text-sm min-w-[400px]">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
@@ -547,7 +547,7 @@ export default function AdminSeoPage() {
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Pages Search Performance
                     </h3>
-                    <div className="border rounded-lg overflow-x-auto">
+                    <div className="border border-border rounded-lg overflow-x-auto">
                       <table className="w-full text-sm min-w-[400px]">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
@@ -612,7 +612,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Keyword Cannibalization (GSC-powered) */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowCannibalization(!showCannibalization)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -634,7 +634,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showCannibalization && (
-          <div className="p-4 border-t space-y-4">
+          <div className="p-4 border-t border-border space-y-4">
             {data.keywordOverlaps && data.keywordOverlaps.length > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
@@ -662,7 +662,7 @@ export default function AdminSeoPage() {
                 No queries with multiple ranking pages detected in the last 28 days.
               </p>
             ) : (
-              <div className="border rounded-lg overflow-x-auto">
+              <div className="border border-border rounded-lg overflow-x-auto">
                 <table className="w-full text-sm min-w-150">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
@@ -757,7 +757,7 @@ export default function AdminSeoPage() {
 
       {/* Canonical URL Monitor */}
       {data.canonicalStatuses && data.canonicalStatuses.length > 0 && (
-        <div className="border rounded-xl overflow-hidden">
+        <div className="border border-border rounded-xl overflow-hidden">
           <button
             onClick={() => setShowCanonicals(!showCanonicals)}
             className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -785,7 +785,7 @@ export default function AdminSeoPage() {
             )}
           </button>
           {showCanonicals && (
-            <div className="p-4 border-t space-y-4">
+            <div className="p-4 border-t border-border space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs">
                   <span className="flex items-center gap-1">
@@ -830,7 +830,7 @@ export default function AdminSeoPage() {
                 }
 
                 return (
-                  <div className="border rounded-lg overflow-x-auto">
+                  <div className="border border-border rounded-lg overflow-x-auto">
                     <table className="w-full text-sm min-w-125">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
@@ -886,7 +886,7 @@ export default function AdminSeoPage() {
       )}
 
       {/* Unindexed Pages Detection */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowUnindexed(!showUnindexed)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -919,7 +919,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showUnindexed && (
-          <div className="p-4 border-t space-y-3">
+          <div className="p-4 border-t border-border space-y-3">
             {!scData ? (
               <p className="text-sm text-muted-foreground text-center py-2">
                 GSC data required. Wait for Search Console data to load.
@@ -987,7 +987,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Broken Internal Links */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowBrokenLinks(!showBrokenLinks)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -1012,13 +1012,13 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showBrokenLinks && (
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-border">
             {!data.brokenLinks || data.brokenLinks.length === 0 ? (
               <p className="text-sm text-green-600 text-center py-2">
                 No broken internal links found.
               </p>
             ) : (
-              <div className="border rounded-lg overflow-x-auto">
+              <div className="border border-border rounded-lg overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-900/50 text-xs text-muted-foreground">
@@ -1137,7 +1137,7 @@ export default function AdminSeoPage() {
       )}
 
       {/* Public Pages */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowPublicPages(!showPublicPages)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -1153,7 +1153,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showPublicPages && (
-          <div className="divide-y border-t">
+          <div className="divide-y divide-border border-t border-border">
             {data.pages.map((page) => (
               <PageRow
                 key={page.url}
@@ -1167,7 +1167,7 @@ export default function AdminSeoPage() {
       </div>
 
       {/* Blog Posts */}
-      <div className="border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <button
           onClick={() => setShowBlogPosts(!showBlogPosts)}
           className="w-full p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-colors"
@@ -1183,7 +1183,7 @@ export default function AdminSeoPage() {
           )}
         </button>
         {showBlogPosts && (
-          <div className="divide-y border-t">
+          <div className="divide-y divide-border border-t border-border">
             {data.blogPosts.map((post) => {
               const urlStatus = data.blogUrlStatuses.find(
                 (u) => u.url === post.url
@@ -1226,7 +1226,7 @@ function StatCard({
           : "";
 
   return (
-    <div className={`border rounded-xl p-3 ${colorClasses}`}>
+    <div className={`border rounded-xl p-3 ${colorClasses || "border-border"}`}>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
         {icon}
         {label}

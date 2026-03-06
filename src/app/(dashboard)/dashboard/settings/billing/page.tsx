@@ -347,7 +347,7 @@ function BillingContent() {
               {billing.cards.map((card) => (
                 <div
                   key={card.id}
-                  className="flex items-center justify-between p-4 rounded-xl border bg-slate-50 dark:bg-slate-900"
+                  className="flex items-center justify-between p-4 rounded-xl border border-border bg-slate-50 dark:bg-slate-900"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{getCardBrandIcon(card.brand)}</span>

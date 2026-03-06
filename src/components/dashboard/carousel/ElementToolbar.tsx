@@ -412,8 +412,8 @@ export function ElementToolbar({
     : undefined;
 
   return (
-    <div className={cn("w-64 bg-background border-r flex flex-col h-full overflow-hidden", className)}>
-      <div className="p-4 border-b shrink-0">
+    <div className={cn("w-64 bg-background border-r border-border flex flex-col h-full overflow-hidden", className)}>
+      <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">Elements</h2>
         <p className="text-xs text-muted-foreground mt-1">Click or drag to add</p>
       </div>
@@ -475,7 +475,7 @@ export function ElementToolbar({
               </div>
 
               {/* AI Image Generation */}
-              <div className="pt-2 border-t border-dashed">
+              <div className="pt-2 border-t border-border border-dashed">
                 <p className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   AI Image Generator
@@ -485,7 +485,7 @@ export function ElementToolbar({
                     placeholder="Describe the image you want to generate..."
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border rounded-md bg-background resize-none"
+                    className="w-full px-3 py-2 text-xs border border-border rounded-md bg-background resize-none"
                     rows={2}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey && onAIImageGenerate) {

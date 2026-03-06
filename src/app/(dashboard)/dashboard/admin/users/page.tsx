@@ -662,7 +662,7 @@ export default function AdminUsersPage() {
             )}
 
             {deletingUser && (
-              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border">
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-medium">
                     {(deletingUser.name || deletingUser.email.charAt(0)).charAt(0).toUpperCase()}

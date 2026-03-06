@@ -354,7 +354,7 @@ export function TemplateGallery({
 
           <TabsContent value="preset" className="flex-1 flex flex-col overflow-hidden mt-0">
             {/* Category filters */}
-            <div className="flex gap-2 flex-wrap py-2 border-b">
+            <div className="flex gap-2 flex-wrap py-2 border-b border-border">
               <Button
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
                 size="sm"
@@ -419,7 +419,7 @@ export function TemplateGallery({
 
         {/* Selected template info */}
         {selectedTemplateId && activeTab === 'preset' && (
-          <div className="pt-4 border-t flex items-center justify-between">
+          <div className="pt-4 border-t border-border flex items-center justify-between">
             <div>
               <p className="font-medium text-sm">
                 {carouselTemplates.find(t => t.id === selectedTemplateId)?.name}

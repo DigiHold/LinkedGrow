@@ -558,7 +558,7 @@ function EditorContent() {
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
               {showMoreMenu && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-40">
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg py-1 min-w-40">
                   <button
                     onClick={handleClearContent}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"

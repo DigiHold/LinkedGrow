@@ -439,7 +439,7 @@ export default function IdeasPage() {
               <p className="text-muted-foreground mb-4">
                 Are you sure you want to use this idea to generate a full LinkedIn post?
               </p>
-              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border">
+              <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-border">
                 <p className="font-medium whitespace-pre-line">{selectedIdea.hook}</p>
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">

@@ -712,7 +712,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
           )}
         </div>
 
-        <div className="pt-2 border-t text-xs text-muted-foreground text-center">
+        <div className="pt-2 border-t border-border text-xs text-muted-foreground text-center">
           Click on an icon to add it to the canvas
         </div>
       </DialogContent>

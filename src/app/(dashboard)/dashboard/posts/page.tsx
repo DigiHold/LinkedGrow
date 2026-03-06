@@ -777,7 +777,7 @@ export default function PostsPage() {
           />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden z-10">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-semibold">Post Preview</h2>
                 <span
@@ -806,7 +806,7 @@ export default function PostsPage() {
             {/* Modal Content */}
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {/* LinkedIn-style preview card */}
-              <div className="bg-white dark:bg-gray-800 border rounded-xl p-4">
+              <div className="bg-white dark:bg-gray-800 border border-border rounded-xl p-4">
                 <div className="flex items-start gap-3 mb-4">
                   {(isTeamView && previewPost.author?.image) || linkedInProfile?.image ? (
                     <img
@@ -867,7 +867,7 @@ export default function PostsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50 dark:bg-gray-800/50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-gray-50 dark:bg-gray-800/50">
               <Button variant="outline" onClick={() => setPreviewPost(null)}>
                 Close
               </Button>

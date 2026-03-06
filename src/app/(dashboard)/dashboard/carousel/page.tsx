@@ -946,7 +946,7 @@ export default function CarouselPage() {
     <FeatureGate feature="carouselGenerator">
       <div className="h-screen flex flex-col overflow-hidden">
         {/* Top Toolbar */}
-        <div className="h-14 border-b bg-background flex items-center justify-between px-4">
+        <div className="h-14 border-b border-border bg-background flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 shrink-0 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
@@ -1339,7 +1339,7 @@ export default function CarouselPage() {
         {/* Export Progress */}
         {isExporting && generationStep && (
           <div className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40">
-            <div className="px-4 py-2 rounded-lg bg-background border shadow-lg">
+            <div className="px-4 py-2 rounded-lg bg-background border border-border shadow-lg">
               <p className="text-sm text-muted-foreground">{generationStep}</p>
             </div>
           </div>

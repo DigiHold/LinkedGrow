@@ -990,7 +990,7 @@ export function CalendarContent() {
       {dropdownOpen && selectedDay && dropdownPosition && (
         <div
           ref={dayDropdownRef}
-          className="fixed z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-2 min-w-44"
+          className="fixed z-50 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg p-2 min-w-44"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -1090,7 +1090,7 @@ export function CalendarContent() {
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" />
           <Drawer.Content
-            className="fixed right-0 top-0 bottom-0 z-150 flex flex-col bg-background w-full max-w-250 border-l shadow-xl outline-none"
+            className="fixed right-0 top-0 bottom-0 z-150 flex flex-col bg-background w-full max-w-250 border-l border-border shadow-xl outline-none"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -1104,7 +1104,7 @@ export function CalendarContent() {
             {/* POST DETAIL VIEW */}
             {drawerView === "post-detail" && selectedPost && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -1123,7 +1123,7 @@ export function CalendarContent() {
                   <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <div className="w-full transition-opacity duration-200">
-                        <div className="w-full max-w-lg m-auto bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                        <div className="w-full max-w-lg m-auto bg-white dark:bg-gray-900 rounded-xl border border-border mb-10">
                           <div className="px-4 pt-4 pb-0">
                             <div className="flex w-full justify-between items-start">
                               <div className="flex max-w-[90%] items-start">
@@ -1153,7 +1153,7 @@ export function CalendarContent() {
                                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                                 </button>
                                 {postMenuOpen && (
-                                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-lg py-1 min-w-32">
+                                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg py-1 min-w-32">
                                     <button
                                       onClick={() => openEditPost(selectedPost)}
                                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -1184,14 +1184,14 @@ export function CalendarContent() {
                                 {selectedPost.media[0].mimeType.startsWith("video/") ? (
                                   <video
                                     src={selectedPost.media[0].storageUrl}
-                                    className="w-full rounded-lg border"
+                                    className="w-full rounded-lg border border-border"
                                     controls
                                   />
                                 ) : (
                                   <img
                                     src={selectedPost.media[0].storageUrl}
                                     alt="Post attachment"
-                                    className="w-full rounded-lg border"
+                                    className="w-full rounded-lg border border-border"
                                   />
                                 )}
                               </div>
@@ -1201,9 +1201,9 @@ export function CalendarContent() {
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 transition-all w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-hidden h-full bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 transition-all w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-hidden h-full bg-white dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
                           <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
@@ -1219,8 +1219,8 @@ export function CalendarContent() {
                       </div>
                     </div>
                     {selectedPost.status === "published" && (
-                      <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                        <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b">
+                      <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
+                        <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b border-border">
                           <div className="flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-violet-500" />
                             <span className="text-sm font-semibold">Performances</span>
@@ -1258,7 +1258,7 @@ export function CalendarContent() {
                       </div>
                     )}
                     {selectedPost.linkedinPostUrl && (
-                      <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         View on LinkedIn <ExternalLink className="w-4 h-4" />
                       </a>
                     )}
@@ -1294,7 +1294,7 @@ export function CalendarContent() {
             {/* CREATE POST VIEW */}
             {drawerView === "create-post" && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -1414,10 +1414,10 @@ Tips for viral posts:
                   </div>
 
                   {/* RIGHT SIDE - Settings */}
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
                     {/* To be planned status box */}
-                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-yellow-500" />
                           <span className="text-xs font-medium text-muted-foreground">To be planned</span>
@@ -1451,7 +1451,7 @@ Tips for viral posts:
                                 const date = new Date(e.target.value);
                                 setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
                               }}
-                              className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
+                              className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm cursor-pointer"
                             />
                           </div>
                         </div>
@@ -1467,7 +1467,7 @@ Tips for viral posts:
                               setScheduleAmPm(hour >= 12 ? "PM" : "AM");
                               setScheduleMinute(mins);
                             }}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm"
                           />
                         </div>
                       </CardContent>
@@ -1503,7 +1503,7 @@ Tips for viral posts:
             {/* SCHEDULE POST VIEW - Post List */}
             {drawerView === "schedule-post" && !selectedPostToSchedule && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -1517,7 +1517,7 @@ Tips for viral posts:
                   </div>
                 </div>
                 <div className="flex flex-col w-full h-full min-h-0">
-                  <div className="flex w-full justify-between items-center gap-4 flex-wrap p-4 border-b">
+                  <div className="flex w-full justify-between items-center gap-4 flex-wrap p-4 border-b border-border">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <input
@@ -1525,7 +1525,7 @@ Tips for viral posts:
                         placeholder="Search for a post"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-md text-sm bg-white dark:bg-gray-900"
+                        className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm bg-white dark:bg-gray-900"
                       />
                     </div>
                     <Select value={filterType} onValueChange={setFilterType}>
@@ -1600,7 +1600,7 @@ Tips for viral posts:
             {/* SCHEDULE POST VIEW - Post Preview */}
             {drawerView === "schedule-post" && selectedPostToSchedule && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setSelectedPostToSchedule(null)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -1622,7 +1622,7 @@ Tips for viral posts:
                       >
                         <ArrowLeft className="w-4 h-4" /> Back to selection
                       </button>
-                      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl border mb-10">
+                      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl border border-border mb-10">
                         <div className="px-4 pt-4 pb-0">
                           <div className="flex w-full justify-between items-start">
                             <div className="flex max-w-[90%] items-start">
@@ -1654,9 +1654,9 @@ Tips for viral posts:
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-yellow-500" />
                           <span className="text-xs font-medium text-muted-foreground">To be scheduled</span>
@@ -1687,7 +1687,7 @@ Tips for viral posts:
                               setSelectedDay({ day: date.getDate(), month: date.getMonth(), year: date.getFullYear() });
                             }}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm"
                           />
                         </div>
                         <div>
@@ -1702,7 +1702,7 @@ Tips for viral posts:
                               setScheduleAmPm(hour >= 12 ? "PM" : "AM");
                               setScheduleMinute(mins);
                             }}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                            className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm"
                           />
                         </div>
                       </CardContent>
@@ -1721,7 +1721,7 @@ Tips for viral posts:
             {/* DAY DETAIL VIEW */}
             {drawerView === "day-detail" && selectedDay && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
@@ -1826,7 +1826,7 @@ Tips for viral posts:
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1921,7 +1921,7 @@ Tips for viral posts:
             {/* EDIT POST VIEW */}
             {drawerView === "edit-post" && selectedPost && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setDrawerView("post-detail")} className="text-gray-500 hover:text-gray-700 cursor-pointer">
@@ -1953,9 +1953,9 @@ Tips for viral posts:
                   </div>
 
                   {/* RIGHT SIDE - Settings */}
-                  <div className="md:border-l flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
+                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
                           <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
@@ -1986,7 +1986,7 @@ Tips for viral posts:
                             value={editScheduleDate}
                             onChange={(e) => setEditScheduleDate(e.target.value)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
+                            className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm cursor-pointer"
                           />
                         </div>
                         <div>
@@ -1995,7 +1995,7 @@ Tips for viral posts:
                             type="time"
                             value={editScheduleTime}
                             onChange={(e) => setEditScheduleTime(e.target.value)}
-                            className="w-full h-10 px-3 border rounded-md bg-background text-sm cursor-pointer"
+                            className="w-full h-10 px-3 border border-border rounded-md bg-background text-sm cursor-pointer"
                           />
                         </div>
                       </CardContent>

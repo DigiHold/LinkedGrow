@@ -320,8 +320,8 @@ export function ElementProperties({
   }, [selectedElement, isIconElement, canvasRef]);
 
   return (
-    <div className={cn("w-72 bg-background border-l flex flex-col h-full overflow-hidden", className)}>
-      <div className="p-4 border-b shrink-0">
+    <div className={cn("w-72 bg-background border-l border-border flex flex-col h-full overflow-hidden", className)}>
+      <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">
           {selectedElement ? 'Element Properties' : 'Canvas Settings'}
         </h2>

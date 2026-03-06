@@ -211,7 +211,7 @@ export function MyCarousels({
                   <div
                     key={carousel.id}
                     className={cn(
-                      "group relative rounded-lg border bg-card overflow-hidden",
+                      "group relative rounded-lg border border-border bg-card overflow-hidden",
                       "hover:border-cyan-300 hover:shadow-md transition-all duration-200"
                     )}
                   >
