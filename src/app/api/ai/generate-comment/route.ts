@@ -48,40 +48,52 @@ async function generateComment(
     businessContext += "\n=== END CONTEXT ===";
   }
 
-  const prompt = `You are a LinkedIn engagement expert. Write a first comment for the LinkedIn post below.
+  const prompt = `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
 
-=== THE POST ===
+=== YOUR POST ===
 ${postContent}
 === END POST ===${businessContext}
 
-=== RULES ===
+=== WHAT A FIRST COMMENT IS ===
 
-1. PURPOSE: The comment should ADD VALUE to the post, not repeat it. Think of it as bonus content.
+The first comment is a strategic self-reply posted by the author 1-5 minutes after publishing. It serves as a CTA, bonus resource, or conversation starter directed at READERS. You are talking TO your audience, not asking yourself questions.
 
-2. APPROACHES (pick the best one for this post):
-   - Share an additional tip, insight, or example not covered in the post
-   - Ask a thought-provoking follow-up question that invites discussion
-   - Share a relevant personal angle or data point
-   - Offer a practical resource, framework, or tool recommendation
-   - Present a respectful counter-perspective that sparks debate
+=== APPROACHES (pick the best one) ===
 
-3. TONE:
-   - Conversational and genuine, not promotional
-   - Write like a real person, not a brand
-   - Match the energy of the post
+1. CALL TO ACTION - Ask readers to engage:
+   - "Drop a comment if you've tried this"
+   - "Who else has seen this in their industry?"
+   - "Tag someone who needs to hear this"
+   - "What's your experience with this?"
 
-4. FORMAT:
-   - 1-3 short sentences maximum (under 280 characters total)
-   - No hashtags
-   - No emojis at the very start of the comment
-   - No self-promotional language
-   - NEVER use em dashes or en dashes. Use commas or " - " instead
-   - NEVER start with "Great post!", "Love this!", "So true!" or similar generic praise
-   - NEVER start with "As someone who..." or "Speaking from experience..."
-   - Avoid overused LinkedIn phrases like "game-changer", "deep dive", "at the end of the day"
-   - Write short, punchy sentences. No long compound sentences
+2. BONUS VALUE - Add something extra for readers:
+   - Share a quick extra tip not in the post
+   - Mention a free resource, tool, or link
+   - Add a stat or data point that supports your post
+   - Give a quick summary or TLDR
 
-5. GOAL: Encourage others to reply, which tells the LinkedIn algorithm the post is engaging.
+3. PERSONAL TOUCH - Make it relatable:
+   - Share a quick personal anecdote related to the post
+   - Mention what made you write this
+   - Share what you learned the hard way about this topic
+
+=== STRICT RULES ===
+
+- You are the POST AUTHOR commenting on YOUR OWN post
+- Talk TO readers, not to yourself
+- 1-3 short sentences max (under 280 characters)
+- No hashtags
+- NEVER use em dashes or en dashes. Use commas or " - " instead
+- NEVER start with generic filler like "Great question!", "Curious to hear..."
+- NEVER ask yourself a question as if you're a stranger reading the post
+- No self-promotional language or links to your products
+- Write casually and naturally, like a real person
+- Short punchy sentences, no long compound sentences
+- Can start with an emoji but not required
+
+=== GOAL ===
+
+Get readers to reply. More replies = LinkedIn algorithm pushes the post to more people.
 
 Return ONLY the comment text. No quotes, no explanations, no labels.`;
 
@@ -257,11 +269,11 @@ export async function POST(request: NextRequest) {
 
     const { aiSettingsUser } = result;
 
-    // Check plan access - advancedEditor requires Starter+
+    // Check plan access - firstComment requires Pro+
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "advancedEditor")) {
+    if (!canAccessFeature(userPlan, "firstComment")) {
       return NextResponse.json(
-        { error: "This feature requires a Starter plan or higher." },
+        { error: "First Comment requires a Pro plan or higher." },
         { status: 403 }
       );
     }
