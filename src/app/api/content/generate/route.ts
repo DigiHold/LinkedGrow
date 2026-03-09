@@ -89,6 +89,12 @@ Writing tone: ${writingTone}`;
 NEVER MENTION OR REFERENCE: ${neverMention}`;
   }
 
+  // Truncate content to avoid exceeding AI model context limits and timeouts
+  const maxContentLength = 15000;
+  const truncatedContent = input.content.length > maxContentLength
+    ? input.content.substring(0, maxContentLength) + "\n\n[Content truncated for length]"
+    : input.content;
+
   // Build source-specific content context
   let sourceContext = "";
   if (input.source === "reddit") {
@@ -97,7 +103,7 @@ NEVER MENTION OR REFERENCE: ${neverMention}`;
       : "";
     sourceContext = `Reddit Context:
 Title: ${input.title}
-Post: ${input.content}
+Post: ${truncatedContent}
 Subreddit: r/${input.metadata?.subreddit || "unknown"} (Score: ${input.metadata?.score || 0}, ${input.metadata?.commentCount || 0} comments)
 
 Top Comments Pain Points:
@@ -106,14 +112,14 @@ ${topCommentsPainPoints}`;
     const durationMin = input.metadata?.duration ? Math.round(input.metadata.duration / 60) : 0;
     sourceContext = `YouTube Video Context:
 Title: ${input.title}${durationMin ? `\nApproximate length: ${durationMin} minutes` : ""}
-Transcript: ${input.content}
+Transcript: ${truncatedContent}
 
 Focus on the most insightful, surprising, or actionable content from the video. Pick ONE angle and go deep.`;
   } else {
     const label = input.source === "blog" ? "Blog Article" : "Web Page";
     sourceContext = `${label} Context:
 Title: ${input.title}
-Content: ${input.content}
+Content: ${truncatedContent}
 
 Focus on the most compelling insight from this ${label.toLowerCase()}. Find the ONE insight that would make someone stop scrolling on LinkedIn and engage.`;
   }

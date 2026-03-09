@@ -22,24 +22,30 @@ interface ContentInput {
 }
 
 function buildPrompt(input: ContentInput): string {
+  // Truncate content to avoid exceeding AI model context limits and timeouts
+  const maxContentLength = 15000;
+  const truncatedContent = input.content.length > maxContentLength
+    ? input.content.substring(0, maxContentLength) + "\n\n[Content truncated for length]"
+    : input.content;
+
   let sourceContext = "";
   let contentBlock = "";
 
   if (input.source === "reddit") {
     sourceContext = `Source: Viral Reddit post from r/${input.metadata?.subreddit || "unknown"} (Score: ${input.metadata?.score || 0}, ${input.metadata?.commentCount || 0} comments)`;
-    contentBlock = `TITLE: ${input.title}\n\nCONTENT: ${input.content}`;
+    contentBlock = `TITLE: ${input.title}\n\nCONTENT: ${truncatedContent}`;
     if (input.metadata?.comments && input.metadata.comments.length > 0) {
       contentBlock += `\n\nTOP COMMENTS: ${input.metadata.comments.slice(0, 10).map(c => c.body).join('\n---\n')}`;
     }
   } else if (input.source === "youtube") {
     const durationMin = input.metadata?.duration ? Math.round(input.metadata.duration / 60) : 0;
     sourceContext = `Source: YouTube video transcript${durationMin ? ` (~${durationMin} minutes)` : ""}`;
-    contentBlock = `VIDEO TITLE: ${input.title}\n\nTRANSCRIPT: ${input.content}`;
+    contentBlock = `VIDEO TITLE: ${input.title}\n\nTRANSCRIPT: ${truncatedContent}`;
   } else {
     // blog or webpage
     const label = input.source === "blog" ? "blog article" : "web page";
     sourceContext = `Source: ${label}`;
-    contentBlock = `ARTICLE TITLE: ${input.title}\n\nCONTENT: ${input.content}`;
+    contentBlock = `ARTICLE TITLE: ${input.title}\n\nCONTENT: ${truncatedContent}`;
   }
 
   return `I will give you content from a ${input.source === "reddit" ? "viral Reddit post" : input.source === "youtube" ? "YouTube video" : input.source === "blog" ? "blog article" : "web page"}:

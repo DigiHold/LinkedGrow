@@ -441,8 +441,10 @@ function ContentRepurposingContent() {
       });
 
       if (!analyzeResponse.ok) {
-        const data = await analyzeResponse.json();
-        throw new Error(data.error || "Failed to analyze content");
+        const text = await analyzeResponse.text();
+        let errorMsg = "Failed to analyze content";
+        try { errorMsg = JSON.parse(text).error || errorMsg; } catch { /* HTML error page */ }
+        throw new Error(errorMsg);
       }
 
       const data = await analyzeResponse.json();
@@ -478,8 +480,10 @@ function ContentRepurposingContent() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to generate posts");
+        const text = await response.text();
+        let errorMsg = "Failed to generate posts";
+        try { errorMsg = JSON.parse(text).error || errorMsg; } catch { /* HTML error page */ }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
