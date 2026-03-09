@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       google: aiSettingsUser.googleApiKey,
       grok: aiSettingsUser.grokApiKey,
       perplexity: aiSettingsUser.perplexityApiKey,
+      kimi: aiSettingsUser.kimiApiKey,
     };
 
     const encryptedApiKey = providerKeyMap[provider];
@@ -105,13 +106,15 @@ export async function POST(request: NextRequest) {
       google: aiSettingsUser.googleModel,
       grok: aiSettingsUser.grokModel,
       perplexity: aiSettingsUser.perplexityModel,
+      kimi: aiSettingsUser.kimiModel,
     };
 
     const defaultModel = provider === "openai" ? "o4-mini" :
                          provider === "anthropic" ? "claude-sonnet-4-6" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4-1-fast-reasoning" :
-                         provider === "perplexity" ? "sonar-pro" : "o4-mini";
+                         provider === "perplexity" ? "sonar-pro" :
+                         provider === "kimi" ? "kimi-k2" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     let generatedPrompt: string;
@@ -132,6 +135,9 @@ export async function POST(request: NextRequest) {
         break;
       case "perplexity":
         generatedPrompt = await generateWithPerplexity(apiKey, postContent, model);
+        break;
+      case "kimi":
+        generatedPrompt = await generateWithKimi(apiKey, postContent, model);
         break;
       default:
         return NextResponse.json(
@@ -363,6 +369,34 @@ async function generateWithPerplexity(apiKey: string, postContent: string, model
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || "Perplexity request failed");
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim();
+}
+
+async function generateWithKimi(apiKey: string, postContent: string, model: string): Promise<string> {
+  // Kimi uses OpenAI-compatible API
+  const response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.message || "Kimi request failed");
   }
 
   const data = await response.json();

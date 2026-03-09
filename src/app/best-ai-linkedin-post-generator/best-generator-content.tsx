@@ -41,12 +41,12 @@ export function BestPostGeneratorContent() {
         badge={{ icon: Award, text: "Best AI Post Generator 2026" }}
         headline={{
           line1: "The best AI LinkedIn post generator",
-          gradient: "with 20+ models",
+          gradient: "with 26+ models",
         }}
         descriptionBold="Not all AI LinkedIn tools are created equal."
-        description="LinkedGrow gives you access to 20+ AI models - ChatGPT, Claude, Gemini, Grok, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
+        description="LinkedGrow gives you access to 26+ AI models - ChatGPT, Claude, Gemini, Grok, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
         valuePropBadges={[
-          { icon: Award, text: "20+ AI models" },
+          { icon: Award, text: "26+ AI models" },
           { icon: Mic, text: "Voice training" },
           { icon: CircleDollarSign, text: "80% cheaper" },
         ]}
@@ -118,10 +118,10 @@ export function BestPostGeneratorContent() {
         features={[
           {
             icon: Brain,
-            title: "20+ AI Models",
+            title: "26+ AI Models",
             description:
-              "The latest models from OpenAI, Anthropic, Google, xAI, and Perplexity. Each model has different strengths. Use Claude for nuanced thought leadership, ChatGPT for storytelling, Gemini for speed. Switch between models per post.",
-            highlights: ["6 AI providers", "20+ models", "Switch per post"],
+              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Each model has different strengths. Use Claude for nuanced thought leadership, ChatGPT for storytelling, Gemini for speed. Switch between models per post.",
+            highlights: ["6 AI providers", "26+ models", "Switch per post"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
           },
@@ -186,7 +186,7 @@ export function BestPostGeneratorContent() {
             number: "01",
             title: "Enter your topic",
             description:
-              "Type a topic, key insight, or paste a Reddit URL. Select a post type (storytelling, how-to, thought leadership, listicle, and more) and choose your preferred AI model from 20+ options.",
+              "Type a topic, key insight, or paste a Reddit URL. Select a post type (storytelling, how-to, thought leadership, listicle, and more) and choose your preferred AI model from 26+ options.",
             icon: PenTool,
             color: "from-cyan-500 to-blue-500",
             time: "20 sec",
@@ -244,7 +244,7 @@ export function BestPostGeneratorContent() {
           price: "$19-79/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "20+ AI models - ChatGPT, Claude, Gemini, Grok, Perplexity, and more" },
+            { text: "26+ AI models - ChatGPT, Claude, Gemini, Grok, Perplexity, Kimi, and more" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "Voice training that matches your exact writing style" },
             { text: "Images, scheduling, analytics, hooks, carousels all included" },
@@ -262,7 +262,7 @@ export function BestPostGeneratorContent() {
         }}
         description="LinkedIn professionals who have tried multiple AI tools are choosing LinkedGrow for its model variety, voice training, and value."
         stats={[
-          { value: "20+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
+          { value: "26+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
           { value: "0", label: "Generation caps on paid plans", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "80%", label: "Cheaper than competitors", color: "text-violet-600 dark:text-violet-400" },
           { value: "179+", label: "Founders trust LinkedGrow", color: "text-amber-600 dark:text-amber-400" },
@@ -270,13 +270,13 @@ export function BestPostGeneratorContent() {
         testimonials={[
           {
             quote:
-              "I switched from Taplio after hitting the generation cap for the third month in a row. LinkedGrow gives me unlimited generations, 20+ models to choose from, and voice training that actually works. My total cost dropped from $79 to $22.",
+              "I switched from Taplio after hitting the generation cap for the third month in a row. LinkedGrow gives me unlimited generations, 26+ models to choose from, and voice training that actually works. My total cost dropped from $79 to $22.",
             author: "Thomas B.",
             role: "SaaS Founder, 31K Followers",
           },
           {
             quote:
-              "Having 20+ models is not a gimmick - it genuinely matters. I use Claude for my leadership posts and ChatGPT for casual storytelling. Different models, different voices, better content. And the BYOK pricing is unbeatable.",
+              "Having 26+ models is not a gimmick - it genuinely matters. I use Claude for my leadership posts and ChatGPT for casual storytelling. Different models, different voices, better content. And the BYOK pricing is unbeatable.",
             author: "Amara J.",
             role: "Executive Coach, 45K Followers",
           },
@@ -299,15 +299,15 @@ export function BestPostGeneratorContent() {
           {
             question: "What makes LinkedGrow the best AI LinkedIn post generator?",
             answer:
-              "20+ AI models instead of one, voice training for authentic output, unlimited generations with no caps, and BYOK pricing at 80% less than competitors. Plus integrated image generation, scheduling, analytics, and more.",
+              "26+ AI models instead of one, voice training for authentic output, unlimited generations with no caps, and BYOK pricing at 80% less than competitors. Plus integrated image generation, scheduling, analytics, and more.",
           },
           {
             question: "How does it compare to Taplio, AuthoredUp, or Supergrow?",
             answer:
-              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 20+ models, unlimited generations, voice training, and integrated tools for $19 to $79 plus $2 to $4 in BYOK AI costs.",
+              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, and integrated tools for $19 to $79 plus $2 to $4 in BYOK AI costs.",
           },
           {
-            question: "Why do 20+ AI models matter?",
+            question: "Why do 26+ AI models matter?",
             answer:
               "Different models excel at different content types. ChatGPT for storytelling, Claude for thought leadership, Gemini for speed. Having choice means better content for every post type.",
           },
@@ -324,7 +324,7 @@ export function BestPostGeneratorContent() {
           {
             question: "What AI models are available?",
             answer:
-              "The latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ text models in total. Plus 14 image models from OpenAI, Google, and Replicate.",
+              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ text models in total. Plus 14 image models from OpenAI, Google, and Replicate.",
           },
           {
             question: "How much does it cost?",
@@ -345,12 +345,12 @@ export function BestPostGeneratorContent() {
           line1: "Ready to use the best",
           gradient: "AI post generator for LinkedIn?",
         }}
-        description="20+ AI models, voice training, unlimited generations, and 80% lower cost than competitors. Join 179+ founders who made the switch."
+        description="26+ AI models, voice training, unlimited generations, and 80% lower cost than competitors. Join 179+ founders who made the switch."
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Free plan available",
-          "20+ AI models",
+          "26+ AI models",
           "Voice training",
           "Cancel anytime",
         ]}

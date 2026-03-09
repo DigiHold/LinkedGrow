@@ -294,6 +294,30 @@ Example format:
     const content = data.choices[0]?.message?.content || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     hooks = JSON.parse(cleanContent);
+  } else if (provider === "kimi") {
+    // Kimi uses OpenAI-compatible API
+    response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "kimi-k2",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Failed to generate hooks with Kimi");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || "[]";
+    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    hooks = JSON.parse(cleanContent);
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
@@ -346,6 +370,7 @@ export async function POST(request: NextRequest) {
       google: aiSettingsUser.googleApiKey,
       grok: aiSettingsUser.grokApiKey,
       perplexity: aiSettingsUser.perplexityApiKey,
+      kimi: aiSettingsUser.kimiApiKey,
     };
 
     const encryptedApiKey = providerKeyMap[provider];
@@ -365,13 +390,15 @@ export async function POST(request: NextRequest) {
       google: aiSettingsUser.googleModel,
       grok: aiSettingsUser.grokModel,
       perplexity: aiSettingsUser.perplexityModel,
+      kimi: aiSettingsUser.kimiModel,
     };
 
     const defaultModel = provider === "openai" ? "o4-mini" :
                          provider === "anthropic" ? "claude-sonnet-4-6" :
                          provider === "google" ? "gemini-3-flash-preview" :
                          provider === "grok" ? "grok-4-1-fast-reasoning" :
-                         provider === "perplexity" ? "sonar-pro" : "o4-mini";
+                         provider === "perplexity" ? "sonar-pro" :
+                         provider === "kimi" ? "kimi-k2" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     // Parse sample posts if available (use user's own voice settings)

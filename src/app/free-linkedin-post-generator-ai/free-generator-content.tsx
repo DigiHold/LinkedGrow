@@ -44,7 +44,7 @@ export function FreePostGeneratorContent() {
           gradient: "powered by AI",
         }}
         descriptionBold="Generate your first LinkedIn posts without paying anything."
-        description="LinkedGrow's free plan gives you 3 AI-powered post generations per month. Access all 20+ AI models from OpenAI, Anthropic, Google, Grok, and Perplexity. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
+        description="LinkedGrow's free plan gives you 3 AI-powered post generations per month. Access all 26+ AI models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
         valuePropBadges={[
           { icon: Gift, text: "3 free generations" },
           { icon: CreditCard, text: "No card required" },
@@ -118,9 +118,9 @@ export function FreePostGeneratorContent() {
         features={[
           {
             icon: Brain,
-            title: "All 20+ AI Models",
+            title: "All 26+ AI Models",
             description:
-              "The free plan gives you access to every supported AI model from OpenAI, Anthropic, Google, Grok, and Perplexity. No model restrictions. The same quality paid users get.",
+              "The free plan gives you access to every supported AI model from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. No model restrictions. The same quality paid users get.",
             highlights: ["ChatGPT included", "Claude included", "Gemini included"],
             badge: "Free",
             color: "from-cyan-500 to-blue-600",
@@ -195,7 +195,7 @@ export function FreePostGeneratorContent() {
             number: "02",
             title: "Enter a topic and generate",
             description:
-              "Type a topic or idea, select a post type, choose your preferred AI model from 20+ options, and hit generate. The AI creates a complete LinkedIn post matching your trained voice in seconds.",
+              "Type a topic or idea, select a post type, choose your preferred AI model from 26+ options, and hit generate. The AI creates a complete LinkedIn post matching your trained voice in seconds.",
             icon: Brain,
             color: "from-violet-500 to-purple-500",
             time: "30 sec",
@@ -236,7 +236,7 @@ export function FreePostGeneratorContent() {
           apiCost: "$2-4/month",
           benefits: [
             { text: "Free plan with 3 real generations per month - no trial expiration" },
-            { text: "All 20+ AI models on the free plan" },
+            { text: "All 26+ AI models on the free plan" },
             { text: "Voice training included on free plan" },
             { text: "Upgrade to unlimited at $19 per month - not $49 to $199" },
             { text: "BYOK AI costs of $2 to $4 per month with zero markup" },
@@ -254,7 +254,7 @@ export function FreePostGeneratorContent() {
         description="Users who started on the free plan and discovered the difference quality AI content makes for their LinkedIn presence."
         stats={[
           { value: "Free", label: "No credit card needed", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "20+", label: "AI models on free plan", color: "text-emerald-600 dark:text-emerald-400" },
+          { value: "26+", label: "AI models on free plan", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "3", label: "Generations per month", color: "text-violet-600 dark:text-violet-400" },
           { value: "$0", label: "Total cost to start", color: "text-amber-600 dark:text-amber-400" },
         ]}
@@ -300,7 +300,7 @@ export function FreePostGeneratorContent() {
           {
             question: "What AI models are on the free plan?",
             answer:
-              "All 20+ models from OpenAI, Anthropic, Google, Grok, and Perplexity. No model restrictions on the free plan.",
+              "All 26+ models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. No model restrictions on the free plan.",
           },
           {
             question: "Is voice training available for free?",

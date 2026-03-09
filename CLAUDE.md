@@ -23,7 +23,7 @@ LinkedGrow is a SaaS platform that helps users create, schedule, and optimize Li
 -   **Email:** Brevo (marketing + transactional)
 -   **Hosting:** Vercel
 -   **Scheduling:** QStash (Upstash) for exact-time post publishing
--   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity (text) + Google, OpenAI, Replicate (images)
+-   **AI Providers:** User provides keys (BYOK model) - OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, Kimi (Moonshot AI) (text) + Google, OpenAI, Replicate (images)
 
 ## Deployment
 
@@ -273,7 +273,7 @@ Main tables in `src/lib/db/schema.ts`:
 Auth: email, password (bcrypt), twoFactorEnabled, twoFactorSecret, isAdmin
 Subscription: plan (free/starter/pro/business), stripeCustomerId, stripeSubscriptionId
 LinkedIn: linkedinAccessToken, linkedinRefreshToken, linkedinTokenExpiry, linkedinProfileId, linkedinProfileName
-Text AI (per-provider): aiProvider, openaiApiKey, openaiModel, anthropicApiKey, anthropicModel, googleApiKey, googleModel, grokApiKey, grokModel, perplexityApiKey, perplexityModel
+Text AI (per-provider): aiProvider, openaiApiKey, openaiModel, anthropicApiKey, anthropicModel, googleApiKey, googleModel, grokApiKey, grokModel, perplexityApiKey, perplexityModel, kimiApiKey, kimiModel
 Image AI (per-provider): imageProvider, googleImageApiKey, googleImageModel, googleImageResolution, googleImageAspectRatio, openaiImageApiKey, openaiImageModel, openaiImageResolution, openaiImageQuality, openaiImageStyle, replicateImageApiKey, replicateImageModel, replicateImageResolution, replicateImageAspectRatio
 Voice: samplePosts (JSON), neverMention, businessDescription, targetAudience, writingTone
 Branding: brandLogoUrl, brandPrimaryColor, brandSecondaryColor, brandFontFamily
@@ -504,13 +504,14 @@ src/
 
 ## AI Models Supported (BYOK)
 
-### Text Generation Models (5 providers, 24 models)
+### Text Generation Models (6 providers, 26 models)
 
 -   **OpenAI**: GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
 -   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
 -   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
 -   **Grok (xAI)**: Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
 -   **Perplexity**: Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar
+-   **Kimi (Moonshot AI)**: Kimi K2.5, Kimi K2
 
 ### Image Generation Models (3 providers, 14 models)
 
@@ -518,7 +519,7 @@ src/
 -   **OpenAI**: GPT Image 1.5, GPT Image 1, GPT Image 1 Mini
 -   **Replicate**: FLUX.2 Pro, FLUX.2 Flex, FLUX.2 Dev, FLUX 1.1 Pro Ultra, FLUX 1.1 Pro, FLUX Schnell
 
-> **IMPORTANT**: Always check `src/app/(dashboard)/dashboard/settings/ai-api/page.tsx` for the actual current model list before referencing models anywhere. Never guess or use outdated names. The models listed above are the source of truth as of February 2026.
+> **IMPORTANT**: Always check `src/app/(dashboard)/dashboard/settings/ai-api/page.tsx` for the actual current model list before referencing models anywhere. Never guess or use outdated names. The models listed above are the source of truth as of March 2026.
 
 ### Typical User API Costs
 

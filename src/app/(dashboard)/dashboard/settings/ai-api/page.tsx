@@ -68,6 +68,12 @@ const PerplexityIcon = () => (
   </svg>
 );
 
+const KimiIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15.5v-3.07c-1.22-.23-2.34-.79-3.24-1.63L9.1 11.5c.68.62 1.55 1 2.46 1.08V8.84c-1.87-.32-3.5-1.63-3.5-3.84 0-2.21 1.63-3.5 3.5-3.5V0h2v1.5c1.22.23 2.34.79 3.24 1.63l-1.34 1.3c-.68-.62-1.55-1-2.46-1.08v3.74c1.87.32 3.5 1.63 3.5 3.84 0 2.21-1.63 3.5-3.5 3.5V16h2v2h-2v1.5h-2zM9.56 5c0 .91.65 1.62 1.44 1.83V3.17c-.79.21-1.44.92-1.44 1.83zm4.88 5.93c0-.91-.65-1.62-1.44-1.83v3.66c.79-.21 1.44-.92 1.44-1.83z"/>
+  </svg>
+);
+
 const ReplicateIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" fillRule="evenodd" viewBox="0 0 24 24" className="w-5 h-5">
     <path d="M22 10.552v2.26h-7.932V22H11.54V10.552H22zM22 2v2.264H4.528V22H2V2h20zm0 4.276V8.54H9.296V22H6.768V6.276H22z"/>
@@ -80,6 +86,7 @@ const providerHelpUrls: Record<string, string> = {
   google: "/docs/byok/google-ai-setup",
   grok: "/docs/byok/grok-setup",
   perplexity: "/docs/byok/perplexity-setup",
+  kimi: "/docs/byok/kimi-setup",
 };
 
 const aiProviders = [
@@ -157,6 +164,18 @@ const aiProviders = [
       { id: "sonar-reasoning", name: "Sonar Reasoning", tag: "Reasoning", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "sonar-pro", name: "Sonar Pro", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "sonar", name: "Sonar", tag: "Fastest", price: "$0.002/post", monthly: "~$0.06/mo" },
+    ],
+  },
+  {
+    id: "kimi",
+    name: "Kimi",
+    description: "Kimi K2.5, Kimi K2 by Moonshot AI",
+    placeholder: "sk-...",
+    icon: KimiIcon,
+    apiKeyUrl: "https://platform.moonshot.ai/console/api-keys",
+    models: [
+      { id: "kimi-k2.5", name: "Kimi K2.5", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.60/mo" },
+      { id: "kimi-k2", name: "Kimi K2", tag: "Recommended", price: "$0.015/post", monthly: "~$0.45/mo" },
     ],
   },
 ];

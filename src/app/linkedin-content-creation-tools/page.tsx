@@ -38,7 +38,7 @@ const toolsFAQs = [
   {
     question: "What LinkedIn content creation tools does LinkedGrow include?",
     answer:
-      "LinkedGrow includes an AI post generator with 20+ text models, AI photo generator with 10+ image models, LinkedIn carousel maker, content calendar with scheduling, hook generator for scroll-stopping opening lines, Reddit-to-LinkedIn content converter, engagement tools for liking and commenting from your dashboard, analytics dashboard, and A/B testing. All tools are built into a single platform.",
+      "LinkedGrow includes an AI post generator with 26+ text models, AI photo generator with 10+ image models, LinkedIn carousel maker, content calendar with scheduling, hook generator for scroll-stopping opening lines, Reddit-to-LinkedIn content converter, engagement tools for liking and commenting from your dashboard, analytics dashboard, and A/B testing. All tools are built into a single platform.",
   },
   {
     question: "How much do LinkedIn content creation tools typically cost?",
@@ -48,7 +48,7 @@ const toolsFAQs = [
   {
     question: "Can I generate unlimited LinkedIn posts with these tools?",
     answer:
-      "Yes. Every paid plan on LinkedGrow includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), or Perplexity, and generate as many posts as you need. There are no monthly caps, credit limits, or token restrictions on post generation.",
+      "Yes. Every paid plan on LinkedGrow includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), Perplexity, or Kimi, and generate as many posts as you need. There are no monthly caps, credit limits, or token restrictions on post generation.",
   },
   {
     question: "Do I need separate tools for writing, images, and scheduling?",
@@ -58,7 +58,7 @@ const toolsFAQs = [
   {
     question: "What AI models power the content creation tools?",
     answer:
-      "For text generation, LinkedGrow supports the latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ models in total. For image generation, it supports the latest models from OpenAI, Google, and Replicate - 10+ models in total. You choose which models to use and can switch between them at any time.",
+      "For text generation, LinkedGrow supports the latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ models in total. For image generation, it supports the latest models from OpenAI, Google, and Replicate - 10+ models in total. You choose which models to use and can switch between them at any time.",
   },
   {
     question: "Is there a free plan available?",

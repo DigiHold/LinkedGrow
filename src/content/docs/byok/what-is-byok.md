@@ -7,13 +7,13 @@ order: 1
 
 ## Bring Your Own Key explained
 
-BYOK stands for Bring Your Own Key. It is LinkedGrow's approach to AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, or Google AI.
+BYOK stands for Bring Your Own Key. It is LinkedGrow's approach to AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.
 
 You pay your LinkedGrow subscription for the platform features, and you pay the AI provider directly for actual usage at their wholesale API rates. No markup, no middleman.
 
 ## How it works
 
-1. **Choose an AI provider** - Pick from OpenAI, Anthropic, Google AI, Grok (xAI), or Perplexity
+1. **Choose an AI provider** - Pick from OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, or Kimi
 2. **Get your API key** - Create an account at the provider's website and generate an API key
 3. **Add billing** - Set up a payment method with the provider (pay-as-you-go)
 4. **Paste your key in LinkedGrow** - Go to Settings > AI API and enter your key
@@ -66,4 +66,5 @@ Ready to set up your API key? See our step-by-step guides for each provider:
 - [Google AI (Gemini) Setup](/docs/byok/google-ai-setup)
 - [Grok (xAI) Setup](/docs/byok/grok-setup)
 - [Perplexity Setup](/docs/byok/perplexity-setup)
+- [Kimi Setup](/docs/byok/kimi-setup)
 - [Image Providers](/docs/byok/image-providers)

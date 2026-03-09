@@ -38,7 +38,7 @@ const aiContentFAQs = [
   {
     question: "What AI models does LinkedGrow use for LinkedIn content creation?",
     answer:
-      "LinkedGrow supports 20+ AI text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions available. For image generation it supports 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
+      "LinkedGrow supports 26+ AI text models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi (Moonshot AI) - always the latest versions available. For image generation it supports 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
   },
   {
     question: "How does AI content creation work for LinkedIn?",

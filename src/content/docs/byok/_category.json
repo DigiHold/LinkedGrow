@@ -1,6 +1,6 @@
 {
   "title": "BYOK (AI API Keys)",
-  "description": "Learn how to set up your AI API keys from OpenAI, Anthropic, Google, and more. Understand costs and troubleshoot common issues.",
+  "description": "Learn how to set up your AI API keys from OpenAI, Anthropic, Google, Kimi, and more. Understand costs and troubleshoot common issues.",
   "order": 6,
   "icon": "key"
 }

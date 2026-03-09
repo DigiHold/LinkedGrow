@@ -5,11 +5,11 @@ import { PostGeneratorFreeContent } from "./post-generator-content";
 export const metadata: Metadata = {
   title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
   description:
-    "Generate LinkedIn posts for free with AI. 20+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan available - no credit card needed.",
+    "Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan available - no credit card needed.",
   openGraph: {
     title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
     description:
-      "Generate LinkedIn posts for free with AI. 20+ models, voice training, and scheduling. Free plan available.",
+      "Generate LinkedIn posts for free with AI. 26+ models, voice training, and scheduling. Free plan available.",
     url: "https://linkedgrow.ai/ai-linkedin-post-generator-free",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI LinkedIn Post Generator Free | LinkedGrow",
     description:
-      "Generate LinkedIn posts with AI for free. 20+ models, voice training. No credit card needed.",
+      "Generate LinkedIn posts with AI for free. 26+ models, voice training. No credit card needed.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
   },
   alternates: {
@@ -43,7 +43,7 @@ const postGenFreeFAQs = [
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
     answer:
-      "LinkedGrow supports 20+ AI text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions available. You choose which model to use based on your preference and can switch between models at any time.",
+      "LinkedGrow supports 26+ AI text models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - always the latest versions available. You choose which model to use based on your preference and can switch between models at any time.",
   },
   {
     question: "How does the AI generate a LinkedIn post?",
@@ -93,7 +93,7 @@ export default function AiLinkedinPostGeneratorFreePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/ai-linkedin-post-generator-free"
-        description="Generate LinkedIn posts for free with AI. 20+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan with no credit card required."
+        description="Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan with no credit card required."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <PostGeneratorFreeContent />

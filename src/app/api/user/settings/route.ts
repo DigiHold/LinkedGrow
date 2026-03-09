@@ -35,6 +35,7 @@ export async function GET() {
       google: { hasKey: hasProviderKey(aiUser.googleApiKey), model: aiUser.googleModel },
       grok: { hasKey: hasProviderKey(aiUser.grokApiKey), model: aiUser.grokModel },
       perplexity: { hasKey: hasProviderKey(aiUser.perplexityApiKey), model: aiUser.perplexityModel },
+      kimi: { hasKey: hasProviderKey(aiUser.kimiApiKey), model: aiUser.kimiModel },
     };
 
     // Build per-provider settings for image AI (API key status + all settings)
@@ -153,6 +154,8 @@ export async function PUT(request: NextRequest) {
       grokModel,
       perplexityApiKey,
       perplexityModel,
+      kimiApiKey,
+      kimiModel,
       imageProvider,
       // Per-provider image AI settings
       googleImageApiKey,
@@ -219,6 +222,12 @@ export async function PUT(request: NextRequest) {
     }
     if (perplexityModel !== undefined) {
       updateData.perplexityModel = perplexityModel || null;
+    }
+    if (kimiApiKey !== undefined) {
+      updateData.kimiApiKey = kimiApiKey ? encryptApiKey(kimiApiKey) : null;
+    }
+    if (kimiModel !== undefined) {
+      updateData.kimiModel = kimiModel || null;
     }
 
     if (imageProvider !== undefined) {
@@ -350,6 +359,7 @@ export async function DELETE(request: NextRequest) {
       google: "googleApiKey",
       grok: "grokApiKey",
       perplexity: "perplexityApiKey",
+      kimi: "kimiApiKey",
     };
 
     // Per-provider image AI key deletion

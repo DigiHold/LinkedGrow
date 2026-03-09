@@ -7,19 +7,20 @@ order: 3
 
 ## What is BYOK?
 
-BYOK stands for Bring Your Own Key. Instead of charging you per generation or limiting your monthly usage, LinkedGrow lets you connect your own AI API key from providers like OpenAI, Anthropic, or Google. You pay the AI provider directly at their rates with no markup from us.
+BYOK stands for Bring Your Own Key. Instead of charging you per generation or limiting your monthly usage, LinkedGrow lets you connect your own AI API key from providers like OpenAI, Anthropic, Google, or Kimi. You pay the AI provider directly at their rates with no markup from us.
 
 This means unlimited generations at cost. Most users spend $2-4 per month on AI costs, compared to competitors that charge $49 or more per month with caps on how much content you can create.
 
 ## Supported providers
 
-### Text generation (5 providers, 26 models)
+### Text generation (6 providers, 28 models)
 
 - **OpenAI** - GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
 - **Anthropic** - Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
 - **Google AI** - Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
 - **Grok (xAI)** - Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
 - **Perplexity** - Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar
+- **Kimi (Moonshot AI)** - Kimi K2.5, Kimi K2
 
 ### Image generation (3 providers, 14 models)
 
@@ -59,5 +60,6 @@ For detailed step-by-step setup guides for each provider, see:
 - [Google AI (Gemini) Setup](/docs/byok/google-ai-setup)
 - [Grok (xAI) Setup](/docs/byok/grok-setup)
 - [Perplexity Setup](/docs/byok/perplexity-setup)
+- [Kimi Setup](/docs/byok/kimi-setup)
 - [Image Providers](/docs/byok/image-providers)
 - [Cost Comparison](/docs/byok/cost-comparison)

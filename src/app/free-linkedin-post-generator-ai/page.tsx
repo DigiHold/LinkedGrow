@@ -5,11 +5,11 @@ import { FreePostGeneratorContent } from "./free-generator-content";
 export const metadata: Metadata = {
   title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
   description:
-    "Try a free AI-powered LinkedIn post generator. 20+ models from OpenAI, Anthropic, Google, Grok, and Perplexity. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
+    "Try a free AI-powered LinkedIn post generator. 26+ models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
   openGraph: {
     title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
     description:
-      "Free AI LinkedIn post generator. 20+ models, voice training. No credit card needed.",
+      "Free AI LinkedIn post generator. 26+ models, voice training. No credit card needed.",
     url: "https://linkedgrow.ai/free-linkedin-post-generator-ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free LinkedIn Post Generator AI | LinkedGrow",
     description:
-      "Generate LinkedIn posts for free with AI. 20+ models, voice training, no credit card.",
+      "Generate LinkedIn posts for free with AI. 26+ models, voice training, no credit card.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
   },
   alternates: {
@@ -38,7 +38,7 @@ const freeGenFAQs = [
   {
     question: "Is this LinkedIn post generator AI really free?",
     answer:
-      "Yes. LinkedGrow offers a free plan with 3 AI post generations per month. You get access to all 20+ AI models and voice training with no credit card required. For unlimited generations, paid plans start at $19 per month.",
+      "Yes. LinkedGrow offers a free plan with 3 AI post generations per month. You get access to all 26+ AI models and voice training with no credit card required. For unlimited generations, paid plans start at $19 per month.",
   },
   {
     question: "Do I need to sign up to use the free AI post generator?",
@@ -48,7 +48,7 @@ const freeGenFAQs = [
   {
     question: "What AI models can I use on the free plan?",
     answer:
-      "The free plan gives you access to all 20+ supported models from OpenAI, Anthropic, Google, Grok, and Perplexity. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
+      "The free plan gives you access to all 26+ supported models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
   },
   {
     question: "How does voice training work on the free plan?",
@@ -93,7 +93,7 @@ export default function FreeLinkedinPostGeneratorAiPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow Free AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/free-linkedin-post-generator-ai"
-        description="Free AI-powered LinkedIn post generator with 20+ models, voice training, and BYOK pricing. 3 free generations per month, no credit card required."
+        description="Free AI-powered LinkedIn post generator with 26+ models, voice training, and BYOK pricing. 3 free generations per month, no credit card required."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <FreePostGeneratorContent />

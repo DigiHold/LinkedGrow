@@ -44,9 +44,9 @@ export function ContentCreationAiContent() {
           gradient: "with AI",
         }}
         descriptionBold="LinkedIn rewards consistency. AI makes it possible."
-        description="LinkedGrow uses 20+ AI models to generate posts, photos, and carousels that match your unique writing voice. ChatGPT, Claude, Gemini, and more - all accessible through one dashboard. Publish 3 to 5 posts per week without spending hours writing."
+        description="LinkedGrow uses 26+ AI models to generate posts, photos, and carousels that match your unique writing voice. ChatGPT, Claude, Gemini, Kimi, and more - all accessible through one dashboard. Publish 3 to 5 posts per week without spending hours writing."
         valuePropBadges={[
-          { icon: Bot, text: "20+ AI models" },
+          { icon: Bot, text: "26+ AI models" },
           { icon: Mic, text: "Voice training" },
           { icon: Zap, text: "Posts in 2 minutes" },
         ]}
@@ -118,10 +118,10 @@ export function ContentCreationAiContent() {
         features={[
           {
             icon: Sparkles,
-            title: "20+ AI Text Models",
+            title: "26+ AI Text Models",
             description:
-              "Choose from the latest models by OpenAI, Anthropic, Google, xAI, and Perplexity. Each model has different strengths for different content types. Switch between models anytime.",
-            highlights: ["6 AI providers", "20+ models", "Switch anytime"],
+              "Choose from the latest models by OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Each model has different strengths for different content types. Switch between models anytime.",
+            highlights: ["6 AI providers", "26+ models", "Switch anytime"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
           },
@@ -245,7 +245,7 @@ export function ContentCreationAiContent() {
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited post generations with zero caps on any paid plan" },
-            { text: "20+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and more" },
+            { text: "26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, Kimi, and more" },
             { text: "Voice training that matches your exact writing style and tone" },
             { text: "AI costs average $2 to $4 per month at provider rates - zero markup" },
             { text: "Photos, scheduling, analytics, and hooks all included" },
@@ -262,7 +262,7 @@ export function ContentCreationAiContent() {
         }}
         description="LinkedIn professionals are using AI to break through the content creation bottleneck and maintain consistent posting schedules that drive real business results."
         stats={[
-          { value: "20+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
+          { value: "26+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
           { value: "< 2 min", label: "Average time per post", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "$2-4", label: "Monthly AI costs (BYOK)", color: "text-violet-600 dark:text-violet-400" },
           { value: "3-5x", label: "More posts per week", color: "text-amber-600 dark:text-amber-400" },
@@ -276,7 +276,7 @@ export function ContentCreationAiContent() {
           },
           {
             quote:
-              "Having 20+ models to choose from is a game changer. I use Claude for thought leadership pieces and ChatGPT for storytelling posts. Different models, different strengths. And my total AI cost last month was $3.20.",
+              "Having 26+ models to choose from is a game changer. I use Claude for thought leadership pieces and ChatGPT for storytelling posts. Different models, different strengths. And my total AI cost last month was $3.20.",
             author: "Priya S.",
             role: "Tech Founder, 19K Followers",
           },
@@ -299,7 +299,7 @@ export function ContentCreationAiContent() {
           {
             question: "What AI models does LinkedGrow use for content creation?",
             answer:
-              "LinkedGrow supports 20+ text models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions. For images: 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
+              "LinkedGrow supports 26+ text models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi (Moonshot AI) - always the latest versions. For images: 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
           },
           {
             question: "How does AI content creation work for LinkedIn?",
@@ -350,7 +350,7 @@ export function ContentCreationAiContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Free plan available",
-          "20+ AI models",
+          "26+ AI models",
           "Cancel anytime",
           "Voice training included",
         ]}

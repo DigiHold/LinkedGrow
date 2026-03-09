@@ -44,10 +44,10 @@ export function PostGeneratorFreeContent() {
           gradient: "with AI",
         }}
         descriptionBold="Create professional LinkedIn posts without spending a dollar."
-        description="LinkedGrow's free plan gives you 3 AI post generations per month with access to 20+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
+        description="LinkedGrow's free plan gives you 3 AI post generations per month with access to 26+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
         valuePropBadges={[
           { icon: Gift, text: "Free plan available" },
-          { icon: Brain, text: "20+ AI models" },
+          { icon: Brain, text: "26+ AI models" },
           { icon: Mic, text: "Voice training" },
         ]}
         primaryCta={{ text: "Start generating free", href: "/sign-up" }}
@@ -114,14 +114,14 @@ export function PostGeneratorFreeContent() {
           text: "Professional LinkedIn posts in seconds,",
           gradient: "starting free",
         }}
-        description="LinkedGrow's AI post generator is designed specifically for LinkedIn. Voice training, multiple post types, and 20+ AI models - with a free plan to get you started."
+        description="LinkedGrow's AI post generator is designed specifically for LinkedIn. Voice training, multiple post types, and 26+ AI models - with a free plan to get you started."
         features={[
           {
             icon: Brain,
-            title: "20+ AI Models to Choose From",
+            title: "26+ AI Models to Choose From",
             description:
-              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
-            highlights: ["6 AI providers", "20+ models", "Your choice"],
+              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, Kimi, and more. Each model generates different styles of LinkedIn content. Try different models to find your favorite.",
+            highlights: ["6 AI providers", "26+ models", "Your choice"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
           },
@@ -237,7 +237,7 @@ export function PostGeneratorFreeContent() {
           benefits: [
             { text: "Free plan with 3 generations per month to start" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
-            { text: "20+ AI models from OpenAI, Anthropic, Google, xAI, and more" },
+            { text: "26+ AI models from OpenAI, Anthropic, Google, xAI, and more" },
             { text: "Voice training matches your writing style on all plans" },
             { text: "AI costs average $2 to $4 per month with zero markup" },
           ],
@@ -254,7 +254,7 @@ export function PostGeneratorFreeContent() {
         description="LinkedIn professionals are using LinkedGrow's AI post generator to finally maintain a consistent posting schedule that drives real career and business results."
         stats={[
           { value: "Free", label: "To start generating posts", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "20+", label: "AI models available", color: "text-emerald-600 dark:text-emerald-400" },
+          { value: "26+", label: "AI models available", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "< 2 min", label: "Per post on average", color: "text-violet-600 dark:text-violet-400" },
           { value: "$2-4", label: "Monthly AI costs (paid plan)", color: "text-amber-600 dark:text-amber-400" },
         ]}
@@ -295,7 +295,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "What AI models are available?",
             answer:
-              "20+ models from OpenAI, Anthropic, Google, xAI, and Perplexity - always the latest versions. Switch between models anytime based on your preference.",
+              "26+ models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - always the latest versions. Switch between models anytime based on your preference.",
           },
           {
             question: "How does voice training work?",

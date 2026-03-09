@@ -44,9 +44,9 @@ export function ContentCreationToolsContent() {
           gradient: "in one platform",
         }}
         descriptionBold="Stop paying for 5 different tools to manage your LinkedIn presence."
-        description="LinkedGrow combines AI post generation, photo creation, carousel building, scheduling, analytics, and engagement tools into a single platform. Write, design, schedule, and track - all from one dashboard. Powered by 20+ AI models with BYOK pricing."
+        description="LinkedGrow combines AI post generation, photo creation, carousel building, scheduling, analytics, and engagement tools into a single platform. Write, design, schedule, and track - all from one dashboard. Powered by 26+ AI models with BYOK pricing."
         valuePropBadges={[
-          { icon: Sparkles, text: "20+ AI models" },
+          { icon: Sparkles, text: "26+ AI models" },
           { icon: Layers, text: "6 tools in one" },
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
@@ -120,8 +120,8 @@ export function ContentCreationToolsContent() {
             icon: PenTool,
             title: "AI Post Generator",
             description:
-              "Generate complete LinkedIn posts with 20+ AI models from OpenAI, Anthropic, Google, xAI, and Perplexity. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
-            highlights: ["20+ AI models", "Voice training", "Unlimited generations"],
+              "Generate complete LinkedIn posts with 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
+            highlights: ["26+ AI models", "Voice training", "Unlimited generations"],
             badge: "Core",
             color: "from-cyan-500 to-blue-600",
           },
@@ -263,7 +263,7 @@ export function ContentCreationToolsContent() {
         description="LinkedIn creators are replacing their scattered tool stacks with LinkedGrow and seeing better results at a fraction of the cost."
         stats={[
           { value: "6", label: "Content tools in one platform", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "20+", label: "AI models for text and images", color: "text-emerald-600 dark:text-emerald-400" },
+          { value: "26+", label: "AI models for text and images", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "80%", label: "Cost savings vs tool stacks", color: "text-violet-600 dark:text-violet-400" },
           { value: "< 3 min", label: "From idea to published post", color: "text-amber-600 dark:text-amber-400" },
         ]}
@@ -299,7 +299,7 @@ export function ContentCreationToolsContent() {
           {
             question: "What LinkedIn content creation tools does LinkedGrow include?",
             answer:
-              "LinkedGrow includes an AI post generator with 20+ text models, AI photo generator with 10+ image models, LinkedIn carousel maker, content calendar with scheduling, hook generator for scroll-stopping opening lines, Reddit-to-LinkedIn content converter, engagement tools, analytics dashboard, and A/B testing. All tools are built into a single platform.",
+              "LinkedGrow includes an AI post generator with 26+ text models, AI photo generator with 10+ image models, LinkedIn carousel maker, content calendar with scheduling, hook generator for scroll-stopping opening lines, Reddit-to-LinkedIn content converter, engagement tools, analytics dashboard, and A/B testing. All tools are built into a single platform.",
           },
           {
             question: "How much do LinkedIn content creation tools typically cost?",
@@ -309,7 +309,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Can I generate unlimited LinkedIn posts?",
             answer:
-              "Yes. Every paid plan includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), or Perplexity, and generate as many posts as you need with no monthly caps.",
+              "Yes. Every paid plan includes unlimited AI post generation. You bring your own API key from OpenAI, Anthropic, Google, Grok (xAI), Perplexity, or Kimi, and generate as many posts as you need with no monthly caps.",
           },
           {
             question: "Do I need separate tools for writing, images, and scheduling?",
@@ -319,7 +319,7 @@ export function ContentCreationToolsContent() {
           {
             question: "What AI models power the content creation tools?",
             answer:
-              "For text: the latest models from OpenAI, Anthropic, Google, xAI, and Perplexity - 20+ models in total. For images: the latest models from OpenAI, Google, and Replicate - 10+ models in total. Switch between models anytime.",
+              "For text: the latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ models in total. For images: the latest models from OpenAI, Google, and Replicate - 10+ models in total. Switch between models anytime.",
           },
           {
             question: "Is there a free plan available?",

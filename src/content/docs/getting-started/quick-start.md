@@ -33,7 +33,7 @@ Your LinkedIn profile name and avatar will sync automatically. You can check the
 LinkedGrow uses the BYOK (Bring Your Own Key) model - you connect your own AI API key for unlimited content generation at cost. Typical monthly cost is $2-4 for most users.
 
 1. Go to **Settings > AI API** from the sidebar
-2. Choose a provider (OpenAI, Anthropic, Google AI, Grok, or Perplexity)
+2. Choose a provider (OpenAI, Anthropic, Google AI, Grok, Perplexity, or Kimi)
 3. Paste your API key from the provider's dashboard
 4. Select a model (each provider has a recommended option marked)
 5. Click **Save**

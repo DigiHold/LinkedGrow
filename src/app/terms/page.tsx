@@ -85,7 +85,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">4. API Keys and Third-Party Services</h2>
               <p className="text-muted-foreground mb-4">
-                When you provide API keys for third-party AI services (OpenAI, Anthropic, Google, etc.):
+                When you provide API keys for third-party AI services (OpenAI, Anthropic, Google, Kimi, etc.):
               </p>
               <ul className="list-disc pl-6 text-muted-foreground mb-4 space-y-2">
                 <li>You are responsible for compliance with those services&apos; terms</li>

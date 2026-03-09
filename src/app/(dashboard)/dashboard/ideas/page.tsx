@@ -220,7 +220,7 @@ export default function IdeasPage() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground mt-6">
-                We support OpenAI, Anthropic, Google AI, Grok (xAI), and Perplexity. Your key is encrypted and stored securely.
+                We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
               </p>
             </div>
           </CardContent>

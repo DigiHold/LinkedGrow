@@ -55,6 +55,8 @@ export const users = sqliteTable("users", {
   grokModel: text("grok_model"),
   perplexityApiKey: text("perplexity_api_key"),
   perplexityModel: text("perplexity_model"),
+  kimiApiKey: text("kimi_api_key"),
+  kimiModel: text("kimi_model"),
 
   // Voice/style settings for AI content generation
   samplePosts: text("sample_posts"), // JSON array of sample posts for voice matching
