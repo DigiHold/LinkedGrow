@@ -362,7 +362,6 @@ Return ONLY the post text. No quotes, no explanations.`;
       body: JSON.stringify({
         model: model || "kimi-k2",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
       }),
     });
 
@@ -597,7 +596,6 @@ Return ONLY a JSON array of 5 strings. Example:
       body: JSON.stringify({
         model: model || "kimi-k2",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
       }),
     });
 
@@ -824,7 +822,6 @@ Return ONLY the edited post. No quotes, no explanations.`;
       body: JSON.stringify({
         model: model || "kimi-k2",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
       }),
     });
 
@@ -1149,7 +1146,6 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
           body: JSON.stringify({
             model: model || "kimi-k2",
             messages: [{ role: "user", content: carouselPrompt }],
-            temperature: 0.8,
           }),
         });
 

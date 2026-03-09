@@ -246,7 +246,6 @@ Return the edited post:`;
       body: JSON.stringify({
         model: model || "kimi-k2",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
       }),
     });
 

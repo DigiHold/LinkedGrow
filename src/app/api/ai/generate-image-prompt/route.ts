@@ -389,7 +389,6 @@ async function generateWithKimi(apiKey: string, postContent: string, model: stri
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
       ],
-      temperature: 0.7,
       max_tokens: 1500,
     }),
   });
