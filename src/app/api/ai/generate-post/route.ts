@@ -181,13 +181,13 @@ The rest of the post starts here..."
    - USE Unicode bold characters for section headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
    - USE emojis strategically: ✅ for list items, ✨ for highlights, 📌 for save CTA, ♻️ for repost CTA, 🔔 for follow CTA
    - USE → arrows for bullet points when listing steps or features
-   - Keep lines SHORT (5-10 words max per line)
-   - Add whitespace between sections for skimmability
+   - Write COMPLETE sentences on a single line. Do NOT split a sentence across multiple lines.
+   - Separate PARAGRAPHS with blank lines for readability, but keep each sentence intact on one line.
    - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
 
 3. STRUCTURE:
    - Start with strong 2-line hook
-   - Keep it skimmable with short lines and whitespace
+   - Separate sections with blank lines for skimmability
    - Include 1 clear takeaway + 1 framework (steps)
    - End with a CTA like "📌 Save this for later" or "♻️ Repost if this helped"
    - 800-1500 characters total
@@ -648,7 +648,7 @@ Instruction: "${instruction}"
    - USE Unicode bold for headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
    - USE emojis strategically: ✅ for lists, 📌 for save CTA, ♻️ for repost CTA
    - USE → arrows for bullet points
-   - Keep lines SHORT for skimmability
+   - Write complete sentences on one line. Separate paragraphs with blank lines.
    - NEVER use em dashes or en dashes. Use commas or " - " instead.
    - NO hashtags
 

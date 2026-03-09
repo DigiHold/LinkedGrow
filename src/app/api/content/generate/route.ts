@@ -144,13 +144,13 @@ ${sourceContext}${businessContext}
    - USE Unicode bold characters for section headers (like \u{1D5E7}\u{1D5F5}\u{1D5F6}\u{1D600} \u{1D5F6}\u{1D600} \u{1D5EE}\u{1D5FC}\u{1D5F9}\u{1D5F1})
    - USE emojis strategically: \u2705 for list items, \u2728 for highlights, \uD83D\uDCCC for save CTA, \u267B\uFE0F for repost CTA, \uD83D\uDD14 for follow CTA
    - USE \u2192 arrows for bullet points when listing steps or features
-   - Keep lines SHORT (5-10 words max per line)
-   - Add whitespace between sections for skimmability
+   - Write COMPLETE sentences on a single line. Do NOT split a sentence across multiple lines.
+   - Separate PARAGRAPHS with blank lines for readability, but keep each sentence intact on one line.
    - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
 
 3. STRUCTURE:
    - Start with the provided 2-line hook exactly
-   - Keep it skimmable with short lines and whitespace
+   - Separate sections with blank lines for skimmability
    - Include 1 clear takeaway + 1 framework (steps)
    - End with a CTA like "\uD83D\uDCCC Save this for later" or "\u267B\uFE0F Repost if this helped"
    - 800-1500 characters total
