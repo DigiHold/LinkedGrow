@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 
+export const maxDuration = 120;
+
 interface Idea {
   hook: string;
   type: string;

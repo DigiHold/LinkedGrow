@@ -4,6 +4,8 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
+export const maxDuration = 120;
+
 // System prompt for generating detailed image prompts (like Blog agent's claude-prompt-generator.js)
 const SYSTEM_PROMPT = `You are an expert at creating highly detailed image generation prompts for Gemini 3 Pro Image and GPT Image 1.5.
 

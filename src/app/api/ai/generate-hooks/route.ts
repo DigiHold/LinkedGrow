@@ -4,6 +4,8 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
+export const maxDuration = 120;
+
 interface HookPair {
   firstLine: string;
   secondLine: string;

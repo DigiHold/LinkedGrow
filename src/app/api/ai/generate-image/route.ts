@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import sharp from "sharp";
+
+export const maxDuration = 120;
 import { GoogleGenAI } from "@google/genai";
 
 // Maximum image size for LinkedIn (5MB)

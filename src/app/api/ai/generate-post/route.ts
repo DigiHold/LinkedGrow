@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 
+export const maxDuration = 120;
+
 // Sanitize AI output: remove wrapping quotes, em dashes, and separators
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();

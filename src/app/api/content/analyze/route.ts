@@ -4,6 +4,8 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 
+export const maxDuration = 120;
+
 // Generic content input (replaces Reddit-specific trimmedJson)
 interface ContentInput {
   source: "reddit" | "youtube" | "webpage" | "blog";
