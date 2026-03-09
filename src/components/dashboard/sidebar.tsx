@@ -470,7 +470,7 @@ export function Sidebar() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
               >
                 <MessageSquare className="w-4 h-4" />
-                Chat with AI
+                Need Help?
               </button>
               <button
                 onClick={() => {
