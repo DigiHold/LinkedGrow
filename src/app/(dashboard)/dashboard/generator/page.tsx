@@ -1494,7 +1494,13 @@ export default function GeneratorPage() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => setShowImageModal(true)}
+                    onClick={() => {
+                      if (!currentPost.trim()) {
+                        setToast({ message: "Add some text to your post first before generating an image.", type: "error" });
+                        return;
+                      }
+                      setShowImageModal(true);
+                    }}
                   >
                     <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
                     Generate AI Image

@@ -46,6 +46,7 @@ import { Drawer } from "vaul";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
+import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
@@ -151,6 +152,13 @@ export function CalendarContent() {
   // User timezone for scheduling
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
 
+  // AI Image generation state
+  const [hasImageApiKey, setHasImageApiKey] = useState(false);
+  const [hasTextApiKey, setHasTextApiKey] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showEditImageModal, setShowEditImageModal] = useState(false);
+  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+
   const showError = (message: string) => {
     setErrorMessage(message);
     setShowErrorToast(true);
@@ -244,6 +252,8 @@ export function CalendarContent() {
           if (data.timezone) {
             setUserTimezone(data.timezone);
           }
+          setHasImageApiKey(data.hasImageApiKey || false);
+          setHasTextApiKey(data.hasApiKey || false);
         }
       } catch {
         // Silently fail - will use browser timezone as fallback
@@ -1344,7 +1354,26 @@ Tips for viral posts:
                         onError={showError}
                         hasAccess={canAccessFeature(userPlan, "firstComment")}
                       />
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
+                        {hasImageApiKey && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (!newPostContent.trim()) {
+                                showError("Add some text to your post first before generating an image.");
+                                return;
+                              }
+                              setShowImageModal(true);
+                            }}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
+                            <span className="hidden sm:inline">AI Image</span>
+                            {!hasImageAccess && (
+                              <span className="ml-1 text-xs text-amber-600">Pro</span>
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1972,6 +2001,27 @@ Tips for viral posts:
                           hasAccess={canAccessFeature(userPlan, "firstComment")}
                         />
                       </div>
+                      {hasImageApiKey && (
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (!editPostContent.trim()) {
+                                showError("Add some text to your post first before generating an image.");
+                                return;
+                              }
+                              setShowEditImageModal(true);
+                            }}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
+                            <span className="hidden sm:inline">AI Image</span>
+                            {!hasImageAccess && (
+                              <span className="ml-1 text-xs text-amber-600">Pro</span>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2046,6 +2096,32 @@ Tips for viral posts:
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
+
+      {/* Image Generator Modal - Create Post */}
+      <ImageGeneratorModal
+        open={showImageModal}
+        onOpenChange={setShowImageModal}
+        postContent={newPostContent}
+        userPlan={userPlan}
+        hasImageApiKey={hasImageApiKey}
+        hasTextApiKey={hasTextApiKey}
+        onImageGenerated={(imageData) => {
+          setAttachedImage(imageData);
+        }}
+      />
+
+      {/* Image Generator Modal - Edit Post */}
+      <ImageGeneratorModal
+        open={showEditImageModal}
+        onOpenChange={setShowEditImageModal}
+        postContent={editPostContent}
+        userPlan={userPlan}
+        hasImageApiKey={hasImageApiKey}
+        hasTextApiKey={hasTextApiKey}
+        onImageGenerated={(imageData) => {
+          setEditAttachedImage(imageData);
+        }}
+      />
 
       {/* Error Toast */}
       {showErrorToast && (

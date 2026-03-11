@@ -26,6 +26,7 @@ import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
+import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { Textarea } from "@/components/ui/textarea";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, getNowInTimezone, resolveTimezone } from "@/lib/timezone";
@@ -176,6 +177,10 @@ function EditorContent() {
   } | null>(null);
   const [originalHadMedia, setOriginalHadMedia] = useState(false);
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
+  const [hasImageApiKey, setHasImageApiKey] = useState(false);
+  const [hasTextApiKey, setHasTextApiKey] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -196,6 +201,8 @@ function EditorContent() {
           if (data.timezone) {
             setUserTimezone(data.timezone);
           }
+          setHasImageApiKey(data.hasImageApiKey || false);
+          setHasTextApiKey(data.hasApiKey || false);
         }
       } catch (error) {
         console.error("Failed to fetch timezone:", error);
@@ -696,6 +703,27 @@ Tips for viral posts:
               AI Assist
             </Button>
 
+            {/* AI Image Generation */}
+            {hasImageApiKey && (
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  if (!content.trim()) {
+                    showError("Add some text to your post first before generating an image.");
+                    return;
+                  }
+                  setShowImageModal(true);
+                }}
+              >
+                <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                Generate AI Image
+                {!hasImageAccess && (
+                  <span className="ml-auto text-xs text-amber-600">Pro</span>
+                )}
+              </Button>
+            )}
+
             {/* Algorithm Score */}
             <Card>
               <CardHeader className="pb-2">
@@ -818,6 +846,19 @@ Tips for viral posts:
             </Card>
           </div>
         </div>
+
+        {/* Image Generator Modal */}
+        <ImageGeneratorModal
+          open={showImageModal}
+          onOpenChange={setShowImageModal}
+          postContent={content}
+          userPlan={userPlan}
+          hasImageApiKey={hasImageApiKey}
+          hasTextApiKey={hasTextApiKey}
+          onImageGenerated={(imageData) => {
+            setAttachedImage(imageData);
+          }}
+        />
 
         {/* Schedule Post Modal */}
         {scheduleModal && (
