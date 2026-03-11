@@ -174,12 +174,24 @@ export async function POST(request: NextRequest) {
         where: eq(posts.id, postId),
       });
 
+      console.log("[First Comment] Post check:", {
+        postId,
+        hasFirstComment: !!updatedPost?.firstComment,
+        firstCommentLength: updatedPost?.firstComment?.length,
+        linkedinPostId: postResult.id,
+      });
+
       if (updatedPost?.firstComment) {
         try {
           const delaySeconds = Math.floor(Math.random() * 241) + 60;
-          await scheduleFirstComment(postId, delaySeconds);
+          const messageId = await scheduleFirstComment(postId, delaySeconds);
+          console.log("[First Comment] Scheduled via QStash:", {
+            postId,
+            delaySeconds,
+            qstashMessageId: messageId,
+          });
         } catch (error) {
-          console.error("Failed to schedule first comment:", error);
+          console.error("[First Comment] Failed to schedule:", error);
         }
       }
     }

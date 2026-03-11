@@ -278,33 +278,36 @@ export async function createLinkedInComment(
     : `urn:li:person:${authorId}`;
 
   const encodedPostUrn = encodeURIComponent(postUrn);
+  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`;
+  const requestBody = {
+    actor: actorUrn,
+    object: postUrn,
+    message: {
+      text: commentText,
+    },
+  };
 
-  const response = await fetch(
-    `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': LINKEDIN_API_VERSION,
-      },
-      body: JSON.stringify({
-        actor: actorUrn,
-        object: postUrn,
-        message: {
-          text: commentText,
-        },
-      }),
-    }
-  );
+  console.log('[LinkedIn Comment] Request:', { url, actor: actorUrn, object: postUrn, commentLength: commentText.length });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+    body: JSON.stringify(requestBody),
+  });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Failed to create LinkedIn comment: ${error}`);
+    console.error('[LinkedIn Comment] Error:', { status: response.status, error });
+    throw new Error(`Failed to create LinkedIn comment (${response.status}): ${error}`);
   }
 
   const data = await response.json();
+  console.log('[LinkedIn Comment] Success:', { id: data.id || data['$URN'] });
   return { id: data.id || data['$URN'] || 'comment-created' };
 }
 
