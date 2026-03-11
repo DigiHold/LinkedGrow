@@ -15,6 +15,7 @@ import {
   Eye,
   Heart,
   MessageCircle,
+  MessageSquare,
   ExternalLink,
   RefreshCw,
   MoreVertical,
@@ -1136,7 +1137,7 @@ export function CalendarContent() {
                     </button>
                   </div>
                 </div>
-                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <div className="w-full transition-opacity duration-200">
@@ -1215,6 +1216,18 @@ export function CalendarContent() {
                             )}
                           </div>
                         </div>
+                        {/* Display first comment if exists */}
+                        {selectedPost.firstComment && (
+                          <div className="w-full max-w-lg m-auto mb-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium">First Comment</span>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-border p-4">
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedPost.firstComment}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1324,7 +1337,7 @@ export function CalendarContent() {
                     </button>
                   </div>
                 </div>
-                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   {/* LEFT SIDE - Editor */}
                   <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-white dark:bg-gray-900">
                     <div className="space-y-4">
@@ -1656,7 +1669,7 @@ Tips for viral posts:
                     </button>
                   </div>
                 </div>
-                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <button
@@ -1977,7 +1990,7 @@ Tips for viral posts:
                     </button>
                   </div>
                 </div>
-                <div className="flex md:flex-row flex-col w-full h-full min-h-0">
+                <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   {/* LEFT SIDE - Editor */}
                   <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-gray-800">
                     <div className="w-full max-w-lg mx-auto">
