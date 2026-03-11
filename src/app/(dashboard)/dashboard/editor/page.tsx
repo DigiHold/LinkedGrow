@@ -157,6 +157,7 @@ function EditorContent() {
   // Start loading if we're editing an existing post (prevents race condition)
   const [isLoading, setIsLoading] = useState(!!editPostId);
   const [currentPostId, setCurrentPostId] = useState<string | null>(editPostId);
+  const [currentPostStatus, setCurrentPostStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -230,6 +231,7 @@ function EditorContent() {
             setContent(data.post.content || "");
             setFirstComment(data.post.firstComment || "");
             setCurrentPostId(data.post.id);
+            setCurrentPostStatus(data.post.status || "draft");
             // Load existing media if present
             if (data.post.media && data.post.media.length > 0) {
               const existingMedia = data.post.media[0];
@@ -319,6 +321,40 @@ function EditorContent() {
       showError(error instanceof Error ? error.message : "Failed to edit post");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Save changes without changing post status (keeps scheduled date, etc.)
+  const handleSaveChanges = async () => {
+    if (!content.trim() || !currentPostId) return;
+    setIsSaving(true);
+    try {
+      const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasNewMedia ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+
+      const removeMedia = originalHadMedia && !attachedImage;
+
+      const response = await fetch(`/api/posts/${currentPostId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, mediaInfo, removeMedia, firstComment: firstComment || null }),
+      });
+      if (!response.ok) throw new Error("Failed to save changes");
+      setSuccessMessage("Changes saved!");
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+        router.push("/dashboard/posts");
+      }, 1500);
+    } catch (error) {
+      console.error("Save error:", error);
+      showError(error instanceof Error ? error.message : "Failed to save changes");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -791,6 +827,21 @@ Tips for viral posts:
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
                     Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
                   </div>
+                )}
+                {/* Save Changes - only when editing an existing post */}
+                {currentPostId && (
+                  <Button
+                    className="w-full"
+                    onClick={handleSaveChanges}
+                    disabled={isSaving || !content.trim()}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
                 )}
                 <Button
                   variant="outline"
