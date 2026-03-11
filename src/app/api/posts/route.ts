@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
-import { eq, desc, and, inArray, or, count, gte } from "drizzle-orm";
+import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { schedulePost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       .select()
       .from(posts)
       .where(and(...conditions))
-      .orderBy(desc(posts.updatedAt))
+      .orderBy(desc(sql`COALESCE(${posts.scheduledAt}, ${posts.publishedAt}, ${posts.updatedAt})`))
       .limit(limit)
       .offset(offset);
 
