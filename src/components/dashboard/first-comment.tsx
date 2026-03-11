@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Sparkles, Loader2, ArrowUpRight, Clock } from "lucide-react";
+import { MessageSquare, Sparkles, Loader2, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 // Community Management API not yet approved by LinkedIn - feature is ready but comments API requires w_member_social_feed scope
@@ -76,32 +76,6 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
     );
   }
 
-  // Coming soon state - Community Management API pending LinkedIn approval
-  if (COMING_SOON) {
-    return (
-      <Card className="border-border">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm font-medium">First Comment</p>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                  Coming Soon
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Automatically post a comment 1-5 min after publication to drive early interactions and boost your post in the algorithm. This feature is pending API approval and will be available soon.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="border-border">
       <CardHeader className="pb-2">
@@ -109,6 +83,11 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
           <span className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             First Comment
+            {COMING_SOON && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                Coming Soon
+              </span>
+            )}
           </span>
           <Button
             variant="outline"
