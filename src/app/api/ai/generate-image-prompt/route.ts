@@ -310,13 +310,23 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
     throw new Error("No text content in Gemini response.");
   }
 
-  // For Pro models with thinking enabled, the actual output is the last text part
-  // (thinking parts come first). Iterate from the end to find the real response.
+  // For Pro models with thinking enabled, response has thinking parts (thought: true)
+  // and actual output parts. Find the first non-thinking text part.
   let responseText = "";
-  for (let i = parts.length - 1; i >= 0; i--) {
-    if (parts[i]?.text) {
-      responseText = parts[i].text;
+  for (const part of parts) {
+    if (part?.text && !part.thought) {
+      responseText = part.text;
       break;
+    }
+  }
+
+  // Fallback: if no non-thinking part found, take the last text part
+  if (!responseText) {
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i]?.text) {
+        responseText = parts[i].text;
+        break;
+      }
     }
   }
 

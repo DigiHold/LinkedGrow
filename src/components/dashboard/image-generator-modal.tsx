@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -54,20 +54,22 @@ export function ImageGeneratorModal({
   // Check if user has access to image generation
   const hasAccess = canAccessFeature(userPlan, "imageGeneration");
 
-  // Generate image prompt using AI when modal opens
-  useEffect(() => {
-    if (open && postContent && hasTextApiKey && hasImageApiKey && hasAccess) {
-      generateImagePrompt();
-    } else if (open) {
-      // If no text API key, show empty prompt for manual entry
-      setStep("prompt");
-      setPrompt("");
-      setGeneratedImage(null);
-      setError(null);
-    }
-  }, [open, postContent, hasTextApiKey, hasImageApiKey, hasAccess]);
+  // Track if we already initialized for the current modal open
+  const initializedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const generateImagePrompt = async () => {
+  // Store postContent in a ref so the async function always has the latest value
+  const postContentRef = useRef(postContent);
+  postContentRef.current = postContent;
+
+  const generateImagePrompt = useCallback(async () => {
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setStep("loading");
     setIsGeneratingPrompt(true);
     setError(null);
@@ -76,26 +78,59 @@ export function ImageGeneratorModal({
       const response = await fetch("/api/ai/generate-image-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postContent }),
+        body: JSON.stringify({ postContent: postContentRef.current }),
+        signal: controller.signal,
       });
 
       const data = await response.json();
+
+      if (controller.signal.aborted) return;
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate image prompt");
       }
 
+      if (!data.prompt || !data.prompt.trim()) {
+        throw new Error("AI returned an empty prompt. Please try again.");
+      }
+
       setPrompt(data.prompt);
       setStep("prompt");
     } catch (err) {
-      // If prompt generation fails, show empty prompt for manual entry
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Failed to generate prompt");
       setPrompt("");
       setStep("prompt");
     } finally {
       setIsGeneratingPrompt(false);
     }
-  };
+  }, []);
+
+  // When modal opens: reset state and generate prompt (once)
+  useEffect(() => {
+    if (open) {
+      if (initializedRef.current) return;
+      initializedRef.current = true;
+
+      // Reset state
+      setGeneratedImage(null);
+      setError(null);
+
+      if (postContent && hasTextApiKey && hasImageApiKey && hasAccess) {
+        generateImagePrompt();
+      } else {
+        setStep("prompt");
+        setPrompt("");
+      }
+    } else {
+      // Modal closed - reset initialized flag for next open
+      initializedRef.current = false;
+      // Cancel any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    }
+  }, [open, postContent, hasTextApiKey, hasImageApiKey, hasAccess, generateImagePrompt]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
