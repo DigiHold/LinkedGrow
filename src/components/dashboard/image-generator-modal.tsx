@@ -258,7 +258,7 @@ export function ImageGeneratorModal({
   if (!hasImageApiKey) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-200" overlayClassName="z-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Image className="w-5 h-5 text-purple-600" />
@@ -290,7 +290,7 @@ export function ImageGeneratorModal({
   if (!hasAccess) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-200" overlayClassName="z-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Image className="w-5 h-5 text-purple-600" />
@@ -318,7 +318,7 @@ export function ImageGeneratorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto z-200" overlayClassName="z-200">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Image className="w-5 h-5 text-purple-600" />
