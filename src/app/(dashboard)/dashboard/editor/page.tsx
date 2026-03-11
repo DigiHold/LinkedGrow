@@ -159,6 +159,7 @@ function EditorContent() {
   const [currentPostId, setCurrentPostId] = useState<string | null>(editPostId);
   const [currentPostStatus, setCurrentPostStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingAction, setSavingAction] = useState<"changes" | "draft" | "publish" | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -328,6 +329,7 @@ function EditorContent() {
   const handleSaveChanges = async () => {
     if (!content.trim() || !currentPostId) return;
     setIsSaving(true);
+    setSavingAction("changes");
     try {
       const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
       const mediaInfo = hasNewMedia ? {
@@ -355,12 +357,14 @@ function EditorContent() {
       showError(error instanceof Error ? error.message : "Failed to save changes");
     } finally {
       setIsSaving(false);
+      setSavingAction(null);
     }
   };
 
   const handleSaveAsDraft = async () => {
     if (!content.trim()) return;
     setIsSaving(true);
+    setSavingAction("draft");
     try {
       // Build media info from R2 upload (storageUrl/storageKey set by post-editor)
       const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
@@ -410,12 +414,14 @@ function EditorContent() {
       showError(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
+      setSavingAction(null);
     }
   };
 
   const handlePublish = async () => {
     if (!content.trim()) return;
     setIsSaving(true);
+    setSavingAction("publish");
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
       let postId = currentPostId;
@@ -474,6 +480,7 @@ function EditorContent() {
       showError(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsSaving(false);
+      setSavingAction(null);
     }
   };
 
@@ -835,12 +842,12 @@ Tips for viral posts:
                     onClick={handleSaveChanges}
                     disabled={isSaving || !content.trim()}
                   >
-                    {isSaving ? (
+                    {savingAction === "changes" ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {isSaving ? "Saving..." : "Save Changes"}
+                    {savingAction === "changes" ? "Saving..." : "Save Changes"}
                   </Button>
                 )}
                 <Button
@@ -849,12 +856,12 @@ Tips for viral posts:
                   onClick={handleSaveAsDraft}
                   disabled={isSaving || !content.trim() || isVideoMedia(attachedImage)}
                 >
-                  {isSaving ? (
+                  {savingAction === "draft" ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Save className="w-4 h-4 mr-2" />
                   )}
-                  {isSaving ? "Saving..." : "Save as Draft"}
+                  {savingAction === "draft" ? "Saving..." : "Save as Draft"}
                 </Button>
                 <Button
                   variant="outline"
@@ -871,12 +878,12 @@ Tips for viral posts:
                   onClick={handlePublish}
                   disabled={isSaving || !content.trim()}
                 >
-                  {isSaving ? (
+                  {savingAction === "publish" ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  {isSaving ? "Publishing..." : "Publish Now"}
+                  {savingAction === "publish" ? "Publishing..." : "Publish Now"}
                 </Button>
               </CardContent>
             </Card>
