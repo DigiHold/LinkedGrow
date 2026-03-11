@@ -1104,7 +1104,7 @@ export function CalendarContent() {
       )}
 
       {/* Multi-purpose Drawer */}
-      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={true}>
+      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={true} handleOnly={true}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" />
           <Drawer.Content
