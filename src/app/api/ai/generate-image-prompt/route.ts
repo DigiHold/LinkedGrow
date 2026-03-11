@@ -306,11 +306,25 @@ REMEMBER: Your response must be 300-450 words, extremely detailed with specific 
   }
 
   const parts = data.candidates[0].content.parts;
-  if (!parts || !parts[0] || !parts[0].text) {
+  if (!parts || parts.length === 0) {
     throw new Error("No text content in Gemini response.");
   }
 
-  return parts[0].text.trim();
+  // For Pro models with thinking enabled, the actual output is the last text part
+  // (thinking parts come first). Iterate from the end to find the real response.
+  let responseText = "";
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (parts[i]?.text) {
+      responseText = parts[i].text;
+      break;
+    }
+  }
+
+  if (!responseText) {
+    throw new Error("No text content in Gemini response.");
+  }
+
+  return responseText.trim();
 }
 
 async function generateWithGrok(apiKey: string, postContent: string, model: string): Promise<string> {

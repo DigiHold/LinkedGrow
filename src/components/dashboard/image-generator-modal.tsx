@@ -31,7 +31,7 @@ interface ImageGeneratorModalProps {
   hasImageApiKey?: boolean;
   hasTextApiKey?: boolean;
   userEmail?: string;
-  onImageGenerated?: (imageData: { base64: string; mimeType: string; filename: string }) => void;
+  onImageGenerated?: (imageData: { base64: string; mimeType: string; preview: string; storageUrl: string; storageKey: string }) => void;
 }
 
 export function ImageGeneratorModal({
@@ -125,19 +125,78 @@ export function ImageGeneratorModal({
     }
   };
 
-  const handleUseImage = () => {
-    if (generatedImage && onImageGenerated) {
-      // Extract base64 and mime type from data URL
-      const match = generatedImage.match(/^data:([^;]+);base64,(.+)$/);
-      if (match) {
-        onImageGenerated({
-          base64: match[2],
-          mimeType: match[1],
-          filename: generatedFilename,
-        });
-      }
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUseImage = async () => {
+    if (!generatedImage || !onImageGenerated) {
+      onOpenChange(false);
+      return;
     }
-    onOpenChange(false);
+
+    // Extract base64 and mime type from data URL
+    const match = generatedImage.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      onOpenChange(false);
+      return;
+    }
+
+    const mimeType = match[1];
+    const base64Data = match[2];
+
+    setIsUploading(true);
+    try {
+      // Convert base64 to blob for R2 upload
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      // Get presigned URL for R2 upload
+      const filename = generatedFilename || `ai-image-${Date.now().toString(36)}.webp`;
+      const presignRes = await fetch("/api/media/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: filename,
+          contentType: mimeType,
+          fileSize: blob.size,
+        }),
+      });
+
+      if (!presignRes.ok) {
+        const err = await presignRes.json().catch(() => null);
+        throw new Error(err?.error || "Failed to prepare upload");
+      }
+
+      const { uploadUrl, key, publicUrl } = await presignRes.json();
+
+      // Upload to R2
+      const uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": mimeType },
+        body: blob,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload image to storage");
+      }
+
+      onImageGenerated({
+        base64: base64Data,
+        mimeType,
+        preview: generatedImage,
+        storageUrl: publicUrl,
+        storageKey: key,
+      });
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload image");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDownload = () => {
@@ -362,9 +421,13 @@ export function ImageGeneratorModal({
               <Button variant="outline" onClick={handleDownload}>
                 <Download className="w-4 h-4" />
               </Button>
-              <Button onClick={handleUseImage} className="flex-1 bg-green-600 hover:bg-green-700">
-                <Check className="w-4 h-4 mr-2" />
-                Use This Image
+              <Button onClick={handleUseImage} disabled={isUploading} className="flex-1 bg-green-600 hover:bg-green-700">
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 mr-2" />
+                )}
+                {isUploading ? "Saving..." : "Use This Image"}
               </Button>
             </div>
 
