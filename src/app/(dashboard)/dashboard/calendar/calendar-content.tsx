@@ -1241,7 +1241,7 @@ export function CalendarContent() {
 
       {/* Insert Idea Modal - rendered via portal to be above drawer */}
       {ideaModalOpen && createPortal(
-        <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4 pointer-events-auto">
           <div className="fixed inset-0 bg-black/40" onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 z-201">
             <div className="flex items-center justify-between mb-4">
@@ -1284,7 +1284,7 @@ export function CalendarContent() {
 
       {/* Delete Post Confirmation Modal - rendered via portal to be above drawer */}
       {showDeleteConfirm && selectedPost && createPortal(
-        <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4 pointer-events-auto">
           <div className="fixed inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-201">
             <div className="flex items-center justify-between mb-4">
