@@ -1,11 +1,12 @@
 /**
  * Cron job to clean up orphaned R2 media files.
+ * Runs daily via QStash. Processes in batches of 50 with delays
+ * between batches to avoid R2 rate limits and Vercel timeouts.
+ *
  * Deletes media records (and their R2 files) that:
  * - Have no postId (not attached to a post)
  * - Are older than 24 hours
  * - Are not referenced in any saved carousel or user template
- *
- * Can be triggered via QStash schedule or manually by admin.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,18 +14,30 @@ import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { media, savedCarousels, userTemplates } from "@/lib/db/schema";
-import { eq, and, isNull, lt } from "drizzle-orm";
+import { eq, and, isNull, lt, inArray } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
+
+const BATCH_SIZE = 50;
+const BATCH_DELAY_MS = 500;
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
   nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
 });
 
-async function runCleanup(): Promise<{ deleted: number; errors: number }> {
-  // Find media records with no postId, older than 24 hours
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runCleanup(): Promise<{
+  deleted: number;
+  errors: number;
+  scanned: number;
+  batches: number;
+}> {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+  // Find media records with no postId, older than 24 hours
   const orphanCandidates = await db
     .select({
       id: media.id,
@@ -33,25 +46,18 @@ async function runCleanup(): Promise<{ deleted: number; errors: number }> {
     })
     .from(media)
     .where(
-      and(
-        isNull(media.postId),
-        eq(media.status, "ready"),
-        lt(media.createdAt, cutoff)
-      )
+      and(isNull(media.postId), eq(media.status, "ready"), lt(media.createdAt, cutoff))
     );
 
   if (orphanCandidates.length === 0) {
-    return { deleted: 0, errors: 0 };
+    return { deleted: 0, errors: 0, scanned: 0, batches: 0 };
   }
 
   // Build a set of all R2 keys referenced in carousels and templates
   const referencedKeys = new Set<string>();
-
-  // Get all carousel slidesJson for users who have orphan candidates
   const userIds = [...new Set(orphanCandidates.map((m) => m.userId))];
 
   for (const userId of userIds) {
-    // Check carousels
     const carousels = await db
       .select({ slidesJson: savedCarousels.slidesJson })
       .from(savedCarousels)
@@ -59,7 +65,6 @@ async function runCleanup(): Promise<{ deleted: number; errors: number }> {
 
     for (const carousel of carousels) {
       if (carousel.slidesJson) {
-        // Extract R2 URLs from all slides
         try {
           const slides = JSON.parse(carousel.slidesJson);
           for (const slide of slides) {
@@ -73,7 +78,6 @@ async function runCleanup(): Promise<{ deleted: number; errors: number }> {
       }
     }
 
-    // Check templates
     const templates = await db
       .select({ canvasJson: userTemplates.canvasJson })
       .from(userTemplates)
@@ -86,33 +90,63 @@ async function runCleanup(): Promise<{ deleted: number; errors: number }> {
     }
   }
 
-  // Filter to only truly orphaned files (not referenced anywhere)
-  const orphans = orphanCandidates.filter(
-    (m) => !referencedKeys.has(m.storageKey)
-  );
+  // Filter to only truly orphaned files
+  const orphans = orphanCandidates.filter((m) => !referencedKeys.has(m.storageKey));
+
+  if (orphans.length === 0) {
+    return { deleted: 0, errors: 0, scanned: orphanCandidates.length, batches: 0 };
+  }
 
   let deleted = 0;
   let errors = 0;
+  let batches = 0;
 
-  // Delete orphans from R2 and media table
-  for (const orphan of orphans) {
-    try {
-      await deleteFromR2(orphan.storageKey);
-      await db.delete(media).where(eq(media.id, orphan.id));
-      deleted++;
-    } catch (err) {
-      console.error(`Failed to clean up orphan ${orphan.id}:`, err);
-      errors++;
+  // Process in batches
+  for (let i = 0; i < orphans.length; i += BATCH_SIZE) {
+    const batch = orphans.slice(i, i + BATCH_SIZE);
+    batches++;
+
+    // Delete R2 files concurrently within the batch
+    const r2Results = await Promise.allSettled(
+      batch.map((orphan) => deleteFromR2(orphan.storageKey))
+    );
+
+    // Collect IDs of successfully deleted R2 files
+    const deletedIds: string[] = [];
+    for (let j = 0; j < r2Results.length; j++) {
+      if (r2Results[j].status === "fulfilled") {
+        deletedIds.push(batch[j].id);
+      } else {
+        console.error(
+          `Failed to delete R2 key ${batch[j].storageKey}:`,
+          (r2Results[j] as PromiseRejectedResult).reason
+        );
+        errors++;
+      }
+    }
+
+    // Batch delete media records for successful R2 deletions
+    if (deletedIds.length > 0) {
+      try {
+        await db.delete(media).where(inArray(media.id, deletedIds));
+        deleted += deletedIds.length;
+      } catch (err) {
+        console.error("Failed to delete media records batch:", err);
+        errors += deletedIds.length;
+        deleted -= deletedIds.length;
+      }
+    }
+
+    // Delay between batches (skip after the last one)
+    if (i + BATCH_SIZE < orphans.length) {
+      await sleep(BATCH_DELAY_MS);
     }
   }
 
-  return { deleted, errors };
+  return { deleted, errors, scanned: orphanCandidates.length, batches };
 }
 
-function extractKeysFromCanvas(
-  canvasJson: string,
-  keysSet: Set<string>
-): void {
+function extractKeysFromCanvas(canvasJson: string, keysSet: Set<string>): void {
   try {
     const canvas = JSON.parse(canvasJson);
     const objects = canvas.objects || [];
@@ -129,10 +163,7 @@ function extractKeysFromCanvas(
 }
 
 function extractKeyFromUrl(url: string): string | null {
-  if (
-    !url ||
-    (!url.includes("r2.dev") && !url.includes("r2.cloudflarestorage.com"))
-  ) {
+  if (!url || (!url.includes("r2.dev") && !url.includes("r2.cloudflarestorage.com"))) {
     return null;
   }
   try {
@@ -140,9 +171,7 @@ function extractKeyFromUrl(url: string): string | null {
     const key = urlObj.pathname.slice(1);
     return key.startsWith("users/") ? key : null;
   } catch {
-    const match = url.match(
-      /r2\.(?:dev|cloudflarestorage\.com)\/(users\/[^?#]+)/
-    );
+    const match = url.match(/r2\.(?:dev|cloudflarestorage\.com)\/(users\/[^?#]+)/);
     return match ? match[1] : null;
   }
 }
@@ -172,13 +201,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await runCleanup();
-    console.log(`Media cleanup: deleted ${result.deleted}, errors ${result.errors}`);
+    console.log(
+      `Media cleanup: scanned=${result.scanned} deleted=${result.deleted} errors=${result.errors} batches=${result.batches}`
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error("Media cleanup failed:", error);
-    return NextResponse.json(
-      { error: "Cleanup failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
   }
 }
