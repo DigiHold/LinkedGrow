@@ -922,74 +922,58 @@ export function ElementProperties({
               )}
 
               {/* Border Radius (for rectangles only - circles/lines don't have corners) */}
-              {isShapeElement && selectedElement?.type === 'rect' && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Border Radius</Label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Slider
-                      value={[elementProps.rx]}
-                      onValueChange={([val]) => {
-                        if (!selectedElement) return;
-                        const canvas = canvasRef.current?.getCanvas();
-                        if (!canvas) return;
-                        // Normalize rect to native dimensions before setting radius
-                        if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
-                          const w = (selectedElement.width || 200) * (selectedElement.scaleX || 1);
-                          const h = (selectedElement.height || 200) * (selectedElement.scaleY || 1);
-                          selectedElement.set('width', w);
-                          selectedElement.set('height', h);
-                          selectedElement.set('scaleX', 1);
-                          selectedElement.set('scaleY', 1);
-                          setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
-                        }
-                        const maxR = Math.min((selectedElement.width || 200) / 2, (selectedElement.height || 200) / 2);
-                        const clamped = Math.min(val, maxR);
-                        selectedElement.set('rx' as keyof FabricObject, clamped);
-                        selectedElement.set('ry' as keyof FabricObject, clamped);
-                        selectedElement.setCoords();
-                        canvas.renderAll();
-                        setElementProps(prev => ({ ...prev, rx: clamped }));
-                      }}
-                      max={Math.round(Math.min(
-                        (selectedElement?.width || 200) * (selectedElement?.scaleX || 1),
-                        (selectedElement?.height || 200) * (selectedElement?.scaleY || 1)
-                      ) / 2)}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <input
-                      type="number"
-                      value={elementProps.rx}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        if (!selectedElement) return;
-                        const canvas = canvasRef.current?.getCanvas();
-                        if (!canvas) return;
-                        // Normalize rect
-                        if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
-                          const w = (selectedElement.width || 200) * (selectedElement.scaleX || 1);
-                          const h = (selectedElement.height || 200) * (selectedElement.scaleY || 1);
-                          selectedElement.set('width', w);
-                          selectedElement.set('height', h);
-                          selectedElement.set('scaleX', 1);
-                          selectedElement.set('scaleY', 1);
-                          setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
-                        }
-                        const maxR = Math.min((selectedElement.width || 200) / 2, (selectedElement.height || 200) / 2);
-                        const clamped = Math.min(val, maxR);
-                        selectedElement.set('rx' as keyof FabricObject, clamped);
-                        selectedElement.set('ry' as keyof FabricObject, clamped);
-                        selectedElement.setCoords();
-                        canvas.renderAll();
-                        setElementProps(prev => ({ ...prev, rx: clamped }));
-                      }}
-                      className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
-                      min={0}
-                    />
-                    <span className="text-xs text-muted-foreground">px</span>
+              {isShapeElement && selectedElement?.type === 'rect' && (() => {
+                // Compute max from React state (always in sync after normalization)
+                const borderRadiusMax = Math.max(1, Math.floor(Math.min(elementProps.width, elementProps.height) / 2));
+                const normalizeRect = () => {
+                  if (!selectedElement) return;
+                  if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
+                    const w = (selectedElement.width || 200) * (selectedElement.scaleX || 1);
+                    const h = (selectedElement.height || 200) * (selectedElement.scaleY || 1);
+                    selectedElement.set('width', w);
+                    selectedElement.set('height', h);
+                    selectedElement.set('scaleX', 1);
+                    selectedElement.set('scaleY', 1);
+                    setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
+                  }
+                };
+                const applyRadius = (val: number) => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  normalizeRect();
+                  const maxR = Math.floor(Math.min((selectedElement.width || 200), (selectedElement.height || 200)) / 2);
+                  const clamped = Math.max(0, Math.min(val, maxR));
+                  selectedElement.set('rx' as keyof FabricObject, clamped);
+                  selectedElement.set('ry' as keyof FabricObject, clamped);
+                  selectedElement.setCoords();
+                  canvas.renderAll();
+                  setElementProps(prev => ({ ...prev, rx: clamped }));
+                };
+                return (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Slider
+                        value={[elementProps.rx]}
+                        onValueChange={([val]) => applyRadius(val)}
+                        max={borderRadiusMax}
+                        step={1}
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        value={elementProps.rx}
+                        onChange={(e) => applyRadius(Number(e.target.value))}
+                        className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
+                        min={0}
+                        max={borderRadiusMax}
+                      />
+                      <span className="text-xs text-muted-foreground">px</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Shadow */}
               <div>
@@ -1064,14 +1048,12 @@ export function ElementProperties({
                         <span className="text-xs text-muted-foreground w-6 text-right">{shadowBlur}</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Offset X</Label>
-                        <Input
-                          type="number"
-                          value={shadowOffsetX}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Offset X</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[shadowOffsetX]}
+                          onValueChange={([val]) => {
                             setShadowOffsetX(val);
                             if (!selectedElement) return;
                             const canvas = canvasRef.current?.getCanvas();
@@ -1079,16 +1061,20 @@ export function ElementProperties({
                             selectedElement.shadow = new Shadow({ color: shadowColor, blur: shadowBlur, offsetX: val, offsetY: shadowOffsetY });
                             canvas.renderAll();
                           }}
-                          className="h-7 text-xs"
+                          min={-50}
+                          max={50}
+                          step={1}
+                          className="flex-1"
                         />
+                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowOffsetX}</span>
                       </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Offset Y</Label>
-                        <Input
-                          type="number"
-                          value={shadowOffsetY}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Offset Y</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[shadowOffsetY]}
+                          onValueChange={([val]) => {
                             setShadowOffsetY(val);
                             if (!selectedElement) return;
                             const canvas = canvasRef.current?.getCanvas();
@@ -1096,8 +1082,12 @@ export function ElementProperties({
                             selectedElement.shadow = new Shadow({ color: shadowColor, blur: shadowBlur, offsetX: shadowOffsetX, offsetY: val });
                             canvas.renderAll();
                           }}
-                          className="h-7 text-xs"
+                          min={-50}
+                          max={50}
+                          step={1}
+                          className="flex-1"
                         />
+                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowOffsetY}</span>
                       </div>
                     </div>
                   </div>

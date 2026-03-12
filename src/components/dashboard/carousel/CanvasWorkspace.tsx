@@ -72,10 +72,13 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
   ctx.restore();
 };
 
-// Override the default mtr (rotation) control render with custom icon
+// Override the default mtr (rotation) control - position at BOTTOM like Canva
 // Must use prototype.controls (ownDefaults.controls is undefined in Fabric v7)
 const protoControls = FabricObject.prototype.controls;
 if (protoControls?.mtr) {
+  protoControls.mtr.y = 0.5;       // bottom edge (default is -0.5 = top)
+  protoControls.mtr.offsetY = 20;   // 20px below the bottom edge
+  protoControls.mtr.offsetX = 0;
   protoControls.mtr.render = renderRotateIcon;
   protoControls.mtr.sizeX = 24;
   protoControls.mtr.sizeY = 24;
@@ -300,6 +303,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         selection: true,
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
+        fireRightClick: true,
+        stopContextMenu: true,
       });
 
       // Preload Inter font for canvas text elements
@@ -380,6 +385,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         guideLinesRef.current = guides;
         canvas.requestRenderAll();
         onElementMovingRef.current?.(obj);
+        updateFloatingPos();
       });
 
       // Draw alignment guides + hover border overlay
@@ -458,6 +464,26 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (hoveredObjectRef.current === e.target) {
           hoveredObjectRef.current = null;
           canvas.requestRenderAll();
+        }
+      });
+
+      // Right-click: select element under cursor and show context menu
+      canvas.on('mouse:down', (e) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((e.e as any).button === 2 && e.target && e.target.selectable) {
+          // Select the right-clicked element if not already selected
+          const active = canvas.getActiveObject();
+          if (active !== e.target) {
+            if (active instanceof ActiveSelection && active.getObjects().includes(e.target)) {
+              // Already part of multi-selection, keep it
+            } else {
+              canvas.setActiveObject(e.target);
+              canvas.requestRenderAll();
+            }
+          }
+          // Show context menu at mouse position
+          const mouseEvent = e.e as MouseEvent;
+          setContextMenu({ x: mouseEvent.clientX, y: mouseEvent.clientY });
         }
       });
 
@@ -547,11 +573,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!fabricRef.current) return;
 
         const fontFamily = options.fontFamily ?? 'Inter';
+        const fontSize = options.fontSize ?? 48;
+        // Scale textbox width with font size to prevent overflow
+        const defaultWidth = options.width ?? Math.min(Math.max(fontSize * 12, 400), CANVAS_WIDTH - 80);
         const text = new Textbox(options.text || 'Add your text here', {
-          left: options.left ?? CANVAS_WIDTH / 2 - 200,
+          left: options.left ?? Math.round(CANVAS_WIDTH / 2 - defaultWidth / 2),
           top: options.top ?? CANVAS_HEIGHT / 2 - 30,
-          width: options.width ?? 400,
-          fontSize: options.fontSize ?? 48,
+          width: defaultWidth,
+          fontSize,
           fontFamily,
           fontWeight: options.fontWeight ?? 'normal',
           fill: options.fill ?? '#000000',
@@ -792,26 +821,47 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const activeObject = fabricRef.current.getActiveObject();
         if (!activeObject || !(activeObject instanceof Group)) return;
 
-        // Calculate absolute transforms BEFORE removing from group
-        const children = activeObject.getObjects();
-        const transforms = children.map(obj => {
-          const absMatrix = obj.calcTransformMatrix();
-          return util.qrDecompose(absMatrix);
-        });
+        // Get group transform to apply to children
+        const groupLeft = activeObject.left || 0;
+        const groupTop = activeObject.top || 0;
+        const groupScaleX = activeObject.scaleX || 1;
+        const groupScaleY = activeObject.scaleY || 1;
+        const groupAngle = activeObject.angle || 0;
+        const groupWidth = activeObject.width || 0;
+        const groupHeight = activeObject.height || 0;
 
         const items = activeObject.removeAll();
         fabricRef.current.remove(activeObject);
 
-        // Apply calculated absolute positions
-        items.forEach((obj, i) => {
-          const t = transforms[i];
-          obj.set({
-            left: t.translateX,
-            top: t.translateY,
-            scaleX: t.scaleX,
-            scaleY: t.scaleY,
-            angle: t.angle,
-          });
+        items.forEach((obj) => {
+          // After removeAll, children have positions relative to group center.
+          // Convert to absolute canvas coordinates.
+          const childLeft = obj.left || 0;
+          const childTop = obj.top || 0;
+
+          if (groupAngle === 0) {
+            // Simple case: no rotation
+            obj.set({
+              left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
+              top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
+              scaleX: (obj.scaleX || 1) * groupScaleX,
+              scaleY: (obj.scaleY || 1) * groupScaleY,
+            });
+          } else {
+            // With rotation: use matrix decomposition
+            const absMatrix = obj.calcTransformMatrix();
+            const t = util.qrDecompose(absMatrix);
+            // translateX/Y from decomposition is the center point
+            const halfW = (obj.width || 0) * t.scaleX / 2;
+            const halfH = (obj.height || 0) * t.scaleY / 2;
+            obj.set({
+              left: t.translateX - halfW,
+              top: t.translateY - halfH,
+              scaleX: t.scaleX,
+              scaleY: t.scaleY,
+              angle: t.angle,
+            });
+          }
           obj.setCoords();
           fabricRef.current!.add(obj);
         });
@@ -1225,27 +1275,39 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
 
-        // Ctrl/Cmd + Shift + G - Ungroup selected
+        // Ctrl/Cmd + Shift + G - Ungroup selected (uses ref method)
         if ((e.ctrlKey || e.metaKey) && e.key === 'G' && e.shiftKey) {
           e.preventDefault();
+          // Delegate to the ungroupSelected imperative method
           const active = fabricRef.current.getActiveObject();
-          if (active && active instanceof Group) {
-            const children = active.getObjects();
-            const transforms = children.map(obj => {
-              const absMatrix = obj.calcTransformMatrix();
-              return util.qrDecompose(absMatrix);
-            });
+          if (active && active instanceof Group && !active._isSvgIcon) {
+            // Inline the same logic as ungroupSelected
+            const groupLeft = active.left || 0;
+            const groupTop = active.top || 0;
+            const groupScaleX = active.scaleX || 1;
+            const groupScaleY = active.scaleY || 1;
+            const groupAngle = active.angle || 0;
+            const groupWidth = active.width || 0;
+            const groupHeight = active.height || 0;
             const items = active.removeAll();
             fabricRef.current.remove(active);
-            items.forEach((obj, i) => {
-              const t = transforms[i];
-              obj.set({
-                left: t.translateX,
-                top: t.translateY,
-                scaleX: t.scaleX,
-                scaleY: t.scaleY,
-                angle: t.angle,
-              });
+            items.forEach((obj) => {
+              const childLeft = obj.left || 0;
+              const childTop = obj.top || 0;
+              if (groupAngle === 0) {
+                obj.set({
+                  left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
+                  top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
+                  scaleX: (obj.scaleX || 1) * groupScaleX,
+                  scaleY: (obj.scaleY || 1) * groupScaleY,
+                });
+              } else {
+                const absMatrix = obj.calcTransformMatrix();
+                const t = util.qrDecompose(absMatrix);
+                const halfW = (obj.width || 0) * t.scaleX / 2;
+                const halfH = (obj.height || 0) * t.scaleY / 2;
+                obj.set({ left: t.translateX - halfW, top: t.translateY - halfH, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
+              }
               obj.setCoords();
               fabricRef.current!.add(obj);
             });
@@ -1336,11 +1398,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         } else if (fabricRef.current) {
           // Handle internally if no external handler
           if (type === 'text') {
+            const dropFontSize = data.fontSize ?? 48;
+            const dropWidth = Math.min(Math.max(dropFontSize * 12, 400), CANVAS_WIDTH - 80);
             const text = new Textbox(data.text || 'Add text here', {
-              left: Math.max(0, Math.min(x - 100, CANVAS_WIDTH - 200)),
+              left: Math.max(0, Math.min(x - dropWidth / 2, CANVAS_WIDTH - dropWidth)),
               top: Math.max(0, Math.min(y - 20, CANVAS_HEIGHT - 40)),
-              width: 400,
-              fontSize: data.fontSize ?? 48,
+              width: dropWidth,
+              fontSize: dropFontSize,
               fontFamily: data.fontFamily ?? 'Inter',
               fontWeight: data.fontWeight ?? 'normal',
               fill: data.fill ?? '#000000',
@@ -1438,10 +1502,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
       e.preventDefault();
-      if (!fabricRef.current) return;
-      const active = fabricRef.current.getActiveObject();
-      if (!active) return;
-      setContextMenu({ x: e.clientX, y: e.clientY });
+      // Context menu is now handled by Fabric's mouse:down event (button === 2)
+      // which properly selects the target element first
     }, []);
 
     // Helper to check if active object is a user group (not SVG icon)
@@ -1606,16 +1668,32 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                     const canvas = fabricRef.current!;
                     const active = canvas.getActiveObject();
                     if (active instanceof Group) {
-                      const children = active.getObjects();
-                      const transforms = children.map(obj => {
-                        const absMatrix = obj.calcTransformMatrix();
-                        return util.qrDecompose(absMatrix);
-                      });
+                      const groupLeft = active.left || 0;
+                      const groupTop = active.top || 0;
+                      const groupScaleX = active.scaleX || 1;
+                      const groupScaleY = active.scaleY || 1;
+                      const groupAngle = active.angle || 0;
+                      const groupWidth = active.width || 0;
+                      const groupHeight = active.height || 0;
                       const items = active.removeAll();
                       canvas.remove(active);
-                      items.forEach((obj, i) => {
-                        const t = transforms[i];
-                        obj.set({ left: t.translateX, top: t.translateY, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
+                      items.forEach((obj) => {
+                        const childLeft = obj.left || 0;
+                        const childTop = obj.top || 0;
+                        if (groupAngle === 0) {
+                          obj.set({
+                            left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
+                            top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
+                            scaleX: (obj.scaleX || 1) * groupScaleX,
+                            scaleY: (obj.scaleY || 1) * groupScaleY,
+                          });
+                        } else {
+                          const absMatrix = obj.calcTransformMatrix();
+                          const t = util.qrDecompose(absMatrix);
+                          const halfW = (obj.width || 0) * t.scaleX / 2;
+                          const halfH = (obj.height || 0) * t.scaleY / 2;
+                          obj.set({ left: t.translateX - halfW, top: t.translateY - halfH, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
+                        }
                         obj.setCoords();
                         canvas.add(obj);
                       });
