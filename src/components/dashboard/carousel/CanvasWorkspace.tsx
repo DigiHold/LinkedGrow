@@ -136,10 +136,23 @@ Rect.prototype._render = function(ctx: CanvasRenderingContext2D) {
     const x = -w / 2;
     const y = -h / 2;
 
-    const rtl = Math.min(Math.max(tl ?? 0, 0), w / 2, h / 2);
-    const rtr = Math.min(Math.max(tr ?? 0, 0), w / 2, h / 2);
-    const rbr = Math.min(Math.max(br ?? 0, 0), w / 2, h / 2);
-    const rbl = Math.min(Math.max(bl ?? 0, 0), w / 2, h / 2);
+    // CSS-spec proportional reduction: if adjacent radii exceed edge length,
+    // scale all radii down proportionally (allows higher values per corner)
+    const rawTl = Math.max(tl ?? 0, 0);
+    const rawTr = Math.max(tr ?? 0, 0);
+    const rawBr = Math.max(br ?? 0, 0);
+    const rawBl = Math.max(bl ?? 0, 0);
+    const f = Math.min(
+      1,
+      (rawTl + rawTr) > 0 ? w / (rawTl + rawTr) : 1,
+      (rawTr + rawBr) > 0 ? h / (rawTr + rawBr) : 1,
+      (rawBr + rawBl) > 0 ? w / (rawBr + rawBl) : 1,
+      (rawBl + rawTl) > 0 ? h / (rawBl + rawTl) : 1,
+    );
+    const rtl = rawTl * f;
+    const rtr = rawTr * f;
+    const rbr = rawBr * f;
+    const rbl = rawBl * f;
 
     ctx.beginPath();
     ctx.moveTo(x + rtl, y);
