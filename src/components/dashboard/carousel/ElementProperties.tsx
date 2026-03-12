@@ -948,8 +948,7 @@ export function ElementProperties({
                     setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
                   }
                 };
-                // Max radius = half the smallest dimension (creates pill shape)
-                const borderRadiusMax = Math.max(1, Math.floor(Math.min(elementProps.width, elementProps.height) / 2));
+                const borderRadiusMax = 200;
 
                 const applyUniformRadius = (val: number) => {
                   if (!selectedElement) return;

@@ -39,14 +39,14 @@ FabricObject.ownDefaults.transparentCorners = false;
 FabricObject.ownDefaults.borderColor = '#06b6d4';
 FabricObject.ownDefaults.borderScaleFactor = 1;
 
-// Custom rotate icon renderer (curved arrow icon below element)
+// Custom rotate icon renderer using lucide rotate-ccw SVG paths
 const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
   const size = 24;
   ctx.save();
   ctx.translate(left, top);
   ctx.rotate(util.degreesToRadians(fabricObject.angle || 0));
 
-  // Draw circle background
+  // White circle background
   ctx.beginPath();
   ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
@@ -55,23 +55,20 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Draw curved arrow
-  ctx.beginPath();
-  ctx.arc(0, 0, 5, -Math.PI * 0.8, Math.PI * 0.5, false);
+  // Draw lucide rotate-ccw icon (viewBox 0 0 24 24, scaled to fit)
+  const iconScale = 14 / 24;
+  ctx.scale(iconScale, iconScale);
+  ctx.translate(-12, -12); // Center the 24x24 coordinate system
   ctx.strokeStyle = '#0891b2';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // Arrowhead
-  const tipX = 5 * Math.cos(Math.PI * 0.5);
-  const tipY = 5 * Math.sin(Math.PI * 0.5);
-  ctx.beginPath();
-  ctx.moveTo(tipX - 3, tipY - 2);
-  ctx.lineTo(tipX, tipY);
-  ctx.lineTo(tipX + 3, tipY - 2);
-  ctx.strokeStyle = '#0891b2';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // Path 1: circle arc + arrow stem
+  const p1 = new Path2D('M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8');
+  ctx.stroke(p1);
+  // Path 2: arrowhead
+  const p2 = new Path2D('M3 3v5h5');
+  ctx.stroke(p2);
 
   ctx.restore();
 };
@@ -582,6 +579,29 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onCanvasChangeRef.current?.();
       });
 
+      // Right-click context menu via Fabric's own event
+      // (React onContextMenu on container doesn't work because Fabric's stopContextMenu
+      // calls stopPropagation on the canvas element, blocking event bubbling)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      canvas.on('contextmenu', (opt: any) => {
+        const target = opt.target as FabricObject | undefined;
+        const e = opt.e as MouseEvent;
+        if (target && target.selectable && !target.isBackgroundRect) {
+          const active = canvas.getActiveObject();
+          if (active !== target) {
+            if (active instanceof ActiveSelection && active.getObjects().includes(target)) {
+              // Already part of multi-selection, keep it
+            } else {
+              canvas.setActiveObject(target);
+              canvas.requestRenderAll();
+            }
+          }
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        } else {
+          setContextMenu(null);
+        }
+      });
+
       fabricRef.current = canvas;
       setIsReady(true);
 
@@ -862,39 +882,18 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const canvas = fabricRef.current;
         const objects = [...activeObject.getObjects()];
 
-        // CRITICAL: Capture absolute transforms WHILE children are still in group.
-        // calcTransformMatrix() composes group transform * child transform.
-        // After removeAll(), children lose their parent so the transform would be wrong.
-        const transforms = objects.map(obj => {
-          const matrix = obj.calcTransformMatrix();
-          return util.qrDecompose(matrix);
-        });
-
-        // Discard selection, detach children, remove empty group
         canvas.discardActiveObject();
+        // removeAll() properly converts child coordinates to absolute canvas coords
+        // via Fabric's _exitGroup -> applyTransformToObject -> setPositionByOrigin
         activeObject.removeAll();
         canvas.remove(activeObject);
 
-        // Add children back with absolute positions
-        objects.forEach((obj, i) => {
-          const t = transforms[i];
-          // qrDecompose gives center-point coords; convert to top-left (originX/Y = 'left'/'top')
-          const w = (obj.width || 0) * t.scaleX;
-          const h = (obj.height || 0) * t.scaleY;
-          obj.set({
-            left: t.translateX - w / 2,
-            top: t.translateY - h / 2,
-            scaleX: t.scaleX,
-            scaleY: t.scaleY,
-            angle: t.angle,
-            skewX: t.skewX,
-            skewY: t.skewY,
-          });
+        // Add children back (they already have correct absolute positions)
+        objects.forEach(obj => {
           obj.setCoords();
           canvas.add(obj);
         });
 
-        // Select all ungrouped items
         if (objects.length > 0) {
           const selection = new ActiveSelection(objects, { canvas });
           canvas.setActiveObject(selection);
@@ -1312,26 +1311,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           if (active && active instanceof Group && !active._isSvgIcon) {
             const canvas = fabricRef.current;
             const objects = [...active.getObjects()];
-            const transforms = objects.map(obj => {
-              const matrix = obj.calcTransformMatrix();
-              return util.qrDecompose(matrix);
-            });
             canvas.discardActiveObject();
             active.removeAll();
             canvas.remove(active);
-            objects.forEach((obj, i) => {
-              const t = transforms[i];
-              const w = (obj.width || 0) * t.scaleX;
-              const h = (obj.height || 0) * t.scaleY;
-              obj.set({
-                left: t.translateX - w / 2,
-                top: t.translateY - h / 2,
-                scaleX: t.scaleX,
-                scaleY: t.scaleY,
-                angle: t.angle,
-                skewX: t.skewX,
-                skewY: t.skewY,
-              });
+            objects.forEach(obj => {
               obj.setCoords();
               canvas.add(obj);
             });
@@ -1526,30 +1509,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       }
     }, [zoom, onElementDrop]);
 
+    // Prevent browser context menu on the container (Fabric handles context menu via its own event)
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
       e.preventDefault();
-      if (!fabricRef.current) return;
-
-      const canvas = fabricRef.current;
-      // Use Fabric's findTarget to get the element under cursor
-      const found = canvas.findTarget(e.nativeEvent as MouseEvent);
-      const target = found?.target;
-
-      if (target && target.selectable && !target.isBackgroundRect) {
-        // Select the right-clicked element if not already selected
-        const active = canvas.getActiveObject();
-        if (active !== target) {
-          if (active instanceof ActiveSelection && active.getObjects().includes(target)) {
-            // Already part of multi-selection, keep it
-          } else {
-            canvas.setActiveObject(target);
-            canvas.requestRenderAll();
-          }
-        }
-        setContextMenu({ x: e.clientX, y: e.clientY });
-      } else {
-        setContextMenu(null);
-      }
     }, []);
 
     // Helper to check if active object is a user group (not SVG icon)
@@ -1715,26 +1677,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                     const active = canvas.getActiveObject();
                     if (active instanceof Group) {
                       const objects = [...active.getObjects()];
-                      const transforms = objects.map(obj => {
-                        const matrix = obj.calcTransformMatrix();
-                        return util.qrDecompose(matrix);
-                      });
                       canvas.discardActiveObject();
                       active.removeAll();
                       canvas.remove(active);
-                      objects.forEach((obj, i) => {
-                        const t = transforms[i];
-                        const w = (obj.width || 0) * t.scaleX;
-                        const h = (obj.height || 0) * t.scaleY;
-                        obj.set({
-                          left: t.translateX - w / 2,
-                          top: t.translateY - h / 2,
-                          scaleX: t.scaleX,
-                          scaleY: t.scaleY,
-                          angle: t.angle,
-                          skewX: t.skewX,
-                          skewY: t.skewY,
-                        });
+                      objects.forEach(obj => {
                         obj.setCoords();
                         canvas.add(obj);
                       });
