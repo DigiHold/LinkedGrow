@@ -18,7 +18,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, content } = body;
+    const { title, content, createdAt } = body;
 
     // Get user
     const [user] = await db
@@ -43,12 +43,17 @@ export async function PATCH(
     }
 
     // Update the idea
+    const updateData: Record<string, unknown> = {
+      title: title || idea.title,
+      content: content !== undefined ? content : idea.content,
+    };
+    if (createdAt) {
+      updateData.createdAt = new Date(createdAt);
+    }
+
     await db
       .update(ideas)
-      .set({
-        title: title || idea.title,
-        content: content !== undefined ? content : idea.content,
-      })
+      .set(updateData)
       .where(and(eq(ideas.id, id), eq(ideas.userId, user.id)));
 
     // Get updated idea

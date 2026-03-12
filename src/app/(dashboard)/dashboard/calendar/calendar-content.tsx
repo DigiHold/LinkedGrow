@@ -146,6 +146,7 @@ export function CalendarContent() {
 
   // Drag and drop state
   const [draggedPost, setDraggedPost] = useState<Post | null>(null);
+  const [draggedIdea, setDraggedIdea] = useState<Idea | null>(null);
   const [dragOverDay, setDragOverDay] = useState<{ day: number; month: number; year: number } | null>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
 
@@ -459,9 +460,8 @@ export function CalendarContent() {
     }
   };
 
-  // Drag and drop handlers for rescheduling posts
+  // Drag and drop handlers for moving posts/ideas between dates
   const handlePostDragStart = (post: Post, e: React.DragEvent) => {
-    // Only allow dragging non-published posts
     if (post.status === "published") {
       e.preventDefault();
       return;
@@ -482,10 +482,26 @@ export function CalendarContent() {
     }
   };
 
-  const handleDayDragOver = (item: typeof days[0], e: React.DragEvent) => {
-    if (!draggedPost) return;
+  const handleIdeaDragStart = (idea: Idea, e: React.DragEvent) => {
+    setDraggedIdea(idea);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', idea.id);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.4';
+    }
+  };
 
-    // Only allow drop on current month future dates
+  const handleIdeaDragEnd = (e: React.DragEvent) => {
+    setDraggedIdea(null);
+    setDragOverDay(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  };
+
+  const handleDayDragOver = (item: typeof days[0], e: React.DragEvent) => {
+    if (!draggedPost && !draggedIdea) return;
+
     if (!item.isCurrentMonth || isPast(item.day, item.month, item.year)) {
       e.dataTransfer.dropEffect = 'none';
       return;
@@ -497,7 +513,6 @@ export function CalendarContent() {
   };
 
   const handleDayDragLeave = (e: React.DragEvent) => {
-    // Only clear if leaving the cell entirely (not entering a child)
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (!e.currentTarget.contains(relatedTarget)) {
       setDragOverDay(null);
@@ -508,73 +523,113 @@ export function CalendarContent() {
     e.preventDefault();
     setDragOverDay(null);
 
-    if (!draggedPost || isRescheduling) return;
+    if (isRescheduling) return;
     if (!item.isCurrentMonth || isPast(item.day, item.month, item.year)) return;
 
-    const post = draggedPost;
-    setDraggedPost(null);
-
-    // Get the original date/time
-    const originalDate = post.scheduledAt || post.createdAt;
-    if (!originalDate) return;
-
-    // Check if dropped on the same day - no-op
-    const existingDateStr = new Date(originalDate).toISOString().split("T")[0];
     const newDateStr = `${item.year}-${String(item.month + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
-    if (existingDateStr === newDateStr) return;
-
-    // Extract time in user's timezone so we preserve it
     const tz = resolveTimezone(userTimezone);
-    const dateObj = new Date(originalDate);
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(dateObj);
-    const hour = parts.find(p => p.type === 'hour')?.value || '12';
-    const minute = parts.find(p => p.type === 'minute')?.value || '00';
-    const timeStr = `${hour}:${minute}`;
 
-    const newScheduledAt = localToUTC(newDateStr, timeStr, tz);
+    // Handle post drop
+    if (draggedPost) {
+      const post = draggedPost;
+      setDraggedPost(null);
 
-    // Validate the new datetime is in the future
-    if (new Date(newScheduledAt) <= new Date()) {
-      showError("Cannot schedule in the past");
+      const originalDate = post.scheduledAt || post.createdAt;
+      if (!originalDate) return;
+
+      // Skip if same day
+      const existingDateStr = new Date(originalDate).toISOString().split("T")[0];
+      if (existingDateStr === newDateStr) return;
+
+      // Preserve time in user's timezone
+      const dateObj = new Date(originalDate);
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(dateObj);
+      const hour = parts.find(p => p.type === 'hour')?.value || '12';
+      const minute = parts.find(p => p.type === 'minute')?.value || '00';
+      const newScheduledAt = localToUTC(newDateStr, `${hour}:${minute}`, tz);
+
+      if (new Date(newScheduledAt) <= new Date()) {
+        showError("Cannot move to a past time");
+        return;
+      }
+
+      // Optimistic update - status stays the same, only date changes
+      const updatedPost = { ...post, scheduledAt: newScheduledAt };
+      setPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
+      setAllPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
+
+      setIsRescheduling(true);
+      try {
+        const response = await fetch(`/api/posts/${post.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduledAt: newScheduledAt }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to move post');
+        }
+      } catch (error) {
+        setPosts(prev => prev.map(p => p.id === post.id ? post : p));
+        setAllPosts(prev => prev.map(p => p.id === post.id ? post : p));
+        showError(error instanceof Error ? error.message : 'Failed to move post');
+      } finally {
+        setIsRescheduling(false);
+      }
       return;
     }
 
-    // Determine new status
-    const newStatus = (post.status === 'draft' || post.status === 'failed') ? 'scheduled' : post.status;
+    // Handle idea drop
+    if (draggedIdea) {
+      const idea = draggedIdea;
+      setDraggedIdea(null);
 
-    // Optimistic update - no refetch needed, just move the post in local state
-    const updatedPost = { ...post, scheduledAt: newScheduledAt, status: newStatus as Post["status"] };
-    setPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
-    setAllPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
+      // Skip if same day
+      const existingDateStr = new Date(idea.createdAt).toISOString().split("T")[0];
+      if (existingDateStr === newDateStr) return;
 
-    setIsRescheduling(true);
-    try {
-      const response = await fetch(`/api/posts/${post.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scheduledAt: newScheduledAt,
-          status: newStatus,
-        }),
+      // Preserve time from original createdAt
+      const dateObj = new Date(idea.createdAt);
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
       });
+      const parts = formatter.formatToParts(dateObj);
+      const hour = parts.find(p => p.type === 'hour')?.value || '12';
+      const minute = parts.find(p => p.type === 'minute')?.value || '00';
+      const newCreatedAt = localToUTC(newDateStr, `${hour}:${minute}`, tz);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to reschedule');
+      // Optimistic update
+      const updatedIdea = { ...idea, createdAt: newCreatedAt };
+      setIdeas(prev => prev.map(i => i.id === idea.id ? updatedIdea : i));
+
+      setIsRescheduling(true);
+      try {
+        const response = await fetch(`/api/ideas/${idea.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ createdAt: newCreatedAt }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to move idea');
+        }
+      } catch (error) {
+        setIdeas(prev => prev.map(i => i.id === idea.id ? idea : i));
+        showError(error instanceof Error ? error.message : 'Failed to move idea');
+      } finally {
+        setIsRescheduling(false);
       }
-    } catch (error) {
-      // Revert optimistic update
-      setPosts(prev => prev.map(p => p.id === post.id ? post : p));
-      setAllPosts(prev => prev.map(p => p.id === post.id ? post : p));
-      showError(error instanceof Error ? error.message : 'Failed to reschedule post');
-    } finally {
-      setIsRescheduling(false);
     }
   };
 
@@ -1030,7 +1085,7 @@ export function CalendarContent() {
                     isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
                     index % 7 === 6 && "border-r-0",
                     // Drag and drop visual feedback
-                    draggedPost && item.isCurrentMonth && !dayIsPast && !isDragOver && "ring-1 ring-inset ring-primary/20",
+                    (draggedPost || draggedIdea) && item.isCurrentMonth && !dayIsPast && !isDragOver && "ring-1 ring-inset ring-primary/20",
                     isDragOver && "bg-primary/10 dark:bg-primary/20 ring-2 ring-inset ring-primary"
                   )}
                 >
@@ -1102,7 +1157,10 @@ export function CalendarContent() {
                         <button
                           key={idea.id}
                           onClick={(e) => handleIdeaClick(idea, e)}
-                          className="w-full p-1 rounded-sm overflow-hidden border border-gray-300 bg-gray-100 dark:bg-gray-800 transition-opacity hover:opacity-80 text-left"
+                          draggable
+                          onDragStart={(e) => handleIdeaDragStart(idea, e)}
+                          onDragEnd={handleIdeaDragEnd}
+                          className="w-full p-1 rounded-sm overflow-hidden border border-gray-300 bg-gray-100 dark:bg-gray-800 transition-opacity hover:opacity-80 text-left cursor-grab active:cursor-grabbing"
                         >
                           <div className="flex items-center gap-1.5 px-1.5 py-1">
                             <div className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0 bg-gray-200 dark:bg-gray-700">
