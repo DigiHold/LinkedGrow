@@ -154,7 +154,7 @@ export function ElementProperties({
       height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
       angle: Math.round(selectedElement.angle || 0),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rx: Math.round(((selectedElement as any).rx || 0) * (selectedElement.scaleX || 1)),
+      rx: Math.round((selectedElement as any).rx || 0),
       // Text-specific
       fontSize: textbox?.fontSize || 48,
       fontFamily: textbox?.fontFamily || 'Inter',
@@ -863,13 +863,12 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        const unscaled = val / (selectedElement.scaleX || 1);
-                        selectedElement.set('rx' as keyof FabricObject, unscaled);
-                        selectedElement.set('ry' as keyof FabricObject, unscaled);
+                        selectedElement.set('rx' as keyof FabricObject, val);
+                        selectedElement.set('ry' as keyof FabricObject, val);
                         canvas.renderAll();
                         setElementProps(prev => ({ ...prev, rx: val }));
                       }}
-                      max={Math.round(Math.min(elementProps.width, elementProps.height) / 2)}
+                      max={Math.max(100, Math.round(Math.min(selectedElement?.width || 200, selectedElement?.height || 200) / 2))}
                       step={1}
                       className="flex-1"
                     />
@@ -881,9 +880,8 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        const unscaled = val / (selectedElement.scaleX || 1);
-                        selectedElement.set('rx' as keyof FabricObject, unscaled);
-                        selectedElement.set('ry' as keyof FabricObject, unscaled);
+                        selectedElement.set('rx' as keyof FabricObject, val);
+                        selectedElement.set('ry' as keyof FabricObject, val);
                         canvas.renderAll();
                         setElementProps(prev => ({ ...prev, rx: val }));
                       }}
