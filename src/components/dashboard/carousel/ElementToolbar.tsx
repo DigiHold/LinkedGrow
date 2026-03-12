@@ -102,10 +102,27 @@ export function ElementToolbar({
     const file = e.target.files?.[0];
     if (!file || !onImageUpload) return;
 
+    // Handle SVG files - read as text and add via addSvgIcon
+    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('SVG file size must be less than 5MB');
+        return;
+      }
+      try {
+        const svgText = await file.text();
+        await canvasRef.current?.addSvgIcon(svgText);
+      } catch (error) {
+        console.error('Failed to load SVG:', error);
+        alert('Failed to load SVG file. Please try again.');
+      }
+      e.target.value = '';
+      return;
+    }
+
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      alert('Please upload a valid image file (JPEG, PNG, GIF, WebP, or SVG)');
       return;
     }
 
@@ -459,7 +476,7 @@ export function ElementToolbar({
                 <input
                   id="image-upload"
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml,.svg"
                   className="hidden"
                   onChange={handleImageUpload}
                 />
@@ -620,14 +637,19 @@ export function ElementToolbar({
                     <input
                       id="logo-upload"
                       type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml,.svg"
                       className="hidden"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (!file || !onImageUpload) return;
+                        if (!file) return;
                         try {
-                          const url = await onImageUpload(file);
-                          await canvasRef.current?.addImage(url);
+                          if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                            const svgText = await file.text();
+                            await canvasRef.current?.addSvgIcon(svgText);
+                          } else if (onImageUpload) {
+                            const url = await onImageUpload(file);
+                            await canvasRef.current?.addImage(url);
+                          }
                         } catch (error) {
                           console.error('Failed to upload logo:', error);
                         }
@@ -653,14 +675,19 @@ export function ElementToolbar({
                   <input
                     id="avatar-upload"
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml,.svg"
                     className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file || !onImageUpload) return;
+                      if (!file) return;
                       try {
-                        const url = await onImageUpload(file);
-                        await canvasRef.current?.addImage(url);
+                        if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                          const svgText = await file.text();
+                          await canvasRef.current?.addSvgIcon(svgText);
+                        } else if (onImageUpload) {
+                          const url = await onImageUpload(file);
+                          await canvasRef.current?.addImage(url);
+                        }
                       } catch (error) {
                         console.error('Failed to upload avatar:', error);
                       }
