@@ -545,7 +545,6 @@ export default function CarouselPage() {
           selectable: false, evented: false, strokeWidth: 0,
           originX: 'left', originY: 'top',
         });
-        // @ts-expect-error custom property for identifying background rects
         bgRect.isBackgroundRect = true;
         const gradient = new Gradient({
           type: 'linear',

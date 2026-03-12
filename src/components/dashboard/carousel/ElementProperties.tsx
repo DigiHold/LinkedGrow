@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage, Group, Gradient } from "fabric";
+import { FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -33,15 +33,23 @@ import {
   AlignEndVertical,
   AlignStartHorizontal,
   AlignEndHorizontal,
+  Layers,
+  Ungroup,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "./CanvasWorkspace";
 
-// Helper to check if an element is an SVG icon group
+// Helper to check if an element is an SVG icon group (not a user-created group)
 function isSvgIconGroup(element: FabricObject): boolean {
-  // SVG icons are loaded as Groups from loadSVGFromString
-  return element instanceof Group && element.type === 'group';
+  if (!(element instanceof Group)) return false;
+  // SVG icons loaded via loadSVGFromString contain only paths/simple shapes
+  // User-created groups contain canvas-level objects like Textbox, FabricImage, etc.
+  // Check if the group has _isSvgIcon flag (set in CanvasWorkspace) or only contains paths
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((element as any)._isSvgIcon) return true;
+  const objects = element.getObjects();
+  return objects.length > 0 && objects.every(o => o.type === 'path');
 }
 
 interface ElementPropertiesProps {
@@ -171,19 +179,33 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const isRect = selectedElement.type === 'rect';
+
     // Apply updates to the element
     Object.entries(updates).forEach(([key, value]) => {
       if (key === 'width') {
-        const scale = (value as number) / (selectedElement.width || 1);
-        selectedElement.set('scaleX', scale);
+        if (isRect) {
+          // For Rect: set native width directly so rx/ry stay in same coordinate space
+          selectedElement.set('width', value as number);
+          selectedElement.set('scaleX', 1);
+        } else {
+          const scale = (value as number) / (selectedElement.width || 1);
+          selectedElement.set('scaleX', scale);
+        }
       } else if (key === 'height') {
-        const scale = (value as number) / (selectedElement.height || 1);
-        selectedElement.set('scaleY', scale);
+        if (isRect) {
+          selectedElement.set('height', value as number);
+          selectedElement.set('scaleY', 1);
+        } else {
+          const scale = (value as number) / (selectedElement.height || 1);
+          selectedElement.set('scaleY', scale);
+        }
       } else {
         selectedElement.set(key as keyof FabricObject, value);
       }
     });
 
+    selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, ...updates }));
   }, [selectedElement, canvasRef]);
@@ -417,6 +439,30 @@ export function ElementProperties({
                   Delete
                 </Button>
               </div>
+
+              {/* Group/Ungroup */}
+              {selectedElement instanceof ActiveSelection && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => canvasRef.current?.groupSelected()}
+                  className="w-full"
+                >
+                  <Layers className="w-3 h-3 mr-1" />
+                  Group elements
+                </Button>
+              )}
+              {selectedElement instanceof Group && !isSvgIconGroup(selectedElement) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => canvasRef.current?.ungroupSelected()}
+                  className="w-full"
+                >
+                  <Ungroup className="w-3 h-3 mr-1" />
+                  Ungroup elements
+                </Button>
+              )}
 
               {/* Layer Order */}
               <div>

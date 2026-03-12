@@ -1,7 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, loadSVGFromString, util } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, loadSVGFromString, util, ActiveSelection, Group, Control } from "fabric";
+
+// Extend FabricObject for hover state tracking
+declare module 'fabric' {
+  interface FabricObject {
+    _hoverBorderColor?: string;
+    _hoverBorderDash?: number[];
+    isBackgroundRect?: boolean;
+  }
+}
+
+// Alignment guide type
+interface AlignmentGuide {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+}
 import { cn } from "@/lib/utils";
 
 // CRITICAL: Fabric.js v7 changed default originX/originY from 'left'/'top' to 'center'/'center'.
@@ -18,6 +33,51 @@ FabricObject.ownDefaults.cornerSize = 12;
 FabricObject.ownDefaults.transparentCorners = false;
 FabricObject.ownDefaults.borderColor = '#0891b2';
 FabricObject.ownDefaults.borderScaleFactor = 2;
+
+// Custom rotate icon renderer (curved arrow instead of circle)
+const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
+  const size = 24;
+  ctx.save();
+  ctx.translate(left, top);
+  ctx.rotate(util.degreesToRadians(fabricObject.angle || 0));
+
+  // Draw circle background
+  ctx.beginPath();
+  ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = '#0891b2';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Draw curved arrow
+  ctx.beginPath();
+  ctx.arc(0, 0, 5, -Math.PI * 0.8, Math.PI * 0.5, false);
+  ctx.strokeStyle = '#0891b2';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Arrowhead
+  const tipX = 5 * Math.cos(Math.PI * 0.5);
+  const tipY = 5 * Math.sin(Math.PI * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(tipX - 3, tipY - 2);
+  ctx.lineTo(tipX, tipY);
+  ctx.lineTo(tipX + 3, tipY - 2);
+  ctx.strokeStyle = '#0891b2';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.restore();
+};
+
+// Override the default mtr (rotation) control render with custom icon
+if (FabricObject.ownDefaults.controls?.mtr) {
+  FabricObject.ownDefaults.controls.mtr.render = renderRotateIcon;
+  FabricObject.ownDefaults.controls.mtr.sizeX = 24;
+  FabricObject.ownDefaults.controls.mtr.sizeY = 24;
+  FabricObject.ownDefaults.controls.mtr.cursorStyleHandler = () => 'grab';
+}
 
 // Helper to parse CSS gradient and convert to Fabric gradient
 function parseGradientToFabric(gradientString: string): { colorStops: Record<string, string>; angle: number } | null {
@@ -115,6 +175,8 @@ export interface CanvasWorkspaceRef {
   addSvgIcon: (svgString: string) => Promise<void>;
   deleteSelected: () => void;
   duplicateSelected: () => void;
+  groupSelected: () => void;
+  ungroupSelected: () => void;
   bringForward: () => void;
   sendBackward: () => void;
   setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => void;
@@ -157,6 +219,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const containerRef = useRef<HTMLDivElement>(null);
     const [isReady, setIsReady] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const guideLinesRef = useRef<AlignmentGuide[]>([]);
 
     // Store callbacks in refs to avoid re-initializing canvas when they change
     const onSelectionChangeRef = useRef(onSelectionChange);
@@ -214,26 +277,112 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         controlsAboveOverlay: true,
       });
 
-      // Enable center guidelines and real-time position updates
+      // Smart alignment guides + snapping
       canvas.on('object:moving', (e) => {
         const obj = e.target;
         if (!obj) return;
 
-        const canvasCenter = CANVAS_WIDTH / 2;
-        const canvasMiddle = CANVAS_HEIGHT / 2;
-        const objCenter = obj.left! + (obj.width! * obj.scaleX!) / 2;
-        const objMiddle = obj.top! + (obj.height! * obj.scaleY!) / 2;
+        const SNAP_THRESHOLD = 5;
+        const guides: AlignmentGuide[] = [];
 
-        // Snap to center
-        if (Math.abs(objCenter - canvasCenter) < 10) {
-          obj.set({ left: canvasCenter - (obj.width! * obj.scaleX!) / 2 });
-        }
-        if (Math.abs(objMiddle - canvasMiddle) < 10) {
-          obj.set({ top: canvasMiddle - (obj.height! * obj.scaleY!) / 2 });
+        const objBound = obj.getBoundingRect();
+        const objLeft = objBound.left;
+        const objTop = objBound.top;
+        const objRight = objBound.left + objBound.width;
+        const objBottom = objBound.top + objBound.height;
+        const objCenterX = objBound.left + objBound.width / 2;
+        const objCenterY = objBound.top + objBound.height / 2;
+
+        // Snap targets: canvas edges + center + all other objects' edges/centers
+        const snapTargetsX: number[] = [0, CANVAS_WIDTH / 2, CANVAS_WIDTH];
+        const snapTargetsY: number[] = [0, CANVAS_HEIGHT / 2, CANVAS_HEIGHT];
+
+        canvas.getObjects().filter(o =>
+          o !== obj && o.selectable !== false
+        ).forEach(other => {
+          const b = other.getBoundingRect();
+          snapTargetsX.push(b.left, b.left + b.width / 2, b.left + b.width);
+          snapTargetsY.push(b.top, b.top + b.height / 2, b.top + b.height);
+        });
+
+        // Snap X axis
+        const edgesX = [
+          { value: objLeft, type: 'left' as const },
+          { value: objCenterX, type: 'center' as const },
+          { value: objRight, type: 'right' as const },
+        ];
+        let snappedX = false;
+        for (const edge of edgesX) {
+          if (snappedX) break;
+          for (const target of snapTargetsX) {
+            if (Math.abs(edge.value - target) < SNAP_THRESHOLD) {
+              const offset = obj.left! - objBound.left;
+              if (edge.type === 'left') obj.set('left', target + offset);
+              else if (edge.type === 'center') obj.set('left', target - objBound.width / 2 + offset);
+              else obj.set('left', target - objBound.width + offset);
+              guides.push({ position: target, orientation: 'vertical' });
+              snappedX = true;
+              break;
+            }
+          }
         }
 
-        // Notify about position change for real-time updates
+        // Snap Y axis
+        const edgesY = [
+          { value: objTop, type: 'top' as const },
+          { value: objCenterY, type: 'center' as const },
+          { value: objBottom, type: 'bottom' as const },
+        ];
+        let snappedY = false;
+        for (const edge of edgesY) {
+          if (snappedY) break;
+          for (const target of snapTargetsY) {
+            if (Math.abs(edge.value - target) < SNAP_THRESHOLD) {
+              const offset = obj.top! - objBound.top;
+              if (edge.type === 'top') obj.set('top', target + offset);
+              else if (edge.type === 'center') obj.set('top', target - objBound.height / 2 + offset);
+              else obj.set('top', target - objBound.height + offset);
+              guides.push({ position: target, orientation: 'horizontal' });
+              snappedY = true;
+              break;
+            }
+          }
+        }
+
+        guideLinesRef.current = guides;
+        canvas.requestRenderAll();
         onElementMovingRef.current?.(obj);
+      });
+
+      // Draw alignment guide lines
+      canvas.on('after:render', () => {
+        if (guideLinesRef.current.length === 0) return;
+        const ctx = canvas.getContext();
+        const zoom = canvas.getZoom();
+        ctx.save();
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        guideLinesRef.current.forEach(guide => {
+          ctx.beginPath();
+          if (guide.orientation === 'vertical') {
+            ctx.moveTo(guide.position * zoom, 0);
+            ctx.lineTo(guide.position * zoom, CANVAS_HEIGHT * zoom);
+          } else {
+            ctx.moveTo(0, guide.position * zoom);
+            ctx.lineTo(CANVAS_WIDTH * zoom, guide.position * zoom);
+          }
+          ctx.stroke();
+        });
+        ctx.restore();
+      });
+
+      // Clear guides on mouse up
+      canvas.on('mouse:up', () => {
+        if (guideLinesRef.current.length > 0) {
+          guideLinesRef.current = [];
+          canvas.requestRenderAll();
+        }
       });
 
       // Also track scaling for real-time size updates
@@ -252,13 +401,43 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Selection events
-      canvas.on('selection:created', (e) => {
-        onSelectionChangeRef.current?.(e.selected?.[0] || null);
+      // Hover border on elements
+      canvas.on('mouse:over', (e) => {
+        const target = e.target;
+        if (!target || !target.selectable) return;
+        const active = canvas.getActiveObject();
+        if (active === target) return;
+        if (active instanceof ActiveSelection && active.getObjects().includes(target)) return;
+
+        target._hoverBorderColor = target.borderColor as string;
+        target._hoverBorderDash = target.borderDashArray as number[];
+        target.set({
+          borderColor: '#06b6d4',
+          borderDashArray: [4, 4],
+        });
+        target.set('hasBorders', true);
+        canvas.requestRenderAll();
       });
 
-      canvas.on('selection:updated', (e) => {
-        onSelectionChangeRef.current?.(e.selected?.[0] || null);
+      canvas.on('mouse:out', (e) => {
+        const target = e.target;
+        if (!target || !target.selectable) return;
+        target.set({
+          borderColor: target._hoverBorderColor || '#0891b2',
+          borderDashArray: target._hoverBorderDash || undefined,
+        });
+        delete target._hoverBorderColor;
+        delete target._hoverBorderDash;
+        canvas.requestRenderAll();
+      });
+
+      // Selection events - pass ActiveSelection for multi-select
+      canvas.on('selection:created', () => {
+        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+      });
+
+      canvas.on('selection:updated', () => {
+        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
       });
 
       canvas.on('selection:cleared', () => {
@@ -267,6 +446,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       // Track changes
       canvas.on('object:modified', () => {
+        guideLinesRef.current = [];
         saveHistory();
         onCanvasChangeRef.current?.();
       });
@@ -481,6 +661,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             scaleX: scale,
             scaleY: scale,
           });
+          // Mark as SVG icon so it's not confused with user-created groups
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (svgGroup as any)._isSvgIcon = true;
 
           fabricRef.current.add(svgGroup);
           fabricRef.current.setActiveObject(svgGroup);
@@ -514,6 +697,57 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current!.setActiveObject(cloned);
           fabricRef.current!.renderAll();
         });
+      },
+
+      groupSelected: () => {
+        if (!fabricRef.current) return;
+        const activeObject = fabricRef.current.getActiveObject();
+        if (!activeObject || !(activeObject instanceof ActiveSelection)) return;
+        const objects = activeObject.getObjects();
+        if (objects.length < 2) return;
+
+        // Remove from canvas
+        fabricRef.current.discardActiveObject();
+        objects.forEach(obj => fabricRef.current!.remove(obj));
+
+        // Create group
+        const group = new Group(objects);
+        fabricRef.current.add(group);
+        fabricRef.current.setActiveObject(group);
+        fabricRef.current.renderAll();
+        saveHistory();
+        onCanvasChangeRef.current?.();
+      },
+
+      ungroupSelected: () => {
+        if (!fabricRef.current) return;
+        const activeObject = fabricRef.current.getActiveObject();
+        if (!activeObject || !(activeObject instanceof Group)) return;
+
+        const items = activeObject.removeAll();
+        fabricRef.current.remove(activeObject);
+
+        // Add items back to canvas with absolute positioning
+        items.forEach(obj => {
+          const matrix = activeObject.calcTransformMatrix();
+          const point = util.transformPoint({ x: obj.left || 0, y: obj.top || 0 }, matrix);
+          obj.set({
+            left: point.x,
+            top: point.y,
+            scaleX: (obj.scaleX || 1) * (activeObject.scaleX || 1),
+            scaleY: (obj.scaleY || 1) * (activeObject.scaleY || 1),
+            angle: (obj.angle || 0) + (activeObject.angle || 0),
+          });
+          obj.setCoords();
+          fabricRef.current!.add(obj);
+        });
+
+        // Select all ungrouped items
+        const selection = new ActiveSelection(items, { canvas: fabricRef.current });
+        fabricRef.current.setActiveObject(selection);
+        fabricRef.current.renderAll();
+        saveHistory();
+        onCanvasChangeRef.current?.();
       },
 
       bringForward: () => {
@@ -896,6 +1130,51 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                 isUndoRedoRef.current = false;
               }, 100);
             });
+          }
+        }
+
+        // Ctrl/Cmd + G - Group selected
+        if ((e.ctrlKey || e.metaKey) && e.key === 'g' && !e.shiftKey) {
+          e.preventDefault();
+          const active = fabricRef.current.getActiveObject();
+          if (active && active instanceof ActiveSelection) {
+            const objects = active.getObjects();
+            if (objects.length >= 2) {
+              fabricRef.current.discardActiveObject();
+              objects.forEach(obj => fabricRef.current!.remove(obj));
+              const group = new Group(objects);
+              fabricRef.current.add(group);
+              fabricRef.current.setActiveObject(group);
+              fabricRef.current.renderAll();
+              saveHistory();
+            }
+          }
+        }
+
+        // Ctrl/Cmd + Shift + G - Ungroup selected
+        if ((e.ctrlKey || e.metaKey) && e.key === 'G' && e.shiftKey) {
+          e.preventDefault();
+          const active = fabricRef.current.getActiveObject();
+          if (active && active instanceof Group) {
+            const items = active.removeAll();
+            fabricRef.current.remove(active);
+            items.forEach(obj => {
+              const matrix = active.calcTransformMatrix();
+              const point = util.transformPoint({ x: obj.left || 0, y: obj.top || 0 }, matrix);
+              obj.set({
+                left: point.x,
+                top: point.y,
+                scaleX: (obj.scaleX || 1) * (active.scaleX || 1),
+                scaleY: (obj.scaleY || 1) * (active.scaleY || 1),
+                angle: (obj.angle || 0) + (active.angle || 0),
+              });
+              obj.setCoords();
+              fabricRef.current!.add(obj);
+            });
+            const selection = new ActiveSelection(items, { canvas: fabricRef.current });
+            fabricRef.current.setActiveObject(selection);
+            fabricRef.current.renderAll();
+            saveHistory();
           }
         }
 
