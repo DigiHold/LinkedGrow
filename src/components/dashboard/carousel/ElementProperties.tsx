@@ -852,8 +852,8 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Border Radius (for all shapes) */}
-              {isShapeElement && (
+              {/* Border Radius (for rectangles only - circles/lines don't have corners) */}
+              {isShapeElement && selectedElement?.type === 'rect' && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Border Radius</Label>
                   <div className="flex items-center gap-2 mt-2">
