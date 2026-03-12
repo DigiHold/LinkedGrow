@@ -97,6 +97,10 @@ export function ElementProperties({
     height: 0,
     angle: 0,
     rx: 0,
+    radiusTL: undefined as number | undefined,
+    radiusTR: undefined as number | undefined,
+    radiusBR: undefined as number | undefined,
+    radiusBL: undefined as number | undefined,
     // Text-specific
     fontSize: 48,
     fontFamily: 'Inter',
@@ -113,6 +117,7 @@ export function ElementProperties({
   const [gradientAngle, setGradientAngle] = useState(90);
   const [iconColor, setIconColor] = useState('#000000');
   const [fontsCacheReady, setFontsCacheReady] = useState(false);
+  const [perCornerMode, setPerCornerMode] = useState(false);
   const [shadowEnabled, setShadowEnabled] = useState(false);
   const [shadowColor, setShadowColor] = useState('rgba(0,0,0,0.25)');
   const [shadowBlur, setShadowBlur] = useState(10);
@@ -156,6 +161,11 @@ export function ElementProperties({
       setFillType('solid');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const el = selectedElement as any;
+    const hasPerCorner = el.radiusTL != null || el.radiusTR != null || el.radiusBR != null || el.radiusBL != null;
+    setPerCornerMode(hasPerCorner);
+
     setElementProps({
       fill: typeof fillValue === 'string' ? fillValue : '#000000',
       stroke: (selectedElement.stroke as string) || '',
@@ -166,8 +176,11 @@ export function ElementProperties({
       width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
       height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
       angle: Math.round(selectedElement.angle || 0),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rx: Math.round((selectedElement as any).rx || 0),
+      rx: Math.round(el.rx || 0),
+      radiusTL: el.radiusTL != null ? Math.round(el.radiusTL) : undefined,
+      radiusTR: el.radiusTR != null ? Math.round(el.radiusTR) : undefined,
+      radiusBR: el.radiusBR != null ? Math.round(el.radiusBR) : undefined,
+      radiusBL: el.radiusBL != null ? Math.round(el.radiusBL) : undefined,
       // Text-specific
       fontSize: textbox?.fontSize || 48,
       fontFamily: textbox?.fontFamily || 'Inter',
@@ -921,10 +934,8 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Border Radius (for rectangles only - circles/lines don't have corners) */}
+              {/* Border Radius (for rectangles only) */}
               {isShapeElement && selectedElement?.type === 'rect' && (() => {
-                // Compute max from React state (always in sync after normalization)
-                const borderRadiusMax = Math.max(1, Math.floor(Math.min(elementProps.width, elementProps.height) / 2));
                 const normalizeRect = () => {
                   if (!selectedElement) return;
                   if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
@@ -937,40 +948,140 @@ export function ElementProperties({
                     setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
                   }
                 };
-                const applyRadius = (val: number) => {
+                // Max radius = half the smallest dimension (creates pill shape)
+                const borderRadiusMax = Math.max(1, Math.floor(Math.min(elementProps.width, elementProps.height) / 2));
+
+                const applyUniformRadius = (val: number) => {
                   if (!selectedElement) return;
                   const canvas = canvasRef.current?.getCanvas();
                   if (!canvas) return;
                   normalizeRect();
-                  const maxR = Math.floor(Math.min((selectedElement.width || 200), (selectedElement.height || 200)) / 2);
-                  const clamped = Math.max(0, Math.min(val, maxR));
-                  selectedElement.set('rx' as keyof FabricObject, clamped);
-                  selectedElement.set('ry' as keyof FabricObject, clamped);
+                  const clamped = Math.max(0, Math.min(val, borderRadiusMax));
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  el.rx = clamped;
+                  el.ry = clamped;
+                  // Clear per-corner when using uniform
+                  delete el.radiusTL;
+                  delete el.radiusTR;
+                  delete el.radiusBR;
+                  delete el.radiusBL;
                   selectedElement.setCoords();
                   canvas.renderAll();
-                  setElementProps(prev => ({ ...prev, rx: clamped }));
+                  setElementProps(prev => ({ ...prev, rx: clamped, radiusTL: undefined, radiusTR: undefined, radiusBR: undefined, radiusBL: undefined }));
                 };
+
+                const applyCornerRadius = (corner: 'radiusTL' | 'radiusTR' | 'radiusBR' | 'radiusBL', val: number) => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  normalizeRect();
+                  const clamped = Math.max(0, Math.min(val, borderRadiusMax));
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  el[corner] = clamped;
+                  // Set rx/ry to 0 so Fabric's default _render doesn't interfere
+                  el.rx = 0;
+                  el.ry = 0;
+                  selectedElement.setCoords();
+                  canvas.renderAll();
+                  setElementProps(prev => ({ ...prev, rx: 0, [corner]: clamped }));
+                };
+
+                const switchToPerCorner = () => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  const currentR = el.rx || 0;
+                  el.radiusTL = currentR;
+                  el.radiusTR = currentR;
+                  el.radiusBR = currentR;
+                  el.radiusBL = currentR;
+                  el.rx = 0;
+                  el.ry = 0;
+                  canvas.renderAll();
+                  setPerCornerMode(true);
+                  setElementProps(prev => ({ ...prev, rx: 0, radiusTL: currentR, radiusTR: currentR, radiusBR: currentR, radiusBL: currentR }));
+                };
+
+                const switchToUniform = () => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  const avg = Math.round(((el.radiusTL || 0) + (el.radiusTR || 0) + (el.radiusBR || 0) + (el.radiusBL || 0)) / 4);
+                  delete el.radiusTL;
+                  delete el.radiusTR;
+                  delete el.radiusBR;
+                  delete el.radiusBL;
+                  el.rx = avg;
+                  el.ry = avg;
+                  canvas.renderAll();
+                  setPerCornerMode(false);
+                  setElementProps(prev => ({ ...prev, rx: avg, radiusTL: undefined, radiusTR: undefined, radiusBR: undefined, radiusBL: undefined }));
+                };
+
                 return (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Border Radius</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Slider
-                        value={[elementProps.rx]}
-                        onValueChange={([val]) => applyRadius(val)}
-                        max={borderRadiusMax}
-                        step={1}
-                        className="flex-1"
-                      />
-                      <input
-                        type="number"
-                        value={elementProps.rx}
-                        onChange={(e) => applyRadius(Number(e.target.value))}
-                        className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
-                        min={0}
-                        max={borderRadiusMax}
-                      />
-                      <span className="text-xs text-muted-foreground">px</span>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                      <button
+                        className={cn(
+                          "text-xs px-1.5 py-0.5 rounded transition-colors",
+                          perCornerMode
+                            ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
+                            : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                        )}
+                        onClick={perCornerMode ? switchToUniform : switchToPerCorner}
+                        title={perCornerMode ? "Switch to uniform radius" : "Switch to per-corner radius"}
+                      >
+                        {perCornerMode ? "Uniform" : "Per corner"}
+                      </button>
                     </div>
+
+                    {!perCornerMode ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Slider
+                          value={[elementProps.rx]}
+                          onValueChange={([val]) => applyUniformRadius(val)}
+                          max={borderRadiusMax}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <input
+                          type="number"
+                          value={elementProps.rx}
+                          onChange={(e) => applyUniformRadius(Number(e.target.value))}
+                          className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
+                          min={0}
+                          max={borderRadiusMax}
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {([
+                          ['radiusTL', 'TL'] as const,
+                          ['radiusTR', 'TR'] as const,
+                          ['radiusBL', 'BL'] as const,
+                          ['radiusBR', 'BR'] as const,
+                        ]).map(([key, label]) => (
+                          <div key={key} className="flex items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground w-5">{label}</span>
+                            <input
+                              type="number"
+                              value={elementProps[key] ?? 0}
+                              onChange={(e) => applyCornerRadius(key, Number(e.target.value))}
+                              className="h-7 text-xs w-full rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
+                              min={0}
+                              max={borderRadiusMax}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}

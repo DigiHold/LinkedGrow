@@ -10,6 +10,10 @@ declare module 'fabric' {
   interface FabricObject {
     isBackgroundRect?: boolean;
     _isSvgIcon?: boolean;
+    radiusTL?: number;
+    radiusTR?: number;
+    radiusBR?: number;
+    radiusBL?: number;
   }
 }
 
@@ -35,7 +39,7 @@ FabricObject.ownDefaults.transparentCorners = false;
 FabricObject.ownDefaults.borderColor = '#06b6d4';
 FabricObject.ownDefaults.borderScaleFactor = 1;
 
-// Custom rotate icon renderer (curved arrow instead of circle)
+// Custom rotate icon renderer (curved arrow icon below element)
 const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
   const size = 24;
   ctx.save();
@@ -72,18 +76,72 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
   ctx.restore();
 };
 
-// Override the default mtr (rotation) control - position at BOTTOM like Canva
-// Must use prototype.controls (ownDefaults.controls is undefined in Fabric v7)
-const protoControls = FabricObject.prototype.controls;
-if (protoControls?.mtr) {
-  protoControls.mtr.y = 0.5;       // bottom edge (default is -0.5 = top)
-  protoControls.mtr.offsetY = 20;   // 20px below the bottom edge
-  protoControls.mtr.offsetX = 0;
-  protoControls.mtr.render = renderRotateIcon;
-  protoControls.mtr.sizeX = 24;
-  protoControls.mtr.sizeY = 24;
-  protoControls.mtr.cursorStyleHandler = () => 'grab';
-}
+// Fabric v7: each instance gets FRESH controls from createControls() factory.
+// Modifying prototype.controls does nothing. Override the static createControls method instead.
+const customizeMtrControl = (controls: Record<string, Control>) => {
+  if (controls.mtr) {
+    controls.mtr.y = 0.5;        // bottom edge (default is -0.5 = top)
+    controls.mtr.offsetY = 25;   // 25px below the bottom edge
+    controls.mtr.offsetX = 0;
+    controls.mtr.render = renderRotateIcon;
+    controls.mtr.sizeX = 24;
+    controls.mtr.sizeY = 24;
+    controls.mtr.cursorStyleHandler = () => 'grab';
+  }
+};
+
+// Override for all FabricObject subclasses (Rect, Circle, Line, Group, FabricImage)
+const origCreateControls = FabricObject.createControls;
+FabricObject.createControls = function() {
+  const result = origCreateControls.call(this);
+  if (result.controls) customizeMtrControl(result.controls);
+  return result;
+};
+
+// Textbox has its own createControls (adds resize handles) - override it too
+const origTextboxCreateControls = Textbox.createControls;
+Textbox.createControls = function() {
+  const result = origTextboxCreateControls.call(this);
+  if (result.controls) customizeMtrControl(result.controls);
+  return result;
+};
+
+// Override Rect._render to support per-corner border radius (radiusTL/TR/BR/BL)
+const kRect = 1 - 0.5522847498; // bezier constant for circular arc approximation
+const origRectRender = Rect.prototype._render;
+Rect.prototype._render = function(ctx: CanvasRenderingContext2D) {
+  const tl = this.radiusTL;
+  const tr = this.radiusTR;
+  const br = this.radiusBR;
+  const bl = this.radiusBL;
+
+  // If any per-corner radius is set, use custom rendering
+  if (tl != null || tr != null || br != null || bl != null) {
+    const { width: w, height: h } = this;
+    const x = -w / 2;
+    const y = -h / 2;
+
+    const rtl = Math.min(Math.max(tl ?? 0, 0), w / 2, h / 2);
+    const rtr = Math.min(Math.max(tr ?? 0, 0), w / 2, h / 2);
+    const rbr = Math.min(Math.max(br ?? 0, 0), w / 2, h / 2);
+    const rbl = Math.min(Math.max(bl ?? 0, 0), w / 2, h / 2);
+
+    ctx.beginPath();
+    ctx.moveTo(x + rtl, y);
+    ctx.lineTo(x + w - rtr, y);
+    if (rtr > 0) ctx.bezierCurveTo(x + w - kRect * rtr, y, x + w, y + kRect * rtr, x + w, y + rtr);
+    ctx.lineTo(x + w, y + h - rbr);
+    if (rbr > 0) ctx.bezierCurveTo(x + w, y + h - kRect * rbr, x + w - kRect * rbr, y + h, x + w - rbr, y + h);
+    ctx.lineTo(x + rbl, y + h);
+    if (rbl > 0) ctx.bezierCurveTo(x + kRect * rbl, y + h, x, y + h - kRect * rbl, x, y + h - rbl);
+    ctx.lineTo(x, y + rtl);
+    if (rtl > 0) ctx.bezierCurveTo(x, y + kRect * rtl, x + kRect * rtl, y, x + rtl, y);
+    ctx.closePath();
+    this._renderPaintInOrder(ctx);
+  } else {
+    origRectRender.call(this, ctx);
+  }
+};
 
 // Helper to parse CSS gradient and convert to Fabric gradient
 function parseGradientToFabric(gradientString: string): { colorStops: Record<string, string>; angle: number } | null {
@@ -272,7 +330,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -303,8 +361,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         selection: true,
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
-        fireRightClick: true,
-        stopContextMenu: true,
+        // CMD+click (Mac) and Shift+click (Windows/Mac) for multi-select
+        selectionKey: ['shiftKey', 'metaKey'],
       });
 
       // Preload Inter font for canvas text elements
@@ -464,26 +522,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (hoveredObjectRef.current === e.target) {
           hoveredObjectRef.current = null;
           canvas.requestRenderAll();
-        }
-      });
-
-      // Right-click: select element under cursor and show context menu
-      canvas.on('mouse:down', (e) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((e.e as any).button === 2 && e.target && e.target.selectable) {
-          // Select the right-clicked element if not already selected
-          const active = canvas.getActiveObject();
-          if (active !== e.target) {
-            if (active instanceof ActiveSelection && active.getObjects().includes(e.target)) {
-              // Already part of multi-selection, keep it
-            } else {
-              canvas.setActiveObject(e.target);
-              canvas.requestRenderAll();
-            }
-          }
-          // Show context menu at mouse position
-          const mouseEvent = e.e as MouseEvent;
-          setContextMenu({ x: mouseEvent.clientX, y: mouseEvent.clientY });
         }
       });
 
@@ -821,55 +859,47 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const activeObject = fabricRef.current.getActiveObject();
         if (!activeObject || !(activeObject instanceof Group)) return;
 
-        // Get group transform to apply to children
-        const groupLeft = activeObject.left || 0;
-        const groupTop = activeObject.top || 0;
-        const groupScaleX = activeObject.scaleX || 1;
-        const groupScaleY = activeObject.scaleY || 1;
-        const groupAngle = activeObject.angle || 0;
-        const groupWidth = activeObject.width || 0;
-        const groupHeight = activeObject.height || 0;
+        const canvas = fabricRef.current;
+        const objects = [...activeObject.getObjects()];
 
-        const items = activeObject.removeAll();
-        fabricRef.current.remove(activeObject);
+        // CRITICAL: Capture absolute transforms WHILE children are still in group.
+        // calcTransformMatrix() composes group transform * child transform.
+        // After removeAll(), children lose their parent so the transform would be wrong.
+        const transforms = objects.map(obj => {
+          const matrix = obj.calcTransformMatrix();
+          return util.qrDecompose(matrix);
+        });
 
-        items.forEach((obj) => {
-          // After removeAll, children have positions relative to group center.
-          // Convert to absolute canvas coordinates.
-          const childLeft = obj.left || 0;
-          const childTop = obj.top || 0;
+        // Discard selection, detach children, remove empty group
+        canvas.discardActiveObject();
+        activeObject.removeAll();
+        canvas.remove(activeObject);
 
-          if (groupAngle === 0) {
-            // Simple case: no rotation
-            obj.set({
-              left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
-              top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
-              scaleX: (obj.scaleX || 1) * groupScaleX,
-              scaleY: (obj.scaleY || 1) * groupScaleY,
-            });
-          } else {
-            // With rotation: use matrix decomposition
-            const absMatrix = obj.calcTransformMatrix();
-            const t = util.qrDecompose(absMatrix);
-            // translateX/Y from decomposition is the center point
-            const halfW = (obj.width || 0) * t.scaleX / 2;
-            const halfH = (obj.height || 0) * t.scaleY / 2;
-            obj.set({
-              left: t.translateX - halfW,
-              top: t.translateY - halfH,
-              scaleX: t.scaleX,
-              scaleY: t.scaleY,
-              angle: t.angle,
-            });
-          }
+        // Add children back with absolute positions
+        objects.forEach((obj, i) => {
+          const t = transforms[i];
+          // qrDecompose gives center-point coords; convert to top-left (originX/Y = 'left'/'top')
+          const w = (obj.width || 0) * t.scaleX;
+          const h = (obj.height || 0) * t.scaleY;
+          obj.set({
+            left: t.translateX - w / 2,
+            top: t.translateY - h / 2,
+            scaleX: t.scaleX,
+            scaleY: t.scaleY,
+            angle: t.angle,
+            skewX: t.skewX,
+            skewY: t.skewY,
+          });
           obj.setCoords();
-          fabricRef.current!.add(obj);
+          canvas.add(obj);
         });
 
         // Select all ungrouped items
-        const selection = new ActiveSelection(items, { canvas: fabricRef.current });
-        fabricRef.current.setActiveObject(selection);
-        fabricRef.current.renderAll();
+        if (objects.length > 0) {
+          const selection = new ActiveSelection(objects, { canvas });
+          canvas.setActiveObject(selection);
+        }
+        canvas.renderAll();
         saveHistory();
         onCanvasChangeRef.current?.();
       },
@@ -1035,7 +1065,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
@@ -1275,45 +1305,41 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
 
-        // Ctrl/Cmd + Shift + G - Ungroup selected (uses ref method)
+        // Ctrl/Cmd + Shift + G - Ungroup selected
         if ((e.ctrlKey || e.metaKey) && e.key === 'G' && e.shiftKey) {
           e.preventDefault();
-          // Delegate to the ungroupSelected imperative method
           const active = fabricRef.current.getActiveObject();
           if (active && active instanceof Group && !active._isSvgIcon) {
-            // Inline the same logic as ungroupSelected
-            const groupLeft = active.left || 0;
-            const groupTop = active.top || 0;
-            const groupScaleX = active.scaleX || 1;
-            const groupScaleY = active.scaleY || 1;
-            const groupAngle = active.angle || 0;
-            const groupWidth = active.width || 0;
-            const groupHeight = active.height || 0;
-            const items = active.removeAll();
-            fabricRef.current.remove(active);
-            items.forEach((obj) => {
-              const childLeft = obj.left || 0;
-              const childTop = obj.top || 0;
-              if (groupAngle === 0) {
-                obj.set({
-                  left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
-                  top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
-                  scaleX: (obj.scaleX || 1) * groupScaleX,
-                  scaleY: (obj.scaleY || 1) * groupScaleY,
-                });
-              } else {
-                const absMatrix = obj.calcTransformMatrix();
-                const t = util.qrDecompose(absMatrix);
-                const halfW = (obj.width || 0) * t.scaleX / 2;
-                const halfH = (obj.height || 0) * t.scaleY / 2;
-                obj.set({ left: t.translateX - halfW, top: t.translateY - halfH, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
-              }
-              obj.setCoords();
-              fabricRef.current!.add(obj);
+            const canvas = fabricRef.current;
+            const objects = [...active.getObjects()];
+            const transforms = objects.map(obj => {
+              const matrix = obj.calcTransformMatrix();
+              return util.qrDecompose(matrix);
             });
-            const selection = new ActiveSelection(items, { canvas: fabricRef.current });
-            fabricRef.current.setActiveObject(selection);
-            fabricRef.current.renderAll();
+            canvas.discardActiveObject();
+            active.removeAll();
+            canvas.remove(active);
+            objects.forEach((obj, i) => {
+              const t = transforms[i];
+              const w = (obj.width || 0) * t.scaleX;
+              const h = (obj.height || 0) * t.scaleY;
+              obj.set({
+                left: t.translateX - w / 2,
+                top: t.translateY - h / 2,
+                scaleX: t.scaleX,
+                scaleY: t.scaleY,
+                angle: t.angle,
+                skewX: t.skewX,
+                skewY: t.skewY,
+              });
+              obj.setCoords();
+              canvas.add(obj);
+            });
+            if (objects.length > 0) {
+              const selection = new ActiveSelection(objects, { canvas });
+              canvas.setActiveObject(selection);
+            }
+            canvas.renderAll();
             saveHistory();
           }
         }
@@ -1502,8 +1528,28 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
       e.preventDefault();
-      // Context menu is now handled by Fabric's mouse:down event (button === 2)
-      // which properly selects the target element first
+      if (!fabricRef.current) return;
+
+      const canvas = fabricRef.current;
+      // Use Fabric's findTarget to get the element under cursor
+      const found = canvas.findTarget(e.nativeEvent as MouseEvent);
+      const target = found?.target;
+
+      if (target && target.selectable && !target.isBackgroundRect) {
+        // Select the right-clicked element if not already selected
+        const active = canvas.getActiveObject();
+        if (active !== target) {
+          if (active instanceof ActiveSelection && active.getObjects().includes(target)) {
+            // Already part of multi-selection, keep it
+          } else {
+            canvas.setActiveObject(target);
+            canvas.requestRenderAll();
+          }
+        }
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      } else {
+        setContextMenu(null);
+      }
     }, []);
 
     // Helper to check if active object is a user group (not SVG icon)
@@ -1602,9 +1648,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         {/* Right-click context menu */}
         {contextMenu && (
           <>
-            <div className="fixed inset-0 z-998" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+            <div className="fixed inset-0 z-9998" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
             <div
-              className="fixed z-999 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
+              className="fixed z-9999 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
               <button
@@ -1668,37 +1714,34 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                     const canvas = fabricRef.current!;
                     const active = canvas.getActiveObject();
                     if (active instanceof Group) {
-                      const groupLeft = active.left || 0;
-                      const groupTop = active.top || 0;
-                      const groupScaleX = active.scaleX || 1;
-                      const groupScaleY = active.scaleY || 1;
-                      const groupAngle = active.angle || 0;
-                      const groupWidth = active.width || 0;
-                      const groupHeight = active.height || 0;
-                      const items = active.removeAll();
+                      const objects = [...active.getObjects()];
+                      const transforms = objects.map(obj => {
+                        const matrix = obj.calcTransformMatrix();
+                        return util.qrDecompose(matrix);
+                      });
+                      canvas.discardActiveObject();
+                      active.removeAll();
                       canvas.remove(active);
-                      items.forEach((obj) => {
-                        const childLeft = obj.left || 0;
-                        const childTop = obj.top || 0;
-                        if (groupAngle === 0) {
-                          obj.set({
-                            left: groupLeft + (childLeft + groupWidth / 2) * groupScaleX,
-                            top: groupTop + (childTop + groupHeight / 2) * groupScaleY,
-                            scaleX: (obj.scaleX || 1) * groupScaleX,
-                            scaleY: (obj.scaleY || 1) * groupScaleY,
-                          });
-                        } else {
-                          const absMatrix = obj.calcTransformMatrix();
-                          const t = util.qrDecompose(absMatrix);
-                          const halfW = (obj.width || 0) * t.scaleX / 2;
-                          const halfH = (obj.height || 0) * t.scaleY / 2;
-                          obj.set({ left: t.translateX - halfW, top: t.translateY - halfH, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
-                        }
+                      objects.forEach((obj, i) => {
+                        const t = transforms[i];
+                        const w = (obj.width || 0) * t.scaleX;
+                        const h = (obj.height || 0) * t.scaleY;
+                        obj.set({
+                          left: t.translateX - w / 2,
+                          top: t.translateY - h / 2,
+                          scaleX: t.scaleX,
+                          scaleY: t.scaleY,
+                          angle: t.angle,
+                          skewX: t.skewX,
+                          skewY: t.skewY,
+                        });
                         obj.setCoords();
                         canvas.add(obj);
                       });
-                      const selection = new ActiveSelection(items, { canvas });
-                      canvas.setActiveObject(selection);
+                      if (objects.length > 0) {
+                        const selection = new ActiveSelection(objects, { canvas });
+                        canvas.setActiveObject(selection);
+                      }
                       canvas.renderAll();
                       saveHistory();
                     }
