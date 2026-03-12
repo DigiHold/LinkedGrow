@@ -788,6 +788,11 @@ export function CalendarContent() {
 
         if (!response.ok) throw new Error("Failed to update idea");
       } else {
+        // Use selectedDay to set the idea's date to the clicked calendar date
+        const ideaDate = selectedDay
+          ? new Date(selectedDay.year, selectedDay.month, selectedDay.day)
+          : new Date();
+
         const response = await fetch("/api/ideas", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -795,6 +800,7 @@ export function CalendarContent() {
             title: newIdeaText.substring(0, 100),
             content: newIdeaText,
             source: "manual",
+            createdAt: ideaDate.toISOString(),
           }),
         });
 

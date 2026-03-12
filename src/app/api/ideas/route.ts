@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, source, sourceUrl } = body;
+    const { title, content, source, sourceUrl, createdAt } = body;
 
     if (!title) {
       return NextResponse.json(
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       content: content || null,
       source: source || "manual",
       sourceUrl: sourceUrl || null,
-      createdAt: new Date(),
+      createdAt: createdAt ? new Date(createdAt) : new Date(),
     });
 
     // Get the created idea
