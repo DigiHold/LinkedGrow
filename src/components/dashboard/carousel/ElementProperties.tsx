@@ -958,13 +958,13 @@ export function ElementProperties({
                   const clamped = Math.max(0, Math.min(val, borderRadiusMax));
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const el = selectedElement as any;
-                  el.rx = clamped;
-                  el.ry = clamped;
                   // Clear per-corner when using uniform
                   delete el.radiusTL;
                   delete el.radiusTR;
                   delete el.radiusBR;
                   delete el.radiusBL;
+                  // Use set() to mark object as dirty so Fabric invalidates cache
+                  selectedElement.set({ rx: clamped, ry: clamped } as Record<string, unknown>);
                   selectedElement.setCoords();
                   canvas.renderAll();
                   setElementProps(prev => ({ ...prev, rx: clamped, radiusTL: undefined, radiusTR: undefined, radiusBR: undefined, radiusBL: undefined }));
@@ -979,9 +979,9 @@ export function ElementProperties({
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const el = selectedElement as any;
                   el[corner] = clamped;
-                  // Set rx/ry to 0 so Fabric's default _render doesn't interfere
-                  el.rx = 0;
-                  el.ry = 0;
+                  // Use set() for rx/ry to mark dirty, and explicitly mark dirty for custom prop
+                  selectedElement.set({ rx: 0, ry: 0 } as Record<string, unknown>);
+                  selectedElement.dirty = true;
                   selectedElement.setCoords();
                   canvas.renderAll();
                   setElementProps(prev => ({ ...prev, rx: 0, [corner]: clamped }));
@@ -998,8 +998,8 @@ export function ElementProperties({
                   el.radiusTR = currentR;
                   el.radiusBR = currentR;
                   el.radiusBL = currentR;
-                  el.rx = 0;
-                  el.ry = 0;
+                  selectedElement.set({ rx: 0, ry: 0 } as Record<string, unknown>);
+                  selectedElement.dirty = true;
                   canvas.renderAll();
                   setPerCornerMode(true);
                   setElementProps(prev => ({ ...prev, rx: 0, radiusTL: currentR, radiusTR: currentR, radiusBR: currentR, radiusBL: currentR }));
@@ -1016,8 +1016,8 @@ export function ElementProperties({
                   delete el.radiusTR;
                   delete el.radiusBR;
                   delete el.radiusBL;
-                  el.rx = avg;
-                  el.ry = avg;
+                  selectedElement.set({ rx: avg, ry: avg } as Record<string, unknown>);
+                  selectedElement.dirty = true;
                   canvas.renderAll();
                   setPerCornerMode(false);
                   setElementProps(prev => ({ ...prev, rx: avg, radiusTL: undefined, radiusTR: undefined, radiusBR: undefined, radiusBL: undefined }));

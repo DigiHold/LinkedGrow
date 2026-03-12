@@ -2,7 +2,21 @@
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control } from "fabric";
-import { Copy, Trash2, Layers, Ungroup as UngroupIcon } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  Layers,
+  Ungroup as UngroupIcon,
+  ChevronUp,
+  ChevronDown,
+  ChevronRight,
+  AlignStartVertical,
+  AlignHorizontalJustifyCenter,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignVerticalJustifyCenter,
+  AlignEndHorizontal,
+} from "lucide-react";
 import { loadGoogleFont } from "./GoogleFontPicker";
 
 // Extend FabricObject for custom properties
@@ -283,6 +297,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const guideLinesRef = useRef<AlignmentGuide[]>([]);
     const hoveredObjectRef = useRef<FabricObject | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const [alignSubmenuOpen, setAlignSubmenuOpen] = useState(false);
     const [floatingBtnPos, setFloatingBtnPos] = useState<{ x: number; y: number } | null>(null);
 
     // Helper to update floating buttons position
@@ -596,9 +611,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               canvas.requestRenderAll();
             }
           }
+          setAlignSubmenuOpen(false);
           setContextMenu({ x: e.clientX, y: e.clientY });
         } else {
           setContextMenu(null);
+          setAlignSubmenuOpen(false);
         }
       });
 
@@ -1610,11 +1627,39 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         {/* Right-click context menu */}
         {contextMenu && (
           <>
-            <div className="fixed inset-0 z-9998" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+            <div className="fixed inset-0 z-9998" onClick={() => { setContextMenu(null); setAlignSubmenuOpen(false); }} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); setAlignSubmenuOpen(false); }} />
             <div
-              className="fixed z-9999 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
+              className="fixed z-9999 min-w-44 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
+              {/* Bring Forward */}
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                onClick={() => {
+                  const active = fabricRef.current?.getActiveObject();
+                  if (active) fabricRef.current!.bringObjectForward(active);
+                  fabricRef.current?.renderAll();
+                  setContextMenu(null);
+                  setAlignSubmenuOpen(false);
+                }}
+              >
+                <ChevronUp className="w-3.5 h-3.5" /> Bring Forward
+              </button>
+              {/* Send Backward */}
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                onClick={() => {
+                  const active = fabricRef.current?.getActiveObject();
+                  if (active) fabricRef.current!.sendObjectBackwards(active);
+                  fabricRef.current?.renderAll();
+                  setContextMenu(null);
+                  setAlignSubmenuOpen(false);
+                }}
+              >
+                <ChevronDown className="w-3.5 h-3.5" /> Send Backward
+              </button>
+              <div className="h-px bg-border my-1" />
+              {/* Duplicate */}
               <button
                 className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                 onClick={() => {
@@ -1626,10 +1671,187 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                     fabricRef.current!.renderAll();
                   });
                   setContextMenu(null);
+                  setAlignSubmenuOpen(false);
                 }}
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </button>
+              {/* Align to page (submenu) */}
+              <div className="relative" onMouseEnter={() => setAlignSubmenuOpen(true)} onMouseLeave={() => setAlignSubmenuOpen(false)}>
+                <button className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 justify-between">
+                  <span className="flex items-center gap-2">
+                    <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /> Align to page
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                </button>
+                {alignSubmenuOpen && (
+                  <div className="absolute left-full top-0 ml-0.5 min-w-36 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm">
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        active.set('left', (active.left || 0) - bound.left);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignStartVertical className="w-3.5 h-3.5" /> Left
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        const offset = (active.left || 0) - bound.left;
+                        active.set('left', (CANVAS_WIDTH - bound.width) / 2 + offset);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /> Center
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        const offset = (active.left || 0) - bound.left;
+                        active.set('left', CANVAS_WIDTH - bound.width + offset);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignEndVertical className="w-3.5 h-3.5" /> Right
+                    </button>
+                    <div className="h-px bg-border my-1" />
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        active.set('top', (active.top || 0) - bound.top);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignStartHorizontal className="w-3.5 h-3.5" /> Top
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        const offset = (active.top || 0) - bound.top;
+                        active.set('top', (CANVAS_HEIGHT - bound.height) / 2 + offset);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignVerticalJustifyCenter className="w-3.5 h-3.5" /> Middle
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (!canvas || !active) return;
+                        const bound = active.getBoundingRect();
+                        const offset = (active.top || 0) - bound.top;
+                        active.set('top', CANVAS_HEIGHT - bound.height + offset);
+                        active.setCoords();
+                        canvas.renderAll();
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <AlignEndHorizontal className="w-3.5 h-3.5" /> Bottom
+                    </button>
+                  </div>
+                )}
+              </div>
+              {/* Group / Ungroup */}
+              {(isMultiSelect() || isUserGroup()) && (
+                <>
+                  <div className="h-px bg-border my-1" />
+                  {isMultiSelect() && (
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current!;
+                        const active = canvas.getActiveObject();
+                        if (active instanceof ActiveSelection) {
+                          const objects = active.getObjects();
+                          if (objects.length >= 2) {
+                            canvas.discardActiveObject();
+                            objects.forEach(obj => canvas.remove(obj));
+                            const group = new Group(objects);
+                            canvas.add(group);
+                            canvas.setActiveObject(group);
+                            canvas.renderAll();
+                            saveHistory();
+                          }
+                        }
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <Layers className="w-3.5 h-3.5" /> Group
+                    </button>
+                  )}
+                  {isUserGroup() && (
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current!;
+                        const active = canvas.getActiveObject();
+                        if (active instanceof Group) {
+                          const objects = [...active.getObjects()];
+                          canvas.discardActiveObject();
+                          active.removeAll();
+                          canvas.remove(active);
+                          objects.forEach(obj => {
+                            obj.setCoords();
+                            canvas.add(obj);
+                          });
+                          if (objects.length > 0) {
+                            const selection = new ActiveSelection(objects, { canvas });
+                            canvas.setActiveObject(selection);
+                          }
+                          canvas.renderAll();
+                          saveHistory();
+                        }
+                        setContextMenu(null);
+                        setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <UngroupIcon className="w-3.5 h-3.5" /> Ungroup
+                    </button>
+                  )}
+                </>
+              )}
+              <div className="h-px bg-border my-1" />
+              {/* Delete */}
               <button
                 className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 text-red-500"
                 onClick={() => {
@@ -1639,86 +1861,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                   fabricRef.current.discardActiveObject();
                   fabricRef.current.renderAll();
                   setContextMenu(null);
+                  setAlignSubmenuOpen(false);
                   setFloatingBtnPos(null);
                 }}
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
-              <div className="h-px bg-border my-1" />
-              {isMultiSelect() && (
-                <button
-                  className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                  onClick={() => {
-                    const canvas = fabricRef.current!;
-                    const active = canvas.getActiveObject();
-                    if (active instanceof ActiveSelection) {
-                      const objects = active.getObjects();
-                      if (objects.length >= 2) {
-                        canvas.discardActiveObject();
-                        objects.forEach(obj => canvas.remove(obj));
-                        const group = new Group(objects);
-                        canvas.add(group);
-                        canvas.setActiveObject(group);
-                        canvas.renderAll();
-                        saveHistory();
-                      }
-                    }
-                    setContextMenu(null);
-                  }}
-                >
-                  <Layers className="w-3.5 h-3.5" /> Group
-                </button>
-              )}
-              {isUserGroup() && (
-                <button
-                  className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                  onClick={() => {
-                    const canvas = fabricRef.current!;
-                    const active = canvas.getActiveObject();
-                    if (active instanceof Group) {
-                      const objects = [...active.getObjects()];
-                      canvas.discardActiveObject();
-                      active.removeAll();
-                      canvas.remove(active);
-                      objects.forEach(obj => {
-                        obj.setCoords();
-                        canvas.add(obj);
-                      });
-                      if (objects.length > 0) {
-                        const selection = new ActiveSelection(objects, { canvas });
-                        canvas.setActiveObject(selection);
-                      }
-                      canvas.renderAll();
-                      saveHistory();
-                    }
-                    setContextMenu(null);
-                  }}
-                >
-                  <UngroupIcon className="w-3.5 h-3.5" /> Ungroup
-                </button>
-              )}
-              <div className="h-px bg-border my-1" />
-              <button
-                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700"
-                onClick={() => {
-                  const active = fabricRef.current?.getActiveObject();
-                  if (active) fabricRef.current!.bringObjectForward(active);
-                  fabricRef.current?.renderAll();
-                  setContextMenu(null);
-                }}
-              >
-                Bring Forward
-              </button>
-              <button
-                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700"
-                onClick={() => {
-                  const active = fabricRef.current?.getActiveObject();
-                  if (active) fabricRef.current!.sendObjectBackwards(active);
-                  fabricRef.current?.renderAll();
-                  setContextMenu(null);
-                }}
-              >
-                Send Backward
               </button>
             </div>
           </>
