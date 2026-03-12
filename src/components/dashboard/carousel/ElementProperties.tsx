@@ -872,7 +872,7 @@ export function ElementProperties({
                       step={1}
                       className="flex-1"
                     />
-                    <Input
+                    <input
                       type="number"
                       value={elementProps.rx}
                       onChange={(e) => {
@@ -885,7 +885,7 @@ export function ElementProperties({
                         canvas.renderAll();
                         setElementProps(prev => ({ ...prev, rx: val }));
                       }}
-                      className="h-8 text-xs w-16"
+                      className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
                       min={0}
                     />
                     <span className="text-xs text-muted-foreground">px</span>
