@@ -1304,9 +1304,9 @@ export function CalendarContent() {
       )}
 
       {/* Multi-purpose Drawer */}
-      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={true} handleOnly={true}>
+      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={false} handleOnly={true}>
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" />
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" onClick={() => setDrawerOpen(false)} />
           <Drawer.Content
             className="fixed right-0 top-0 bottom-0 z-150 flex flex-col bg-background w-full max-w-250 border-l border-border shadow-xl outline-none"
             aria-describedby={undefined}
