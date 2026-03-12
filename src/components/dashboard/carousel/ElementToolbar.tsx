@@ -102,15 +102,20 @@ export function ElementToolbar({
     const file = e.target.files?.[0];
     if (!file || !onImageUpload) return;
 
-    // Handle SVG files - read as text and add via addSvgIcon
+    // Handle SVG files - render as image to preserve all original colors/styles
     if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
       if (file.size > 5 * 1024 * 1024) {
         alert('SVG file size must be less than 5MB');
         return;
       }
       try {
-        const svgText = await file.text();
-        await canvasRef.current?.addSvgIcon(svgText);
+        const reader = new FileReader();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await canvasRef.current?.addImage(dataUrl);
       } catch (error) {
         console.error('Failed to load SVG:', error);
         alert('Failed to load SVG file. Please try again.');
@@ -644,8 +649,13 @@ export function ElementToolbar({
                         if (!file) return;
                         try {
                           if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
-                            const svgText = await file.text();
-                            await canvasRef.current?.addSvgIcon(svgText);
+                            const reader = new FileReader();
+                            const dataUrl = await new Promise<string>((resolve, reject) => {
+                              reader.onload = () => resolve(reader.result as string);
+                              reader.onerror = reject;
+                              reader.readAsDataURL(file);
+                            });
+                            await canvasRef.current?.addImage(dataUrl);
                           } else if (onImageUpload) {
                             const url = await onImageUpload(file);
                             await canvasRef.current?.addImage(url);

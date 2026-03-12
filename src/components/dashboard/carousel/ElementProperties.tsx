@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection } from "fabric";
+import { FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -113,6 +113,11 @@ export function ElementProperties({
   const [gradientAngle, setGradientAngle] = useState(90);
   const [iconColor, setIconColor] = useState('#000000');
   const [fontsCacheReady, setFontsCacheReady] = useState(false);
+  const [shadowEnabled, setShadowEnabled] = useState(false);
+  const [shadowColor, setShadowColor] = useState('rgba(0,0,0,0.25)');
+  const [shadowBlur, setShadowBlur] = useState(10);
+  const [shadowOffsetX, setShadowOffsetX] = useState(0);
+  const [shadowOffsetY, setShadowOffsetY] = useState(4);
 
   // Ensure fonts cache is loaded so getFontWeights returns accurate data
   useEffect(() => {
@@ -171,6 +176,18 @@ export function ElementProperties({
       underline: textbox?.underline || false,
       textAlign: textbox?.textAlign || 'center',
     });
+
+    // Read shadow
+    const shadow = selectedElement.shadow;
+    if (shadow && shadow instanceof Shadow) {
+      setShadowEnabled(true);
+      setShadowColor(shadow.color || 'rgba(0,0,0,0.25)');
+      setShadowBlur(shadow.blur || 10);
+      setShadowOffsetX(shadow.offsetX || 0);
+      setShadowOffsetY(shadow.offsetY || 4);
+    } else {
+      setShadowEnabled(false);
+    }
   }, [selectedElement, updateTrigger]);
 
   const updateElement = useCallback((updates: Partial<typeof elementProps>) => {
@@ -569,8 +586,14 @@ export function ElementProperties({
                               selectedElement.set('fontFamily', font);
                               selectedElement.set('dirty', true);
                               selectedElement.initDimensions();
+                              selectedElement.setCoords();
                               canvas.requestRenderAll();
-                              setElementProps(prev => ({ ...prev, fontFamily: font }));
+                              setElementProps(prev => ({
+                                ...prev,
+                                fontFamily: font,
+                                width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
+                                height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
+                              }));
                             }
                           }
                         }}
@@ -909,12 +932,28 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        selectedElement.set('rx' as keyof FabricObject, val);
-                        selectedElement.set('ry' as keyof FabricObject, val);
+                        // Normalize rect to native dimensions before setting radius
+                        if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
+                          const w = (selectedElement.width || 200) * (selectedElement.scaleX || 1);
+                          const h = (selectedElement.height || 200) * (selectedElement.scaleY || 1);
+                          selectedElement.set('width', w);
+                          selectedElement.set('height', h);
+                          selectedElement.set('scaleX', 1);
+                          selectedElement.set('scaleY', 1);
+                          setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
+                        }
+                        const maxR = Math.min((selectedElement.width || 200) / 2, (selectedElement.height || 200) / 2);
+                        const clamped = Math.min(val, maxR);
+                        selectedElement.set('rx' as keyof FabricObject, clamped);
+                        selectedElement.set('ry' as keyof FabricObject, clamped);
+                        selectedElement.setCoords();
                         canvas.renderAll();
-                        setElementProps(prev => ({ ...prev, rx: val }));
+                        setElementProps(prev => ({ ...prev, rx: clamped }));
                       }}
-                      max={Math.max(100, Math.round(Math.min(selectedElement?.width || 200, selectedElement?.height || 200) / 2))}
+                      max={Math.round(Math.min(
+                        (selectedElement?.width || 200) * (selectedElement?.scaleX || 1),
+                        (selectedElement?.height || 200) * (selectedElement?.scaleY || 1)
+                      ) / 2)}
                       step={1}
                       className="flex-1"
                     />
@@ -926,10 +965,23 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        selectedElement.set('rx' as keyof FabricObject, val);
-                        selectedElement.set('ry' as keyof FabricObject, val);
+                        // Normalize rect
+                        if (selectedElement.scaleX !== 1 || selectedElement.scaleY !== 1) {
+                          const w = (selectedElement.width || 200) * (selectedElement.scaleX || 1);
+                          const h = (selectedElement.height || 200) * (selectedElement.scaleY || 1);
+                          selectedElement.set('width', w);
+                          selectedElement.set('height', h);
+                          selectedElement.set('scaleX', 1);
+                          selectedElement.set('scaleY', 1);
+                          setElementProps(prev => ({ ...prev, width: Math.round(w), height: Math.round(h) }));
+                        }
+                        const maxR = Math.min((selectedElement.width || 200) / 2, (selectedElement.height || 200) / 2);
+                        const clamped = Math.min(val, maxR);
+                        selectedElement.set('rx' as keyof FabricObject, clamped);
+                        selectedElement.set('ry' as keyof FabricObject, clamped);
+                        selectedElement.setCoords();
                         canvas.renderAll();
-                        setElementProps(prev => ({ ...prev, rx: val }));
+                        setElementProps(prev => ({ ...prev, rx: clamped }));
                       }}
                       className="h-8 text-xs w-16 shrink-0 rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
                       min={0}
@@ -938,6 +990,119 @@ export function ElementProperties({
                   </div>
                 </div>
               )}
+
+              {/* Shadow */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Shadow</Label>
+                  <button
+                    className={cn(
+                      "w-8 h-4 rounded-full transition-colors relative",
+                      shadowEnabled ? "bg-cyan-500" : "bg-slate-200 dark:bg-slate-700"
+                    )}
+                    onClick={() => {
+                      const newEnabled = !shadowEnabled;
+                      setShadowEnabled(newEnabled);
+                      if (!selectedElement) return;
+                      const canvas = canvasRef.current?.getCanvas();
+                      if (!canvas) return;
+                      if (newEnabled) {
+                        selectedElement.shadow = new Shadow({
+                          color: shadowColor,
+                          blur: shadowBlur,
+                          offsetX: shadowOffsetX,
+                          offsetY: shadowOffsetY,
+                        });
+                      } else {
+                        selectedElement.shadow = null;
+                      }
+                      canvas.renderAll();
+                    }}
+                  >
+                    <div className={cn(
+                      "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
+                      shadowEnabled ? "translate-x-4" : "translate-x-0.5"
+                    )} />
+                  </button>
+                </div>
+                {shadowEnabled && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={shadowColor.startsWith('rgba') ? '#000000' : shadowColor}
+                        onChange={(e) => {
+                          const color = e.target.value;
+                          setShadowColor(color);
+                          if (!selectedElement) return;
+                          const canvas = canvasRef.current?.getCanvas();
+                          if (!canvas) return;
+                          selectedElement.shadow = new Shadow({ color, blur: shadowBlur, offsetX: shadowOffsetX, offsetY: shadowOffsetY });
+                          canvas.renderAll();
+                        }}
+                        className="w-6 h-6 rounded cursor-pointer border-0"
+                      />
+                      <span className="text-[10px] text-muted-foreground">Color</span>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Blur</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[shadowBlur]}
+                          onValueChange={([val]) => {
+                            setShadowBlur(val);
+                            if (!selectedElement) return;
+                            const canvas = canvasRef.current?.getCanvas();
+                            if (!canvas) return;
+                            selectedElement.shadow = new Shadow({ color: shadowColor, blur: val, offsetX: shadowOffsetX, offsetY: shadowOffsetY });
+                            canvas.renderAll();
+                          }}
+                          max={50}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowBlur}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Offset X</Label>
+                        <Input
+                          type="number"
+                          value={shadowOffsetX}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setShadowOffsetX(val);
+                            if (!selectedElement) return;
+                            const canvas = canvasRef.current?.getCanvas();
+                            if (!canvas) return;
+                            selectedElement.shadow = new Shadow({ color: shadowColor, blur: shadowBlur, offsetX: val, offsetY: shadowOffsetY });
+                            canvas.renderAll();
+                          }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Offset Y</Label>
+                        <Input
+                          type="number"
+                          value={shadowOffsetY}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setShadowOffsetY(val);
+                            if (!selectedElement) return;
+                            const canvas = canvasRef.current?.getCanvas();
+                            if (!canvas) return;
+                            selectedElement.shadow = new Shadow({ color: shadowColor, blur: shadowBlur, offsetX: shadowOffsetX, offsetY: val });
+                            canvas.renderAll();
+                          }}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Opacity */}
               <div>

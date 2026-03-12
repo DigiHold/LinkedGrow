@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, loadSVGFromString, util, ActiveSelection, Group, Control } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control } from "fabric";
+import { Copy, Trash2, Layers, Ungroup as UngroupIcon } from "lucide-react";
+import { loadGoogleFont } from "./GoogleFontPicker";
 
-// Extend FabricObject for hover state tracking
+// Extend FabricObject for custom properties
 declare module 'fabric' {
   interface FabricObject {
-    _hoverBorderColor?: string;
-    _hoverBorderDash?: number[];
     isBackgroundRect?: boolean;
+    _isSvgIcon?: boolean;
   }
 }
 
@@ -29,10 +30,10 @@ FabricObject.ownDefaults.originX = 'left';
 FabricObject.ownDefaults.originY = 'top';
 FabricObject.ownDefaults.cornerColor = '#0891b2';
 FabricObject.ownDefaults.cornerStyle = 'circle';
-FabricObject.ownDefaults.cornerSize = 12;
+FabricObject.ownDefaults.cornerSize = 8;
 FabricObject.ownDefaults.transparentCorners = false;
-FabricObject.ownDefaults.borderColor = '#0891b2';
-FabricObject.ownDefaults.borderScaleFactor = 2;
+FabricObject.ownDefaults.borderColor = '#06b6d4';
+FabricObject.ownDefaults.borderScaleFactor = 1;
 
 // Custom rotate icon renderer (curved arrow instead of circle)
 const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
@@ -72,11 +73,13 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
 };
 
 // Override the default mtr (rotation) control render with custom icon
-if (FabricObject.ownDefaults.controls?.mtr) {
-  FabricObject.ownDefaults.controls.mtr.render = renderRotateIcon;
-  FabricObject.ownDefaults.controls.mtr.sizeX = 24;
-  FabricObject.ownDefaults.controls.mtr.sizeY = 24;
-  FabricObject.ownDefaults.controls.mtr.cursorStyleHandler = () => 'grab';
+// Must use prototype.controls (ownDefaults.controls is undefined in Fabric v7)
+const protoControls = FabricObject.prototype.controls;
+if (protoControls?.mtr) {
+  protoControls.mtr.render = renderRotateIcon;
+  protoControls.mtr.sizeX = 24;
+  protoControls.mtr.sizeY = 24;
+  protoControls.mtr.cursorStyleHandler = () => 'grab';
 }
 
 // Helper to parse CSS gradient and convert to Fabric gradient
@@ -220,6 +223,28 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const [isReady, setIsReady] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const guideLinesRef = useRef<AlignmentGuide[]>([]);
+    const hoveredObjectRef = useRef<FabricObject | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const [floatingBtnPos, setFloatingBtnPos] = useState<{ x: number; y: number } | null>(null);
+
+    // Helper to update floating buttons position
+    const updateFloatingPos = useCallback(() => {
+      if (!fabricRef.current) {
+        setFloatingBtnPos(null);
+        return;
+      }
+      const active = fabricRef.current.getActiveObject();
+      if (!active) {
+        setFloatingBtnPos(null);
+        return;
+      }
+      const bound = active.getBoundingRect();
+      const z = fabricRef.current.getZoom();
+      setFloatingBtnPos({
+        x: (bound.left + bound.width / 2) * z,
+        y: bound.top * z - 8,
+      });
+    }, []);
 
     // Store callbacks in refs to avoid re-initializing canvas when they change
     const onSelectionChangeRef = useRef(onSelectionChange);
@@ -276,6 +301,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         preserveObjectStacking: true,
         controlsAboveOverlay: true,
       });
+
+      // Preload Inter font for canvas text elements
+      loadGoogleFont('Inter').catch(() => {});
 
       // Smart alignment guides + snapping
       canvas.on('object:moving', (e) => {
@@ -354,11 +382,25 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onElementMovingRef.current?.(obj);
       });
 
-      // Draw alignment guide lines
+      // Draw alignment guides + hover border overlay
       canvas.on('after:render', () => {
-        if (guideLinesRef.current.length === 0) return;
         const ctx = canvas.getContext();
-        const zoom = canvas.getZoom();
+        const z = canvas.getZoom();
+
+        // Draw hover border on non-selected hovered element
+        const hovered = hoveredObjectRef.current;
+        if (hovered && hovered !== canvas.getActiveObject()) {
+          const bound = hovered.getBoundingRect();
+          ctx.save();
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeRect(bound.left * z, bound.top * z, bound.width * z, bound.height * z);
+          ctx.restore();
+        }
+
+        // Draw alignment guide lines
+        if (guideLinesRef.current.length === 0) return;
         ctx.save();
         ctx.strokeStyle = '#06b6d4';
         ctx.lineWidth = 1;
@@ -366,11 +408,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         guideLinesRef.current.forEach(guide => {
           ctx.beginPath();
           if (guide.orientation === 'vertical') {
-            ctx.moveTo(guide.position * zoom, 0);
-            ctx.lineTo(guide.position * zoom, CANVAS_HEIGHT * zoom);
+            ctx.moveTo(guide.position * z, 0);
+            ctx.lineTo(guide.position * z, CANVAS_HEIGHT * z);
           } else {
-            ctx.moveTo(0, guide.position * zoom);
-            ctx.lineTo(CANVAS_WIDTH * zoom, guide.position * zoom);
+            ctx.moveTo(0, guide.position * z);
+            ctx.lineTo(CANVAS_WIDTH * z, guide.position * z);
           }
           ctx.stroke();
         });
@@ -401,47 +443,61 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Hover border on elements
+      // Hover border on elements (tracked in ref, drawn in after:render)
       canvas.on('mouse:over', (e) => {
         const target = e.target;
-        if (!target || !target.selectable) return;
+        if (!target || !target.selectable || target.isBackgroundRect) return;
         const active = canvas.getActiveObject();
         if (active === target) return;
         if (active instanceof ActiveSelection && active.getObjects().includes(target)) return;
-
-        target._hoverBorderColor = target.borderColor as string;
-        target._hoverBorderDash = target.borderDashArray as number[];
-        target.set({
-          borderColor: '#06b6d4',
-          borderDashArray: [4, 4],
-        });
-        target.set('hasBorders', true);
+        hoveredObjectRef.current = target;
         canvas.requestRenderAll();
       });
 
       canvas.on('mouse:out', (e) => {
-        const target = e.target;
-        if (!target || !target.selectable) return;
-        target.set({
-          borderColor: target._hoverBorderColor || '#0891b2',
-          borderDashArray: target._hoverBorderDash || undefined,
-        });
-        delete target._hoverBorderColor;
-        delete target._hoverBorderDash;
-        canvas.requestRenderAll();
+        if (hoveredObjectRef.current === e.target) {
+          hoveredObjectRef.current = null;
+          canvas.requestRenderAll();
+        }
       });
 
-      // Selection events - pass ActiveSelection for multi-select
+      // Double-click to enter group interactive mode (edit children inside group)
+      canvas.on('mouse:dblclick', (e) => {
+        const target = e.target;
+        if (target instanceof Group && !target._isSvgIcon) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (target as any).interactive = true;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (target as any).subTargetCheck = true;
+          canvas.requestRenderAll();
+        }
+      });
+
+      // Selection events - pass ActiveSelection for multi-select + track floating buttons
       canvas.on('selection:created', () => {
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        updateFloatingPos();
       });
 
       canvas.on('selection:updated', () => {
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        updateFloatingPos();
       });
 
       canvas.on('selection:cleared', () => {
         onSelectionChangeRef.current?.(null);
+        setFloatingBtnPos(null);
+        // Exit interactive mode on all groups
+        canvas.getObjects().forEach(obj => {
+          if (obj instanceof Group) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const g = obj as any;
+            if (g.interactive) {
+              g.interactive = false;
+              g.subTargetCheck = false;
+            }
+          }
+        });
       });
 
       // Track changes
@@ -449,6 +505,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         guideLinesRef.current = [];
         saveHistory();
         onCanvasChangeRef.current?.();
+        updateFloatingPos();
       });
 
       canvas.on('object:added', () => {
@@ -489,12 +546,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       addText: (options: Partial<TextOptions> = {}, batch = false) => {
         if (!fabricRef.current) return;
 
+        const fontFamily = options.fontFamily ?? 'Inter';
         const text = new Textbox(options.text || 'Add your text here', {
           left: options.left ?? CANVAS_WIDTH / 2 - 200,
           top: options.top ?? CANVAS_HEIGHT / 2 - 30,
           width: options.width ?? 400,
           fontSize: options.fontSize ?? 48,
-          fontFamily: options.fontFamily ?? 'Inter',
+          fontFamily,
           fontWeight: options.fontWeight ?? 'normal',
           fill: options.fill ?? '#000000',
           textAlign: options.textAlign ?? 'center',
@@ -503,6 +561,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         });
 
         fabricRef.current.add(text);
+
+        // Ensure font is loaded, then re-render with correct font
+        loadGoogleFont(fontFamily).then(() => {
+          if (fabricRef.current) {
+            text.set('dirty', true);
+            text.initDimensions();
+            fabricRef.current.requestRenderAll();
+          }
+        }).catch(() => {});
+
         if (!batch) {
           fabricRef.current.setActiveObject(text);
           fabricRef.current.renderAll();
@@ -724,19 +792,25 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const activeObject = fabricRef.current.getActiveObject();
         if (!activeObject || !(activeObject instanceof Group)) return;
 
+        // Calculate absolute transforms BEFORE removing from group
+        const children = activeObject.getObjects();
+        const transforms = children.map(obj => {
+          const absMatrix = obj.calcTransformMatrix();
+          return util.qrDecompose(absMatrix);
+        });
+
         const items = activeObject.removeAll();
         fabricRef.current.remove(activeObject);
 
-        // Add items back to canvas with absolute positioning
-        items.forEach(obj => {
-          const matrix = activeObject.calcTransformMatrix();
-          const point = util.transformPoint({ x: obj.left || 0, y: obj.top || 0 }, matrix);
+        // Apply calculated absolute positions
+        items.forEach((obj, i) => {
+          const t = transforms[i];
           obj.set({
-            left: point.x,
-            top: point.y,
-            scaleX: (obj.scaleX || 1) * (activeObject.scaleX || 1),
-            scaleY: (obj.scaleY || 1) * (activeObject.scaleY || 1),
-            angle: (obj.angle || 0) + (activeObject.angle || 0),
+            left: t.translateX,
+            top: t.translateY,
+            scaleX: t.scaleX,
+            scaleY: t.scaleY,
+            angle: t.angle,
           });
           obj.setCoords();
           fabricRef.current!.add(obj);
@@ -1156,17 +1230,21 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           e.preventDefault();
           const active = fabricRef.current.getActiveObject();
           if (active && active instanceof Group) {
+            const children = active.getObjects();
+            const transforms = children.map(obj => {
+              const absMatrix = obj.calcTransformMatrix();
+              return util.qrDecompose(absMatrix);
+            });
             const items = active.removeAll();
             fabricRef.current.remove(active);
-            items.forEach(obj => {
-              const matrix = active.calcTransformMatrix();
-              const point = util.transformPoint({ x: obj.left || 0, y: obj.top || 0 }, matrix);
+            items.forEach((obj, i) => {
+              const t = transforms[i];
               obj.set({
-                left: point.x,
-                top: point.y,
-                scaleX: (obj.scaleX || 1) * (active.scaleX || 1),
-                scaleY: (obj.scaleY || 1) * (active.scaleY || 1),
-                angle: (obj.angle || 0) + (active.angle || 0),
+                left: t.translateX,
+                top: t.translateY,
+                scaleX: t.scaleX,
+                scaleY: t.scaleY,
+                angle: t.angle,
               });
               obj.setCoords();
               fabricRef.current!.add(obj);
@@ -1176,6 +1254,23 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             fabricRef.current.renderAll();
             saveHistory();
           }
+        }
+
+        // Escape - exit group interactive mode
+        if (e.key === 'Escape') {
+          fabricRef.current.getObjects().forEach(obj => {
+            if (obj instanceof Group) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const g = obj as any;
+              if (g.interactive) {
+                g.interactive = false;
+                g.subTargetCheck = false;
+              }
+            }
+          });
+          fabricRef.current.discardActiveObject();
+          fabricRef.current.requestRenderAll();
+          setContextMenu(null);
         }
 
         // Ctrl/Cmd + D - Duplicate
@@ -1255,6 +1350,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             fabricRef.current.add(text);
             fabricRef.current.setActiveObject(text);
             fabricRef.current.renderAll();
+            // Ensure font is loaded for dropped text
+            loadGoogleFont(data.fontFamily ?? 'Inter').then(() => {
+              if (fabricRef.current) {
+                text.set('dirty', true);
+                text.initDimensions();
+                fabricRef.current.requestRenderAll();
+              }
+            }).catch(() => {});
           } else if (type === 'shape') {
             let shape: FabricObject;
             const dropX = Math.max(0, Math.min(x - 50, CANVAS_WIDTH - 100));
@@ -1333,6 +1436,24 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       }
     }, [zoom, onElementDrop]);
 
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      if (!fabricRef.current) return;
+      const active = fabricRef.current.getActiveObject();
+      if (!active) return;
+      setContextMenu({ x: e.clientX, y: e.clientY });
+    }, []);
+
+    // Helper to check if active object is a user group (not SVG icon)
+    const isUserGroup = useCallback(() => {
+      const active = fabricRef.current?.getActiveObject();
+      return active instanceof Group && !active._isSvgIcon;
+    }, []);
+
+    const isMultiSelect = useCallback(() => {
+      return fabricRef.current?.getActiveObject() instanceof ActiveSelection;
+    }, []);
+
     return (
       <div
         ref={containerRef}
@@ -1346,6 +1467,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onContextMenu={handleContextMenu}
       >
         {/* Canvas container - Fabric handles zoom natively */}
         <div
@@ -1355,6 +1477,49 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           )}
         >
           <canvas ref={canvasRef} />
+
+          {/* Floating action buttons above selected element */}
+          {floatingBtnPos && (
+            <div
+              className="absolute flex gap-0.5 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-border p-0.5"
+              style={{
+                left: floatingBtnPos.x,
+                top: floatingBtnPos.y,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 10,
+              }}
+            >
+              <button
+                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={() => {
+                  fabricRef.current?.getActiveObject()?.clone().then((cloned: FabricObject) => {
+                    const active = fabricRef.current!.getActiveObject();
+                    cloned.set({ left: (active?.left || 0) + 20, top: (active?.top || 0) + 20 });
+                    fabricRef.current!.add(cloned);
+                    fabricRef.current!.setActiveObject(cloned);
+                    fabricRef.current!.renderAll();
+                  });
+                }}
+                title="Duplicate"
+              >
+                <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+              </button>
+              <button
+                className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                onClick={() => {
+                  if (!fabricRef.current) return;
+                  const activeObjects = fabricRef.current.getActiveObjects();
+                  activeObjects.forEach(obj => fabricRef.current!.remove(obj));
+                  fabricRef.current.discardActiveObject();
+                  fabricRef.current.renderAll();
+                  setFloatingBtnPos(null);
+                }}
+                title="Delete"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Drop zone indicator */}
@@ -1370,6 +1535,126 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           <div className="absolute inset-0 flex items-center justify-center bg-white/80">
             <div className="text-muted-foreground">Loading editor...</div>
           </div>
+        )}
+
+        {/* Right-click context menu */}
+        {contextMenu && (
+          <>
+            <div className="fixed inset-0 z-998" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+            <div
+              className="fixed z-999 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                onClick={() => {
+                  fabricRef.current?.getActiveObject()?.clone().then((cloned: FabricObject) => {
+                    const active = fabricRef.current!.getActiveObject();
+                    cloned.set({ left: (active?.left || 0) + 20, top: (active?.top || 0) + 20 });
+                    fabricRef.current!.add(cloned);
+                    fabricRef.current!.setActiveObject(cloned);
+                    fabricRef.current!.renderAll();
+                  });
+                  setContextMenu(null);
+                }}
+              >
+                <Copy className="w-3.5 h-3.5" /> Duplicate
+              </button>
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 text-red-500"
+                onClick={() => {
+                  if (!fabricRef.current) return;
+                  const activeObjects = fabricRef.current.getActiveObjects();
+                  activeObjects.forEach(obj => fabricRef.current!.remove(obj));
+                  fabricRef.current.discardActiveObject();
+                  fabricRef.current.renderAll();
+                  setContextMenu(null);
+                  setFloatingBtnPos(null);
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+              <div className="h-px bg-border my-1" />
+              {isMultiSelect() && (
+                <button
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  onClick={() => {
+                    const canvas = fabricRef.current!;
+                    const active = canvas.getActiveObject();
+                    if (active instanceof ActiveSelection) {
+                      const objects = active.getObjects();
+                      if (objects.length >= 2) {
+                        canvas.discardActiveObject();
+                        objects.forEach(obj => canvas.remove(obj));
+                        const group = new Group(objects);
+                        canvas.add(group);
+                        canvas.setActiveObject(group);
+                        canvas.renderAll();
+                        saveHistory();
+                      }
+                    }
+                    setContextMenu(null);
+                  }}
+                >
+                  <Layers className="w-3.5 h-3.5" /> Group
+                </button>
+              )}
+              {isUserGroup() && (
+                <button
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  onClick={() => {
+                    const canvas = fabricRef.current!;
+                    const active = canvas.getActiveObject();
+                    if (active instanceof Group) {
+                      const children = active.getObjects();
+                      const transforms = children.map(obj => {
+                        const absMatrix = obj.calcTransformMatrix();
+                        return util.qrDecompose(absMatrix);
+                      });
+                      const items = active.removeAll();
+                      canvas.remove(active);
+                      items.forEach((obj, i) => {
+                        const t = transforms[i];
+                        obj.set({ left: t.translateX, top: t.translateY, scaleX: t.scaleX, scaleY: t.scaleY, angle: t.angle });
+                        obj.setCoords();
+                        canvas.add(obj);
+                      });
+                      const selection = new ActiveSelection(items, { canvas });
+                      canvas.setActiveObject(selection);
+                      canvas.renderAll();
+                      saveHistory();
+                    }
+                    setContextMenu(null);
+                  }}
+                >
+                  <UngroupIcon className="w-3.5 h-3.5" /> Ungroup
+                </button>
+              )}
+              <div className="h-px bg-border my-1" />
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => {
+                  const active = fabricRef.current?.getActiveObject();
+                  if (active) fabricRef.current!.bringObjectForward(active);
+                  fabricRef.current?.renderAll();
+                  setContextMenu(null);
+                }}
+              >
+                Bring Forward
+              </button>
+              <button
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => {
+                  const active = fabricRef.current?.getActiveObject();
+                  if (active) fabricRef.current!.sendObjectBackwards(active);
+                  fabricRef.current?.renderAll();
+                  setContextMenu(null);
+                }}
+              >
+                Send Backward
+              </button>
+            </div>
+          </>
         )}
       </div>
     );
