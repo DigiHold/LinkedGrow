@@ -3,8 +3,12 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { savedCarousels, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { deleteFromR2 } from "@/lib/storage/r2";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
+import {
+  extractR2KeysFromSlidesJson,
+  cleanupR2Keys,
+  cleanupRemovedR2Keys,
+} from "@/lib/storage/canvas-r2-cleanup";
 
 // GET - Get a single carousel with full slide data
 export async function GET(
@@ -68,9 +72,9 @@ export async function PUT(
     const body = await request.json();
     const { name, description, thumbnail, slidesJson, slideCount } = body;
 
-    // Check ownership
+    // Check ownership and fetch existing data for R2 cleanup
     const [existing] = await db
-      .select({ id: savedCarousels.id })
+      .select({ id: savedCarousels.id, slidesJson: savedCarousels.slidesJson })
       .from(savedCarousels)
       .where(
         and(
@@ -105,6 +109,15 @@ export async function PUT(
         )
       );
 
+    // Clean up R2 images that were removed from slides
+    if (slidesJson !== undefined && existing.slidesJson) {
+      const newSlidesStr = typeof slidesJson === "string" ? slidesJson : JSON.stringify(slidesJson);
+      const oldKeys = extractR2KeysFromSlidesJson(existing.slidesJson);
+      const newKeys = extractR2KeysFromSlidesJson(newSlidesStr);
+      // Fire and forget - don't block the response
+      cleanupRemovedR2Keys(oldKeys, newKeys);
+    }
+
     return NextResponse.json({ message: "Carousel updated successfully" });
   } catch (error) {
     console.error("Failed to update carousel:", error);
@@ -113,67 +126,6 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
-
-/**
- * Extract R2 storage keys from Fabric.js canvas JSON
- * Looks for image objects and extracts R2 URLs, converting them to storage keys
- */
-function extractR2KeysFromCanvasJson(canvasJson: string): string[] {
-  const keys: string[] = [];
-
-  try {
-    const canvas = JSON.parse(canvasJson);
-    const objects = canvas.objects || [];
-
-    for (const obj of objects) {
-      // Check for image objects
-      if (obj.type === 'image') {
-        // Check originalSrc first (we store original R2 URL there)
-        const src = obj.originalSrc || obj.src || '';
-        const key = extractR2KeyFromUrl(src);
-        if (key) {
-          keys.push(key);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Failed to parse canvas JSON for image extraction:', error);
-  }
-
-  return keys;
-}
-
-/**
- * Extract R2 storage key from a URL
- * R2 URLs look like: https://pub-xxx.r2.dev/users/userId/uploads/timestamp-random-filename
- * We need to extract: users/userId/uploads/timestamp-random-filename
- */
-function extractR2KeyFromUrl(url: string): string | null {
-  if (!url) return null;
-
-  // Check if it's an R2 URL
-  if (!url.includes('r2.dev') && !url.includes('r2.cloudflarestorage.com')) {
-    return null;
-  }
-
-  try {
-    const urlObj = new URL(url);
-    // The pathname starts with /, so remove it
-    const key = urlObj.pathname.slice(1);
-    // Only return if it looks like a valid key (starts with users/)
-    if (key.startsWith('users/')) {
-      return key;
-    }
-  } catch {
-    // URL parsing failed, try regex fallback
-    const match = url.match(/r2\.(?:dev|cloudflarestorage\.com)\/(users\/[^?#]+)/);
-    if (match) {
-      return match[1];
-    }
-  }
-
-  return null;
 }
 
 // DELETE - Delete a carousel
@@ -208,31 +160,16 @@ export async function DELETE(
     }
 
     // Extract all R2 image keys from the slides
-    const imageKeysToDelete: string[] = [];
-
-    if (carousel.slidesJson) {
-      try {
-        const slides = JSON.parse(carousel.slidesJson);
-        for (const slide of slides) {
-          if (slide.canvasJSON) {
-            const keys = extractR2KeysFromCanvasJson(slide.canvasJSON);
-            imageKeysToDelete.push(...keys);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to parse slides JSON:', error);
-      }
-    }
+    const imageKeysToDelete = carousel.slidesJson
+      ? extractR2KeysFromSlidesJson(carousel.slidesJson)
+      : [];
 
     // Delete the carousel from database first
     await db.delete(savedCarousels).where(eq(savedCarousels.id, id));
 
-    // Clean up R2 images in the background (don't block the response)
+    // Clean up R2 files + media records in the background
     if (imageKeysToDelete.length > 0) {
-      // Use Promise.allSettled to not fail if some deletions fail
-      Promise.allSettled(
-        imageKeysToDelete.map(key => deleteFromR2(key))
-      );
+      cleanupR2Keys(imageKeysToDelete);
     }
 
     return NextResponse.json({ message: "Carousel deleted successfully" });

@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { userTemplates } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  extractR2KeysFromCanvasJson,
+  cleanupR2Keys,
+  cleanupRemovedR2Keys,
+} from "@/lib/storage/canvas-r2-cleanup";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -82,6 +87,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       })
       .where(eq(userTemplates.id, id));
 
+    // Clean up R2 images that were removed from the canvas
+    if (canvasJson && existingTemplate.canvasJson) {
+      const oldKeys = extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
+      const newKeys = extractR2KeysFromCanvasJson(canvasJson);
+      cleanupRemovedR2Keys(oldKeys, newKeys);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update template:", error);
@@ -102,7 +114,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
 
-    // Check if template exists and belongs to user
+    // Fetch template with canvas data for R2 cleanup
     const [existingTemplate] = await db
       .select()
       .from(userTemplates)
@@ -117,10 +129,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
-    // Delete template
+    // Delete template from DB first
     await db
       .delete(userTemplates)
       .where(eq(userTemplates.id, id));
+
+    // Clean up R2 images from canvas in the background
+    if (existingTemplate.canvasJson) {
+      const keys = extractR2KeysFromCanvasJson(existingTemplate.canvasJson);
+      if (keys.length > 0) {
+        cleanupR2Keys(keys);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
