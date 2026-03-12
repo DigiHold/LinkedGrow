@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage, Group } from "fabric";
+import { FabricObject, Textbox, FabricImage, Group, Gradient } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -88,6 +88,7 @@ export function ElementProperties({
     width: 0,
     height: 0,
     angle: 0,
+    rx: 0,
     // Text-specific
     fontSize: 48,
     fontFamily: 'Inter',
@@ -98,6 +99,10 @@ export function ElementProperties({
   });
 
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [fillType, setFillType] = useState<'solid' | 'gradient'>('solid');
+  const [gradientColor1, setGradientColor1] = useState('#0891b2');
+  const [gradientColor2, setGradientColor2] = useState('#6366f1');
+  const [gradientAngle, setGradientAngle] = useState(90);
   const [iconColor, setIconColor] = useState('#000000');
   const [fontsCacheReady, setFontsCacheReady] = useState(false);
 
@@ -113,8 +118,33 @@ export function ElementProperties({
     const isTextbox = selectedElement instanceof Textbox;
     const textbox = isTextbox ? selectedElement as Textbox : null;
 
+    // Detect gradient fill
+    const fillValue = selectedElement.fill;
+    if (fillValue && typeof fillValue === 'object' && 'colorStops' in fillValue) {
+      setFillType('gradient');
+      const gradientObj = fillValue as InstanceType<typeof Gradient>;
+      const stops = gradientObj.colorStops || [];
+      if (stops.length >= 1) {
+        setGradientColor1(stops[0].color);
+        if (stops.length >= 2) {
+          setGradientColor2(stops[stops.length - 1].color);
+        }
+      }
+      const coords = gradientObj.coords as { x1: number; y1: number; x2: number; y2: number };
+      if (coords) {
+        const w = selectedElement.width || 1;
+        const h = selectedElement.height || 1;
+        const dx = (coords.x2 - coords.x1) / w;
+        const dy = (coords.y2 - coords.y1) / h;
+        const angleDeg = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360;
+        setGradientAngle(Math.round(angleDeg));
+      }
+    } else {
+      setFillType('solid');
+    }
+
     setElementProps({
-      fill: (selectedElement.fill as string) || '#000000',
+      fill: typeof fillValue === 'string' ? fillValue : '#000000',
       stroke: (selectedElement.stroke as string) || '',
       strokeWidth: selectedElement.strokeWidth || 0,
       opacity: selectedElement.opacity || 1,
@@ -123,6 +153,8 @@ export function ElementProperties({
       width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
       height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
       angle: Math.round(selectedElement.angle || 0),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rx: (selectedElement as any).rx || 0,
       // Text-specific
       fontSize: textbox?.fontSize || 48,
       fontFamily: textbox?.fontFamily || 'Inter',
@@ -318,6 +350,39 @@ export function ElementProperties({
     canvas.renderAll();
     setIconColor(color);
   }, [selectedElement, isIconElement, canvasRef]);
+
+  const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement : false;
+
+  // Apply gradient fill to selected element
+  const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
+    if (!selectedElement) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const w = selectedElement.width || 100;
+    const h = selectedElement.height || 100;
+
+    const angleRad = (angle - 90) * Math.PI / 180;
+    const gradient = new Gradient({
+      type: 'linear',
+      coords: {
+        x1: (0.5 - Math.cos(angleRad) * 0.5) * w,
+        y1: (0.5 - Math.sin(angleRad) * 0.5) * h,
+        x2: (0.5 + Math.cos(angleRad) * 0.5) * w,
+        y2: (0.5 + Math.sin(angleRad) * 0.5) * h,
+      },
+      colorStops: [
+        { offset: 0, color: color1 },
+        { offset: 1, color: color2 },
+      ],
+    });
+
+    selectedElement.set('fill', gradient);
+    canvas.renderAll();
+    setGradientColor1(color1);
+    setGradientColor2(color2);
+    setGradientAngle(angle);
+  }, [selectedElement, canvasRef]);
 
   return (
     <div className={cn("w-72 bg-background border-l border-border flex flex-col h-full overflow-hidden", className)}>
@@ -614,40 +679,150 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Color (for text and shapes, not images) */}
-              {!isImageElement && (
+              {/* Fill (for text and shapes, not images or icons) */}
+              {!isImageElement && !isIconElement && (
                 <div>
                   <Label className="text-xs text-muted-foreground">
-                    {isTextElement ? 'Text Color' : 'Fill Color'}
+                    {isTextElement ? 'Text Color' : 'Fill'}
                   </Label>
-                  <div className="mt-2">
-                    <div className="flex gap-2 items-center mb-2">
-                      <input
-                        type="color"
-                        value={elementProps.fill}
-                        onChange={(e) => updateElement({ fill: e.target.value })}
-                        className="w-8 h-8 rounded cursor-pointer border-0"
-                      />
-                      <Input
-                        value={elementProps.fill}
-                        onChange={(e) => updateElement({ fill: e.target.value })}
-                        className="h-8 text-xs flex-1"
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {PRESET_COLORS.map((color) => (
-                        <button
-                          key={color}
-                          className={cn(
-                            "w-5 h-5 rounded border border-border hover:scale-110 transition-transform",
-                            elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
-                          )}
-                          style={{ backgroundColor: color }}
-                          onClick={() => updateElement({ fill: color })}
-                        />
-                      ))}
-                    </div>
+
+                  {/* Solid / Gradient toggle */}
+                  <div className="flex gap-1 mt-2 mb-3">
+                    <Button
+                      variant={fillType === 'solid' ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => {
+                        setFillType('solid');
+                        const solidColor = gradientColor1 || elementProps.fill;
+                        updateElement({ fill: solidColor });
+                      }}
+                    >
+                      Solid
+                    </Button>
+                    <Button
+                      variant={fillType === 'gradient' ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1 h-7 text-xs"
+                      onClick={() => {
+                        setFillType('gradient');
+                        applyGradientFill(gradientColor1, gradientColor2, gradientAngle);
+                      }}
+                    >
+                      Gradient
+                    </Button>
                   </div>
+
+                  {fillType === 'solid' ? (
+                    <div>
+                      <div className="flex gap-2 items-center mb-2">
+                        <input
+                          type="color"
+                          value={elementProps.fill}
+                          onChange={(e) => updateElement({ fill: e.target.value })}
+                          className="w-8 h-8 rounded cursor-pointer border-0"
+                        />
+                        <Input
+                          value={elementProps.fill}
+                          onChange={(e) => updateElement({ fill: e.target.value })}
+                          className="h-8 text-xs flex-1"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {PRESET_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            className={cn(
+                              "w-5 h-5 rounded border border-border hover:scale-110 transition-transform",
+                              elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
+                            )}
+                            style={{ backgroundColor: color }}
+                            onClick={() => updateElement({ fill: color })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Start Color */}
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Start Color</Label>
+                        <div className="flex gap-2 items-center mt-1">
+                          <input
+                            type="color"
+                            value={gradientColor1}
+                            onChange={(e) => applyGradientFill(e.target.value, gradientColor2, gradientAngle)}
+                            className="w-8 h-8 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={gradientColor1}
+                            onChange={(e) => applyGradientFill(e.target.value, gradientColor2, gradientAngle)}
+                            className="h-8 text-xs flex-1"
+                          />
+                        </div>
+                      </div>
+                      {/* End Color */}
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">End Color</Label>
+                        <div className="flex gap-2 items-center mt-1">
+                          <input
+                            type="color"
+                            value={gradientColor2}
+                            onChange={(e) => applyGradientFill(gradientColor1, e.target.value, gradientAngle)}
+                            className="w-8 h-8 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={gradientColor2}
+                            onChange={(e) => applyGradientFill(gradientColor1, e.target.value, gradientAngle)}
+                            className="h-8 text-xs flex-1"
+                          />
+                        </div>
+                      </div>
+                      {/* Angle */}
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Angle</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[gradientAngle]}
+                            onValueChange={([val]) => applyGradientFill(gradientColor1, gradientColor2, val)}
+                            max={360}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <span className="text-xs text-muted-foreground w-8">
+                            {gradientAngle}°
+                          </span>
+                        </div>
+                      </div>
+                      {/* Gradient preview */}
+                      <div
+                        className="h-6 rounded border border-border"
+                        style={{
+                          background: `linear-gradient(${gradientAngle}deg, ${gradientColor1}, ${gradientColor2})`,
+                        }}
+                      />
+                      {/* Preset gradients */}
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Presets</Label>
+                        <div className="grid grid-cols-3 gap-1 mt-1">
+                          {GRADIENT_PRESETS.map((preset) => (
+                            <button
+                              key={preset.label}
+                              className="h-6 rounded border border-border hover:scale-105 transition-transform"
+                              style={{ background: preset.value }}
+                              onClick={() => {
+                                const match = preset.value.match(/linear-gradient\((\d+)deg,\s*(#[a-fA-F0-9]{6})\s*\d*%?,\s*(#[a-fA-F0-9]{6})\s*\d*%?\)/);
+                                if (match) {
+                                  applyGradientFill(match[2], match[3], parseInt(match[1], 10));
+                                }
+                              }}
+                              title={preset.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -673,6 +848,47 @@ export function ElementProperties({
                       />
                       <span className="text-xs text-muted-foreground">px</span>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Border Radius (for all shapes) */}
+              {isShapeElement && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Slider
+                      value={[elementProps.rx]}
+                      onValueChange={([val]) => {
+                        if (!selectedElement) return;
+                        const canvas = canvasRef.current?.getCanvas();
+                        if (!canvas) return;
+                        selectedElement.set('rx' as keyof FabricObject, val);
+                        selectedElement.set('ry' as keyof FabricObject, val);
+                        canvas.renderAll();
+                        setElementProps(prev => ({ ...prev, rx: val }));
+                      }}
+                      max={Math.round(Math.min(elementProps.width, elementProps.height) / 2)}
+                      step={1}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={elementProps.rx}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (!selectedElement) return;
+                        const canvas = canvasRef.current?.getCanvas();
+                        if (!canvas) return;
+                        selectedElement.set('rx' as keyof FabricObject, val);
+                        selectedElement.set('ry' as keyof FabricObject, val);
+                        canvas.renderAll();
+                        setElementProps(prev => ({ ...prev, rx: val }));
+                      }}
+                      className="h-8 text-xs w-16"
+                      min={0}
+                    />
+                    <span className="text-xs text-muted-foreground">px</span>
                   </div>
                 </div>
               )}

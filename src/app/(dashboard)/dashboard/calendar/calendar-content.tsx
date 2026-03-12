@@ -144,6 +144,11 @@ export function CalendarContent() {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Drag and drop state
+  const [draggedPost, setDraggedPost] = useState<Post | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<{ day: number; month: number; year: number } | null>(null);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+
   // LinkedIn profile data for preview
   const [linkedInProfile, setLinkedInProfile] = useState<{
     name: string;
@@ -451,6 +456,127 @@ export function CalendarContent() {
       case "published": return "bg-green-500";
       case "failed": return "bg-red-500";
       default: return "bg-yellow-500";
+    }
+  };
+
+  // Drag and drop handlers for rescheduling posts
+  const handlePostDragStart = (post: Post, e: React.DragEvent) => {
+    // Only allow dragging non-published posts
+    if (post.status === "published") {
+      e.preventDefault();
+      return;
+    }
+    setDraggedPost(post);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', post.id);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.4';
+    }
+  };
+
+  const handlePostDragEnd = (e: React.DragEvent) => {
+    setDraggedPost(null);
+    setDragOverDay(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  };
+
+  const handleDayDragOver = (item: typeof days[0], e: React.DragEvent) => {
+    if (!draggedPost) return;
+
+    // Only allow drop on current month future dates
+    if (!item.isCurrentMonth || isPast(item.day, item.month, item.year)) {
+      e.dataTransfer.dropEffect = 'none';
+      return;
+    }
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDay({ day: item.day, month: item.month, year: item.year });
+  };
+
+  const handleDayDragLeave = (e: React.DragEvent) => {
+    // Only clear if leaving the cell entirely (not entering a child)
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!e.currentTarget.contains(relatedTarget)) {
+      setDragOverDay(null);
+    }
+  };
+
+  const handleDayDrop = async (item: typeof days[0], e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverDay(null);
+
+    if (!draggedPost || isRescheduling) return;
+    if (!item.isCurrentMonth || isPast(item.day, item.month, item.year)) return;
+
+    const post = draggedPost;
+    setDraggedPost(null);
+
+    // Get the original date/time
+    const originalDate = post.scheduledAt || post.createdAt;
+    if (!originalDate) return;
+
+    // Check if dropped on the same day - no-op
+    const existingDateStr = new Date(originalDate).toISOString().split("T")[0];
+    const newDateStr = `${item.year}-${String(item.month + 1).padStart(2, '0')}-${String(item.day).padStart(2, '0')}`;
+    if (existingDateStr === newDateStr) return;
+
+    // Extract time in user's timezone so we preserve it
+    const tz = resolveTimezone(userTimezone);
+    const dateObj = new Date(originalDate);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(dateObj);
+    const hour = parts.find(p => p.type === 'hour')?.value || '12';
+    const minute = parts.find(p => p.type === 'minute')?.value || '00';
+    const timeStr = `${hour}:${minute}`;
+
+    const newScheduledAt = localToUTC(newDateStr, timeStr, tz);
+
+    // Validate the new datetime is in the future
+    if (new Date(newScheduledAt) <= new Date()) {
+      showError("Cannot schedule in the past");
+      return;
+    }
+
+    // Determine new status
+    const newStatus = (post.status === 'draft' || post.status === 'failed') ? 'scheduled' : post.status;
+
+    // Optimistic update
+    const updatedPost = { ...post, scheduledAt: newScheduledAt, status: newStatus as Post["status"] };
+    setPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
+
+    setIsRescheduling(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduledAt: newScheduledAt,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reschedule');
+      }
+
+      // Refresh to get accurate data from server
+      fetchPosts();
+      fetchAllPosts();
+    } catch (error) {
+      // Revert optimistic update
+      setPosts(prev => prev.map(p => p.id === post.id ? post : p));
+      showError(error instanceof Error ? error.message : 'Failed to reschedule post');
+    } finally {
+      setIsRescheduling(false);
     }
   };
 
@@ -889,17 +1015,25 @@ export function CalendarContent() {
               const isClickable = item.isCurrentMonth && !dayIsPast;
               const isSelected = selectedDay?.day === item.day && selectedDay?.month === item.month && selectedDay?.year === item.year;
 
+              const isDragOver = dragOverDay?.day === item.day && dragOverDay?.month === item.month && dragOverDay?.year === item.year;
+
               return (
                 <div
                   key={index}
                   onClick={(e) => handleDayClick(item, e)}
+                  onDragOver={(e) => handleDayDragOver(item, e)}
+                  onDragLeave={handleDayDragLeave}
+                  onDrop={(e) => handleDayDrop(item, e)}
                   className={cn(
                     "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
                     !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
                     isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
                     dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20 calendar-past-stripes",
                     isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
-                    index % 7 === 6 && "border-r-0"
+                    index % 7 === 6 && "border-r-0",
+                    // Drag and drop visual feedback
+                    draggedPost && item.isCurrentMonth && !dayIsPast && !isDragOver && "ring-1 ring-inset ring-primary/20",
+                    isDragOver && "bg-primary/10 dark:bg-primary/20 ring-2 ring-inset ring-primary"
                   )}
                 >
                   {/* Day Number */}
@@ -923,12 +1057,16 @@ export function CalendarContent() {
                         <button
                           key={post.id}
                           onClick={(e) => handlePostClick(post, e)}
+                          draggable={post.status !== "published"}
+                          onDragStart={(e) => handlePostDragStart(post, e)}
+                          onDragEnd={handlePostDragEnd}
                           className={cn(
                             "w-full p-1 rounded-sm overflow-hidden border transition-opacity hover:opacity-80 text-left",
                             post.status === "draft" && "border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20",
                             post.status === "scheduled" && "border-blue-300 bg-blue-50 dark:bg-blue-900/20",
                             post.status === "published" && "border-green-300 bg-green-50 dark:bg-green-900/20",
-                            post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20"
+                            post.status === "failed" && "border-red-300 bg-red-50 dark:bg-red-900/20",
+                            post.status !== "published" && "cursor-grab active:cursor-grabbing"
                           )}
                         >
                           <div className="flex items-center gap-1.5 px-1.5 py-1">
