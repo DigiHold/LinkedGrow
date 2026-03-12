@@ -52,7 +52,7 @@ import { ImageGeneratorModal } from "@/components/dashboard/image-generator-moda
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -187,7 +187,8 @@ export function CalendarContent() {
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const daysInMonth = lastDayOfMonth.getDate();
-  const startingDay = firstDayOfMonth.getDay();
+  // Convert getDay() (0=Sun) to Monday-first (0=Mon)
+  const startingDay = (firstDayOfMonth.getDay() + 6) % 7;
 
   const fetchPosts = useCallback(async () => {
     try {
