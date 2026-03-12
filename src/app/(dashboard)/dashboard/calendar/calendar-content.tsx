@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -1238,8 +1239,8 @@ export function CalendarContent() {
         </div>
       )}
 
-      {/* Insert Idea Modal */}
-      {ideaModalOpen && (
+      {/* Insert Idea Modal - rendered via portal to be above drawer */}
+      {ideaModalOpen && createPortal(
         <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40" onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 z-201">
@@ -1277,11 +1278,12 @@ export function CalendarContent() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Delete Post Confirmation Modal */}
-      {showDeleteConfirm && selectedPost && (
+      {/* Delete Post Confirmation Modal - rendered via portal to be above drawer */}
+      {showDeleteConfirm && selectedPost && createPortal(
         <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-201">
@@ -1303,7 +1305,8 @@ export function CalendarContent() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Multi-purpose Drawer */}
