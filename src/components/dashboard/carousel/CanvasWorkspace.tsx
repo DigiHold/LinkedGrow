@@ -117,6 +117,10 @@ Textbox.createControls = function() {
   return result;
 };
 
+// Register custom per-corner radius properties as cache-invalidating
+// so Fabric regenerates the render cache when they change via set()
+Rect.cacheProperties = [...Rect.cacheProperties, 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL'];
+
 // Override Rect._render to support per-corner border radius (radiusTL/TR/BR/BL)
 const kRect = 1 - 0.5522847498; // bezier constant for circular arc approximation
 const origRectRender = Rect.prototype._render;
@@ -1695,7 +1699,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const bound = active.getBoundingRect();
                         active.set('left', (active.left || 0) - bound.left);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}
@@ -1712,7 +1719,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const offset = (active.left || 0) - bound.left;
                         active.set('left', (CANVAS_WIDTH - bound.width) / 2 + offset);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}
@@ -1729,7 +1739,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const offset = (active.left || 0) - bound.left;
                         active.set('left', CANVAS_WIDTH - bound.width + offset);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}
@@ -1746,7 +1759,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const bound = active.getBoundingRect();
                         active.set('top', (active.top || 0) - bound.top);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}
@@ -1763,7 +1779,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const offset = (active.top || 0) - bound.top;
                         active.set('top', (CANVAS_HEIGHT - bound.height) / 2 + offset);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}
@@ -1780,7 +1799,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const offset = (active.top || 0) - bound.top;
                         active.set('top', CANVAS_HEIGHT - bound.height + offset);
                         active.setCoords();
+                        active.fire('modified');
                         canvas.renderAll();
+                        updateFloatingPos();
+                        saveHistory();
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
                       }}

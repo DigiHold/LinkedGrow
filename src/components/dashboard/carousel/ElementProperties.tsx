@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow } from "fabric";
+import { Canvas, FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -256,27 +256,31 @@ export function ElementProperties({
     canvasRef.current?.sendBackward();
   };
 
+  // Helper: after programmatic alignment, fire events so group layout
+  // recalculates and floating buttons update position
+  const fireAlignmentDone = useCallback((element: FabricObject, canvas: Canvas) => {
+    // Trigger group layout manager to recalculate bounds (if element is in a group)
+    element.fire('modified');
+    // Trigger canvas handler to update floating buttons + save history
+    canvas.fire('object:modified', { target: element });
+  }, []);
+
   // Alignment functions - use getBoundingRect for accurate positioning
   const alignHorizontalCenter = useCallback(() => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    // Get the bounding rect which accounts for scale, rotation, etc.
     const bound = selectedElement.getBoundingRect();
-    const objWidth = bound.width;
-    const currentLeft = selectedElement.left || 0;
-    const boundLeft = bound.left;
-
-    // Calculate offset between object's left and bound's left
-    const offset = currentLeft - boundLeft;
-    const newLeft = (CANVAS_WIDTH - objWidth) / 2 + offset;
+    const offset = (selectedElement.left || 0) - bound.left;
+    const newLeft = (CANVAS_WIDTH - bound.width) / 2 + offset;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const alignVerticalCenter = useCallback(() => {
     if (!selectedElement) return;
@@ -284,18 +288,15 @@ export function ElementProperties({
     if (!canvas) return;
 
     const bound = selectedElement.getBoundingRect();
-    const objHeight = bound.height;
-    const currentTop = selectedElement.top || 0;
-    const boundTop = bound.top;
-
-    const offset = currentTop - boundTop;
-    const newTop = (CANVAS_HEIGHT - objHeight) / 2 + offset;
+    const offset = (selectedElement.top || 0) - bound.top;
+    const newTop = (CANVAS_HEIGHT - bound.height) / 2 + offset;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const alignToLeft = useCallback(() => {
     if (!selectedElement) return;
@@ -303,18 +304,14 @@ export function ElementProperties({
     if (!canvas) return;
 
     const bound = selectedElement.getBoundingRect();
-    const currentLeft = selectedElement.left || 0;
-    const boundLeft = bound.left;
-
-    // Move so the left edge of the bounding box is at 0
-    const offset = currentLeft - boundLeft;
-    const newLeft = offset;
+    const newLeft = (selectedElement.left || 0) - bound.left;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const alignToRight = useCallback(() => {
     if (!selectedElement) return;
@@ -322,19 +319,15 @@ export function ElementProperties({
     if (!canvas) return;
 
     const bound = selectedElement.getBoundingRect();
-    const objWidth = bound.width;
-    const currentLeft = selectedElement.left || 0;
-    const boundLeft = bound.left;
-
-    // Move so the right edge of the bounding box is at CANVAS_WIDTH
-    const offset = currentLeft - boundLeft;
-    const newLeft = CANVAS_WIDTH - objWidth + offset;
+    const offset = (selectedElement.left || 0) - bound.left;
+    const newLeft = CANVAS_WIDTH - bound.width + offset;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, left: Math.round(newLeft) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const alignToTop = useCallback(() => {
     if (!selectedElement) return;
@@ -342,18 +335,14 @@ export function ElementProperties({
     if (!canvas) return;
 
     const bound = selectedElement.getBoundingRect();
-    const currentTop = selectedElement.top || 0;
-    const boundTop = bound.top;
-
-    // Move so the top edge of the bounding box is at 0
-    const offset = currentTop - boundTop;
-    const newTop = offset;
+    const newTop = (selectedElement.top || 0) - bound.top;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const alignToBottom = useCallback(() => {
     if (!selectedElement) return;
@@ -361,19 +350,15 @@ export function ElementProperties({
     if (!canvas) return;
 
     const bound = selectedElement.getBoundingRect();
-    const objHeight = bound.height;
-    const currentTop = selectedElement.top || 0;
-    const boundTop = bound.top;
-
-    // Move so the bottom edge of the bounding box is at CANVAS_HEIGHT
-    const offset = currentTop - boundTop;
-    const newTop = CANVAS_HEIGHT - objHeight + offset;
+    const offset = (selectedElement.top || 0) - bound.top;
+    const newTop = CANVAS_HEIGHT - bound.height + offset;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
     canvas.renderAll();
     setElementProps(prev => ({ ...prev, top: Math.round(newTop) }));
-  }, [selectedElement, canvasRef]);
+    fireAlignmentDone(selectedElement, canvas);
+  }, [selectedElement, canvasRef, fireAlignmentDone]);
 
   const isTextElement = selectedElement instanceof Textbox;
   const isImageElement = selectedElement instanceof FabricImage;
@@ -976,12 +961,8 @@ export function ElementProperties({
                   if (!canvas) return;
                   normalizeRect();
                   const clamped = Math.max(0, Math.min(val, borderRadiusMax));
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const el = selectedElement as any;
-                  el[corner] = clamped;
-                  // Use set() for rx/ry to mark dirty, and explicitly mark dirty for custom prop
-                  selectedElement.set({ rx: 0, ry: 0 } as Record<string, unknown>);
-                  selectedElement.dirty = true;
+                  // Use set() for all props - custom corner props are registered in Rect.cacheProperties
+                  selectedElement.set({ [corner]: clamped, rx: 0, ry: 0 } as Record<string, unknown>);
                   selectedElement.setCoords();
                   canvas.renderAll();
                   setElementProps(prev => ({ ...prev, rx: 0, [corner]: clamped }));
@@ -992,14 +973,8 @@ export function ElementProperties({
                   const canvas = canvasRef.current?.getCanvas();
                   if (!canvas) return;
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const el = selectedElement as any;
-                  const currentR = el.rx || 0;
-                  el.radiusTL = currentR;
-                  el.radiusTR = currentR;
-                  el.radiusBR = currentR;
-                  el.radiusBL = currentR;
-                  selectedElement.set({ rx: 0, ry: 0 } as Record<string, unknown>);
-                  selectedElement.dirty = true;
+                  const currentR = (selectedElement as any).rx || 0;
+                  selectedElement.set({ radiusTL: currentR, radiusTR: currentR, radiusBR: currentR, radiusBL: currentR, rx: 0, ry: 0 } as Record<string, unknown>);
                   canvas.renderAll();
                   setPerCornerMode(true);
                   setElementProps(prev => ({ ...prev, rx: 0, radiusTL: currentR, radiusTR: currentR, radiusBR: currentR, radiusBL: currentR }));
@@ -1012,12 +987,12 @@ export function ElementProperties({
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const el = selectedElement as any;
                   const avg = Math.round(((el.radiusTL || 0) + (el.radiusTR || 0) + (el.radiusBR || 0) + (el.radiusBL || 0)) / 4);
+                  // Clear per-corner props and set uniform via set() for proper cache invalidation
                   delete el.radiusTL;
                   delete el.radiusTR;
                   delete el.radiusBR;
                   delete el.radiusBL;
                   selectedElement.set({ rx: avg, ry: avg } as Record<string, unknown>);
-                  selectedElement.dirty = true;
                   canvas.renderAll();
                   setPerCornerMode(false);
                   setElementProps(prev => ({ ...prev, rx: avg, radiusTL: undefined, radiusTR: undefined, radiusBR: undefined, radiusBL: undefined }));
