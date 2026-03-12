@@ -154,7 +154,7 @@ export function ElementProperties({
       height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
       angle: Math.round(selectedElement.angle || 0),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rx: (selectedElement as any).rx || 0,
+      rx: Math.round(((selectedElement as any).rx || 0) * (selectedElement.scaleX || 1)),
       // Text-specific
       fontSize: textbox?.fontSize || 48,
       fontFamily: textbox?.fontFamily || 'Inter',
@@ -863,8 +863,9 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        selectedElement.set('rx' as keyof FabricObject, val);
-                        selectedElement.set('ry' as keyof FabricObject, val);
+                        const unscaled = val / (selectedElement.scaleX || 1);
+                        selectedElement.set('rx' as keyof FabricObject, unscaled);
+                        selectedElement.set('ry' as keyof FabricObject, unscaled);
                         canvas.renderAll();
                         setElementProps(prev => ({ ...prev, rx: val }));
                       }}
@@ -880,8 +881,9 @@ export function ElementProperties({
                         if (!selectedElement) return;
                         const canvas = canvasRef.current?.getCanvas();
                         if (!canvas) return;
-                        selectedElement.set('rx' as keyof FabricObject, val);
-                        selectedElement.set('ry' as keyof FabricObject, val);
+                        const unscaled = val / (selectedElement.scaleX || 1);
+                        selectedElement.set('rx' as keyof FabricObject, unscaled);
+                        selectedElement.set('ry' as keyof FabricObject, unscaled);
                         canvas.renderAll();
                         setElementProps(prev => ({ ...prev, rx: val }));
                       }}
