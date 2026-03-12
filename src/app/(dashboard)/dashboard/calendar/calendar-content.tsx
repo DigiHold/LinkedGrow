@@ -548,9 +548,10 @@ export function CalendarContent() {
     // Determine new status
     const newStatus = (post.status === 'draft' || post.status === 'failed') ? 'scheduled' : post.status;
 
-    // Optimistic update
+    // Optimistic update - no refetch needed, just move the post in local state
     const updatedPost = { ...post, scheduledAt: newScheduledAt, status: newStatus as Post["status"] };
     setPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
+    setAllPosts(prev => prev.map(p => p.id === post.id ? updatedPost : p));
 
     setIsRescheduling(true);
     try {
@@ -567,13 +568,10 @@ export function CalendarContent() {
         const data = await response.json();
         throw new Error(data.error || 'Failed to reschedule');
       }
-
-      // Refresh to get accurate data from server
-      fetchPosts();
-      fetchAllPosts();
     } catch (error) {
       // Revert optimistic update
       setPosts(prev => prev.map(p => p.id === post.id ? post : p));
+      setAllPosts(prev => prev.map(p => p.id === post.id ? post : p));
       showError(error instanceof Error ? error.message : 'Failed to reschedule post');
     } finally {
       setIsRescheduling(false);
