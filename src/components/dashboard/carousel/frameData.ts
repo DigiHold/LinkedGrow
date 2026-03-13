@@ -4,9 +4,6 @@
 export type FrameCategory =
   | 'basic'
   | 'blob'
-  | 'film'
-  | 'devices'
-  | 'paper'
   | 'flowers'
   | 'retro'
   | 'letters'
@@ -23,9 +20,6 @@ export interface FrameDefinition {
 export const frameCategories: { id: FrameCategory; label: string }[] = [
   { id: 'basic', label: 'Basic' },
   { id: 'blob', label: 'Blob' },
-  { id: 'film', label: 'Film' },
-  { id: 'devices', label: 'Devices' },
-  { id: 'paper', label: 'Paper' },
   { id: 'flowers', label: 'Flowers' },
   { id: 'retro', label: 'Retro' },
   { id: 'letters', label: 'Letters' },
@@ -208,92 +202,6 @@ export const frameDefinitions: FrameDefinition[] = [
     category: 'blob',
     viewBox: { width: 200, height: 200 },
     svgPath: blobPath(100, 100, 6, [90, 86, 92, 84, 88, 90], 0.3),
-  },
-
-  // ============================================
-  // FILM & PHOTO
-  // ============================================
-  {
-    id: 'film-polaroid',
-    name: 'Polaroid',
-    category: 'film',
-    viewBox: { width: 100, height: 120 },
-    svgPath: 'M 5 0 L 95 0 Q 100 0 100 5 L 100 115 Q 100 120 95 120 L 5 120 Q 0 120 0 115 L 0 5 Q 0 0 5 0 Z',
-  },
-  {
-    id: 'film-strip',
-    name: 'Film Strip',
-    category: 'film',
-    viewBox: { width: 120, height: 100 },
-    svgPath: 'M 0 0 L 120 0 L 120 100 L 0 100 Z M 5 8 L 12 8 L 12 18 L 5 18 Z M 5 24 L 12 24 L 12 34 L 5 34 Z M 5 40 L 12 40 L 12 50 L 5 50 Z M 5 56 L 12 56 L 12 66 L 5 66 Z M 5 72 L 12 72 L 12 82 L 5 82 Z M 108 8 L 115 8 L 115 18 L 108 18 Z M 108 24 L 115 24 L 115 34 L 108 34 Z M 108 40 L 115 40 L 115 50 L 108 50 Z M 108 56 L 115 56 L 115 66 L 108 66 Z M 108 72 L 115 72 L 115 82 L 108 82 Z',
-  },
-  {
-    id: 'film-photo-border',
-    name: 'Photo Mat',
-    category: 'film',
-    viewBox: { width: 100, height: 100 },
-    svgPath: 'M 0 0 L 100 0 L 100 100 L 0 100 Z',
-  },
-
-  // ============================================
-  // DEVICES - distinctive device silhouettes
-  // ============================================
-  {
-    id: 'device-phone',
-    name: 'Phone',
-    category: 'devices',
-    viewBox: { width: 75, height: 150 },
-    // Modern smartphone with pill-shaped dynamic island notch and rounded corners
-    svgPath: 'M 15 0 L 27 0 L 27 4 C 27 8 30 10 34 10 L 41 10 C 45 10 48 8 48 4 L 48 0 L 60 0 C 75 0 75 15 75 15 L 75 135 C 75 150 60 150 60 150 L 15 150 C 0 150 0 135 0 135 L 0 15 C 0 0 15 0 15 0 Z',
-  },
-  {
-    id: 'device-laptop',
-    name: 'Laptop',
-    category: 'devices',
-    viewBox: { width: 170, height: 115 },
-    // Laptop with screen area and wider keyboard base connected by hinge
-    svgPath: 'M 20 0 L 150 0 Q 158 0 158 8 L 158 78 L 165 82 Q 170 84 170 88 L 170 105 Q 170 110 165 110 L 5 110 Q 0 110 0 105 L 0 88 Q 0 84 5 82 L 12 78 L 12 8 Q 12 0 20 0 Z',
-  },
-  {
-    id: 'device-tablet',
-    name: 'Tablet',
-    category: 'devices',
-    viewBox: { width: 100, height: 140 },
-    // Modern tablet with slim bezels and large rounded corners
-    svgPath: 'M 14 0 L 86 0 Q 100 0 100 14 L 100 126 Q 100 140 86 140 L 14 140 Q 0 140 0 126 L 0 14 Q 0 0 14 0 Z',
-  },
-  {
-    id: 'device-monitor',
-    name: 'Monitor',
-    category: 'devices',
-    viewBox: { width: 150, height: 125 },
-    // Desktop monitor with screen and stand
-    svgPath: 'M 10 0 L 140 0 Q 150 0 150 10 L 150 86 Q 150 92 140 92 L 82 92 L 82 104 L 98 104 L 98 116 Q 98 120 94 120 L 56 120 Q 52 120 52 116 L 52 104 L 68 104 L 68 92 L 10 92 Q 0 92 0 86 L 0 10 Q 0 0 10 0 Z',
-  },
-
-  // ============================================
-  // PAPER
-  // ============================================
-  {
-    id: 'paper-torn',
-    name: 'Torn Edge',
-    category: 'paper',
-    viewBox: { width: 100, height: 100 },
-    svgPath: 'M 0 5 C 8 3 12 8 20 5 C 28 2 32 7 40 4 C 48 1 52 6 60 3 C 68 0 72 5 80 3 C 88 1 92 4 100 2 L 100 95 C 92 97 88 92 80 95 C 72 98 68 93 60 96 C 52 99 48 94 40 97 C 32 100 28 95 20 98 C 12 101 8 96 0 98 Z',
-  },
-  {
-    id: 'paper-sticky',
-    name: 'Sticky Note',
-    category: 'paper',
-    viewBox: { width: 100, height: 100 },
-    svgPath: 'M 0 0 L 100 0 L 100 75 L 75 100 L 0 100 Z',
-  },
-  {
-    id: 'paper-notebook',
-    name: 'Notebook',
-    category: 'paper',
-    viewBox: { width: 110, height: 100 },
-    svgPath: 'M 10 0 L 110 0 L 110 100 L 10 100 Z M 0 10 L 15 10 L 15 16 L 0 16 Z M 0 25 L 15 25 L 15 31 L 0 31 Z M 0 40 L 15 40 L 15 46 L 0 46 Z M 0 55 L 15 55 L 15 61 L 0 61 Z M 0 70 L 15 70 L 15 76 L 0 76 Z M 0 85 L 15 85 L 15 91 L 0 91 Z',
   },
 
   // ============================================

@@ -24,8 +24,6 @@ import {
   Underline,
   Trash2,
   Copy,
-  ChevronUp,
-  ChevronDown,
   RotateCcw,
   AlignHorizontalJustifyCenter,
   AlignVerticalJustifyCenter,
@@ -252,8 +250,16 @@ export function ElementProperties({
     canvasRef.current?.bringForward();
   };
 
+  const handleBringToFront = () => {
+    canvasRef.current?.bringToFront();
+  };
+
   const handleSendBackward = () => {
     canvasRef.current?.sendBackward();
+  };
+
+  const handleSendToBack = () => {
+    canvasRef.current?.sendToBack();
   };
 
   // Helper: after programmatic alignment, fire events so group layout
@@ -485,24 +491,42 @@ export function ElementProperties({
               {/* Layer Order */}
               <div>
                 <Label className="text-xs text-muted-foreground">Layer Order</Label>
-                <div className="flex gap-2 mt-2">
+                <div className="grid grid-cols-2 gap-2 mt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleBringForward}
-                    className="flex-1"
+                    className="h-8 text-xs"
                   >
-                    <ChevronUp className="w-3 h-3 mr-1" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg>
                     Forward
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleSendBackward}
-                    className="flex-1"
+                    onClick={handleBringToFront}
+                    className="h-8 text-xs"
                   >
-                    <ChevronDown className="w-3 h-3 mr-1" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></svg>
+                    To Front
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendBackward}
+                    className="h-8 text-xs"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M19 3H5"/><path d="M12 21V7"/><path d="m6 15 6 6 6-6"/></svg>
                     Backward
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendToBack}
+                    className="h-8 text-xs"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+                    To Back
                   </Button>
                 </div>
               </div>

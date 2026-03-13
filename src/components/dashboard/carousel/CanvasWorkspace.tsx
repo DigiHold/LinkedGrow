@@ -22,8 +22,6 @@ import {
   Trash2,
   Layers,
   Ungroup as UngroupIcon,
-  ChevronUp,
-  ChevronDown,
   ChevronRight,
   AlignStartVertical,
   AlignHorizontalJustifyCenter,
@@ -360,7 +358,9 @@ export interface CanvasWorkspaceRef {
   groupSelected: () => void;
   ungroupSelected: () => void;
   bringForward: () => void;
+  bringToFront: () => void;
   sendBackward: () => void;
+  sendToBack: () => void;
   setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => void;
   exportToDataURL: () => string;
   exportToJSON: () => string;
@@ -406,6 +406,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const frameHighlightRef = useRef<FabricObject | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [alignSubmenuOpen, setAlignSubmenuOpen] = useState(false);
+    const [layerSubmenuOpen, setLayerSubmenuOpen] = useState(false);
     const [floatingBtnPos, setFloatingBtnPos] = useState<{ x: number; y: number } | null>(null);
     // Frame crop mode state
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1443,18 +1444,21 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         canvas.discardActiveObject();
         // removeAll() properly converts child coordinates to absolute canvas coords
-        // via Fabric's _exitGroup -> applyTransformToObject -> setPositionByOrigin
         activeObject.removeAll();
         canvas.remove(activeObject);
 
-        // Add children back (they already have correct absolute positions)
+        // Filter out empty groups and add children back
+        const validObjects: FabricObject[] = [];
         objects.forEach(obj => {
+          // Skip empty groups (0 children)
+          if (obj instanceof Group && obj.getObjects().length === 0) return;
           obj.setCoords();
           canvas.add(obj);
+          validObjects.push(obj);
         });
 
-        if (objects.length > 0) {
-          const selection = new ActiveSelection(objects, { canvas });
+        if (validObjects.length > 0) {
+          const selection = new ActiveSelection(validObjects, { canvas });
           canvas.setActiveObject(selection);
         }
         canvas.renderAll();
@@ -1464,20 +1468,49 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       bringForward: () => {
         if (!fabricRef.current) return;
-        const activeObject = fabricRef.current.getActiveObject();
-        if (activeObject) {
-          fabricRef.current.bringObjectForward(activeObject);
-          fabricRef.current.renderAll();
-        }
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        fabricRef.current.bringObjectForward(active);
+        fabricRef.current.renderAll();
+        saveHistory();
+      },
+
+      bringToFront: () => {
+        if (!fabricRef.current) return;
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        fabricRef.current.bringObjectToFront(active);
+        fabricRef.current.renderAll();
+        saveHistory();
       },
 
       sendBackward: () => {
         if (!fabricRef.current) return;
-        const activeObject = fabricRef.current.getActiveObject();
-        if (activeObject) {
-          fabricRef.current.sendObjectBackwards(activeObject);
-          fabricRef.current.renderAll();
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        const canvas = fabricRef.current;
+        const objects = canvas.getObjects();
+        const idx = objects.indexOf(active);
+        // Don't send below background rect (index 0)
+        if (idx <= 1) return;
+        canvas.sendObjectBackwards(active);
+        canvas.renderAll();
+        saveHistory();
+      },
+
+      sendToBack: () => {
+        if (!fabricRef.current) return;
+        const active = fabricRef.current.getActiveObject();
+        if (!active) return;
+        const canvas = fabricRef.current;
+        canvas.sendObjectToBack(active);
+        // Move above background rect if present
+        const objects = canvas.getObjects();
+        if (objects.length > 1 && objects[0]?.isBackgroundRect) {
+          canvas.moveObjectTo(active, 1);
         }
+        canvas.renderAll();
+        saveHistory();
       },
 
       setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => {
@@ -2245,38 +2278,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         {/* Right-click context menu */}
         {contextMenu && (
           <>
-            <div className="fixed inset-0 z-9998" onClick={() => { setContextMenu(null); setAlignSubmenuOpen(false); }} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); setAlignSubmenuOpen(false); }} />
+            <div className="fixed inset-0 z-9998" onClick={() => { setContextMenu(null); setAlignSubmenuOpen(false); setLayerSubmenuOpen(false); }} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); setAlignSubmenuOpen(false); setLayerSubmenuOpen(false); }} />
             <div
               className="fixed z-9999 min-w-44 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
-              {/* Bring Forward */}
-              <button
-                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                onClick={() => {
-                  const active = fabricRef.current?.getActiveObject();
-                  if (active) fabricRef.current!.bringObjectForward(active);
-                  fabricRef.current?.renderAll();
-                  setContextMenu(null);
-                  setAlignSubmenuOpen(false);
-                }}
-              >
-                <ChevronUp className="w-3.5 h-3.5" /> Bring Forward
-              </button>
-              {/* Send Backward */}
-              <button
-                className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                onClick={() => {
-                  const active = fabricRef.current?.getActiveObject();
-                  if (active) fabricRef.current!.sendObjectBackwards(active);
-                  fabricRef.current?.renderAll();
-                  setContextMenu(null);
-                  setAlignSubmenuOpen(false);
-                }}
-              >
-                <ChevronDown className="w-3.5 h-3.5" /> Send Backward
-              </button>
-              <div className="h-px bg-border my-1" />
               {/* Duplicate */}
               <button
                 className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
@@ -2290,12 +2296,83 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                   });
                   setContextMenu(null);
                   setAlignSubmenuOpen(false);
+                  setLayerSubmenuOpen(false);
                 }}
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </button>
+              {/* Layer (submenu) */}
+              <div className="relative" onMouseEnter={() => { setLayerSubmenuOpen(true); setAlignSubmenuOpen(false); }} onMouseLeave={() => setLayerSubmenuOpen(false)}>
+                <button className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 justify-between">
+                  <span className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg>
+                    Layer
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                </button>
+                {layerSubmenuOpen && (
+                  <div className="absolute left-full top-0 ml-0.5 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm">
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const active = fabricRef.current?.getActiveObject();
+                        if (active) { fabricRef.current!.bringObjectForward(active); fabricRef.current!.renderAll(); saveHistory(); }
+                        setContextMenu(null); setLayerSubmenuOpen(false); setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg>
+                      Bring Forward
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const active = fabricRef.current?.getActiveObject();
+                        if (active) { fabricRef.current!.bringObjectToFront(active); fabricRef.current!.renderAll(); saveHistory(); }
+                        setContextMenu(null); setLayerSubmenuOpen(false); setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></svg>
+                      Bring to Front
+                    </button>
+                    <div className="h-px bg-border my-1" />
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (active && canvas) {
+                          const objects = canvas.getObjects();
+                          const idx = objects.indexOf(active);
+                          if (idx > 1) { canvas.sendObjectBackwards(active); canvas.renderAll(); saveHistory(); }
+                        }
+                        setContextMenu(null); setLayerSubmenuOpen(false); setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 3H5"/><path d="M12 21V7"/><path d="m6 15 6 6 6-6"/></svg>
+                      Send Backward
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        const canvas = fabricRef.current;
+                        const active = canvas?.getActiveObject();
+                        if (active && canvas) {
+                          canvas.sendObjectToBack(active);
+                          const objects = canvas.getObjects();
+                          if (objects.length > 1 && objects[0]?.isBackgroundRect) { canvas.moveObjectTo(active, 1); }
+                          canvas.renderAll(); saveHistory();
+                        }
+                        setContextMenu(null); setLayerSubmenuOpen(false); setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+                      Send to Back
+                    </button>
+                  </div>
+                )}
+              </div>
               {/* Align to page (submenu) */}
-              <div className="relative" onMouseEnter={() => setAlignSubmenuOpen(true)} onMouseLeave={() => setAlignSubmenuOpen(false)}>
+              <div className="relative" onMouseEnter={() => { setAlignSubmenuOpen(true); setLayerSubmenuOpen(false); }} onMouseLeave={() => setAlignSubmenuOpen(false)}>
                 <button className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 justify-between">
                   <span className="flex items-center gap-2">
                     <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /> Align to page
@@ -2466,12 +2543,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                           canvas.discardActiveObject();
                           active.removeAll();
                           canvas.remove(active);
+                          const validObjects: FabricObject[] = [];
                           objects.forEach(obj => {
+                            if (obj instanceof Group && obj.getObjects().length === 0) return;
                             obj.setCoords();
                             canvas.add(obj);
+                            validObjects.push(obj);
                           });
-                          if (objects.length > 0) {
-                            const selection = new ActiveSelection(objects, { canvas });
+                          if (validObjects.length > 0) {
+                            const selection = new ActiveSelection(validObjects, { canvas });
                             canvas.setActiveObject(selection);
                           }
                           canvas.renderAll();
@@ -2479,6 +2559,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         }
                         setContextMenu(null);
                         setAlignSubmenuOpen(false);
+                        setLayerSubmenuOpen(false);
                       }}
                     >
                       <UngroupIcon className="w-3.5 h-3.5" /> Ungroup
