@@ -616,27 +616,66 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     const overItem = items.find(i => i.id === over.id);
     if (!activeItem || !overItem) return;
 
-    const obj = activeItem.fabricObject;
+    // Determine all items being dragged (multi-select or single)
+    const activeObj = canvas.getActiveObject();
+    const selectedSet = new Set<FabricObject>();
+    if (activeObj instanceof ActiveSelection) {
+      activeObj.getObjects().forEach(o => selectedSet.add(o));
+    }
+    // Always include the dragged item
+    selectedSet.add(activeItem.fabricObject);
+
     const sourceParent = activeItem.parentGroup;
     const targetParent = overItem.parentGroup;
 
     // Prevent dragging a group into itself or its descendants
-    if (activeItem.isGroup) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let check: FabricObject | undefined = targetParent || undefined;
-      while (check) {
-        if (check === obj) return;
+    for (const selObj of selectedSet) {
+      if (selObj instanceof Group) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        check = (check as any).parent;
+        let check: FabricObject | undefined = targetParent || undefined;
+        while (check) {
+          if (check === selObj) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          check = (check as any).parent;
+        }
       }
     }
 
-    if (sourceParent === targetParent) {
-      // Same parent - reorder within that parent
+    // Multi-drag: only supported for same-parent reorder
+    if (selectedSet.size > 1 && sourceParent === targetParent) {
+      const getList = () => sourceParent
+        ? [...sourceParent.getObjects()].reverse()
+        : canvas.getObjects().filter(o => !prop(o, 'isBackgroundRect')).reverse();
+
+      const reversed = getList();
+      const targetIdx = reversed.indexOf(overItem.fabricObject);
+      if (targetIdx === -1) return;
+
+      // Remove selected items, preserving their relative order
+      const selected = reversed.filter(o => selectedSet.has(o));
+      const rest = reversed.filter(o => !selectedSet.has(o));
+
+      // Insert selected items at the drop position
+      const insertIdx = rest.indexOf(overItem.fabricObject);
+      // If drop target is not a selected item, insert before it; otherwise use targetIdx
+      const finalIdx = insertIdx >= 0 ? insertIdx : Math.min(targetIdx, rest.length);
+      rest.splice(finalIdx, 0, ...selected);
+
+      // Apply new z-order
+      const newOrder = [...rest].reverse();
       if (sourceParent) {
-        // Within a group
+        newOrder.forEach((o, i) => sourceParent.moveObjectTo(o, i));
+        sourceParent.setCoords();
+      } else {
+        const bgCount = canvas.getObjects().filter(o => prop(o, 'isBackgroundRect')).length;
+        newOrder.forEach((o, i) => canvas.moveObjectTo(o, i + bgCount));
+      }
+    } else if (sourceParent === targetParent) {
+      // Single item same-parent reorder
+      const obj = activeItem.fabricObject;
+      if (sourceParent) {
         const children = sourceParent.getObjects();
-        const reversed = [...children].reverse(); // flat list order (highest z first)
+        const reversed = [...children].reverse();
         const oldIdx = reversed.indexOf(obj);
         const newIdx = reversed.indexOf(overItem.fabricObject);
         if (oldIdx === -1 || newIdx === -1) return;
@@ -647,7 +686,6 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
         });
         sourceParent.setCoords();
       } else {
-        // Canvas root
         const objects = canvas.getObjects().filter(o => !prop(o, 'isBackgroundRect'));
         const reversed = [...objects].reverse();
         const oldIdx = reversed.indexOf(obj);
@@ -661,9 +699,8 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
         });
       }
     } else {
-      // Cross-parent move: element moves between groups or between group and canvas
-
-      // Remove from source (Fabric.js auto-converts coords to absolute via _exitGroup)
+      // Cross-parent move (single item only)
+      const obj = activeItem.fabricObject;
       if (sourceParent) {
         sourceParent.remove(obj);
         obj.setCoords();
@@ -672,7 +709,6 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
         canvas.remove(obj);
       }
 
-      // Add to target (Fabric.js auto-converts coords to group-relative via _enterGroup)
       if (targetParent) {
         const overIdx = targetParent.getObjects().indexOf(overItem.fabricObject);
         if (overIdx >= 0) {
@@ -683,7 +719,6 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
         targetParent.setCoords();
       } else {
         canvas.add(obj);
-        // Position near the over item in z-order
         const overIdx = canvas.getObjects().indexOf(overItem.fabricObject);
         if (overIdx >= 0) {
           canvas.moveObjectTo(obj, overIdx);
@@ -692,7 +727,7 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (canvas as any).fire('object:modified', { target: obj });
+    (canvas as any).fire('object:modified', { target: activeItem.fabricObject });
     canvas.renderAll();
     refreshLayers();
   }, [canvasRef, refreshLayers]);
