@@ -595,18 +595,40 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         });
 
-        // Draw crop mode frame boundary overlay
+        // Draw crop mode frame shape outline behind image (subtle, like Canva)
         const crop = cropModeRef.current;
         if (crop) {
           const fl = crop.frameLeft * z;
           const ft = crop.frameTop * z;
           const fw = crop.frameWidth * z;
           const fh = crop.frameHeight * z;
+          const svgPath = crop.image._frameSvgPath;
+          const vbStr = crop.image._frameViewBox || '100,100';
+          const [vbW, vbH] = vbStr.split(',').map(Number);
+
           ctx.save();
-          ctx.strokeStyle = '#0891b2';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([6, 4]);
-          ctx.strokeRect(fl, ft, fw, fh);
+
+          if (svgPath) {
+            // Draw the actual frame shape path scaled to frame bounds
+            ctx.translate(fl, ft);
+            ctx.scale(fw / vbW, fh / vbH);
+            const path2d = new Path2D(svgPath);
+            // Subtle filled background
+            ctx.fillStyle = 'rgba(226, 232, 240, 0.35)';
+            ctx.fill(path2d);
+            // Subtle dashed stroke
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
+            ctx.lineWidth = 2 * (vbW / fw);
+            ctx.setLineDash([6 * (vbW / fw), 4 * (vbW / fw)]);
+            ctx.stroke(path2d);
+          } else {
+            // Fallback: dashed rectangle
+            ctx.strokeStyle = '#0891b2';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.strokeRect(fl, ft, fw, fh);
+          }
+
           ctx.restore();
         }
 
@@ -888,6 +910,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       const { image } = crop;
       const frameSvgPath = image._frameSvgPath;
       const frameViewBox = image._frameViewBox;
+      const frameId = image._frameId;
       if (!frameSvgPath || !frameViewBox) {
         cropModeRef.current = null;
         return;
@@ -898,6 +921,61 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       const imgScaleY = image.scaleY || 1;
       const imgCenterX = image.left! + (image.width! * imgScaleX) / 2;
       const imgCenterY = image.top! + (image.height! * imgScaleY) / 2;
+
+      // Check if image center is outside the frame bounds - if so, detach
+      const frameCenterX = crop.frameLeft + crop.frameWidth / 2;
+      const frameCenterY = crop.frameTop + crop.frameHeight / 2;
+      const dx = Math.abs(imgCenterX - frameCenterX);
+      const dy = Math.abs(imgCenterY - frameCenterY);
+      const isOutside = dx > (crop.frameWidth / 2 + (image.width! * imgScaleX) / 2) ||
+                         dy > (crop.frameHeight / 2 + (image.height! * imgScaleY) / 2);
+
+      if (isOutside) {
+        // Detach: strip frame properties, make it a normal image
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ip = image as any;
+        ip._isFrame = false;
+        ip._frameHasImage = false;
+        ip._frameId = undefined;
+        ip._frameSvgPath = undefined;
+        ip._frameViewBox = undefined;
+        image.clipPath = undefined;
+        image.set('opacity', 1);
+        image.dirty = true;
+
+        // Re-create the empty frame at the stored position
+        if (frameId) {
+          const frameDef = getFrameById(frameId);
+          if (frameDef) {
+            const scaleX = crop.frameWidth / frameDef.viewBox.width;
+            const scaleY = crop.frameHeight / frameDef.viewBox.height;
+            const framePath = new Path(frameDef.svgPath, {
+              left: crop.frameLeft,
+              top: crop.frameTop,
+              scaleX,
+              scaleY,
+              fill: '#e2e8f0',
+              stroke: '#94a3b8',
+              strokeWidth: 1.5 / scaleX,
+              strokeDashArray: [8 / scaleX, 4 / scaleX],
+              objectCaching: true,
+            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fp = framePath as any;
+            fp._isFrame = true;
+            fp._frameId = frameId;
+            fp._frameSvgPath = frameDef.svgPath;
+            fp._frameViewBox = `${frameDef.viewBox.width},${frameDef.viewBox.height}`;
+            fp._frameHasImage = false;
+            canvas.add(framePath);
+          }
+        }
+
+        cropModeRef.current = null;
+        canvas.requestRenderAll();
+        saveHistory();
+        return;
+      }
 
       // Recalculate clipPath position AND scale for the image's current transform
       const newClip = new Path(frameSvgPath, {
