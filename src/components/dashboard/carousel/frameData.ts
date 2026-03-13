@@ -57,6 +57,38 @@ function starPath(points: number, cx: number, cy: number, outerR: number, innerR
   return parts.join(' ') + ' Z';
 }
 
+// Smooth organic blob generator using Catmull-Rom to Bezier conversion
+function blobPath(cx: number, cy: number, numPoints: number, radii: number[], startAngle = 0): string {
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < numPoints; i++) {
+    const angle = startAngle + (2 * Math.PI * i) / numPoints - Math.PI / 2;
+    const r = radii[i % radii.length];
+    pts.push({
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+    });
+  }
+
+  const tension = 0.35;
+  const segments: string[] = [`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`];
+
+  for (let i = 0; i < numPoints; i++) {
+    const p0 = pts[(i - 1 + numPoints) % numPoints];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % numPoints];
+    const p3 = pts[(i + 2) % numPoints];
+
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+    segments.push(`C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`);
+  }
+
+  return segments.join(' ') + ' Z';
+}
+
 export const frameDefinitions: FrameDefinition[] = [
   // ============================================
   // BASIC SHAPES
@@ -133,49 +165,49 @@ export const frameDefinitions: FrameDefinition[] = [
   },
 
   // ============================================
-  // BLOB SHAPES
+  // BLOB SHAPES - smooth organic shapes using Catmull-Rom splines
   // ============================================
   {
     id: 'blob-1',
     name: 'Blob 1',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 45 5 C 75 -5 120 10 150 35 C 180 60 195 95 185 130 C 175 165 145 190 110 195 C 75 200 35 185 15 155 C -5 125 -5 85 10 55 C 25 25 15 15 45 5 Z',
+    svgPath: blobPath(100, 100, 8, [92, 85, 88, 82, 90, 78, 94, 84]),
   },
   {
     id: 'blob-2',
     name: 'Blob 2',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 100 10 C 140 5 175 25 190 60 C 205 95 195 140 170 170 C 145 200 105 205 70 190 C 35 175 10 145 5 110 C 0 75 15 40 40 20 C 65 0 60 15 100 10 Z',
+    svgPath: blobPath(100, 100, 6, [90, 72, 92, 78, 86, 82]),
   },
   {
     id: 'blob-3',
     name: 'Blob 3',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 80 8 C 120 -5 160 15 180 50 C 200 85 200 125 180 155 C 160 185 125 200 90 195 C 55 190 25 170 10 140 C -5 110 0 70 20 40 C 40 10 40 21 80 8 Z',
+    svgPath: blobPath(100, 100, 7, [85, 92, 76, 90, 82, 96, 78]),
   },
   {
     id: 'blob-4',
     name: 'Blob 4',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 95 5 C 130 0 165 20 185 55 C 205 90 200 130 175 160 C 150 190 110 200 75 190 C 40 180 10 150 3 115 C -4 80 10 45 35 22 C 60 -1 60 10 95 5 Z',
+    svgPath: blobPath(100, 100, 8, [86, 78, 94, 72, 90, 80, 92, 74]),
   },
   {
     id: 'blob-5',
     name: 'Blob 5',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 60 10 C 100 -10 145 5 175 35 C 205 65 205 110 185 145 C 165 180 130 200 90 195 C 50 190 15 165 5 130 C -5 95 5 60 25 35 C 45 10 20 30 60 10 Z',
+    svgPath: blobPath(100, 100, 5, [92, 78, 88, 74, 94]),
   },
   {
     id: 'blob-6',
     name: 'Blob 6',
     category: 'blob',
     viewBox: { width: 200, height: 200 },
-    svgPath: 'M 110 5 C 145 10 180 35 190 70 C 200 105 190 145 165 175 C 140 205 100 205 65 190 C 30 175 5 140 0 105 C -5 70 10 35 35 15 C 60 -5 75 0 110 5 Z',
+    svgPath: blobPath(100, 100, 6, [90, 86, 92, 84, 88, 90], 0.3),
   },
 
   // ============================================
@@ -204,28 +236,31 @@ export const frameDefinitions: FrameDefinition[] = [
   },
 
   // ============================================
-  // DEVICES
+  // DEVICES - distinctive device silhouettes
   // ============================================
   {
     id: 'device-phone',
     name: 'Phone',
     category: 'devices',
     viewBox: { width: 70, height: 140 },
-    svgPath: 'M 10 0 L 60 0 Q 70 0 70 10 L 70 130 Q 70 140 60 140 L 10 140 Q 0 140 0 130 L 0 10 Q 0 0 10 0 Z',
+    // Modern smartphone with dynamic island notch at top
+    svgPath: 'M 14 0 L 26 0 L 26 3 Q 26 6 29 6 L 41 6 Q 44 6 44 3 L 44 0 L 56 0 Q 70 0 70 14 L 70 126 Q 70 140 56 140 L 14 140 Q 0 140 0 126 L 0 14 Q 0 0 14 0 Z',
   },
   {
     id: 'device-laptop',
     name: 'Laptop',
     category: 'devices',
-    viewBox: { width: 160, height: 110 },
-    svgPath: 'M 15 5 L 145 5 Q 150 5 150 10 L 150 85 L 160 85 L 160 100 Q 160 105 155 105 L 5 105 Q 0 105 0 100 L 0 85 L 10 85 L 10 10 Q 10 5 15 5 Z',
+    viewBox: { width: 160, height: 108 },
+    // Laptop with visible screen and keyboard base
+    svgPath: 'M 18 0 L 142 0 Q 150 0 150 8 L 150 80 L 160 80 Q 160 80 160 84 L 160 98 Q 160 104 154 104 L 6 104 Q 0 104 0 98 L 0 84 Q 0 80 0 80 L 10 80 L 10 8 Q 10 0 18 0 Z',
   },
   {
     id: 'device-tablet',
     name: 'Tablet',
     category: 'devices',
-    viewBox: { width: 100, height: 130 },
-    svgPath: 'M 8 0 L 92 0 Q 100 0 100 8 L 100 122 Q 100 130 92 130 L 8 130 Q 0 130 0 122 L 0 8 Q 0 0 8 0 Z',
+    viewBox: { width: 100, height: 140 },
+    // Modern tablet with slim bezels and rounded corners
+    svgPath: 'M 12 0 L 88 0 Q 100 0 100 12 L 100 128 Q 100 140 88 140 L 12 140 Q 0 140 0 128 L 0 12 Q 0 0 12 0 Z',
   },
 
   // ============================================
@@ -311,191 +346,191 @@ export const frameDefinitions: FrameDefinition[] = [
   },
 
   // ============================================
-  // LETTERS A-Z
+  // LETTERS A-Z - Bold sans-serif, 80x100 viewBox, ~20px strokes
   // ============================================
   {
     id: 'letter-a', name: 'A', category: 'letters',
     viewBox: { width: 80, height: 100 },
-    svgPath: 'M 40 0 L 80 100 L 65 100 L 55 72 L 25 72 L 15 100 L 0 100 Z M 30 58 L 50 58 L 40 28 Z',
+    svgPath: 'M 40 0 L 80 100 L 58 100 L 50 76 L 30 76 L 22 100 L 0 100 Z M 34 60 L 46 60 L 40 30 Z',
   },
   {
     id: 'letter-b', name: 'B', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 45 0 Q 65 0 65 18 Q 65 32 50 38 Q 70 42 70 60 Q 70 80 50 90 Q 42 100 0 100 Z M 15 14 L 15 42 L 42 42 Q 50 42 50 28 Q 50 14 42 14 Z M 15 56 L 15 86 L 45 86 Q 55 86 55 71 Q 55 56 45 56 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 50 0 Q 76 0 76 24 Q 76 40 56 46 Q 80 52 80 74 Q 80 100 50 100 L 0 100 Z M 22 16 L 22 38 L 46 38 Q 54 38 54 27 Q 54 16 46 16 Z M 22 58 L 22 84 L 48 84 Q 58 84 58 71 Q 58 58 48 58 Z',
   },
   {
     id: 'letter-c', name: 'C', category: 'letters',
-    viewBox: { width: 75, height: 100 },
-    svgPath: 'M 55 0 Q 75 0 75 15 L 60 22 Q 58 14 50 14 Q 30 14 20 30 Q 12 42 12 50 Q 12 58 20 70 Q 30 86 50 86 Q 58 86 60 78 L 75 85 Q 75 100 55 100 Q 22 100 8 78 Q 0 65 0 50 Q 0 35 8 22 Q 22 0 55 0 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 58 0 Q 80 0 80 18 L 62 28 Q 58 16 48 14 Q 30 14 22 30 Q 16 42 16 50 Q 16 58 22 70 Q 30 86 48 86 Q 58 84 62 72 L 80 82 Q 80 100 58 100 Q 22 100 8 78 Q 0 64 0 50 Q 0 36 8 22 Q 22 0 58 0 Z',
   },
   {
     id: 'letter-d', name: 'D', category: 'letters',
-    viewBox: { width: 75, height: 100 },
-    svgPath: 'M 0 0 L 38 0 Q 60 0 70 22 Q 75 34 75 50 Q 75 66 70 78 Q 60 100 38 100 L 0 100 Z M 15 14 L 15 86 L 38 86 Q 50 86 55 72 Q 60 62 60 50 Q 60 38 55 28 Q 50 14 38 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 44 0 Q 68 0 76 22 Q 80 34 80 50 Q 80 66 76 78 Q 68 100 44 100 L 0 100 Z M 22 16 L 22 84 L 42 84 Q 54 84 60 72 Q 64 62 64 50 Q 64 38 60 28 Q 54 16 42 16 Z',
   },
   {
     id: 'letter-e', name: 'E', category: 'letters',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 0 0 L 65 0 L 65 14 L 15 14 L 15 42 L 55 42 L 55 56 L 15 56 L 15 86 L 65 86 L 65 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 80 0 L 80 18 L 22 18 L 22 42 L 66 42 L 66 58 L 22 58 L 22 82 L 80 82 L 80 100 L 0 100 Z',
   },
   {
     id: 'letter-f', name: 'F', category: 'letters',
-    viewBox: { width: 60, height: 100 },
-    svgPath: 'M 0 0 L 60 0 L 60 14 L 15 14 L 15 42 L 50 42 L 50 56 L 15 56 L 15 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 78 0 L 78 18 L 22 18 L 22 44 L 64 44 L 64 60 L 22 60 L 22 100 L 0 100 Z',
   },
   {
     id: 'letter-g', name: 'G', category: 'letters',
     viewBox: { width: 80, height: 100 },
-    svgPath: 'M 55 0 Q 80 0 80 15 L 65 22 Q 62 14 52 14 Q 32 14 22 30 Q 14 42 14 50 Q 14 58 22 70 Q 32 86 52 86 Q 60 86 62 78 L 62 58 L 45 58 L 45 44 L 78 44 L 78 85 Q 78 100 55 100 Q 22 100 8 78 Q 0 65 0 50 Q 0 35 8 22 Q 22 0 55 0 Z',
+    svgPath: 'M 58 0 Q 80 0 80 18 L 62 28 Q 58 16 48 14 Q 30 14 22 30 Q 16 42 16 50 Q 16 58 22 70 Q 30 86 48 86 Q 56 84 58 76 L 58 56 L 42 56 L 42 42 L 78 42 L 78 82 Q 78 100 58 100 Q 22 100 8 78 Q 0 64 0 50 Q 0 36 8 22 Q 22 0 58 0 Z',
   },
   {
     id: 'letter-h', name: 'H', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 15 0 L 15 42 L 55 42 L 55 0 L 70 0 L 70 100 L 55 100 L 55 56 L 15 56 L 15 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 22 42 L 58 42 L 58 0 L 80 0 L 80 100 L 58 100 L 58 58 L 22 58 L 22 100 L 0 100 Z',
   },
   {
     id: 'letter-i', name: 'I', category: 'letters',
-    viewBox: { width: 40, height: 100 },
-    svgPath: 'M 0 0 L 40 0 L 40 14 L 27 14 L 27 86 L 40 86 L 40 100 L 0 100 L 0 86 L 13 86 L 13 14 L 0 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 80 0 L 80 18 L 51 18 L 51 82 L 80 82 L 80 100 L 0 100 L 0 82 L 29 82 L 29 18 L 0 18 Z',
   },
   {
     id: 'letter-j', name: 'J', category: 'letters',
-    viewBox: { width: 55, height: 100 },
-    svgPath: 'M 20 0 L 55 0 L 55 14 L 42 14 L 42 72 Q 42 86 28 86 Q 14 86 8 78 L 0 82 L 8 96 Q 15 100 28 100 Q 55 100 55 72 L 55 0 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 80 0 L 80 18 L 56 18 L 56 64 Q 56 86 36 86 Q 16 86 6 72 L 20 58 Q 26 72 36 72 Q 40 72 40 64 L 40 18 L 0 18 Z',
   },
   {
     id: 'letter-k', name: 'K', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 15 0 L 15 40 L 48 0 L 68 0 L 35 42 L 70 100 L 50 100 L 22 52 L 15 60 L 15 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 22 38 L 54 0 L 80 0 L 44 44 L 80 100 L 54 100 L 26 54 L 22 60 L 22 100 L 0 100 Z',
   },
   {
     id: 'letter-l', name: 'L', category: 'letters',
-    viewBox: { width: 60, height: 100 },
-    svgPath: 'M 0 0 L 15 0 L 15 86 L 60 86 L 60 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 22 82 L 80 82 L 80 100 L 0 100 Z',
   },
   {
     id: 'letter-m', name: 'M', category: 'letters',
-    viewBox: { width: 85, height: 100 },
-    svgPath: 'M 0 0 L 20 0 L 42 45 L 65 0 L 85 0 L 85 100 L 70 100 L 70 30 L 50 70 L 35 70 L 15 30 L 15 100 L 0 100 Z',
+    viewBox: { width: 88, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 44 42 L 66 0 L 88 0 L 88 100 L 68 100 L 68 30 L 50 66 L 38 66 L 20 30 L 20 100 L 0 100 Z',
   },
   {
     id: 'letter-n', name: 'N', category: 'letters',
-    viewBox: { width: 72, height: 100 },
-    svgPath: 'M 0 0 L 18 0 L 57 72 L 57 0 L 72 0 L 72 100 L 54 100 L 15 28 L 15 100 L 0 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 58 68 L 58 0 L 80 0 L 80 100 L 58 100 L 22 32 L 22 100 L 0 100 Z',
   },
   {
     id: 'letter-o', name: 'O', category: 'letters',
     viewBox: { width: 80, height: 100 },
-    svgPath: 'M 40 0 Q 62 0 72 22 Q 80 38 80 50 Q 80 62 72 78 Q 62 100 40 100 Q 18 100 8 78 Q 0 62 0 50 Q 0 38 8 22 Q 18 0 40 0 Z M 40 14 Q 25 14 18 30 Q 14 40 14 50 Q 14 60 18 70 Q 25 86 40 86 Q 55 86 62 70 Q 66 60 66 50 Q 66 40 62 30 Q 55 14 40 14 Z',
+    svgPath: 'M 40 0 Q 64 0 74 22 Q 80 36 80 50 Q 80 64 74 78 Q 64 100 40 100 Q 16 100 6 78 Q 0 64 0 50 Q 0 36 6 22 Q 16 0 40 0 Z M 40 16 Q 24 16 18 30 Q 14 42 14 50 Q 14 58 18 70 Q 24 84 40 84 Q 56 84 62 70 Q 66 58 66 50 Q 66 42 62 30 Q 56 16 40 16 Z',
   },
   {
     id: 'letter-p', name: 'P', category: 'letters',
-    viewBox: { width: 68, height: 100 },
-    svgPath: 'M 0 0 L 42 0 Q 68 0 68 28 Q 68 56 42 56 L 15 56 L 15 100 L 0 100 Z M 15 14 L 15 42 L 40 42 Q 52 42 52 28 Q 52 14 40 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 48 0 Q 78 0 78 28 Q 78 56 48 56 L 22 56 L 22 100 L 0 100 Z M 22 16 L 22 40 L 44 40 Q 56 40 56 28 Q 56 16 44 16 Z',
   },
   {
     id: 'letter-q', name: 'Q', category: 'letters',
-    viewBox: { width: 82, height: 108 },
-    svgPath: 'M 40 0 Q 62 0 72 22 Q 80 38 80 50 Q 80 62 72 78 Q 65 92 52 98 L 72 108 L 60 108 L 44 100 Q 42 100 40 100 Q 18 100 8 78 Q 0 62 0 50 Q 0 38 8 22 Q 18 0 40 0 Z M 40 14 Q 25 14 18 30 Q 14 40 14 50 Q 14 60 18 70 Q 25 86 40 86 Q 55 86 62 70 Q 66 60 66 50 Q 66 40 62 30 Q 55 14 40 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 40 0 Q 64 0 74 20 Q 80 32 80 46 Q 80 60 74 72 Q 68 84 56 90 L 74 100 L 58 100 L 46 92 Q 44 94 40 94 Q 16 94 6 72 Q 0 60 0 46 Q 0 32 6 20 Q 16 0 40 0 Z M 40 14 Q 24 14 18 28 Q 14 38 14 46 Q 14 54 18 64 Q 24 78 40 78 Q 56 78 62 64 Q 66 54 66 46 Q 66 38 62 28 Q 56 14 40 14 Z',
   },
   {
     id: 'letter-r', name: 'R', category: 'letters',
-    viewBox: { width: 72, height: 100 },
-    svgPath: 'M 0 0 L 42 0 Q 65 0 65 25 Q 65 42 52 50 L 72 100 L 55 100 L 38 52 L 15 52 L 15 100 L 0 100 Z M 15 14 L 15 40 L 40 40 Q 50 40 50 27 Q 50 14 40 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 48 0 Q 76 0 76 26 Q 76 44 58 52 L 80 100 L 56 100 L 38 54 L 22 54 L 22 100 L 0 100 Z M 22 16 L 22 40 L 44 40 Q 56 40 56 28 Q 56 16 44 16 Z',
   },
   {
     id: 'letter-s', name: 'S', category: 'letters',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 48 0 Q 65 0 65 15 L 52 22 Q 50 14 42 14 Q 28 14 20 22 Q 15 28 15 35 Q 15 42 22 46 Q 28 50 42 55 Q 58 60 62 68 Q 65 75 65 80 Q 65 92 48 100 Q 40 100 32 100 Q 8 100 0 85 L 14 78 Q 16 86 28 86 Q 42 86 48 78 Q 52 72 50 65 Q 48 58 35 52 Q 18 44 10 38 Q 0 28 0 18 Q 0 0 22 0 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 54 0 Q 80 0 80 18 L 62 28 Q 58 16 46 14 Q 32 14 24 22 Q 18 28 18 36 Q 18 44 26 48 Q 34 52 48 58 Q 66 64 74 74 Q 80 82 76 92 Q 70 100 52 100 Q 26 100 8 86 L 22 74 Q 28 86 44 86 Q 58 86 62 78 Q 64 72 60 66 Q 54 58 40 52 Q 22 44 14 36 Q 4 24 8 14 Q 14 0 54 0 Z',
   },
   {
     id: 'letter-t', name: 'T', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 70 0 L 70 14 L 42 14 L 42 100 L 28 100 L 28 14 L 0 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 80 0 L 80 18 L 51 18 L 51 100 L 29 100 L 29 18 L 0 18 Z',
   },
   {
     id: 'letter-u', name: 'U', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 15 0 L 15 68 Q 15 86 35 86 Q 55 86 55 68 L 55 0 L 70 0 L 70 70 Q 70 100 35 100 Q 0 100 0 70 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 22 68 Q 22 84 40 84 Q 58 84 58 68 L 58 0 L 80 0 L 80 70 Q 80 100 40 100 Q 0 100 0 70 Z',
   },
   {
     id: 'letter-v', name: 'V', category: 'letters',
-    viewBox: { width: 75, height: 100 },
-    svgPath: 'M 0 0 L 16 0 L 37 72 L 59 0 L 75 0 L 45 100 L 30 100 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 20 0 L 40 72 L 60 0 L 80 0 L 48 100 L 32 100 Z',
   },
   {
     id: 'letter-w', name: 'W', category: 'letters',
-    viewBox: { width: 100, height: 100 },
-    svgPath: 'M 0 0 L 14 0 L 25 68 L 42 0 L 58 0 L 75 68 L 86 0 L 100 0 L 80 100 L 65 100 L 50 38 L 35 100 L 20 100 Z',
+    viewBox: { width: 96, height: 100 },
+    svgPath: 'M 0 0 L 16 0 L 26 62 L 40 0 L 56 0 L 70 62 L 80 0 L 96 0 L 76 100 L 60 100 L 48 42 L 36 100 L 20 100 Z',
   },
   {
     id: 'letter-x', name: 'X', category: 'letters',
-    viewBox: { width: 70, height: 100 },
-    svgPath: 'M 0 0 L 18 0 L 35 38 L 52 0 L 70 0 L 45 50 L 70 100 L 52 100 L 35 62 L 18 100 L 0 100 L 25 50 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 40 38 L 58 0 L 80 0 L 52 50 L 80 100 L 58 100 L 40 62 L 22 100 L 0 100 L 28 50 Z',
   },
   {
     id: 'letter-y', name: 'Y', category: 'letters',
-    viewBox: { width: 72, height: 100 },
-    svgPath: 'M 0 0 L 18 0 L 36 40 L 54 0 L 72 0 L 44 55 L 44 100 L 28 100 L 28 55 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 22 0 L 40 40 L 58 0 L 80 0 L 51 56 L 51 100 L 29 100 L 29 56 Z',
   },
   {
     id: 'letter-z', name: 'Z', category: 'letters',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 0 0 L 65 0 L 65 14 L 18 86 L 65 86 L 65 100 L 0 100 L 0 86 L 47 14 L 0 14 Z',
+    viewBox: { width: 80, height: 100 },
+    svgPath: 'M 0 0 L 80 0 L 80 18 L 24 82 L 80 82 L 80 100 L 0 100 L 0 82 L 56 18 L 0 18 Z',
   },
 
   // ============================================
-  // NUMBERS 0-9
+  // NUMBERS 0-9 - Bold sans-serif, 70x100 viewBox, ~18px strokes
   // ============================================
   {
     id: 'number-0', name: '0', category: 'numbers',
     viewBox: { width: 70, height: 100 },
-    svgPath: 'M 35 0 Q 55 0 62 22 Q 70 40 70 50 Q 70 60 62 78 Q 55 100 35 100 Q 15 100 8 78 Q 0 60 0 50 Q 0 40 8 22 Q 15 0 35 0 Z M 35 14 Q 22 14 17 30 Q 14 40 14 50 Q 14 60 17 70 Q 22 86 35 86 Q 48 86 53 70 Q 56 60 56 50 Q 56 40 53 30 Q 48 14 35 14 Z',
+    svgPath: 'M 35 0 Q 56 0 64 22 Q 70 36 70 50 Q 70 64 64 78 Q 56 100 35 100 Q 14 100 6 78 Q 0 64 0 50 Q 0 36 6 22 Q 14 0 35 0 Z M 35 16 Q 22 16 17 30 Q 14 40 14 50 Q 14 60 17 70 Q 22 84 35 84 Q 48 84 53 70 Q 56 60 56 50 Q 56 40 53 30 Q 48 16 35 16 Z',
   },
   {
     id: 'number-1', name: '1', category: 'numbers',
-    viewBox: { width: 45, height: 100 },
-    svgPath: 'M 0 18 L 18 0 L 30 0 L 30 86 L 45 86 L 45 100 L 0 100 L 0 86 L 15 86 L 15 22 L 0 32 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 6 22 L 24 0 L 44 0 L 44 82 L 64 82 L 64 100 L 6 100 L 6 82 L 24 82 L 24 28 L 6 38 Z',
   },
   {
     id: 'number-2', name: '2', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 10 15 Q 18 0 38 0 Q 58 0 65 18 Q 65 35 52 48 L 18 85 L 65 85 L 65 100 L 0 100 L 0 88 L 42 42 Q 50 32 50 25 Q 50 14 38 14 Q 26 14 22 25 L 8 20 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 10 18 Q 18 0 38 0 Q 58 0 66 18 Q 70 30 64 44 L 24 82 L 70 82 L 70 100 L 0 100 L 0 86 L 46 42 Q 52 34 52 26 Q 52 16 40 14 Q 28 14 22 26 Z',
   },
   {
     id: 'number-3', name: '3', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 5 15 Q 15 0 35 0 Q 55 0 62 12 Q 65 22 65 28 Q 65 40 52 48 Q 68 55 68 72 Q 68 88 52 96 Q 45 100 35 100 Q 15 100 5 85 L 18 78 Q 22 86 35 86 Q 48 86 52 75 Q 54 68 50 62 Q 45 55 35 55 L 25 55 L 25 42 L 35 42 Q 48 42 50 30 Q 50 20 42 16 Q 38 14 35 14 Q 25 14 18 22 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 6 18 Q 16 0 36 0 Q 56 0 64 14 Q 70 24 68 34 Q 66 44 52 50 Q 70 56 70 74 Q 70 90 54 98 Q 46 100 36 100 Q 14 100 4 86 L 18 74 Q 24 86 36 86 Q 50 86 54 76 Q 56 70 52 64 Q 48 56 36 56 L 26 56 L 26 42 L 36 42 Q 50 42 52 32 Q 54 24 48 18 Q 42 14 36 14 Q 26 14 20 24 Z',
   },
   {
     id: 'number-4', name: '4', category: 'numbers',
     viewBox: { width: 70, height: 100 },
-    svgPath: 'M 42 0 L 58 0 L 58 58 L 70 58 L 70 72 L 58 72 L 58 100 L 42 100 L 42 72 L 0 72 L 0 60 Z M 42 26 L 18 58 L 42 58 Z',
+    svgPath: 'M 44 0 L 62 0 L 62 58 L 70 58 L 70 74 L 62 74 L 62 100 L 44 100 L 44 74 L 0 74 L 0 60 Z M 44 28 L 18 58 L 44 58 Z',
   },
   {
     id: 'number-5', name: '5', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 8 0 L 60 0 L 60 14 L 18 14 L 15 42 Q 22 38 35 38 Q 55 38 62 55 Q 65 62 65 70 Q 65 85 52 95 Q 42 100 32 100 Q 12 100 2 85 L 15 78 Q 20 86 32 86 Q 45 86 50 75 Q 52 68 50 62 Q 45 52 35 52 Q 22 52 15 60 L 5 55 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 8 0 L 66 0 L 66 16 L 22 16 L 18 42 Q 26 36 38 36 Q 58 36 66 54 Q 70 64 70 72 Q 70 88 56 96 Q 46 100 36 100 Q 14 100 4 86 L 18 74 Q 24 86 36 86 Q 50 86 54 76 Q 56 70 54 64 Q 48 52 38 52 Q 26 52 18 62 L 4 56 Z',
   },
   {
     id: 'number-6', name: '6', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 52 0 L 55 14 Q 45 14 38 22 Q 28 35 22 50 Q 28 42 40 42 Q 58 42 64 58 Q 65 65 65 70 Q 65 85 52 96 Q 42 100 35 100 Q 15 100 5 82 Q 0 72 0 60 Q 0 35 15 18 Q 28 0 52 0 Z M 35 55 Q 22 55 16 68 Q 14 72 14 78 Q 14 86 22 90 Q 28 92 35 90 Q 48 88 52 78 Q 54 72 52 65 Q 48 55 35 55 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 54 0 L 58 16 Q 46 16 38 24 Q 28 36 22 50 Q 28 42 40 42 Q 58 42 66 58 Q 70 66 70 72 Q 70 88 56 96 Q 46 100 36 100 Q 14 100 4 82 Q 0 72 0 60 Q 0 34 16 18 Q 30 0 54 0 Z M 36 56 Q 22 56 16 68 Q 14 74 14 78 Q 14 86 22 90 Q 28 92 36 90 Q 50 88 54 78 Q 56 72 54 66 Q 50 56 36 56 Z',
   },
   {
     id: 'number-7', name: '7', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 0 0 L 65 0 L 65 12 L 25 100 L 8 100 L 48 14 L 0 14 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 0 0 L 70 0 L 70 14 L 28 100 L 8 100 L 50 18 L 0 18 Z',
   },
   {
     id: 'number-8', name: '8', category: 'numbers',
-    viewBox: { width: 68, height: 100 },
-    svgPath: 'M 34 0 Q 55 0 62 12 Q 68 22 65 32 Q 62 42 50 48 Q 65 55 68 68 Q 70 80 58 92 Q 48 100 34 100 Q 20 100 10 92 Q -2 80 0 68 Q 3 55 18 48 Q 6 42 3 32 Q 0 22 6 12 Q 13 0 34 0 Z M 34 14 Q 22 14 17 22 Q 14 28 17 35 Q 20 42 34 44 Q 48 42 51 35 Q 54 28 51 22 Q 46 14 34 14 Z M 34 56 Q 18 58 14 70 Q 12 78 18 85 Q 24 90 34 90 Q 44 90 50 85 Q 56 78 54 70 Q 50 58 34 56 Z',
+    viewBox: { width: 72, height: 100 },
+    svgPath: 'M 36 0 Q 56 0 64 12 Q 70 22 68 34 Q 66 44 52 50 Q 68 56 72 70 Q 74 82 60 92 Q 50 100 36 100 Q 22 100 12 92 Q 0 82 2 70 Q 6 56 20 50 Q 6 44 4 34 Q 2 22 8 12 Q 16 0 36 0 Z M 36 14 Q 24 14 18 22 Q 14 28 18 36 Q 22 44 36 46 Q 50 44 54 36 Q 58 28 54 22 Q 48 14 36 14 Z M 36 58 Q 20 60 16 72 Q 14 80 20 86 Q 26 92 36 92 Q 46 92 52 86 Q 58 80 56 72 Q 52 60 36 58 Z',
   },
   {
     id: 'number-9', name: '9', category: 'numbers',
-    viewBox: { width: 65, height: 100 },
-    svgPath: 'M 13 100 L 10 86 Q 20 86 27 78 Q 37 65 43 50 Q 37 58 25 58 Q 7 58 1 42 Q 0 35 0 30 Q 0 15 13 4 Q 23 0 30 0 Q 50 0 60 18 Q 65 28 65 40 Q 65 65 50 82 Q 37 100 13 100 Z M 30 8 Q 17 12 13 22 Q 11 28 13 35 Q 17 45 30 45 Q 43 45 49 32 Q 51 28 49 20 Q 45 10 30 8 Z',
+    viewBox: { width: 70, height: 100 },
+    svgPath: 'M 16 100 L 12 84 Q 24 84 32 76 Q 42 64 48 50 Q 42 58 30 58 Q 12 58 4 42 Q 0 34 0 28 Q 0 12 14 4 Q 24 0 34 0 Q 54 0 64 18 Q 70 28 70 40 Q 70 66 54 82 Q 40 100 16 100 Z M 34 10 Q 20 12 16 22 Q 14 28 16 36 Q 20 46 34 46 Q 48 46 52 34 Q 54 28 52 22 Q 48 12 34 10 Z',
   },
 ];
 

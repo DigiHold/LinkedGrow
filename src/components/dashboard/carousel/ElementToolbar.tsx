@@ -629,18 +629,26 @@ export function ElementToolbar({
                   )}
                   title={frame.name}
                 >
-                  <svg
-                    viewBox={`0 0 ${frame.viewBox.width} ${frame.viewBox.height}`}
-                    className="w-full h-full"
-                  >
-                    <path
-                      d={frame.svgPath}
-                      fill="#e2e8f0"
-                      stroke="#94a3b8"
-                      strokeWidth="2"
-                      strokeDasharray="4 2"
-                    />
-                  </svg>
+                  {(() => {
+                    // Center the path in a square viewBox for consistent grid rendering
+                    const maxDim = Math.max(frame.viewBox.width, frame.viewBox.height);
+                    const padX = (maxDim - frame.viewBox.width) / 2;
+                    const padY = (maxDim - frame.viewBox.height) / 2;
+                    return (
+                      <svg
+                        viewBox={`${-padX} ${-padY} ${maxDim} ${maxDim}`}
+                        className="w-full h-full"
+                      >
+                        <path
+                          d={frame.svgPath}
+                          fill="#e2e8f0"
+                          stroke="#94a3b8"
+                          strokeWidth="2"
+                          strokeDasharray="4 2"
+                        />
+                      </svg>
+                    );
+                  })()}
                 </button>
               ))}
             </div>

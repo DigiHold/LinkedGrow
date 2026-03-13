@@ -337,6 +337,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const [isDragOver, setIsDragOver] = useState(false);
     const guideLinesRef = useRef<AlignmentGuide[]>([]);
     const hoveredObjectRef = useRef<FabricObject | null>(null);
+    const frameHighlightRef = useRef<FabricObject | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [alignSubmenuOpen, setAlignSubmenuOpen] = useState(false);
     const [floatingBtnPos, setFloatingBtnPos] = useState<{ x: number; y: number } | null>(null);
@@ -504,6 +505,26 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
 
         guideLinesRef.current = guides;
+
+        // Detect image-over-frame hover for auto-fill visual feedback
+        if (obj instanceof FabricImage && !obj._isFrame) {
+          const ob = obj.getBoundingRect();
+          const ocx = ob.left + ob.width / 2;
+          const ocy = ob.top + ob.height / 2;
+          let hoverFrame: FabricObject | null = null;
+          const frames = canvas.getObjects().filter(o => o._isFrame && !o._frameHasImage && o !== obj);
+          for (let fi = frames.length - 1; fi >= 0; fi--) {
+            const fb = frames[fi].getBoundingRect();
+            if (ocx >= fb.left && ocx <= fb.left + fb.width && ocy >= fb.top && ocy <= fb.top + fb.height) {
+              hoverFrame = frames[fi];
+              break;
+            }
+          }
+          frameHighlightRef.current = hoverFrame;
+        } else {
+          frameHighlightRef.current = null;
+        }
+
         canvas.requestRenderAll();
         onElementMovingRef.current?.(obj);
         updateFloatingPos();
@@ -523,6 +544,20 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           ctx.lineWidth = 1.5;
           ctx.setLineDash([4, 4]);
           ctx.strokeRect(bound.left * z, bound.top * z, bound.width * z, bound.height * z);
+          ctx.restore();
+        }
+
+        // Draw frame highlight when dragging image over empty frame
+        const highlightedFrame = frameHighlightRef.current;
+        if (highlightedFrame) {
+          const hb = highlightedFrame.getBoundingRect();
+          ctx.save();
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([]);
+          ctx.strokeRect(hb.left * z, hb.top * z, hb.width * z, hb.height * z);
+          ctx.fillStyle = 'rgba(6, 182, 212, 0.12)';
+          ctx.fillRect(hb.left * z, hb.top * z, hb.width * z, hb.height * z);
           ctx.restore();
         }
 
@@ -597,6 +632,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       // Clear guides on mouse up
       canvas.on('mouse:up', () => {
+        frameHighlightRef.current = null;
         if (guideLinesRef.current.length > 0) {
           guideLinesRef.current = [];
           canvas.requestRenderAll();
@@ -685,8 +721,73 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       });
 
       // Track changes
-      canvas.on('object:modified', () => {
+      canvas.on('object:modified', (e) => {
         guideLinesRef.current = [];
+        frameHighlightRef.current = null;
+
+        // Check if an image was dropped on an empty frame - auto-fill it
+        const modifiedObj = e.target;
+        if (modifiedObj instanceof FabricImage && !modifiedObj._isFrame) {
+          const ob = modifiedObj.getBoundingRect();
+          const ocx = ob.left + ob.width / 2;
+          const ocy = ob.top + ob.height / 2;
+          const frames = canvas.getObjects().filter(o => o._isFrame && !o._frameHasImage);
+          for (let fi = frames.length - 1; fi >= 0; fi--) {
+            const frame = frames[fi];
+            const fb = frame.getBoundingRect();
+            if (ocx >= fb.left && ocx <= fb.left + fb.width && ocy >= fb.top && ocy <= fb.top + fb.height) {
+              // Fill the frame with this image
+              const imgSrc = (modifiedObj as unknown as Record<string, unknown>).originalSrc as string || modifiedObj.getSrc();
+              const vbStr = frame._frameViewBox || '100,100';
+              const [vbW, vbH] = vbStr.split(',').map(Number);
+              const coverScale = Math.max(fb.width / modifiedObj.width!, fb.height / modifiedObj.height!);
+              const imgW = modifiedObj.width! * coverScale;
+              const imgH = modifiedObj.height! * coverScale;
+
+              modifiedObj.set({
+                left: fb.left - (imgW - fb.width) / 2,
+                top: fb.top - (imgH - fb.height) / 2,
+                scaleX: coverScale,
+                scaleY: coverScale,
+                angle: 0,
+              });
+
+              const clipScaleX = fb.width / vbW;
+              const clipScaleY = fb.height / vbH;
+              const clipPathObj = new Path(frame._frameSvgPath!, {
+                scaleX: clipScaleX / coverScale,
+                scaleY: clipScaleY / coverScale,
+                originX: 'left',
+                originY: 'top',
+              });
+
+              const imgCX = modifiedObj.left! + imgW / 2;
+              const imgCY = modifiedObj.top! + imgH / 2;
+              const frameCX = fb.left + fb.width / 2;
+              const frameCY = fb.top + fb.height / 2;
+              clipPathObj.set({
+                left: ((frameCX - imgCX) / coverScale) - (vbW * clipScaleX / coverScale) / 2,
+                top: ((frameCY - imgCY) / coverScale) - (vbH * clipScaleY / coverScale) / 2,
+              });
+
+              modifiedObj.clipPath = clipPathObj;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const ip = modifiedObj as any;
+              ip._isFrame = true;
+              ip._frameId = frame._frameId;
+              ip._frameSvgPath = frame._frameSvgPath;
+              ip._frameViewBox = frame._frameViewBox;
+              ip._frameHasImage = true;
+              ip._frameImageUrl = imgSrc;
+
+              canvas.remove(frame);
+              canvas.setActiveObject(modifiedObj);
+              canvas.requestRenderAll();
+              break;
+            }
+          }
+        }
+
         saveHistory();
         onCanvasChangeRef.current?.();
         updateFloatingPos();
