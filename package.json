@@ -49,6 +49,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dompurify": "^3.3.3",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "fabric": "^7.2.0",
@@ -86,6 +87,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcryptjs": "^2.4.6",
+    "@types/dompurify": "^3.0.5",
     "@types/fabric": "^5.3.11",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^25.0.6",

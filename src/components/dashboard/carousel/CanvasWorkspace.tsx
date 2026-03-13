@@ -2,7 +2,21 @@
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path } from "fabric";
+import DOMPurify from "dompurify";
 import { getFrameById } from "./frameData";
+
+// SVG sanitizer: strips scripts, event handlers, foreignObject, etc.
+function sanitizeSvg(svgString: string): string {
+  return DOMPurify.sanitize(svgString, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['use'],
+    FORBID_TAGS: ['script', 'foreignObject', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: [
+      'onload', 'onerror', 'onclick', 'onmouseover', 'onfocus', 'onblur',
+      'onanimationstart', 'onanimationend', 'ontoggle', 'onresize',
+    ],
+  });
+}
 import {
   Copy,
   Trash2,
@@ -970,7 +984,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!fabricRef.current) return;
 
         try {
-          const { objects } = await loadSVGFromString(svgString);
+          // Sanitize SVG to prevent XSS (strips scripts, event handlers, etc.)
+          const cleanSvg = sanitizeSvg(svgString);
+          const { objects } = await loadSVGFromString(cleanSvg);
           const svgGroup = util.groupSVGElements(objects as FabricObject[]);
 
           // Set initial size for icons (120px)
