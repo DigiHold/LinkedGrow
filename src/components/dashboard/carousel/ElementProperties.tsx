@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Canvas, FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow, filters as FabricFilters } from "fabric";
+import { Canvas, FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow, filters as FabricFilters, cache as fabricCache } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -330,13 +330,17 @@ export function ElementProperties({
     tb.setCoords();
     canvas.requestRenderAll();
 
-    // Load font variant in background for weight/family changes, then re-render
-    if ('fontWeight' in styles || 'fontFamily' in styles) {
+    // Load font variant in background for weight/family/style changes, then re-render
+    if ('fontWeight' in styles || 'fontFamily' in styles || 'fontStyle' in styles) {
       const family = (styles.fontFamily as string) || tb.fontFamily || 'Inter';
       const weight = (styles.fontWeight as string) || String(tb.fontWeight || 'normal');
+      const style = (styles.fontStyle as string) || tb.fontStyle || 'normal';
       loadGoogleFont(family).then(() =>
-        document.fonts.load(`${weight} 16px "${family}"`)
+        document.fonts.load(`${style} ${weight} 16px "${family}"`)
       ).then(() => {
+        // Clear stale global char width cache so Fabric re-measures with the
+        // newly loaded font variant instead of using cached wrong widths.
+        fabricCache.clearFontCache(family);
         tb.dirty = true;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (tb as any)._forceClearCache = true;
