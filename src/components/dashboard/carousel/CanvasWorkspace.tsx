@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path, controlsUtils } from "fabric";
 import DOMPurify from "dompurify";
 import { getFrameById } from "./frameData";
 
@@ -108,18 +108,64 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
   ctx.restore();
 };
 
+// Custom move/drag icon renderer (grip dots pattern)
+const renderMoveIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
+  const size = 24;
+  ctx.save();
+  ctx.translate(left, top);
+  ctx.rotate(util.degreesToRadians(fabricObject.angle || 0));
+
+  // White circle background
+  ctx.beginPath();
+  ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = '#0891b2';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Draw 6 grip dots (2x3 arrangement)
+  ctx.fillStyle = '#0891b2';
+  const dotR = 1.6;
+  const gapX = 5;
+  const gapY = 4;
+  for (let row = -1; row <= 1; row++) {
+    for (let col = -0.5; col <= 0.5; col++) {
+      ctx.beginPath();
+      ctx.arc(col * gapX, row * gapY, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+};
+
 // Fabric v7: each instance gets FRESH controls from createControls() factory.
 // Modifying prototype.controls does nothing. Override the static createControls method instead.
 const customizeMtrControl = (controls: Record<string, Control>) => {
   if (controls.mtr) {
     controls.mtr.y = 0.5;        // bottom edge (default is -0.5 = top)
     controls.mtr.offsetY = 25;   // 25px below the bottom edge
-    controls.mtr.offsetX = 0;
+    controls.mtr.offsetX = -16;  // shift left to make room for move handle
     controls.mtr.render = renderRotateIcon;
     controls.mtr.sizeX = 24;
     controls.mtr.sizeY = 24;
     controls.mtr.cursorStyleHandler = () => 'grab';
   }
+
+  // Add move/drag handle next to rotate icon
+  controls.moveHandle = new Control({
+    x: 0,
+    y: 0.5,
+    offsetY: 25,
+    offsetX: 16,     // right of center (rotate is at -16)
+    cursorStyle: 'move',
+    actionHandler: controlsUtils.dragHandler,
+    actionName: 'drag',
+    render: renderMoveIcon,
+    sizeX: 24,
+    sizeY: 24,
+  });
 };
 
 // Override for all FabricObject subclasses (Rect, Circle, Line, Group, FabricImage)
@@ -768,29 +814,36 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Force enter text editing on second click (Canva-like behavior)
-      // Fabric.js normally enters editing on mouseUp, but blocks it when
-      // transform.actionPerformed is true (user moved mouse slightly).
-      // This fix enters editing on mouseDown so mouse movement extends
-      // the text selection instead of moving the object.
+      // Prevent Fabric.js from entering text editing on single click mouseUp.
+      // We want double-click to enter editing (Canva-like behavior).
+      // Fabric's mouseUpHandler checks __lastSelected to decide whether to enterEditing.
+      // By resetting it on mouse:down (which fires AFTER Fabric's internal _mouseDownHandler
+      // sets it), we prevent single-click from entering editing.
       canvas.on('mouse:down', (opt) => {
         const target = opt.target;
-        if (!target || !(target instanceof Textbox) || !target.editable) return;
-        if (canvas.getActiveObject() === target && !target.isEditing) {
-          target.enterEditing(opt.e);
-          target.setCursorByClick(opt.e);
-          // Cancel any pending move transform so object doesn't move
+        if (target instanceof Textbox) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (canvas as any)._currentTransform = null;
-          isTextEditingRef.current = true;
-          hoveredObjectRef.current = null;
-          setFloatingBtnPos(null);
+          (target as any).__lastSelected = false;
         }
       });
 
-      // Double-click to enter group interactive mode OR frame crop mode
+      // Double-click to enter text editing, group interactive mode, or frame crop mode
       canvas.on('mouse:dblclick', (e) => {
         const target = e.target;
+
+        // Textbox: enter editing mode + select word under cursor (Canva-like)
+        if (target instanceof Textbox && target.editable && !target.isEditing) {
+          target.enterEditing(e.e);
+          target.setCursorByClick(e.e);
+          // Select the word at cursor position
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (target as any).selectWord(target.selectionStart);
+          isTextEditingRef.current = true;
+          hoveredObjectRef.current = null;
+          setFloatingBtnPos(null);
+          return;
+        }
+
         if (target instanceof Group && !target._isSvgIcon) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (target as any).interactive = true;
