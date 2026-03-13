@@ -390,12 +390,13 @@ interface CanvasWorkspaceProps {
   onCanvasChange?: () => void;
   onElementMoving?: (element: FabricObject) => void;
   onElementDrop?: (type: string, data: Record<string, unknown>, x: number, y: number) => void;
+  onShowLayers?: () => void;
   zoom?: number;
   className?: string;
 }
 
 export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspaceProps>(
-  ({ onSelectionChange, onCanvasChange, onElementMoving, onElementDrop, zoom = 0.4, className }, ref) => {
+  ({ onSelectionChange, onCanvasChange, onElementMoving, onElementDrop, onShowLayers, zoom = 0.4, className }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -442,13 +443,15 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const onSelectionChangeRef = useRef(onSelectionChange);
     const onCanvasChangeRef = useRef(onCanvasChange);
     const onElementMovingRef = useRef(onElementMoving);
+    const onShowLayersRef = useRef(onShowLayers);
 
     // Keep refs up to date
     useEffect(() => {
       onSelectionChangeRef.current = onSelectionChange;
       onCanvasChangeRef.current = onCanvasChange;
       onElementMovingRef.current = onElementMoving;
-    }, [onSelectionChange, onCanvasChange, onElementMoving]);
+      onShowLayersRef.current = onShowLayers;
+    }, [onSelectionChange, onCanvasChange, onElementMoving, onShowLayers]);
 
     // Undo/Redo history
     const historyRef = useRef<string[]>([]);
@@ -2376,6 +2379,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
                       Send to Back
+                    </button>
+                    <div className="h-px bg-border my-1" />
+                    <button
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      onClick={() => {
+                        onShowLayersRef.current?.();
+                        setContextMenu(null); setLayerSubmenuOpen(false); setAlignSubmenuOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg>
+                      Show Layers
                     </button>
                   </div>
                 )}

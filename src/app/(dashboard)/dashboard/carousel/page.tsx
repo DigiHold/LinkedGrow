@@ -53,6 +53,7 @@ import Link from "next/link";
 import { CanvasWorkspace, CanvasWorkspaceRef, CANVAS_WIDTH, CANVAS_HEIGHT } from "@/components/dashboard/carousel/CanvasWorkspace";
 import { ElementToolbar } from "@/components/dashboard/carousel/ElementToolbar";
 import { ElementProperties } from "@/components/dashboard/carousel/ElementProperties";
+import { LayersPanel } from "@/components/dashboard/carousel/LayersPanel";
 import { SlideManager, SlideState } from "@/components/dashboard/carousel/SlideManager";
 import { BrandingSettings } from "@/components/dashboard/carousel/branding-settings";
 import { TemplateGallery } from "@/components/dashboard/carousel/template-gallery";
@@ -62,6 +63,18 @@ import { carouselTemplates, type CarouselTemplate } from "@/lib/carousel-templat
 
 // Generate unique ID
 const generateId = () => `slide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// Auto-save localStorage key
+const DRAFT_STORAGE_KEY = 'carousel-draft';
+
+interface CarouselDraft {
+  slides: Array<{ id: string; canvasJSON: string }>;
+  currentSlideIndex: number;
+  currentCarouselId: string | null;
+  carouselName: string;
+  carouselDescription: string;
+  lastModified: number;
+}
 
 export default function CarouselPage() {
   // Canvas ref
@@ -115,6 +128,17 @@ export default function CarouselPage() {
   const [hasTextApiKey, setHasTextApiKey] = useState<boolean | null>(null);
   const [hasImageApiKey, setHasImageApiKey] = useState<boolean | null>(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
+  // Auto-save state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slidesRef = useRef(slides);
+  const currentSlideIndexRef = useRef(currentSlideIndex);
+  const draftRestoredRef = useRef(false);
+
+  // Right panel view (properties or layers)
+  const [rightPanelView, setRightPanelView] = useState<'properties' | 'layers'>('properties');
+
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -152,6 +176,86 @@ export default function CarouselPage() {
 
     checkApiKeys();
   }, []);
+
+  // Keep refs in sync
+  useEffect(() => { slidesRef.current = slides; }, [slides]);
+  useEffect(() => { currentSlideIndexRef.current = currentSlideIndex; }, [currentSlideIndex]);
+
+  // Restore draft from localStorage on mount
+  useEffect(() => {
+    if (draftRestoredRef.current || isCheckingApiKey) return;
+    draftRestoredRef.current = true;
+
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const draft: CarouselDraft = JSON.parse(raw);
+      // Skip if draft is older than 7 days
+      if (Date.now() - draft.lastModified > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        return;
+      }
+      if (!draft.slides || draft.slides.length === 0) return;
+
+      const restoredSlides: SlideState[] = draft.slides.map(s => ({
+        id: s.id,
+        canvasJSON: s.canvasJSON,
+        thumbnail: '',
+      }));
+      const targetIndex = Math.min(draft.currentSlideIndex || 0, restoredSlides.length - 1);
+
+      setSlides(restoredSlides);
+      setCurrentSlideIndex(targetIndex);
+      if (draft.currentCarouselId) setCurrentCarouselId(draft.currentCarouselId);
+      if (draft.carouselName) setCarouselName(draft.carouselName);
+      if (draft.carouselDescription) setCarouselDescription(draft.carouselDescription);
+
+      // Load the target slide after canvas is ready
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (canvasRef.current && restoredSlides[targetIndex]?.canvasJSON) {
+            canvasRef.current.loadFromJSON(restoredSlides[targetIndex].canvasJSON);
+            setTimeout(() => {
+              if (canvasRef.current) {
+                const thumbnail = canvasRef.current.exportToDataURL();
+                setSlides(prev => prev.map((s, i) =>
+                  i === targetIndex ? { ...s, thumbnail } : s
+                ));
+              }
+            }, 200);
+          }
+        });
+      });
+    } catch (e) {
+      console.warn('Failed to restore draft:', e);
+    }
+  }, [isCheckingApiKey]);
+
+  // Flush save on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!canvasRef.current) return;
+      try {
+        const canvasJSON = canvasRef.current.exportToJSON();
+        const curSlides = slidesRef.current;
+        const curIdx = currentSlideIndexRef.current;
+        const draft: CarouselDraft = {
+          slides: curSlides.map((slide, i) => ({
+            id: slide.id,
+            canvasJSON: i === curIdx ? canvasJSON : slide.canvasJSON,
+          })),
+          currentSlideIndex: curIdx,
+          currentCarouselId,
+          carouselName,
+          carouselDescription,
+          lastModified: Date.now(),
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentCarouselId, carouselName, carouselDescription]);
 
   // Save current slide before switching
   const saveCurrentSlide = useCallback(() => {
@@ -353,7 +457,88 @@ export default function CarouselPage() {
     }
   }, [currentSlideIndex, slides]);
 
-  // Handle canvas change (update thumbnail)
+  // Helper to compress thumbnail for storage (reduce size significantly)
+  const compressThumbnail = useCallback(async (dataUrl: string, maxWidth: number = 200): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }, []);
+
+  // --- Auto-save functions ---
+
+  const saveToLocalStorage = useCallback(() => {
+    if (!canvasRef.current) return;
+    try {
+      const canvasJSON = canvasRef.current.exportToJSON();
+      const curSlides = slidesRef.current;
+      const curIdx = currentSlideIndexRef.current;
+      const draft: CarouselDraft = {
+        slides: curSlides.map((slide, i) => ({
+          id: slide.id,
+          canvasJSON: i === curIdx ? canvasJSON : slide.canvasJSON,
+        })),
+        currentSlideIndex: curIdx,
+        currentCarouselId,
+        carouselName,
+        carouselDescription,
+        lastModified: Date.now(),
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      setSaveStatus('saved');
+    } catch (e) {
+      console.warn('Failed to save draft to localStorage:', e);
+    }
+  }, [currentCarouselId, carouselName, carouselDescription]);
+
+  const saveToDatabase = useCallback(async () => {
+    if (!canvasRef.current || !currentCarouselId || !carouselName.trim()) return;
+    setSaveStatus('saving');
+    try {
+      const currentCanvasJSON = canvasRef.current.exportToJSON();
+      const currentThumbnail = canvasRef.current.exportToDataURL();
+      const curSlides = slidesRef.current;
+      const curIdx = currentSlideIndexRef.current;
+      const slidesData = curSlides.map((slide, i) => ({
+        id: slide.id,
+        canvasJSON: i === curIdx ? currentCanvasJSON : slide.canvasJSON,
+      }));
+      const rawThumbnail = curIdx === 0 ? currentThumbnail : (curSlides[0]?.thumbnail || currentThumbnail);
+      const carouselThumbnail = await compressThumbnail(rawThumbnail, 200);
+      const payload = {
+        name: carouselName.trim(),
+        description: carouselDescription.trim() || null,
+        thumbnail: carouselThumbnail,
+        slidesJson: JSON.stringify(slidesData),
+        slideCount: slidesData.length,
+      };
+      const response = await fetch(`/api/carousels/${currentCarouselId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) setSaveStatus('saved');
+    } catch (e) {
+      console.warn('Auto-save to DB failed:', e);
+      setSaveStatus('idle');
+    }
+  }, [currentCarouselId, carouselName, carouselDescription, compressThumbnail]);
+
+  // Handle canvas change (update thumbnail + schedule auto-saves)
   const handleCanvasChange = useCallback(() => {
     if (!canvasRef.current) return;
 
@@ -363,7 +548,25 @@ export default function CarouselPage() {
         ? { ...slide, thumbnail }
         : slide
     ));
-  }, [currentSlideIndex]);
+
+    // Schedule debounced localStorage save (2s)
+    setSaveStatus('saving');
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    localSaveTimerRef.current = setTimeout(() => saveToLocalStorage(), 2000);
+
+    // Schedule debounced DB save (10s) if carousel is already saved
+    if (currentCarouselId) {
+      if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+      dbSaveTimerRef.current = setTimeout(() => saveToDatabase(), 10000);
+    }
+  }, [currentSlideIndex, currentCarouselId, saveToLocalStorage, saveToDatabase]);
+
+  // Also save to localStorage when slides array changes (covers add/delete/reorder)
+  useEffect(() => {
+    if (!draftRestoredRef.current) return; // Don't save during initial restore
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    localSaveTimerRef.current = setTimeout(() => saveToLocalStorage(), 1000);
+  }, [slides, saveToLocalStorage]);
 
   // Handle background change
   const handleBackgroundChange = useCallback((type: 'solid' | 'gradient' | 'image', value: string) => {
@@ -640,6 +843,7 @@ export default function CarouselPage() {
     canvas.renderAll();
 
     setShowTemplateGallery(false);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
     showToast(`Template "${template.name}" applied!`, "success");
   };
 
@@ -696,28 +900,6 @@ export default function CarouselPage() {
     }
   };
 
-  // Helper to compress thumbnail for storage (reduce size significantly)
-  const compressThumbnail = useCallback(async (dataUrl: string, maxWidth: number = 200): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ratio = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = img.height * ratio;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // Use JPEG with lower quality for smaller size
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        } else {
-          resolve(dataUrl);
-        }
-      };
-      img.onerror = () => resolve(dataUrl);
-      img.src = dataUrl;
-    });
-  }, []);
 
   // Save carousel handler (saves all slides) - updates existing or creates new
   const handleSaveCarousel = async (saveAsNew: boolean = false) => {
@@ -833,6 +1015,7 @@ export default function CarouselPage() {
         });
       });
 
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
       showToast(`Loaded "${data.name}"`, "success");
     } catch (err) {
       showToast("Failed to load carousel");
@@ -976,6 +1159,24 @@ export default function CarouselPage() {
               >
                 <Redo2 className="w-4 h-4" />
               </Button>
+            </div>
+
+            <div className="h-6 w-px bg-border" />
+
+            {/* Auto-save Status */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-16">
+              {saveStatus === 'saving' && (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              )}
+              {saveStatus === 'saved' && (
+                <>
+                  <Check className="w-3 h-3 text-green-500" />
+                  <span>Saved</span>
+                </>
+              )}
             </div>
 
             <div className="h-6 w-px bg-border" />
@@ -1253,6 +1454,7 @@ export default function CarouselPage() {
               onSelectionChange={setSelectedElement}
               onCanvasChange={handleCanvasChange}
               onElementMoving={() => setElementUpdateTrigger(prev => prev + 1)}
+              onShowLayers={() => { setRightPanelView('layers'); setShowRightSidebar(true); }}
               className="m-auto"
             />
           </div>
@@ -1274,19 +1476,26 @@ export default function CarouselPage() {
             )}
           </Button>
 
-          {/* Right Sidebar - Properties Panel */}
+          {/* Right Sidebar - Properties Panel or Layers Panel */}
           <div className={cn(
             "transition-all duration-300 ease-in-out",
             showRightSidebar ? "w-72 opacity-100" : "w-0 opacity-0 overflow-hidden",
             "hidden md:block",
             showRightSidebar && "block! absolute md:relative right-0 z-10 h-full bg-background shadow-lg md:shadow-none"
           )}>
-            <ElementProperties
-              selectedElement={selectedElement}
-              canvasRef={canvasRef}
-              onBackgroundChange={handleBackgroundChange}
-              updateTrigger={elementUpdateTrigger}
-            />
+            {rightPanelView === 'layers' ? (
+              <LayersPanel
+                canvasRef={canvasRef}
+                onClose={() => setRightPanelView('properties')}
+              />
+            ) : (
+              <ElementProperties
+                selectedElement={selectedElement}
+                canvasRef={canvasRef}
+                onBackgroundChange={handleBackgroundChange}
+                updateTrigger={elementUpdateTrigger}
+              />
+            )}
           </div>
         </div>
 
