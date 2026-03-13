@@ -49,6 +49,7 @@ declare module 'fabric' {
     _frameHasImage?: boolean;
     _frameOrigWidth?: number;
     _frameOrigHeight?: number;
+    _layerName?: string;
   }
 }
 
@@ -665,7 +666,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -2164,7 +2165,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {

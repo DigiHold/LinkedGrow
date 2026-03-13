@@ -74,6 +74,10 @@ function isUserGroup(obj: FabricObject): boolean {
 }
 
 function getLayerLabel(obj: FabricObject): string {
+  // Custom name takes priority
+  const customName = prop(obj, '_layerName');
+  if (customName) return customName;
+
   if (obj instanceof Textbox) {
     const text = obj.text || 'Text';
     return text.length > 20 ? text.substring(0, 20) + '...' : text;
@@ -168,6 +172,7 @@ function SortableLayerRow({
   onDelete,
   onToggleExpand,
   onMoveOut,
+  onRename,
 }: {
   item: FlatLayerItem;
   isSelected: boolean;
@@ -177,7 +182,12 @@ function SortableLayerRow({
   onDelete: (obj: FabricObject) => void;
   onToggleExpand: (id: string) => void;
   onMoveOut: (obj: FabricObject, parent: Group) => void;
+  onRename: (obj: FabricObject, name: string) => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const {
     attributes,
     listeners,
@@ -190,6 +200,20 @@ function SortableLayerRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  const startRename = () => {
+    setEditValue(item.label);
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commitRename = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== item.label) {
+      onRename(item.fabricObject, trimmed);
+    }
+    setIsEditing(false);
   };
 
   return (
@@ -232,8 +256,29 @@ function SortableLayerRow({
         {getLayerIcon(item.fabricObject)}
       </div>
 
-      {/* Label */}
-      <span className="text-xs truncate flex-1 select-none">{item.label}</span>
+      {/* Label - double-click to rename */}
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          className="text-xs flex-1 bg-background border border-cyan-300 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-cyan-400 min-w-0"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitRename();
+            if (e.key === 'Escape') setIsEditing(false);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className="text-xs truncate flex-1 select-none"
+          onDoubleClick={(e) => { e.stopPropagation(); startRename(); }}
+        >
+          {item.label}
+        </span>
+      )}
 
       {/* Action buttons */}
       <div className="flex items-center gap-0 opacity-0 group-hover/layer:opacity-100 transition-opacity shrink-0">
@@ -417,6 +462,16 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     refreshLayers();
   }, [canvasRef, refreshLayers]);
 
+  // Rename a layer (stores custom name on the Fabric object, persists in JSON)
+  const renameObject = useCallback((obj: FabricObject, name: string) => {
+    (obj as any)._layerName = name;
+    const canvas = canvasRef.current?.getCanvas();
+    if (canvas) {
+      (canvas as any).fire('object:modified', { target: obj });
+    }
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
+
   // DnD sensors - entire row is draggable with distance activation
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -562,6 +617,7 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
                     onDelete={deleteObject}
                     onToggleExpand={toggleExpand}
                     onMoveOut={moveOutOfGroup}
+                    onRename={renameObject}
                   />
                 ))}
               </SortableContext>
