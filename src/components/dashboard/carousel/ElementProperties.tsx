@@ -35,6 +35,7 @@ import {
   Layers,
   Ungroup,
   Plus,
+  Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -72,7 +73,6 @@ interface ElementPropertiesProps {
   onBrandColorsChange?: (colors: string[]) => void;
 }
 
-const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 128];
 
 const PRESET_COLORS = [
   '#000000', '#ffffff', '#374151', '#6b7280', '#9ca3af',
@@ -839,24 +839,40 @@ export function ElementProperties({
 
                   <div>
                     <Label className="text-xs text-muted-foreground">Font Size</Label>
-                    <Select
-                      value={String(elementProps.fontSize)}
-                      onValueChange={(value) => {
-                        applyTextStyle({ fontSize: Number(value) });
-                        setElementProps(prev => ({ ...prev, fontSize: Number(value) }));
-                      }}
-                    >
-                      <SelectTrigger className="mt-2 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FONT_SIZES.map((size) => (
-                          <SelectItem key={size} value={String(size)}>
-                            {size}px
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-1 mt-2">
+                      <button
+                        className="h-8 w-8 shrink-0 rounded-md border border-input bg-background flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+                        onClick={() => {
+                          const newSize = Math.max(1, (elementProps.fontSize || 48) - 1);
+                          applyTextStyle({ fontSize: newSize });
+                          setElementProps(prev => ({ ...prev, fontSize: newSize }));
+                        }}
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={elementProps.fontSize || 48}
+                        onChange={(e) => {
+                          const val = Math.max(1, Math.min(500, Number(e.target.value) || 1));
+                          applyTextStyle({ fontSize: val });
+                          setElementProps(prev => ({ ...prev, fontSize: val }));
+                        }}
+                        className="h-8 w-full text-center text-sm border border-input rounded-md bg-background [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        className="h-8 w-8 shrink-0 rounded-md border border-input bg-background flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
+                        onClick={() => {
+                          const newSize = Math.min(500, (elementProps.fontSize || 48) + 1);
+                          applyTextStyle({ fontSize: newSize });
+                          setElementProps(prev => ({ ...prev, fontSize: newSize }));
+                        }}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   <div>
