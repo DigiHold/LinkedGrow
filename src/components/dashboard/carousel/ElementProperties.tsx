@@ -182,8 +182,16 @@ export function ElementProperties({
     const hasPerCorner = el.radiusTL != null || el.radiusTR != null || el.radiusBR != null || el.radiusBL != null;
     setPerCornerMode(hasPerCorner);
 
+    // For text elements, read styles from the first character's complete style
+    // declaration (merges object-level defaults with per-character overrides)
+    // so the panel shows the actual rendered values, not stale defaults.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const charStyle = textbox && textbox.text && textbox.text.length > 0 ? (textbox as any).getCompleteStyleDeclaration(0, 0) : null;
+
     setElementProps({
-      fill: typeof fillValue === 'string' ? fillValue : '#000000',
+      fill: textbox
+        ? (typeof (charStyle?.fill) === 'string' ? charStyle.fill : (typeof fillValue === 'string' ? fillValue : '#000000'))
+        : (typeof fillValue === 'string' ? fillValue : '#000000'),
       stroke: (selectedElement.stroke as string) || '',
       strokeWidth: selectedElement.strokeWidth || 0,
       opacity: selectedElement.opacity || 1,
@@ -197,12 +205,11 @@ export function ElementProperties({
       radiusTR: el.radiusTR != null ? Math.round(el.radiusTR) : undefined,
       radiusBR: el.radiusBR != null ? Math.round(el.radiusBR) : undefined,
       radiusBL: el.radiusBL != null ? Math.round(el.radiusBL) : undefined,
-      // Text-specific
-      fontSize: textbox?.fontSize || 48,
-      fontFamily: textbox?.fontFamily || 'Inter',
-      fontWeight: String(textbox?.fontWeight || 'normal'),
-      fontStyle: textbox?.fontStyle || 'normal',
-      underline: textbox?.underline || false,
+      fontSize: charStyle?.fontSize ?? textbox?.fontSize ?? 48,
+      fontFamily: charStyle?.fontFamily ?? textbox?.fontFamily ?? 'Inter',
+      fontWeight: String(charStyle?.fontWeight ?? textbox?.fontWeight ?? 'normal'),
+      fontStyle: (charStyle?.fontStyle ?? textbox?.fontStyle ?? 'normal') as string,
+      underline: !!(charStyle?.underline ?? textbox?.underline),
       textAlign: textbox?.textAlign || 'center',
     });
 
@@ -287,9 +294,13 @@ export function ElementProperties({
       // Apply to selection only (per-character styles)
       tb.setSelectionStyles(styles);
     } else {
-      // Apply to entire textbox (object-level)
+      // Apply to entire textbox: set object-level AND clear per-character
+      // overrides so the new value takes effect visually (per-char styles
+      // would otherwise win over object-level defaults).
       Object.entries(styles).forEach(([key, value]) => {
         tb.set(key as keyof Textbox, value);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tb.removeStyle(key as any);
       });
     }
     tb.dirty = true;
