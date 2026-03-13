@@ -27,6 +27,29 @@ import type { BrandingData } from "./types";
 import { IconPicker, QuickIcons, getIconById } from "./IconPicker";
 import { frameCategories, getFramesByCategory, type FrameCategory } from "./frameData";
 
+// Ensure SVG has width/height attributes (required for <img> rendering)
+// Many SVGs only have viewBox but no explicit dimensions, which causes
+// them to render as 0x0 when loaded as an image data URL
+function ensureSvgDimensions(svgText: string): string {
+  if (/\bwidth\s*=/.test(svgText) && /\bheight\s*=/.test(svgText)) {
+    return svgText;
+  }
+  const viewBoxMatch = svgText.match(/viewBox\s*=\s*["']([^"']+)["']/);
+  if (viewBoxMatch) {
+    const parts = viewBoxMatch[1].trim().split(/[\s,]+/);
+    if (parts.length === 4) {
+      return svgText.replace(/<svg\b/, `<svg width="${parts[2]}" height="${parts[3]}"`);
+    }
+  }
+  return svgText;
+}
+
+// Convert SVG text to a data URL with dimensions ensured
+function svgToDataUrl(svgText: string): string {
+  const fixed = ensureSvgDimensions(svgText);
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(fixed)))}`;
+}
+
 interface ElementToolbarProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
   branding?: BrandingData;
@@ -104,19 +127,15 @@ export function ElementToolbar({
     const file = e.target.files?.[0];
     if (!file || !onImageUpload) return;
 
-    // Handle SVG files - render as image to preserve all original colors/styles
+    // Handle SVG files - read as text to ensure width/height attributes exist
     if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
       if (file.size > 5 * 1024 * 1024) {
         alert('SVG file size must be less than 5MB');
         return;
       }
       try {
-        const reader = new FileReader();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        const svgText = await file.text();
+        const dataUrl = svgToDataUrl(svgText);
         await canvasRef.current?.addImage(dataUrl);
       } catch (error) {
         console.error('Failed to load SVG:', error);
@@ -732,12 +751,8 @@ export function ElementToolbar({
                         if (!file) return;
                         try {
                           if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
-                            const reader = new FileReader();
-                            const dataUrl = await new Promise<string>((resolve, reject) => {
-                              reader.onload = () => resolve(reader.result as string);
-                              reader.onerror = reject;
-                              reader.readAsDataURL(file);
-                            });
+                            const svgText = await file.text();
+                            const dataUrl = svgToDataUrl(svgText);
                             await canvasRef.current?.addImage(dataUrl);
                           } else if (onImageUpload) {
                             const url = await onImageUpload(file);
