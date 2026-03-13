@@ -1193,7 +1193,7 @@ export default function CarouselPage() {
               ) : (
                 <Images className="w-4 h-4 mr-2" />
               )}
-              Images
+              Export As Images
             </Button>
             <Button
               size="sm"
@@ -1206,7 +1206,7 @@ export default function CarouselPage() {
               ) : (
                 <FileDown className="w-4 h-4 mr-2" />
               )}
-              Export PDF
+              Export As PDF
             </Button>
           </div>
         </div>
