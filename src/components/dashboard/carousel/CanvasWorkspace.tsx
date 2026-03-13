@@ -53,6 +53,10 @@ declare module 'fabric' {
     _frameOrigHeight?: number;
     _layerName?: string;
     _locked?: boolean;
+    _strokeTop?: number;
+    _strokeRight?: number;
+    _strokeBottom?: number;
+    _strokeLeft?: number;
   }
 }
 
@@ -353,9 +357,9 @@ const origMouseDown = (Textbox.prototype as any)._mouseDownHandler;
 
 // Register custom per-corner radius properties as cache-invalidating
 // so Fabric regenerates the render cache when they change via set()
-Rect.cacheProperties = [...Rect.cacheProperties, 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL'];
+Rect.cacheProperties = [...Rect.cacheProperties, 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_strokeTop', '_strokeRight', '_strokeBottom', '_strokeLeft'];
 
-// Override Rect._render to support per-corner border radius (radiusTL/TR/BR/BL)
+// Override Rect._render to support per-corner border radius and per-side stroke
 const kRect = 1 - 0.5522847498; // bezier constant for circular arc approximation
 const origRectRender = Rect.prototype._render;
 Rect.prototype._render = function(ctx: CanvasRenderingContext2D) {
@@ -363,45 +367,135 @@ Rect.prototype._render = function(ctx: CanvasRenderingContext2D) {
   const tr = this.radiusTR;
   const br = this.radiusBR;
   const bl = this.radiusBL;
+  const sTop = this._strokeTop;
+  const sRight = this._strokeRight;
+  const sBottom = this._strokeBottom;
+  const sLeft = this._strokeLeft;
+  const hasPerCornerRadius = tl != null || tr != null || br != null || bl != null;
+  const hasPerSideStroke = sTop != null || sRight != null || sBottom != null || sLeft != null;
 
-  // If any per-corner radius is set, use custom rendering
-  if (tl != null || tr != null || br != null || bl != null) {
-    const { width: w, height: h } = this;
-    const x = -w / 2;
-    const y = -h / 2;
+  // No custom rendering needed
+  if (!hasPerCornerRadius && !hasPerSideStroke) {
+    return origRectRender.call(this, ctx);
+  }
 
-    // CSS-spec proportional reduction: if adjacent radii exceed edge length,
-    // scale all radii down proportionally (allows higher values per corner)
+  const { width: w, height: h } = this;
+  const x = -w / 2;
+  const y = -h / 2;
+
+  // Compute corner radii
+  let rtl: number, rtr: number, rbr: number, rbl: number;
+  if (hasPerCornerRadius) {
     const rawTl = Math.max(tl ?? 0, 0);
     const rawTr = Math.max(tr ?? 0, 0);
     const rawBr = Math.max(br ?? 0, 0);
     const rawBl = Math.max(bl ?? 0, 0);
-    const f = Math.min(
-      1,
+    const f = Math.min(1,
       (rawTl + rawTr) > 0 ? w / (rawTl + rawTr) : 1,
       (rawTr + rawBr) > 0 ? h / (rawTr + rawBr) : 1,
       (rawBr + rawBl) > 0 ? w / (rawBr + rawBl) : 1,
       (rawBl + rawTl) > 0 ? h / (rawBl + rawTl) : 1,
     );
-    const rtl = rawTl * f;
-    const rtr = rawTr * f;
-    const rbr = rawBr * f;
-    const rbl = rawBl * f;
-
-    ctx.beginPath();
-    ctx.moveTo(x + rtl, y);
-    ctx.lineTo(x + w - rtr, y);
-    if (rtr > 0) ctx.bezierCurveTo(x + w - kRect * rtr, y, x + w, y + kRect * rtr, x + w, y + rtr);
-    ctx.lineTo(x + w, y + h - rbr);
-    if (rbr > 0) ctx.bezierCurveTo(x + w, y + h - kRect * rbr, x + w - kRect * rbr, y + h, x + w - rbr, y + h);
-    ctx.lineTo(x + rbl, y + h);
-    if (rbl > 0) ctx.bezierCurveTo(x + kRect * rbl, y + h, x, y + h - kRect * rbl, x, y + h - rbl);
-    ctx.lineTo(x, y + rtl);
-    if (rtl > 0) ctx.bezierCurveTo(x, y + kRect * rtl, x + kRect * rtl, y, x + rtl, y);
-    ctx.closePath();
-    this._renderPaintInOrder(ctx);
+    rtl = rawTl * f;
+    rtr = rawTr * f;
+    rbr = rawBr * f;
+    rbl = rawBl * f;
   } else {
-    origRectRender.call(this, ctx);
+    const r = Math.max(Math.min(this.rx || 0, w / 2, h / 2), 0);
+    rtl = rtr = rbr = rbl = r;
+  }
+
+  // Build full shape path
+  ctx.beginPath();
+  ctx.moveTo(x + rtl, y);
+  ctx.lineTo(x + w - rtr, y);
+  if (rtr > 0) ctx.bezierCurveTo(x + w - kRect * rtr, y, x + w, y + kRect * rtr, x + w, y + rtr);
+  ctx.lineTo(x + w, y + h - rbr);
+  if (rbr > 0) ctx.bezierCurveTo(x + w, y + h - kRect * rbr, x + w - kRect * rbr, y + h, x + w - rbr, y + h);
+  ctx.lineTo(x + rbl, y + h);
+  if (rbl > 0) ctx.bezierCurveTo(x + kRect * rbl, y + h, x, y + h - kRect * rbl, x, y + h - rbl);
+  ctx.lineTo(x, y + rtl);
+  if (rtl > 0) ctx.bezierCurveTo(x, y + kRect * rtl, x + kRect * rtl, y, x + rtl, y);
+  ctx.closePath();
+
+  if (hasPerSideStroke) {
+    // Fill the shape without default stroke
+    this._renderFill(ctx);
+
+    // Draw each side individually with its own width
+    const strokeColor = (typeof this.stroke === 'string' ? this.stroke : '#000000') || '#000000';
+    const dashArr = this.strokeDashArray;
+    const st = sTop ?? 0;
+    const sr = sRight ?? 0;
+    const sb = sBottom ?? 0;
+    const sl = sLeft ?? 0;
+
+    const drawSegment = (pathFn: () => void, lineWidth: number) => {
+      if (lineWidth <= 0) return;
+      ctx.save();
+      ctx.beginPath();
+      pathFn();
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = strokeColor;
+      if (dashArr && dashArr.length) ctx.setLineDash(dashArr);
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'miter';
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    // Top edge
+    drawSegment(() => {
+      ctx.moveTo(x + rtl, y);
+      ctx.lineTo(x + w - rtr, y);
+    }, st);
+
+    // Right edge
+    drawSegment(() => {
+      ctx.moveTo(x + w, y + rtr);
+      ctx.lineTo(x + w, y + h - rbr);
+    }, sr);
+
+    // Bottom edge
+    drawSegment(() => {
+      ctx.moveTo(x + w - rbr, y + h);
+      ctx.lineTo(x + rbl, y + h);
+    }, sb);
+
+    // Left edge
+    drawSegment(() => {
+      ctx.moveTo(x, y + h - rbl);
+      ctx.lineTo(x, y + rtl);
+    }, sl);
+
+    // Corner curves (use max of adjacent side widths)
+    if (rtl > 0) {
+      drawSegment(() => {
+        ctx.moveTo(x, y + rtl);
+        ctx.bezierCurveTo(x, y + kRect * rtl, x + kRect * rtl, y, x + rtl, y);
+      }, Math.max(st, sl));
+    }
+    if (rtr > 0) {
+      drawSegment(() => {
+        ctx.moveTo(x + w - rtr, y);
+        ctx.bezierCurveTo(x + w - kRect * rtr, y, x + w, y + kRect * rtr, x + w, y + rtr);
+      }, Math.max(st, sr));
+    }
+    if (rbr > 0) {
+      drawSegment(() => {
+        ctx.moveTo(x + w, y + h - rbr);
+        ctx.bezierCurveTo(x + w, y + h - kRect * rbr, x + w - kRect * rbr, y + h, x + w - rbr, y + h);
+      }, Math.max(sr, sb));
+    }
+    if (rbl > 0) {
+      drawSegment(() => {
+        ctx.moveTo(x + rbl, y + h);
+        ctx.bezierCurveTo(x + kRect * rbl, y + h, x, y + h - kRect * rbl, x, y + h - rbl);
+      }, Math.max(sb, sl));
+    }
+  } else {
+    // No per-side stroke, use standard paint order
+    this._renderPaintInOrder(ctx);
   }
 };
 
@@ -689,7 +783,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked', '_strokeTop', '_strokeRight', '_strokeBottom', '_strokeLeft']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -2212,7 +2306,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked', '_strokeTop', '_strokeRight', '_strokeBottom', '_strokeLeft']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {

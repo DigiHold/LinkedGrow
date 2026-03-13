@@ -105,6 +105,11 @@ export function ElementProperties({
     fill: '#000000',
     stroke: '',
     strokeWidth: 0,
+    strokeDashArray: [] as number[],
+    _strokeTop: undefined as number | undefined,
+    _strokeRight: undefined as number | undefined,
+    _strokeBottom: undefined as number | undefined,
+    _strokeLeft: undefined as number | undefined,
     opacity: 1,
     left: 0,
     top: 0,
@@ -133,6 +138,7 @@ export function ElementProperties({
   const [iconColor, setIconColor] = useState('#000000');
   const [fontsCacheReady, setFontsCacheReady] = useState(false);
   const [perCornerMode, setPerCornerMode] = useState(false);
+  const [perSideStrokeMode, setPerSideStrokeMode] = useState(false);
   const [shadowEnabled, setShadowEnabled] = useState(false);
   const [shadowColor, setShadowColor] = useState('rgba(0,0,0,0.25)');
   const [shadowBlur, setShadowBlur] = useState(10);
@@ -201,6 +207,8 @@ export function ElementProperties({
     const el = selectedElement as any;
     const hasPerCorner = el.radiusTL != null || el.radiusTR != null || el.radiusBR != null || el.radiusBL != null;
     setPerCornerMode(hasPerCorner);
+    const hasPerSideStroke = el._strokeTop != null || el._strokeRight != null || el._strokeBottom != null || el._strokeLeft != null;
+    setPerSideStrokeMode(hasPerSideStroke);
 
     // For text elements, read styles from the first character's complete style
     // declaration (merges object-level defaults with per-character overrides)
@@ -214,6 +222,11 @@ export function ElementProperties({
         : (typeof fillValue === 'string' ? fillValue : '#000000'),
       stroke: (selectedElement.stroke as string) || '',
       strokeWidth: selectedElement.strokeWidth || 0,
+      strokeDashArray: (selectedElement.strokeDashArray as number[]) || [],
+      _strokeTop: el._strokeTop,
+      _strokeRight: el._strokeRight,
+      _strokeBottom: el._strokeBottom,
+      _strokeLeft: el._strokeLeft,
       opacity: selectedElement.opacity || 1,
       left: Math.round(selectedElement.left || 0),
       top: Math.round(selectedElement.top || 0),
@@ -1348,31 +1361,158 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Stroke (for shapes only, not images, text, or frames) */}
-              {!isTextElement && !isImageElement && !isFrameElement && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Stroke</Label>
-                  <div className="mt-2 space-y-2">
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="color"
-                        value={elementProps.stroke || '#000000'}
-                        onChange={(e) => updateElement({ stroke: e.target.value })}
-                        className="w-8 h-8 rounded cursor-pointer border-0"
-                      />
-                      <Input
-                        type="number"
-                        value={elementProps.strokeWidth}
-                        onChange={(e) => updateElement({ strokeWidth: Number(e.target.value) })}
-                        className="h-8 text-xs w-16"
-                        min={0}
-                        max={20}
-                      />
-                      <span className="text-xs text-muted-foreground">px</span>
+              {/* Border (for shapes only, not images, text, or frames) */}
+              {!isTextElement && !isImageElement && !isFrameElement && (() => {
+                const anyBorderWidth = perSideStrokeMode
+                  ? ((elementProps._strokeTop ?? 0) + (elementProps._strokeRight ?? 0) + (elementProps._strokeBottom ?? 0) + (elementProps._strokeLeft ?? 0)) > 0
+                  : elementProps.strokeWidth > 0;
+
+                const currentStyle = (() => {
+                  const d = elementProps.strokeDashArray;
+                  if (!d || d.length === 0) return 'solid';
+                  if (d[0] >= 5) return 'dashed';
+                  return 'dotted';
+                })();
+
+                const switchToPerSide = () => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  const w = elementProps.strokeWidth || 0;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  el._strokeTop = w;
+                  el._strokeRight = w;
+                  el._strokeBottom = w;
+                  el._strokeLeft = w;
+                  selectedElement.set('strokeWidth' as keyof FabricObject, 0);
+                  selectedElement.setCoords();
+                  canvas.renderAll();
+                  setPerSideStrokeMode(true);
+                  setElementProps(prev => ({ ...prev, strokeWidth: 0, _strokeTop: w, _strokeRight: w, _strokeBottom: w, _strokeLeft: w }));
+                };
+
+                const switchToUniform = () => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const el = selectedElement as any;
+                  const avg = Math.round(((el._strokeTop ?? 0) + (el._strokeRight ?? 0) + (el._strokeBottom ?? 0) + (el._strokeLeft ?? 0)) / 4);
+                  delete el._strokeTop;
+                  delete el._strokeRight;
+                  delete el._strokeBottom;
+                  delete el._strokeLeft;
+                  selectedElement.set('strokeWidth' as keyof FabricObject, avg);
+                  selectedElement.setCoords();
+                  canvas.renderAll();
+                  setPerSideStrokeMode(false);
+                  setElementProps(prev => ({ ...prev, strokeWidth: avg, _strokeTop: undefined, _strokeRight: undefined, _strokeBottom: undefined, _strokeLeft: undefined }));
+                };
+
+                const updatePerSide = (side: '_strokeTop' | '_strokeRight' | '_strokeBottom' | '_strokeLeft', val: number) => {
+                  if (!selectedElement) return;
+                  const canvas = canvasRef.current?.getCanvas();
+                  if (!canvas) return;
+                  const clamped = Math.max(0, Math.min(val, 20));
+                  selectedElement.set(side as keyof FabricObject, clamped);
+                  selectedElement.set('strokeWidth' as keyof FabricObject, 0);
+                  selectedElement.setCoords();
+                  canvas.renderAll();
+                  setElementProps(prev => ({ ...prev, [side]: clamped }));
+                };
+
+                const updateStyle = (style: string) => {
+                  const dashArray = style === 'dashed' ? [8, 4] : style === 'dotted' ? [2, 2] : [];
+                  updateElement({ strokeDashArray: dashArray } as Record<string, unknown>);
+                };
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Border</Label>
+                      {selectedElement?.type === 'rect' && (
+                        <button
+                          className={cn(
+                            "text-xs px-1.5 py-0.5 rounded transition-colors",
+                            perSideStrokeMode
+                              ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
+                              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                          onClick={perSideStrokeMode ? switchToUniform : switchToPerSide}
+                          title={perSideStrokeMode ? "Switch to uniform border" : "Switch to per-side border"}
+                        >
+                          {perSideStrokeMode ? "Uniform" : "Per side"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      {!perSideStrokeMode ? (
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="color"
+                            value={elementProps.stroke || '#000000'}
+                            onChange={(e) => updateElement({ stroke: e.target.value })}
+                            className="w-8 h-8 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            type="number"
+                            value={elementProps.strokeWidth}
+                            onChange={(e) => updateElement({ strokeWidth: Number(e.target.value) })}
+                            className="h-8 text-xs w-16"
+                            min={0}
+                            max={20}
+                          />
+                          <span className="text-xs text-muted-foreground">px</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="color"
+                              value={elementProps.stroke || '#000000'}
+                              onChange={(e) => updateElement({ stroke: e.target.value })}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              ['_strokeTop', 'T'] as const,
+                              ['_strokeRight', 'R'] as const,
+                              ['_strokeBottom', 'B'] as const,
+                              ['_strokeLeft', 'L'] as const,
+                            ]).map(([key, label]) => (
+                              <div key={key} className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground w-4">{label}</span>
+                                <input
+                                  type="number"
+                                  value={elementProps[key] ?? 0}
+                                  onChange={(e) => updatePerSide(key, Number(e.target.value))}
+                                  className="h-7 text-xs w-full rounded-md border border-input bg-background px-2 text-center focus:outline-none focus:ring-2 focus:ring-ring"
+                                  min={0}
+                                  max={20}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {anyBorderWidth && (
+                        <Select value={currentStyle} onValueChange={updateStyle}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="solid">Solid</SelectItem>
+                            <SelectItem value="dashed">Dashed</SelectItem>
+                            <SelectItem value="dotted">Dotted</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Border Radius (for rectangles only) */}
               {isShapeElement && selectedElement?.type === 'rect' && (() => {
