@@ -315,8 +315,13 @@ export function ElementProperties({
     } else {
       Object.entries(styles).forEach(([key, value]) => {
         tb.set(key as keyof Textbox, value);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tb.removeStyle(key as any);
+        // Don't removeStyle('fill') - it destroys per-character gradient fills
+        // on other words. Per-char fills take priority, so clearing them would
+        // erase gradients that should be preserved.
+        if (key !== 'fill') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tb.removeStyle(key as any);
+        }
       });
     }
 
