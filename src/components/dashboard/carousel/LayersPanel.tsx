@@ -10,7 +10,6 @@ import {
   EyeOff,
   Copy,
   Trash2,
-  GripVertical,
   ChevronRight,
   Type,
   Image as ImageIcon,
@@ -20,6 +19,7 @@ import {
   Layers,
   Frame,
   Pen,
+  ArrowUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -27,7 +27,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -35,7 +34,6 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -46,13 +44,16 @@ interface LayersPanelProps {
   onClose: () => void;
 }
 
-interface LayerItem {
+interface FlatLayerItem {
   id: string;
   fabricObject: FabricObject;
-  type: string;
   label: string;
   visible: boolean;
-  children?: LayerItem[];
+  depth: number;
+  parentGroup: Group | null;
+  isGroup: boolean;
+  isExpanded: boolean;
+  hasChildren: boolean;
 }
 
 // Stable object ID mapping
@@ -67,6 +68,10 @@ function getObjectId(obj: FabricObject): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function prop(obj: FabricObject, key: string): any { return (obj as any)[key]; }
+
+function isUserGroup(obj: FabricObject): boolean {
+  return obj instanceof Group && !prop(obj, '_isSvgIcon');
+}
 
 function getLayerLabel(obj: FabricObject): string {
   if (obj instanceof Textbox) {
@@ -100,42 +105,78 @@ function getLayerIcon(obj: FabricObject) {
   return <Square className="w-3.5 h-3.5" />;
 }
 
-function buildLayerItem(obj: FabricObject): LayerItem {
-  const item: LayerItem = {
-    id: getObjectId(obj),
-    fabricObject: obj,
-    type: obj.type || 'object',
-    label: getLayerLabel(obj),
-    visible: obj.visible !== false,
-  };
-  if (obj instanceof Group) {
-    const children = obj.getObjects();
-    item.children = children.map(child => buildLayerItem(child));
+// Build a flat list of all layers (including nested group children)
+function buildFlatList(objects: FabricObject[], expandedGroups: Set<string>): FlatLayerItem[] {
+  const result: FlatLayerItem[] = [];
+
+  function addItem(obj: FabricObject, depth: number, parentGroup: Group | null) {
+    if (prop(obj, 'isBackgroundRect')) return;
+
+    const id = getObjectId(obj);
+    const userGroup = isUserGroup(obj);
+    const isExpanded = userGroup && expandedGroups.has(id);
+    const children = userGroup ? (obj as Group).getObjects() : [];
+
+    result.push({
+      id,
+      fabricObject: obj,
+      label: getLayerLabel(obj),
+      visible: obj.visible !== false,
+      depth,
+      parentGroup,
+      isGroup: userGroup,
+      isExpanded,
+      hasChildren: children.length > 0,
+    });
+
+    if (isExpanded) {
+      // Show children in reverse z-order (highest z first in list)
+      for (let i = children.length - 1; i >= 0; i--) {
+        addItem(children[i], depth + 1, obj as Group);
+      }
+    }
   }
-  return item;
+
+  // Canvas objects: last has highest z-index, show first in list
+  for (let i = objects.length - 1; i >= 0; i--) {
+    addItem(objects[i], 0, null);
+  }
+
+  return result;
 }
 
-// Sortable layer row component
+// Remove empty groups recursively up the chain
+function cleanupEmptyGroup(group: Group, canvas: { remove: (obj: FabricObject) => void }) {
+  if (group.getObjects().length > 0) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parent = (group as any).parent as Group | undefined;
+  if (parent && parent instanceof Group) {
+    parent.remove(group);
+    cleanupEmptyGroup(parent, canvas);
+  } else {
+    canvas.remove(group);
+  }
+}
+
+// Sortable layer row
 function SortableLayerRow({
   item,
   isSelected,
-  depth,
-  expandedGroups,
   onSelect,
   onToggleVisibility,
   onDuplicate,
   onDelete,
   onToggleExpand,
+  onMoveOut,
 }: {
-  item: LayerItem;
+  item: FlatLayerItem;
   isSelected: boolean;
-  depth: number;
-  expandedGroups: Set<string>;
   onSelect: (obj: FabricObject) => void;
   onToggleVisibility: (obj: FabricObject) => void;
   onDuplicate: (obj: FabricObject) => void;
   onDelete: (obj: FabricObject) => void;
   onToggleExpand: (id: string) => void;
+  onMoveOut: (obj: FabricObject, parent: Group) => void;
 }) {
   const {
     attributes,
@@ -151,120 +192,106 @@ function SortableLayerRow({
     transition,
   };
 
-  const isGroup = item.children && item.children.length > 0;
-  const isExpanded = expandedGroups.has(item.id);
-
   return (
-    <>
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={cn(
-          "flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer group transition-colors",
-          isSelected && "bg-cyan-50 dark:bg-cyan-900/20 ring-1 ring-cyan-200 dark:ring-cyan-800",
-          !isSelected && "hover:bg-slate-100 dark:hover:bg-slate-800",
-          isDragging && "z-50 opacity-80 shadow-lg bg-background",
-          !item.visible && "opacity-50"
-        )}
-        onClick={() => onSelect(item.fabricObject)}
-      >
-        {/* Drag handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-          style={{ marginLeft: depth * 16 }}
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer group/layer transition-colors",
+        isSelected && "bg-cyan-50 dark:bg-cyan-900/20 ring-1 ring-cyan-200 dark:ring-cyan-800",
+        !isSelected && "hover:bg-slate-100 dark:hover:bg-slate-800",
+        isDragging && "z-50 opacity-70 shadow-lg bg-background ring-1 ring-cyan-300",
+        !item.visible && "opacity-50"
+      )}
+      onClick={() => onSelect(item.fabricObject)}
+      {...attributes}
+      {...listeners}
+    >
+      {/* Depth indent + visual connector */}
+      {item.depth > 0 && (
+        <div className="flex items-center shrink-0" style={{ width: item.depth * 14 }}>
+          <div className="w-px h-full bg-border/40 ml-1.5" />
+        </div>
+      )}
+
+      {/* Group expand/collapse */}
+      {item.isGroup && item.hasChildren ? (
+        <button
+          className="shrink-0 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onToggleExpand(item.id); }}
         >
-          <GripVertical className="w-3 h-3" />
-        </div>
+          <ChevronRight className={cn("w-3 h-3 transition-transform", item.isExpanded && "rotate-90")} />
+        </button>
+      ) : (
+        <div className="w-4 shrink-0" />
+      )}
 
-        {/* Group expand/collapse */}
-        {isGroup ? (
-          <button
-            className="shrink-0 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
-            onClick={(e) => { e.stopPropagation(); onToggleExpand(item.id); }}
-          >
-            <ChevronRight className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-90")} />
-          </button>
-        ) : (
-          <div className="w-4 shrink-0" />
-        )}
-
-        {/* Type icon */}
-        <div className="text-muted-foreground shrink-0">
-          {getLayerIcon(item.fabricObject)}
-        </div>
-
-        {/* Label */}
-        <span className="text-xs truncate flex-1 select-none">{item.label}</span>
-
-        {/* Action buttons - visible on hover */}
-        <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button
-            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
-            onClick={(e) => { e.stopPropagation(); onToggleVisibility(item.fabricObject); }}
-            title={item.visible ? "Hide" : "Show"}
-          >
-            {item.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground" />}
-          </button>
-          <button
-            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
-            onClick={(e) => { e.stopPropagation(); onDuplicate(item.fabricObject); }}
-            title="Duplicate"
-          >
-            <Copy className="w-3 h-3" />
-          </button>
-          <button
-            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-500"
-            onClick={(e) => { e.stopPropagation(); onDelete(item.fabricObject); }}
-            title="Delete"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
+      {/* Type icon */}
+      <div className="text-muted-foreground shrink-0">
+        {getLayerIcon(item.fabricObject)}
       </div>
 
-      {/* Group children */}
-      {isGroup && isExpanded && item.children?.map((child) => (
-        <SortableLayerRow
-          key={child.id}
-          item={child}
-          isSelected={false}
-          depth={depth + 1}
-          expandedGroups={expandedGroups}
-          onSelect={onSelect}
-          onToggleVisibility={onToggleVisibility}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-          onToggleExpand={onToggleExpand}
-        />
-      ))}
-    </>
+      {/* Label */}
+      <span className="text-xs truncate flex-1 select-none">{item.label}</span>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-0 opacity-0 group-hover/layer:opacity-100 transition-opacity shrink-0">
+        {/* Move out of group button */}
+        {item.depth > 0 && item.parentGroup && (
+          <button
+            className="p-1 rounded hover:bg-cyan-100 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onMoveOut(item.fabricObject, item.parentGroup!); }}
+            title="Move out of group"
+          >
+            <ArrowUp className="w-3 h-3" />
+          </button>
+        )}
+        <button
+          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onToggleVisibility(item.fabricObject); }}
+          title={item.visible ? "Hide" : "Show"}
+        >
+          {item.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground" />}
+        </button>
+        <button
+          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDuplicate(item.fabricObject); }}
+          title="Duplicate"
+        >
+          <Copy className="w-3 h-3" />
+        </button>
+        <button
+          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-500"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDelete(item.fabricObject); }}
+          title="Delete"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
   );
 }
 
 export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
-  const [layerItems, setLayerItems] = useState<LayerItem[]>([]);
+  const [flatItems, setFlatItems] = useState<FlatLayerItem[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [, forceRender] = useState(0);
-  const refreshCountRef = useRef(0);
+  const expandedGroupsRef = useRef<Set<string>>(new Set());
+  const flatItemsRef = useRef<FlatLayerItem[]>([]);
+  const isDraggingRef = useRef(false);
 
   const refreshLayers = useCallback(() => {
+    if (isDraggingRef.current) return; // Don't refresh mid-drag
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
-
-    const objects = canvas.getObjects();
-    const layers: LayerItem[] = [];
-
-    // Reverse order: top z-order first
-    for (let i = objects.length - 1; i >= 0; i--) {
-      const obj = objects[i];
-      if (prop(obj, 'isBackgroundRect')) continue;
-      layers.push(buildLayerItem(obj));
-    }
-
-    setLayerItems(layers);
-    refreshCountRef.current++;
+    const items = buildFlatList(canvas.getObjects(), expandedGroupsRef.current);
+    setFlatItems(items);
+    flatItemsRef.current = items;
   }, [canvasRef]);
 
   // Subscribe to canvas events
@@ -282,7 +309,6 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     canvas.on('selection:updated', onSelection);
     canvas.on('selection:cleared', onSelection);
 
-    // Initial load
     refreshLayers();
 
     return () => {
@@ -330,48 +356,162 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     if (!canvas) return;
     const active = canvas.getActiveObject();
     if (active === obj) canvas.discardActiveObject();
-    canvas.remove(obj);
+    // If inside a group, remove from group
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parent = (obj as any).parent as Group | undefined;
+    if (parent && parent instanceof Group) {
+      parent.remove(obj);
+      cleanupEmptyGroup(parent, canvas);
+    } else {
+      canvas.remove(obj);
+    }
     canvas.renderAll();
-  }, [canvasRef]);
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      expandedGroupsRef.current = next;
       return next;
     });
-  }, []);
+    // Refresh with new expanded state
+    setTimeout(() => refreshLayers(), 0);
+  }, [refreshLayers]);
 
-  // Drag-and-drop sensors
+  // Move an object out of its parent group
+  const moveOutOfGroup = useCallback((obj: FabricObject, parentGroup: Group) => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    // Remove from group (Fabric.js auto-converts coords to absolute)
+    parentGroup.remove(obj);
+    obj.setCoords();
+
+    // Add to parent's parent or canvas root
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const grandParent = (parentGroup as any).parent as Group | undefined;
+    if (grandParent && grandParent instanceof Group) {
+      // Insert after the parent group within grandparent
+      const parentIdx = grandParent.getObjects().indexOf(parentGroup);
+      grandParent.insertAt(parentIdx + 1, obj);
+      grandParent.setCoords();
+    } else {
+      // Add to canvas, position right after the parent group in z-order
+      canvas.add(obj);
+      const parentIdx = canvas.getObjects().indexOf(parentGroup);
+      if (parentIdx >= 0) {
+        canvas.moveObjectTo(obj, parentIdx + 1);
+      }
+    }
+
+    // Cleanup empty source group
+    cleanupEmptyGroup(parentGroup, canvas);
+
+    canvas.setActiveObject(obj);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (canvas as any).fire('object:modified', { target: obj });
+    canvas.renderAll();
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
+
+  // DnD sensors - entire row is draggable with distance activation
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    isDraggingRef.current = false;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const objects = canvas.getObjects().filter(o => !prop(o, 'isBackgroundRect'));
-    const reversedObjects = [...objects].reverse(); // UI order (top first)
+    const items = flatItemsRef.current;
+    const activeItem = items.find(i => i.id === active.id);
+    const overItem = items.find(i => i.id === over.id);
+    if (!activeItem || !overItem) return;
 
-    const oldIndex = reversedObjects.findIndex(o => getObjectId(o) === active.id);
-    const newIndex = reversedObjects.findIndex(o => getObjectId(o) === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
+    const obj = activeItem.fabricObject;
+    const sourceParent = activeItem.parentGroup;
+    const targetParent = overItem.parentGroup;
 
-    const reordered = arrayMove(reversedObjects, oldIndex, newIndex);
-    // Reverse back to z-order and apply
-    const newZOrder = [...reordered].reverse();
-    const bgCount = canvas.getObjects().filter(o => prop(o, 'isBackgroundRect')).length;
+    // Prevent dragging a group into itself or its descendants
+    if (activeItem.isGroup) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let check: FabricObject | undefined = targetParent || undefined;
+      while (check) {
+        if (check === obj) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        check = (check as any).parent;
+      }
+    }
 
-    newZOrder.forEach((obj, index) => {
-      canvas.moveObjectTo(obj, index + bgCount);
-    });
+    if (sourceParent === targetParent) {
+      // Same parent - reorder within that parent
+      if (sourceParent) {
+        // Within a group
+        const children = sourceParent.getObjects();
+        const reversed = [...children].reverse(); // flat list order (highest z first)
+        const oldIdx = reversed.indexOf(obj);
+        const newIdx = reversed.indexOf(overItem.fabricObject);
+        if (oldIdx === -1 || newIdx === -1) return;
 
+        const reordered = arrayMove(reversed, oldIdx, newIdx);
+        [...reordered].reverse().forEach((o, i) => {
+          sourceParent.moveObjectTo(o, i);
+        });
+        sourceParent.setCoords();
+      } else {
+        // Canvas root
+        const objects = canvas.getObjects().filter(o => !prop(o, 'isBackgroundRect'));
+        const reversed = [...objects].reverse();
+        const oldIdx = reversed.indexOf(obj);
+        const newIdx = reversed.indexOf(overItem.fabricObject);
+        if (oldIdx === -1 || newIdx === -1) return;
+
+        const reordered = arrayMove(reversed, oldIdx, newIdx);
+        const bgCount = canvas.getObjects().filter(o => prop(o, 'isBackgroundRect')).length;
+        [...reordered].reverse().forEach((o, i) => {
+          canvas.moveObjectTo(o, i + bgCount);
+        });
+      }
+    } else {
+      // Cross-parent move: element moves between groups or between group and canvas
+
+      // Remove from source (Fabric.js auto-converts coords to absolute via _exitGroup)
+      if (sourceParent) {
+        sourceParent.remove(obj);
+        obj.setCoords();
+        cleanupEmptyGroup(sourceParent, canvas);
+      } else {
+        canvas.remove(obj);
+      }
+
+      // Add to target (Fabric.js auto-converts coords to group-relative via _enterGroup)
+      if (targetParent) {
+        const overIdx = targetParent.getObjects().indexOf(overItem.fabricObject);
+        if (overIdx >= 0) {
+          targetParent.insertAt(overIdx, obj);
+        } else {
+          targetParent.add(obj);
+        }
+        targetParent.setCoords();
+      } else {
+        canvas.add(obj);
+        // Position near the over item in z-order
+        const overIdx = canvas.getObjects().indexOf(overItem.fabricObject);
+        if (overIdx >= 0) {
+          canvas.moveObjectTo(obj, overIdx);
+        }
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (canvas as any).fire('object:modified', { target: obj });
     canvas.renderAll();
     refreshLayers();
   }, [canvasRef, refreshLayers]);
@@ -380,14 +520,14 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
   const canvas = canvasRef.current?.getCanvas();
   const activeObject = canvas?.getActiveObject();
 
-  const layerIds = layerItems.map(item => item.id);
+  const sortableIds = flatItems.map(item => item.id);
 
   return (
     <div className="h-full flex flex-col border-l border-border bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg>
+          <Layers className="w-4 h-4" />
           <span className="font-semibold text-sm">Layers</span>
         </div>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
@@ -398,25 +538,30 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
       {/* Layer list */}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-0.5">
-          {layerItems.length === 0 ? (
+          {flatItems.length === 0 ? (
             <div className="text-center py-8 text-xs text-muted-foreground">
               No elements on canvas
             </div>
           ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={layerIds} strategy={verticalListSortingStrategy}>
-                {layerItems.map((item) => (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={() => { isDraggingRef.current = true; }}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => { isDraggingRef.current = false; }}
+            >
+              <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                {flatItems.map((item) => (
                   <SortableLayerRow
                     key={item.id}
                     item={item}
                     isSelected={activeObject === item.fabricObject}
-                    depth={0}
-                    expandedGroups={expandedGroups}
                     onSelect={selectObject}
                     onToggleVisibility={toggleVisibility}
                     onDuplicate={duplicateObject}
                     onDelete={deleteObject}
                     onToggleExpand={toggleExpand}
+                    onMoveOut={moveOutOfGroup}
                   />
                 ))}
               </SortableContext>
