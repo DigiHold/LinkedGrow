@@ -254,8 +254,11 @@ export function ElementProperties({
         tb.set(key as keyof Textbox, value);
       });
     }
-    tb.set('dirty', true);
+    tb.dirty = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (tb as any)._forceClearCache = true;
     tb.initDimensions();
+    tb.setCoords();
     canvas.requestRenderAll();
   }, [selectedElement, canvasRef]);
 
@@ -489,7 +492,7 @@ export function ElementProperties({
 
   const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement && !isFrameElement : false;
 
-  // Apply gradient fill to selected element
+  // Apply gradient fill to selected element (always applies to entire element - gradients can't be per-character)
   const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
@@ -512,6 +515,11 @@ export function ElementProperties({
         { offset: 1, color: color2 },
       ],
     });
+
+    // For text elements, clear per-character fill styles so gradient shows through
+    if (selectedElement instanceof Textbox) {
+      (selectedElement as Textbox).removeStyle('fill');
+    }
 
     selectedElement.set('fill', gradient);
     canvas.renderAll();
@@ -692,8 +700,11 @@ export function ElementProperties({
                     <div className="mt-2">
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
-                        onChange={(font) => {
+                        onChange={async (font) => {
                           if (selectedElement instanceof Textbox) {
+                            // Load font before applying to ensure correct text measurement
+                            await loadGoogleFont(font);
+                            await document.fonts.load(`16px "${font}"`);
                             applyTextStyle({ fontFamily: font });
                             setElementProps(prev => ({
                               ...prev,

@@ -554,10 +554,10 @@ export default function CarouselPage() {
     if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
     localSaveTimerRef.current = setTimeout(() => saveToLocalStorage(), 2000);
 
-    // Schedule debounced DB save (10s) if carousel is already saved
+    // Schedule debounced DB save (5s) if carousel is already saved
     if (currentCarouselId) {
       if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
-      dbSaveTimerRef.current = setTimeout(() => saveToDatabase(), 10000);
+      dbSaveTimerRef.current = setTimeout(() => saveToDatabase(), 5000);
     }
   }, [currentSlideIndex, currentCarouselId, saveToLocalStorage, saveToDatabase]);
 
@@ -1164,19 +1164,18 @@ export default function CarouselPage() {
             <div className="h-6 w-px bg-border" />
 
             {/* Auto-save Status */}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-16">
-              {saveStatus === 'saving' && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {saveStatus === 'saving' ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Saving...</span>
+                  <span>Saving changes...</span>
                 </>
-              )}
-              {saveStatus === 'saved' && (
+              ) : saveStatus === 'saved' ? (
                 <>
                   <Check className="w-3 h-3 text-green-500" />
-                  <span>Saved</span>
+                  <span>All changes saved</span>
                 </>
-              )}
+              ) : null}
             </div>
 
             <div className="h-6 w-px bg-border" />

@@ -874,7 +874,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         updateFloatingPos();
       });
 
-      canvas.on('object:added', () => {
+      canvas.on('object:added', (e) => {
+        // Disable DraggableTextDelegate on Textbox to fix text selection glitch
+        // (double-click + drag to extend selection was intercepted as text drag-and-drop)
+        if (e.target instanceof Textbox) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const delegate = (e.target as any).draggableTextDelegate;
+          if (delegate) delegate.start = () => false;
+        }
         saveHistory();
         onCanvasChangeRef.current?.();
       });
