@@ -57,6 +57,14 @@ interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';
 }
+
+// Equal spacing guide - shown when gaps between objects match
+interface SpacingGuide {
+  orientation: 'horizontal' | 'vertical';
+  from: number;   // start edge of gap (right edge of left obj / bottom of top obj)
+  to: number;     // end edge of gap (left edge of right obj / top of bottom obj)
+  level: number;  // draw position: Y center for horizontal, X center for vertical
+}
 import { cn } from "@/lib/utils";
 
 // CRITICAL: Fabric.js v7 changed default originX/originY from 'left'/'top' to 'center'/'center'.
@@ -594,6 +602,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const [isReady, setIsReady] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const guideLinesRef = useRef<AlignmentGuide[]>([]);
+    const spacingGuidesRef = useRef<SpacingGuide[]>([]);
     const hoveredObjectRef = useRef<FabricObject | null>(null);
     const frameHighlightRef = useRef<FabricObject | null>(null);
     const isTextEditingRef = useRef(false);
@@ -766,6 +775,169 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
 
+        // Equal spacing detection - find matching gaps between objects
+        const spacingGuides: SpacingGuide[] = [];
+        const others = canvas.getObjects().filter(o =>
+          o !== obj && o.selectable !== false
+        );
+
+        if (others.length >= 2) {
+          const updatedObjBound = obj.getBoundingRect();
+
+          // Build sorted arrays of bounding rects for all objects including dragged
+          type ObjRect = { left: number; right: number; top: number; bottom: number; cx: number; cy: number; isDragged: boolean };
+          const rects: ObjRect[] = others.map(o => {
+            const b = o.getBoundingRect();
+            return { left: b.left, right: b.left + b.width, top: b.top, bottom: b.top + b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, isDragged: false };
+          });
+          rects.push({
+            left: updatedObjBound.left, right: updatedObjBound.left + updatedObjBound.width,
+            top: updatedObjBound.top, bottom: updatedObjBound.top + updatedObjBound.height,
+            cx: updatedObjBound.left + updatedObjBound.width / 2, cy: updatedObjBound.top + updatedObjBound.height / 2,
+            isDragged: true,
+          });
+
+          // --- Horizontal equal spacing ---
+          const sortedH = [...rects].sort((a, b) => a.left - b.left);
+          const dragIdxH = sortedH.findIndex(r => r.isDragged);
+          if (dragIdxH >= 1 && dragIdxH < sortedH.length - 1) {
+            const gapLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
+            const gapRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
+            if (gapLeft > 0 && gapRight > 0 && Math.abs(gapLeft - gapRight) < SNAP_THRESHOLD) {
+              // Snap to exact equal spacing
+              if (!snappedX) {
+                const exactGap = (sortedH[dragIdxH + 1].left - sortedH[dragIdxH - 1].right - updatedObjBound.width) / 2;
+                const snapLeft = sortedH[dragIdxH - 1].right + exactGap;
+                const offset = obj.left! - updatedObjBound.left;
+                obj.set('left', snapLeft + offset);
+                // Recalculate bounds after snap
+                const snappedBound = obj.getBoundingRect();
+                sortedH[dragIdxH].left = snappedBound.left;
+                sortedH[dragIdxH].right = snappedBound.left + snappedBound.width;
+              }
+              // Show indicators for both gaps
+              const level = sortedH[dragIdxH].cy;
+              spacingGuides.push({
+                orientation: 'horizontal',
+                from: sortedH[dragIdxH - 1].right,
+                to: sortedH[dragIdxH].left,
+                level,
+              });
+              spacingGuides.push({
+                orientation: 'horizontal',
+                from: sortedH[dragIdxH].right,
+                to: sortedH[dragIdxH + 1].left,
+                level,
+              });
+            }
+          }
+          // Also check: dragged is at edge, gap matches an existing gap between other objects
+          if (dragIdxH >= 1 && spacingGuides.length === 0) {
+            const gapToLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
+            if (gapToLeft > 0) {
+              // Check if this gap matches any other consecutive gap
+              for (let i = 0; i < sortedH.length - 1; i++) {
+                if (i === dragIdxH - 1 || i === dragIdxH) continue;
+                const otherGap = sortedH[i + 1].left - sortedH[i].right;
+                if (otherGap > 0 && Math.abs(gapToLeft - otherGap) < SNAP_THRESHOLD) {
+                  if (!snappedX) {
+                    const snapLeft = sortedH[dragIdxH - 1].right + otherGap;
+                    const offset = obj.left! - updatedObjBound.left;
+                    obj.set('left', snapLeft + offset);
+                  }
+                  const level = sortedH[dragIdxH].cy;
+                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH - 1].right, to: sortedH[dragIdxH - 1].right + otherGap, level });
+                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
+                  break;
+                }
+              }
+            }
+          }
+          if (dragIdxH < sortedH.length - 1 && spacingGuides.filter(s => s.orientation === 'horizontal').length === 0) {
+            const gapToRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
+            if (gapToRight > 0) {
+              for (let i = 0; i < sortedH.length - 1; i++) {
+                if (i === dragIdxH - 1 || i === dragIdxH) continue;
+                const otherGap = sortedH[i + 1].left - sortedH[i].right;
+                if (otherGap > 0 && Math.abs(gapToRight - otherGap) < SNAP_THRESHOLD) {
+                  if (!snappedX) {
+                    const snapRight = sortedH[dragIdxH + 1].left - otherGap - updatedObjBound.width;
+                    const offset = obj.left! - updatedObjBound.left;
+                    obj.set('left', snapRight + offset);
+                  }
+                  const level = sortedH[dragIdxH].cy;
+                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH].right, to: sortedH[dragIdxH + 1].left, level });
+                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
+                  break;
+                }
+              }
+            }
+          }
+
+          // --- Vertical equal spacing ---
+          const sortedV = [...rects].sort((a, b) => a.top - b.top);
+          const dragIdxV = sortedV.findIndex(r => r.isDragged);
+          if (dragIdxV >= 1 && dragIdxV < sortedV.length - 1) {
+            const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
+            const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
+            if (gapAbove > 0 && gapBelow > 0 && Math.abs(gapAbove - gapBelow) < SNAP_THRESHOLD) {
+              if (!snappedY) {
+                const exactGap = (sortedV[dragIdxV + 1].top - sortedV[dragIdxV - 1].bottom - updatedObjBound.height) / 2;
+                const snapTop = sortedV[dragIdxV - 1].bottom + exactGap;
+                const offset = obj.top! - updatedObjBound.top;
+                obj.set('top', snapTop + offset);
+                const snappedBound = obj.getBoundingRect();
+                sortedV[dragIdxV].top = snappedBound.top;
+                sortedV[dragIdxV].bottom = snappedBound.top + snappedBound.height;
+              }
+              const level = sortedV[dragIdxV].cx;
+              spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV].top, level });
+              spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
+            }
+          }
+          if (dragIdxV >= 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
+            const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
+            if (gapAbove > 0) {
+              for (let i = 0; i < sortedV.length - 1; i++) {
+                if (i === dragIdxV - 1 || i === dragIdxV) continue;
+                const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
+                if (otherGap > 0 && Math.abs(gapAbove - otherGap) < SNAP_THRESHOLD) {
+                  if (!snappedY) {
+                    const snapTop = sortedV[dragIdxV - 1].bottom + otherGap;
+                    const offset = obj.top! - updatedObjBound.top;
+                    obj.set('top', snapTop + offset);
+                  }
+                  const level = sortedV[dragIdxV].cx;
+                  spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV - 1].bottom + otherGap, level });
+                  spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
+                  break;
+                }
+              }
+            }
+          }
+          if (dragIdxV < sortedV.length - 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
+            const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
+            if (gapBelow > 0) {
+              for (let i = 0; i < sortedV.length - 1; i++) {
+                if (i === dragIdxV - 1 || i === dragIdxV) continue;
+                const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
+                if (otherGap > 0 && Math.abs(gapBelow - otherGap) < SNAP_THRESHOLD) {
+                  if (!snappedY) {
+                    const snapTop = sortedV[dragIdxV + 1].top - otherGap - updatedObjBound.height;
+                    const offset = obj.top! - updatedObjBound.top;
+                    obj.set('top', snapTop + offset);
+                  }
+                  const level = sortedV[dragIdxV].cx;
+                  spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
+                  spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        spacingGuidesRef.current = spacingGuides;
         guideLinesRef.current = guides;
 
         // Detect image-over-frame hover for auto-fill visual feedback
@@ -895,30 +1067,108 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
 
         // Draw alignment guide lines
-        if (guideLinesRef.current.length === 0) return;
-        ctx.save();
-        ctx.strokeStyle = '#06b6d4';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        guideLinesRef.current.forEach(guide => {
-          ctx.beginPath();
-          if (guide.orientation === 'vertical') {
-            ctx.moveTo(guide.position * z, 0);
-            ctx.lineTo(guide.position * z, CANVAS_HEIGHT * z);
-          } else {
-            ctx.moveTo(0, guide.position * z);
-            ctx.lineTo(CANVAS_WIDTH * z, guide.position * z);
-          }
-          ctx.stroke();
-        });
-        ctx.restore();
+        if (guideLinesRef.current.length > 0) {
+          ctx.save();
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          guideLinesRef.current.forEach(guide => {
+            ctx.beginPath();
+            if (guide.orientation === 'vertical') {
+              ctx.moveTo(guide.position * z, 0);
+              ctx.lineTo(guide.position * z, CANVAS_HEIGHT * z);
+            } else {
+              ctx.moveTo(0, guide.position * z);
+              ctx.lineTo(CANVAS_WIDTH * z, guide.position * z);
+            }
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        // Draw equal spacing indicators (pink/magenta, like Canva)
+        if (spacingGuidesRef.current.length > 0) {
+          spacingGuidesRef.current.forEach(sg => {
+            ctx.save();
+            const gap = Math.round(sg.to - sg.from);
+            if (gap <= 0) { ctx.restore(); return; }
+
+            if (sg.orientation === 'horizontal') {
+              const y = sg.level * z;
+              const x1 = sg.from * z;
+              const x2 = sg.to * z;
+              // Dotted line across the gap
+              ctx.strokeStyle = '#e879f9';
+              ctx.lineWidth = 1;
+              ctx.setLineDash([3, 3]);
+              ctx.beginPath();
+              ctx.moveTo(x1, y);
+              ctx.lineTo(x2, y);
+              ctx.stroke();
+              // Ticks at edges
+              ctx.setLineDash([]);
+              ctx.beginPath();
+              ctx.moveTo(x1, y - 5 * z); ctx.lineTo(x1, y + 5 * z);
+              ctx.moveTo(x2, y - 5 * z); ctx.lineTo(x2, y + 5 * z);
+              ctx.stroke();
+              // Distance label in pink pill
+              const label = `${gap}`;
+              ctx.font = `${Math.max(9, 9 * z)}px Inter, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              const tw = ctx.measureText(label).width + 8;
+              const lx = (x1 + x2) / 2;
+              const ly = y;
+              ctx.fillStyle = '#e879f9';
+              ctx.beginPath();
+              ctx.roundRect(lx - tw / 2, ly - 7 * z, tw, 14 * z, 3 * z);
+              ctx.fill();
+              ctx.fillStyle = '#ffffff';
+              ctx.fillText(label, lx, ly);
+            } else {
+              const x = sg.level * z;
+              const y1 = sg.from * z;
+              const y2 = sg.to * z;
+              // Dotted line across the gap
+              ctx.strokeStyle = '#e879f9';
+              ctx.lineWidth = 1;
+              ctx.setLineDash([3, 3]);
+              ctx.beginPath();
+              ctx.moveTo(x, y1);
+              ctx.lineTo(x, y2);
+              ctx.stroke();
+              // Ticks at edges
+              ctx.setLineDash([]);
+              ctx.beginPath();
+              ctx.moveTo(x - 5 * z, y1); ctx.lineTo(x + 5 * z, y1);
+              ctx.moveTo(x - 5 * z, y2); ctx.lineTo(x + 5 * z, y2);
+              ctx.stroke();
+              // Distance label
+              const label = `${gap}`;
+              ctx.font = `${Math.max(9, 9 * z)}px Inter, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              const tw = ctx.measureText(label).width + 8;
+              const lx = x;
+              const ly = (y1 + y2) / 2;
+              ctx.fillStyle = '#e879f9';
+              ctx.beginPath();
+              ctx.roundRect(lx - tw / 2, ly - 7 * z, tw, 14 * z, 3 * z);
+              ctx.fill();
+              ctx.fillStyle = '#ffffff';
+              ctx.fillText(label, lx, ly);
+            }
+            ctx.restore();
+          });
+        }
       });
 
       // Clear guides on mouse up
       canvas.on('mouse:up', () => {
         frameHighlightRef.current = null;
-        if (guideLinesRef.current.length > 0) {
+        if (guideLinesRef.current.length > 0 || spacingGuidesRef.current.length > 0) {
           guideLinesRef.current = [];
+          spacingGuidesRef.current = [];
           canvas.requestRenderAll();
         }
       });
@@ -1052,6 +1302,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       // Track changes
       canvas.on('object:modified', (e) => {
         guideLinesRef.current = [];
+        spacingGuidesRef.current = [];
         frameHighlightRef.current = null;
 
         // Check if an image was dropped on an empty frame - auto-fill it
