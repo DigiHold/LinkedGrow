@@ -252,26 +252,22 @@ export function ElementProperties({
     return (selectedElement as Textbox).isEditing;
   }, [selectedElement]);
 
-  // Get the style at the current cursor position or start of selection.
-  // Works for both cursor-only (no selection) and selection states.
-  // Returns the complete style (per-char overrides merged with object defaults).
+  // Get the style at the current cursor position or first char of selection.
+  // Uses getCompleteStyleDeclaration which merges per-char overrides with object defaults.
   const getSelectionStyle = useCallback((prop: string): unknown => {
     if (!(selectedElement instanceof Textbox)) return undefined;
     const tb = selectedElement as Textbox;
     if (!tb.isEditing) return undefined;
-    // Read at cursor/selection start position
-    const pos = tb.selectionStart;
-    // Guard: don't read past end of text
-    if (pos >= tb.text.length) {
-      // At end of text, read the last character's style
-      if (tb.text.length === 0) return undefined;
-      const styles = tb.getSelectionStyles(tb.text.length - 1, tb.text.length, true);
-      if (styles.length > 0 && prop in styles[0]) return styles[0][prop as keyof typeof styles[0]];
-      return undefined;
-    }
-    const styles = tb.getSelectionStyles(pos, pos + 1, true);
-    if (styles.length > 0 && prop in styles[0]) return styles[0][prop as keyof typeof styles[0]];
-    return undefined;
+    if (!tb.text || tb.text.length === 0) return undefined;
+
+    // Read at the first character of the selection (or cursor position)
+    const pos = Math.min(tb.selectionStart, tb.text.length - 1);
+    // Use get2DCursorLocation + getCompleteStyleDeclaration directly
+    // to avoid any issues with getSelectionStyles argument handling
+    const loc = tb.get2DCursorLocation(pos);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const style = (tb as any).getCompleteStyleDeclaration(loc.lineIndex, loc.charIndex);
+    return style?.[prop];
   }, [selectedElement]);
 
   // Apply style to selected text or whole textbox

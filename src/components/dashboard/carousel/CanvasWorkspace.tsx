@@ -831,27 +831,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Prevent Fabric.js from entering text editing on single click.
-      // We want double-click to enter editing (Canva-like behavior).
-      // In Fabric v7, mouseUpHandler checks `this.selected` to decide whether to enterEditing.
-      // The `selected` property is set in the target's `mousedown` handler (which fires AFTER
-      // canvas `mouse:down`). So we reset it on `mouse:up` (which fires BEFORE the target's
-      // `mouseup` handler) to block single-click editing entry.
-      canvas.on('mouse:up', (opt) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const target = (opt as any).target;
-        if (target instanceof Textbox && !target.isEditing) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (target as any).selected = false;
-        }
-      });
+      // Canva-like text editing: editable=false prevents Fabric from entering
+      // editing on single click. We enable editing only on double-click.
+      // This is the approach recommended by the Fabric.js team (issue #7095).
 
       // Double-click to enter text editing, group interactive mode, or frame crop mode
       canvas.on('mouse:dblclick', (e) => {
         const target = e.target;
 
-        // Textbox: enter editing mode + select word under cursor (Canva-like)
-        if (target instanceof Textbox && target.editable && !target.isEditing) {
+        // Textbox: enable editing, enter edit mode, select word (Canva-like)
+        if (target instanceof Textbox && !target.isEditing) {
+          target.editable = true;
           target.enterEditing(e.e);
           target.setCursorByClick(e.e);
           // Select the word at cursor position
@@ -860,6 +850,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           isTextEditingRef.current = true;
           hoveredObjectRef.current = null;
           setFloatingBtnPos(null);
+          // Notify properties panel AFTER selection is set
+          onSelectionChangeRef.current?.(target);
           return;
         }
 
@@ -912,10 +904,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         isTextEditingRef.current = true;
         hoveredObjectRef.current = null;
         setFloatingBtnPos(null);
-        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        // Don't notify here - we notify from mouse:dblclick AFTER selectWord
       });
-      canvas.on('text:editing:exited', () => {
+      canvas.on('text:editing:exited', (e) => {
         isTextEditingRef.current = false;
+        // Disable editable so single-click can't re-enter editing (Canva-like)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const target = (e as any).target;
+        if (target instanceof Textbox) {
+          target.editable = false;
+        }
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
         updateFloatingPos();
       });
@@ -967,12 +965,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       });
 
       canvas.on('object:added', (e) => {
-        // Disable DraggableTextDelegate on Textbox to fix text selection glitch
-        // (double-click + drag to extend selection was intercepted as text drag-and-drop)
         if (e.target instanceof Textbox) {
+          // Disable DraggableTextDelegate to prevent text drag-and-drop
+          // (interferes with text selection in editing mode)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const delegate = (e.target as any).draggableTextDelegate;
           if (delegate) delegate.start = () => false;
+
+          // Set editable=false so Fabric doesn't enter editing on single click.
+          // We enable it on double-click (Canva-like behavior).
+          e.target.editable = false;
         }
         saveHistory();
         onCanvasChangeRef.current?.();
