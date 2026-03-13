@@ -847,15 +847,31 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       const clip = image.clipPath;
       if (!clip) return;
 
-      // Store the frame boundary for overlay drawing
-      const bound = image.getBoundingRect();
+      // Calculate the FRAME bounds from clipPath + image transforms
+      // clipPath coordinates are in image's local space (center = 0,0)
+      const imgScaleX = image.scaleX || 1;
+      const imgScaleY = image.scaleY || 1;
+      const imgCenterX = image.left! + (image.width! * imgScaleX) / 2;
+      const imgCenterY = image.top! + (image.height! * imgScaleY) / 2;
+
+      const vbStr = image._frameViewBox || '100,100';
+      const [vbW, vbH] = vbStr.split(',').map(Number);
+      const clipSX = clip.scaleX || 1;
+      const clipSY = clip.scaleY || 1;
+
+      // Frame position and size in canvas coordinates
+      const frameLeft = imgCenterX + (clip.left || 0) * imgScaleX;
+      const frameTop = imgCenterY + (clip.top || 0) * imgScaleY;
+      const frameWidth = vbW * clipSX * imgScaleX;
+      const frameHeight = vbH * clipSY * imgScaleY;
+
       cropModeRef.current = {
         image,
         originalClipPath: clip,
-        frameLeft: bound.left,
-        frameTop: bound.top,
-        frameWidth: bound.width,
-        frameHeight: bound.height,
+        frameLeft,
+        frameTop,
+        frameWidth,
+        frameHeight,
       };
 
       // Remove clipPath to show full image, reduce opacity
@@ -869,27 +885,31 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       const crop = cropModeRef.current;
       if (!crop) return;
 
-      const { image, originalClipPath } = crop;
+      const { image } = crop;
+      const frameSvgPath = image._frameSvgPath;
+      const frameViewBox = image._frameViewBox;
+      if (!frameSvgPath || !frameViewBox) {
+        cropModeRef.current = null;
+        return;
+      }
 
-      // Re-apply clipPath - recalculate offset based on image's new position
-      // clipPath is relative to the image center, so we need to adjust
-      // based on how the image moved since entering crop mode
-      const imgCenter = image.getCenterPoint();
-      const frameCenter = {
-        x: crop.frameLeft + crop.frameWidth / 2,
-        y: crop.frameTop + crop.frameHeight / 2,
-      };
+      const [vbW, vbH] = frameViewBox.split(',').map(Number);
+      const imgScaleX = image.scaleX || 1;
+      const imgScaleY = image.scaleY || 1;
+      const imgCenterX = image.left! + (image.width! * imgScaleX) / 2;
+      const imgCenterY = image.top! + (image.height! * imgScaleY) / 2;
 
-      // The clipPath needs to offset to where the frame center is relative to the image center
-      const offsetX = (frameCenter.x - imgCenter.x) / (image.scaleX || 1);
-      const offsetY = (frameCenter.y - imgCenter.y) / (image.scaleY || 1);
-
-      originalClipPath.set({
-        left: offsetX,
-        top: offsetY,
+      // Recalculate clipPath position AND scale for the image's current transform
+      const newClip = new Path(frameSvgPath, {
+        scaleX: crop.frameWidth / (vbW * imgScaleX),
+        scaleY: crop.frameHeight / (vbH * imgScaleY),
+        left: (crop.frameLeft - imgCenterX) / imgScaleX,
+        top: (crop.frameTop - imgCenterY) / imgScaleY,
+        originX: 'left',
+        originY: 'top',
       });
 
-      image.clipPath = originalClipPath;
+      image.clipPath = newClip;
       image.set('opacity', 1);
       image.dirty = true;
 

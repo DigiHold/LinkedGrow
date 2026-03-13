@@ -242,25 +242,33 @@ export const frameDefinitions: FrameDefinition[] = [
     id: 'device-phone',
     name: 'Phone',
     category: 'devices',
-    viewBox: { width: 70, height: 140 },
-    // Modern smartphone with dynamic island notch at top
-    svgPath: 'M 14 0 L 26 0 L 26 3 Q 26 6 29 6 L 41 6 Q 44 6 44 3 L 44 0 L 56 0 Q 70 0 70 14 L 70 126 Q 70 140 56 140 L 14 140 Q 0 140 0 126 L 0 14 Q 0 0 14 0 Z',
+    viewBox: { width: 75, height: 150 },
+    // Modern smartphone with pill-shaped dynamic island notch and rounded corners
+    svgPath: 'M 15 0 L 27 0 L 27 4 C 27 8 30 10 34 10 L 41 10 C 45 10 48 8 48 4 L 48 0 L 60 0 C 75 0 75 15 75 15 L 75 135 C 75 150 60 150 60 150 L 15 150 C 0 150 0 135 0 135 L 0 15 C 0 0 15 0 15 0 Z',
   },
   {
     id: 'device-laptop',
     name: 'Laptop',
     category: 'devices',
-    viewBox: { width: 160, height: 108 },
-    // Laptop with visible screen and keyboard base
-    svgPath: 'M 18 0 L 142 0 Q 150 0 150 8 L 150 80 L 160 80 Q 160 80 160 84 L 160 98 Q 160 104 154 104 L 6 104 Q 0 104 0 98 L 0 84 Q 0 80 0 80 L 10 80 L 10 8 Q 10 0 18 0 Z',
+    viewBox: { width: 170, height: 115 },
+    // Laptop with screen area and wider keyboard base connected by hinge
+    svgPath: 'M 20 0 L 150 0 Q 158 0 158 8 L 158 78 L 165 82 Q 170 84 170 88 L 170 105 Q 170 110 165 110 L 5 110 Q 0 110 0 105 L 0 88 Q 0 84 5 82 L 12 78 L 12 8 Q 12 0 20 0 Z',
   },
   {
     id: 'device-tablet',
     name: 'Tablet',
     category: 'devices',
     viewBox: { width: 100, height: 140 },
-    // Modern tablet with slim bezels and rounded corners
-    svgPath: 'M 12 0 L 88 0 Q 100 0 100 12 L 100 128 Q 100 140 88 140 L 12 140 Q 0 140 0 128 L 0 12 Q 0 0 12 0 Z',
+    // Modern tablet with slim bezels and large rounded corners
+    svgPath: 'M 14 0 L 86 0 Q 100 0 100 14 L 100 126 Q 100 140 86 140 L 14 140 Q 0 140 0 126 L 0 14 Q 0 0 14 0 Z',
+  },
+  {
+    id: 'device-monitor',
+    name: 'Monitor',
+    category: 'devices',
+    viewBox: { width: 150, height: 125 },
+    // Desktop monitor with screen and stand
+    svgPath: 'M 10 0 L 140 0 Q 150 0 150 10 L 150 86 Q 150 92 140 92 L 82 92 L 82 104 L 98 104 L 98 116 Q 98 120 94 120 L 56 120 Q 52 120 52 116 L 52 104 L 68 104 L 68 92 L 10 92 Q 0 92 0 86 L 0 10 Q 0 0 10 0 Z',
   },
 
   // ============================================
