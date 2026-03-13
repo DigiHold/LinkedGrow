@@ -768,6 +768,26 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
+      // Force enter text editing on second click (Canva-like behavior)
+      // Fabric.js normally enters editing on mouseUp, but blocks it when
+      // transform.actionPerformed is true (user moved mouse slightly).
+      // This fix enters editing on mouseDown so mouse movement extends
+      // the text selection instead of moving the object.
+      canvas.on('mouse:down', (opt) => {
+        const target = opt.target;
+        if (!target || !(target instanceof Textbox) || !target.editable) return;
+        if (canvas.getActiveObject() === target && !target.isEditing) {
+          target.enterEditing(opt.e);
+          target.setCursorByClick(opt.e);
+          // Cancel any pending move transform so object doesn't move
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (canvas as any)._currentTransform = null;
+          isTextEditingRef.current = true;
+          hoveredObjectRef.current = null;
+          setFloatingBtnPos(null);
+        }
+      });
+
       // Double-click to enter group interactive mode OR frame crop mode
       canvas.on('mouse:dblclick', (e) => {
         const target = e.target;

@@ -69,6 +69,14 @@ const PRESET_COLORS = [
   '#10b981', '#14b8a6',
 ];
 
+// Interpolate between two hex colors for per-character gradient
+function interpolateColor(hex1: string, hex2: string, factor: number): string {
+  const r1 = parseInt(hex1.slice(1, 3), 16), g1 = parseInt(hex1.slice(3, 5), 16), b1 = parseInt(hex1.slice(5, 7), 16);
+  const r2 = parseInt(hex2.slice(1, 3), 16), g2 = parseInt(hex2.slice(3, 5), 16), b2 = parseInt(hex2.slice(5, 7), 16);
+  const r = Math.round(r1 + (r2 - r1) * factor), g = Math.round(g1 + (g2 - g1) * factor), b = Math.round(b1 + (b2 - b1) * factor);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 const GRADIENT_PRESETS = [
   { label: 'Ocean', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
   { label: 'Sunset', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
@@ -236,6 +244,16 @@ export function ElementProperties({
     if (!(selectedElement instanceof Textbox)) return false;
     const tb = selectedElement as Textbox;
     return tb.isEditing && tb.selectionStart !== tb.selectionEnd;
+  }, [selectedElement]);
+
+  // Get the style of the current text selection (or cursor position)
+  const getSelectionStyle = useCallback((prop: string): unknown => {
+    if (!(selectedElement instanceof Textbox)) return undefined;
+    const tb = selectedElement as Textbox;
+    if (!tb.isEditing) return undefined;
+    const styles = tb.getSelectionStyles(tb.selectionStart, tb.selectionStart + 1, true);
+    if (styles.length > 0 && prop in styles[0]) return styles[0][prop as keyof typeof styles[0]];
+    return undefined;
   }, [selectedElement]);
 
   // Apply style to selected text or whole textbox
@@ -492,11 +510,32 @@ export function ElementProperties({
 
   const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement && !isFrameElement : false;
 
-  // Apply gradient fill to selected element (always applies to entire element - gradients can't be per-character)
+  // Apply gradient fill - per-character when text is selected, otherwise whole element
   const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
+
+    // Per-character gradient for selected text
+    if (selectedElement instanceof Textbox) {
+      const tb = selectedElement as Textbox;
+      if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
+        const start = tb.selectionStart;
+        const end = tb.selectionEnd;
+        const len = end - start;
+        for (let i = 0; i < len; i++) {
+          const factor = len > 1 ? i / (len - 1) : 0;
+          const color = interpolateColor(color1, color2, factor);
+          tb.setSelectionStyles({ fill: color }, start + i, start + i + 1);
+        }
+        tb.dirty = true;
+        canvas.requestRenderAll();
+        setGradientColor1(color1);
+        setGradientColor2(color2);
+        setGradientAngle(angle);
+        return;
+      }
+    }
 
     const w = selectedElement.width || 100;
     const h = selectedElement.height || 100;
@@ -516,7 +555,7 @@ export function ElementProperties({
       ],
     });
 
-    // For text elements, clear per-character fill styles so gradient shows through
+    // For text elements without selection, clear per-character fill styles so gradient shows through
     if (selectedElement instanceof Textbox) {
       (selectedElement as Textbox).removeStyle('fill');
     }
@@ -772,43 +811,61 @@ export function ElementProperties({
                   <div>
                     <Label className="text-xs text-muted-foreground">Text Style</Label>
                     <div className="flex gap-1 mt-2">
-                      <Button
-                        variant={String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          const isBold = String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold';
-                          const newWeight = isBold ? 'normal' : 'bold';
-                          applyTextStyle({ fontWeight: newWeight });
-                          setElementProps(prev => ({ ...prev, fontWeight: newWeight }));
-                        }}
-                      >
-                        <Bold className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant={elementProps.fontStyle === 'italic' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          const newStyle = elementProps.fontStyle === 'italic' ? 'normal' : 'italic';
-                          applyTextStyle({ fontStyle: newStyle });
-                          setElementProps(prev => ({ ...prev, fontStyle: newStyle }));
-                        }}
-                      >
-                        <Italic className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant={elementProps.underline ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          const newUnderline = !elementProps.underline;
-                          applyTextStyle({ underline: newUnderline });
-                          setElementProps(prev => ({ ...prev, underline: newUnderline }));
-                        }}
-                      >
-                        <Underline className="w-3 h-3" />
-                      </Button>
+                      {(() => {
+                        // Read selection styles when text is selected, otherwise use object-level props
+                        const selWeight = hasTextSelection() ? getSelectionStyle('fontWeight') : undefined;
+                        const selStyle = hasTextSelection() ? getSelectionStyle('fontStyle') : undefined;
+                        const selUnderline = hasTextSelection() ? getSelectionStyle('underline') : undefined;
+                        const currentBold = selWeight !== undefined
+                          ? (String(selWeight) === '700' || selWeight === 'bold')
+                          : (String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold');
+                        const currentItalic = selStyle !== undefined
+                          ? selStyle === 'italic'
+                          : elementProps.fontStyle === 'italic';
+                        const currentUnderline = selUnderline !== undefined
+                          ? !!selUnderline
+                          : elementProps.underline;
+                        return (
+                          <>
+                            <Button
+                              variant={currentBold ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                const newWeight = currentBold ? 'normal' : 'bold';
+                                applyTextStyle({ fontWeight: newWeight });
+                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, fontWeight: newWeight }));
+                              }}
+                            >
+                              <Bold className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant={currentItalic ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                const newStyle = currentItalic ? 'normal' : 'italic';
+                                applyTextStyle({ fontStyle: newStyle });
+                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, fontStyle: newStyle }));
+                              }}
+                            >
+                              <Italic className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant={currentUnderline ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                const newUnderline = !currentUnderline;
+                                applyTextStyle({ underline: newUnderline });
+                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, underline: newUnderline }));
+                              }}
+                            >
+                              <Underline className="w-3 h-3" />
+                            </Button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
