@@ -360,8 +360,11 @@ export function ElementProperties({
     fireAlignmentDone(selectedElement, canvas);
   }, [selectedElement, canvasRef, fireAlignmentDone]);
 
+  const isFrameElement = selectedElement?._isFrame === true;
+  const isFilledFrame = isFrameElement && selectedElement?._frameHasImage === true;
+  const isEmptyFrame = isFrameElement && !selectedElement?._frameHasImage;
   const isTextElement = selectedElement instanceof Textbox;
-  const isImageElement = selectedElement instanceof FabricImage;
+  const isImageElement = selectedElement instanceof FabricImage && !isFrameElement;
   const isIconElement = selectedElement ? isSvgIconGroup(selectedElement) : false;
 
   // Update icon color by changing fill of all paths in the SVG group
@@ -388,7 +391,7 @@ export function ElementProperties({
     setIconColor(color);
   }, [selectedElement, isIconElement, canvasRef]);
 
-  const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement : false;
+  const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement && !isFrameElement : false;
 
   // Apply gradient fill to selected element
   const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
@@ -746,8 +749,39 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Fill (for text and shapes, not images or icons) */}
-              {!isImageElement && !isIconElement && (
+              {/* Frame Controls */}
+              {isFrameElement && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Frame</Label>
+                  {isEmptyFrame && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Drop an image on this frame to fill it
+                    </p>
+                  )}
+                  {isFilledFrame && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-[10px] text-muted-foreground">
+                        Double-click to reposition image inside frame
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (selectedElement) {
+                            canvasRef.current?.clearFrameImage(selectedElement);
+                          }
+                        }}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Fill (for text and shapes, not images, icons, or frames) */}
+              {!isImageElement && !isIconElement && !isFrameElement && (
                 <div>
                   <Label className="text-xs text-muted-foreground">
                     {isTextElement ? 'Text Color' : 'Fill'}
@@ -893,8 +927,8 @@ export function ElementProperties({
                 </div>
               )}
 
-              {/* Stroke (for shapes only, not images or text) */}
-              {!isTextElement && !isImageElement && (
+              {/* Stroke (for shapes only, not images, text, or frames) */}
+              {!isTextElement && !isImageElement && !isFrameElement && (
                 <div>
                   <Label className="text-xs text-muted-foreground">Stroke</Label>
                   <div className="mt-2 space-y-2">

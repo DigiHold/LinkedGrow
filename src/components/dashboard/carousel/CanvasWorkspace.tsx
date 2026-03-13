@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path } from "fabric";
+import { getFrameById } from "./frameData";
 import {
   Copy,
   Trash2,
@@ -28,6 +29,12 @@ declare module 'fabric' {
     radiusTR?: number;
     radiusBR?: number;
     radiusBL?: number;
+    // Frame properties
+    _isFrame?: boolean;
+    _frameId?: string;
+    _frameSvgPath?: string;
+    _frameViewBox?: string;
+    _frameHasImage?: boolean;
   }
 }
 
@@ -265,6 +272,9 @@ export interface CanvasWorkspaceRef {
   addShapeWithOptions: (options: ShapeOptions, batch?: boolean) => void;
   addImage: (url: string) => Promise<void>;
   addSvgIcon: (svgString: string) => Promise<void>;
+  addFrame: (frameId: string, x?: number, y?: number) => void;
+  fillFrameWithImage: (frameObject: FabricObject, imageUrl: string) => Promise<void>;
+  clearFrameImage: (frameObject: FabricObject) => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
   groupSelected: () => void;
@@ -316,6 +326,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [alignSubmenuOpen, setAlignSubmenuOpen] = useState(false);
     const [floatingBtnPos, setFloatingBtnPos] = useState<{ x: number; y: number } | null>(null);
+    // Frame crop mode state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cropModeRef = useRef<{
+      image: FabricImage;
+      originalClipPath: any;
+      frameLeft: number;
+      frameTop: number;
+      frameWidth: number;
+      frameHeight: number;
+    } | null>(null);
 
     // Helper to update floating buttons position
     const updateFloatingPos = useCallback(() => {
@@ -359,7 +379,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -492,6 +512,55 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           ctx.restore();
         }
 
+        // Draw placeholder icon on empty frames
+        canvas.getObjects().forEach(obj => {
+          if (obj._isFrame && !obj._frameHasImage) {
+            const bound = obj.getBoundingRect();
+            const cx = (bound.left + bound.width / 2) * z;
+            const cy = (bound.top + bound.height / 2) * z;
+            const iconSize = Math.min(bound.width * z * 0.25, 32);
+
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            // Draw image icon (rect + mountain + sun)
+            const ix = cx - iconSize / 2;
+            const iy = cy - iconSize / 2;
+            ctx.strokeRect(ix, iy, iconSize, iconSize);
+            // Mountain
+            ctx.beginPath();
+            ctx.moveTo(ix + iconSize * 0.15, iy + iconSize * 0.8);
+            ctx.lineTo(ix + iconSize * 0.4, iy + iconSize * 0.45);
+            ctx.lineTo(ix + iconSize * 0.6, iy + iconSize * 0.65);
+            ctx.lineTo(ix + iconSize * 0.85, iy + iconSize * 0.35);
+            ctx.lineTo(ix + iconSize * 0.95, iy + iconSize * 0.8);
+            ctx.stroke();
+            // Sun
+            ctx.beginPath();
+            ctx.arc(ix + iconSize * 0.3, iy + iconSize * 0.3, iconSize * 0.08, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+        });
+
+        // Draw crop mode frame boundary overlay
+        const crop = cropModeRef.current;
+        if (crop) {
+          const fl = crop.frameLeft * z;
+          const ft = crop.frameTop * z;
+          const fw = crop.frameWidth * z;
+          const fh = crop.frameHeight * z;
+          ctx.save();
+          ctx.strokeStyle = '#0891b2';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+          ctx.strokeRect(fl, ft, fw, fh);
+          ctx.restore();
+        }
+
         // Draw alignment guide lines
         if (guideLinesRef.current.length === 0) return;
         ctx.save();
@@ -554,7 +623,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Double-click to enter group interactive mode (edit children inside group)
+      // Double-click to enter group interactive mode OR frame crop mode
       canvas.on('mouse:dblclick', (e) => {
         const target = e.target;
         if (target instanceof Group && !target._isSvgIcon) {
@@ -563,6 +632,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (target as any).subTargetCheck = true;
           canvas.requestRenderAll();
+        }
+        // Frame crop mode: double-click a filled frame to reposition the image
+        if (target instanceof FabricImage && target._isFrame && target._frameHasImage && target.clipPath) {
+          enterCropMode(target, canvas);
         }
       });
 
@@ -580,6 +653,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       canvas.on('selection:cleared', () => {
         onSelectionChangeRef.current?.(null);
         setFloatingBtnPos(null);
+        // Exit frame crop mode if active
+        if (cropModeRef.current) {
+          exitCropMode(canvas);
+        }
         // Exit interactive mode on all groups
         canvas.getObjects().forEach(obj => {
           if (obj instanceof Group) {
@@ -647,6 +724,63 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         fabricRef.current = null;
       };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [saveHistory]);
+
+    // Frame crop mode helpers
+    const enterCropMode = useCallback((image: FabricImage, canvas: Canvas) => {
+      if (cropModeRef.current) return; // Already in crop mode
+      const clip = image.clipPath;
+      if (!clip) return;
+
+      // Store the frame boundary for overlay drawing
+      const bound = image.getBoundingRect();
+      cropModeRef.current = {
+        image,
+        originalClipPath: clip,
+        frameLeft: bound.left,
+        frameTop: bound.top,
+        frameWidth: bound.width,
+        frameHeight: bound.height,
+      };
+
+      // Remove clipPath to show full image, reduce opacity
+      image.clipPath = undefined;
+      image.set('opacity', 0.4);
+      image.dirty = true;
+      canvas.requestRenderAll();
+    }, []);
+
+    const exitCropMode = useCallback((canvas: Canvas) => {
+      const crop = cropModeRef.current;
+      if (!crop) return;
+
+      const { image, originalClipPath } = crop;
+
+      // Re-apply clipPath - recalculate offset based on image's new position
+      // clipPath is relative to the image center, so we need to adjust
+      // based on how the image moved since entering crop mode
+      const imgCenter = image.getCenterPoint();
+      const frameCenter = {
+        x: crop.frameLeft + crop.frameWidth / 2,
+        y: crop.frameTop + crop.frameHeight / 2,
+      };
+
+      // The clipPath needs to offset to where the frame center is relative to the image center
+      const offsetX = (frameCenter.x - imgCenter.x) / (image.scaleX || 1);
+      const offsetY = (frameCenter.y - imgCenter.y) / (image.scaleY || 1);
+
+      originalClipPath.set({
+        left: offsetX,
+        top: offsetY,
+      });
+
+      image.clipPath = originalClipPath;
+      image.set('opacity', 1);
+      image.dirty = true;
+
+      cropModeRef.current = null;
+      canvas.requestRenderAll();
+      saveHistory();
     }, [saveHistory]);
 
     // Handle zoom using Fabric's native zoom + dimension scaling
@@ -860,6 +994,178 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         } catch (error) {
           console.error('Failed to load SVG icon:', error);
         }
+      },
+
+      addFrame: (frameId: string, x?: number, y?: number) => {
+        if (!fabricRef.current) return;
+
+        const frameDef = getFrameById(frameId);
+        if (!frameDef) {
+          console.error('Frame not found:', frameId);
+          return;
+        }
+
+        // Default frame size on canvas (300px wide, proportional height)
+        const defaultWidth = 300;
+        const aspect = frameDef.viewBox.height / frameDef.viewBox.width;
+        const defaultHeight = defaultWidth * aspect;
+
+        // Scale SVG path from viewBox coordinates to canvas size
+        const scaleX = defaultWidth / frameDef.viewBox.width;
+        const scaleY = defaultHeight / frameDef.viewBox.height;
+
+        const framePath = new Path(frameDef.svgPath, {
+          left: x ?? CANVAS_WIDTH / 2 - defaultWidth / 2,
+          top: y ?? CANVAS_HEIGHT / 2 - defaultHeight / 2,
+          scaleX,
+          scaleY,
+          fill: '#e2e8f0',
+          stroke: '#94a3b8',
+          strokeWidth: 1.5 / scaleX, // Compensate for scale
+          strokeDashArray: [8 / scaleX, 4 / scaleX],
+          objectCaching: true,
+        });
+
+        // Set frame custom properties
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fp = framePath as any;
+        fp._isFrame = true;
+        fp._frameId = frameId;
+        fp._frameSvgPath = frameDef.svgPath;
+        fp._frameViewBox = `${frameDef.viewBox.width},${frameDef.viewBox.height}`;
+        fp._frameHasImage = false;
+
+        fabricRef.current.add(framePath);
+        fabricRef.current.setActiveObject(framePath);
+        fabricRef.current.renderAll();
+      },
+
+      fillFrameWithImage: async (frameObject: FabricObject, imageUrl: string) => {
+        if (!fabricRef.current) return;
+
+        const frameId = frameObject._frameId;
+        const frameSvgPath = frameObject._frameSvgPath;
+        const frameViewBox = frameObject._frameViewBox;
+        if (!frameId || !frameSvgPath || !frameViewBox) return;
+
+        try {
+          // Get frame position and dimensions
+          const frameBound = frameObject.getBoundingRect();
+          const frameLeft = frameBound.left;
+          const frameTop = frameBound.top;
+          const frameW = frameBound.width;
+          const frameH = frameBound.height;
+
+          // Load the image
+          let loadUrl = imageUrl;
+          if (imageUrl.includes('r2.dev') || imageUrl.includes('r2.cloudflarestorage.com')) {
+            loadUrl = `/api/media/proxy?url=${encodeURIComponent(imageUrl)}`;
+          }
+          const img = await FabricImage.fromURL(loadUrl, { crossOrigin: 'anonymous' });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (img as any).originalSrc = imageUrl;
+
+          // Scale image to "cover" the frame (like CSS object-fit: cover)
+          const coverScale = Math.max(frameW / img.width!, frameH / img.height!);
+          const imgW = img.width! * coverScale;
+          const imgH = img.height! * coverScale;
+
+          img.set({
+            left: frameLeft - (imgW - frameW) / 2,
+            top: frameTop - (imgH - frameH) / 2,
+            scaleX: coverScale,
+            scaleY: coverScale,
+          });
+
+          // Create clipPath from frame SVG path
+          const [vbW, vbH] = frameViewBox.split(',').map(Number);
+          const clipScaleX = frameW / vbW;
+          const clipScaleY = frameH / vbH;
+
+          const clipPath = new Path(frameSvgPath, {
+            scaleX: clipScaleX / coverScale,
+            scaleY: clipScaleY / coverScale,
+            // clipPath is relative to the object's center
+            left: -(frameW / 2) / coverScale,
+            top: -(frameH / 2) / coverScale,
+            // Adjust for image offset from frame
+            originX: 'left',
+            originY: 'top',
+          });
+
+          // Adjust clipPath position based on image offset from frame center
+          const imgCenterX = img.left! + imgW / 2;
+          const imgCenterY = img.top! + imgH / 2;
+          const frameCenterX = frameLeft + frameW / 2;
+          const frameCenterY = frameTop + frameH / 2;
+          const offsetX = (frameCenterX - imgCenterX) / coverScale;
+          const offsetY = (frameCenterY - imgCenterY) / coverScale;
+          clipPath.set({
+            left: offsetX - (vbW * clipScaleX / coverScale) / 2,
+            top: offsetY - (vbH * clipScaleY / coverScale) / 2,
+          });
+
+          img.clipPath = clipPath;
+
+          // Set frame custom properties on the image
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ip = img as any;
+          ip._isFrame = true;
+          ip._frameId = frameId;
+          ip._frameSvgPath = frameSvgPath;
+          ip._frameViewBox = frameViewBox;
+          ip._frameHasImage = true;
+
+          // Remove the empty frame, add the filled image
+          fabricRef.current.remove(frameObject);
+          fabricRef.current.add(img);
+          fabricRef.current.setActiveObject(img);
+          fabricRef.current.renderAll();
+        } catch (error) {
+          console.error('Failed to fill frame with image:', error);
+        }
+      },
+
+      clearFrameImage: (frameObject: FabricObject) => {
+        if (!fabricRef.current) return;
+        if (!frameObject._isFrame || !frameObject._frameId) return;
+
+        const frameId = frameObject._frameId;
+        const frameBound = frameObject.getBoundingRect();
+
+        // Remove the filled frame image
+        fabricRef.current.remove(frameObject);
+
+        // Re-create the empty frame at the same position and size
+        const frameDef = getFrameById(frameId);
+        if (!frameDef) return;
+
+        const scaleX = frameBound.width / frameDef.viewBox.width;
+        const scaleY = frameBound.height / frameDef.viewBox.height;
+
+        const framePath = new Path(frameDef.svgPath, {
+          left: frameBound.left,
+          top: frameBound.top,
+          scaleX,
+          scaleY,
+          fill: '#e2e8f0',
+          stroke: '#94a3b8',
+          strokeWidth: 1.5 / scaleX,
+          strokeDashArray: [8 / scaleX, 4 / scaleX],
+          objectCaching: true,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fp = framePath as any;
+        fp._isFrame = true;
+        fp._frameId = frameId;
+        fp._frameSvgPath = frameDef.svgPath;
+        fp._frameViewBox = `${frameDef.viewBox.width},${frameDef.viewBox.height}`;
+        fp._frameHasImage = false;
+
+        fabricRef.current.add(framePath);
+        fabricRef.current.setActiveObject(framePath);
+        fabricRef.current.renderAll();
       },
 
       deleteSelected: () => {
@@ -1098,7 +1404,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
@@ -1361,8 +1667,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
 
-        // Escape - exit group interactive mode
+        // Escape - exit crop mode or group interactive mode
         if (e.key === 'Escape') {
+          // Exit frame crop mode first if active
+          if (cropModeRef.current) {
+            exitCropMode(fabricRef.current);
+          }
           fabricRef.current.getObjects().forEach(obj => {
             if (obj instanceof Group) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1505,30 +1815,144 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             fabricRef.current.setActiveObject(shape);
             fabricRef.current.renderAll();
           } else if (type === 'image' && data.url) {
-            // Handle image drops (for branding elements like logo/avatar)
-            try {
-              const img = await FabricImage.fromURL(data.url, { crossOrigin: 'anonymous' });
+            // Check if the image is being dropped onto an empty frame
+            const emptyFrames = fabricRef.current.getObjects().filter(
+              obj => obj._isFrame && !obj._frameHasImage
+            );
+            let targetFrame: FabricObject | null = null;
+            for (let i = emptyFrames.length - 1; i >= 0; i--) {
+              const fb = emptyFrames[i].getBoundingRect();
+              if (x >= fb.left && x <= fb.left + fb.width && y >= fb.top && y <= fb.top + fb.height) {
+                targetFrame = emptyFrames[i];
+                break;
+              }
+            }
 
-              // Scale image to fit nicely
-              const maxWidth = CANVAS_WIDTH * 0.4;
-              const maxHeight = CANVAS_HEIGHT * 0.3;
-              const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
+            if (targetFrame) {
+              // Fill the frame with the image
+              try {
+                // Use imperative handle ref pattern - call fillFrameWithImage
+                let loadUrl = data.url;
+                if (data.url.includes('r2.dev') || data.url.includes('r2.cloudflarestorage.com')) {
+                  loadUrl = `/api/media/proxy?url=${encodeURIComponent(data.url)}`;
+                }
+                const img = await FabricImage.fromURL(loadUrl, { crossOrigin: 'anonymous' });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (img as any).originalSrc = data.url;
 
-              const dropX = Math.max(0, Math.min(x - (img.width! * scale) / 2, CANVAS_WIDTH - img.width! * scale));
-              const dropY = Math.max(0, Math.min(y - (img.height! * scale) / 2, CANVAS_HEIGHT - img.height! * scale));
+                const fb = targetFrame.getBoundingRect();
+                const coverScale = Math.max(fb.width / img.width!, fb.height / img.height!);
+                const imgW = img.width! * coverScale;
+                const imgH = img.height! * coverScale;
 
-              img.set({
+                img.set({
+                  left: fb.left - (imgW - fb.width) / 2,
+                  top: fb.top - (imgH - fb.height) / 2,
+                  scaleX: coverScale,
+                  scaleY: coverScale,
+                });
+
+                // Create clipPath
+                const vbStr = targetFrame._frameViewBox || '100,100';
+                const [vbW, vbH] = vbStr.split(',').map(Number);
+                const clipScaleX = fb.width / vbW;
+                const clipScaleY = fb.height / vbH;
+
+                const clipPath = new Path(targetFrame._frameSvgPath!, {
+                  scaleX: clipScaleX / coverScale,
+                  scaleY: clipScaleY / coverScale,
+                  originX: 'left',
+                  originY: 'top',
+                });
+
+                const imgCX = img.left! + imgW / 2;
+                const imgCY = img.top! + imgH / 2;
+                const frameCX = fb.left + fb.width / 2;
+                const frameCY = fb.top + fb.height / 2;
+                clipPath.set({
+                  left: ((frameCX - imgCX) / coverScale) - (vbW * clipScaleX / coverScale) / 2,
+                  top: ((frameCY - imgCY) / coverScale) - (vbH * clipScaleY / coverScale) / 2,
+                });
+
+                img.clipPath = clipPath;
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const ip = img as any;
+                ip._isFrame = true;
+                ip._frameId = targetFrame._frameId;
+                ip._frameSvgPath = targetFrame._frameSvgPath;
+                ip._frameViewBox = targetFrame._frameViewBox;
+                ip._frameHasImage = true;
+
+                fabricRef.current!.remove(targetFrame);
+                fabricRef.current!.add(img);
+                fabricRef.current!.setActiveObject(img);
+                fabricRef.current!.renderAll();
+              } catch (error) {
+                console.error('Failed to fill frame:', error);
+              }
+            } else {
+              // Normal image drop
+              try {
+                const img = await FabricImage.fromURL(data.url, { crossOrigin: 'anonymous' });
+
+                const maxWidth = CANVAS_WIDTH * 0.4;
+                const maxHeight = CANVAS_HEIGHT * 0.3;
+                const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!, 1);
+
+                const dropX = Math.max(0, Math.min(x - (img.width! * scale) / 2, CANVAS_WIDTH - img.width! * scale));
+                const dropY = Math.max(0, Math.min(y - (img.height! * scale) / 2, CANVAS_HEIGHT - img.height! * scale));
+
+                img.set({
+                  left: dropX,
+                  top: dropY,
+                  scaleX: scale,
+                  scaleY: scale,
+                });
+
+                fabricRef.current!.add(img);
+                fabricRef.current!.setActiveObject(img);
+                fabricRef.current!.renderAll();
+              } catch (error) {
+                console.error('Failed to load dropped image:', error);
+              }
+            }
+          } else if (type === 'frame' && data.frameId) {
+            // Handle frame drops from toolbar
+            const frameDef = getFrameById(data.frameId);
+            if (frameDef) {
+              const defaultWidth = 300;
+              const aspect = frameDef.viewBox.height / frameDef.viewBox.width;
+              const defaultHeight = defaultWidth * aspect;
+              const scaleX = defaultWidth / frameDef.viewBox.width;
+              const scaleY = defaultHeight / frameDef.viewBox.height;
+
+              const dropX = Math.max(0, Math.min(x - defaultWidth / 2, CANVAS_WIDTH - defaultWidth));
+              const dropY = Math.max(0, Math.min(y - defaultHeight / 2, CANVAS_HEIGHT - defaultHeight));
+
+              const framePath = new Path(frameDef.svgPath, {
                 left: dropX,
                 top: dropY,
-                scaleX: scale,
-                scaleY: scale,
+                scaleX,
+                scaleY,
+                fill: '#e2e8f0',
+                stroke: '#94a3b8',
+                strokeWidth: 1.5 / scaleX,
+                strokeDashArray: [8 / scaleX, 4 / scaleX],
+                objectCaching: true,
               });
 
-              fabricRef.current.add(img);
-              fabricRef.current.setActiveObject(img);
-              fabricRef.current.renderAll();
-            } catch (error) {
-              console.error('Failed to load dropped image:', error);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const fp = framePath as any;
+              fp._isFrame = true;
+              fp._frameId = data.frameId;
+              fp._frameSvgPath = frameDef.svgPath;
+              fp._frameViewBox = `${frameDef.viewBox.width},${frameDef.viewBox.height}`;
+              fp._frameHasImage = false;
+
+              fabricRef.current!.add(framePath);
+              fabricRef.current!.setActiveObject(framePath);
+              fabricRef.current!.renderAll();
             }
           } else if (type === 'icon' && data.iconId) {
             // Handle icon drops - dispatch custom event for ElementToolbar to handle

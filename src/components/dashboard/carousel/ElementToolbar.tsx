@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 import type { BrandingData } from "./types";
 import { IconPicker, QuickIcons, getIconById } from "./IconPicker";
+import { frameCategories, getFramesByCategory, type FrameCategory } from "./frameData";
 
 interface ElementToolbarProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
@@ -53,6 +54,7 @@ export function ElementToolbar({
   const [aiPrompt, setAiPrompt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [selectedFrameCategory, setSelectedFrameCategory] = useState<FrameCategory>('basic');
   const dragImageRef = useRef<HTMLDivElement | null>(null);
 
   // Create custom drag image element on mount
@@ -566,6 +568,79 @@ export function ElementToolbar({
                 >
                   {item.icon}
                   <span className="text-xs">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Frames */}
+          <div>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              Frames
+            </h3>
+            <p className="text-[10px] text-muted-foreground mb-2">
+              Drop an image on a frame to clip it
+            </p>
+
+            {/* Category pills */}
+            <div className="flex gap-1 mb-3 flex-wrap">
+              {frameCategories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedFrameCategory(cat.id)}
+                  className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                    selectedFrameCategory === cat.id
+                      ? "bg-cyan-100 border-cyan-300 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
+                      : "border-border text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800"
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Frame grid */}
+            <div className="grid grid-cols-3 gap-2">
+              {getFramesByCategory(selectedFrameCategory).map(frame => (
+                <button
+                  key={frame.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: 'frame',
+                      data: { frameId: frame.id }
+                    }));
+                    e.dataTransfer.effectAllowed = 'copy';
+                    if (dragImageRef.current) {
+                      dragImageRef.current.textContent = frame.name;
+                      e.dataTransfer.setDragImage(dragImageRef.current, 40, 20);
+                    }
+                    setIsDragging(true);
+                  }}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => canvasRef.current?.addFrame(frame.id)}
+                  className={cn(
+                    "aspect-square flex items-center justify-center rounded-md border border-input bg-background",
+                    "hover:bg-cyan-50 hover:border-cyan-300 dark:hover:bg-cyan-950",
+                    "cursor-grab active:cursor-grabbing transition-all duration-150 p-2"
+                  )}
+                  title={frame.name}
+                >
+                  <svg
+                    viewBox={`0 0 ${frame.viewBox.width} ${frame.viewBox.height}`}
+                    className="w-full h-full"
+                  >
+                    <path
+                      d={frame.svgPath}
+                      fill="#e2e8f0"
+                      stroke="#94a3b8"
+                      strokeWidth="2"
+                      strokeDasharray="4 2"
+                    />
+                  </svg>
                 </button>
               ))}
             </div>
