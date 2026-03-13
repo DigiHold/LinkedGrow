@@ -201,6 +201,38 @@ Textbox.createControls = function() {
   return result;
 };
 
+// Canva-like text editing: override mouseUpHandler on the PROTOTYPE so initBehavior()
+// picks it up during construction. Instance-level overrides don't work because
+// initBehavior() registers `this.mouseUpHandler` by reference at construction time.
+// This prevents single-click from entering editing - only our dblclick handler does.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const origTextboxMouseUp = Textbox.prototype.mouseUpHandler as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(Textbox.prototype as any).mouseUpHandler = function(options: any) {
+  if (!this.isEditing) {
+    // Prevent enterEditing: the original checks `this.selected` and calls enterEditing if true.
+    // By clearing it, the original skips enterEditing. _mouseDownHandler will set it back to
+    // true on the next mousedown (via alreadySelected), so the cycle repeats.
+    this.selected = false;
+  }
+  return origTextboxMouseUp.call(this, options);
+};
+
+// Also disable DraggableTextDelegate globally to prevent text drag-and-drop
+// (it interferes with text selection in editing mode)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const origMouseDown = (Textbox.prototype as any)._mouseDownHandler;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(Textbox.prototype as any)._mouseDownHandler = function(options: any) {
+  // Disable draggableTextDelegate.start on first call per instance
+  const delegate = this.draggableTextDelegate;
+  if (delegate && delegate._patched !== true) {
+    delegate.start = () => false;
+    delegate._patched = true;
+  }
+  return origMouseDown.call(this, options);
+};
+
 // Register custom per-corner radius properties as cache-invalidating
 // so Fabric regenerates the render cache when they change via set()
 Rect.cacheProperties = [...Rect.cacheProperties, 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL'];
@@ -960,27 +992,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       canvas.on('object:added', (e) => {
         if (e.target instanceof Textbox) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tb = e.target as any;
-
-          // Disable text drag-and-drop (interferes with text selection in editing mode)
-          if (tb.draggableTextDelegate) tb.draggableTextDelegate.start = () => false;
-
           // Ensure editable=true so all IText handlers work normally
           // (cursor placement, drag-to-select, keyboard input, etc.)
-          tb.editable = true;
-
-          // Override mouseUpHandler to prevent single-click entering editing.
-          // Canva-like: only our mouse:dblclick handler enters editing.
-          const origMouseUp = tb.mouseUpHandler.bind(tb);
-          tb.mouseUpHandler = function(options: Record<string, unknown>) {
-            if (!this.isEditing) {
-              // Block enterEditing in the original handler by clearing `selected`.
-              // The original handler's else-branch will set it back to true for next time.
-              this.selected = false;
-            }
-            return origMouseUp.call(this, options);
-          };
+          // Note: mouseUpHandler and _mouseDownHandler are overridden on the PROTOTYPE
+          // (at module scope above) since initBehavior() registers handlers by reference.
+          e.target.editable = true;
         }
         saveHistory();
         onCanvasChangeRef.current?.();
