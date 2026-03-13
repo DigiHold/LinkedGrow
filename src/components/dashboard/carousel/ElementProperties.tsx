@@ -311,26 +311,35 @@ export function ElementProperties({
     const tb = selectedElement as Textbox;
 
     if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
-      // Apply to selection only (per-character styles)
       tb.setSelectionStyles(styles);
     } else {
-      // Apply to entire textbox: set object-level AND clear per-character
-      // overrides so the new value takes effect visually (per-char styles
-      // would otherwise win over object-level defaults).
       Object.entries(styles).forEach(([key, value]) => {
         tb.set(key as keyof Textbox, value);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tb.removeStyle(key as any);
       });
     }
+
+    const layoutKeys = ['fontWeight', 'fontFamily', 'fontStyle', 'fontSize', 'charSpacing', 'lineHeight', 'textAlign'];
+    const affectsLayout = layoutKeys.some(k => k in styles);
+
+    // Clear global char width cache BEFORE re-measuring so initDimensions()
+    // gets fresh measurements instead of stale cached widths from fallback fonts
+    // or previous font variants. Must happen synchronously before initDimensions.
+    if (affectsLayout) {
+      fabricCache.clearFontCache();
+    }
+
     tb.dirty = true;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (tb as any)._forceClearCache = true;
-    tb.initDimensions();
-    tb.setCoords();
+    if (affectsLayout) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tb as any)._forceClearCache = true;
+      tb.initDimensions();
+      tb.setCoords();
+    }
     canvas.requestRenderAll();
 
-    // Load font variant in background for weight/family/style changes, then re-render
+    // For font variant changes, also load the font file and re-render once loaded
     if ('fontWeight' in styles || 'fontFamily' in styles || 'fontStyle' in styles) {
       const family = (styles.fontFamily as string) || tb.fontFamily || 'Inter';
       const weight = (styles.fontWeight as string) || String(tb.fontWeight || 'normal');
@@ -338,8 +347,6 @@ export function ElementProperties({
       loadGoogleFont(family).then(() =>
         document.fonts.load(`${style} ${weight} 16px "${family}"`)
       ).then(() => {
-        // Clear stale global char width cache so Fabric re-measures with the
-        // newly loaded font variant instead of using cached wrong widths.
         fabricCache.clearFontCache(family);
         tb.dirty = true;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -655,11 +662,10 @@ export function ElementProperties({
           absIdx++; // newline character
         }
 
+        // Fill is purely visual - no dimension recalculation needed.
+        // Calling initDimensions here would re-measure text and cause layout
+        // shifts if the font cache isn't perfectly populated.
         tb.dirty = true;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tb as any)._forceClearCache = true;
-        tb.initDimensions();
-        tb.setCoords();
         canvas.requestRenderAll();
         setGradientColor1(color1);
         setGradientColor2(color2);
@@ -672,7 +678,8 @@ export function ElementProperties({
     }
 
     selectedElement.set('fill', gradient);
-    canvas.renderAll();
+    selectedElement.dirty = true;
+    canvas.requestRenderAll();
     setGradientColor1(color1);
     setGradientColor2(color2);
     setGradientAngle(angle);
