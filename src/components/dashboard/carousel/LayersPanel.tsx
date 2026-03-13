@@ -22,6 +22,8 @@ import {
   ArrowUp,
   Group as GroupIcon,
   Ungroup as UngroupIcon,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -57,6 +59,7 @@ interface FlatLayerItem {
   fabricObject: FabricObject;
   label: string;
   visible: boolean;
+  locked: boolean;
   depth: number;
   parentGroup: Group | null;
   isGroup: boolean;
@@ -134,6 +137,7 @@ function buildFlatList(objects: FabricObject[], expandedGroups: Set<string>): Fl
       fabricObject: obj,
       label: getLayerLabel(obj),
       visible: obj.visible !== false,
+      locked: !!prop(obj, '_locked'),
       depth,
       parentGroup,
       isGroup: userGroup,
@@ -183,6 +187,7 @@ function SortableLayerRow({
   onToggleExpand,
   onMoveOut,
   onRename,
+  onToggleLock,
 }: {
   item: FlatLayerItem;
   isSelected: boolean;
@@ -190,6 +195,7 @@ function SortableLayerRow({
   onMultiSelect: (obj: FabricObject) => void;
   onContextMenu: (e: React.MouseEvent, item: FlatLayerItem) => void;
   onToggleVisibility: (obj: FabricObject) => void;
+  onToggleLock: (obj: FabricObject) => void;
   onDuplicate: (obj: FabricObject) => void;
   onDelete: (obj: FabricObject) => void;
   onToggleExpand: (id: string) => void;
@@ -300,7 +306,10 @@ function SortableLayerRow({
       )}
 
       {/* Action buttons */}
-      <div className="flex items-center gap-0 opacity-0 group-hover/layer:opacity-100 transition-opacity shrink-0">
+      <div className={cn(
+        "flex items-center gap-0 transition-opacity shrink-0",
+        item.locked ? "opacity-100" : "opacity-0 group-hover/layer:opacity-100"
+      )}>
         {/* Move out of group button */}
         {item.depth > 0 && item.parentGroup && (
           <button
@@ -319,6 +328,17 @@ function SortableLayerRow({
           title={item.visible ? "Hide" : "Show"}
         >
           {item.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground" />}
+        </button>
+        <button
+          className={cn(
+            "p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700",
+            item.locked && "text-amber-500"
+          )}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onToggleLock(item.fabricObject); }}
+          title={item.locked ? "Unlock" : "Lock"}
+        >
+          {item.locked ? <Lock className="w-3 h-3" /> : <LockOpen className="w-3 h-3" />}
         </button>
         <button
           className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -491,6 +511,33 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
       const active = canvas.getActiveObject();
       if (active === obj) canvas.discardActiveObject();
     }
+    canvas.renderAll();
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
+
+  const toggleLock = useCallback((obj: FabricObject) => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+    if ((obj as any)._locked) {
+      // Unlock
+      (obj as any)._locked = false;
+      obj.selectable = true;
+      obj.evented = true;
+      obj.hasControls = true;
+      obj.lockMovementX = false;
+      obj.lockMovementY = false;
+    } else {
+      // Lock
+      (obj as any)._locked = true;
+      obj.selectable = false;
+      obj.evented = false;
+      obj.hasControls = false;
+      obj.lockMovementX = true;
+      obj.lockMovementY = true;
+      const active = canvas.getActiveObject();
+      if (active === obj) canvas.discardActiveObject();
+    }
+    (canvas as any).fire('object:modified', { target: obj });
     canvas.renderAll();
     refreshLayers();
   }, [canvasRef, refreshLayers]);
@@ -783,6 +830,7 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
                     onMultiSelect={multiSelectObject}
                     onContextMenu={handleContextMenu}
                     onToggleVisibility={toggleVisibility}
+                    onToggleLock={toggleLock}
                     onDuplicate={duplicateObject}
                     onDelete={deleteObject}
                     onToggleExpand={toggleExpand}
@@ -826,6 +874,21 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
             >
               <UngroupIcon className="w-3.5 h-3.5" />
               Ungroup
+            </button>
+          )}
+          {/* Lock / Unlock */}
+          {contextMenu.items.length === 1 && (
+            <button
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent text-left"
+              onClick={() => {
+                toggleLock(contextMenu.items[0].fabricObject);
+                setContextMenu(null);
+              }}
+            >
+              {contextMenu.items[0].locked
+                ? <><LockOpen className="w-3.5 h-3.5" /> Unlock</>
+                : <><Lock className="w-3.5 h-3.5" /> Lock</>
+              }
             </button>
           )}
           <div className="h-px bg-border my-1" />

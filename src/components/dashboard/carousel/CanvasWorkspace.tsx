@@ -29,6 +29,8 @@ import {
   AlignStartHorizontal,
   AlignVerticalJustifyCenter,
   AlignEndHorizontal,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import { loadGoogleFont } from "./GoogleFontPicker";
 
@@ -50,6 +52,7 @@ declare module 'fabric' {
     _frameOrigWidth?: number;
     _frameOrigHeight?: number;
     _layerName?: string;
+    _locked?: boolean;
   }
 }
 
@@ -158,6 +161,26 @@ function refreshTextDimensions(canvas: Canvas) {
     }
   }
   refreshObjects(canvas.getObjects());
+}
+
+// Restore locked state after loading from JSON. The _locked flag is serialized
+// but selectable/evented/lockMovement are not, so we re-apply them.
+function restoreLockedState(canvas: Canvas) {
+  function processObjects(objects: FabricObject[]) {
+    for (const obj of objects) {
+      if (obj._locked) {
+        obj.selectable = false;
+        obj.evented = false;
+        obj.hasControls = false;
+        obj.lockMovementX = true;
+        obj.lockMovementY = true;
+      }
+      if (obj instanceof Group) {
+        processObjects(obj.getObjects());
+      }
+    }
+  }
+  processObjects(canvas.getObjects());
 }
 
 FabricObject.ownDefaults.originX = 'left';
@@ -666,7 +689,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -785,7 +808,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           ? objParent.getObjects()
           : canvas.getObjects();
         const others = pool.filter((o: FabricObject) =>
-          o !== obj && o.selectable !== false && !o._isFrame
+          o !== obj && !o._locked && o.selectable !== false && !o._isFrame
         );
 
         if (others.length >= 2) {
@@ -1378,14 +1401,23 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       canvas.on('contextmenu', (opt: any) => {
         const target = opt.target as FabricObject | undefined;
         const e = opt.e as MouseEvent;
-        if (target && target.selectable && !target.isBackgroundRect) {
-          const active = canvas.getActiveObject();
-          if (active !== target) {
-            if (active instanceof ActiveSelection && active.getObjects().includes(target)) {
-              // Already part of multi-selection, keep it
-            } else {
-              canvas.setActiveObject(target);
-              canvas.requestRenderAll();
+        if (target && !target.isBackgroundRect && (target.selectable || target._locked)) {
+          if (target._locked) {
+            // For locked objects, temporarily select to show context menu
+            target.selectable = true;
+            target.evented = true;
+            canvas.setActiveObject(target);
+            target.selectable = false;
+            target.evented = false;
+          } else {
+            const active = canvas.getActiveObject();
+            if (active !== target) {
+              if (active instanceof ActiveSelection && active.getObjects().includes(target)) {
+                // Already part of multi-selection, keep it
+              } else {
+                canvas.setActiveObject(target);
+                canvas.requestRenderAll();
+              }
             }
           }
           setAlignSubmenuOpen(false);
@@ -2180,7 +2212,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight', '_layerName', '_locked']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
@@ -2246,6 +2278,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
 
+          // Restore locked state (selectable/evented aren't serialized)
+          restoreLockedState(fabricRef.current);
+
           // Force re-measure all text objects after load. loadFromJSON may have
           // measured some text before font faces were fully rasterized.
           fabricCache.clearFontCache();
@@ -2277,6 +2312,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const proxiedJson = proxyR2UrlsInJson(json);
         const parsed = JSON.parse(proxiedJson);
         preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
+          restoreLockedState(fabricRef.current!);
           fabricCache.clearFontCache();
           refreshTextDimensions(fabricRef.current!);
           fabricRef.current!.setZoom(currentZoom);
@@ -2304,6 +2340,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const proxiedJson = proxyR2UrlsInJson(json);
         const parsed = JSON.parse(proxiedJson);
         preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
+          restoreLockedState(fabricRef.current!);
           fabricCache.clearFontCache();
           refreshTextDimensions(fabricRef.current!);
           fabricRef.current!.setZoom(currentZoom);
@@ -2380,6 +2417,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             const proxiedJson = proxyR2UrlsInJson(json);
             const parsedUndo = JSON.parse(proxiedJson);
             preloadFontsFromJSON(parsedUndo).then(() => fabricRef.current!.loadFromJSON(parsedUndo)).then(() => {
+              restoreLockedState(fabricRef.current!);
               fabricCache.clearFontCache();
               refreshTextDimensions(fabricRef.current!);
               fabricRef.current!.setZoom(currentZoom);
@@ -2407,6 +2445,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             const proxiedJson = proxyR2UrlsInJson(json);
             const parsedRedo = JSON.parse(proxiedJson);
             preloadFontsFromJSON(parsedRedo).then(() => fabricRef.current!.loadFromJSON(parsedRedo)).then(() => {
+              restoreLockedState(fabricRef.current!);
               fabricCache.clearFontCache();
               refreshTextDimensions(fabricRef.current!);
               fabricRef.current!.setZoom(currentZoom);
@@ -3071,6 +3110,49 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                   </div>
                 )}
               </div>
+              {/* Lock / Unlock */}
+              {(() => {
+                const active = fabricRef.current?.getActiveObject();
+                const isLocked = active?._locked;
+                return (
+                  <button
+                    className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                    onClick={() => {
+                      const canvas = fabricRef.current;
+                      const active = canvas?.getActiveObject();
+                      if (!canvas || !active) return;
+                      if (active._locked) {
+                        // Unlock
+                        active._locked = false;
+                        active.selectable = true;
+                        active.evented = true;
+                        active.hasControls = true;
+                        active.lockMovementX = false;
+                        active.lockMovementY = false;
+                        canvas.setActiveObject(active);
+                      } else {
+                        // Lock
+                        active._locked = true;
+                        active.selectable = false;
+                        active.evented = false;
+                        active.hasControls = false;
+                        active.lockMovementX = true;
+                        active.lockMovementY = true;
+                        canvas.discardActiveObject();
+                      }
+                      canvas.renderAll();
+                      saveHistory();
+                      onCanvasChangeRef.current?.();
+                      setContextMenu(null);
+                      setAlignSubmenuOpen(false);
+                      setLayerSubmenuOpen(false);
+                    }}
+                  >
+                    {isLocked ? <LockOpen className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    {isLocked ? 'Unlock' : 'Lock'}
+                  </button>
+                );
+              })()}
               {/* Group / Ungroup */}
               {(isMultiSelect() || isUserGroup()) && (
                 <>
