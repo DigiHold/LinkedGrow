@@ -328,19 +328,23 @@ export function ElementProperties({
     const layoutKeys = ['fontWeight', 'fontFamily', 'fontStyle', 'fontSize', 'charSpacing', 'lineHeight', 'textAlign'];
     const affectsLayout = layoutKeys.some(k => k in styles);
 
-    // Clear global char width cache BEFORE re-measuring so initDimensions()
-    // gets fresh measurements instead of stale cached widths from fallback fonts
-    // or previous font variants. Must happen synchronously before initDimensions.
     if (affectsLayout) {
+      // Clear global char width cache BEFORE re-measuring so initDimensions()
+      // gets fresh measurements instead of stale cached widths from fallback fonts
       fabricCache.clearFontCache();
-    }
-
-    tb.dirty = true;
-    if (affectsLayout) {
+      tb.dirty = true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (tb as any)._forceClearCache = true;
       tb.initDimensions();
       tb.setCoords();
+    } else {
+      // Fill/color-only changes: setSelectionStyles sets _forceClearCache=true
+      // internally but fill doesn't affect layout. Reset the flag to prevent
+      // initDimensions() from running during render which could disrupt per-char
+      // gradient fills on other characters.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tb as any)._forceClearCache = false;
+      tb.dirty = true;
     }
     canvas.requestRenderAll();
 
@@ -603,8 +607,9 @@ export function ElementProperties({
   const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement && !isFrameElement : false;
 
   // Apply gradient fill to text or shapes.
-  // Text: per-character interpolated solid fills so multiple gradient ranges
-  // can coexist on different words. Shapes: real Fabric.js Gradient object.
+  // Text: per-character interpolated solid fills via setSelectionStyles so
+  // multiple gradient ranges can coexist on different words.
+  // Shapes: real Fabric.js Gradient object.
   const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
@@ -626,43 +631,35 @@ export function ElementProperties({
         return `#${ch(r1+(r2-r1)*t)}${ch(g1+(g2-g1)*t)}${ch(b1+(b2-b1)*t)}`;
       };
 
-      const text = tb.text || '';
-      const lines = text.split('\n');
-
       if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
-        // Partial selection: gradient only on selected chars, leave others untouched
+        // Partial selection: gradient only on selected chars
         const start = tb.selectionStart;
         const end = tb.selectionEnd;
         const len = end - start;
-        let absIdx = 0;
-        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-          if (!tb.styles[lineIdx]) tb.styles[lineIdx] = {};
-          for (let charIdx = 0; charIdx < lines[lineIdx].length; charIdx++) {
-            if (absIdx >= start && absIdx < end) {
-              const t = len <= 1 ? 0 : (absIdx - start) / (len - 1);
-              if (!tb.styles[lineIdx][charIdx]) tb.styles[lineIdx][charIdx] = {};
-              tb.styles[lineIdx][charIdx].fill = lerp(color1, color2, t);
-            }
-            absIdx++;
-          }
-          absIdx++; // newline
+        for (let i = start; i < end; i++) {
+          const t = len <= 1 ? 0 : (i - start) / (len - 1);
+          // Use Fabric's own API which handles _styleMap correctly for wrapped text
+          tb.setSelectionStyles({ fill: lerp(color1, color2, t) }, i, i + 1);
         }
       } else {
         // Whole textbox: gradient across all characters
-        const totalChars = text.replace(/\n/g, '').length;
-        let absIdx = 0;
-        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-          if (!tb.styles[lineIdx]) tb.styles[lineIdx] = {};
-          for (let charIdx = 0; charIdx < lines[lineIdx].length; charIdx++) {
-            const t = totalChars <= 1 ? 0 : absIdx / (totalChars - 1);
-            if (!tb.styles[lineIdx][charIdx]) tb.styles[lineIdx][charIdx] = {};
-            tb.styles[lineIdx][charIdx].fill = lerp(color1, color2, t);
-            absIdx++;
-          }
+        const text = tb.text || '';
+        const totalVisible = text.replace(/\n/g, '').length;
+        let visibleIdx = 0;
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] === '\n') continue;
+          const t = totalVisible <= 1 ? 0 : visibleIdx / (totalVisible - 1);
+          tb.setSelectionStyles({ fill: lerp(color1, color2, t) }, i, i + 1);
+          visibleIdx++;
         }
       }
 
-      // Fill only - no dimension recalculation needed
+      // setSelectionStyles sets _forceClearCache=true internally, but fill
+      // changes don't affect layout. Reset the flag to prevent initDimensions()
+      // from running during render (which would recalculate char positions and
+      // could disrupt the layout).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tb as any)._forceClearCache = false;
       tb.dirty = true;
       canvas.requestRenderAll();
     } else {
