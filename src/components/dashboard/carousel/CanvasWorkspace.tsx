@@ -49,6 +49,8 @@ declare module 'fabric' {
     _frameSvgPath?: string;
     _frameViewBox?: string;
     _frameHasImage?: boolean;
+    _frameOrigWidth?: number;
+    _frameOrigHeight?: number;
   }
 }
 
@@ -214,6 +216,70 @@ function parseGradientToFabric(gradientString: string): { colorStops: Record<str
   }
 
   return { colorStops, angle };
+}
+
+// Helper: set up a FabricImage to fill a frame using cropX/cropY so bounding box matches frame
+function setupFrameImage(
+  img: FabricImage,
+  frameLeft: number,
+  frameTop: number,
+  frameW: number,
+  frameH: number,
+  frameSvgPath: string,
+  frameViewBox: string,
+  frameId: string,
+) {
+  const origW = img.width!;
+  const origH = img.height!;
+  const [vbW, vbH] = frameViewBox.split(',').map(Number);
+
+  // "Cover" scale: smallest scale that fully covers the frame
+  const coverScale = Math.max(frameW / origW, frameH / origH);
+
+  // Visible portion of source in source pixels
+  const srcVisibleW = Math.min(Math.round(frameW / coverScale), origW);
+  const srcVisibleH = Math.min(Math.round(frameH / coverScale), origH);
+
+  // Center crop
+  const cropX = Math.round((origW - srcVisibleW) / 2);
+  const cropY = Math.round((origH - srcVisibleH) / 2);
+
+  // Display scale: frame canvas size / visible source pixels
+  const displayScaleX = frameW / srcVisibleW;
+  const displayScaleY = frameH / srcVisibleH;
+
+  img.set({
+    left: frameLeft,
+    top: frameTop,
+    width: srcVisibleW,
+    height: srcVisibleH,
+    cropX,
+    cropY,
+    scaleX: displayScaleX,
+    scaleY: displayScaleY,
+    angle: 0,
+  });
+
+  // ClipPath in local coords: image local space is (-srcVisibleW/2, -srcVisibleH/2) to (+, +)
+  const clipPath = new Path(frameSvgPath, {
+    scaleX: srcVisibleW / vbW,
+    scaleY: srcVisibleH / vbH,
+    left: -srcVisibleW / 2,
+    top: -srcVisibleH / 2,
+    originX: 'left',
+    originY: 'top',
+  });
+  img.clipPath = clipPath;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ip = img as any;
+  ip._isFrame = true;
+  ip._frameId = frameId;
+  ip._frameSvgPath = frameSvgPath;
+  ip._frameViewBox = frameViewBox;
+  ip._frameHasImage = true;
+  ip._frameOrigWidth = origW;
+  ip._frameOrigHeight = origH;
 }
 
 // Helper to proxy R2 URLs in canvas JSON for CORS
@@ -394,7 +460,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       if (!fabricRef.current || isUndoRedoRef.current) return;
 
       // Include custom properties in history serialization
-      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage']));
+      const json = JSON.stringify(fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight']));
 
       // Don't save if it's the same as the last saved state
       if (json === lastSavedStateRef.current) return;
@@ -758,49 +824,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             const frame = frames[fi];
             const fb = frame.getBoundingRect();
             if (ocx >= fb.left && ocx <= fb.left + fb.width && ocy >= fb.top && ocy <= fb.top + fb.height) {
-              // Fill the frame with this image
-              const imgSrc = (modifiedObj as unknown as Record<string, unknown>).originalSrc as string || modifiedObj.getSrc();
-              const vbStr = frame._frameViewBox || '100,100';
-              const [vbW, vbH] = vbStr.split(',').map(Number);
-              const coverScale = Math.max(fb.width / modifiedObj.width!, fb.height / modifiedObj.height!);
-              const imgW = modifiedObj.width! * coverScale;
-              const imgH = modifiedObj.height! * coverScale;
+              // Need original source dimensions - restore if cropX/cropY were set
+              const fullW = (modifiedObj as FabricImage)._frameOrigWidth || ((modifiedObj.cropX || 0) > 0 ? modifiedObj.width! + (modifiedObj.cropX || 0) * 2 : modifiedObj.width!);
+              const fullH = (modifiedObj as FabricImage)._frameOrigHeight || ((modifiedObj.cropY || 0) > 0 ? modifiedObj.height! + (modifiedObj.cropY || 0) * 2 : modifiedObj.height!);
+              // Reset crop to get full source image
+              modifiedObj.set({ width: fullW, height: fullH, cropX: 0, cropY: 0 });
 
-              modifiedObj.set({
-                left: fb.left - (imgW - fb.width) / 2,
-                top: fb.top - (imgH - fb.height) / 2,
-                scaleX: coverScale,
-                scaleY: coverScale,
-                angle: 0,
-              });
-
-              const clipScaleX = fb.width / vbW;
-              const clipScaleY = fb.height / vbH;
-              const clipPathObj = new Path(frame._frameSvgPath!, {
-                scaleX: clipScaleX / coverScale,
-                scaleY: clipScaleY / coverScale,
-                originX: 'left',
-                originY: 'top',
-              });
-
-              const imgCX = modifiedObj.left! + imgW / 2;
-              const imgCY = modifiedObj.top! + imgH / 2;
-              const frameCX = fb.left + fb.width / 2;
-              const frameCY = fb.top + fb.height / 2;
-              clipPathObj.set({
-                left: ((frameCX - imgCX) / coverScale) - (vbW * clipScaleX / coverScale) / 2,
-                top: ((frameCY - imgCY) / coverScale) - (vbH * clipScaleY / coverScale) / 2,
-              });
-
-              modifiedObj.clipPath = clipPathObj;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const ip = modifiedObj as any;
-              ip._isFrame = true;
-              ip._frameId = frame._frameId;
-              ip._frameSvgPath = frame._frameSvgPath;
-              ip._frameViewBox = frame._frameViewBox;
-              ip._frameHasImage = true;
-              ip._frameImageUrl = imgSrc;
+              setupFrameImage(modifiedObj, fb.left, fb.top, fb.width, fb.height, frame._frameSvgPath!, frame._frameViewBox!, frame._frameId!);
 
               canvas.remove(frame);
               canvas.setActiveObject(modifiedObj);
@@ -865,40 +895,48 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
     // Frame crop mode helpers
     const enterCropMode = useCallback((image: FabricImage, canvas: Canvas) => {
-      if (cropModeRef.current) return; // Already in crop mode
-      const clip = image.clipPath;
-      if (!clip) return;
+      if (cropModeRef.current) return;
+      if (!image.clipPath) return;
 
-      // Calculate the FRAME bounds from clipPath + image transforms
-      // clipPath coordinates are in image's local space (center = 0,0)
-      const imgScaleX = image.scaleX || 1;
-      const imgScaleY = image.scaleY || 1;
-      const imgCenterX = image.left! + (image.width! * imgScaleX) / 2;
-      const imgCenterY = image.top! + (image.height! * imgScaleY) / 2;
+      const scaleX = image.scaleX || 1;
+      const scaleY = image.scaleY || 1;
 
-      const vbStr = image._frameViewBox || '100,100';
-      const [vbW, vbH] = vbStr.split(',').map(Number);
-      const clipSX = clip.scaleX || 1;
-      const clipSY = clip.scaleY || 1;
+      // Frame bounds = current image bounds (since cropX/cropY approach sizes image to frame)
+      const frameLeft = image.left!;
+      const frameTop = image.top!;
+      const frameWidth = image.width! * scaleX;
+      const frameHeight = image.height! * scaleY;
 
-      // Frame position and size in canvas coordinates
-      const frameLeft = imgCenterX + (clip.left || 0) * imgScaleX;
-      const frameTop = imgCenterY + (clip.top || 0) * imgScaleY;
-      const frameWidth = vbW * clipSX * imgScaleX;
-      const frameHeight = vbH * clipSY * imgScaleY;
+      // Restore full source image dimensions
+      const origW = image._frameOrigWidth || image.width!;
+      const origH = image._frameOrigHeight || image.height!;
+      const currentCropX = image.cropX || 0;
+      const currentCropY = image.cropY || 0;
+
+      // Adjust position so frame area stays in the same place
+      const newLeft = frameLeft - currentCropX * scaleX;
+      const newTop = frameTop - currentCropY * scaleY;
 
       cropModeRef.current = {
         image,
-        originalClipPath: clip,
+        originalClipPath: image.clipPath,
         frameLeft,
         frameTop,
         frameWidth,
         frameHeight,
       };
 
-      // Remove clipPath to show full image, reduce opacity
+      // Show full image at reduced opacity
       image.clipPath = undefined;
-      image.set('opacity', 0.4);
+      image.set({
+        width: origW,
+        height: origH,
+        cropX: 0,
+        cropY: 0,
+        left: newLeft,
+        top: newTop,
+        opacity: 0.4,
+      });
       image.dirty = true;
       canvas.requestRenderAll();
     }, []);
@@ -919,16 +957,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       const [vbW, vbH] = frameViewBox.split(',').map(Number);
       const imgScaleX = image.scaleX || 1;
       const imgScaleY = image.scaleY || 1;
-      const imgCenterX = image.left! + (image.width! * imgScaleX) / 2;
-      const imgCenterY = image.top! + (image.height! * imgScaleY) / 2;
 
-      // Check if image center is outside the frame bounds - if so, detach
-      const frameCenterX = crop.frameLeft + crop.frameWidth / 2;
-      const frameCenterY = crop.frameTop + crop.frameHeight / 2;
-      const dx = Math.abs(imgCenterX - frameCenterX);
-      const dy = Math.abs(imgCenterY - frameCenterY);
-      const isOutside = dx > (crop.frameWidth / 2 + (image.width! * imgScaleX) / 2) ||
-                         dy > (crop.frameHeight / 2 + (image.height! * imgScaleY) / 2);
+      // Check if image has been moved completely outside the frame - detach
+      const imgRight = image.left! + image.width! * imgScaleX;
+      const imgBottom = image.top! + image.height! * imgScaleY;
+      const frameRight = crop.frameLeft + crop.frameWidth;
+      const frameBottom = crop.frameTop + crop.frameHeight;
+      const isOutside = imgRight <= crop.frameLeft || image.left! >= frameRight ||
+                         imgBottom <= crop.frameTop || image.top! >= frameBottom;
 
       if (isOutside) {
         // Detach: strip frame properties, make it a normal image
@@ -939,6 +975,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         ip._frameId = undefined;
         ip._frameSvgPath = undefined;
         ip._frameViewBox = undefined;
+        ip._frameOrigWidth = undefined;
+        ip._frameOrigHeight = undefined;
         image.clipPath = undefined;
         image.set('opacity', 1);
         image.dirty = true;
@@ -947,17 +985,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (frameId) {
           const frameDef = getFrameById(frameId);
           if (frameDef) {
-            const scaleX = crop.frameWidth / frameDef.viewBox.width;
-            const scaleY = crop.frameHeight / frameDef.viewBox.height;
+            const fScaleX = crop.frameWidth / frameDef.viewBox.width;
+            const fScaleY = crop.frameHeight / frameDef.viewBox.height;
             const framePath = new Path(frameDef.svgPath, {
               left: crop.frameLeft,
               top: crop.frameTop,
-              scaleX,
-              scaleY,
+              scaleX: fScaleX,
+              scaleY: fScaleY,
               fill: '#e2e8f0',
               stroke: '#94a3b8',
-              strokeWidth: 1.5 / scaleX,
-              strokeDashArray: [8 / scaleX, 4 / scaleX],
+              strokeWidth: 1.5 / fScaleX,
+              strokeDashArray: [8 / fScaleX, 4 / fScaleX],
               objectCaching: true,
             });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -977,18 +1015,40 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         return;
       }
 
-      // Recalculate clipPath position AND scale for the image's current transform
+      // Calculate new cropX/cropY based on image position relative to frame
+      const newCropX = Math.max(0, Math.round((crop.frameLeft - image.left!) / imgScaleX));
+      const newCropY = Math.max(0, Math.round((crop.frameTop - image.top!) / imgScaleY));
+      const origW = image.width!;
+      const origH = image.height!;
+      const srcVisibleW = Math.min(Math.round(crop.frameWidth / imgScaleX), origW - newCropX);
+      const srcVisibleH = Math.min(Math.round(crop.frameHeight / imgScaleY), origH - newCropY);
+
+      // Recalculate display scale to match frame canvas size
+      const displayScaleX = crop.frameWidth / srcVisibleW;
+      const displayScaleY = crop.frameHeight / srcVisibleH;
+
+      // ClipPath covers the full visible area
       const newClip = new Path(frameSvgPath, {
-        scaleX: crop.frameWidth / (vbW * imgScaleX),
-        scaleY: crop.frameHeight / (vbH * imgScaleY),
-        left: (crop.frameLeft - imgCenterX) / imgScaleX,
-        top: (crop.frameTop - imgCenterY) / imgScaleY,
+        scaleX: srcVisibleW / vbW,
+        scaleY: srcVisibleH / vbH,
+        left: -srcVisibleW / 2,
+        top: -srcVisibleH / 2,
         originX: 'left',
         originY: 'top',
       });
 
+      image.set({
+        left: crop.frameLeft,
+        top: crop.frameTop,
+        width: srcVisibleW,
+        height: srcVisibleH,
+        cropX: newCropX,
+        cropY: newCropY,
+        scaleX: displayScaleX,
+        scaleY: displayScaleY,
+        opacity: 1,
+      });
       image.clipPath = newClip;
-      image.set('opacity', 1);
       image.dirty = true;
 
       cropModeRef.current = null;
@@ -1264,14 +1324,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!frameId || !frameSvgPath || !frameViewBox) return;
 
         try {
-          // Get frame position and dimensions
           const frameBound = frameObject.getBoundingRect();
-          const frameLeft = frameBound.left;
-          const frameTop = frameBound.top;
-          const frameW = frameBound.width;
-          const frameH = frameBound.height;
 
-          // Load the image
           let loadUrl = imageUrl;
           if (imageUrl.includes('r2.dev') || imageUrl.includes('r2.cloudflarestorage.com')) {
             loadUrl = `/api/media/proxy?url=${encodeURIComponent(imageUrl)}`;
@@ -1280,58 +1334,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (img as any).originalSrc = imageUrl;
 
-          // Scale image to "cover" the frame (like CSS object-fit: cover)
-          const coverScale = Math.max(frameW / img.width!, frameH / img.height!);
-          const imgW = img.width! * coverScale;
-          const imgH = img.height! * coverScale;
+          setupFrameImage(img, frameBound.left, frameBound.top, frameBound.width, frameBound.height, frameSvgPath, frameViewBox, frameId);
 
-          img.set({
-            left: frameLeft - (imgW - frameW) / 2,
-            top: frameTop - (imgH - frameH) / 2,
-            scaleX: coverScale,
-            scaleY: coverScale,
-          });
-
-          // Create clipPath from frame SVG path
-          const [vbW, vbH] = frameViewBox.split(',').map(Number);
-          const clipScaleX = frameW / vbW;
-          const clipScaleY = frameH / vbH;
-
-          const clipPath = new Path(frameSvgPath, {
-            scaleX: clipScaleX / coverScale,
-            scaleY: clipScaleY / coverScale,
-            // clipPath is relative to the object's center
-            left: -(frameW / 2) / coverScale,
-            top: -(frameH / 2) / coverScale,
-            // Adjust for image offset from frame
-            originX: 'left',
-            originY: 'top',
-          });
-
-          // Adjust clipPath position based on image offset from frame center
-          const imgCenterX = img.left! + imgW / 2;
-          const imgCenterY = img.top! + imgH / 2;
-          const frameCenterX = frameLeft + frameW / 2;
-          const frameCenterY = frameTop + frameH / 2;
-          const offsetX = (frameCenterX - imgCenterX) / coverScale;
-          const offsetY = (frameCenterY - imgCenterY) / coverScale;
-          clipPath.set({
-            left: offsetX - (vbW * clipScaleX / coverScale) / 2,
-            top: offsetY - (vbH * clipScaleY / coverScale) / 2,
-          });
-
-          img.clipPath = clipPath;
-
-          // Set frame custom properties on the image
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const ip = img as any;
-          ip._isFrame = true;
-          ip._frameId = frameId;
-          ip._frameSvgPath = frameSvgPath;
-          ip._frameViewBox = frameViewBox;
-          ip._frameHasImage = true;
-
-          // Remove the empty frame, add the filled image
           fabricRef.current.remove(frameObject);
           fabricRef.current.add(img);
           fabricRef.current.setActiveObject(img);
@@ -1619,7 +1623,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       exportToJSON: () => {
         if (!fabricRef.current) return '{}';
         // Include custom properties like isBackgroundRect and originalSrc in serialization
-        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage']);
+        const json = fabricRef.current.toObject(['isBackgroundRect', 'originalSrc', 'radiusTL', 'radiusTR', 'radiusBR', 'radiusBL', '_isFrame', '_frameId', '_frameSvgPath', '_frameViewBox', '_frameHasImage', '_frameOrigWidth', '_frameOrigHeight']);
 
         // Post-process to restore original R2 URLs instead of proxy URLs
         if (json.objects && Array.isArray(json.objects)) {
@@ -2046,7 +2050,6 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             if (targetFrame) {
               // Fill the frame with the image
               try {
-                // Use imperative handle ref pattern - call fillFrameWithImage
                 let loadUrl = data.url;
                 if (data.url.includes('r2.dev') || data.url.includes('r2.cloudflarestorage.com')) {
                   loadUrl = `/api/media/proxy?url=${encodeURIComponent(data.url)}`;
@@ -2056,48 +2059,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                 (img as any).originalSrc = data.url;
 
                 const fb = targetFrame.getBoundingRect();
-                const coverScale = Math.max(fb.width / img.width!, fb.height / img.height!);
-                const imgW = img.width! * coverScale;
-                const imgH = img.height! * coverScale;
-
-                img.set({
-                  left: fb.left - (imgW - fb.width) / 2,
-                  top: fb.top - (imgH - fb.height) / 2,
-                  scaleX: coverScale,
-                  scaleY: coverScale,
-                });
-
-                // Create clipPath
-                const vbStr = targetFrame._frameViewBox || '100,100';
-                const [vbW, vbH] = vbStr.split(',').map(Number);
-                const clipScaleX = fb.width / vbW;
-                const clipScaleY = fb.height / vbH;
-
-                const clipPath = new Path(targetFrame._frameSvgPath!, {
-                  scaleX: clipScaleX / coverScale,
-                  scaleY: clipScaleY / coverScale,
-                  originX: 'left',
-                  originY: 'top',
-                });
-
-                const imgCX = img.left! + imgW / 2;
-                const imgCY = img.top! + imgH / 2;
-                const frameCX = fb.left + fb.width / 2;
-                const frameCY = fb.top + fb.height / 2;
-                clipPath.set({
-                  left: ((frameCX - imgCX) / coverScale) - (vbW * clipScaleX / coverScale) / 2,
-                  top: ((frameCY - imgCY) / coverScale) - (vbH * clipScaleY / coverScale) / 2,
-                });
-
-                img.clipPath = clipPath;
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ip = img as any;
-                ip._isFrame = true;
-                ip._frameId = targetFrame._frameId;
-                ip._frameSvgPath = targetFrame._frameSvgPath;
-                ip._frameViewBox = targetFrame._frameViewBox;
-                ip._frameHasImage = true;
+                setupFrameImage(img, fb.left, fb.top, fb.width, fb.height, targetFrame._frameSvgPath!, targetFrame._frameViewBox!, targetFrame._frameId!);
 
                 fabricRef.current!.remove(targetFrame);
                 fabricRef.current!.add(img);
