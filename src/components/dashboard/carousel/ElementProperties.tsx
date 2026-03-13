@@ -597,89 +597,92 @@ export function ElementProperties({
 
   const isShapeElement = selectedElement ? !isTextElement && !isImageElement && !isIconElement && !isFrameElement : false;
 
-  // Apply gradient fill - uses real Fabric.js Gradient on the textbox to preserve kerning.
-  // For partial text selection: sets gradient as textbox fill, then overrides non-selected
-  // chars with solid fill so only the selected range shows the gradient.
+  // Apply gradient fill to text or shapes.
+  // Text: per-character interpolated solid fills so multiple gradient ranges
+  // can coexist on different words. Shapes: real Fabric.js Gradient object.
   const applyGradientFill = useCallback((color1: string, color2: string, angle: number) => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
-    const w = selectedElement.width || 100;
-    const h = selectedElement.height || 100;
-    const angleRad = (angle - 90) * Math.PI / 180;
-    const gradient = new Gradient({
-      type: 'linear',
-      coords: {
-        x1: (0.5 - Math.cos(angleRad) * 0.5) * w,
-        y1: (0.5 - Math.sin(angleRad) * 0.5) * h,
-        x2: (0.5 + Math.cos(angleRad) * 0.5) * w,
-        y2: (0.5 + Math.sin(angleRad) * 0.5) * h,
-      },
-      colorStops: [
-        { offset: 0, color: color1 },
-        { offset: 1, color: color2 },
-      ],
-    });
-
     if (selectedElement instanceof Textbox) {
-      const tb = selectedElement as Textbox;
+      const tb = selectedElement;
+
+      // Ensure base fill is solid (not a leftover Gradient object)
+      if (typeof tb.fill !== 'string') {
+        tb.set('fill', color1);
+      }
+
+      // Helper: interpolate hex color
+      const lerp = (c1: string, c2: string, t: number) => {
+        const p = (h: string) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+        const [r1,g1,b1] = p(c1), [r2,g2,b2] = p(c2);
+        const ch = (v: number) => Math.round(v).toString(16).padStart(2,'0');
+        return `#${ch(r1+(r2-r1)*t)}${ch(g1+(g2-g1)*t)}${ch(b1+(b2-b1)*t)}`;
+      };
+
+      const text = tb.text || '';
+      const lines = text.split('\n');
 
       if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
-        // Partial text gradient: set gradient on textbox, override non-selected chars with solid
+        // Partial selection: gradient only on selected chars, leave others untouched
         const start = tb.selectionStart;
         const end = tb.selectionEnd;
-
-        // Get current solid fill for non-gradient characters
-        const baseFill = typeof tb.fill === 'string' ? tb.fill : '#000000';
-
-        // Set gradient as textbox fill
-        tb.set('fill', gradient);
-
-        // Process all characters: non-selected get solid fill, selected inherit gradient
-        const text = tb.text || '';
-        const lines = text.split('\n');
+        const len = end - start;
         let absIdx = 0;
         for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
           if (!tb.styles[lineIdx]) tb.styles[lineIdx] = {};
           for (let charIdx = 0; charIdx < lines[lineIdx].length; charIdx++) {
             if (absIdx >= start && absIdx < end) {
-              // Selected: remove per-char fill so gradient shows through
-              if (tb.styles[lineIdx]?.[charIdx]?.fill) {
-                delete tb.styles[lineIdx][charIdx].fill;
-                if (Object.keys(tb.styles[lineIdx][charIdx]).length === 0) {
-                  delete tb.styles[lineIdx][charIdx];
-                }
-              }
-            } else {
-              // Not selected: set per-char solid fill to preserve appearance
-              const existingFill = tb.styles[lineIdx]?.[charIdx]?.fill;
+              const t = len <= 1 ? 0 : (absIdx - start) / (len - 1);
               if (!tb.styles[lineIdx][charIdx]) tb.styles[lineIdx][charIdx] = {};
-              tb.styles[lineIdx][charIdx].fill = existingFill || baseFill;
+              tb.styles[lineIdx][charIdx].fill = lerp(color1, color2, t);
             }
             absIdx++;
           }
-          absIdx++; // newline character
+          absIdx++; // newline
         }
-
-        // Fill is purely visual - no dimension recalculation needed.
-        // Calling initDimensions here would re-measure text and cause layout
-        // shifts if the font cache isn't perfectly populated.
-        tb.dirty = true;
-        canvas.requestRenderAll();
-        setGradientColor1(color1);
-        setGradientColor2(color2);
-        setGradientAngle(angle);
-        return;
+      } else {
+        // Whole textbox: gradient across all characters
+        const totalChars = text.replace(/\n/g, '').length;
+        let absIdx = 0;
+        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+          if (!tb.styles[lineIdx]) tb.styles[lineIdx] = {};
+          for (let charIdx = 0; charIdx < lines[lineIdx].length; charIdx++) {
+            const t = totalChars <= 1 ? 0 : absIdx / (totalChars - 1);
+            if (!tb.styles[lineIdx][charIdx]) tb.styles[lineIdx][charIdx] = {};
+            tb.styles[lineIdx][charIdx].fill = lerp(color1, color2, t);
+            absIdx++;
+          }
+        }
       }
 
-      // Whole textbox gradient: clear all per-character fill overrides
-      tb.removeStyle('fill');
+      // Fill only - no dimension recalculation needed
+      tb.dirty = true;
+      canvas.requestRenderAll();
+    } else {
+      // Shapes: use real Fabric.js Gradient
+      const w = selectedElement.width || 100;
+      const h = selectedElement.height || 100;
+      const angleRad = (angle - 90) * Math.PI / 180;
+      const gradient = new Gradient({
+        type: 'linear',
+        coords: {
+          x1: (0.5 - Math.cos(angleRad) * 0.5) * w,
+          y1: (0.5 - Math.sin(angleRad) * 0.5) * h,
+          x2: (0.5 + Math.cos(angleRad) * 0.5) * w,
+          y2: (0.5 + Math.sin(angleRad) * 0.5) * h,
+        },
+        colorStops: [
+          { offset: 0, color: color1 },
+          { offset: 1, color: color2 },
+        ],
+      });
+      selectedElement.set('fill', gradient);
+      selectedElement.dirty = true;
+      canvas.requestRenderAll();
     }
 
-    selectedElement.set('fill', gradient);
-    selectedElement.dirty = true;
-    canvas.requestRenderAll();
     setGradientColor1(color1);
     setGradientColor2(color2);
     setGradientAngle(angle);
