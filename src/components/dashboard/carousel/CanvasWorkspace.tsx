@@ -1350,22 +1350,26 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         if (!fabricRef.current) return;
         if (!frameObject._isFrame || !frameObject._frameId) return;
 
+        const canvas = fabricRef.current;
         const frameId = frameObject._frameId;
-        const frameBound = frameObject.getBoundingRect();
+        const frameViewBox = frameObject._frameViewBox;
+        if (!frameViewBox) return;
 
-        // Remove the filled frame image
-        fabricRef.current.remove(frameObject);
+        // Use object properties for frame dimensions (not getBoundingRect which can be affected by padding)
+        const frameLeft = frameObject.left!;
+        const frameTop = frameObject.top!;
+        const frameW = frameObject.width! * (frameObject.scaleX || 1);
+        const frameH = frameObject.height! * (frameObject.scaleY || 1);
 
-        // Re-create the empty frame at the same position and size
         const frameDef = getFrameById(frameId);
         if (!frameDef) return;
 
-        const scaleX = frameBound.width / frameDef.viewBox.width;
-        const scaleY = frameBound.height / frameDef.viewBox.height;
+        const scaleX = frameW / frameDef.viewBox.width;
+        const scaleY = frameH / frameDef.viewBox.height;
 
         const framePath = new Path(frameDef.svgPath, {
-          left: frameBound.left,
-          top: frameBound.top,
+          left: frameLeft,
+          top: frameTop,
           scaleX,
           scaleY,
           fill: '#e2e8f0',
@@ -1383,9 +1387,14 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         fp._frameViewBox = `${frameDef.viewBox.width},${frameDef.viewBox.height}`;
         fp._frameHasImage = false;
 
-        fabricRef.current.add(framePath);
-        fabricRef.current.setActiveObject(framePath);
-        fabricRef.current.renderAll();
+        // Remove the filled frame image first, then add the empty frame
+        canvas.discardActiveObject();
+        canvas.remove(frameObject);
+        canvas.add(framePath);
+        canvas.setActiveObject(framePath);
+        canvas.renderAll();
+        saveHistory();
+        onCanvasChangeRef.current?.();
       },
 
       deleteSelected: () => {
