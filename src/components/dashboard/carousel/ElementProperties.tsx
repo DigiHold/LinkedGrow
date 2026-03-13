@@ -20,6 +20,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Bold,
   Italic,
   Underline,
   Trash2,
@@ -200,6 +201,34 @@ export function ElementProperties({
       setShadowEnabled(false);
     }
   }, [selectedElement, updateTrigger]);
+
+  // Check if textbox is in editing mode with a selection
+  const hasTextSelection = useCallback(() => {
+    if (!(selectedElement instanceof Textbox)) return false;
+    const tb = selectedElement as Textbox;
+    return tb.isEditing && tb.selectionStart !== tb.selectionEnd;
+  }, [selectedElement]);
+
+  // Apply style to selected text or whole textbox
+  const applyTextStyle = useCallback((styles: Record<string, unknown>) => {
+    if (!(selectedElement instanceof Textbox)) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+    const tb = selectedElement as Textbox;
+
+    if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
+      // Apply to selection only
+      tb.setSelectionStyles(styles);
+    } else {
+      // Apply to entire textbox
+      Object.entries(styles).forEach(([key, value]) => {
+        tb.set(key as keyof Textbox, value);
+      });
+    }
+    tb.set('dirty', true);
+    tb.initDimensions();
+    canvas.requestRenderAll();
+  }, [selectedElement, canvasRef]);
 
   const updateElement = useCallback((updates: Partial<typeof elementProps>) => {
     if (!selectedElement) return;
@@ -603,23 +632,14 @@ export function ElementProperties({
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
                         onChange={(font) => {
-                          // Font is already loaded by GoogleFontPicker before calling onChange.
-                          // Apply to the Fabric.js textbox and force a full re-render.
                           if (selectedElement instanceof Textbox) {
-                            const canvas = canvasRef.current?.getCanvas();
-                            if (canvas) {
-                              selectedElement.set('fontFamily', font);
-                              selectedElement.set('dirty', true);
-                              selectedElement.initDimensions();
-                              selectedElement.setCoords();
-                              canvas.requestRenderAll();
-                              setElementProps(prev => ({
-                                ...prev,
-                                fontFamily: font,
-                                width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
-                                height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
-                              }));
-                            }
+                            applyTextStyle({ fontFamily: font });
+                            setElementProps(prev => ({
+                              ...prev,
+                              fontFamily: font,
+                              width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
+                              height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
+                            }));
                           }
                         }}
                       />
@@ -630,7 +650,10 @@ export function ElementProperties({
                     <Label className="text-xs text-muted-foreground">Font Size</Label>
                     <Select
                       value={String(elementProps.fontSize)}
-                      onValueChange={(value) => updateElement({ fontSize: Number(value) })}
+                      onValueChange={(value) => {
+                        applyTextStyle({ fontSize: Number(value) });
+                        setElementProps(prev => ({ ...prev, fontSize: Number(value) }));
+                      }}
                     >
                       <SelectTrigger className="mt-2 h-8">
                         <SelectValue />
@@ -652,18 +675,12 @@ export function ElementProperties({
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
                       onValueChange={async (val) => {
                         if (!(selectedElement instanceof Textbox)) return;
-                        const canvas = canvasRef.current?.getCanvas();
-                        if (!canvas) return;
                         const fontFamily = selectedElement.fontFamily || 'Inter';
-                        // Ensure this specific weight is loaded before rendering
                         try {
                           await document.fonts.load(`${val} 16px "${fontFamily}"`);
                           await document.fonts.ready;
                         } catch { /* ignore */ }
-                        selectedElement.set('fontWeight', val);
-                        selectedElement.set('dirty', true);
-                        selectedElement.initDimensions();
-                        canvas.requestRenderAll();
+                        applyTextStyle({ fontWeight: val });
                         setElementProps(prev => ({ ...prev, fontWeight: val }));
                       }}
                     >
@@ -684,12 +701,27 @@ export function ElementProperties({
                     <Label className="text-xs text-muted-foreground">Text Style</Label>
                     <div className="flex gap-1 mt-2">
                       <Button
+                        variant={String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold' ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => {
+                          const isBold = String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold';
+                          const newWeight = isBold ? 'normal' : 'bold';
+                          applyTextStyle({ fontWeight: newWeight });
+                          setElementProps(prev => ({ ...prev, fontWeight: newWeight }));
+                        }}
+                      >
+                        <Bold className="w-3 h-3" />
+                      </Button>
+                      <Button
                         variant={elementProps.fontStyle === 'italic' ? 'default' : 'outline'}
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => updateElement({
-                          fontStyle: elementProps.fontStyle === 'italic' ? 'normal' : 'italic'
-                        })}
+                        onClick={() => {
+                          const newStyle = elementProps.fontStyle === 'italic' ? 'normal' : 'italic';
+                          applyTextStyle({ fontStyle: newStyle });
+                          setElementProps(prev => ({ ...prev, fontStyle: newStyle }));
+                        }}
                       >
                         <Italic className="w-3 h-3" />
                       </Button>
@@ -697,7 +729,11 @@ export function ElementProperties({
                         variant={elementProps.underline ? 'default' : 'outline'}
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => updateElement({ underline: !elementProps.underline })}
+                        onClick={() => {
+                          const newUnderline = !elementProps.underline;
+                          applyTextStyle({ underline: newUnderline });
+                          setElementProps(prev => ({ ...prev, underline: newUnderline }));
+                        }}
                       >
                         <Underline className="w-3 h-3" />
                       </Button>
@@ -844,12 +880,26 @@ export function ElementProperties({
                         <input
                           type="color"
                           value={elementProps.fill}
-                          onChange={(e) => updateElement({ fill: e.target.value })}
+                          onChange={(e) => {
+                            if (hasTextSelection()) {
+                              applyTextStyle({ fill: e.target.value });
+                              setElementProps(prev => ({ ...prev, fill: e.target.value }));
+                            } else {
+                              updateElement({ fill: e.target.value });
+                            }
+                          }}
                           className="w-8 h-8 rounded cursor-pointer border-0"
                         />
                         <Input
                           value={elementProps.fill}
-                          onChange={(e) => updateElement({ fill: e.target.value })}
+                          onChange={(e) => {
+                            if (hasTextSelection()) {
+                              applyTextStyle({ fill: e.target.value });
+                              setElementProps(prev => ({ ...prev, fill: e.target.value }));
+                            } else {
+                              updateElement({ fill: e.target.value });
+                            }
+                          }}
                           className="h-8 text-xs flex-1"
                         />
                       </div>
@@ -862,7 +912,14 @@ export function ElementProperties({
                               elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
                             )}
                             style={{ backgroundColor: color }}
-                            onClick={() => updateElement({ fill: color })}
+                            onClick={() => {
+                              if (hasTextSelection()) {
+                                applyTextStyle({ fill: color });
+                                setElementProps(prev => ({ ...prev, fill: color }));
+                              } else {
+                                updateElement({ fill: color });
+                              }
+                            }}
                           />
                         ))}
                       </div>

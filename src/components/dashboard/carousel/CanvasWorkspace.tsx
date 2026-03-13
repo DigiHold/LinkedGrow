@@ -812,6 +812,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         });
       });
 
+      // Text editing events - notify properties panel to refresh selection styles
+      canvas.on('text:editing:entered', () => {
+        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+      });
+      canvas.on('text:editing:exited', () => {
+        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+      });
+      canvas.on('text:selection:changed', () => {
+        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+      });
+
       // Track changes
       canvas.on('object:modified', (e) => {
         guideLinesRef.current = [];
