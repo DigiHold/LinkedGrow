@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path, controlsUtils } from "fabric";
+import { Canvas, FabricObject, Textbox, Rect, Circle, Line, FabricImage, Gradient, Shadow, loadSVGFromString, util, ActiveSelection, Group, Control, Path, controlsUtils, cache as fabricCache } from "fabric";
 import DOMPurify from "dompurify";
 import { getFrameById } from "./frameData";
 
@@ -65,23 +65,39 @@ import { cn } from "@/lib/utils";
 //   this.setOptions(options);
 // So modifying ownDefaults directly is the only way to change defaults globally.
 // Using prototype.set() does NOT work because ownDefaults overwrite prototype values.
-// Extract all unique fontFamily values from canvas JSON and preload them
+// Extract all unique fontFamily + fontWeight combinations from canvas JSON,
+// preload the stylesheets, wait for every specific font face to be ready,
+// then clear Fabric's global char-width cache so loadFromJSON measures fresh.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function preloadFontsFromJSON(parsed: any): Promise<void> {
   const fonts = new Set<string>();
+  // Track font-family -> set of weights used
+  const fontWeights = new Map<string, Set<string>>();
+
+  function addFont(family: string, weight?: unknown) {
+    if (!family || family === 'Inter') return;
+    fonts.add(family);
+    if (!fontWeights.has(family)) fontWeights.set(family, new Set());
+    const w = weight ? String(weight) : '400';
+    fontWeights.get(family)!.add(w);
+  }
+
   function collectFonts(objects: Record<string, unknown>[]) {
     if (!Array.isArray(objects)) return;
     for (const obj of objects) {
-      if (obj.fontFamily && typeof obj.fontFamily === 'string' && obj.fontFamily !== 'Inter') {
-        fonts.add(obj.fontFamily as string);
+      if (obj.fontFamily && typeof obj.fontFamily === 'string') {
+        addFont(obj.fontFamily as string, obj.fontWeight);
       }
-      // Check styles map for per-character fonts (Textbox rich text)
+      // Check per-character styles for fonts and weights
       if (obj.styles && typeof obj.styles === 'object') {
         for (const lineStyles of Object.values(obj.styles as Record<string, Record<string, Record<string, unknown>>>)) {
           if (lineStyles && typeof lineStyles === 'object') {
             for (const charStyle of Object.values(lineStyles)) {
               if (charStyle?.fontFamily && typeof charStyle.fontFamily === 'string') {
-                fonts.add(charStyle.fontFamily as string);
+                addFont(charStyle.fontFamily as string, charStyle.fontWeight);
+              } else if (charStyle?.fontWeight && obj.fontFamily) {
+                // Per-char weight override with object-level family
+                addFont(obj.fontFamily as string, charStyle.fontWeight);
               }
             }
           }
@@ -94,9 +110,45 @@ async function preloadFontsFromJSON(parsed: any): Promise<void> {
     }
   }
   if (parsed.objects) collectFonts(parsed.objects);
-  if (fonts.size > 0) {
-    await Promise.all([...fonts].map(f => loadGoogleFont(f, true)));
+  if (fonts.size === 0) return;
+
+  // Load all font stylesheets
+  await Promise.all([...fonts].map(f => loadGoogleFont(f, true)));
+
+  // Wait for every specific weight variant to be ready
+  const facePromises: Promise<FontFace[]>[] = [];
+  for (const [family, weights] of fontWeights) {
+    for (const w of weights) {
+      facePromises.push(
+        document.fonts.load(`${w} 16px "${family}"`).catch(() => [])
+      );
+    }
   }
+  await Promise.all(facePromises);
+  await document.fonts.ready;
+
+  // Clear Fabric's global char width cache so loadFromJSON measures with
+  // the now-loaded fonts instead of stale fallback measurements
+  fabricCache.clearFontCache();
+}
+
+// Force re-measure all Textbox objects on a canvas. Call after loadFromJSON
+// to fix char positions that were measured before fonts fully loaded.
+function refreshTextDimensions(canvas: Canvas) {
+  function refreshObjects(objects: FabricObject[]) {
+    for (const obj of objects) {
+      if (obj instanceof Textbox) {
+        obj.dirty = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (obj as any)._forceClearCache = true;
+        obj.initDimensions();
+        obj.setCoords();
+      } else if (obj instanceof Group) {
+        refreshObjects(obj.getObjects());
+      }
+    }
+  }
+  refreshObjects(canvas.getObjects());
 }
 
 FabricObject.ownDefaults.originX = 'left';
@@ -1926,6 +1978,11 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.clear();
           await fabricRef.current.loadFromJSON(parsed);
 
+          // Force re-measure all text objects after load. loadFromJSON may have
+          // measured some text before font faces were fully rasterized.
+          fabricCache.clearFontCache();
+          refreshTextDimensions(fabricRef.current);
+
           // Re-apply zoom (clear/loadFromJSON may reset dimensions)
           fabricRef.current.setZoom(currentZoom);
           fabricRef.current.setDimensions({
@@ -1952,6 +2009,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const proxiedJson = proxyR2UrlsInJson(json);
         const parsed = JSON.parse(proxiedJson);
         preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
+          fabricCache.clearFontCache();
+          refreshTextDimensions(fabricRef.current!);
           fabricRef.current!.setZoom(currentZoom);
           fabricRef.current!.setDimensions({
             width: CANVAS_WIDTH * currentZoom,
@@ -1977,6 +2036,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         const proxiedJson = proxyR2UrlsInJson(json);
         const parsed = JSON.parse(proxiedJson);
         preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
+          fabricCache.clearFontCache();
+          refreshTextDimensions(fabricRef.current!);
           fabricRef.current!.setZoom(currentZoom);
           fabricRef.current!.setDimensions({
             width: CANVAS_WIDTH * currentZoom,
@@ -2049,7 +2110,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             lastSavedStateRef.current = json;
             const currentZoom = fabricRef.current.getZoom();
             const proxiedJson = proxyR2UrlsInJson(json);
-            fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+            const parsedUndo = JSON.parse(proxiedJson);
+            preloadFontsFromJSON(parsedUndo).then(() => fabricRef.current!.loadFromJSON(parsedUndo)).then(() => {
+              fabricCache.clearFontCache();
+              refreshTextDimensions(fabricRef.current!);
               fabricRef.current!.setZoom(currentZoom);
               fabricRef.current!.setDimensions({
                 width: CANVAS_WIDTH * currentZoom,
@@ -2073,7 +2137,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             lastSavedStateRef.current = json;
             const currentZoom = fabricRef.current.getZoom();
             const proxiedJson = proxyR2UrlsInJson(json);
-            fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+            const parsedRedo = JSON.parse(proxiedJson);
+            preloadFontsFromJSON(parsedRedo).then(() => fabricRef.current!.loadFromJSON(parsedRedo)).then(() => {
+              fabricCache.clearFontCache();
+              refreshTextDimensions(fabricRef.current!);
               fabricRef.current!.setZoom(currentZoom);
               fabricRef.current!.setDimensions({
                 width: CANVAS_WIDTH * currentZoom,
