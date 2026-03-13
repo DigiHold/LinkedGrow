@@ -108,7 +108,7 @@ const renderRotateIcon = (ctx: CanvasRenderingContext2D, left: number, top: numb
   ctx.restore();
 };
 
-// Custom move/drag icon renderer (grip dots pattern)
+// Custom move/drag icon renderer (lucide move icon)
 const renderMoveIcon = (ctx: CanvasRenderingContext2D, left: number, top: number, _styleOverride: unknown, fabricObject: FabricObject) => {
   const size = 24;
   ctx.save();
@@ -124,18 +124,34 @@ const renderMoveIcon = (ctx: CanvasRenderingContext2D, left: number, top: number
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Draw 6 grip dots (2x3 arrangement)
-  ctx.fillStyle = '#0891b2';
-  const dotR = 1.6;
-  const gapX = 5;
-  const gapY = 4;
-  for (let row = -1; row <= 1; row++) {
-    for (let col = -0.5; col <= 0.5; col++) {
-      ctx.beginPath();
-      ctx.arc(col * gapX, row * gapY, dotR, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
+  // Draw lucide move icon (viewBox 0 0 24 24, scaled to fit)
+  const iconScale = 14 / 24;
+  ctx.scale(iconScale, iconScale);
+  ctx.translate(-12, -12); // Center the 24x24 coordinate system
+  ctx.strokeStyle = '#0891b2';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.fillStyle = 'none';
+
+  // Vertical line
+  const p1 = new Path2D('M12 2v20');
+  ctx.stroke(p1);
+  // Bottom arrow
+  const p2 = new Path2D('M15 19l-3 3-3-3');
+  ctx.stroke(p2);
+  // Right arrow
+  const p3 = new Path2D('M19 9l3 3-3 3');
+  ctx.stroke(p3);
+  // Horizontal line
+  const p4 = new Path2D('M2 12h20');
+  ctx.stroke(p4);
+  // Left arrow
+  const p5 = new Path2D('M5 9l-3 3 3 3');
+  ctx.stroke(p5);
+  // Top arrow
+  const p6 = new Path2D('M9 5l3-3 3 3');
+  ctx.stroke(p6);
 
   ctx.restore();
 };
