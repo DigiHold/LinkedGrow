@@ -779,10 +779,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         // Equal spacing detection - only between objects on the same row/column
         const spacingGuides: SpacingGuide[] = [];
         const others = canvas.getObjects().filter(o =>
-          o !== obj && o.selectable !== false
+          o !== obj && o.selectable !== false && !o._isFrame
         );
 
         if (others.length >= 2) {
+          // Force coordinate update after alignment snapping, so getBoundingRect() reflects actual position
+          obj.setCoords();
           const updatedObjBound = obj.getBoundingRect();
           type ObjRect = { left: number; right: number; top: number; bottom: number; cx: number; cy: number; isDragged: boolean };
           const dragRect: ObjRect = {
@@ -797,9 +799,16 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             return { left: b.left, right: b.left + b.width, top: b.top, bottom: b.top + b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, isDragged: false };
           });
 
-          // Helper: check if two objects overlap on an axis (used to filter same-row/same-column)
-          const overlapV = (a: ObjRect, b: ObjRect) => a.top < b.bottom && a.bottom > b.top;
-          const overlapH = (a: ObjRect, b: ObjRect) => a.left < b.right && a.right > b.left;
+          // Helper: check if two objects are on the same row/column (with tolerance)
+          // Use generous tolerance: half the height/width of the larger object
+          const overlapV = (a: ObjRect, b: ObjRect) => {
+            const margin = Math.max(a.bottom - a.top, b.bottom - b.top) * 0.5;
+            return (a.top - margin) < b.bottom && (a.bottom + margin) > b.top;
+          };
+          const overlapH = (a: ObjRect, b: ObjRect) => {
+            const margin = Math.max(a.right - a.left, b.right - b.left) * 0.5;
+            return (a.left - margin) < b.right && (a.right + margin) > b.left;
+          };
 
           // --- Horizontal equal spacing (objects on same row) ---
           // Only include objects that vertically overlap with the dragged object

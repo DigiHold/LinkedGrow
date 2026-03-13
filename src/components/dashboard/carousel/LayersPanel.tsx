@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { FabricObject, Textbox, Rect, Circle, Line, FabricImage, Group, Path } from "fabric";
+import { FabricObject, Textbox, Rect, Circle, Line, FabricImage, Group, Path, ActiveSelection } from "fabric";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -20,6 +20,8 @@ import {
   Frame,
   Pen,
   ArrowUp,
+  Group as GroupIcon,
+  Ungroup as UngroupIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
@@ -42,6 +44,12 @@ import { CSS } from "@dnd-kit/utilities";
 interface LayersPanelProps {
   canvasRef: React.RefObject<CanvasWorkspaceRef | null>;
   onClose: () => void;
+}
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+  items: FlatLayerItem[];
 }
 
 interface FlatLayerItem {
@@ -167,6 +175,8 @@ function SortableLayerRow({
   item,
   isSelected,
   onSelect,
+  onMultiSelect,
+  onContextMenu,
   onToggleVisibility,
   onDuplicate,
   onDelete,
@@ -177,6 +187,8 @@ function SortableLayerRow({
   item: FlatLayerItem;
   isSelected: boolean;
   onSelect: (obj: FabricObject) => void;
+  onMultiSelect: (obj: FabricObject) => void;
+  onContextMenu: (e: React.MouseEvent, item: FlatLayerItem) => void;
   onToggleVisibility: (obj: FabricObject) => void;
   onDuplicate: (obj: FabricObject) => void;
   onDelete: (obj: FabricObject) => void;
@@ -227,7 +239,14 @@ function SortableLayerRow({
         isDragging && "z-50 opacity-70 shadow-lg bg-background ring-1 ring-cyan-300",
         !item.visible && "opacity-50"
       )}
-      onClick={() => onSelect(item.fabricObject)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey) {
+          onMultiSelect(item.fabricObject);
+        } else {
+          onSelect(item.fabricObject);
+        }
+      }}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, item); }}
       {...attributes}
       {...listeners}
     >
@@ -326,9 +345,11 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
   const [flatItems, setFlatItems] = useState<FlatLayerItem[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [, forceRender] = useState(0);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const expandedGroupsRef = useRef<Set<string>>(new Set());
   const flatItemsRef = useRef<FlatLayerItem[]>([]);
   const isDraggingRef = useRef(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const refreshLayers = useCallback(() => {
     if (isDraggingRef.current) return; // Don't refresh mid-drag
@@ -373,6 +394,95 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     canvas.renderAll();
   }, [canvasRef]);
 
+  const multiSelectObject = useCallback((obj: FabricObject) => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+    const active = canvas.getActiveObject();
+    if (!active) {
+      canvas.setActiveObject(obj);
+    } else if (active instanceof ActiveSelection) {
+      const objects = active.getObjects();
+      if (objects.includes(obj)) {
+        // Remove from selection - rebuild without this object
+        const remaining = objects.filter(o => o !== obj);
+        canvas.discardActiveObject();
+        if (remaining.length === 1) {
+          canvas.setActiveObject(remaining[0]);
+        } else if (remaining.length > 1) {
+          const selection = new ActiveSelection(remaining, { canvas });
+          canvas.setActiveObject(selection);
+        }
+      } else {
+        // Add to selection - rebuild with this object
+        canvas.discardActiveObject();
+        const selection = new ActiveSelection([...objects, obj], { canvas });
+        canvas.setActiveObject(selection);
+      }
+    } else if (active === obj) {
+      canvas.discardActiveObject();
+    } else {
+      // One object selected, CMD+clicking another - create ActiveSelection
+      canvas.discardActiveObject();
+      const selection = new ActiveSelection([active, obj], { canvas });
+      canvas.setActiveObject(selection);
+    }
+    canvas.renderAll();
+  }, [canvasRef]);
+
+  // Close context menu on click anywhere
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    window.addEventListener('contextmenu', handleClick);
+    return () => {
+      window.removeEventListener('click', handleClick);
+      window.removeEventListener('contextmenu', handleClick);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, item: FlatLayerItem) => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+    const active = canvas.getActiveObject();
+    // If right-clicked item is not in current selection, select it
+    const isInSelection = active instanceof ActiveSelection && active.getObjects().includes(item.fabricObject);
+    if (active !== item.fabricObject && !isInSelection) {
+      canvas.setActiveObject(item.fabricObject);
+      canvas.renderAll();
+    }
+    // Determine which items are contextually relevant
+    const selectedItems: FlatLayerItem[] = [];
+    const currentActive = canvas.getActiveObject();
+    if (currentActive instanceof ActiveSelection) {
+      const objs = currentActive.getObjects();
+      for (const fi of flatItemsRef.current) {
+        if (objs.includes(fi.fabricObject)) selectedItems.push(fi);
+      }
+    } else {
+      selectedItems.push(item);
+    }
+    // Position relative to the panel
+    const rect = panelRef.current?.getBoundingClientRect();
+    setContextMenu({
+      x: e.clientX - (rect?.left || 0),
+      y: e.clientY - (rect?.top || 0),
+      items: selectedItems,
+    });
+  }, [canvasRef]);
+
+  const groupSelectedLayers = useCallback(() => {
+    canvasRef.current?.groupSelected();
+    setContextMenu(null);
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
+
+  const ungroupSelectedLayers = useCallback(() => {
+    canvasRef.current?.ungroupSelected();
+    setContextMenu(null);
+    refreshLayers();
+  }, [canvasRef, refreshLayers]);
+
   const toggleVisibility = useCallback((obj: FabricObject) => {
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
@@ -413,6 +523,22 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     canvas.renderAll();
     refreshLayers();
   }, [canvasRef, refreshLayers]);
+
+  const duplicateContextItems = useCallback(() => {
+    if (!contextMenu) return;
+    for (const item of contextMenu.items) {
+      duplicateObject(item.fabricObject);
+    }
+    setContextMenu(null);
+  }, [contextMenu, duplicateObject]);
+
+  const deleteContextItems = useCallback(() => {
+    if (!contextMenu) return;
+    for (const item of contextMenu.items) {
+      deleteObject(item.fabricObject);
+    }
+    setContextMenu(null);
+  }, [contextMenu, deleteObject]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedGroups(prev => {
@@ -571,14 +697,21 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
     refreshLayers();
   }, [canvasRef, refreshLayers]);
 
-  // Get active object for highlighting
+  // Get active object for highlighting (supports multi-select)
   const canvas = canvasRef.current?.getCanvas();
   const activeObject = canvas?.getActiveObject();
+  const selectedObjects = activeObject instanceof ActiveSelection
+    ? new Set(activeObject.getObjects())
+    : activeObject ? new Set([activeObject]) : new Set<FabricObject>();
+
+  // Context menu: determine if group/ungroup is available
+  const canGroup = contextMenu && contextMenu.items.length >= 2 && contextMenu.items.every(i => i.depth === 0);
+  const canUngroup = contextMenu && contextMenu.items.length === 1 && contextMenu.items[0].isGroup;
 
   const sortableIds = flatItems.map(item => item.id);
 
   return (
-    <div className="h-full flex flex-col border-r border-border bg-background">
+    <div ref={panelRef} className="h-full flex flex-col border-r border-border bg-background relative">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
@@ -610,8 +743,10 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
                   <SortableLayerRow
                     key={item.id}
                     item={item}
-                    isSelected={activeObject === item.fabricObject}
+                    isSelected={selectedObjects.has(item.fabricObject)}
                     onSelect={selectObject}
+                    onMultiSelect={multiSelectObject}
+                    onContextMenu={handleContextMenu}
                     onToggleVisibility={toggleVisibility}
                     onDuplicate={duplicateObject}
                     onDelete={deleteObject}
@@ -625,6 +760,49 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
           )}
         </div>
       </ScrollArea>
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <div
+          className="absolute z-100 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-40"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent text-left"
+            onClick={duplicateContextItems}
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Duplicate
+          </button>
+          {canGroup && (
+            <button
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent text-left"
+              onClick={groupSelectedLayers}
+            >
+              <GroupIcon className="w-3.5 h-3.5" />
+              Group
+            </button>
+          )}
+          {canUngroup && (
+            <button
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent text-left"
+              onClick={ungroupSelectedLayers}
+            >
+              <UngroupIcon className="w-3.5 h-3.5" />
+              Ungroup
+            </button>
+          )}
+          <div className="h-px bg-border my-1" />
+          <button
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent text-left text-red-500"
+            onClick={deleteContextItems}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }
