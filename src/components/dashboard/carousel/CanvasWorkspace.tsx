@@ -404,6 +404,16 @@ function proxyR2UrlsInJson(jsonString: string): string {
 export const CANVAS_WIDTH = 1080;
 export const CANVAS_HEIGHT = 1350;
 
+// Get alignment bounds: parent group if element is inside a group, otherwise canvas
+function getAlignmentBounds(element: FabricObject): { left: number; top: number; width: number; height: number } {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parent = (element as any).parent;
+  if (parent && parent instanceof Group && !(parent as any)._isSvgIcon) {
+    return parent.getBoundingRect();
+  }
+  return { left: 0, top: 0, width: CANVAS_WIDTH, height: CANVAS_HEIGHT };
+}
+
 export interface CanvasElement {
   id: string;
   type: 'text' | 'image' | 'shape' | 'group';
@@ -2546,7 +2556,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               <div className="relative" onMouseEnter={() => { setAlignSubmenuOpen(true); setLayerSubmenuOpen(false); }} onMouseLeave={() => setAlignSubmenuOpen(false)}>
                 <button className="w-full px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 justify-between">
                   <span className="flex items-center gap-2">
-                    <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /> Align to page
+                    <AlignHorizontalJustifyCenter className="w-3.5 h-3.5" /> {(() => {
+                      const active = fabricRef.current?.getActiveObject();
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const parent = active && (active as any).parent;
+                      return parent && parent instanceof Group && !(parent as any)._isSvgIcon ? 'Align to group' : 'Align to page';
+                    })()}
                   </span>
                   <ChevronRight className="w-3 h-3 text-muted-foreground" />
                 </button>
@@ -2558,8 +2573,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
-                        active.set('left', (active.left || 0) - bound.left);
+                        const offset = (active.left || 0) - bound.left;
+                        active.set('left', container.left + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();
@@ -2577,9 +2594,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
                         const offset = (active.left || 0) - bound.left;
-                        active.set('left', (CANVAS_WIDTH - bound.width) / 2 + offset);
+                        active.set('left', container.left + (container.width - bound.width) / 2 + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();
@@ -2597,9 +2615,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
                         const offset = (active.left || 0) - bound.left;
-                        active.set('left', CANVAS_WIDTH - bound.width + offset);
+                        active.set('left', container.left + container.width - bound.width + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();
@@ -2618,8 +2637,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
-                        active.set('top', (active.top || 0) - bound.top);
+                        const offset = (active.top || 0) - bound.top;
+                        active.set('top', container.top + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();
@@ -2637,9 +2658,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
                         const offset = (active.top || 0) - bound.top;
-                        active.set('top', (CANVAS_HEIGHT - bound.height) / 2 + offset);
+                        active.set('top', container.top + (container.height - bound.height) / 2 + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();
@@ -2657,9 +2679,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                         const canvas = fabricRef.current;
                         const active = canvas?.getActiveObject();
                         if (!canvas || !active) return;
+                        const container = getAlignmentBounds(active);
                         const bound = active.getBoundingRect();
                         const offset = (active.top || 0) - bound.top;
-                        active.set('top', CANVAS_HEIGHT - bound.height + offset);
+                        active.set('top', container.top + container.height - bound.height + offset);
                         active.setCoords();
                         active.fire('modified');
                         canvas.renderAll();

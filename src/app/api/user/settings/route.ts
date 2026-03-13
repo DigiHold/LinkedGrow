@@ -120,6 +120,8 @@ export async function GET() {
       brandLogoUrl: user.brandLogoUrl,
       brandAvatarUrl: user.image,
       brandHandle: aiUser.linkedinProfileName,
+      // Brand colors (custom palette)
+      brandColors: user.brandColors ? (() => { try { return JSON.parse(user.brandColors); } catch { return []; } })() : [],
       // Timezone
       timezone: user.timezone,
     });
@@ -320,6 +322,10 @@ export async function PUT(request: NextRequest) {
 
     if (timezone !== undefined) {
       updateData.timezone = timezone || null;
+    }
+
+    if (body.brandColors !== undefined) {
+      updateData.brandColors = Array.isArray(body.brandColors) ? JSON.stringify(body.brandColors) : null;
     }
 
     await db

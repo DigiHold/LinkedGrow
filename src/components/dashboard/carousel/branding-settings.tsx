@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -47,16 +46,14 @@ export function BrandingSettings({
   const loadBrandingData = async () => {
     setIsLoading(true);
     try {
-      // Fetch branding settings (Business plan)
-      const brandingResponse = await fetch("/api/user/branding");
+      // Fetch branding settings
+      const brandingResponse = await fetch("/api/user/settings");
       if (brandingResponse.ok) {
         const brandingData = await brandingResponse.json();
         setHasBusinessPlan(true);
         onBrandingChange({
           ...branding,
-          logoUrl: brandingData.logoUrl || undefined,
-          primaryColor: brandingData.primaryColor || undefined,
-          secondaryColor: brandingData.secondaryColor || undefined,
+          logoUrl: brandingData.brandLogoUrl || undefined,
         });
       }
 
@@ -220,47 +217,6 @@ export function BrandingSettings({
             className="h-8 text-sm"
           />
         )}
-      </div>
-
-      {/* Color overrides */}
-      <div className="pt-4 border-t border-border">
-        <Label className="text-sm font-medium mb-3 block">Color Override</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Primary</Label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={branding.primaryColor || "#0891b2"}
-                onChange={(e) => handleInputChange('primaryColor', e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-0"
-              />
-              <Input
-                value={branding.primaryColor || ""}
-                onChange={(e) => handleInputChange('primaryColor', e.target.value)}
-                placeholder="#0891b2"
-                className="h-8 text-xs flex-1"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Accent</Label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={branding.secondaryColor || "#2563eb"}
-                onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-0"
-              />
-              <Input
-                value={branding.secondaryColor || ""}
-                onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
-                placeholder="#2563eb"
-                className="h-8 text-xs flex-1"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

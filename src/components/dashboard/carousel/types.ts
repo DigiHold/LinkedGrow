@@ -5,8 +5,6 @@ export interface BrandingData {
   avatarUrl?: string;
   handle?: string;
   website?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
 }
 
 // Slide types for different carousel slide layouts (legacy)

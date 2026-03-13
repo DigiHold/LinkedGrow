@@ -34,10 +34,21 @@ import {
   AlignEndHorizontal,
   Layers,
   Ungroup,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasWorkspaceRef } from "./CanvasWorkspace";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "./CanvasWorkspace";
+
+// Get alignment bounds: parent group if element is inside a group, otherwise canvas
+function getAlignmentBounds(element: FabricObject): { left: number; top: number; width: number; height: number } {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parent = (element as any).parent;
+  if (parent && parent instanceof Group && !(parent as any)._isSvgIcon) {
+    return parent.getBoundingRect();
+  }
+  return { left: 0, top: 0, width: CANVAS_WIDTH, height: CANVAS_HEIGHT };
+}
 
 // Helper to check if an element is an SVG icon group (not a user-created group)
 function isSvgIconGroup(element: FabricObject): boolean {
@@ -57,6 +68,8 @@ interface ElementPropertiesProps {
   onBackgroundChange?: (type: 'solid' | 'gradient' | 'image', value: string) => void;
   updateTrigger?: number;
   className?: string;
+  brandColors?: string[];
+  onBrandColorsChange?: (colors: string[]) => void;
 }
 
 const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 128];
@@ -92,6 +105,8 @@ export function ElementProperties({
   onBackgroundChange,
   updateTrigger,
   className,
+  brandColors,
+  onBrandColorsChange,
 }: ElementPropertiesProps) {
   const [elementProps, setElementProps] = useState({
     fill: '#000000',
@@ -139,6 +154,18 @@ export function ElementProperties({
   const [filterHueRotation, setFilterHueRotation] = useState(0);
   const [filterGrayscale, setFilterGrayscale] = useState(false);
   const [filterInvert, setFilterInvert] = useState(false);
+
+  // Brand color helpers
+  const addBrandColor = useCallback((color: string) => {
+    const hex = color.toLowerCase();
+    if (!brandColors?.includes(hex)) {
+      onBrandColorsChange?.([...(brandColors || []), hex]);
+    }
+  }, [brandColors, onBrandColorsChange]);
+
+  const removeBrandColor = useCallback((color: string) => {
+    onBrandColorsChange?.((brandColors || []).filter(c => c !== color));
+  }, [brandColors, onBrandColorsChange]);
 
   // Ensure fonts cache is loaded so getFontWeights returns accurate data
   useEffect(() => {
@@ -430,14 +457,16 @@ export function ElementProperties({
   }, []);
 
   // Alignment functions - use getBoundingRect for accurate positioning
+  // Aligns relative to parent group if element is inside a group, otherwise to canvas
   const alignHorizontalCenter = useCallback(() => {
     if (!selectedElement) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
     const offset = (selectedElement.left || 0) - bound.left;
-    const newLeft = (CANVAS_WIDTH - bound.width) / 2 + offset;
+    const newLeft = container.left + (container.width - bound.width) / 2 + offset;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
@@ -451,9 +480,10 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
     const offset = (selectedElement.top || 0) - bound.top;
-    const newTop = (CANVAS_HEIGHT - bound.height) / 2 + offset;
+    const newTop = container.top + (container.height - bound.height) / 2 + offset;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
@@ -467,8 +497,10 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
-    const newLeft = (selectedElement.left || 0) - bound.left;
+    const offset = (selectedElement.left || 0) - bound.left;
+    const newLeft = container.left + offset;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
@@ -482,9 +514,10 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
     const offset = (selectedElement.left || 0) - bound.left;
-    const newLeft = CANVAS_WIDTH - bound.width + offset;
+    const newLeft = container.left + container.width - bound.width + offset;
 
     selectedElement.set('left', newLeft);
     selectedElement.setCoords();
@@ -498,8 +531,10 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
-    const newTop = (selectedElement.top || 0) - bound.top;
+    const offset = (selectedElement.top || 0) - bound.top;
+    const newTop = container.top + offset;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
@@ -513,9 +548,10 @@ export function ElementProperties({
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
+    const container = getAlignmentBounds(selectedElement);
     const bound = selectedElement.getBoundingRect();
     const offset = (selectedElement.top || 0) - bound.top;
-    const newTop = CANVAS_HEIGHT - bound.height + offset;
+    const newTop = container.top + container.height - bound.height + offset;
 
     selectedElement.set('top', newTop);
     selectedElement.setCoords();
@@ -970,7 +1006,38 @@ export function ElementProperties({
                         onChange={(e) => updateIconColor(e.target.value)}
                         className="h-8 text-xs flex-1"
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 shrink-0"
+                        onClick={() => addBrandColor(iconColor)}
+                        title="Save color"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
+                    {brandColors && brandColors.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {brandColors.map((color) => (
+                          <button
+                            key={`brand-${color}`}
+                            className={cn(
+                              "w-5 h-5 rounded border-2 border-dashed border-cyan-400/60 hover:scale-110 transition-transform relative group/swatch",
+                              iconColor === color && "ring-2 ring-cyan-500 ring-offset-1"
+                            )}
+                            style={{ backgroundColor: color }}
+                            onClick={() => updateIconColor(color)}
+                          >
+                            <span
+                              className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-white text-[8px] leading-3 text-center opacity-0 group-hover/swatch:opacity-100 cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); removeBrandColor(color); }}
+                            >
+                              x
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-1">
                       {PRESET_COLORS.map((color) => (
                         <button
@@ -1081,7 +1148,45 @@ export function ElementProperties({
                           }}
                           className="h-8 text-xs flex-1"
                         />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 shrink-0"
+                          onClick={() => addBrandColor(elementProps.fill)}
+                          title="Save color"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
+                      {brandColors && brandColors.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          {brandColors.map((color) => (
+                            <button
+                              key={`brand-${color}`}
+                              className={cn(
+                                "w-5 h-5 rounded border-2 border-dashed border-cyan-400/60 hover:scale-110 transition-transform relative group/swatch",
+                                elementProps.fill === color && "ring-2 ring-cyan-500 ring-offset-1"
+                              )}
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                if (hasTextSelection()) {
+                                  applyTextStyle({ fill: color });
+                                  setElementProps(prev => ({ ...prev, fill: color }));
+                                } else {
+                                  updateElement({ fill: color });
+                                }
+                              }}
+                            >
+                              <span
+                                className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-white text-[8px] leading-3 text-center opacity-0 group-hover/swatch:opacity-100 cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); removeBrandColor(color); }}
+                              >
+                                x
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1">
                         {PRESET_COLORS.map((color) => (
                           <button
@@ -1745,7 +1850,41 @@ export function ElementProperties({
                       }}
                       className="h-8 text-xs flex-1"
                     />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 shrink-0"
+                      onClick={() => addBrandColor(backgroundColor)}
+                      title="Save color"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
+                  {brandColors && brandColors.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {brandColors.map((color) => (
+                        <button
+                          key={`brand-${color}`}
+                          className={cn(
+                            "w-5 h-5 rounded border-2 border-dashed border-cyan-400/60 hover:scale-110 transition-transform relative group/swatch",
+                            backgroundColor === color && "ring-2 ring-cyan-500 ring-offset-1"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => {
+                            setBackgroundColor(color);
+                            onBackgroundChange?.('solid', color);
+                          }}
+                        >
+                          <span
+                            className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-white text-[8px] leading-3 text-center opacity-0 group-hover/swatch:opacity-100 cursor-pointer"
+                            onClick={(e) => { e.stopPropagation(); removeBrandColor(color); }}
+                          >
+                            x
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-1">
                     {PRESET_COLORS.map((color) => (
                       <button

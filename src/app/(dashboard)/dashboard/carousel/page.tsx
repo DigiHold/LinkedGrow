@@ -92,6 +92,7 @@ export default function CarouselPage() {
 
   // Branding state
   const [branding, setBranding] = useState<BrandingData>({});
+  const [brandColors, setBrandColors] = useState<string[]>([]);
 
   // UI state
   const [zoom, setZoom] = useState(0.4);
@@ -162,6 +163,7 @@ export default function CarouselPage() {
             avatarUrl: data.brandAvatarUrl || undefined,
             handle: data.brandHandle || undefined,
           });
+          setBrandColors(data.brandColors || []);
         } else {
           setHasTextApiKey(false);
           setHasImageApiKey(false);
@@ -1501,6 +1503,15 @@ export default function CarouselPage() {
                 canvasRef={canvasRef}
                 onBackgroundChange={handleBackgroundChange}
                 updateTrigger={elementUpdateTrigger}
+                brandColors={brandColors}
+                onBrandColorsChange={(colors) => {
+                  setBrandColors(colors);
+                  fetch("/api/user/settings", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ brandColors: colors }),
+                  });
+                }}
               />
             )}
           </div>
