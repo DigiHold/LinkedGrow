@@ -620,7 +620,14 @@ export default function CarouselPage() {
     showToast("Generating PDF...", "success");
 
     try {
+      // Save current canvas JSON before export loop (don't rely on async React state)
+      const currentCanvasJSON = canvasRef.current.exportToJSON();
       saveCurrentSlide();
+
+      // Discard selection to avoid any selection artifacts
+      const canvas = canvasRef.current.getCanvas();
+      canvas?.discardActiveObject();
+      canvas?.renderAll();
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -634,8 +641,7 @@ export default function CarouselPage() {
 
         // Load slide if not current
         if (i !== currentSlideIndex && slides[i].canvasJSON) {
-          canvasRef.current.loadFromJSON(slides[i].canvasJSON);
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await canvasRef.current.loadFromJSON(slides[i].canvasJSON);
         }
 
         const dataUrl = canvasRef.current.exportToDataURL();
@@ -647,10 +653,8 @@ export default function CarouselPage() {
         pdf.addImage(dataUrl, 'PNG', 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       }
 
-      // Restore current slide
-      if (slides[currentSlideIndex].canvasJSON) {
-        canvasRef.current.loadFromJSON(slides[currentSlideIndex].canvasJSON);
-      }
+      // Restore current slide from the saved JSON (not stale React state)
+      await canvasRef.current.loadFromJSON(currentCanvasJSON);
 
       pdf.save('carousel.pdf');
       showToast("PDF downloaded successfully!", "success");
@@ -669,15 +673,21 @@ export default function CarouselPage() {
     showToast("Generating images...", "success");
 
     try {
+      // Save current canvas JSON before export loop (don't rely on async React state)
+      const currentCanvasJSON = canvasRef.current.exportToJSON();
       saveCurrentSlide();
+
+      // Discard selection to avoid any selection artifacts
+      const canvas = canvasRef.current.getCanvas();
+      canvas?.discardActiveObject();
+      canvas?.renderAll();
 
       for (let i = 0; i < slides.length; i++) {
         setGenerationStep(`Exporting slide ${i + 1} of ${slides.length}...`);
 
         // Load slide if not current
         if (i !== currentSlideIndex && slides[i].canvasJSON) {
-          canvasRef.current.loadFromJSON(slides[i].canvasJSON);
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await canvasRef.current.loadFromJSON(slides[i].canvasJSON);
         }
 
         const dataUrl = canvasRef.current.exportToDataURL();
@@ -690,10 +700,8 @@ export default function CarouselPage() {
         await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      // Restore current slide
-      if (slides[currentSlideIndex].canvasJSON) {
-        canvasRef.current.loadFromJSON(slides[currentSlideIndex].canvasJSON);
-      }
+      // Restore current slide from the saved JSON (not stale React state)
+      await canvasRef.current.loadFromJSON(currentCanvasJSON);
 
       showToast("Images downloaded!", "success");
     } catch (err) {
