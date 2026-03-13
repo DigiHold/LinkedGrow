@@ -778,7 +778,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         // Equal spacing detection - only between objects on the same row/column
         const spacingGuides: SpacingGuide[] = [];
-        const others = canvas.getObjects().filter(o =>
+        // Use siblings from parent group if dragged object is inside a group, otherwise top-level canvas objects
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const objParent = (obj as any).parent;
+        const pool = (objParent && objParent instanceof Group && !objParent._isSvgIcon)
+          ? objParent.getObjects()
+          : canvas.getObjects();
+        const others = pool.filter((o: FabricObject) =>
           o !== obj && o.selectable !== false && !o._isFrame
         );
 
