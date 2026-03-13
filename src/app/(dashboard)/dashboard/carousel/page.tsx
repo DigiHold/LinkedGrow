@@ -137,8 +137,8 @@ export default function CarouselPage() {
   const currentSlideIndexRef = useRef(currentSlideIndex);
   const draftRestoredRef = useRef(false);
 
-  // Right panel view (properties or layers)
-  const [rightPanelView, setRightPanelView] = useState<'properties' | 'layers'>('properties');
+  // Left sidebar view (toolbar or layers)
+  const [leftPanelView, setLeftPanelView] = useState<'toolbar' | 'layers'>('toolbar');
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -1440,19 +1440,26 @@ export default function CarouselPage() {
             )}
           </Button>
 
-          {/* Left Sidebar - Element Toolbar */}
+          {/* Left Sidebar - Element Toolbar or Layers Panel */}
           <div className={cn(
             "transition-all duration-300 ease-in-out",
             showLeftSidebar ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
             "hidden md:block",
             showLeftSidebar && "block! absolute md:relative z-10 h-full bg-background shadow-lg md:shadow-none"
           )}>
-            <ElementToolbar
-              canvasRef={canvasRef}
-              branding={branding}
-              onImageUpload={handleImageUpload}
-              onAIImageGenerate={hasImageApiKey ? handleAIImageGenerate : undefined}
-            />
+            {leftPanelView === 'layers' ? (
+              <LayersPanel
+                canvasRef={canvasRef}
+                onClose={() => setLeftPanelView('toolbar')}
+              />
+            ) : (
+              <ElementToolbar
+                canvasRef={canvasRef}
+                branding={branding}
+                onImageUpload={handleImageUpload}
+                onAIImageGenerate={hasImageApiKey ? handleAIImageGenerate : undefined}
+              />
+            )}
           </div>
 
           {/* Canvas Workspace */}
@@ -1463,7 +1470,7 @@ export default function CarouselPage() {
               onSelectionChange={setSelectedElement}
               onCanvasChange={handleCanvasChange}
               onElementMoving={() => setElementUpdateTrigger(prev => prev + 1)}
-              onShowLayers={() => { setRightPanelView('layers'); setShowRightSidebar(true); }}
+              onShowLayers={() => { setLeftPanelView('layers'); setShowLeftSidebar(true); }}
               className="m-auto"
             />
           </div>
@@ -1485,35 +1492,28 @@ export default function CarouselPage() {
             )}
           </Button>
 
-          {/* Right Sidebar - Properties Panel or Layers Panel */}
+          {/* Right Sidebar - Properties Panel */}
           <div className={cn(
             "transition-all duration-300 ease-in-out",
             showRightSidebar ? "w-72 opacity-100" : "w-0 opacity-0 overflow-hidden",
             "hidden md:block",
             showRightSidebar && "block! absolute md:relative right-0 z-10 h-full bg-background shadow-lg md:shadow-none"
           )}>
-            {rightPanelView === 'layers' ? (
-              <LayersPanel
-                canvasRef={canvasRef}
-                onClose={() => setRightPanelView('properties')}
-              />
-            ) : (
-              <ElementProperties
-                selectedElement={selectedElement}
-                canvasRef={canvasRef}
-                onBackgroundChange={handleBackgroundChange}
-                updateTrigger={elementUpdateTrigger}
-                brandColors={brandColors}
-                onBrandColorsChange={(colors) => {
-                  setBrandColors(colors);
-                  fetch("/api/user/settings", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ brandColors: colors }),
-                  });
-                }}
-              />
-            )}
+            <ElementProperties
+              selectedElement={selectedElement}
+              canvasRef={canvasRef}
+              onBackgroundChange={handleBackgroundChange}
+              updateTrigger={elementUpdateTrigger}
+              brandColors={brandColors}
+              onBrandColorsChange={(colors) => {
+                setBrandColors(colors);
+                fetch("/api/user/settings", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ brandColors: colors }),
+                });
+              }}
+            />
           </div>
         </div>
 

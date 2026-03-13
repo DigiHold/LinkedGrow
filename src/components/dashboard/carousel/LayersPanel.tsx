@@ -523,7 +523,7 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
   const sortableIds = flatItems.map(item => item.id);
 
   return (
-    <div className="h-full flex flex-col border-l border-border bg-background">
+    <div className="h-full flex flex-col border-r border-border bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
