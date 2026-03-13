@@ -831,17 +831,17 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Canva-like text editing: editable=false prevents Fabric from entering
-      // editing on single click. We enable editing only on double-click.
-      // This is the approach recommended by the Fabric.js team (issue #7095).
+      // Canva-like text editing: we keep editable=true so all IText handlers
+      // (_mouseDownHandler, setCursorByClick, textEditingManager, etc.) work normally.
+      // We override mouseUpHandler per-instance in object:added to prevent
+      // single-click from entering editing. Only double-click enters editing.
 
       // Double-click to enter text editing, group interactive mode, or frame crop mode
       canvas.on('mouse:dblclick', (e) => {
         const target = e.target;
 
-        // Textbox: enable editing, enter edit mode, select word (Canva-like)
+        // Textbox: enter edit mode, select word at cursor (Canva-like)
         if (target instanceof Textbox && !target.isEditing) {
-          target.editable = true;
           target.enterEditing(e.e);
           target.setCursorByClick(e.e);
           // Select the word at cursor position
@@ -906,14 +906,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         setFloatingBtnPos(null);
         // Don't notify here - we notify from mouse:dblclick AFTER selectWord
       });
-      canvas.on('text:editing:exited', (e) => {
+      canvas.on('text:editing:exited', () => {
         isTextEditingRef.current = false;
-        // Disable editable so single-click can't re-enter editing (Canva-like)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const target = (e as any).target;
-        if (target instanceof Textbox) {
-          target.editable = false;
-        }
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
         updateFloatingPos();
       });
@@ -966,15 +960,27 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       canvas.on('object:added', (e) => {
         if (e.target instanceof Textbox) {
-          // Disable DraggableTextDelegate to prevent text drag-and-drop
-          // (interferes with text selection in editing mode)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const delegate = (e.target as any).draggableTextDelegate;
-          if (delegate) delegate.start = () => false;
+          const tb = e.target as any;
 
-          // Set editable=false so Fabric doesn't enter editing on single click.
-          // We enable it on double-click (Canva-like behavior).
-          e.target.editable = false;
+          // Disable text drag-and-drop (interferes with text selection in editing mode)
+          if (tb.draggableTextDelegate) tb.draggableTextDelegate.start = () => false;
+
+          // Ensure editable=true so all IText handlers work normally
+          // (cursor placement, drag-to-select, keyboard input, etc.)
+          tb.editable = true;
+
+          // Override mouseUpHandler to prevent single-click entering editing.
+          // Canva-like: only our mouse:dblclick handler enters editing.
+          const origMouseUp = tb.mouseUpHandler.bind(tb);
+          tb.mouseUpHandler = function(options: Record<string, unknown>) {
+            if (!this.isEditing) {
+              // Block enterEditing in the original handler by clearing `selected`.
+              // The original handler's else-branch will set it back to true for next time.
+              this.selected = false;
+            }
+            return origMouseUp.call(this, options);
+          };
         }
         saveHistory();
         onCanvasChangeRef.current?.();

@@ -260,39 +260,34 @@ export function ElementProperties({
     if (!tb.isEditing) return undefined;
     if (!tb.text || tb.text.length === 0) return undefined;
 
-    // Read at the first character of the selection (or cursor position)
-    const pos = Math.min(tb.selectionStart, tb.text.length - 1);
-    // Use get2DCursorLocation + getCompleteStyleDeclaration directly
-    // to avoid any issues with getSelectionStyles argument handling
+    let pos: number;
+    if (tb.selectionStart !== tb.selectionEnd) {
+      // Selection: read style of first character in selection
+      pos = tb.selectionStart;
+    } else {
+      // Cursor only: read character to the LEFT of cursor (like Word/Canva -
+      // reflects the style of what you just typed)
+      pos = Math.max(0, tb.selectionStart - 1);
+    }
+    pos = Math.min(pos, tb.text.length - 1);
     const loc = tb.get2DCursorLocation(pos);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const style = (tb as any).getCompleteStyleDeclaration(loc.lineIndex, loc.charIndex);
     return style?.[prop];
   }, [selectedElement]);
 
-  // Apply style to selected text or whole textbox
-  const applyTextStyle = useCallback(async (styles: Record<string, unknown>) => {
+  // Apply style to selected text or whole textbox (synchronous - no await needed)
+  const applyTextStyle = useCallback((styles: Record<string, unknown>) => {
     if (!(selectedElement instanceof Textbox)) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
     const tb = selectedElement as Textbox;
 
-    // Load font variant before applying weight/family changes
-    if ('fontWeight' in styles || 'fontFamily' in styles) {
-      const family = (styles.fontFamily as string) || tb.fontFamily || 'Inter';
-      const weight = (styles.fontWeight as string) || String(tb.fontWeight || 'normal');
-      try {
-        await loadGoogleFont(family);
-        await document.fonts.load(`${weight} 16px "${family}"`);
-        await document.fonts.ready;
-      } catch { /* ignore */ }
-    }
-
     if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
-      // Apply to selection only
+      // Apply to selection only (per-character styles)
       tb.setSelectionStyles(styles);
     } else {
-      // Apply to entire textbox
+      // Apply to entire textbox (object-level)
       Object.entries(styles).forEach(([key, value]) => {
         tb.set(key as keyof Textbox, value);
       });
@@ -303,6 +298,22 @@ export function ElementProperties({
     tb.initDimensions();
     tb.setCoords();
     canvas.requestRenderAll();
+
+    // Load font variant in background for weight/family changes, then re-render
+    if ('fontWeight' in styles || 'fontFamily' in styles) {
+      const family = (styles.fontFamily as string) || tb.fontFamily || 'Inter';
+      const weight = (styles.fontWeight as string) || String(tb.fontWeight || 'normal');
+      loadGoogleFont(family).then(() =>
+        document.fonts.load(`${weight} 16px "${family}"`)
+      ).then(() => {
+        tb.dirty = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (tb as any)._forceClearCache = true;
+        tb.initDimensions();
+        tb.setCoords();
+        canvas.requestRenderAll();
+      }).catch(() => {});
+    }
   }, [selectedElement, canvasRef]);
 
   // Apply image filters - rebuilds the entire filter array from current state
@@ -764,10 +775,9 @@ export function ElementProperties({
                     <div className="mt-2">
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
-                        onChange={async (font) => {
+                        onChange={(font) => {
                           if (selectedElement instanceof Textbox) {
-                            // applyTextStyle handles font loading (weight + family)
-                            await applyTextStyle({ fontFamily: font });
+                            applyTextStyle({ fontFamily: font });
                             setElementProps(prev => ({
                               ...prev,
                               fontFamily: font,
@@ -807,10 +817,9 @@ export function ElementProperties({
                     <Select
                       key={`${elementProps.fontFamily}-${fontsCacheReady}`}
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
-                      onValueChange={async (val) => {
+                      onValueChange={(val) => {
                         if (!(selectedElement instanceof Textbox)) return;
-                        // applyTextStyle handles font loading (weight + family)
-                        await applyTextStyle({ fontWeight: val });
+                        applyTextStyle({ fontWeight: val });
                         setElementProps(prev => ({
                           ...prev,
                           fontWeight: val,
@@ -843,9 +852,11 @@ export function ElementProperties({
                         const selWeight = editing ? getSelectionStyle('fontWeight') : undefined;
                         const selStyle = editing ? getSelectionStyle('fontStyle') : undefined;
                         const selUnderline = editing ? getSelectionStyle('underline') : undefined;
+                        // Normalize bold check: fontWeight can be 'bold', 'normal', 700, '700', 400, '400'
+                        const isBoldWeight = (w: unknown) => String(w) === '700' || String(w) === 'bold';
                         const currentBold = selWeight !== undefined
-                          ? (String(selWeight) === '700' || selWeight === 'bold')
-                          : (String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold');
+                          ? isBoldWeight(selWeight)
+                          : isBoldWeight(elementProps.fontWeight);
                         const currentItalic = selStyle !== undefined
                           ? selStyle === 'italic'
                           : elementProps.fontStyle === 'italic';
@@ -861,7 +872,8 @@ export function ElementProperties({
                               onClick={() => {
                                 const newWeight = currentBold ? 'normal' : 'bold';
                                 applyTextStyle({ fontWeight: newWeight });
-                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, fontWeight: newWeight }));
+                                // Always update state to trigger re-render (picks up per-char changes)
+                                setElementProps(prev => ({ ...prev, fontWeight: hasTextSelection() ? prev.fontWeight : newWeight }));
                               }}
                             >
                               <Bold className="w-3 h-3" />
@@ -873,7 +885,7 @@ export function ElementProperties({
                               onClick={() => {
                                 const newStyle = currentItalic ? 'normal' : 'italic';
                                 applyTextStyle({ fontStyle: newStyle });
-                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, fontStyle: newStyle }));
+                                setElementProps(prev => ({ ...prev, fontStyle: hasTextSelection() ? prev.fontStyle : newStyle }));
                               }}
                             >
                               <Italic className="w-3 h-3" />
@@ -885,7 +897,7 @@ export function ElementProperties({
                               onClick={() => {
                                 const newUnderline = !currentUnderline;
                                 applyTextStyle({ underline: newUnderline });
-                                if (!hasTextSelection()) setElementProps(prev => ({ ...prev, underline: newUnderline }));
+                                setElementProps(prev => ({ ...prev, underline: hasTextSelection() ? prev.underline : newUnderline }));
                               }}
                             >
                               <Underline className="w-3 h-3" />
