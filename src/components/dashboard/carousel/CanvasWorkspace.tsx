@@ -775,7 +775,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
 
-        // Equal spacing detection - find matching gaps between objects
+        // Equal spacing detection - only between objects on the same row/column
         const spacingGuides: SpacingGuide[] = [];
         const others = canvas.getObjects().filter(o =>
           o !== obj && o.selectable !== false
@@ -783,154 +783,155 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         if (others.length >= 2) {
           const updatedObjBound = obj.getBoundingRect();
-
-          // Build sorted arrays of bounding rects for all objects including dragged
           type ObjRect = { left: number; right: number; top: number; bottom: number; cx: number; cy: number; isDragged: boolean };
-          const rects: ObjRect[] = others.map(o => {
-            const b = o.getBoundingRect();
-            return { left: b.left, right: b.left + b.width, top: b.top, bottom: b.top + b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, isDragged: false };
-          });
-          rects.push({
+          const dragRect: ObjRect = {
             left: updatedObjBound.left, right: updatedObjBound.left + updatedObjBound.width,
             top: updatedObjBound.top, bottom: updatedObjBound.top + updatedObjBound.height,
             cx: updatedObjBound.left + updatedObjBound.width / 2, cy: updatedObjBound.top + updatedObjBound.height / 2,
             isDragged: true,
+          };
+
+          const allRects: ObjRect[] = others.map(o => {
+            const b = o.getBoundingRect();
+            return { left: b.left, right: b.left + b.width, top: b.top, bottom: b.top + b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, isDragged: false };
           });
 
-          // --- Horizontal equal spacing ---
-          const sortedH = [...rects].sort((a, b) => a.left - b.left);
-          const dragIdxH = sortedH.findIndex(r => r.isDragged);
-          if (dragIdxH >= 1 && dragIdxH < sortedH.length - 1) {
-            const gapLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
-            const gapRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
-            if (gapLeft > 0 && gapRight > 0 && Math.abs(gapLeft - gapRight) < SNAP_THRESHOLD) {
-              // Snap to exact equal spacing
-              if (!snappedX) {
-                const exactGap = (sortedH[dragIdxH + 1].left - sortedH[dragIdxH - 1].right - updatedObjBound.width) / 2;
-                const snapLeft = sortedH[dragIdxH - 1].right + exactGap;
-                const offset = obj.left! - updatedObjBound.left;
-                obj.set('left', snapLeft + offset);
-                // Recalculate bounds after snap
-                const snappedBound = obj.getBoundingRect();
-                sortedH[dragIdxH].left = snappedBound.left;
-                sortedH[dragIdxH].right = snappedBound.left + snappedBound.width;
+          // Helper: check if two objects overlap on an axis (used to filter same-row/same-column)
+          const overlapV = (a: ObjRect, b: ObjRect) => a.top < b.bottom && a.bottom > b.top;
+          const overlapH = (a: ObjRect, b: ObjRect) => a.left < b.right && a.right > b.left;
+
+          // --- Horizontal equal spacing (objects on same row) ---
+          // Only include objects that vertically overlap with the dragged object
+          const hRects = allRects.filter(r => overlapV(r, dragRect));
+          if (hRects.length >= 2) {
+            const sortedH = [...hRects, dragRect].sort((a, b) => a.left - b.left);
+            const dragIdxH = sortedH.findIndex(r => r.isDragged);
+
+            // Case 1: dragged is between two others
+            if (dragIdxH >= 1 && dragIdxH < sortedH.length - 1) {
+              const gapLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
+              const gapRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
+              if (gapLeft > 0 && gapRight > 0 && Math.abs(gapLeft - gapRight) < SNAP_THRESHOLD) {
+                if (!snappedX) {
+                  const exactGap = (sortedH[dragIdxH + 1].left - sortedH[dragIdxH - 1].right - updatedObjBound.width) / 2;
+                  const snapLeft = sortedH[dragIdxH - 1].right + exactGap;
+                  const offset = obj.left! - updatedObjBound.left;
+                  obj.set('left', snapLeft + offset);
+                  const snappedBound = obj.getBoundingRect();
+                  sortedH[dragIdxH].left = snappedBound.left;
+                  sortedH[dragIdxH].right = snappedBound.left + snappedBound.width;
+                }
+                const level = sortedH[dragIdxH].cy;
+                spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH - 1].right, to: sortedH[dragIdxH].left, level });
+                spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH].right, to: sortedH[dragIdxH + 1].left, level });
               }
-              // Show indicators for both gaps
-              const level = sortedH[dragIdxH].cy;
-              spacingGuides.push({
-                orientation: 'horizontal',
-                from: sortedH[dragIdxH - 1].right,
-                to: sortedH[dragIdxH].left,
-                level,
-              });
-              spacingGuides.push({
-                orientation: 'horizontal',
-                from: sortedH[dragIdxH].right,
-                to: sortedH[dragIdxH + 1].left,
-                level,
-              });
             }
-          }
-          // Also check: dragged is at edge, gap matches an existing gap between other objects
-          if (dragIdxH >= 1 && spacingGuides.length === 0) {
-            const gapToLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
-            if (gapToLeft > 0) {
-              // Check if this gap matches any other consecutive gap
-              for (let i = 0; i < sortedH.length - 1; i++) {
-                if (i === dragIdxH - 1 || i === dragIdxH) continue;
-                const otherGap = sortedH[i + 1].left - sortedH[i].right;
-                if (otherGap > 0 && Math.abs(gapToLeft - otherGap) < SNAP_THRESHOLD) {
-                  if (!snappedX) {
-                    const snapLeft = sortedH[dragIdxH - 1].right + otherGap;
-                    const offset = obj.left! - updatedObjBound.left;
-                    obj.set('left', snapLeft + offset);
+            // Case 2: dragged at left edge, gap to right neighbor matches another gap
+            if (dragIdxH >= 1 && spacingGuides.length === 0) {
+              const gapToLeft = sortedH[dragIdxH].left - sortedH[dragIdxH - 1].right;
+              if (gapToLeft > 0) {
+                for (let i = 0; i < sortedH.length - 1; i++) {
+                  if (i === dragIdxH - 1 || i === dragIdxH) continue;
+                  const otherGap = sortedH[i + 1].left - sortedH[i].right;
+                  if (otherGap > 0 && Math.abs(gapToLeft - otherGap) < SNAP_THRESHOLD) {
+                    if (!snappedX) {
+                      const snapLeft = sortedH[dragIdxH - 1].right + otherGap;
+                      const offset = obj.left! - updatedObjBound.left;
+                      obj.set('left', snapLeft + offset);
+                    }
+                    const level = sortedH[dragIdxH].cy;
+                    spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH - 1].right, to: sortedH[dragIdxH - 1].right + otherGap, level });
+                    spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
+                    break;
                   }
-                  const level = sortedH[dragIdxH].cy;
-                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH - 1].right, to: sortedH[dragIdxH - 1].right + otherGap, level });
-                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
-                  break;
                 }
               }
             }
-          }
-          if (dragIdxH < sortedH.length - 1 && spacingGuides.filter(s => s.orientation === 'horizontal').length === 0) {
-            const gapToRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
-            if (gapToRight > 0) {
-              for (let i = 0; i < sortedH.length - 1; i++) {
-                if (i === dragIdxH - 1 || i === dragIdxH) continue;
-                const otherGap = sortedH[i + 1].left - sortedH[i].right;
-                if (otherGap > 0 && Math.abs(gapToRight - otherGap) < SNAP_THRESHOLD) {
-                  if (!snappedX) {
-                    const snapRight = sortedH[dragIdxH + 1].left - otherGap - updatedObjBound.width;
-                    const offset = obj.left! - updatedObjBound.left;
-                    obj.set('left', snapRight + offset);
+            // Case 3: dragged at right edge
+            if (dragIdxH < sortedH.length - 1 && spacingGuides.filter(s => s.orientation === 'horizontal').length === 0) {
+              const gapToRight = sortedH[dragIdxH + 1].left - sortedH[dragIdxH].right;
+              if (gapToRight > 0) {
+                for (let i = 0; i < sortedH.length - 1; i++) {
+                  if (i === dragIdxH - 1 || i === dragIdxH) continue;
+                  const otherGap = sortedH[i + 1].left - sortedH[i].right;
+                  if (otherGap > 0 && Math.abs(gapToRight - otherGap) < SNAP_THRESHOLD) {
+                    if (!snappedX) {
+                      const snapRight = sortedH[dragIdxH + 1].left - otherGap - updatedObjBound.width;
+                      const offset = obj.left! - updatedObjBound.left;
+                      obj.set('left', snapRight + offset);
+                    }
+                    const level = sortedH[dragIdxH].cy;
+                    spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH].right, to: sortedH[dragIdxH + 1].left, level });
+                    spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
+                    break;
                   }
-                  const level = sortedH[dragIdxH].cy;
-                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[dragIdxH].right, to: sortedH[dragIdxH + 1].left, level });
-                  spacingGuides.push({ orientation: 'horizontal', from: sortedH[i].right, to: sortedH[i + 1].left, level: sortedH[i].cy });
-                  break;
                 }
               }
             }
           }
 
-          // --- Vertical equal spacing ---
-          const sortedV = [...rects].sort((a, b) => a.top - b.top);
-          const dragIdxV = sortedV.findIndex(r => r.isDragged);
-          if (dragIdxV >= 1 && dragIdxV < sortedV.length - 1) {
-            const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
-            const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
-            if (gapAbove > 0 && gapBelow > 0 && Math.abs(gapAbove - gapBelow) < SNAP_THRESHOLD) {
-              if (!snappedY) {
-                const exactGap = (sortedV[dragIdxV + 1].top - sortedV[dragIdxV - 1].bottom - updatedObjBound.height) / 2;
-                const snapTop = sortedV[dragIdxV - 1].bottom + exactGap;
-                const offset = obj.top! - updatedObjBound.top;
-                obj.set('top', snapTop + offset);
-                const snappedBound = obj.getBoundingRect();
-                sortedV[dragIdxV].top = snappedBound.top;
-                sortedV[dragIdxV].bottom = snappedBound.top + snappedBound.height;
+          // --- Vertical equal spacing (objects on same column) ---
+          // Only include objects that horizontally overlap with the dragged object
+          const vRects = allRects.filter(r => overlapH(r, dragRect));
+          if (vRects.length >= 2) {
+            const sortedV = [...vRects, dragRect].sort((a, b) => a.top - b.top);
+            const dragIdxV = sortedV.findIndex(r => r.isDragged);
+
+            if (dragIdxV >= 1 && dragIdxV < sortedV.length - 1) {
+              const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
+              const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
+              if (gapAbove > 0 && gapBelow > 0 && Math.abs(gapAbove - gapBelow) < SNAP_THRESHOLD) {
+                if (!snappedY) {
+                  const exactGap = (sortedV[dragIdxV + 1].top - sortedV[dragIdxV - 1].bottom - updatedObjBound.height) / 2;
+                  const snapTop = sortedV[dragIdxV - 1].bottom + exactGap;
+                  const offset = obj.top! - updatedObjBound.top;
+                  obj.set('top', snapTop + offset);
+                  const snappedBound = obj.getBoundingRect();
+                  sortedV[dragIdxV].top = snappedBound.top;
+                  sortedV[dragIdxV].bottom = snappedBound.top + snappedBound.height;
+                }
+                const level = sortedV[dragIdxV].cx;
+                spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV].top, level });
+                spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
               }
-              const level = sortedV[dragIdxV].cx;
-              spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV].top, level });
-              spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
             }
-          }
-          if (dragIdxV >= 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
-            const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
-            if (gapAbove > 0) {
-              for (let i = 0; i < sortedV.length - 1; i++) {
-                if (i === dragIdxV - 1 || i === dragIdxV) continue;
-                const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
-                if (otherGap > 0 && Math.abs(gapAbove - otherGap) < SNAP_THRESHOLD) {
-                  if (!snappedY) {
-                    const snapTop = sortedV[dragIdxV - 1].bottom + otherGap;
-                    const offset = obj.top! - updatedObjBound.top;
-                    obj.set('top', snapTop + offset);
+            if (dragIdxV >= 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
+              const gapAbove = sortedV[dragIdxV].top - sortedV[dragIdxV - 1].bottom;
+              if (gapAbove > 0) {
+                for (let i = 0; i < sortedV.length - 1; i++) {
+                  if (i === dragIdxV - 1 || i === dragIdxV) continue;
+                  const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
+                  if (otherGap > 0 && Math.abs(gapAbove - otherGap) < SNAP_THRESHOLD) {
+                    if (!snappedY) {
+                      const snapTop = sortedV[dragIdxV - 1].bottom + otherGap;
+                      const offset = obj.top! - updatedObjBound.top;
+                      obj.set('top', snapTop + offset);
+                    }
+                    const level = sortedV[dragIdxV].cx;
+                    spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV - 1].bottom + otherGap, level });
+                    spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
+                    break;
                   }
-                  const level = sortedV[dragIdxV].cx;
-                  spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV - 1].bottom, to: sortedV[dragIdxV - 1].bottom + otherGap, level });
-                  spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
-                  break;
                 }
               }
             }
-          }
-          if (dragIdxV < sortedV.length - 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
-            const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
-            if (gapBelow > 0) {
-              for (let i = 0; i < sortedV.length - 1; i++) {
-                if (i === dragIdxV - 1 || i === dragIdxV) continue;
-                const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
-                if (otherGap > 0 && Math.abs(gapBelow - otherGap) < SNAP_THRESHOLD) {
-                  if (!snappedY) {
-                    const snapTop = sortedV[dragIdxV + 1].top - otherGap - updatedObjBound.height;
-                    const offset = obj.top! - updatedObjBound.top;
-                    obj.set('top', snapTop + offset);
+            if (dragIdxV < sortedV.length - 1 && spacingGuides.filter(s => s.orientation === 'vertical').length === 0) {
+              const gapBelow = sortedV[dragIdxV + 1].top - sortedV[dragIdxV].bottom;
+              if (gapBelow > 0) {
+                for (let i = 0; i < sortedV.length - 1; i++) {
+                  if (i === dragIdxV - 1 || i === dragIdxV) continue;
+                  const otherGap = sortedV[i + 1].top - sortedV[i].bottom;
+                  if (otherGap > 0 && Math.abs(gapBelow - otherGap) < SNAP_THRESHOLD) {
+                    if (!snappedY) {
+                      const snapTop = sortedV[dragIdxV + 1].top - otherGap - updatedObjBound.height;
+                      const offset = obj.top! - updatedObjBound.top;
+                      obj.set('top', snapTop + offset);
+                    }
+                    const level = sortedV[dragIdxV].cx;
+                    spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
+                    spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
+                    break;
                   }
-                  const level = sortedV[dragIdxV].cx;
-                  spacingGuides.push({ orientation: 'vertical', from: sortedV[dragIdxV].bottom, to: sortedV[dragIdxV + 1].top, level });
-                  spacingGuides.push({ orientation: 'vertical', from: sortedV[i].bottom, to: sortedV[i + 1].top, level: sortedV[i].cx });
-                  break;
                 }
               }
             }
