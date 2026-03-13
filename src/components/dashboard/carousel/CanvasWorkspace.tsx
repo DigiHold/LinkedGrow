@@ -405,6 +405,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
     const guideLinesRef = useRef<AlignmentGuide[]>([]);
     const hoveredObjectRef = useRef<FabricObject | null>(null);
     const frameHighlightRef = useRef<FabricObject | null>(null);
+    const isTextEditingRef = useRef(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [alignSubmenuOpen, setAlignSubmenuOpen] = useState(false);
     const [layerSubmenuOpen, setLayerSubmenuOpen] = useState(false);
@@ -749,6 +750,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
       // Hover border on elements (tracked in ref, drawn in after:render)
       canvas.on('mouse:over', (e) => {
+        if (isTextEditingRef.current) return;
         const target = e.target;
         if (!target || !target.selectable || target.isBackgroundRect) return;
         const active = canvas.getActiveObject();
@@ -759,6 +761,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       });
 
       canvas.on('mouse:out', (e) => {
+        if (isTextEditingRef.current) return;
         if (hoveredObjectRef.current === e.target) {
           hoveredObjectRef.current = null;
           canvas.requestRenderAll();
@@ -784,12 +787,12 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
       // Selection events - pass ActiveSelection for multi-select + track floating buttons
       canvas.on('selection:created', () => {
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
-        updateFloatingPos();
+        if (!isTextEditingRef.current) updateFloatingPos();
       });
 
       canvas.on('selection:updated', () => {
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
-        updateFloatingPos();
+        if (!isTextEditingRef.current) updateFloatingPos();
       });
 
       canvas.on('selection:cleared', () => {
@@ -812,15 +815,26 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         });
       });
 
-      // Text editing events - notify properties panel to refresh selection styles
+      // Text editing events - manage editing state and notify properties panel
       canvas.on('text:editing:entered', () => {
+        isTextEditingRef.current = true;
+        hoveredObjectRef.current = null;
+        setFloatingBtnPos(null);
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
       });
       canvas.on('text:editing:exited', () => {
+        isTextEditingRef.current = false;
         onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        updateFloatingPos();
       });
+      // Throttle text:selection:changed to avoid excessive React re-renders during drag-select
+      let textSelectionTimer: ReturnType<typeof setTimeout> | null = null;
       canvas.on('text:selection:changed', () => {
-        onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        if (textSelectionTimer) return;
+        textSelectionTimer = setTimeout(() => {
+          textSelectionTimer = null;
+          onSelectionChangeRef.current?.(canvas.getActiveObject() || null);
+        }, 50);
       });
 
       // Track changes

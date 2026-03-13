@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Canvas, FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow } from "fabric";
+import { Canvas, FabricObject, Textbox, FabricImage, Group, Gradient, ActiveSelection, Shadow, filters as FabricFilters } from "fabric";
 import { Button } from "@/components/ui/button";
 import { GoogleFontPicker, loadGoogleFont, getFontWeights, ensureFontsLoaded } from "./GoogleFontPicker";
 import { Input } from "@/components/ui/input";
@@ -123,6 +123,15 @@ export function ElementProperties({
   const [shadowOffsetX, setShadowOffsetX] = useState(0);
   const [shadowOffsetY, setShadowOffsetY] = useState(4);
 
+  // Image filter state
+  const [filterBlur, setFilterBlur] = useState(0);
+  const [filterBrightness, setFilterBrightness] = useState(0);
+  const [filterContrast, setFilterContrast] = useState(0);
+  const [filterSaturation, setFilterSaturation] = useState(0);
+  const [filterHueRotation, setFilterHueRotation] = useState(0);
+  const [filterGrayscale, setFilterGrayscale] = useState(false);
+  const [filterInvert, setFilterInvert] = useState(false);
+
   // Ensure fonts cache is loaded so getFontWeights returns accurate data
   useEffect(() => {
     ensureFontsLoaded().then(() => setFontsCacheReady(true));
@@ -200,6 +209,26 @@ export function ElementProperties({
     } else {
       setShadowEnabled(false);
     }
+
+    // Read image filters
+    if (selectedElement instanceof FabricImage) {
+      const imgFilters = selectedElement.filters || [];
+      setFilterBlur((imgFilters.find(f => f instanceof FabricFilters.Blur) as InstanceType<typeof FabricFilters.Blur>)?.blur || 0);
+      setFilterBrightness((imgFilters.find(f => f instanceof FabricFilters.Brightness) as InstanceType<typeof FabricFilters.Brightness>)?.brightness || 0);
+      setFilterContrast((imgFilters.find(f => f instanceof FabricFilters.Contrast) as InstanceType<typeof FabricFilters.Contrast>)?.contrast || 0);
+      setFilterSaturation((imgFilters.find(f => f instanceof FabricFilters.Saturation) as InstanceType<typeof FabricFilters.Saturation>)?.saturation || 0);
+      setFilterHueRotation((imgFilters.find(f => f instanceof FabricFilters.HueRotation) as InstanceType<typeof FabricFilters.HueRotation>)?.rotation || 0);
+      setFilterGrayscale(imgFilters.some(f => f instanceof FabricFilters.Grayscale));
+      setFilterInvert(imgFilters.some(f => f instanceof FabricFilters.Invert));
+    } else {
+      setFilterBlur(0);
+      setFilterBrightness(0);
+      setFilterContrast(0);
+      setFilterSaturation(0);
+      setFilterHueRotation(0);
+      setFilterGrayscale(false);
+      setFilterInvert(false);
+    }
   }, [selectedElement, updateTrigger]);
 
   // Check if textbox is in editing mode with a selection
@@ -229,6 +258,38 @@ export function ElementProperties({
     tb.initDimensions();
     canvas.requestRenderAll();
   }, [selectedElement, canvasRef]);
+
+  // Apply image filters - rebuilds the entire filter array from current state
+  const applyImageFilters = useCallback((overrides: {
+    blur?: number; brightness?: number; contrast?: number;
+    saturation?: number; hueRotation?: number; grayscale?: boolean; invert?: boolean;
+  } = {}) => {
+    if (!(selectedElement instanceof FabricImage)) return;
+    const canvas = canvasRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const b = overrides.blur ?? filterBlur;
+    const br = overrides.brightness ?? filterBrightness;
+    const co = overrides.contrast ?? filterContrast;
+    const sa = overrides.saturation ?? filterSaturation;
+    const hr = overrides.hueRotation ?? filterHueRotation;
+    const gs = overrides.grayscale ?? filterGrayscale;
+    const inv = overrides.invert ?? filterInvert;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newFilters: any[] = [];
+    if (b > 0) newFilters.push(new FabricFilters.Blur({ blur: b }));
+    if (br !== 0) newFilters.push(new FabricFilters.Brightness({ brightness: br }));
+    if (co !== 0) newFilters.push(new FabricFilters.Contrast({ contrast: co }));
+    if (sa !== 0) newFilters.push(new FabricFilters.Saturation({ saturation: sa }));
+    if (hr !== 0) newFilters.push(new FabricFilters.HueRotation({ rotation: hr }));
+    if (gs) newFilters.push(new FabricFilters.Grayscale());
+    if (inv) newFilters.push(new FabricFilters.Invert());
+
+    selectedElement.filters = newFilters;
+    selectedElement.applyFilters();
+    canvas.renderAll();
+  }, [selectedElement, canvasRef, filterBlur, filterBrightness, filterContrast, filterSaturation, filterHueRotation, filterGrayscale, filterInvert]);
 
   const updateElement = useCallback((updates: Partial<typeof elementProps>) => {
     if (!selectedElement) return;
@@ -1310,6 +1371,163 @@ export function ElementProperties({
                   </span>
                 </div>
               </div>
+
+              {/* Image Filters */}
+              {isImageElement && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Filters</Label>
+                  <div className="mt-2 space-y-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Blur</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[Math.round(filterBlur * 100)]}
+                          onValueChange={([val]) => {
+                            const v = val / 100;
+                            setFilterBlur(v);
+                            applyImageFilters({ blur: v });
+                          }}
+                          max={100}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterBlur * 100)}%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Brightness</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[Math.round(filterBrightness * 100)]}
+                          onValueChange={([val]) => {
+                            const v = val / 100;
+                            setFilterBrightness(v);
+                            applyImageFilters({ brightness: v });
+                          }}
+                          min={-100}
+                          max={100}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterBrightness * 100)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Contrast</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[Math.round(filterContrast * 100)]}
+                          onValueChange={([val]) => {
+                            const v = val / 100;
+                            setFilterContrast(v);
+                            applyImageFilters({ contrast: v });
+                          }}
+                          min={-100}
+                          max={100}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterContrast * 100)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Saturation</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[Math.round(filterSaturation * 100)]}
+                          onValueChange={([val]) => {
+                            const v = val / 100;
+                            setFilterSaturation(v);
+                            applyImageFilters({ saturation: v });
+                          }}
+                          min={-100}
+                          max={100}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterSaturation * 100)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Hue Rotation</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[Math.round(filterHueRotation * 100)]}
+                          onValueChange={([val]) => {
+                            const v = val / 100;
+                            setFilterHueRotation(v);
+                            applyImageFilters({ hueRotation: v });
+                          }}
+                          min={-100}
+                          max={100}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterHueRotation * 100)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 pt-1">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <button
+                          className={cn(
+                            "w-8 h-4 rounded-full transition-colors relative",
+                            filterGrayscale ? "bg-cyan-500" : "bg-slate-200 dark:bg-slate-700"
+                          )}
+                          onClick={() => {
+                            const v = !filterGrayscale;
+                            setFilterGrayscale(v);
+                            applyImageFilters({ grayscale: v });
+                          }}
+                        >
+                          <div className={cn(
+                            "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
+                            filterGrayscale ? "translate-x-4" : "translate-x-0.5"
+                          )} />
+                        </button>
+                        <span className="text-[10px] text-muted-foreground">Grayscale</span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <button
+                          className={cn(
+                            "w-8 h-4 rounded-full transition-colors relative",
+                            filterInvert ? "bg-cyan-500" : "bg-slate-200 dark:bg-slate-700"
+                          )}
+                          onClick={() => {
+                            const v = !filterInvert;
+                            setFilterInvert(v);
+                            applyImageFilters({ invert: v });
+                          }}
+                        >
+                          <div className={cn(
+                            "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
+                            filterInvert ? "translate-x-4" : "translate-x-0.5"
+                          )} />
+                        </button>
+                        <span className="text-[10px] text-muted-foreground">Invert</span>
+                      </label>
+                    </div>
+                    {(filterBlur > 0 || filterBrightness !== 0 || filterContrast !== 0 || filterSaturation !== 0 || filterHueRotation !== 0 || filterGrayscale || filterInvert) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-7 text-xs"
+                        onClick={() => {
+                          setFilterBlur(0);
+                          setFilterBrightness(0);
+                          setFilterContrast(0);
+                          setFilterSaturation(0);
+                          setFilterHueRotation(0);
+                          setFilterGrayscale(false);
+                          setFilterInvert(false);
+                          applyImageFilters({ blur: 0, brightness: 0, contrast: 0, saturation: 0, hueRotation: 0, grayscale: false, invert: false });
+                        }}
+                      >
+                        Reset Filters
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Separator />
 
