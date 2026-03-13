@@ -65,6 +65,40 @@ import { cn } from "@/lib/utils";
 //   this.setOptions(options);
 // So modifying ownDefaults directly is the only way to change defaults globally.
 // Using prototype.set() does NOT work because ownDefaults overwrite prototype values.
+// Extract all unique fontFamily values from canvas JSON and preload them
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function preloadFontsFromJSON(parsed: any): Promise<void> {
+  const fonts = new Set<string>();
+  function collectFonts(objects: Record<string, unknown>[]) {
+    if (!Array.isArray(objects)) return;
+    for (const obj of objects) {
+      if (obj.fontFamily && typeof obj.fontFamily === 'string' && obj.fontFamily !== 'Inter') {
+        fonts.add(obj.fontFamily as string);
+      }
+      // Check styles map for per-character fonts (Textbox rich text)
+      if (obj.styles && typeof obj.styles === 'object') {
+        for (const lineStyles of Object.values(obj.styles as Record<string, Record<string, Record<string, unknown>>>)) {
+          if (lineStyles && typeof lineStyles === 'object') {
+            for (const charStyle of Object.values(lineStyles)) {
+              if (charStyle?.fontFamily && typeof charStyle.fontFamily === 'string') {
+                fonts.add(charStyle.fontFamily as string);
+              }
+            }
+          }
+        }
+      }
+      // Recurse into groups
+      if (obj.objects && Array.isArray(obj.objects)) {
+        collectFonts(obj.objects as Record<string, unknown>[]);
+      }
+    }
+  }
+  if (parsed.objects) collectFonts(parsed.objects);
+  if (fonts.size > 0) {
+    await Promise.all([...fonts].map(f => loadGoogleFont(f, true)));
+  }
+}
+
 FabricObject.ownDefaults.originX = 'left';
 FabricObject.ownDefaults.originY = 'top';
 FabricObject.ownDefaults.cornerColor = '#0891b2';
@@ -1882,6 +1916,9 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
             });
           }
 
+          // Preload all Google Fonts used in the canvas before rendering
+          await preloadFontsFromJSON(parsed);
+
           // Save current zoom level
           const currentZoom = fabricRef.current.getZoom();
 
@@ -1913,7 +1950,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         const currentZoom = fabricRef.current.getZoom();
         const proxiedJson = proxyR2UrlsInJson(json);
-        fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+        const parsed = JSON.parse(proxiedJson);
+        preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
           fabricRef.current!.setZoom(currentZoom);
           fabricRef.current!.setDimensions({
             width: CANVAS_WIDTH * currentZoom,
@@ -1937,7 +1975,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         const currentZoom = fabricRef.current.getZoom();
         const proxiedJson = proxyR2UrlsInJson(json);
-        fabricRef.current.loadFromJSON(JSON.parse(proxiedJson)).then(() => {
+        const parsed = JSON.parse(proxiedJson);
+        preloadFontsFromJSON(parsed).then(() => fabricRef.current!.loadFromJSON(parsed)).then(() => {
           fabricRef.current!.setZoom(currentZoom);
           fabricRef.current!.setDimensions({
             width: CANVAS_WIDTH * currentZoom,
