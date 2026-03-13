@@ -246,22 +246,51 @@ export function ElementProperties({
     return tb.isEditing && tb.selectionStart !== tb.selectionEnd;
   }, [selectedElement]);
 
-  // Get the style of the current text selection (or cursor position)
+  // Check if textbox is in editing mode (cursor or selection)
+  const isTextEditing = useCallback(() => {
+    if (!(selectedElement instanceof Textbox)) return false;
+    return (selectedElement as Textbox).isEditing;
+  }, [selectedElement]);
+
+  // Get the style at the current cursor position or start of selection.
+  // Works for both cursor-only (no selection) and selection states.
+  // Returns the complete style (per-char overrides merged with object defaults).
   const getSelectionStyle = useCallback((prop: string): unknown => {
     if (!(selectedElement instanceof Textbox)) return undefined;
     const tb = selectedElement as Textbox;
     if (!tb.isEditing) return undefined;
-    const styles = tb.getSelectionStyles(tb.selectionStart, tb.selectionStart + 1, true);
+    // Read at cursor/selection start position
+    const pos = tb.selectionStart;
+    // Guard: don't read past end of text
+    if (pos >= tb.text.length) {
+      // At end of text, read the last character's style
+      if (tb.text.length === 0) return undefined;
+      const styles = tb.getSelectionStyles(tb.text.length - 1, tb.text.length, true);
+      if (styles.length > 0 && prop in styles[0]) return styles[0][prop as keyof typeof styles[0]];
+      return undefined;
+    }
+    const styles = tb.getSelectionStyles(pos, pos + 1, true);
     if (styles.length > 0 && prop in styles[0]) return styles[0][prop as keyof typeof styles[0]];
     return undefined;
   }, [selectedElement]);
 
   // Apply style to selected text or whole textbox
-  const applyTextStyle = useCallback((styles: Record<string, unknown>) => {
+  const applyTextStyle = useCallback(async (styles: Record<string, unknown>) => {
     if (!(selectedElement instanceof Textbox)) return;
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
     const tb = selectedElement as Textbox;
+
+    // Load font variant before applying weight/family changes
+    if ('fontWeight' in styles || 'fontFamily' in styles) {
+      const family = (styles.fontFamily as string) || tb.fontFamily || 'Inter';
+      const weight = (styles.fontWeight as string) || String(tb.fontWeight || 'normal');
+      try {
+        await loadGoogleFont(family);
+        await document.fonts.load(`${weight} 16px "${family}"`);
+        await document.fonts.ready;
+      } catch { /* ignore */ }
+    }
 
     if (tb.isEditing && tb.selectionStart !== tb.selectionEnd) {
       // Apply to selection only
@@ -741,10 +770,8 @@ export function ElementProperties({
                         value={elementProps.fontFamily || 'Inter'}
                         onChange={async (font) => {
                           if (selectedElement instanceof Textbox) {
-                            // Load font before applying to ensure correct text measurement
-                            await loadGoogleFont(font);
-                            await document.fonts.load(`16px "${font}"`);
-                            applyTextStyle({ fontFamily: font });
+                            // applyTextStyle handles font loading (weight + family)
+                            await applyTextStyle({ fontFamily: font });
                             setElementProps(prev => ({
                               ...prev,
                               fontFamily: font,
@@ -786,13 +813,14 @@ export function ElementProperties({
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
                       onValueChange={async (val) => {
                         if (!(selectedElement instanceof Textbox)) return;
-                        const fontFamily = selectedElement.fontFamily || 'Inter';
-                        try {
-                          await document.fonts.load(`${val} 16px "${fontFamily}"`);
-                          await document.fonts.ready;
-                        } catch { /* ignore */ }
-                        applyTextStyle({ fontWeight: val });
-                        setElementProps(prev => ({ ...prev, fontWeight: val }));
+                        // applyTextStyle handles font loading (weight + family)
+                        await applyTextStyle({ fontWeight: val });
+                        setElementProps(prev => ({
+                          ...prev,
+                          fontWeight: val,
+                          width: Math.round((selectedElement.width || 0) * (selectedElement.scaleX || 1)),
+                          height: Math.round((selectedElement.height || 0) * (selectedElement.scaleY || 1)),
+                        }));
                       }}
                     >
                       <SelectTrigger className="mt-2 h-8">
@@ -812,10 +840,13 @@ export function ElementProperties({
                     <Label className="text-xs text-muted-foreground">Text Style</Label>
                     <div className="flex gap-1 mt-2">
                       {(() => {
-                        // Read selection styles when text is selected, otherwise use object-level props
-                        const selWeight = hasTextSelection() ? getSelectionStyle('fontWeight') : undefined;
-                        const selStyle = hasTextSelection() ? getSelectionStyle('fontStyle') : undefined;
-                        const selUnderline = hasTextSelection() ? getSelectionStyle('underline') : undefined;
+                        // When editing (cursor or selection), read per-character style at cursor position.
+                        // This ensures buttons reflect the actual style of the text under the cursor,
+                        // not the object-level default. Works like Word/Canva.
+                        const editing = isTextEditing();
+                        const selWeight = editing ? getSelectionStyle('fontWeight') : undefined;
+                        const selStyle = editing ? getSelectionStyle('fontStyle') : undefined;
+                        const selUnderline = editing ? getSelectionStyle('underline') : undefined;
                         const currentBold = selWeight !== undefined
                           ? (String(selWeight) === '700' || selWeight === 'bold')
                           : (String(elementProps.fontWeight) === '700' || elementProps.fontWeight === 'bold');

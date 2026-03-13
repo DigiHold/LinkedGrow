@@ -163,6 +163,7 @@ const customizeMtrControl = (controls: Record<string, Control>) => {
     controls.mtr.y = 0.5;        // bottom edge (default is -0.5 = top)
     controls.mtr.offsetY = 25;   // 25px below the bottom edge
     controls.mtr.offsetX = -16;  // shift left to make room for move handle
+    controls.mtr.withConnection = false; // no line between element and rotate icon
     controls.mtr.render = renderRotateIcon;
     controls.mtr.sizeX = 24;
     controls.mtr.sizeY = 24;
@@ -830,16 +831,18 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         }
       });
 
-      // Prevent Fabric.js from entering text editing on single click mouseUp.
+      // Prevent Fabric.js from entering text editing on single click.
       // We want double-click to enter editing (Canva-like behavior).
-      // Fabric's mouseUpHandler checks __lastSelected to decide whether to enterEditing.
-      // By resetting it on mouse:down (which fires AFTER Fabric's internal _mouseDownHandler
-      // sets it), we prevent single-click from entering editing.
-      canvas.on('mouse:down', (opt) => {
-        const target = opt.target;
-        if (target instanceof Textbox) {
+      // In Fabric v7, mouseUpHandler checks `this.selected` to decide whether to enterEditing.
+      // The `selected` property is set in the target's `mousedown` handler (which fires AFTER
+      // canvas `mouse:down`). So we reset it on `mouse:up` (which fires BEFORE the target's
+      // `mouseup` handler) to block single-click editing entry.
+      canvas.on('mouse:up', (opt) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const target = (opt as any).target;
+        if (target instanceof Textbox && !target.isEditing) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (target as any).__lastSelected = false;
+          (target as any).selected = false;
         }
       });
 
