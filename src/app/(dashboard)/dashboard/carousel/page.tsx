@@ -647,13 +647,13 @@ export default function CarouselPage() {
           await canvasRef.current.loadFromJSON(slideJSON);
         }
 
-        const dataUrl = canvasRef.current.exportToDataURL();
+        const dataUrl = canvasRef.current.exportToDataURL('jpeg');
 
         if (i > 0) {
           pdf.addPage([CANVAS_WIDTH, CANVAS_HEIGHT]);
         }
 
-        pdf.addImage(dataUrl, 'PNG', 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, undefined, 'FAST');
       }
 
       // Restore current slide

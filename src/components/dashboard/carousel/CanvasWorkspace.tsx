@@ -679,7 +679,7 @@ export interface CanvasWorkspaceRef {
   sendBackward: () => void;
   sendToBack: () => void;
   setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => void;
-  exportToDataURL: () => string;
+  exportToDataURL: (format?: 'png' | 'jpeg') => string;
   exportToJSON: () => string;
   loadFromJSON: (json: string) => Promise<void>;
   undo: () => void;
@@ -2279,7 +2279,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         onCanvasChangeRef.current?.();
       },
 
-      exportToDataURL: () => {
+      exportToDataURL: (format: 'png' | 'jpeg' = 'png') => {
         if (!fabricRef.current) return '';
 
         // Temporarily reset zoom for full-resolution export
@@ -2288,8 +2288,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         fabricRef.current.setDimensions({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
 
         const dataURL = fabricRef.current.toDataURL({
-          format: 'png',
-          quality: 1,
+          format,
+          quality: format === 'jpeg' ? 0.92 : 1,
           multiplier: 1,
         });
 

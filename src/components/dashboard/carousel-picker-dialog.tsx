@@ -144,13 +144,13 @@ export function CarouselPickerDialog({
           });
         });
 
-        const dataUrl = offscreenCanvas.toDataURL("image/png");
+        const dataUrl = offscreenCanvas.toDataURL("image/jpeg", 0.92);
 
         if (i > 0) {
           pdf.addPage([CANVAS_WIDTH, CANVAS_HEIGHT]);
         }
 
-        pdf.addImage(dataUrl, "PNG", 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        pdf.addImage(dataUrl, "JPEG", 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, undefined, "FAST");
       }
 
       // Clean up
