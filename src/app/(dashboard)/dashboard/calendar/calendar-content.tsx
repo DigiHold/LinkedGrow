@@ -1410,7 +1410,7 @@ export function CalendarContent() {
                                 {selectedPost.media[0].mimeType === "application/pdf" ? (
                                   <PdfCarouselPreview
                                     url={selectedPost.media[0].storageUrl}
-                                    maxHeight={320}
+                                    maxHeight={500}
                                   />
                                 ) : selectedPost.media[0].mimeType.startsWith("video/") ? (
                                   <video

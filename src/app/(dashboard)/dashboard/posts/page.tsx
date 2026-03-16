@@ -864,7 +864,7 @@ export default function PostsPage() {
                         <PdfCarouselPreview
                           key={media.id}
                           url={media.storageUrl}
-                          maxHeight={320}
+                          maxHeight={500}
                         />
                       ) : (
                         <img

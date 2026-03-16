@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -14,54 +14,90 @@ interface PdfCarouselPreviewInnerProps {
   maxHeight?: number;
 }
 
-export function PdfCarouselPreviewInner({ url, maxHeight = 320 }: PdfCarouselPreviewInnerProps) {
+export function PdfCarouselPreviewInner({ url, maxHeight = 500 }: PdfCarouselPreviewInnerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure container width to render PDF at full width
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    // Initial measurement
+    setContainerWidth(el.clientWidth);
+    return () => observer.disconnect();
+  }, []);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setLoading(false);
   }, []);
 
-  const goToPrevPage = useCallback(() => {
+  const goToPrevPage = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setCurrentPage((prev) => Math.max(1, prev - 1));
   }, []);
 
-  const goToNextPage = useCallback(() => {
+  const goToNextPage = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setCurrentPage((prev) => Math.min(numPages, prev + 1));
   }, [numPages]);
 
+  // Calculate height from width using 4:5 carousel aspect ratio
+  const pageHeight = containerWidth > 0 ? containerWidth * (5 / 4) : 0;
+  // Clamp to maxHeight
+  const effectiveHeight = pageHeight > 0 ? Math.min(pageHeight, maxHeight) : maxHeight;
+  const effectiveWidth = pageHeight > maxHeight ? maxHeight * (4 / 5) : containerWidth;
+
   return (
-    <div className="relative rounded-lg overflow-hidden bg-muted/30 border">
-      <Document
-        file={url}
-        onLoadSuccess={onDocumentLoadSuccess}
-        loading={
-          <div
-            className="flex items-center justify-center bg-muted/50"
-            style={{ height: maxHeight }}
-          >
-            <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
-          </div>
-        }
-        error={
-          <div
-            className="flex items-center justify-center bg-muted/50"
-            style={{ height: maxHeight }}
-          >
-            <div className="text-sm text-muted-foreground">Failed to load PDF</div>
-          </div>
-        }
+    <div ref={containerRef} className="relative rounded-lg overflow-hidden bg-muted/30 border">
+      {/* Fixed-height container prevents layout shift on page change */}
+      <div
+        className="flex items-center justify-center"
+        style={{ height: effectiveHeight, minHeight: 200 }}
       >
-        <Page
-          pageNumber={currentPage}
-          height={maxHeight}
-          renderTextLayer={false}
-          renderAnnotationLayer={false}
-          loading={null}
-        />
-      </Document>
+        <Document
+          file={url}
+          onLoadSuccess={onDocumentLoadSuccess}
+          loading={
+            <div
+              className="flex items-center justify-center"
+              style={{ height: effectiveHeight }}
+            >
+              <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
+            </div>
+          }
+          error={
+            <div
+              className="flex items-center justify-center"
+              style={{ height: effectiveHeight }}
+            >
+              <div className="text-sm text-muted-foreground">Failed to load PDF</div>
+            </div>
+          }
+        >
+          {containerWidth > 0 && (
+            <Page
+              pageNumber={currentPage}
+              width={effectiveWidth}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              loading={null}
+            />
+          )}
+        </Document>
+      </div>
 
       {/* Navigation arrows */}
       {!loading && numPages > 1 && (
