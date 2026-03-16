@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 
 interface PdfCarouselPreviewProps {
   url: string;
-  maxHeight?: number;
 }
 
 // Dynamically import the actual PDF viewer to avoid SSR issues
@@ -14,13 +13,13 @@ const PdfCarouselPreviewInner = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-lg overflow-hidden bg-muted/30 border flex items-center justify-center" style={{ height: 320 }}>
+      <div className="rounded-lg overflow-hidden border flex items-center justify-center aspect-4/5">
         <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
       </div>
     ),
   }
 );
 
-export function PdfCarouselPreview({ url, maxHeight = 320 }: PdfCarouselPreviewProps) {
-  return <PdfCarouselPreviewInner url={url} maxHeight={maxHeight} />;
+export function PdfCarouselPreview({ url }: PdfCarouselPreviewProps) {
+  return <PdfCarouselPreviewInner url={url} />;
 }

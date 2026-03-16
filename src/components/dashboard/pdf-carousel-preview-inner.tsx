@@ -11,10 +11,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 interface PdfCarouselPreviewInnerProps {
   url: string;
-  maxHeight?: number;
 }
 
-export function PdfCarouselPreviewInner({ url, maxHeight = 500 }: PdfCarouselPreviewInnerProps) {
+export function PdfCarouselPreviewInner({ url }: PdfCarouselPreviewInnerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -32,7 +31,6 @@ export function PdfCarouselPreviewInner({ url, maxHeight = 500 }: PdfCarouselPre
       }
     });
     observer.observe(el);
-    // Initial measurement
     setContainerWidth(el.clientWidth);
     return () => observer.disconnect();
   }, []);
@@ -54,50 +52,32 @@ export function PdfCarouselPreviewInner({ url, maxHeight = 500 }: PdfCarouselPre
     setCurrentPage((prev) => Math.min(numPages, prev + 1));
   }, [numPages]);
 
-  // Calculate height from width using 4:5 carousel aspect ratio
-  const pageHeight = containerWidth > 0 ? containerWidth * (5 / 4) : 0;
-  // Clamp to maxHeight
-  const effectiveHeight = pageHeight > 0 ? Math.min(pageHeight, maxHeight) : maxHeight;
-  const effectiveWidth = pageHeight > maxHeight ? maxHeight * (4 / 5) : containerWidth;
-
   return (
-    <div ref={containerRef} className="relative rounded-lg overflow-hidden bg-muted/30 border">
-      {/* Fixed-height container prevents layout shift on page change */}
-      <div
-        className="flex items-center justify-center"
-        style={{ height: effectiveHeight, minHeight: 200 }}
+    <div ref={containerRef} className="relative rounded-lg overflow-hidden border">
+      <Document
+        file={url}
+        onLoadSuccess={onDocumentLoadSuccess}
+        loading={
+          <div className="flex items-center justify-center aspect-4/5 bg-muted/50">
+            <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
+          </div>
+        }
+        error={
+          <div className="flex items-center justify-center aspect-4/5 bg-muted/50">
+            <div className="text-sm text-muted-foreground">Failed to load PDF</div>
+          </div>
+        }
       >
-        <Document
-          file={url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={
-            <div
-              className="flex items-center justify-center"
-              style={{ height: effectiveHeight }}
-            >
-              <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
-            </div>
-          }
-          error={
-            <div
-              className="flex items-center justify-center"
-              style={{ height: effectiveHeight }}
-            >
-              <div className="text-sm text-muted-foreground">Failed to load PDF</div>
-            </div>
-          }
-        >
-          {containerWidth > 0 && (
-            <Page
-              pageNumber={currentPage}
-              width={effectiveWidth}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              loading={null}
-            />
-          )}
-        </Document>
-      </div>
+        {containerWidth > 0 && (
+          <Page
+            pageNumber={currentPage}
+            width={containerWidth}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            loading={null}
+          />
+        )}
+      </Document>
 
       {/* Navigation arrows */}
       {!loading && numPages > 1 && (
