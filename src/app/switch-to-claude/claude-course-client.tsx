@@ -378,6 +378,12 @@ const comparisons = [
     claude: "See, edit, and delete all memories",
     winner: "claude",
   },
+  {
+    feature: "Ethics",
+    chatgpt: "Signed $200M Pentagon military deal",
+    claude: "Refused - rejected military surveillance",
+    winner: "claude",
+  },
 ];
 
 function ComparisonSection() {
@@ -413,8 +419,9 @@ function ComparisonSection() {
             transition={{ delay: 0.2 }}
             className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
           >
-            Claude wins in the areas that matter most for professional work.
-            Here is the honest comparison.
+            After OpenAI signed a $200M Pentagon military contract in March 2026,
+            millions of users switched to Claude. But ethics is only part of the story -
+            Claude also wins where it matters most.
           </motion.p>
         </div>
 
@@ -492,7 +499,7 @@ function NoStartingOverSection() {
       step: "1",
       title: "Copy the extraction prompt",
       description:
-        "Go to claude.ai/import-memory and copy the special prompt designed to export your ChatGPT data.",
+        "Go to claude.com/import-memory and copy the special prompt designed to export your ChatGPT data.",
     },
     {
       step: "2",
@@ -541,8 +548,7 @@ function NoStartingOverSection() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6"
           >
-            You do not start from zero.
-            <br />
+            You do not start from zero.{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-white">
               Not even close.
             </span>
@@ -916,7 +922,7 @@ function WhoIsThisForSection() {
 const results = [
   {
     stat: "60s",
-    label: "ChatGPT data transfer",
+    label: "ChatGPT transfer",
     description:
       "Import your entire ChatGPT memory, preferences, and writing style into Claude.",
   },
