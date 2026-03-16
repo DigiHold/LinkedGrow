@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
+import { FloatingAIIcons } from "@/components/marketing/hero";
 import {
   ArrowRight,
   Check,
@@ -202,6 +203,9 @@ function HeroSection() {
         transition={{ duration: 8, repeat: Infinity, delay: 1 }}
         className="absolute bottom-20 right-10 w-72 h-72 bg-orange-500 rounded-full blur-3xl"
       />
+
+      {/* Floating AI brand icons */}
+      <FloatingAIIcons />
 
       <div className="relative z-10 mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 lg:pt-40 pb-16 lg:pb-24 text-center">
         {/* Badge */}
