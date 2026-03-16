@@ -681,7 +681,7 @@ export interface CanvasWorkspaceRef {
   setBackground: (type: 'solid' | 'gradient' | 'image', value: string) => void;
   exportToDataURL: (format?: 'png' | 'jpeg') => string;
   exportToJSON: () => string;
-  loadFromJSON: (json: string) => Promise<void>;
+  loadFromJSON: (json: string) => Promise<boolean>;
   undo: () => void;
   redo: () => void;
   getCanvas: () => Canvas | null;
@@ -2337,8 +2337,8 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
         return JSON.stringify(json);
       },
 
-      loadFromJSON: async (json: string) => {
-        if (!fabricRef.current || !json) return;
+      loadFromJSON: async (json: string): Promise<boolean> => {
+        if (!fabricRef.current || !json) return false;
 
         try {
           const parsed = JSON.parse(json);
@@ -2368,9 +2368,37 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           // Save current zoom level
           const currentZoom = fabricRef.current.getZoom();
 
-          // Clear and load new state
-          fabricRef.current.clear();
-          await fabricRef.current.loadFromJSON(parsed);
+          // Try to load - if image fails, retry without the failing image
+          let loadSuccess = false;
+          let attempts = 0;
+          const maxAttempts = 10;
+
+          while (!loadSuccess && attempts < maxAttempts) {
+            try {
+              fabricRef.current.clear();
+              await fabricRef.current.loadFromJSON(parsed);
+              loadSuccess = true;
+            } catch (loadError) {
+              attempts++;
+              const errMsg = String(loadError);
+              // Extract failed URL from Fabric error message
+              const urlMatch = errMsg.match(/Error loading (https?:\/\/\S+)/);
+              if (urlMatch && parsed.objects) {
+                const failedUrl = urlMatch[1];
+                console.warn(`Image failed to load, removing from canvas: ${failedUrl}`);
+                parsed.objects = parsed.objects.filter((obj: Record<string, unknown>) => {
+                  if (obj.type === 'image' && obj.src === failedUrl) return false;
+                  return true;
+                });
+              } else {
+                // Can't identify the failing image - give up
+                console.error('Failed to load canvas from JSON:', loadError);
+                break;
+              }
+            }
+          }
+
+          if (!loadSuccess) return false;
 
           // Restore locked state (selectable/evented aren't serialized)
           restoreLockedState(fabricRef.current);
@@ -2389,8 +2417,10 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
           fabricRef.current.renderAll();
           onCanvasChangeRef.current?.();
+          return true;
         } catch (error) {
           console.error('Failed to load canvas from JSON:', error);
+          return false;
         }
       },
 

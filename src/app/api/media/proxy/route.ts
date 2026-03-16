@@ -32,10 +32,16 @@ export async function GET(request: NextRequest) {
     // Fetch the image
     const imageResponse = await fetch(url);
     if (!imageResponse.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch image" },
-        { status: imageResponse.status }
-      );
+      // Return a placeholder image instead of error to prevent canvas load failures
+      // This prevents Fabric.js loadFromJSON from throwing and wiping carousel data
+      console.warn(`Media proxy: R2 returned ${imageResponse.status} for ${url}`);
+      const placeholder = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#f3f4f6" rx="8"/><text x="200" y="192" text-anchor="middle" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="14">Image unavailable</text><text x="200" y="216" text-anchor="middle" fill="#d1d5db" font-family="system-ui,sans-serif" font-size="12">Re-upload this image</text></svg>`;
+      return new NextResponse(placeholder, {
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Cache-Control": "no-cache, no-store",
+        },
+      });
     }
 
     const contentType = imageResponse.headers.get("content-type") || "image/webp";

@@ -136,6 +136,7 @@ export default function CarouselPage() {
   const slidesRef = useRef(slides);
   const currentSlideIndexRef = useRef(currentSlideIndex);
   const draftRestoredRef = useRef(false);
+  const loadFailedRef = useRef(false); // Prevents auto-save from overwriting DB after a failed canvas load
 
   // Left sidebar view (toolbar or layers)
   const [leftPanelView, setLeftPanelView] = useState<'toolbar' | 'layers'>('toolbar');
@@ -216,15 +217,22 @@ export default function CarouselPage() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (canvasRef.current && restoredSlides[targetIndex]?.canvasJSON) {
-            canvasRef.current.loadFromJSON(restoredSlides[targetIndex].canvasJSON);
-            setTimeout(() => {
-              if (canvasRef.current) {
-                const thumbnail = canvasRef.current.exportToDataURL();
-                setSlides(prev => prev.map((s, i) =>
-                  i === targetIndex ? { ...s, thumbnail } : s
-                ));
+            canvasRef.current.loadFromJSON(restoredSlides[targetIndex].canvasJSON).then((success) => {
+              if (!success) {
+                // Load failed (e.g. missing images) - block auto-save to prevent data corruption
+                loadFailedRef.current = true;
+                return;
               }
-            }, 200);
+              loadFailedRef.current = false;
+              setTimeout(() => {
+                if (canvasRef.current) {
+                  const thumbnail = canvasRef.current.exportToDataURL();
+                  setSlides(prev => prev.map((s, i) =>
+                    i === targetIndex ? { ...s, thumbnail } : s
+                  ));
+                }
+              }, 200);
+            });
           }
         });
       });
@@ -237,6 +245,8 @@ export default function CarouselPage() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (!canvasRef.current) return;
+      // Don't flush save if canvas load failed
+      if (loadFailedRef.current) return;
       try {
         const canvasJSON = canvasRef.current.exportToJSON();
         const curSlides = slidesRef.current;
@@ -262,6 +272,7 @@ export default function CarouselPage() {
   // Save current slide before switching
   const saveCurrentSlide = useCallback(() => {
     if (!canvasRef.current) return;
+    if (loadFailedRef.current) return;
 
     const canvasJSON = canvasRef.current.exportToJSON();
     const thumbnail = canvasRef.current.exportToDataURL();
@@ -485,6 +496,8 @@ export default function CarouselPage() {
 
   const saveToLocalStorage = useCallback(() => {
     if (!canvasRef.current) return;
+    // Don't save if canvas load failed - would save blank data
+    if (loadFailedRef.current) return;
     try {
       const canvasJSON = canvasRef.current.exportToJSON();
       const curSlides = slidesRef.current;
@@ -509,6 +522,8 @@ export default function CarouselPage() {
 
   const saveToDatabase = useCallback(async () => {
     if (!canvasRef.current || !currentCarouselId || !carouselName.trim()) return;
+    // Don't auto-save if canvas load failed - would overwrite good data with blank canvas
+    if (loadFailedRef.current) return;
     setSaveStatus('saving');
     try {
       const currentCanvasJSON = canvasRef.current.exportToJSON();
@@ -1012,17 +1027,25 @@ export default function CarouselPage() {
       setCurrentSlideIndex(0);
 
       // Load first slide and generate its thumbnail
+      loadFailedRef.current = false; // Reset flag for new load
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (canvasRef.current && slidesWithEmptyThumbnails[0].canvasJSON) {
-            canvasRef.current.loadFromJSON(slidesWithEmptyThumbnails[0].canvasJSON);
-            // After loading, update the thumbnail for the first slide
-            setTimeout(() => {
-              if (canvasRef.current) {
-                const thumbnail = canvasRef.current.exportToDataURL();
-                setSlides(prev => prev.map((s, i) => i === 0 ? { ...s, thumbnail } : s));
+            canvasRef.current.loadFromJSON(slidesWithEmptyThumbnails[0].canvasJSON).then((success) => {
+              if (!success) {
+                loadFailedRef.current = true;
+                showToast("Some images failed to load. Auto-save is paused to protect your data.");
+                return;
               }
-            }, 100);
+              loadFailedRef.current = false;
+              // After loading, update the thumbnail for the first slide
+              setTimeout(() => {
+                if (canvasRef.current) {
+                  const thumbnail = canvasRef.current.exportToDataURL();
+                  setSlides(prev => prev.map((s, i) => i === 0 ? { ...s, thumbnail } : s));
+                }
+              }, 100);
+            });
           }
         });
       });

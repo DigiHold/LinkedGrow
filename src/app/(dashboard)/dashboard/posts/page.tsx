@@ -859,12 +859,27 @@ export default function PostsPage() {
                 {previewPost.media && previewPost.media.length > 0 && (
                   <div className="mt-4 grid gap-2">
                     {previewPost.media.map((media) => (
-                      <img
-                        key={media.id}
-                        src={media.storageUrl}
-                        alt="Post media"
-                        className="rounded-lg max-h-80 object-cover w-full"
-                      />
+                      media.mimeType === 'application/pdf' ? (
+                        <div
+                          key={media.id}
+                          className="rounded-lg border bg-muted/50 p-6 flex flex-col items-center justify-center gap-3"
+                        >
+                          <FileText className="w-12 h-12 text-muted-foreground" />
+                          <div className="text-center">
+                            <p className="text-sm font-medium">Carousel (PDF Document)</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Will display as a swipeable carousel on LinkedIn
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          key={media.id}
+                          src={media.storageUrl}
+                          alt="Post media"
+                          className="rounded-lg max-h-80 object-cover w-full"
+                        />
+                      )
                     ))}
                   </div>
                 )}
