@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
 import Link from "next/link";
+import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
 
 type PostStatus = "all" | "draft" | "scheduled" | "published";
 
@@ -860,18 +861,11 @@ export default function PostsPage() {
                   <div className="mt-4 grid gap-2">
                     {previewPost.media.map((media) => (
                       media.mimeType === 'application/pdf' ? (
-                        <div
+                        <PdfCarouselPreview
                           key={media.id}
-                          className="rounded-lg border bg-muted/50 p-6 flex flex-col items-center justify-center gap-3"
-                        >
-                          <FileText className="w-12 h-12 text-muted-foreground" />
-                          <div className="text-center">
-                            <p className="text-sm font-medium">Carousel (PDF Document)</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Will display as a swipeable carousel on LinkedIn
-                            </p>
-                          </div>
-                        </div>
+                          url={media.storageUrl}
+                          maxHeight={320}
+                        />
                       ) : (
                         <img
                           key={media.id}

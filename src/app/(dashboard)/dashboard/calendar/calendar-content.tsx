@@ -50,6 +50,7 @@ import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { canAccessFeature, PlanId } from "@/lib/plans";
+import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
 import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -1406,7 +1407,12 @@ export function CalendarContent() {
                             {/* Display attached media */}
                             {selectedPost.media && selectedPost.media.length > 0 && (
                               <div className="mt-3">
-                                {selectedPost.media[0].mimeType.startsWith("video/") ? (
+                                {selectedPost.media[0].mimeType === "application/pdf" ? (
+                                  <PdfCarouselPreview
+                                    url={selectedPost.media[0].storageUrl}
+                                    maxHeight={320}
+                                  />
+                                ) : selectedPost.media[0].mimeType.startsWith("video/") ? (
                                   <video
                                     src={selectedPost.media[0].storageUrl}
                                     className="w-full rounded-lg border border-border"
@@ -2075,7 +2081,11 @@ Tips for viral posts:
                                     </div>
                                     {post.media && post.media.length > 0 && (
                                       <div className="shrink-0">
-                                        {post.media[0].mimeType.startsWith("video/") ? (
+                                        {post.media[0].mimeType === "application/pdf" ? (
+                                          <div className="w-16 h-16 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <CalendarDays className="w-6 h-6 text-muted-foreground" />
+                                          </div>
+                                        ) : post.media[0].mimeType.startsWith("video/") ? (
                                           <div className="w-16 h-16 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                             <ImageIcon className="w-6 h-6 text-muted-foreground" />
                                           </div>
