@@ -18,6 +18,7 @@ export function PdfCarouselPreviewInner({ url }: PdfCarouselPreviewInnerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [pageHeight, setPageHeight] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Measure container width to render PDF at full width
@@ -68,15 +69,25 @@ export function PdfCarouselPreviewInner({ url }: PdfCarouselPreviewInnerProps) {
           </div>
         }
       >
-        {containerWidth > 0 && (
-          <Page
-            pageNumber={currentPage}
-            width={containerWidth}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-            loading={null}
-          />
-        )}
+        {/* Stable-height wrapper prevents scroll jump when page changes */}
+        <div style={pageHeight > 0 ? { minHeight: pageHeight } : undefined}>
+          {containerWidth > 0 && (
+            <Page
+              pageNumber={currentPage}
+              width={containerWidth}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              loading={null}
+              onRenderSuccess={() => {
+                // Capture rendered height after first page to stabilize container
+                if (pageHeight === 0 && containerRef.current) {
+                  const canvas = containerRef.current.querySelector('canvas');
+                  if (canvas) setPageHeight(canvas.offsetHeight);
+                }
+              }}
+            />
+          )}
+        </div>
       </Document>
 
       {/* Navigation arrows */}
