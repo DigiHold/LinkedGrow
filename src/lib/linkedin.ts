@@ -1194,6 +1194,8 @@ export async function getMemberAggregatedAnalytics(
         try {
           const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
 
+          console.log(`[Analytics] Fetching ${metric}: ${url}`);
+
           const response = await fetch(url, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -1204,11 +1206,12 @@ export async function getMemberAggregatedAnalytics(
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.warn(`[Analytics] ${metric} failed:`, response.status, errorText.substring(0, 200));
+            console.warn(`[Analytics] ${metric} FAILED ${response.status}: ${errorText.substring(0, 300)}`);
             return;
           }
 
           const data = await response.json();
+          console.log(`[Analytics] ${metric} response: ${JSON.stringify(data).substring(0, 300)}`);
           let total = 0;
           if (data.elements && Array.isArray(data.elements)) {
             for (const el of data.elements) {

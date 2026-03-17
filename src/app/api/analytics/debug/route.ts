@@ -3,18 +3,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import {
-  getLinkedInProfileWithHeadline,
-  scrapeOwnProfilePostURNs,
-  getPostByUrn,
-  getImageDownloadUrls,
-  getMemberAggregatedAnalytics,
-  getMemberAllPostsAnalytics,
-  getPostsByAuthor,
-} from "@/lib/linkedin";
 
-// DEBUG endpoint - tests every step of the analytics pipeline
-// Access: https://staging.linkedgrow.ai/api/analytics/debug
+const LINKEDIN_REST_API_BASE = 'https://api.linkedin.com/rest';
+const LINKEDIN_API_VERSION = '202506';
+
+// DEBUG endpoint - tests every analytics API call with RAW responses
 export async function GET() {
   const results: Record<string, unknown> = {};
 
@@ -26,101 +19,119 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const token = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
-    results.user = {
-      email: user.email,
-      plan: user.plan,
-      postingTarget: user.linkedinPostingTarget,
-      orgId: user.linkedinSelectedOrgId,
-      profileId: user.linkedinProfileId,
-      vanityName: user.linkedinVanityName,
-      headline: user.linkedinHeadline,
-      hasCommunityToken: !!user.linkedinCommunityAccessToken,
-      hasPosterToken: !!user.linkedinAccessToken,
-    };
+    results.tokenType = user.linkedinCommunityAccessToken ? "community" : "poster";
 
     if (!token) {
-      results.error = "No token available";
+      results.error = "No token";
       return NextResponse.json(results);
     }
 
-    // Test 1: Profile with headline (r_basicprofile)
+    // Test 1: memberCreatorPostAnalytics WITHOUT date range (lifetime)
     try {
-      const profile = await getLinkedInProfileWithHeadline(token);
-      results.test1_profile = { success: true, data: profile };
-    } catch (err) {
-      results.test1_profile = { success: false, error: String(err) };
-    }
+      const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=TOTAL`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      });
+      const text = await res.text();
+      results.test1_impression_lifetime = { status: res.status, raw: text.substring(0, 500) };
+    } catch (err) { results.test1_impression_lifetime = { error: String(err) }; }
 
-    // Test 2: Scrape own public profile for post URNs
-    const vanity = user.linkedinVanityName || '';
-    if (vanity) {
-      try {
-        const posts = await scrapeOwnProfilePostURNs(vanity);
-        results.test2_scrape = { success: true, postCount: posts.length, first3: posts.slice(0, 3) };
-      } catch (err) {
-        results.test2_scrape = { success: false, error: String(err) };
-      }
-    } else {
-      results.test2_scrape = { skipped: "no vanity name" };
-    }
-
-    // Test 3: Aggregated analytics (r_member_postAnalytics)
+    // Test 2: Same but with date range (30 days)
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const agg = await getMemberAggregatedAnalytics(token, { start: thirtyDaysAgo, end: new Date() });
-      results.test3_aggregated = { success: true, data: agg };
-    } catch (err) {
-      results.test3_aggregated = { success: false, error: String(err) };
+      const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=TOTAL&dateRange=(start:(year:2026,month:2,day:15),end:(year:2026,month:3,day:17))`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      });
+      const text = await res.text();
+      results.test2_impression_30d = { status: res.status, raw: text.substring(0, 500) };
+    } catch (err) { results.test2_impression_30d = { error: String(err) }; }
+
+    // Test 3: REACTION lifetime
+    try {
+      const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=REACTION&aggregation=TOTAL`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      });
+      const text = await res.text();
+      results.test3_reaction_lifetime = { status: res.status, raw: text.substring(0, 500) };
+    } catch (err) { results.test3_reaction_lifetime = { error: String(err) }; }
+
+    // Test 4: DAILY impressions (should show daily breakdown)
+    try {
+      const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=DAILY&dateRange=(start:(year:2026,month:3,day:10),end:(year:2026,month:3,day:17))`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      });
+      const text = await res.text();
+      results.test4_impression_daily = { status: res.status, raw: text.substring(0, 1000) };
+    } catch (err) { results.test4_impression_daily = { error: String(err) }; }
+
+    // Test 5: Try with poster token instead of community token
+    if (user.linkedinAccessToken && user.linkedinCommunityAccessToken) {
+      try {
+        const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=TOTAL`;
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${user.linkedinAccessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': LINKEDIN_API_VERSION,
+          },
+        });
+        const text = await res.text();
+        results.test5_impression_poster_token = { status: res.status, raw: text.substring(0, 500) };
+      } catch (err) { results.test5_impression_poster_token = { error: String(err) }; }
     }
 
-    // Test 4: Try fetching posts via Posts API with person URN (even though r_member_social is "closed")
-    if (user.linkedinProfileId) {
-      try {
-        const personUrn = `urn:li:person:${user.linkedinProfileId}`;
-        const postsResult = await getPostsByAuthor(token, personUrn, 10);
-        results.test4_postsAPI_person = { success: true, postCount: postsResult.posts.length, first3: postsResult.posts.slice(0, 3).map(p => ({ id: p.id, text: p.commentary?.substring(0, 50), mediaType: p.mediaType })) };
-      } catch (err) {
-        results.test4_postsAPI_person = { success: false, error: String(err) };
-      }
-    }
+    // Test 6: Follower count (this works - for comparison)
+    try {
+      const url = `${LINKEDIN_REST_API_BASE}/memberFollowersCount?q=me`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      });
+      const text = await res.text();
+      results.test6_followers = { status: res.status, raw: text.substring(0, 500) };
+    } catch (err) { results.test6_followers = { error: String(err) }; }
 
-    // Test 5: Try fetching posts via Posts API with org URN
-    if (user.linkedinSelectedOrgId) {
+    // Test 7: Try Posts API for org (if org exists in linkedin_organizations)
+    if (user.linkedinOrganizations) {
       try {
-        const orgUrn = `urn:li:organization:${user.linkedinSelectedOrgId}`;
-        const postsResult = await getPostsByAuthor(token, orgUrn, 10);
-        results.test5_postsAPI_org = { success: true, postCount: postsResult.posts.length, first3: postsResult.posts.slice(0, 3).map(p => ({ id: p.id, text: p.commentary?.substring(0, 50), mediaType: p.mediaType })) };
-      } catch (err) {
-        results.test5_postsAPI_org = { success: false, error: String(err) };
-      }
-    } else {
-      results.test5_postsAPI_org = { skipped: "no org selected" };
-    }
-
-    // Test 6: If we got scraped URNs, try to read one post by URN
-    const scrapeData = results.test2_scrape as Record<string, unknown>;
-    if (scrapeData?.success && (scrapeData.first3 as Array<Record<string, unknown>>)?.length > 0) {
-      const firstPost = (scrapeData.first3 as Array<Record<string, unknown>>)[0];
-      const shareUrn = firstPost.shareUrn as string;
-      try {
-        const post = await getPostByUrn(token, shareUrn);
-        results.test6_getPostByUrn = { success: true, data: post ? { id: post.id, text: post.commentary?.substring(0, 50), mediaType: post.mediaType, mediaId: post.mediaId } : null };
-      } catch (err) {
-        results.test6_getPostByUrn = { success: false, error: String(err) };
-      }
-    }
-
-    // Test 7: If we have an org, try to get org posts WITH their share statistics
-    if (user.linkedinSelectedOrgId) {
-      try {
-        // Get org follower count
-        const { getOrganizationFollowerCount } = await import("@/lib/linkedin");
-        const orgStats = await getOrganizationFollowerCount(token, user.linkedinSelectedOrgId);
-        results.test7_orgFollowers = { success: true, data: orgStats };
-      } catch (err) {
-        results.test7_orgFollowers = { success: false, error: String(err) };
-      }
+        const orgs = JSON.parse(user.linkedinOrganizations);
+        if (orgs.length > 0) {
+          const orgId = orgs[0].id;
+          const orgUrn = encodeURIComponent(`urn:li:organization:${orgId}`);
+          const url = `${LINKEDIN_REST_API_BASE}/posts?author=${orgUrn}&q=author&count=5&sortBy=LAST_MODIFIED`;
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': LINKEDIN_API_VERSION,
+              'X-RestLi-Method': 'FINDER',
+            },
+          });
+          const text = await res.text();
+          results.test7_org_posts = { status: res.status, orgId, raw: text.substring(0, 1000) };
+        }
+      } catch (err) { results.test7_org_posts = { error: String(err) }; }
     }
 
     return NextResponse.json(results);
