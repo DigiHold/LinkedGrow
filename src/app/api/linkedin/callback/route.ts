@@ -182,6 +182,7 @@ export async function GET(request: NextRequest) {
               ? new Date(Date.now() + tokenData.expires_in * 1000)
               : null,
             linkedinHeadline: profileData?.headline || null,
+            linkedinVanityName: profileData?.vanityName || null,
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));

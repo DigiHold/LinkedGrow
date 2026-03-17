@@ -29,7 +29,8 @@ export const users = sqliteTable("users", {
   linkedinTokenExpiry: integer("linkedin_token_expiry", { mode: "timestamp" }),
   linkedinProfileId: text("linkedin_profile_id"),
   linkedinProfileName: text("linkedin_profile_name"),
-  linkedinHeadline: text("linkedin_headline"), // User's headline for preview (manually set)
+  linkedinHeadline: text("linkedin_headline"), // User's headline from r_basicprofile
+  linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "nicolas-lecocq")
 
   // LinkedIn posting target selection
   linkedinPostingTarget: text("linkedin_posting_target", { enum: ["profile", "organization"] }).default("profile"),

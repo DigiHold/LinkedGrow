@@ -20,6 +20,7 @@ import {
   getOrganizationFollowerDemographics,
   scrapeOwnProfilePostURNs,
   getPostByUrn,
+  getLinkedInProfileWithHeadline,
   type MemberPostAnalytics,
   type LinkedInAuthorPost,
 } from "@/lib/linkedin";
@@ -181,32 +182,33 @@ export async function GET(request: NextRequest) {
     // PERSONAL PROFILE PATH
     // ===========================
     } else {
-      // Step 1: Scrape user's OWN public profile to get post URNs
-      // This is safe - it's publicly accessible and it's their own profile
-      const vanityName = user.linkedinProfileId; // We'll use profile ID as fallback
-      let scrapedPosts: Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }> = [];
-
-      // Try to get vanity name from the community token (r_basicprofile)
-      let profileVanity = '';
-      try {
-        const { getLinkedInProfileWithHeadline } = await import("@/lib/linkedin");
-        const profileData = await getLinkedInProfileWithHeadline(token);
-        if (profileData?.vanityName) profileVanity = profileData.vanityName;
-        log(`VanityName: ${profileVanity}`);
-      } catch (err) { log(`VanityName fetch failed: ${err}`); }
-
-      if (profileVanity) {
+      // Step 1: Get vanity name (stored in DB from community app callback, or fetch now)
+      let vanityName = user.linkedinVanityName || '';
+      if (!vanityName) {
         try {
-          scrapedPosts = await scrapeOwnProfilePostURNs(profileVanity);
-          log(`Scraped ${scrapedPosts.length} post URNs from public profile`);
-        } catch (err) { log(`Profile scrape FAILED: ${err}`); }
+          const profileData = await getLinkedInProfileWithHeadline(token);
+          if (profileData?.vanityName) {
+            vanityName = profileData.vanityName;
+            // Store for next time
+            await db.update(users).set({ linkedinVanityName: vanityName }).where(eq(users.id, user.id));
+          }
+          log(`Fetched vanityName: ${vanityName}`);
+        } catch (err) { log(`VanityName fetch FAILED: ${err}`); }
       } else {
-        log(`No vanity name - cannot scrape profile`);
+        log(`Using stored vanityName: ${vanityName}`);
       }
 
-      // Step 2: For each scraped post, fetch full content via Posts API (own posts, w_member_social)
-      // And get image URLs
-      const imageUrns: string[] = [];
+      // Step 2: Scrape own public profile for post URNs
+      let scrapedPosts: Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }> = [];
+      if (vanityName) {
+        try {
+          scrapedPosts = await scrapeOwnProfilePostURNs(vanityName);
+          log(`Scraped ${scrapedPosts.length} post URNs from public profile`);
+        } catch (err) { log(`Profile scrape FAILED: ${err}`); }
+      }
+
+      // Step 3: For each post, try to get full content + media via Posts API
+      const postImageMap = new Map<string, string>(); // shareUrn -> imageUrn
       for (const sp of scrapedPosts.slice(0, 15)) {
         try {
           const postData = await getPostByUrn(token, sp.shareUrn);
@@ -215,62 +217,39 @@ export async function GET(request: NextRequest) {
             if (postData.mediaType === "video") postType = "video";
             else if (postData.mediaType === "document") postType = "carousel";
             else if (postData.mediaType === "image" || postData.mediaType === "multiImage") postType = "image";
-
-            if (postData.mediaId?.includes("urn:li:image:")) imageUrns.push(postData.mediaId);
+            if (postData.mediaId?.includes("urn:li:image:")) postImageMap.set(sp.shareUrn, postData.mediaId);
 
             allPosts.push({
-              id: postData.id,
-              content: postData.commentary?.substring(0, 200) || sp.textPreview || null,
-              postType,
-              status: "published",
+              id: postData.id, content: postData.commentary?.substring(0, 200) || sp.textPreview || null,
+              postType, status: "published",
               publishedAt: postData.publishedAt ? new Date(postData.publishedAt).toISOString() : null,
               createdAt: postData.publishedAt ? new Date(postData.publishedAt).toISOString() : null,
-              linkedinPostId: sp.shareUrn,
-              linkedinPostUrl: sp.postUrl,
-              linkedinImageUrl: undefined, // Will be filled after image batch fetch
-              syncedFromLinkedin: true,
+              linkedinPostId: sp.shareUrn, linkedinPostUrl: sp.postUrl, syncedFromLinkedin: true,
             });
+            log(`  Post ${sp.activityId.slice(-6)}: ${postData.commentary?.substring(0, 40) || sp.textPreview.substring(0, 40)}`);
           } else {
-            // Post API failed - use scraped preview data
+            // Posts API failed - use text preview from scrape
             allPosts.push({
-              id: sp.shareUrn,
-              content: sp.textPreview || null,
-              postType: "text",
-              status: "published",
-              publishedAt: null,
-              createdAt: null,
-              linkedinPostId: sp.shareUrn,
-              linkedinPostUrl: sp.postUrl,
-              syncedFromLinkedin: true,
+              id: sp.shareUrn, content: sp.textPreview || null,
+              postType: "text", status: "published",
+              publishedAt: null, createdAt: null,
+              linkedinPostId: sp.shareUrn, linkedinPostUrl: sp.postUrl, syncedFromLinkedin: true,
             });
+            log(`  Post ${sp.activityId.slice(-6)}: API failed, using preview: ${sp.textPreview.substring(0, 40)}`);
           }
-        } catch (err) {
-          log(`Post fetch failed for ${sp.shareUrn}: ${err}`);
-        }
+        } catch (err) { log(`Post ${sp.activityId.slice(-6)} FAILED: ${err}`); }
       }
 
-      // Batch fetch image URLs
+      // Step 4: Batch fetch image URLs
+      const imageUrns = Array.from(postImageMap.values());
       if (imageUrns.length > 0) {
         try {
           const imageUrls = await getImageDownloadUrls(token, imageUrns);
           log(`Got ${imageUrls.size} image URLs`);
           for (const post of allPosts) {
-            const matchingUrn = imageUrns.find(urn => {
-              // Find which post has this image
-              const sp = scrapedPosts.find(s => s.shareUrn === post.linkedinPostId);
-              return sp !== undefined;
-            });
-            // Simple approach: match by checking each post's scraped data
-          }
-          // Set image URLs on posts
-          for (const post of allPosts) {
-            if (!post.linkedinImageUrl) {
-              for (const [urn, url] of imageUrls.entries()) {
-                // We stored imageUrns in order of posts, so we can match
-                post.linkedinImageUrl = url;
-                imageUrls.delete(urn);
-                break;
-              }
+            const imgUrn = postImageMap.get(post.linkedinPostId || '');
+            if (imgUrn && imageUrls.has(imgUrn)) {
+              post.linkedinImageUrl = imageUrls.get(imgUrn);
             }
           }
         } catch (err) { log(`Image batch FAILED: ${err}`); }
@@ -278,7 +257,7 @@ export async function GET(request: NextRequest) {
 
       log(`Total personal posts: ${allPosts.length}`);
 
-      // Step 3: Aggregated analytics (r_member_postAnalytics)
+      // Step 5: Aggregated analytics (r_member_postAnalytics)
       try {
         const agg = await getMemberAggregatedAnalytics(token, { start: startDate, end: new Date() });
         if (agg) {
@@ -288,12 +267,10 @@ export async function GET(request: NextRequest) {
           totalShares = agg.totalReshares;
           membersReached = agg.totalMembersReached;
           log(`Aggregated: imp=${totalImpressions} react=${totalReactions} comm=${totalComments} share=${totalShares}`);
-        } else {
-          log(`Aggregated analytics returned null`);
-        }
+        } else { log(`Aggregated analytics returned null`); }
       } catch (err) { log(`Aggregated analytics FAILED: ${err}`); }
 
-      // Step 4: Per-post analytics using scraped URNs
+      // Step 6: Per-post analytics
       const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 10);
       if (postUrns.length > 0) {
         try {
