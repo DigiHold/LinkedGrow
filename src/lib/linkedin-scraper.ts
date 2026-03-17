@@ -31,7 +31,21 @@ export interface ScrapedProfile {
 // SCRAPER
 // ============================================
 
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours - posts don't change fast, saves proxy bandwidth
+const STALE_SERVE_MS = 24 * 60 * 60 * 1000; // Serve stale cache up to 24h while refreshing in background
+
+// Global rate limiter - max 1 fetch every 3 seconds across all users
+let lastFetchTime = 0;
+const MIN_FETCH_INTERVAL_MS = 3000;
+
+async function waitForRateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastFetchTime;
+  if (elapsed < MIN_FETCH_INTERVAL_MS) {
+    await new Promise((resolve) => setTimeout(resolve, MIN_FETCH_INTERVAL_MS - elapsed));
+  }
+  lastFetchTime = Date.now();
+}
 
 function fetchProfileHtml(vanityName: string): string {
   const user = process.env.IPROYAL_PROXY_USER;
@@ -214,6 +228,7 @@ export async function scrapeLinkedInProfile(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      await waitForRateLimit();
       const html = fetchProfileHtml(vanityName);
 
       if (!html || html.length < 1000) {
@@ -254,4 +269,10 @@ export async function scrapeLinkedInProfile(
 export function isCacheFresh(lastFetchedAt: Date | number): boolean {
   const fetchedMs = lastFetchedAt instanceof Date ? lastFetchedAt.getTime() : lastFetchedAt * 1000;
   return Date.now() - fetchedMs < CACHE_TTL_MS;
+}
+
+/** Returns true if cache is old but still usable (serve stale while refreshing) */
+export function isCacheServable(lastFetchedAt: Date | number): boolean {
+  const fetchedMs = lastFetchedAt instanceof Date ? lastFetchedAt.getTime() : lastFetchedAt * 1000;
+  return Date.now() - fetchedMs < STALE_SERVE_MS;
 }
