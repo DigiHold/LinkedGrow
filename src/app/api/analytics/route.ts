@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, postAnalytics, users } from "@/lib/db/schema";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { posts, users } from "@/lib/db/schema";
+import { eq, and, gte, desc } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import {
@@ -19,9 +19,10 @@ import {
   getOrganizationPageStatistics,
   getOrganizationFollowerDemographics,
   type MemberPostAnalytics,
+  type LinkedInAuthorPost,
 } from "@/lib/linkedin";
 
-interface PostAnalyticsData {
+interface PostData {
   id: string;
   content: string | null;
   postType: string | null;
@@ -41,270 +42,225 @@ interface PostAnalyticsData {
   };
 }
 
-// GET /api/analytics
 export async function GET(request: NextRequest) {
   const logs: string[] = [];
   const log = (msg: string) => { logs.push(msg); console.log(`[Analytics] ${msg}`); };
 
   try {
     const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, session.user.email))
-      .limit(1);
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email)).limit(1);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get("days") || "30");
     const advanced = searchParams.get("advanced") === "true";
 
     const userPlan = (user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "analytics")) {
-      return NextResponse.json({ error: "Analytics requires Pro plan or higher" }, { status: 403 });
-    }
-
-    if (advanced && !canAccessFeature(userPlan, "advancedAnalytics")) {
-      return NextResponse.json({ error: "Advanced analytics requires Business plan" }, { status: 403 });
-    }
+    if (!canAccessFeature(userPlan, "analytics")) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
+    if (advanced && !canAccessFeature(userPlan, "advancedAnalytics")) return NextResponse.json({ error: "Business plan required" }, { status: 403 });
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    const endDate = new Date();
 
     const postingTarget = user.linkedinPostingTarget as "profile" | "organization" | null;
-    const hasLinkedInConnected = !!(user.linkedinAccessToken && user.linkedinProfileId);
+    const hasLinkedIn = !!(user.linkedinAccessToken && user.linkedinProfileId);
     const capabilities = getAnalyticsCapabilities(postingTarget);
+    const token = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+    const isOrg = postingTarget === "organization" && user.linkedinSelectedOrgId;
 
-    // Use community token (has analytics scopes), fallback to poster token
-    const accessToken = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+    log(`User: ${user.email} | Plan: ${user.plan} | Target: ${postingTarget} | Org: ${isOrg ? user.linkedinSelectedOrgId : 'no'}`);
+    log(`CommunityToken: ${!!user.linkedinCommunityAccessToken} | PosterToken: ${!!user.linkedinAccessToken}`);
 
-    log(`User: ${user.email}, Plan: ${user.plan}, Target: ${postingTarget}`);
-    log(`HasLinkedIn: ${hasLinkedInConnected}, HasCommunityToken: ${!!user.linkedinCommunityAccessToken}`);
-    log(`Days: ${days}, Advanced: ${advanced}`);
-
-    // Initialize
-    let totalImpressions = 0;
-    let totalReactions = 0;
-    let totalComments = 0;
-    let totalShares = 0;
-    let followerCount: number | undefined;
-    let followersGained: number | undefined;
-    let membersReached: number | undefined;
+    let totalImpressions = 0, totalReactions = 0, totalComments = 0, totalShares = 0;
+    let followerCount: number | undefined, followersGained: number | undefined, membersReached: number | undefined;
     let followerGrowth: Array<{ date: string; count: number }> | undefined;
-    let pageViews: number | undefined;
-    let uniqueVisitors: number | undefined;
+    let pageViews: number | undefined, uniqueVisitors: number | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let followerDemographics: any;
+    let followerDemographics: any;
 
-    // Fetch all posts directly from LinkedIn (not from DB)
-    const allLinkedInPosts: PostAnalyticsData[] = [];
-    const linkedinPostAnalytics = new Map<string, MemberPostAnalytics>();
+    const allPosts: PostData[] = [];
+    const postAnalyticsMap = new Map<string, MemberPostAnalytics>();
 
-    if (hasLinkedInConnected && accessToken) {
-      const isOrg = postingTarget === "organization" && user.linkedinSelectedOrgId;
-      const authorUrn = isOrg
-        ? `urn:li:organization:${user.linkedinSelectedOrgId}`
-        : `urn:li:person:${user.linkedinProfileId}`;
+    if (!hasLinkedIn || !token) {
+      log(`No LinkedIn connection`);
+      return NextResponse.json({
+        summary: { totalPosts: 0, totalImpressions: 0, totalReactions: 0, totalComments: 0, totalShares: 0, avgEngagement: "0.00" },
+        posts: [], capabilities: { ...capabilities, hasLinkedInConnected: false, postingTarget }, _logs: logs,
+      });
+    }
 
-      log(`Fetching posts for author: ${authorUrn}`);
+    // ===========================
+    // ORGANIZATION PATH
+    // ===========================
+    if (isOrg) {
+      const orgId = user.linkedinSelectedOrgId!;
+      const orgUrn = `urn:li:organization:${orgId}`;
 
-      // Step 1: Fetch all posts from LinkedIn Posts API
+      // 1. Fetch ALL posts from LinkedIn (org has r_organization_social)
       try {
-        const postsResult = await getPostsByAuthor(accessToken, authorUrn, 50);
-        log(`Fetched ${postsResult.posts.length} posts from LinkedIn`);
+        const result = await getPostsByAuthor(token, orgUrn, 100);
+        log(`Org posts fetched: ${result.posts.length}`);
 
-        // Collect image URNs for batch download
-        const imageUrns: string[] = [];
-        for (const post of postsResult.posts) {
-          if (post.mediaId?.includes("urn:li:image:")) {
-            imageUrns.push(post.mediaId);
-          }
-        }
-
-        // Batch fetch image URLs (LinkedIn CDN, not R2)
-        const imageDownloadUrls = imageUrns.length > 0
-          ? await getImageDownloadUrls(accessToken, imageUrns).catch((err) => {
-              log(`Image batch fetch failed: ${err}`);
-              return new Map<string, string>();
-            })
+        // Get image URLs
+        const imageUrns = result.posts.filter(p => p.mediaId?.includes("urn:li:image:")).map(p => p.mediaId!);
+        const imageUrls = imageUrns.length > 0
+          ? await getImageDownloadUrls(token, imageUrns).catch(() => new Map<string, string>())
           : new Map<string, string>();
+        log(`Image URLs: ${imageUrls.size}`);
 
-        log(`Got ${imageDownloadUrls.size} image URLs`);
-
-        // Build post list
-        for (const post of postsResult.posts) {
-          if (post.lifecycleState !== "PUBLISHED") continue;
+        for (const p of result.posts) {
+          if (p.lifecycleState !== "PUBLISHED") continue;
+          const published = new Date(p.publishedAt);
+          if (published < startDate) continue;
 
           let postType: "text" | "image" | "carousel" | "video" = "text";
-          if (post.mediaType === "video") postType = "video";
-          else if (post.mediaType === "document") postType = "carousel";
-          else if (post.mediaType === "image" || post.mediaType === "multiImage" || post.mediaType === "article") postType = "image";
+          if (p.mediaType === "video") postType = "video";
+          else if (p.mediaType === "document") postType = "carousel";
+          else if (p.mediaType === "image" || p.mediaType === "multiImage" || p.mediaType === "article") postType = "image";
 
-          allLinkedInPosts.push({
-            id: post.id,
-            content: post.commentary?.substring(0, 200) || null,
+          allPosts.push({
+            id: p.id,
+            content: p.commentary?.substring(0, 200) || null,
             postType,
             status: "published",
-            publishedAt: new Date(post.publishedAt).toISOString(),
-            createdAt: new Date(post.createdAt).toISOString(),
-            linkedinPostId: post.id,
-            linkedinPostUrl: `https://www.linkedin.com/feed/update/${post.id}/`,
-            linkedinImageUrl: post.mediaId ? imageDownloadUrls.get(post.mediaId) : undefined,
+            publishedAt: published.toISOString(),
+            createdAt: new Date(p.createdAt).toISOString(),
+            linkedinPostId: p.id,
+            linkedinPostUrl: `https://www.linkedin.com/feed/update/${p.id}/`,
+            linkedinImageUrl: p.mediaId ? imageUrls.get(p.mediaId) : undefined,
             syncedFromLinkedin: true,
           });
         }
       } catch (err) {
-        log(`Failed to fetch posts from LinkedIn: ${err}`);
+        log(`Org posts fetch FAILED: ${err}`);
       }
 
-      // Step 2: Fetch aggregated analytics
+      // 2. Org share statistics (impressions per post)
+      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 50);
+      if (postUrns.length > 0) {
+        try {
+          const stats = await getOrganizationShareStatistics(token, orgId, postUrns, { start: startDate, end: new Date() });
+          log(`Org share stats: ${stats.size} posts`);
+          stats.forEach((s, urn) => {
+            totalImpressions += s.impressions;
+            totalReactions += s.likes;
+            totalComments += s.comments;
+            totalShares += s.shares;
+            postAnalyticsMap.set(urn, { postUrn: urn, impressions: s.impressions, membersReached: 0, reactions: s.likes, comments: s.comments, reshares: s.shares });
+          });
+        } catch (err) { log(`Org share stats FAILED: ${err}`); }
+      }
+
+      // 3. Follower count
       try {
-        if (isOrg) {
-          // Organization analytics
-          const orgId = user.linkedinSelectedOrgId!;
-          log(`Fetching org analytics for: ${orgId}`);
+        const orgStats = await getOrganizationFollowerCount(token, orgId);
+        if (orgStats) { followerCount = orgStats.followerCount; followersGained = orgStats.followerGrowth?.totalCount; }
+        log(`Org followers: ${followerCount}, gained: ${followersGained}`);
+      } catch (err) { log(`Org followers FAILED: ${err}`); }
 
-          const orgStats = await getOrganizationFollowerCount(accessToken, orgId);
-          if (orgStats) {
-            followerCount = orgStats.followerCount;
-            followersGained = orgStats.followerGrowth?.totalCount;
-            log(`Org followers: ${followerCount}, gained: ${followersGained}`);
-          } else {
-            log(`Org follower count returned null`);
-          }
+      // 4. Advanced
+      if (advanced) {
+        try {
+          const ps = await getOrganizationPageStatistics(token, orgId, { start: startDate, end: new Date() });
+          if (ps) { pageViews = ps.pageViews; uniqueVisitors = ps.uniqueVisitors; }
+          log(`Page stats: views=${pageViews} visitors=${uniqueVisitors}`);
+        } catch (err) { log(`Org page stats FAILED: ${err}`); }
 
-          // Org share statistics for posts we fetched
-          const postUrns = allLinkedInPosts
-            .map(p => p.linkedinPostId)
-            .filter((id): id is string => !!id)
-            .slice(0, 20);
-
-          if (postUrns.length > 0) {
-            try {
-              const orgShareStats = await getOrganizationShareStatistics(
-                accessToken, orgId, postUrns, { start: startDate, end: endDate }
-              );
-              log(`Got org share stats for ${orgShareStats.size} posts`);
-
-              orgShareStats.forEach((stats, urn) => {
-                totalImpressions += stats.impressions;
-                totalReactions += stats.likes;
-                totalComments += stats.comments;
-                totalShares += stats.shares;
-                linkedinPostAnalytics.set(urn, {
-                  postUrn: urn,
-                  impressions: stats.impressions,
-                  membersReached: 0,
-                  reactions: stats.likes,
-                  comments: stats.comments,
-                  reshares: stats.shares,
-                });
-              });
-            } catch (err) {
-              log(`Org share stats failed: ${err}`);
-            }
-          }
-
-          // Advanced org analytics
-          if (advanced) {
-            try {
-              const pageStats = await getOrganizationPageStatistics(accessToken, orgId, { start: startDate, end: endDate });
-              if (pageStats) {
-                pageViews = pageStats.pageViews;
-                uniqueVisitors = pageStats.uniqueVisitors;
-                log(`Page views: ${pageViews}, visitors: ${uniqueVisitors}`);
-              }
-            } catch (err) {
-              log(`Org page stats failed: ${err}`);
-            }
-
-            try {
-              const demographics = await getOrganizationFollowerDemographics(accessToken, orgId);
-              if (demographics) followerDemographics = demographics;
-              log(`Demographics: ${demographics ? 'yes' : 'no'}`);
-            } catch (err) {
-              log(`Org demographics failed: ${err}`);
-            }
-          }
-        } else {
-          // Personal profile analytics
-          log(`Fetching member analytics`);
-
-          try {
-            const memberAnalytics = await getMemberAggregatedAnalytics(accessToken, { start: startDate, end: endDate });
-            if (memberAnalytics) {
-              totalImpressions = memberAnalytics.totalImpressions;
-              totalReactions = memberAnalytics.totalReactions;
-              totalComments = memberAnalytics.totalComments;
-              totalShares = memberAnalytics.totalReshares;
-              membersReached = memberAnalytics.totalMembersReached;
-              log(`Aggregated: imp=${totalImpressions} react=${totalReactions} comm=${totalComments} share=${totalShares} reached=${membersReached}`);
-            } else {
-              log(`getMemberAggregatedAnalytics returned null`);
-            }
-          } catch (err) {
-            log(`getMemberAggregatedAnalytics failed: ${err}`);
-          }
-
-          // Per-post analytics for top posts
-          const postUrns = allLinkedInPosts
-            .map(p => p.linkedinPostId)
-            .filter((id): id is string => !!id)
-            .slice(0, 10);
-
-          if (postUrns.length > 0) {
-            try {
-              const perPostAnalytics = await getMemberAllPostsAnalytics(accessToken, { start: startDate, end: endDate }, postUrns);
-              log(`Got per-post analytics for ${perPostAnalytics.length} posts`);
-              perPostAnalytics.forEach((ps) => {
-                linkedinPostAnalytics.set(ps.postUrn, ps);
-                log(`  Post ${ps.postUrn.slice(-10)}: imp=${ps.impressions} react=${ps.reactions}`);
-              });
-            } catch (err) {
-              log(`Per-post analytics failed: ${err}`);
-            }
-          }
-
-          // Follower count
-          try {
-            const memberFollowers = await getMemberFollowerCount(accessToken);
-            if (memberFollowers !== null) followerCount = memberFollowers;
-            log(`Follower count: ${followerCount}`);
-          } catch (err) {
-            log(`Follower count failed: ${err}`);
-          }
-
-          // Follower growth time-series
-          try {
-            const followerStats = await getMemberFollowerStats(accessToken, { start: startDate, end: endDate });
-            if (followerStats?.followersByDateRange) {
-              followersGained = followerStats.followersByDateRange.reduce((sum: number, day: { count: number }) => sum + day.count, 0);
-              followerGrowth = followerStats.followersByDateRange;
-              log(`Follower growth: ${followersGained} gained, ${followerGrowth.length} data points`);
-            }
-          } catch (err) {
-            log(`Follower stats failed: ${err}`);
-          }
-        }
-      } catch (err) {
-        log(`LinkedIn analytics section failed: ${err}`);
+        try {
+          const demo = await getOrganizationFollowerDemographics(token, orgId);
+          if (demo) followerDemographics = demo;
+          log(`Demographics: ${demo ? 'yes' : 'no'}`);
+        } catch (err) { log(`Org demographics FAILED: ${err}`); }
       }
+
+    // ===========================
+    // PERSONAL PROFILE PATH
+    // ===========================
     } else {
-      log(`No LinkedIn connection or token - skipping API calls`);
+      // For personal profiles: no r_member_social = can't list posts from API
+      // Use DB posts (created through LinkedGrow) + aggregated analytics from r_member_postAnalytics
+
+      // 1. Get posts from local DB
+      const dbPosts = await db.query.posts.findMany({
+        where: and(eq(posts.userId, user.id), gte(posts.createdAt, startDate)),
+        orderBy: desc(posts.createdAt),
+      });
+      log(`DB posts: ${dbPosts.length}`);
+
+      for (const p of dbPosts) {
+        if (p.status !== "published") continue;
+        allPosts.push({
+          id: p.id,
+          content: p.content?.substring(0, 200) || null,
+          postType: p.postType,
+          status: p.status,
+          publishedAt: p.publishedAt?.toISOString() || null,
+          createdAt: p.createdAt?.toISOString() || null,
+          linkedinPostId: p.linkedinPostId,
+          linkedinPostUrl: p.linkedinPostUrl,
+          linkedinImageUrl: p.linkedinImageUrl,
+          syncedFromLinkedin: p.syncedFromLinkedin ?? false,
+        });
+      }
+
+      // 2. Aggregated analytics (r_member_postAnalytics - works for all member posts)
+      try {
+        const agg = await getMemberAggregatedAnalytics(token, { start: startDate, end: new Date() });
+        if (agg) {
+          totalImpressions = agg.totalImpressions;
+          totalReactions = agg.totalReactions;
+          totalComments = agg.totalComments;
+          totalShares = agg.totalReshares;
+          membersReached = agg.totalMembersReached;
+          log(`Aggregated: imp=${totalImpressions} react=${totalReactions} comm=${totalComments} share=${totalShares}`);
+        } else {
+          log(`Aggregated analytics returned null`);
+        }
+      } catch (err) { log(`Aggregated analytics FAILED: ${err}`); }
+
+      // 3. Per-post analytics for DB posts that have linkedinPostId
+      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 10);
+      if (postUrns.length > 0) {
+        try {
+          const perPost = await getMemberAllPostsAnalytics(token, { start: startDate, end: new Date() }, postUrns);
+          log(`Per-post analytics: ${perPost.length} posts`);
+          perPost.forEach(ps => {
+            postAnalyticsMap.set(ps.postUrn, ps);
+            log(`  ${ps.postUrn.slice(-8)}: imp=${ps.impressions} react=${ps.reactions} comm=${ps.comments}`);
+          });
+        } catch (err) { log(`Per-post analytics FAILED: ${err}`); }
+      } else {
+        log(`No post URNs for per-post analytics`);
+      }
+
+      // 4. Follower count
+      try {
+        const fc = await getMemberFollowerCount(token);
+        if (fc !== null) followerCount = fc;
+        log(`Followers: ${followerCount}`);
+      } catch (err) { log(`Follower count FAILED: ${err}`); }
+
+      // 5. Follower growth
+      try {
+        const fs = await getMemberFollowerStats(token, { start: startDate, end: new Date() });
+        if (fs?.followersByDateRange) {
+          followersGained = fs.followersByDateRange.reduce((sum: number, d: { count: number }) => sum + d.count, 0);
+          followerGrowth = fs.followersByDateRange;
+          log(`Follower growth: ${followersGained} gained, ${followerGrowth.length} points`);
+        }
+      } catch (err) { log(`Follower growth FAILED: ${err}`); }
     }
 
+    // ===========================
+    // BUILD RESPONSE
+    // ===========================
+
     // Attach analytics to posts
-    const postsWithAnalytics: PostAnalyticsData[] = allLinkedInPosts.map((post) => {
+    for (const post of allPosts) {
       if (post.linkedinPostId) {
-        const stats = linkedinPostAnalytics.get(post.linkedinPostId);
+        const stats = postAnalyticsMap.get(post.linkedinPostId);
         if (stats) {
           post.analytics = {
             impressions: stats.impressions,
@@ -315,34 +271,21 @@ export async function GET(request: NextRequest) {
           };
         }
       }
-      return post;
-    });
+    }
 
-    // Sort by impressions and take top 10
-    const top10Posts = postsWithAnalytics
-      .filter(p => p.analytics)
-      .sort((a, b) => (b.analytics?.impressions || 0) - (a.analytics?.impressions || 0))
-      .slice(0, 10);
+    // Top 10 posts by impressions (with analytics), plus fill to 10 without
+    const withAnalytics = allPosts.filter(p => p.analytics).sort((a, b) => (b.analytics?.impressions || 0) - (a.analytics?.impressions || 0));
+    const withoutAnalytics = allPosts.filter(p => !p.analytics);
+    const top10 = [...withAnalytics.slice(0, 10), ...withoutAnalytics.slice(0, Math.max(0, 10 - withAnalytics.length))];
 
-    // Also include posts without analytics (up to 10 total)
-    const postsWithoutAnalytics = postsWithAnalytics.filter(p => !p.analytics).slice(0, Math.max(0, 10 - top10Posts.length));
-    const finalPosts = [...top10Posts, ...postsWithoutAnalytics];
-
-    log(`Final: ${finalPosts.length} posts (${top10Posts.length} with analytics)`);
-
-    // Calculate engagement rate
     const totalEngagements = totalReactions + totalComments + totalShares;
-    const avgEngagement = totalImpressions > 0
-      ? ((totalEngagements / totalImpressions) * 100).toFixed(2)
-      : "0.00";
+    const avgEngagement = totalImpressions > 0 ? ((totalEngagements / totalImpressions) * 100).toFixed(2) : "0.00";
 
-    // Best posting times from posts that have analytics
-    const bestPostingTimes = calculateBestPostingTimes(top10Posts);
+    log(`RESULT: ${allPosts.length} total posts, ${withAnalytics.length} with analytics, returning ${top10.length}`);
 
-    // Build response
     const response: Record<string, unknown> = {
       summary: {
-        totalPosts: allLinkedInPosts.length,
+        totalPosts: allPosts.length,
         totalImpressions,
         totalReactions,
         totalComments,
@@ -352,44 +295,32 @@ export async function GET(request: NextRequest) {
         followersGained,
         membersReached,
       },
-      posts: finalPosts,
+      posts: top10,
       followerGrowth,
-      capabilities: {
-        ...capabilities,
-        hasLinkedInConnected,
-        postingTarget,
-      },
-      linkedinData: hasLinkedInConnected ? {
-        source: "linkedin_api",
-        fetchedAt: new Date().toISOString(),
-      } : undefined,
-      _logs: logs, // Include logs in response for debugging
+      capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, postingTarget },
+      linkedinData: { source: "linkedin_api", fetchedAt: new Date().toISOString() },
+      _logs: logs,
     };
 
-    // Advanced data
+    // Advanced
     if (advanced) {
-      const postTypeStats: Record<string, { count: number; totalEngagement: number }> = {};
-      postsWithAnalytics.forEach((post) => {
-        const type = post.postType || "text";
-        if (!postTypeStats[type]) postTypeStats[type] = { count: 0, totalEngagement: 0 };
-        postTypeStats[type].count++;
-        if (post.analytics) {
-          const eng = post.analytics.impressions > 0
-            ? ((post.analytics.reactions + post.analytics.comments + post.analytics.reshares) / post.analytics.impressions) * 100
-            : 0;
-          postTypeStats[type].totalEngagement += eng;
+      const typeStats: Record<string, { count: number; totalEng: number }> = {};
+      allPosts.forEach(p => {
+        const t = p.postType || "text";
+        if (!typeStats[t]) typeStats[t] = { count: 0, totalEng: 0 };
+        typeStats[t].count++;
+        if (p.analytics && p.analytics.impressions > 0) {
+          typeStats[t].totalEng += ((p.analytics.reactions + p.analytics.comments + p.analytics.reshares) / p.analytics.impressions) * 100;
         }
       });
 
       response.advanced = {
-        postTypePerformance: Object.entries(postTypeStats).map(([type, stats]) => ({
-          type,
-          count: stats.count,
-          avgEngagement: stats.count > 0 ? (stats.totalEngagement / stats.count).toFixed(2) : "0",
+        postTypePerformance: Object.entries(typeStats).map(([type, s]) => ({
+          type, count: s.count, avgEngagement: s.count > 0 ? (s.totalEng / s.count).toFixed(2) : "0",
         })),
         engagementTrend: [],
-        bestPostingTimes,
-        postingTimeHeatmap: calculatePostingTimeHeatmap(postsWithAnalytics),
+        bestPostingTimes: calculateBestPostingTimes(withAnalytics),
+        postingTimeHeatmap: calculateHeatmap(withAnalytics),
         pageViews,
         uniqueVisitors,
         followerDemographics,
@@ -398,96 +329,50 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    log(`FATAL ERROR: ${msg}`);
-    console.error("Analytics route error:", error);
+    log(`FATAL: ${error}`);
     return NextResponse.json({ error: "Failed to fetch analytics", _logs: logs }, { status: 500 });
   }
 }
 
-function calculateBestPostingTimes(posts: PostAnalyticsData[]): {
-  bestDay: string;
-  bestHour: string;
-  insight: string;
-} | undefined {
-  const postsWithData = posts.filter(p => p.analytics && p.publishedAt);
-  if (postsWithData.length < 3) return undefined;
+function calculateBestPostingTimes(posts: PostData[]) {
+  const valid = posts.filter(p => p.analytics && p.publishedAt);
+  if (valid.length < 3) return undefined;
 
-  const dayStats: Record<number, { totalEngagement: number; count: number }> = {};
-  const hourStats: Record<number, { totalEngagement: number; count: number }> = {};
-  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayStats: Record<number, { total: number; count: number }> = {};
+  const hourStats: Record<number, { total: number; count: number }> = {};
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-  postsWithData.forEach((post) => {
-    if (!post.publishedAt || !post.analytics) return;
-    const date = new Date(post.publishedAt);
-    const day = date.getDay();
-    const hour = date.getHours();
-    const engagement = post.analytics.impressions > 0
-      ? ((post.analytics.reactions + post.analytics.comments + post.analytics.reshares) / post.analytics.impressions) * 100
-      : 0;
-
-    if (!dayStats[day]) dayStats[day] = { totalEngagement: 0, count: 0 };
-    dayStats[day].totalEngagement += engagement;
-    dayStats[day].count++;
-
-    if (!hourStats[hour]) hourStats[hour] = { totalEngagement: 0, count: 0 };
-    hourStats[hour].totalEngagement += engagement;
-    hourStats[hour].count++;
+  valid.forEach(p => {
+    const d = new Date(p.publishedAt!);
+    const eng = p.analytics!.impressions > 0 ? ((p.analytics!.reactions + p.analytics!.comments + p.analytics!.reshares) / p.analytics!.impressions) * 100 : 0;
+    const day = d.getDay(), hour = d.getHours();
+    if (!dayStats[day]) dayStats[day] = { total: 0, count: 0 };
+    dayStats[day].total += eng; dayStats[day].count++;
+    if (!hourStats[hour]) hourStats[hour] = { total: 0, count: 0 };
+    hourStats[hour].total += eng; hourStats[hour].count++;
   });
 
-  let bestDay = 2;
-  let bestDayAvg = 0;
-  Object.entries(dayStats).forEach(([day, stats]) => {
-    const avg = stats.count > 0 ? stats.totalEngagement / stats.count : 0;
-    if (avg > bestDayAvg) { bestDayAvg = avg; bestDay = parseInt(day); }
-  });
+  let bestDay = 2, bestDayAvg = 0;
+  Object.entries(dayStats).forEach(([d, s]) => { const a = s.total / s.count; if (a > bestDayAvg) { bestDayAvg = a; bestDay = +d; } });
+  let bestHour = 10, bestHourAvg = 0;
+  Object.entries(hourStats).forEach(([h, s]) => { const a = s.total / s.count; if (a > bestHourAvg) { bestHourAvg = a; bestHour = +h; } });
 
-  let bestHour = 10;
-  let bestHourAvg = 0;
-  Object.entries(hourStats).forEach(([hour, stats]) => {
-    const avg = stats.count > 0 ? stats.totalEngagement / stats.count : 0;
-    if (avg > bestHourAvg) { bestHourAvg = avg; bestHour = parseInt(hour); }
-  });
-
-  const formatHour = (hour: number) => {
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h = hour % 12 || 12;
-    return `${h}:00 ${ampm}`;
-  };
-
-  return {
-    bestDay: dayNames[bestDay],
-    bestHour: formatHour(bestHour),
-    insight: `Your audience engages most on ${dayNames[bestDay]}s around ${formatHour(bestHour)}`,
-  };
+  const fh = (h: number) => `${h % 12 || 12}:00 ${h >= 12 ? "PM" : "AM"}`;
+  return { bestDay: days[bestDay], bestHour: fh(bestHour), insight: `Your audience engages most on ${days[bestDay]}s around ${fh(bestHour)}` };
 }
 
-function calculatePostingTimeHeatmap(
-  posts: PostAnalyticsData[]
-): Array<{ day: number; hour: number; avgEngagement: number; postCount: number }> {
-  const grid: Record<string, { totalEngagement: number; count: number }> = {};
-
-  posts.forEach((post) => {
-    if (!post.publishedAt || !post.analytics) return;
-    const date = new Date(post.publishedAt);
-    const day = date.getDay();
-    const hour = date.getHours();
-    const key = `${day}-${hour}`;
-    const engagement = post.analytics.impressions > 0
-      ? ((post.analytics.reactions + post.analytics.comments + post.analytics.reshares) / post.analytics.impressions) * 100
-      : 0;
-    if (!grid[key]) grid[key] = { totalEngagement: 0, count: 0 };
-    grid[key].totalEngagement += engagement;
-    grid[key].count++;
+function calculateHeatmap(posts: PostData[]) {
+  const grid: Record<string, { total: number; count: number }> = {};
+  posts.forEach(p => {
+    if (!p.publishedAt || !p.analytics) return;
+    const d = new Date(p.publishedAt);
+    const key = `${d.getDay()}-${d.getHours()}`;
+    const eng = p.analytics.impressions > 0 ? ((p.analytics.reactions + p.analytics.comments + p.analytics.reshares) / p.analytics.impressions) * 100 : 0;
+    if (!grid[key]) grid[key] = { total: 0, count: 0 };
+    grid[key].total += eng; grid[key].count++;
   });
-
-  return Object.entries(grid).map(([key, data]) => {
-    const [day, hour] = key.split("-").map(Number);
-    return {
-      day,
-      hour,
-      avgEngagement: data.count > 0 ? parseFloat((data.totalEngagement / data.count).toFixed(2)) : 0,
-      postCount: data.count,
-    };
+  return Object.entries(grid).map(([k, v]) => {
+    const [day, hour] = k.split("-").map(Number);
+    return { day, hour, avgEngagement: +(v.total / v.count).toFixed(2), postCount: v.count };
   });
 }
