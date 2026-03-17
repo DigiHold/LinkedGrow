@@ -306,9 +306,18 @@ export default function EngagementPage() {
 
         {!isLoading && engagementData && (
           <>
-            {/* Community connection */}
-            {!engagementData.communityConnected && (
+            {/* Community connection / disconnection */}
+            {!engagementData.communityConnected ? (
               <CommunityConnectBanner isConnected={false} profileName={engagementData.profileName} />
+            ) : (
+              <CommunityConnectBanner
+                isConnected={true}
+                profileName={engagementData.profileName}
+                onDisconnect={async () => {
+                  await fetch("/api/linkedin/community/disconnect", { method: "POST" });
+                  window.location.reload();
+                }}
+              />
             )}
 
             {/* Feed loading */}

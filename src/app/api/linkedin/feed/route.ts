@@ -6,7 +6,8 @@ import { eq, and, sql } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import {
-  getLinkedInFeed,
+  getPostsByAuthor,
+  getImageDownloadUrls,
   likeLinkedInPost,
   createLinkedInComment,
 } from "@/lib/linkedin";
@@ -25,7 +26,7 @@ async function getTodayCounts(userId: string) {
   return { likes: likes[0]?.count || 0, comments: comments[0]?.count || 0 };
 }
 
-// GET /api/linkedin/feed - Fetch enriched LinkedIn feed
+// GET /api/linkedin/feed - Fetch posts from connected profile or organization
 export async function GET() {
   try {
     const session = await auth();
@@ -56,8 +57,53 @@ export async function GET() {
       );
     }
 
-    const result = await getLinkedInFeed(accessToken, 20);
-    return NextResponse.json(result);
+    // Determine author URN - use org if posting to company page, otherwise personal profile
+    const isOrg = user.linkedinPostingTarget === "organization" && user.linkedinSelectedOrgId;
+    const authorUrn = isOrg
+      ? `urn:li:organization:${user.linkedinSelectedOrgId}`
+      : user.linkedinProfileId
+        ? `urn:li:person:${user.linkedinProfileId}`
+        : null;
+
+    if (!authorUrn) {
+      return NextResponse.json({ error: "LinkedIn profile not found" }, { status: 400 });
+    }
+
+    // Fetch posts by author (uses q=author which works with r_organization_social)
+    const result = await getPostsByAuthor(accessToken, authorUrn, 30);
+
+    // Collect image URNs to resolve
+    const imageUrns: string[] = [];
+    for (const post of result.posts) {
+      if (post.mediaId?.includes("urn:li:image:")) {
+        imageUrns.push(post.mediaId);
+      }
+    }
+
+    // Batch fetch image download URLs
+    const imageDownloadUrls = imageUrns.length > 0
+      ? await getImageDownloadUrls(accessToken, imageUrns).catch(() => new Map<string, string>())
+      : new Map<string, string>();
+
+    // Build enriched response
+    const posts = result.posts
+      .filter((p) => p.lifecycleState === "PUBLISHED")
+      .map((post) => ({
+        urn: post.id,
+        authorUrn: post.author,
+        authorName: isOrg ? (user.linkedinSelectedOrgName || "Company") : (user.linkedinProfileName || "You"),
+        authorHeadline: "",
+        authorProfilePicture: user.image || "",
+        commentary: post.commentary,
+        publishedAt: post.publishedAt,
+        mediaType: post.mediaType,
+        imageUrl: post.mediaId ? imageDownloadUrls.get(post.mediaId) : undefined,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+      }));
+
+    return NextResponse.json({ posts, total: posts.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Failed to fetch feed:", message, error);
@@ -90,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     const accessToken = user.linkedinCommunityAccessToken;
     if (!accessToken || !user.linkedinProfileId) {
-      return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
+      return NextResponse.json({ error: "Community App not connected" }, { status: 400 });
     }
 
     const body = await request.json();
