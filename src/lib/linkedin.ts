@@ -416,19 +416,17 @@ export async function createLinkedInComment(
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`;
-  const requestBody = {
-    actor: actorUrn,
+  // Try the new comments endpoint first
+  const commentsUrl = `${LINKEDIN_REST_API_BASE}/comments`;
+  const commentsBody = {
     object: postUrn,
-    message: {
-      text: commentText,
-    },
+    actor: actorUrn,
+    message: { text: commentText },
   };
 
-  console.log('[LinkedIn Comment] Request:', { url, actor: actorUrn, object: postUrn, commentLength: commentText.length });
+  console.log('[LinkedIn Comment] Trying comments endpoint:', { postUrn, actor: actorUrn, commentLength: commentText.length });
 
-  const response = await fetch(url, {
+  let response = await fetch(commentsUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -436,16 +434,48 @@ export async function createLinkedInComment(
       'X-Restli-Protocol-Version': '2.0.0',
       'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify(commentsBody),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Comment] Error:', { status: response.status, error });
-    throw new Error(`Failed to create LinkedIn comment (${response.status}): ${error}`);
+    const commentsError = await response.text();
+    console.log('[LinkedIn Comment] Comments endpoint failed:', response.status, commentsError);
+
+    // Fall back to socialActions endpoint
+    const encodedPostUrn = encodeURIComponent(postUrn);
+    const socialUrl = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`;
+    const socialBody = {
+      actor: actorUrn,
+      object: postUrn,
+      message: { text: commentText },
+    };
+
+    console.log('[LinkedIn Comment] Trying socialActions fallback');
+
+    response = await fetch(socialUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify(socialBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[LinkedIn Comment] Both endpoints failed:', { status: response.status, error });
+      throw new Error(`Failed to create LinkedIn comment (${response.status}): ${error}`);
+    }
   }
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
   console.log('[LinkedIn Comment] Success:', { id: data.id || data['$URN'] });
   return { id: data.id || data['$URN'] || 'comment-created' };
 }
@@ -1895,16 +1925,16 @@ export async function likeLinkedInPost(
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes`;
-  const requestBody = {
-    actor: actorUrn,
-    object: postUrn,
+  // Try the new reactions endpoint first, fall back to socialActions
+  const reactionsUrl = `${LINKEDIN_REST_API_BASE}/reactions`;
+  const reactionsBody = {
+    root: postUrn,
+    reactionType: 'LIKE',
   };
 
-  console.log('[LinkedIn Like] Request:', { url, actor: actorUrn, object: postUrn });
+  console.log('[LinkedIn Like] Trying reactions endpoint:', { postUrn, actor: actorUrn });
 
-  const response = await fetch(url, {
+  let response = await fetch(reactionsUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -1912,13 +1942,36 @@ export async function likeLinkedInPost(
       'X-Restli-Protocol-Version': '2.0.0',
       'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify(reactionsBody),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Like] Error:', { status: response.status, error });
-    throw new Error(`Failed to like LinkedIn post (${response.status}): ${error}`);
+    const reactionsError = await response.text();
+    console.log('[LinkedIn Like] Reactions endpoint failed:', response.status, reactionsError);
+
+    // Fall back to socialActions endpoint
+    const encodedPostUrn = encodeURIComponent(postUrn);
+    const socialUrl = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes`;
+    const socialBody = { actor: actorUrn, object: postUrn };
+
+    console.log('[LinkedIn Like] Trying socialActions fallback');
+
+    response = await fetch(socialUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify(socialBody),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[LinkedIn Like] Both endpoints failed:', { status: response.status, error });
+      throw new Error(`Failed to like LinkedIn post (${response.status}): ${error}`);
+    }
   }
 
   console.log('[LinkedIn Like] Success:', { postUrn });
@@ -1927,7 +1980,6 @@ export async function likeLinkedInPost(
 
 /**
  * Unlike a LinkedIn post
- * Uses the REST API socialActions endpoint
  */
 export async function unlikeLinkedInPost(
   accessToken: string,
@@ -1939,13 +1991,11 @@ export async function unlikeLinkedInPost(
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const encodedActorUrn = encodeURIComponent(actorUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`;
+  // Try reactions endpoint first
+  const encodedRoot = encodeURIComponent(postUrn);
+  const encodedActor = encodeURIComponent(actorUrn);
 
-  console.log('[LinkedIn Unlike] Request:', { url, actor: actorUrn, object: postUrn });
-
-  const response = await fetch(url, {
+  let response = await fetch(`${LINKEDIN_REST_API_BASE}/reactions/(actor:${encodedActor},root:${encodedRoot})`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -1955,12 +2005,24 @@ export async function unlikeLinkedInPost(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Unlike] Error:', { status: response.status, error });
-    throw new Error(`Failed to unlike LinkedIn post (${response.status}): ${error}`);
+    // Fall back to socialActions
+    const encodedPostUrn = encodeURIComponent(postUrn);
+    const encodedActorUrn = encodeURIComponent(actorUrn);
+    response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to unlike LinkedIn post (${response.status}): ${error}`);
+    }
   }
 
-  console.log('[LinkedIn Unlike] Success:', { postUrn });
   return { success: true };
 }
 

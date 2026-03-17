@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Requires Pro plan" }, { status: 403 });
     }
 
-    // Use Community App token (w_member_social scope)
+    // Community App token has w_member_social from Community Management API
     const accessToken = user.linkedinCommunityAccessToken;
     if (!accessToken || !user.linkedinProfileId) {
       return NextResponse.json(
@@ -47,29 +47,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert urn:li:activity:XXX to the format LinkedIn socialActions API expects
+    // Convert urn:li:activity:XXX to urn:li:share:XXX for the LinkedIn API
+    let apiUrn = postUrn;
     const activityMatch = postUrn.match(/^urn:li:activity:(\d+)$/);
-    const activityId = activityMatch ? activityMatch[1] : null;
+    if (activityMatch) {
+      apiUrn = `urn:li:share:${activityMatch[1]}`;
+    }
 
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      // Try urn:li:share first, fall back to urn:li:ugcPost
-      let likeError: Error | null = null;
-      const urnFormats = activityId
-        ? [`urn:li:share:${activityId}`, `urn:li:ugcPost:${activityId}`, postUrn]
-        : [postUrn];
-
-      for (const urn of urnFormats) {
-        try {
-          await likeLinkedInPost(accessToken, urn, user.linkedinProfileId);
-          likeError = null;
-          break;
-        } catch (err) {
-          likeError = err instanceof Error ? err : new Error(String(err));
-        }
-      }
-      if (likeError) throw likeError;
+      await likeLinkedInPost(accessToken, apiUrn, user.linkedinProfileId);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -87,22 +75,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Try urn:li:share first, fall back to urn:li:ugcPost
-      let commentError: Error | null = null;
-      const commentUrnFormats = activityId
-        ? [`urn:li:share:${activityId}`, `urn:li:ugcPost:${activityId}`, postUrn]
-        : [postUrn];
-
-      for (const urn of commentUrnFormats) {
-        try {
-          await createLinkedInComment(accessToken, urn, user.linkedinProfileId, text.trim());
-          commentError = null;
-          break;
-        } catch (err) {
-          commentError = err instanceof Error ? err : new Error(String(err));
-        }
-      }
-      if (commentError) throw commentError;
+      await createLinkedInComment(accessToken, apiUrn, user.linkedinProfileId, text.trim());
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
