@@ -1207,6 +1207,9 @@ export async function getMemberAggregatedAnalytics(
           if (!response.ok) {
             const errorText = await response.text();
             console.warn(`[Analytics] ${metric} FAILED ${response.status}: ${errorText.substring(0, 300)}`);
+            if (response.status === 429) {
+              console.warn(`[Analytics] Rate limited - returning partial data`);
+            }
             return;
           }
 

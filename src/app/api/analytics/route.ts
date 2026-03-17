@@ -25,6 +25,10 @@ import {
   type LinkedInAuthorPost,
 } from "@/lib/linkedin";
 
+// In-memory cache to avoid burning rate limits (Dev Tier: 100 req/member/day)
+const analyticsCache = new Map<string, { data: Record<string, unknown>; timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
 interface PostData {
   id: string;
   content: string | null;
@@ -60,6 +64,17 @@ export async function GET(request: NextRequest) {
     const days = parseInt(searchParams.get("days") || "30");
     const advanced = searchParams.get("advanced") === "true";
 
+    // Check cache first (1 hour TTL) to avoid rate limits
+    const refresh = searchParams.get("refresh") === "true";
+    const cacheKey = `${user.id}:${days}:${advanced}`;
+    if (!refresh) {
+      const cached = analyticsCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        log(`Returning cached data (${Math.round((Date.now() - cached.timestamp) / 60000)}min old)`);
+        return NextResponse.json(cached.data);
+      }
+    }
+
     const userPlan = (user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "analytics")) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
     if (advanced && !canAccessFeature(userPlan, "advancedAnalytics")) return NextResponse.json({ error: "Business plan required" }, { status: 403 });
@@ -90,7 +105,7 @@ export async function GET(request: NextRequest) {
       log(`No LinkedIn connection`);
       return NextResponse.json({
         summary: { totalPosts: 0, totalImpressions: 0, totalReactions: 0, totalComments: 0, totalShares: 0, avgEngagement: "0.00" },
-        posts: [], capabilities: { ...capabilities, hasLinkedInConnected: false, postingTarget }, _logs: logs,
+        posts: [], capabilities: { ...capabilities, hasLinkedInConnected: false, postingTarget },
       });
     }
 
@@ -347,7 +362,7 @@ export async function GET(request: NextRequest) {
       followerGrowth,
       capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, postingTarget },
       linkedinData: { source: "linkedin_api", fetchedAt: new Date().toISOString() },
-      _logs: logs,
+      _v: 1,
     };
 
     // Advanced
@@ -375,10 +390,13 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Cache the response for 1 hour
+    analyticsCache.set(cacheKey, { data: response, timestamp: Date.now() });
+
     return NextResponse.json(response);
   } catch (error) {
     log(`FATAL: ${error}`);
-    return NextResponse.json({ error: "Failed to fetch analytics", _logs: logs }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
   }
 }
 
