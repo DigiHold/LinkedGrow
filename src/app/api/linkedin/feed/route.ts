@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, users, engagementActions } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import {
@@ -10,6 +10,19 @@ import {
   createLinkedInComment,
 } from "@/lib/linkedin";
 import { randomUUID } from "crypto";
+
+async function getTodayCounts(userId: string) {
+  const today = new Date().toISOString().split("T")[0];
+  const likes = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(engagementActions)
+    .where(and(eq(engagementActions.userId, userId), eq(engagementActions.type, "like"), eq(engagementActions.date, today)));
+  const comments = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(engagementActions)
+    .where(and(eq(engagementActions.userId, userId), eq(engagementActions.type, "comment"), eq(engagementActions.date, today)));
+  return { likes: likes[0]?.count || 0, comments: comments[0]?.count || 0 };
+}
 
 // GET /api/linkedin/feed - Fetch LinkedIn feed
 export async function GET() {
@@ -118,7 +131,8 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
       });
 
-      return NextResponse.json({ success: true });
+      const counts = await getTodayCounts(user.id);
+      return NextResponse.json({ success: true, today: counts });
     }
 
     if (action === "comment") {
@@ -147,7 +161,8 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
       });
 
-      return NextResponse.json({ success: true });
+      const counts = await getTodayCounts(user.id);
+      return NextResponse.json({ success: true, today: counts });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
