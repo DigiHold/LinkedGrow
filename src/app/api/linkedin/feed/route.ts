@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, users, engagementActions } from "@/lib/db";
+import { db } from "@/lib/db";
+import { users, engagementActions } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
@@ -24,7 +25,7 @@ async function getTodayCounts(userId: string) {
   return { likes: likes[0]?.count || 0, comments: comments[0]?.count || 0 };
 }
 
-// GET /api/linkedin/feed - Fetch LinkedIn feed
+// GET /api/linkedin/feed - Fetch enriched LinkedIn feed
 export async function GET() {
   try {
     const session = await auth();
@@ -44,30 +45,19 @@ export async function GET() {
 
     const userPlan = (user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "engagement")) {
-      return NextResponse.json(
-        { error: "Engagement requires Pro plan or higher" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Engagement requires Pro plan or higher" }, { status: 403 });
     }
 
-    // Use community token if available, fallback to poster token
-    const accessToken =
-      user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+    const accessToken = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
     if (!accessToken) {
-      return NextResponse.json(
-        { error: "LinkedIn not connected" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
-    const result = await getLinkedInFeed(accessToken);
+    const result = await getLinkedInFeed(accessToken, 20);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to fetch feed:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch feed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch feed" }, { status: 500 });
   }
 }
 
@@ -91,29 +81,19 @@ export async function POST(request: NextRequest) {
 
     const userPlan = (user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "engagement")) {
-      return NextResponse.json(
-        { error: "Engagement requires Pro plan or higher" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Engagement requires Pro plan or higher" }, { status: 403 });
     }
 
-    const accessToken =
-      user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+    const accessToken = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
     if (!accessToken || !user.linkedinProfileId) {
-      return NextResponse.json(
-        { error: "LinkedIn not connected" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
     const body = await request.json();
     const { action, postUrn, text } = body;
 
     if (!action || !postUrn) {
-      return NextResponse.json(
-        { error: "Missing action or postUrn" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing action or postUrn" }, { status: 400 });
     }
 
     const today = new Date().toISOString().split("T")[0];
@@ -121,7 +101,6 @@ export async function POST(request: NextRequest) {
     if (action === "like") {
       await likeLinkedInPost(accessToken, postUrn, user.linkedinProfileId);
 
-      // Track in engagement actions
       await db.insert(engagementActions).values({
         id: randomUUID(),
         userId: user.id,
@@ -137,20 +116,11 @@ export async function POST(request: NextRequest) {
 
     if (action === "comment") {
       if (!text || text.trim().length === 0) {
-        return NextResponse.json(
-          { error: "Comment text is required" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Comment text is required" }, { status: 400 });
       }
 
-      await createLinkedInComment(
-        accessToken,
-        postUrn,
-        user.linkedinProfileId,
-        text.trim()
-      );
+      await createLinkedInComment(accessToken, postUrn, user.linkedinProfileId, text.trim());
 
-      // Track in engagement actions
       await db.insert(engagementActions).values({
         id: randomUUID(),
         userId: user.id,
@@ -168,9 +138,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("Failed to perform feed action:", error);
-    return NextResponse.json(
-      { error: "Failed to perform action" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to perform action" }, { status: 500 });
   }
 }

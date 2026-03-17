@@ -1886,6 +1886,10 @@ export async function reshareLinkedInPost(
  * Get LinkedIn feed posts for the authenticated member
  * Requires r_member_social scope (Community Management API)
  */
+/**
+ * Fetch LinkedIn feed with enriched data (author profiles, media, social counts)
+ * Returns fully resolved posts ready for display
+ */
 export async function getLinkedInFeed(
   accessToken: string,
   count: number = 20,
@@ -1893,7 +1897,7 @@ export async function getLinkedInFeed(
 ): Promise<{ posts: LinkedInFeedPost[]; total: number }> {
   const url = `${LINKEDIN_REST_API_BASE}/posts?q=feed&count=${count}&start=${start}`;
 
-  console.log('[LinkedIn Feed] Request:', { url, count, start });
+  console.log('[LinkedIn Feed] Fetching:', { count, start });
 
   const response = await fetch(url, {
     method: 'GET',
@@ -1911,24 +1915,252 @@ export async function getLinkedInFeed(
   }
 
   const data = await response.json();
-  const posts: LinkedInFeedPost[] = (data.elements || []).map((element: Record<string, unknown>) => ({
-    urn: (element.id as string) || '',
-    author: (element.author as string) || '',
-    commentary: (element.commentary as string) || '',
-    publishedAt: (element.publishedAt as string) || '',
-    lifecycleState: (element.lifecycleState as string) || '',
-    visibility: (element.visibility as string) || '',
-    content: element.content || null,
-    socialDetail: element.socialDetail || null,
-  }));
+  const elements = data.elements || [];
 
-  console.log('[LinkedIn Feed] Success:', { count: posts.length });
+  // Parse raw posts and collect URNs to resolve
+  const authorUrns = new Set<string>();
+  const imageUrns: string[] = [];
+  const postUrns: string[] = [];
+
+  interface RawPost {
+    urn: string;
+    authorUrn: string;
+    commentary: string;
+    publishedAt: number;
+    mediaId?: string;
+    mediaType?: 'image' | 'video' | 'document' | 'multiImage' | 'article';
+    multiImageIds?: string[];
+    articleThumbnail?: string;
+    articleUrl?: string;
+    articleTitle?: string;
+  }
+
+  const rawPosts: RawPost[] = elements.map((el: Record<string, unknown>) => {
+    const authorUrn = (el.author as string) || '';
+    authorUrns.add(authorUrn);
+    postUrns.push((el.id as string) || '');
+
+    const content = el.content as Record<string, unknown> | undefined;
+    let mediaId: string | undefined;
+    let mediaType: RawPost['mediaType'];
+    let multiImageIds: string[] | undefined;
+    let articleThumbnail: string | undefined;
+    let articleUrl: string | undefined;
+    let articleTitle: string | undefined;
+
+    if (content?.media) {
+      const media = content.media as Record<string, unknown>;
+      mediaId = media.id as string;
+      if (mediaId?.includes('urn:li:image:')) {
+        mediaType = 'image';
+        imageUrns.push(mediaId);
+      } else if (mediaId?.includes('urn:li:video:')) {
+        mediaType = 'video';
+      } else if (mediaId?.includes('urn:li:document:')) {
+        mediaType = 'document';
+      }
+    } else if (content?.multiImage) {
+      mediaType = 'multiImage';
+      const mi = content.multiImage as Record<string, unknown>;
+      const images = mi.images as Array<Record<string, unknown>> | undefined;
+      if (images) {
+        multiImageIds = images.map(img => img.id as string).filter(Boolean);
+        multiImageIds.forEach(id => { if (id.includes('urn:li:image:')) imageUrns.push(id); });
+      }
+    } else if (content?.article) {
+      mediaType = 'article';
+      const article = content.article as Record<string, unknown>;
+      articleThumbnail = article.thumbnail as string;
+      articleUrl = article.source as string;
+      articleTitle = article.title as string;
+      if (articleThumbnail?.includes('urn:li:image:')) imageUrns.push(articleThumbnail);
+    }
+
+    return {
+      urn: (el.id as string) || '',
+      authorUrn,
+      commentary: (el.commentary as string) || '',
+      publishedAt: (el.publishedAt as number) || 0,
+      mediaId,
+      mediaType,
+      multiImageIds,
+      articleThumbnail,
+      articleUrl,
+      articleTitle,
+    };
+  });
+
+  // Resolve in parallel: author profiles, image URLs, social counts
+  const [authorProfiles, imageDownloadUrls, socialCounts] = await Promise.all([
+    resolveAuthorProfiles(accessToken, Array.from(authorUrns)),
+    imageUrns.length > 0 ? getImageDownloadUrls(accessToken, imageUrns) : Promise.resolve(new Map<string, string>()),
+    resolveSocialCounts(accessToken, postUrns),
+  ]);
+
+  // Build enriched feed posts
+  const posts: LinkedInFeedPost[] = rawPosts.map((raw) => {
+    const author = authorProfiles.get(raw.authorUrn);
+    const social = socialCounts.get(raw.urn);
+
+    // Resolve media URLs
+    let imageUrl: string | undefined;
+    let multiImageUrls: string[] | undefined;
+
+    if (raw.mediaType === 'image' && raw.mediaId) {
+      imageUrl = imageDownloadUrls.get(raw.mediaId);
+    } else if (raw.mediaType === 'multiImage' && raw.multiImageIds) {
+      multiImageUrls = raw.multiImageIds
+        .map(id => imageDownloadUrls.get(id))
+        .filter((url): url is string => !!url);
+      if (multiImageUrls.length > 0) imageUrl = multiImageUrls[0];
+    } else if (raw.mediaType === 'article' && raw.articleThumbnail) {
+      imageUrl = imageDownloadUrls.get(raw.articleThumbnail);
+    }
+
+    return {
+      urn: raw.urn,
+      authorUrn: raw.authorUrn,
+      authorName: author?.name || 'LinkedIn User',
+      authorHeadline: author?.headline || '',
+      authorProfilePicture: author?.profilePicture || '',
+      commentary: raw.commentary,
+      publishedAt: raw.publishedAt,
+      mediaType: raw.mediaType,
+      imageUrl,
+      multiImageUrls,
+      articleUrl: raw.articleUrl,
+      articleTitle: raw.articleTitle,
+      likes: social?.likes || 0,
+      comments: social?.comments || 0,
+      shares: social?.shares || 0,
+    };
+  });
+
+  console.log('[LinkedIn Feed] Enriched:', { posts: posts.length, authors: authorProfiles.size, images: imageDownloadUrls.size });
   return { posts, total: data.paging?.total || posts.length };
 }
 
 /**
- * Get social actions (likes, comments count) for a post
- * Requires r_member_social or r_organization_social scope
+ * Resolve author profiles from URNs (person or organization)
+ */
+async function resolveAuthorProfiles(
+  accessToken: string,
+  urns: string[]
+): Promise<Map<string, { name: string; headline: string; profilePicture: string }>> {
+  const profiles = new Map<string, { name: string; headline: string; profilePicture: string }>();
+
+  for (const urn of urns) {
+    try {
+      if (urn.includes('urn:li:person:')) {
+        // Fetch person profile via REST API
+        const personId = urn.replace('urn:li:person:', '');
+        const url = `${LINKEDIN_REST_API_BASE}/people/(id:${personId})?projection=(localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams))`;
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': LINKEDIN_API_VERSION,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const firstName = data.localizedFirstName || '';
+          const lastName = data.localizedLastName || '';
+          const headline = data.localizedHeadline || '';
+
+          // Extract profile picture URL from playableStreams
+          let profilePicture = '';
+          const displayImage = data.profilePicture?.['displayImage~']?.elements;
+          if (displayImage && displayImage.length > 0) {
+            // Get the largest available image
+            const largest = displayImage[displayImage.length - 1];
+            profilePicture = largest?.identifiers?.[0]?.identifier || '';
+          }
+
+          profiles.set(urn, {
+            name: `${firstName} ${lastName}`.trim() || 'LinkedIn User',
+            headline,
+            profilePicture,
+          });
+        }
+      } else if (urn.includes('urn:li:organization:')) {
+        const orgId = urn.replace('urn:li:organization:', '');
+        const url = `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,localizedDescription,logoV2(original~:playableStreams))`;
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          let logoUrl = '';
+          if (data.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
+            logoUrl = data.logoV2['original~'].elements[0].identifiers[0].identifier;
+          }
+
+          profiles.set(urn, {
+            name: data.localizedName || 'Organization',
+            headline: data.localizedDescription || '',
+            profilePicture: logoUrl,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[LinkedIn Feed] Failed to resolve profile ${urn}:`, error);
+    }
+  }
+
+  return profiles;
+}
+
+/**
+ * Batch resolve social counts for multiple posts
+ */
+async function resolveSocialCounts(
+  accessToken: string,
+  postUrns: string[]
+): Promise<Map<string, { likes: number; comments: number; shares: number }>> {
+  const counts = new Map<string, { likes: number; comments: number; shares: number }>();
+
+  // Fetch social actions per post (LinkedIn doesn't have a batch endpoint for this)
+  await Promise.all(
+    postUrns.map(async (urn) => {
+      try {
+        const encodedUrn = encodeURIComponent(urn);
+        const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}`;
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': LINKEDIN_API_VERSION,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          counts.set(urn, {
+            likes: data.likesSummary?.totalLikes || 0,
+            comments: data.commentsSummary?.totalFirstLevelComments || 0,
+            shares: data.sharesSummary?.totalShares || 0,
+          });
+        }
+      } catch {
+        // Silently skip failed social count fetches
+      }
+    })
+  );
+
+  return counts;
+}
+
+/**
+ * Get social actions (likes, comments count) for a single post
  */
 export async function getLinkedInPostSocialActions(
   accessToken: string,
@@ -1958,16 +2190,23 @@ export async function getLinkedInPostSocialActions(
   };
 }
 
-// Feed post interface for Community Management API
+// Enriched feed post with resolved author profile, media URLs, and social counts
 export interface LinkedInFeedPost {
   urn: string;
-  author: string;
+  authorUrn: string;
+  authorName: string;
+  authorHeadline: string;
+  authorProfilePicture: string;
   commentary: string;
-  publishedAt: string;
-  lifecycleState: string;
-  visibility: string;
-  content: Record<string, unknown> | null;
-  socialDetail: Record<string, unknown> | null;
+  publishedAt: number;
+  mediaType?: 'image' | 'video' | 'document' | 'multiImage' | 'article';
+  imageUrl?: string;
+  multiImageUrls?: string[];
+  articleUrl?: string;
+  articleTitle?: string;
+  likes: number;
+  comments: number;
+  shares: number;
 }
 
 /**

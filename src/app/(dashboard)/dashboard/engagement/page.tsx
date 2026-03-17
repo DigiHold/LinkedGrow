@@ -21,9 +21,33 @@ import {
   Settings,
   X,
   Rss,
+  ThumbsUp,
+  Share2,
+  Video,
+  FileText,
+  ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
+
+interface FeedPost {
+  urn: string;
+  authorUrn: string;
+  authorName: string;
+  authorHeadline: string;
+  authorProfilePicture: string;
+  commentary: string;
+  publishedAt: number;
+  mediaType?: "image" | "video" | "document" | "multiImage" | "article";
+  imageUrl?: string;
+  multiImageUrls?: string[];
+  articleUrl?: string;
+  articleTitle?: string;
+  likes: number;
+  comments: number;
+  shares: number;
+}
 
 interface EngagementData {
   objectives: { dailyLikes: number; dailyComments: number };
@@ -32,13 +56,17 @@ interface EngagementData {
   profileName: string;
 }
 
-interface FeedPost {
-  urn: string;
-  author: string;
-  commentary: string;
-  publishedAt: string;
-  content: Record<string, unknown> | null;
-  socialDetail: Record<string, unknown> | null;
+function timeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}w`;
 }
 
 export default function EngagementPage() {
@@ -57,13 +85,13 @@ export default function EngagementPage() {
   const [editComments, setEditComments] = useState(5);
   const [isSavingGoals, setIsSavingGoals] = useState(false);
 
-  // Per-post states
+  // Per-post interaction states
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likingPost, setLikingPost] = useState<string | null>(null);
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
-  const [isGeneratingComment, setIsGeneratingComment] = useState(false);
+  const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
 
   const fetchEngagement = useCallback(async () => {
     try {
@@ -79,13 +107,17 @@ export default function EngagementPage() {
 
   const fetchFeed = useCallback(async () => {
     setIsFeedLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/linkedin/feed");
       if (res.ok) {
         const data = await res.json();
         setFeedPosts(data.posts || []);
+      } else {
+        const errData = await res.json();
+        setError(errData.error || "Failed to load feed");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load feed");
     } finally {
       setIsFeedLoading(false);
@@ -94,8 +126,7 @@ export default function EngagementPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    Promise.all([fetchEngagement(), fetchFeed()])
-      .finally(() => setIsLoading(false));
+    Promise.all([fetchEngagement(), fetchFeed()]).finally(() => setIsLoading(false));
   }, [fetchEngagement, fetchFeed]);
 
   const handleLike = async (postUrn: string) => {
@@ -109,6 +140,10 @@ export default function EngagementPage() {
       if (res.ok) {
         const data = await res.json();
         setLikedPosts((prev) => new Set([...prev, postUrn]));
+        // Update local like count on the post
+        setFeedPosts((prev) =>
+          prev.map((p) => p.urn === postUrn ? { ...p, likes: p.likes + 1 } : p)
+        );
         if (data.today) {
           setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
         }
@@ -131,6 +166,10 @@ export default function EngagementPage() {
         const data = await res.json();
         setCommentingOn(null);
         setCommentText("");
+        // Update local comment count
+        setFeedPosts((prev) =>
+          prev.map((p) => p.urn === postUrn ? { ...p, comments: p.comments + 1 } : p)
+        );
         if (data.today) {
           setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
         }
@@ -140,8 +179,10 @@ export default function EngagementPage() {
     }
   };
 
-  const handleGenerateComment = async (postContent: string) => {
-    setIsGeneratingComment(true);
+  const handleGenerateComment = async (postUrn: string, postContent: string) => {
+    setCommentingOn(postUrn);
+    setGeneratingCommentFor(postUrn);
+    setCommentText("");
     try {
       const res = await fetch("/api/ai/generate-comment", {
         method: "POST",
@@ -153,7 +194,7 @@ export default function EngagementPage() {
         setCommentText(data.comment || "");
       }
     } finally {
-      setIsGeneratingComment(false);
+      setGeneratingCommentFor(null);
     }
   };
 
@@ -174,7 +215,6 @@ export default function EngagementPage() {
     }
   };
 
-  // Team members cannot access this page
   if (isTeamMember) {
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
@@ -195,13 +235,13 @@ export default function EngagementPage() {
     );
   }
 
-  const likesProgress = engagementData ? Math.min(100, (engagementData.today.likes / engagementData.objectives.dailyLikes) * 100) : 0;
-  const commentsProgress = engagementData ? Math.min(100, (engagementData.today.comments / engagementData.objectives.dailyComments) * 100) : 0;
+  const likesProgress = engagementData ? Math.min(100, (engagementData.today.likes / Math.max(1, engagementData.objectives.dailyLikes)) * 100) : 0;
+  const commentsProgress = engagementData ? Math.min(100, (engagementData.today.comments / Math.max(1, engagementData.objectives.dailyComments)) * 100) : 0;
 
   return (
     <FeatureGate feature="engagement">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-        {/* Header with daily goals counters */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
@@ -209,58 +249,37 @@ export default function EngagementPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Engagement</h1>
-              <p className="text-muted-foreground text-sm">
-                Like and comment on posts to grow your network
-              </p>
+              <p className="text-muted-foreground text-sm">Like and comment on posts to grow your network</p>
             </div>
           </div>
 
-          {/* Daily goals counters - top right */}
+          {/* Daily goals + controls */}
           {engagementData && (
-            <div className="flex items-center gap-3">
-              {/* Likes counter */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Likes */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <Heart className="w-4 h-4 text-cyan-500" />
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold">{engagementData.today.likes}</span>
-                  <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyLikes}</span>
-                </div>
+                <span className="text-sm font-bold">{engagementData.today.likes}</span>
+                <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyLikes}</span>
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${likesProgress}%` }} />
                 </div>
               </div>
-
-              {/* Comments counter */}
+              {/* Comments */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <MessageCircle className="w-4 h-4 text-blue-500" />
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold">{engagementData.today.comments}</span>
-                  <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyComments}</span>
-                </div>
+                <span className="text-sm font-bold">{engagementData.today.comments}</span>
+                <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyComments}</span>
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${commentsProgress}%` }} />
                 </div>
               </div>
-
-              {/* Settings */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => {
-                  setEditLikes(engagementData.objectives.dailyLikes);
-                  setEditComments(engagementData.objectives.dailyComments);
-                  setShowGoals(true);
-                }}
-                title="Edit daily goals"
-              >
+              <Button variant="ghost" size="icon-sm" onClick={() => { setEditLikes(engagementData.objectives.dailyLikes); setEditComments(engagementData.objectives.dailyComments); setShowGoals(true); }} title="Edit daily goals">
                 <Settings className="w-4 h-4" />
               </Button>
-
-              {/* Refresh feed */}
               <Button variant="ghost" size="icon-sm" onClick={fetchFeed} disabled={isFeedLoading} title="Refresh feed">
                 <RefreshCw className={`w-4 h-4 ${isFeedLoading ? "animate-spin" : ""}`} />
               </Button>
-
               <Link href="/docs/getting-started/understanding-dashboard" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-cyan-600 transition-colors">
                 <HelpCircle className="w-4 h-4" />
               </Link>
@@ -284,15 +303,11 @@ export default function EngagementPage() {
           </Card>
         )}
 
-        {/* Content */}
         {!isLoading && engagementData && (
           <>
-            {/* Community connection if needed */}
+            {/* Community connection */}
             {!engagementData.communityConnected && (
-              <CommunityConnectBanner
-                isConnected={false}
-                profileName={engagementData.profileName}
-              />
+              <CommunityConnectBanner isConnected={false} profileName={engagementData.profileName} />
             )}
 
             {/* Feed loading */}
@@ -312,62 +327,140 @@ export default function EngagementPage() {
               </Card>
             )}
 
-            {/* Feed grid - 4 columns on desktop */}
+            {/* Feed grid - LinkedIn style cards */}
             {feedPosts.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {feedPosts.map((post) => (
                   <div
                     key={post.urn}
-                    className="group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all"
+                    className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col"
                   >
-                    {/* Post content */}
-                    <div className="p-4">
-                      {/* Author */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
-                          <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-300">
-                            {(post.author || "").slice(-2).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{post.author}</p>
-                          {post.publishedAt && (
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </p>
+                    {/* Author row */}
+                    <div className="p-4 pb-0">
+                      <div className="flex items-start gap-3 mb-3">
+                        {post.authorProfilePicture ? (
+                          <img
+                            src={post.authorProfilePicture}
+                            alt={post.authorName}
+                            className="w-10 h-10 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-bold text-white">
+                              {post.authorName.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate">{post.authorName}</p>
+                          {post.authorHeadline && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">{post.authorHeadline}</p>
                           )}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {timeAgo(post.publishedAt)}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Commentary */}
-                      <p className="text-sm leading-relaxed line-clamp-6 whitespace-pre-wrap mb-3">
+                      {/* Post text */}
+                      <p className="text-sm leading-relaxed line-clamp-5 whitespace-pre-wrap">
                         {post.commentary || "(No text)"}
                       </p>
                     </div>
 
-                    {/* Action bar */}
-                    <div className="px-4 pb-3 flex items-center gap-1">
-                      {/* Like button */}
+                    {/* Media */}
+                    {post.imageUrl && (
+                      <div className="mt-3">
+                        <img
+                          src={post.imageUrl}
+                          alt=""
+                          className="w-full max-h-64 object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {/* Multi-image preview */}
+                    {post.multiImageUrls && post.multiImageUrls.length > 1 && (
+                      <div className="mt-3 grid grid-cols-2 gap-0.5">
+                        {post.multiImageUrls.slice(0, 4).map((url, i) => (
+                          <div key={i} className="relative">
+                            <img src={url} alt="" className="w-full h-28 object-cover" />
+                            {i === 3 && post.multiImageUrls!.length > 4 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">+{post.multiImageUrls!.length - 4}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Video placeholder */}
+                    {post.mediaType === "video" && !post.imageUrl && (
+                      <div className="mt-3 mx-4 h-40 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <Video className="w-10 h-10 text-slate-400" />
+                      </div>
+                    )}
+
+                    {/* Document/carousel placeholder */}
+                    {post.mediaType === "document" && !post.imageUrl && (
+                      <div className="mt-3 mx-4 h-40 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <FileText className="w-10 h-10 text-slate-400" />
+                      </div>
+                    )}
+
+                    {/* Article preview */}
+                    {post.mediaType === "article" && post.articleUrl && (
+                      <a href={post.articleUrl} target="_blank" rel="noopener noreferrer" className="mt-3 mx-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors block">
+                        {post.imageUrl && (
+                          <img src={post.imageUrl} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />
+                        )}
+                        <p className="text-xs font-medium line-clamp-2">{post.articleTitle || post.articleUrl}</p>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                          <ExternalLink className="w-3 h-3" />
+                          {new URL(post.articleUrl).hostname}
+                        </div>
+                      </a>
+                    )}
+
+                    {/* Social counts */}
+                    <div className="px-4 pt-3 mt-auto">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
+                        {post.likes > 0 && (
+                          <span className="flex items-center gap-1">
+                            <ThumbsUp className="w-3 h-3" /> {post.likes}
+                          </span>
+                        )}
+                        {post.comments > 0 && (
+                          <span>{post.comments} comments</span>
+                        )}
+                        {post.shares > 0 && (
+                          <span>{post.shares} shares</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="px-2 py-1 flex items-center">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={`flex-1 ${likedPosts.has(post.urn) ? "text-cyan-600 dark:text-cyan-400" : ""}`}
+                        className={`flex-1 text-xs ${likedPosts.has(post.urn) ? "text-cyan-600 dark:text-cyan-400" : ""}`}
                         onClick={() => handleLike(post.urn)}
                         disabled={likingPost === post.urn || likedPosts.has(post.urn)}
                       >
                         {likingPost === post.urn ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                         ) : (
-                          <Heart className={`w-3.5 h-3.5 mr-1 ${likedPosts.has(post.urn) ? "fill-cyan-500" : ""}`} />
+                          <ThumbsUp className={`w-4 h-4 mr-1.5 ${likedPosts.has(post.urn) ? "fill-cyan-500 text-cyan-500" : ""}`} />
                         )}
                         {likedPosts.has(post.urn) ? "Liked" : "Like"}
                       </Button>
 
-                      {/* Comment button */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex-1"
+                        className="flex-1 text-xs"
                         onClick={() => {
                           if (commentingOn === post.urn) {
                             setCommentingOn(null);
@@ -378,26 +471,22 @@ export default function EngagementPage() {
                           }
                         }}
                       >
-                        <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                        <MessageCircle className="w-4 h-4 mr-1.5" />
                         Comment
                       </Button>
 
-                      {/* AI comment button */}
                       <Button
                         variant="ghost"
                         size="icon-sm"
                         className="shrink-0"
-                        title="Generate AI comment"
-                        onClick={() => {
-                          setCommentingOn(post.urn);
-                          handleGenerateComment(post.commentary);
-                        }}
-                        disabled={isGeneratingComment && commentingOn === post.urn}
+                        title="AI-generate a comment"
+                        onClick={() => handleGenerateComment(post.urn, post.commentary)}
+                        disabled={generatingCommentFor === post.urn}
                       >
-                        {isGeneratingComment && commentingOn === post.urn ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        {generatingCommentFor === post.urn ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          <Sparkles className="w-4 h-4 text-amber-500" />
                         )}
                       </Button>
                     </div>
@@ -409,29 +498,21 @@ export default function EngagementPage() {
                           placeholder="Write a comment..."
                           value={commentText}
                           onChange={(e) => setCommentText(e.target.value)}
-                          className="min-h-17.5 text-sm resize-none"
+                          className="min-h-18 text-sm resize-none"
                           autoFocus
                         />
                         <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setCommentingOn(null);
-                              setCommentText("");
-                            }}
-                          >
-                            <X className="w-3.5 h-3.5 mr-1" />
-                            Cancel
+                          <Button variant="ghost" size="sm" onClick={() => { setCommentingOn(null); setCommentText(""); }}>
+                            <X className="w-3.5 h-3.5 mr-1" /> Cancel
                           </Button>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleGenerateComment(post.commentary)}
-                              disabled={isGeneratingComment}
+                              onClick={() => handleGenerateComment(post.urn, post.commentary)}
+                              disabled={generatingCommentFor === post.urn}
                             >
-                              {isGeneratingComment ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" />}
+                              {generatingCommentFor === post.urn ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" />}
                               AI
                             </Button>
                             <Button
@@ -464,8 +545,7 @@ export default function EngagementPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-cyan-500" />
-                    Daily Likes
+                    <Heart className="w-4 h-4 text-cyan-500" /> Daily Likes
                   </label>
                   <span className="text-sm font-bold">{editLikes}</span>
                 </div>
@@ -474,8 +554,7 @@ export default function EngagementPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-blue-500" />
-                    Daily Comments
+                    <MessageCircle className="w-4 h-4 text-blue-500" /> Daily Comments
                   </label>
                   <span className="text-sm font-bold">{editComments}</span>
                 </div>
