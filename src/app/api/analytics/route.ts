@@ -40,6 +40,9 @@ interface PostAnalyticsData {
   publishedAt: string | null;
   createdAt: string | null;
   linkedinPostId?: string | null;
+  linkedinPostUrl?: string | null;
+  linkedinImageUrl?: string | null;
+  syncedFromLinkedin?: boolean;
   analytics?: {
     impressions: number;
     reactions: number;
@@ -340,6 +343,9 @@ export async function GET(request: NextRequest) {
         publishedAt: post.publishedAt?.toISOString() || null,
         createdAt: post.createdAt?.toISOString() || null,
         linkedinPostId: post.linkedinPostId,
+        linkedinPostUrl: post.linkedinPostUrl,
+        linkedinImageUrl: post.linkedinImageUrl,
+        syncedFromLinkedin: post.syncedFromLinkedin ?? false,
         analytics: postAnalyticsData,
       };
     });

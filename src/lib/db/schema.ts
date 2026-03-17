@@ -163,6 +163,8 @@ export const posts = sqliteTable("posts", {
   publishedAt: integer("published_at", { mode: "timestamp" }),
   linkedinPostId: text("linkedin_post_id"),
   linkedinPostUrl: text("linkedin_post_url"),
+  linkedinImageUrl: text("linkedin_image_url"), // R2 URL of the post's image (synced from LinkedIn)
+  syncedFromLinkedin: integer("synced_from_linkedin", { mode: "boolean" }).default(false),
   // QStash message ID for scheduled posts (used to cancel/reschedule)
   qstashMessageId: text("qstash_message_id"),
   // First comment to auto-post after publication (1-5 min delay)

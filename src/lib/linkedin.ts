@@ -1589,6 +1589,158 @@ export async function getOrganizationFollowerDemographics(
 }
 
 // ============================================
+// POST SYNC FUNCTIONS (Community Management API)
+// ============================================
+
+/**
+ * Fetch all posts by author (person or organization) using the Posts API
+ * Requires r_member_social (personal) or r_organization_social (org)
+ */
+export async function getPostsByAuthor(
+  accessToken: string,
+  authorUrn: string,
+  count: number = 100,
+  start: number = 0
+): Promise<{ posts: LinkedInAuthorPost[]; total: number; hasMore: boolean }> {
+  const encodedAuthor = encodeURIComponent(authorUrn);
+  const url = `${LINKEDIN_REST_API_BASE}/posts?author=${encodedAuthor}&q=author&count=${count}&start=${start}&sortBy=LAST_MODIFIED`;
+
+  console.log('[LinkedIn Posts Sync] Fetching:', { authorUrn, count, start });
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+      'X-RestLi-Method': 'FINDER',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[LinkedIn Posts Sync] Error:', { status: response.status, error });
+    throw new Error(`Failed to fetch posts by author (${response.status}): ${error}`);
+  }
+
+  const data = await response.json();
+  const elements = data.elements || [];
+
+  const posts: LinkedInAuthorPost[] = elements.map((el: Record<string, unknown>) => {
+    const content = el.content as Record<string, unknown> | undefined;
+    let mediaId: string | undefined;
+    let mediaType: 'image' | 'video' | 'document' | 'article' | 'multiImage' | undefined;
+
+    if (content?.media) {
+      const media = content.media as Record<string, unknown>;
+      mediaId = media.id as string;
+      if (mediaId) {
+        if (mediaId.includes('urn:li:image:')) mediaType = 'image';
+        else if (mediaId.includes('urn:li:video:')) mediaType = 'video';
+        else if (mediaId.includes('urn:li:document:')) mediaType = 'document';
+      }
+    } else if (content?.multiImage) {
+      mediaType = 'multiImage';
+      const multiImage = content.multiImage as Record<string, unknown>;
+      const images = multiImage.images as Array<Record<string, unknown>> | undefined;
+      if (images && images.length > 0) {
+        mediaId = (images[0].id as string) || undefined;
+      }
+    } else if (content?.article) {
+      mediaType = 'article';
+      const article = content.article as Record<string, unknown>;
+      mediaId = (article.thumbnail as string) || undefined;
+    }
+
+    return {
+      id: el.id as string,
+      author: el.author as string,
+      commentary: (el.commentary as string) || '',
+      publishedAt: el.publishedAt as number,
+      createdAt: el.createdAt as number,
+      lastModifiedAt: el.lastModifiedAt as number,
+      lifecycleState: el.lifecycleState as string,
+      visibility: (el.visibility as string) || 'PUBLIC',
+      mediaId,
+      mediaType,
+      content: content || null,
+    };
+  });
+
+  const hasMore = (data.paging?.links || []).some((l: Record<string, unknown>) => l.rel === 'next');
+
+  console.log('[LinkedIn Posts Sync] Fetched:', { count: posts.length, hasMore });
+  return { posts, total: data.paging?.total || posts.length, hasMore };
+}
+
+/**
+ * Get image download URLs from LinkedIn Images API
+ * Returns a map of image URN -> download URL
+ */
+export async function getImageDownloadUrls(
+  accessToken: string,
+  imageUrns: string[]
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (imageUrns.length === 0) return result;
+
+  // Batch get images (up to 20 at a time)
+  const batchSize = 20;
+  for (let i = 0; i < imageUrns.length; i += batchSize) {
+    const batch = imageUrns.slice(i, i + batchSize);
+    const encodedIds = batch.map(urn => encodeURIComponent(urn)).join(',');
+    const url = `${LINKEDIN_REST_API_BASE}/images?ids=List(${encodedIds})`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+          'X-RestLi-Method': 'BATCH_GET',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('[LinkedIn Images] Batch fetch failed:', response.status);
+        continue;
+      }
+
+      const data = await response.json();
+      const results = data.results || {};
+
+      for (const [urn, imageData] of Object.entries(results)) {
+        const img = imageData as Record<string, unknown>;
+        if (img.downloadUrl && img.status === 'AVAILABLE') {
+          result.set(urn, img.downloadUrl as string);
+        }
+      }
+    } catch (error) {
+      console.error('[LinkedIn Images] Batch fetch error:', error);
+    }
+  }
+
+  console.log('[LinkedIn Images] Got download URLs:', { requested: imageUrns.length, found: result.size });
+  return result;
+}
+
+// Post returned from the Posts API author finder
+export interface LinkedInAuthorPost {
+  id: string;
+  author: string;
+  commentary: string;
+  publishedAt: number;
+  createdAt: number;
+  lastModifiedAt: number;
+  lifecycleState: string;
+  visibility: string;
+  mediaId?: string;
+  mediaType?: 'image' | 'video' | 'document' | 'article' | 'multiImage';
+  content: Record<string, unknown> | null;
+}
+
+// ============================================
 // ENGAGEMENT FUNCTIONS (Community Management API)
 // ============================================
 

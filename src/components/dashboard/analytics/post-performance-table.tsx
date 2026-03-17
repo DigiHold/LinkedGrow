@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, ArrowUpDown } from "lucide-react";
+import { BarChart3, ArrowUpDown, Video, FileText, ExternalLink } from "lucide-react";
 
 interface PostData {
   id: string;
   content: string | null;
   postType: string | null;
   publishedAt: string | null;
+  linkedinPostUrl?: string | null;
+  linkedinImageUrl?: string | null;
+  syncedFromLinkedin?: boolean;
   analytics?: {
     impressions: number;
     reactions: number;
@@ -83,49 +86,103 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
           <BarChart3 className="w-4 h-4 text-blue-500" />
           Post Performance
         </h3>
-        <div className="overflow-x-auto -mx-6 px-6">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left pb-3 text-xs font-medium text-muted-foreground w-[40%]">Post</th>
-                <th className="text-right pb-3 pr-3"><SortButton field="impressions" label="Views" /></th>
-                <th className="text-right pb-3 pr-3"><SortButton field="reactions" label="Reactions" /></th>
-                <th className="text-right pb-3 pr-3"><SortButton field="comments" label="Comments" /></th>
-                <th className="text-right pb-3 pr-3"><SortButton field="reshares" label="Shares" /></th>
-                <th className="text-right pb-3"><SortButton field="engagement" label="Rate" /></th>
-              </tr>
-            </thead>
-            <tbody>
-              {postsWithMetrics.slice(0, 20).map((post) => (
-                <tr key={post.id} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <Badge className={`text-[10px] shrink-0 ${typeColors[post.postType || "text"] || typeColors.text}`}>
-                        {post.postType || "text"}
+        <div className="space-y-3">
+          {/* Sort controls */}
+          <div className="flex items-center gap-3 text-xs">
+            <span className="text-muted-foreground">Sort by:</span>
+            <SortButton field="impressions" label="Views" />
+            <SortButton field="reactions" label="Reactions" />
+            <SortButton field="comments" label="Comments" />
+            <SortButton field="reshares" label="Shares" />
+            <SortButton field="engagement" label="Rate" />
+          </div>
+
+          {/* Post cards */}
+          <div className="space-y-3">
+            {postsWithMetrics.slice(0, 30).map((post) => (
+              <div
+                key={post.id}
+                className="flex gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                {/* Post thumbnail */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
+                  {post.linkedinImageUrl ? (
+                    <img
+                      src={post.linkedinImageUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : post.postType === "video" ? (
+                    <Video className="w-6 h-6 text-emerald-500" />
+                  ) : post.postType === "carousel" ? (
+                    <FileText className="w-6 h-6 text-purple-500" />
+                  ) : (
+                    <div className="w-full h-full bg-linear-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground font-medium">TEXT</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Post info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className={`text-[10px] shrink-0 ${typeColors[post.postType || "text"] || typeColors.text}`}>
+                      {post.postType || "text"}
+                    </Badge>
+                    {post.syncedFromLinkedin && (
+                      <Badge className="text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                        LinkedIn
                       </Badge>
-                      <span className="text-sm truncate max-w-[200px]">
-                        {post.content || "Untitled post"}
+                    )}
+                    {post.publishedAt && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    )}
+                    {post.linkedinPostUrl && (
+                      <a
+                        href={post.linkedinPostUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-cyan-600 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-sm truncate max-w-full mb-2">
+                    {post.content || "No text content"}
+                  </p>
+
+                  {/* Metrics row */}
+                  <div className="flex items-center gap-3 sm:gap-4 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Views </span>
+                      <span className="font-semibold tabular-nums">{post.analytics!.impressions.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Reactions </span>
+                      <span className="font-semibold tabular-nums">{post.analytics!.reactions.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Comments </span>
+                      <span className="font-semibold tabular-nums">{post.analytics!.comments.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Shares </span>
+                      <span className="font-semibold tabular-nums">{post.analytics!.reshares.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Rate </span>
+                      <span className={`font-semibold tabular-nums ${post.engagementRate > 3 ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
+                        {post.engagementRate.toFixed(1)}%
                       </span>
                     </div>
-                    {post.publishedAt && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </p>
-                    )}
-                  </td>
-                  <td className="text-right py-3 pr-3 text-sm tabular-nums">{post.analytics!.impressions.toLocaleString()}</td>
-                  <td className="text-right py-3 pr-3 text-sm tabular-nums">{post.analytics!.reactions.toLocaleString()}</td>
-                  <td className="text-right py-3 pr-3 text-sm tabular-nums">{post.analytics!.comments.toLocaleString()}</td>
-                  <td className="text-right py-3 pr-3 text-sm tabular-nums">{post.analytics!.reshares.toLocaleString()}</td>
-                  <td className="text-right py-3 text-sm font-medium tabular-nums">
-                    <span className={post.engagementRate > 3 ? "text-emerald-600 dark:text-emerald-400" : ""}>
-                      {post.engagementRate.toFixed(1)}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
