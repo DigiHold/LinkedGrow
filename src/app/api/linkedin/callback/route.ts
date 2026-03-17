@@ -165,7 +165,43 @@ export async function GET(request: NextRequest) {
     // Exchange code for access token
     const tokenData = await exchangeCodeForToken(appType, code, redirectUri);
 
-    // Get user profile
+    // For community app connect flow, skip profile fetch (no openid scope)
+    // Just store the tokens and return
+    if (appType === 'community' && mode === 'connect') {
+      const session = await auth();
+      if (session?.user?.id) {
+        await db
+          .update(users)
+          .set({
+            linkedinCommunityAccessToken: tokenData.access_token,
+            linkedinCommunityRefreshToken: tokenData.refresh_token || null,
+            linkedinCommunityTokenExpiry: tokenData.expires_in
+              ? new Date(Date.now() + tokenData.expires_in * 1000)
+              : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, session.user.id));
+      }
+
+      if (isPopup) {
+        const response = createPopupResponse(true, { name: 'Community App' });
+        response.cookies.delete('linkedin_oauth_state');
+        response.cookies.delete('linkedin_app_type');
+        response.cookies.delete('linkedin_oauth_mode');
+        response.cookies.delete('linkedin_popup');
+        return response;
+      }
+
+      const response = NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/engagement?community=connected`
+      );
+      response.cookies.delete('linkedin_oauth_state');
+      response.cookies.delete('linkedin_app_type');
+      response.cookies.delete('linkedin_oauth_mode');
+      return response;
+    }
+
+    // Get user profile (requires openid scope - poster app only)
     const profile = await getLinkedInProfile(tokenData.access_token);
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
     const linkedInPictureUrl = profile.profilePicture?.displayImage || null;
