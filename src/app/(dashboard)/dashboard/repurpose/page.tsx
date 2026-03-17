@@ -1200,12 +1200,12 @@ function ContentRepurposingContent() {
                   </div>
                 )}
 
-                {/* Attached Image Preview */}
-                {attachedImage && (
+                {/* Attached Image Preview (only when not editing - PostEditor has its own preview) */}
+                {!isEditing && attachedImage?.preview && (
                   <div className="mt-4 relative">
                     <div className="rounded-xl overflow-hidden border border-border bg-accent/30">
                       <img
-                        src={`data:${attachedImage.mimeType};base64,${attachedImage.base64}`}
+                        src={attachedImage.preview}
                         alt="Attached image"
                         className="w-full h-auto max-h-[200px] object-contain"
                       />

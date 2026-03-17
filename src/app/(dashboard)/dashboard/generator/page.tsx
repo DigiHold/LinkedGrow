@@ -1354,7 +1354,7 @@ export default function GeneratorPage() {
             </Card>
 
             {/* Attached Image Preview */}
-            {attachedImage && (
+            {attachedImage?.preview && (
               <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -1375,7 +1375,7 @@ export default function GeneratorPage() {
                 <CardContent>
                   <div className="rounded-xl overflow-hidden border border-border">
                     <img
-                      src={`data:${attachedImage.mimeType};base64,${attachedImage.base64}`}
+                      src={attachedImage.preview}
                       alt="Attached image"
                       className="w-full h-auto max-h-50 object-contain"
                     />
