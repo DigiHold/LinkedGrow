@@ -163,8 +163,10 @@ export async function GET(request: NextRequest) {
     let followerDemographics: AnalyticsResponse["advanced"];
 
     // Fetch from LinkedIn API if connected
-    if (hasLinkedInConnected && user.linkedinAccessToken) {
-      const accessToken = user.linkedinAccessToken;
+    // Use community token first (has r_organization_social, r_member_postAnalytics scopes)
+    // Fall back to poster token if community not connected
+    const accessToken = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+    if (hasLinkedInConnected && accessToken) {
 
       try {
         if (postingTarget === "organization" && user.linkedinSelectedOrgId) {
@@ -284,7 +286,8 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (linkedinError) {
-        console.error("Failed to fetch LinkedIn analytics:", linkedinError);
+        const msg = linkedinError instanceof Error ? linkedinError.message : String(linkedinError);
+        console.error("Failed to fetch LinkedIn analytics:", msg);
         // Continue with database data if LinkedIn API fails
       }
     }
