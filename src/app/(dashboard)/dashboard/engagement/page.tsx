@@ -81,7 +81,7 @@ interface FeedPost {
 }
 
 interface EngagementData {
-  objectives: { dailyLikes: number; dailyComments: number };
+  objectives: { dailyLikes: number; dailyComments: number; postsPerProfile: number };
   today: { likes: number; comments: number };
   communityConnected: boolean;
   profileName: string;
@@ -239,11 +239,12 @@ export default function EngagementPage() {
   const [isAddingProfile, setIsAddingProfile] = useState(false);
   const [addProfileError, setAddProfileError] = useState<string | null>(null);
 
-  // Goals dialog
-  const [showGoals, setShowGoals] = useState(false);
+  // Settings dialog
+  const [showSettings, setShowSettings] = useState(false);
   const [editLikes, setEditLikes] = useState(10);
   const [editComments, setEditComments] = useState(5);
-  const [isSavingGoals, setIsSavingGoals] = useState(false);
+  const [editPostsPerProfile, setEditPostsPerProfile] = useState(2);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Post interaction states
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
@@ -473,20 +474,20 @@ export default function EngagementPage() {
     }
   };
 
-  const handleSaveGoals = async () => {
-    setIsSavingGoals(true);
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
     try {
       const res = await fetch("/api/linkedin/engagement", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dailyLikes: editLikes, dailyComments: editComments }),
+        body: JSON.stringify({ dailyLikes: editLikes, dailyComments: editComments, postsPerProfile: editPostsPerProfile }),
       });
       if (res.ok) {
-        setEngagementData((prev) => prev ? { ...prev, objectives: { dailyLikes: editLikes, dailyComments: editComments } } : prev);
-        setShowGoals(false);
+        setEngagementData((prev) => prev ? { ...prev, objectives: { dailyLikes: editLikes, dailyComments: editComments, postsPerProfile: editPostsPerProfile } } : prev);
+        setShowSettings(false);
       }
     } finally {
-      setIsSavingGoals(false);
+      setIsSavingSettings(false);
     }
   };
 
@@ -550,7 +551,7 @@ export default function EngagementPage() {
                   <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${commentsProgress}%` }} />
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => { setEditLikes(engagementData.objectives.dailyLikes); setEditComments(engagementData.objectives.dailyComments); setShowGoals(true); }} title="Edit daily goals">
+              <Button variant="ghost" size="icon-sm" onClick={() => { setEditLikes(engagementData.objectives.dailyLikes); setEditComments(engagementData.objectives.dailyComments); setEditPostsPerProfile(engagementData.objectives.postsPerProfile); setShowSettings(true); }} title="Engagement settings">
                 <Settings className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="icon-sm" onClick={() => fetchFeed(activeListId, true)} disabled={isFeedLoading} title="Refresh feed (clear cache)">
@@ -641,9 +642,19 @@ export default function EngagementPage() {
             )}
 
             {/* Post Feed Grid */}
-            {feedPosts.length > 0 && (
+            {feedPosts.length > 0 && (() => {
+              // Limit posts per profile based on user setting
+              const ppp = engagementData?.objectives.postsPerProfile ?? 2;
+              const authorCounts = new Map<string, number>();
+              const visiblePosts = feedPosts.filter((post) => {
+                const count = authorCounts.get(post.authorVanityName) || 0;
+                if (count >= ppp) return false;
+                authorCounts.set(post.authorVanityName, count + 1);
+                return true;
+              });
+              return (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {feedPosts.map((post) => (
+                {visiblePosts.map((post) => (
                   <div key={post.activityUrn} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
                     {/* Author */}
                     <div className="p-4 pb-0">
@@ -761,7 +772,8 @@ export default function EngagementPage() {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
 
             {/* Empty feed with profiles */}
             {!isFeedLoading && feedPosts.length === 0 && lists.length > 0 && totalProfiles === 0 && (
@@ -916,32 +928,40 @@ export default function EngagementPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Goals dialog */}
-        <Dialog open={showGoals} onOpenChange={setShowGoals}>
+        {/* Settings dialog */}
+        <Dialog open={showSettings} onOpenChange={setShowSettings}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Daily Engagement Goals</DialogTitle>
+              <DialogTitle>Engagement Settings</DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium flex items-center gap-2"><Heart className="w-4 h-4 text-cyan-500" /> Daily Likes</label>
+                  <label className="text-sm font-medium flex items-center gap-2"><Heart className="w-4 h-4 text-cyan-500" /> Daily Likes Goal</label>
                   <span className="text-sm font-bold">{editLikes}</span>
                 </div>
                 <Slider value={[editLikes]} onValueChange={([v]) => setEditLikes(v)} min={1} max={100} step={1} />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium flex items-center gap-2"><MessageCircle className="w-4 h-4 text-blue-500" /> Daily Comments</label>
+                  <label className="text-sm font-medium flex items-center gap-2"><MessageCircle className="w-4 h-4 text-blue-500" /> Daily Comments Goal</label>
                   <span className="text-sm font-bold">{editComments}</span>
                 </div>
                 <Slider value={[editComments]} onValueChange={([v]) => setEditComments(v)} min={1} max={50} step={1} />
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium flex items-center gap-2"><Users className="w-4 h-4 text-emerald-500" /> Posts Per Profile</label>
+                  <span className="text-sm font-bold">{editPostsPerProfile}</span>
+                </div>
+                <Slider value={[editPostsPerProfile]} onValueChange={([v]) => setEditPostsPerProfile(v)} min={1} max={10} step={1} />
+                <p className="text-xs text-muted-foreground mt-1">Number of recent posts shown for each profile in your feed</p>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowGoals(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleSaveGoals} disabled={isSavingGoals}>
-                {isSavingGoals && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save
+              <Button variant="outline" onClick={() => setShowSettings(false)}>Cancel</Button>
+              <Button variant="primary" onClick={handleSaveSettings} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save
               </Button>
             </div>
           </DialogContent>

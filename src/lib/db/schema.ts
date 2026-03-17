@@ -393,6 +393,7 @@ export const engagementObjectives = sqliteTable("engagement_objectives", {
     .references(() => users.id, { onDelete: "cascade" }),
   dailyLikes: integer("daily_likes").default(10),
   dailyComments: integer("daily_comments").default(5),
+  postsPerProfile: integer("posts_per_profile").default(2),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
 });
 
