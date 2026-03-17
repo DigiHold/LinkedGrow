@@ -153,10 +153,17 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
     const activityId = post.activityUrn.split(":").pop();
     if (!activityId) continue;
 
-    const urnIdx = html.indexOf(`urn:li:activity:${activityId}`);
-    if (urnIdx < 0) continue;
+    // Find the post section in HTML - try activity URN first, then post URL slug
+    let chunkStart = html.indexOf(`urn:li:activity:${activityId}`);
+    if (chunkStart < 0) {
+      chunkStart = html.indexOf(`activity-${activityId}`);
+    }
+    if (chunkStart < 0) continue;
 
-    const chunk = html.substring(urnIdx, Math.min(html.length, urnIdx + 15000));
+    // Search backwards to find the card start (profile-activity-card)
+    const cardStart = html.lastIndexOf("profile-activity-card", chunkStart);
+    const searchFrom = cardStart > 0 ? cardStart : chunkStart;
+    const chunk = html.substring(searchFrom, Math.min(html.length, searchFrom + 20000));
 
     // Reactions
     const reactionsMatch = chunk.match(/([\d,]+)\s*Reactions?/i);
@@ -177,37 +184,41 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
       post.reposts = parseInt(repostsMatch[1].replace(/,/g, ""), 10);
     }
 
-    // Carousel/document detection - look for document cover images
-    const carouselCovers = chunk.match(
-      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*feedshare-document-cover-images[^"&]*/g
-    );
+    // Match LinkedIn CDN image URLs (handle &amp; HTML encoding)
+    const urlPattern = (keyword: string) =>
+      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/[^"\\s]*${keyword}[^"\\s]*`, "g");
+    const urlPatternAny = (keyword: string) =>
+      new RegExp(`https://(?:dms|media)\\.licdn\\.com/[^"\\s]*${keyword}[^"\\s]*`);
+
+    const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["']/g, "");
+
+    // Carousel/document detection
+    const carouselCovers = chunk.match(urlPattern("feedshare-document-cover-images"));
     if (carouselCovers && carouselCovers.length > 0) {
       post.mediaType = "carousel";
-      // Deduplicate and sort by page index
-      const uniqueSlides = [...new Set(carouselCovers.map((u) => u.replace(/&amp;/g, "&")))];
+      const uniqueSlides = [...new Set(carouselCovers.map(cleanUrl))];
       post.carouselSlides = uniqueSlides;
       post.imageUrl = uniqueSlides[0] || null;
-      continue; // skip other media checks
+      continue;
     }
 
-    // Video detection - look for video thumbnails
-    const videoThumb = chunk.match(
-      /https:\/\/(?:dms|media)\.licdn\.com\/[^"&]*feedshare-video-thumbnail[^"&]*/
-    );
+    // Video detection
+    const videoThumb = chunk.match(urlPatternAny("feedshare-video-thumbnail"));
     if (videoThumb) {
       post.mediaType = "video";
-      post.videoThumbnailUrl = videoThumb[0].replace(/&amp;/g, "&");
+      post.videoThumbnailUrl = cleanUrl(videoThumb[0]);
       post.imageUrl = post.videoThumbnailUrl;
       continue;
     }
 
-    // Single image (feedshare or image-shrink)
-    const imgMatch = chunk.match(
-      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*(?:feedshare-shrink|image-shrink)[^"&]*/
-    );
+    // Single image (feedshare or image-shrink, but NOT profile photos)
+    const imgMatch = chunk.match(urlPattern("(?:feedshare-shrink|image-shrink)"));
     if (imgMatch) {
-      post.mediaType = "image";
-      post.imageUrl = imgMatch[0].replace(/&amp;/g, "&");
+      const url = cleanUrl(imgMatch[0]);
+      if (!url.includes("profile-displayphoto")) {
+        post.mediaType = "image";
+        post.imageUrl = url;
+      }
     }
   }
 }

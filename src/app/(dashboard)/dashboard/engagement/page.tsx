@@ -112,6 +112,29 @@ function formatCount(n: number): string {
   return n.toString();
 }
 
+/**
+ * Truncate text exactly like LinkedIn does:
+ * - ~210 chars for short posts (< 5 lines)
+ * - Cuts at word boundary, adds "...more"
+ */
+function linkedInTruncate(text: string, maxChars = 210): { truncated: string; isTruncated: boolean } {
+  if (text.length <= maxChars) return { truncated: text, isTruncated: false };
+  // Find the last space before maxChars
+  let cutoff = text.lastIndexOf(" ", maxChars);
+  if (cutoff < maxChars * 0.6) cutoff = maxChars; // no good space found, hard cut
+  return { truncated: text.substring(0, cutoff), isTruncated: true };
+}
+
+function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+      <path d="m21 3-9 9" />
+      <path d="M15 3h6v6" />
+    </svg>
+  );
+}
+
 // ============================================
 // CAROUSEL VIEWER
 // ============================================
@@ -595,22 +618,28 @@ export default function EngagementPage() {
                           {post.authorHeadline && <p className="text-xs text-muted-foreground line-clamp-1">{post.authorHeadline}</p>}
                           <p className="text-[10px] text-muted-foreground mt-0.5">{timeAgo(post.datePublished)}</p>
                         </div>
+                        {post.postUrl && (
+                          <a href={post.postUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-muted-foreground hover:text-cyan-600 transition-colors shrink-0" title="View on LinkedIn">
+                            <ExternalLinkIcon className="w-4 h-4" />
+                          </a>
+                        )}
                       </div>
 
-                      {/* Post text */}
-                      {post.text ? (
-                        <div className="text-sm leading-relaxed">
-                          <p className={`whitespace-pre-wrap ${expandedPosts.has(post.activityUrn) ? "" : "line-clamp-4"}`}>{post.text}</p>
-                          {post.text.length > 200 && (
-                            <button
-                              onClick={() => setExpandedPosts((prev) => { const next = new Set(prev); if (next.has(post.activityUrn)) next.delete(post.activityUrn); else next.add(post.activityUrn); return next; })}
-                              className="text-muted-foreground hover:text-foreground font-medium text-xs mt-1 transition-colors"
-                            >
-                              {expandedPosts.has(post.activityUrn) ? "...see less" : "...see more"}
-                            </button>
-                          )}
-                        </div>
-                      ) : (
+                      {/* Post text - LinkedIn-style truncation */}
+                      {post.text ? (() => {
+                        const isExpanded = expandedPosts.has(post.activityUrn);
+                        const { truncated, isTruncated } = linkedInTruncate(post.text);
+                        return (
+                          <div className="text-sm leading-relaxed">
+                            <p className="whitespace-pre-wrap">{isExpanded ? post.text : truncated}{!isExpanded && isTruncated && (
+                              <button
+                                onClick={() => setExpandedPosts((prev) => { const next = new Set(prev); next.add(post.activityUrn); return next; })}
+                                className="text-muted-foreground hover:text-foreground font-medium transition-colors"
+                              > ...more</button>
+                            )}</p>
+                          </div>
+                        );
+                      })() : (
                         <p className="text-sm text-muted-foreground italic">(Shared content)</p>
                       )}
                     </div>
@@ -821,8 +850,7 @@ export default function EngagementPage() {
                           )}
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{profile.displayName || profile.vanityName}</p>
-                            {profile.headline && <p className="text-[11px] text-muted-foreground truncate">{profile.headline}</p>}
-                            {!profile.headline && profile.displayName && <p className="text-[11px] text-muted-foreground">@{profile.vanityName}</p>}
+                            <p className="text-[11px] text-muted-foreground">@{profile.vanityName}</p>
                           </div>
                           <button
                             onClick={() => handleRemoveProfile(dialogList.id, profile.id)}

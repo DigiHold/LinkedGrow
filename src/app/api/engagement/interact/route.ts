@@ -47,13 +47,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert activity URN to share URN format if needed
-    // LinkedIn API expects urn:li:share:XXX or urn:li:ugcPost:XXX for social actions
-    // But activity URNs work too with the socialActions endpoint
+    // Convert urn:li:activity:XXX to urn:li:share:XXX
+    // LinkedIn socialActions API only accepts share URNs, not activity URNs
+    let shareUrn = postUrn;
+    const activityMatch = postUrn.match(/^urn:li:activity:(\d+)$/);
+    if (activityMatch) {
+      shareUrn = `urn:li:share:${activityMatch[1]}`;
+    }
+
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, postUrn, user.linkedinProfileId);
+      await likeLinkedInPost(accessToken, shareUrn, user.linkedinProfileId);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
 
       await createLinkedInComment(
         accessToken,
-        postUrn,
+        shareUrn,
         user.linkedinProfileId,
         text.trim()
       );
