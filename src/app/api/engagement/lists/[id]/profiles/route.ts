@@ -10,7 +10,45 @@ import {
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
-import { scrapeLinkedInProfile, isCacheFresh } from "@/lib/linkedin-scraper";
+import { scrapeLinkedInProfile } from "@/lib/linkedin-scraper";
+import { uploadToR2 } from "@/lib/storage/r2";
+
+const LINKEDIN_CDN_HOSTS = [
+  "media.licdn.com",
+  "media-exp1.licdn.com",
+  "media-exp2.licdn.com",
+  "static.licdn.com",
+];
+
+async function downloadProfilePictureToR2(
+  imageUrl: string,
+  vanityName: string
+): Promise<string | null> {
+  try {
+    const url = new URL(imageUrl);
+    if (!LINKEDIN_CDN_HOSTS.some((h) => url.hostname.endsWith(h))) return null;
+    if (url.protocol !== "https:") return null;
+
+    const res = await fetch(imageUrl);
+    if (!res.ok) return null;
+
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.length < 100) return null;
+
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+
+    const result = await uploadToR2(buffer, {
+      fileName: `engagement-profile-${vanityName}.${ext}`,
+      contentType,
+      userId: "engagement", // shared namespace for engagement profile pics
+    });
+
+    return result.url;
+  } catch {
+    return null;
+  }
+}
 
 // POST /api/engagement/lists/[id]/profiles - Add a profile to a list
 export async function POST(
@@ -113,12 +151,17 @@ export async function POST(
       headline = cached.headline || "";
       profilePictureUrl = cached.profilePictureUrl || "";
     } else {
-      // Try to scrape the profile to get basic info + cache posts
+      // Scrape the profile to get basic info + cache posts
       try {
         const profile = await scrapeLinkedInProfile(vanityName);
         displayName = profile.displayName;
         headline = profile.headline;
-        profilePictureUrl = profile.profilePictureUrl;
+
+        // Download profile picture to R2 for permanent storage
+        if (profile.profilePictureUrl) {
+          const r2Url = await downloadProfilePictureToR2(profile.profilePictureUrl, vanityName);
+          profilePictureUrl = r2Url || profile.profilePictureUrl;
+        }
 
         // Cache the scraped data
         await db
@@ -127,7 +170,7 @@ export async function POST(
             vanityName,
             displayName: profile.displayName,
             headline: profile.headline,
-            profilePictureUrl: profile.profilePictureUrl,
+            profilePictureUrl,
             followerCount: profile.followerCount,
             postsJson: JSON.stringify(profile.posts),
             lastFetchedAt: new Date(),
@@ -138,7 +181,7 @@ export async function POST(
             set: {
               displayName: profile.displayName,
               headline: profile.headline,
-              profilePictureUrl: profile.profilePictureUrl,
+              profilePictureUrl,
               followerCount: profile.followerCount,
               postsJson: JSON.stringify(profile.posts),
               lastFetchedAt: new Date(),
@@ -147,7 +190,6 @@ export async function POST(
           });
       } catch {
         // Profile couldn't be scraped - add anyway with vanity name as display name
-        // Posts will be fetched later
       }
     }
 

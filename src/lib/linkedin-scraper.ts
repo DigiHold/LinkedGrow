@@ -5,14 +5,17 @@ import { execSync } from "child_process";
 // ============================================
 
 export interface ScrapedPost {
-  activityUrn: string; // urn:li:activity:XXXXX
+  activityUrn: string;
   text: string;
-  datePublished: string; // ISO date
+  datePublished: string;
   likes: number;
   comments: number;
   reposts: number;
   postUrl: string;
   imageUrl: string | null;
+  mediaType: "image" | "video" | "carousel" | "article" | null;
+  carouselSlides: string[]; // URLs for carousel pages
+  videoThumbnailUrl: string | null;
 }
 
 export interface ScrapedProfile {
@@ -30,10 +33,6 @@ export interface ScrapedProfile {
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
-/**
- * Fetch a LinkedIn public profile page via curl + SOCKS5 proxy.
- * Returns raw HTML string or throws on failure.
- */
 function fetchProfileHtml(vanityName: string): string {
   const user = process.env.IPROYAL_PROXY_USER;
   const pass = process.env.IPROYAL_PROXY_PASS;
@@ -46,49 +45,37 @@ function fetchProfileHtml(vanityName: string): string {
 
   const url = `https://www.linkedin.com/in/${encodeURIComponent(vanityName)}/`;
 
-  // Use curl with SOCKS5 proxy and browser-like headers
   const curlCmd = [
     "curl", "-s", "--max-time", "25",
     "--proxy", `socks5://${user}:${pass}@${host}:${port}`,
-    "-L", // follow redirects
+    "-L",
     "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "-H", "Accept-Language: en-US,en;q=0.9",
     `"${url}"`,
   ].join(" ");
 
-  const html = execSync(curlCmd, {
+  return execSync(curlCmd, {
     encoding: "utf-8",
     timeout: 30000,
-    maxBuffer: 5 * 1024 * 1024, // 5MB
+    maxBuffer: 5 * 1024 * 1024,
   });
-
-  return html;
 }
 
-/**
- * Check if the HTML is an authwall (bot detection) page.
- */
 function isAuthwall(html: string): boolean {
   return (
     html.includes("/authwall?") ||
-    html.includes("session_redirect") && html.length < 10000 ||
+    (html.includes("session_redirect") && html.length < 10000) ||
     !html.includes("application/ld+json")
   );
 }
 
-/**
- * Parse JSON-LD structured data from LinkedIn profile HTML.
- */
 function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<ScrapedProfile> } {
   const posts: ScrapedPost[] = [];
   const profile: Partial<ScrapedProfile> = {};
 
-  // Extract JSON-LD script
   const ldMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/);
-  if (!ldMatch) {
-    return { posts, profile };
-  }
+  if (!ldMatch) return { posts, profile };
 
   let data: { "@graph"?: Record<string, unknown>[] };
   try {
@@ -99,7 +86,6 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
 
   const graph = data["@graph"] || [];
 
-  // Extract Person data
   const person = graph.find((item) => item["@type"] === "Person") as Record<string, unknown> | undefined;
   if (person) {
     profile.displayName = (person.name as string) || "";
@@ -113,10 +99,8 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
     }
   }
 
-  // Extract headline from title tag
   const titleMatch = html.match(/<title>(.*?)<\/title>/);
   if (titleMatch) {
-    // Format: "Name - Headline | LinkedIn"
     const titleParts = titleMatch[1].split(" | LinkedIn")[0];
     const dashIndex = titleParts.indexOf(" - ");
     if (dashIndex > 0) {
@@ -124,10 +108,7 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
     }
   }
 
-  // Extract DiscussionForumPosting entries (actual LinkedIn posts)
-  const postEntries = graph.filter(
-    (item) => item["@type"] === "DiscussionForumPosting"
-  );
+  const postEntries = graph.filter((item) => item["@type"] === "DiscussionForumPosting");
 
   for (const entry of postEntries) {
     const postUrl = (entry.mainEntityOfPage as string) || (entry.url as string) || "";
@@ -142,78 +123,91 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
       text: (entry.text as string) || "",
       datePublished: (entry.datePublished as string) || "",
       likes: stats?.userInteractionCount || 0,
-      comments: 0, // filled from HTML parsing
+      comments: 0,
       reposts: 0,
       postUrl,
-      imageUrl: null, // filled from HTML parsing
+      imageUrl: null,
+      mediaType: null,
+      carouselSlides: [],
+      videoThumbnailUrl: null,
     });
   }
 
   return { posts, profile };
 }
 
-/**
- * Enrich posts with comment counts, repost counts, and images from HTML.
- */
 function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
   for (const post of posts) {
     const activityId = post.activityUrn.split(":").pop();
     if (!activityId) continue;
 
-    // Find the position of this activity URN in HTML
     const urnIdx = html.indexOf(`urn:li:activity:${activityId}`);
     if (urnIdx < 0) continue;
 
-    // Search in a window after the URN for social counts
-    const chunk = html.substring(urnIdx, Math.min(html.length, urnIdx + 10000));
+    const chunk = html.substring(urnIdx, Math.min(html.length, urnIdx + 15000));
 
-    // Reactions count (should match JSON-LD, but HTML is more current)
+    // Reactions
     const reactionsMatch = chunk.match(/([\d,]+)\s*Reactions?/i);
     if (reactionsMatch) {
       const count = parseInt(reactionsMatch[1].replace(/,/g, ""), 10);
       if (count > 0) post.likes = count;
     }
 
-    // Comment count
+    // Comments
     const commentsMatch = chunk.match(/([\d,]+)\s*Comments?/i);
     if (commentsMatch) {
       post.comments = parseInt(commentsMatch[1].replace(/,/g, ""), 10);
     }
 
-    // Repost count
+    // Reposts
     const repostsMatch = chunk.match(/([\d,]+)\s*Reposts?/i);
     if (repostsMatch) {
       post.reposts = parseInt(repostsMatch[1].replace(/,/g, ""), 10);
     }
 
-    // Post image (feedshare or image-shrink URLs)
+    // Carousel/document detection - look for document cover images
+    const carouselCovers = chunk.match(
+      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*feedshare-document-cover-images[^"&]*/g
+    );
+    if (carouselCovers && carouselCovers.length > 0) {
+      post.mediaType = "carousel";
+      // Deduplicate and sort by page index
+      const uniqueSlides = [...new Set(carouselCovers.map((u) => u.replace(/&amp;/g, "&")))];
+      post.carouselSlides = uniqueSlides;
+      post.imageUrl = uniqueSlides[0] || null;
+      continue; // skip other media checks
+    }
+
+    // Video detection - look for video thumbnails
+    const videoThumb = chunk.match(
+      /https:\/\/(?:dms|media)\.licdn\.com\/[^"&]*feedshare-video-thumbnail[^"&]*/
+    );
+    if (videoThumb) {
+      post.mediaType = "video";
+      post.videoThumbnailUrl = videoThumb[0].replace(/&amp;/g, "&");
+      post.imageUrl = post.videoThumbnailUrl;
+      continue;
+    }
+
+    // Single image (feedshare or image-shrink)
     const imgMatch = chunk.match(
       /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*(?:feedshare-shrink|image-shrink)[^"&]*/
     );
     if (imgMatch) {
+      post.mediaType = "image";
       post.imageUrl = imgMatch[0].replace(/&amp;/g, "&");
     }
   }
 }
 
-/**
- * Extract profile picture from HTML if not found in JSON-LD.
- */
 function extractProfilePicture(html: string): string | null {
-  // Look for profile display photo in img elements
   const match = html.match(
     /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*profile-displayphoto-scale_200_200[^"&]*/
   );
-  if (match) {
-    return match[0].replace(/&amp;/g, "&");
-  }
+  if (match) return match[0].replace(/&amp;/g, "&");
   return null;
 }
 
-/**
- * Scrape a LinkedIn profile's public page for recent posts.
- * Retries up to 3 times on authwall (different proxy IP each time).
- */
 export async function scrapeLinkedInProfile(
   vanityName: string,
   maxRetries = 3
@@ -232,13 +226,10 @@ export async function scrapeLinkedInProfile(
         throw new Error("LinkedIn authwall (bot detection)");
       }
 
-      // Parse JSON-LD data
       const { posts, profile } = parseJsonLd(html);
 
-      // Enrich with HTML data (comments, images)
       enrichFromHtml(html, posts);
 
-      // Get profile picture from HTML if not in JSON-LD
       if (!profile.profilePictureUrl) {
         profile.profilePictureUrl = extractProfilePicture(html) || "";
       }
@@ -249,13 +240,11 @@ export async function scrapeLinkedInProfile(
         headline: profile.headline || "",
         profilePictureUrl: profile.profilePictureUrl || "",
         followerCount: profile.followerCount || 0,
-        posts: posts.slice(0, 10), // max 10 posts
+        posts: posts.slice(0, 10),
       };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      // Only retry on authwall or network errors
       if (attempt < maxRetries) {
-        // Small delay before retry (different proxy IP each request)
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
       }
     }
@@ -264,9 +253,6 @@ export async function scrapeLinkedInProfile(
   throw lastError || new Error("Failed to scrape profile after retries");
 }
 
-/**
- * Check if cached data is still fresh.
- */
 export function isCacheFresh(lastFetchedAt: Date | number): boolean {
   const fetchedMs = lastFetchedAt instanceof Date ? lastFetchedAt.getTime() : lastFetchedAt * 1000;
   return Date.now() - fetchedMs < CACHE_TTL_MS;

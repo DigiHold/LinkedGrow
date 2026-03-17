@@ -33,8 +33,12 @@ import {
   UserPlus,
   AlertCircle,
   FolderOpen,
-  Pencil,
   Check,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
@@ -67,6 +71,9 @@ interface FeedPost {
   reposts: number;
   postUrl: string;
   imageUrl: string | null;
+  mediaType: "image" | "video" | "carousel" | "article" | null;
+  carouselSlides: string[];
+  videoThumbnailUrl: string | null;
   authorVanityName: string;
   authorDisplayName: string;
   authorHeadline: string;
@@ -106,6 +113,47 @@ function formatCount(n: number): string {
 }
 
 // ============================================
+// CAROUSEL VIEWER
+// ============================================
+
+function CarouselViewer({ slides }: { slides: string[] }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  if (slides.length === 0) return null;
+  return (
+    <div className="relative mt-3 group">
+      <img
+        src={slides[currentSlide]}
+        alt={`Slide ${currentSlide + 1}`}
+        className="w-full object-contain max-h-80 bg-slate-50 dark:bg-slate-800"
+      />
+      {slides.length > 1 && (
+        <>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-medium">
+            {currentSlide + 1} / {slides.length}
+          </div>
+          {currentSlide > 0 && (
+            <button
+              onClick={() => setCurrentSlide((p) => p - 1)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          {currentSlide < slides.length - 1 && (
+            <button
+              onClick={() => setCurrentSlide((p) => p + 1)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // PAGE
 // ============================================
 
@@ -121,17 +169,19 @@ export default function EngagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFeedLoading, setIsFeedLoading] = useState(false);
 
-  // List management
-  const [activeListId, setActiveListId] = useState<string | null>(null); // null = "All"
+  // Active list filter
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+
+  // List management dialog
+  const [showListDialog, setShowListDialog] = useState(false);
+  const [dialogView, setDialogView] = useState<"lists" | "list-detail">("lists");
+  const [dialogListId, setDialogListId] = useState<string | null>(null);
   const [newListName, setNewListName] = useState("");
   const [isCreatingList, setIsCreatingList] = useState(false);
-  const [addingProfileToList, setAddingProfileToList] = useState<string | null>(null);
+  const [deletingListId, setDeletingListId] = useState<string | null>(null);
   const [newVanityName, setNewVanityName] = useState("");
   const [isAddingProfile, setIsAddingProfile] = useState(false);
   const [addProfileError, setAddProfileError] = useState<string | null>(null);
-  const [editingListId, setEditingListId] = useState<string | null>(null);
-  const [editListName, setEditListName] = useState("");
-  const [deletingListId, setDeletingListId] = useState<string | null>(null);
 
   // Goals dialog
   const [showGoals, setShowGoals] = useState(false);
@@ -155,10 +205,7 @@ export default function EngagementPage() {
   const fetchEngagement = useCallback(async () => {
     try {
       const res = await fetch("/api/linkedin/engagement");
-      if (res.ok) {
-        const data = await res.json();
-        setEngagementData(data);
-      }
+      if (res.ok) setEngagementData(await res.json());
     } catch (err) {
       console.error("Failed to fetch engagement:", err);
     }
@@ -176,47 +223,55 @@ export default function EngagementPage() {
     }
   }, []);
 
-  const fetchFeed = useCallback(
-    async (listId?: string | null) => {
-      setIsFeedLoading(true);
-      setFeedErrors([]);
-      try {
-        const url = listId
-          ? `/api/engagement/feed?listId=${listId}`
-          : "/api/engagement/feed";
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setFeedPosts(data.posts || []);
-          setFeedErrors(data.errors || []);
-        } else {
-          const err = await res.json().catch(() => ({ error: "Failed to load feed" }));
-          setFeedErrors([{ vanityName: "", error: err.error }]);
-        }
-      } catch {
-        setFeedErrors([{ vanityName: "", error: "Failed to load feed" }]);
-      } finally {
-        setIsFeedLoading(false);
+  const fetchFeed = useCallback(async (listId?: string | null) => {
+    setIsFeedLoading(true);
+    setFeedErrors([]);
+    try {
+      const url = listId ? `/api/engagement/feed?listId=${listId}` : "/api/engagement/feed";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setFeedPosts(data.posts || []);
+        setFeedErrors(data.errors || []);
+      } else {
+        const err = await res.json().catch(() => ({ error: "Failed to load feed" }));
+        setFeedErrors([{ vanityName: "", error: err.error }]);
       }
-    },
-    []
-  );
+    } catch {
+      setFeedErrors([{ vanityName: "", error: "Failed to load feed" }]);
+    } finally {
+      setIsFeedLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
     Promise.all([fetchEngagement(), fetchLists()]).finally(() => setIsLoading(false));
   }, [fetchEngagement, fetchLists]);
 
-  // Fetch feed when lists are loaded or active list changes
   useEffect(() => {
-    if (!isLoading && lists.length > 0) {
-      fetchFeed(activeListId);
-    }
+    if (!isLoading && lists.length > 0) fetchFeed(activeListId);
   }, [isLoading, lists.length, activeListId, fetchFeed]);
 
   // ============================================
-  // LIST MANAGEMENT
+  // LIST MANAGEMENT (DIALOG)
   // ============================================
+
+  const openListDialog = () => {
+    setShowListDialog(true);
+    setDialogView("lists");
+    setDialogListId(null);
+    setNewListName("");
+    setNewVanityName("");
+    setAddProfileError(null);
+  };
+
+  const openListDetail = (listId: string) => {
+    setDialogView("list-detail");
+    setDialogListId(listId);
+    setNewVanityName("");
+    setAddProfileError(null);
+  };
 
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
@@ -231,6 +286,8 @@ export default function EngagementPage() {
         const data = await res.json();
         setLists((prev) => [...prev, data.list]);
         setNewListName("");
+        // Auto-enter the new list
+        openListDetail(data.list.id);
       }
     } finally {
       setIsCreatingList(false);
@@ -243,31 +300,11 @@ export default function EngagementPage() {
       const res = await fetch(`/api/engagement/lists/${listId}`, { method: "DELETE" });
       if (res.ok) {
         setLists((prev) => prev.filter((l) => l.id !== listId));
-        if (activeListId === listId) {
-          setActiveListId(null);
-        }
+        if (activeListId === listId) setActiveListId(null);
+        if (dialogListId === listId) setDialogView("lists");
       }
     } finally {
       setDeletingListId(null);
-    }
-  };
-
-  const handleRenameList = async (listId: string) => {
-    if (!editListName.trim()) return;
-    try {
-      const res = await fetch(`/api/engagement/lists/${listId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editListName.trim() }),
-      });
-      if (res.ok) {
-        setLists((prev) =>
-          prev.map((l) => (l.id === listId ? { ...l, name: editListName.trim() } : l))
-        );
-        setEditingListId(null);
-      }
-    } catch {
-      // ignore
     }
   };
 
@@ -284,15 +321,9 @@ export default function EngagementPage() {
       const data = await res.json();
       if (res.ok) {
         setLists((prev) =>
-          prev.map((l) =>
-            l.id === listId
-              ? { ...l, profiles: [...l.profiles, data.profile] }
-              : l
-          )
+          prev.map((l) => l.id === listId ? { ...l, profiles: [...l.profiles, data.profile] } : l)
         );
         setNewVanityName("");
-        setAddingProfileToList(null);
-        // Refresh feed to include new profile's posts
         fetchFeed(activeListId);
       } else {
         setAddProfileError(data.error || "Failed to add profile");
@@ -306,22 +337,13 @@ export default function EngagementPage() {
 
   const handleRemoveProfile = async (listId: string, profileId: string) => {
     try {
-      const res = await fetch(
-        `/api/engagement/lists/${listId}/profiles?profileId=${profileId}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/engagement/lists/${listId}/profiles?profileId=${profileId}`, { method: "DELETE" });
       if (res.ok) {
         setLists((prev) =>
-          prev.map((l) =>
-            l.id === listId
-              ? { ...l, profiles: l.profiles.filter((p) => p.id !== profileId) }
-              : l
-          )
+          prev.map((l) => l.id === listId ? { ...l, profiles: l.profiles.filter((p) => p.id !== profileId) } : l)
         );
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   };
 
   // ============================================
@@ -339,16 +361,8 @@ export default function EngagementPage() {
       if (res.ok) {
         const data = await res.json();
         setLikedPosts((prev) => new Set([...prev, postUrn]));
-        setFeedPosts((prev) =>
-          prev.map((p) =>
-            p.activityUrn === postUrn ? { ...p, likes: p.likes + 1 } : p
-          )
-        );
-        if (data.today) {
-          setEngagementData((prev) =>
-            prev ? { ...prev, today: data.today } : prev
-          );
-        }
+        setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, likes: p.likes + 1 } : p));
+        if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
       }
     } finally {
       setLikingPost(null);
@@ -362,36 +376,21 @@ export default function EngagementPage() {
       const res = await fetch("/api/engagement/interact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "comment",
-          postUrn,
-          text: commentText.trim(),
-        }),
+        body: JSON.stringify({ action: "comment", postUrn, text: commentText.trim() }),
       });
       if (res.ok) {
         const data = await res.json();
         setCommentingOn(null);
         setCommentText("");
-        setFeedPosts((prev) =>
-          prev.map((p) =>
-            p.activityUrn === postUrn ? { ...p, comments: p.comments + 1 } : p
-          )
-        );
-        if (data.today) {
-          setEngagementData((prev) =>
-            prev ? { ...prev, today: data.today } : prev
-          );
-        }
+        setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, comments: p.comments + 1 } : p));
+        if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
       }
     } finally {
       setIsCommenting(false);
     }
   };
 
-  const handleGenerateComment = async (
-    postUrn: string,
-    postContent: string
-  ) => {
+  const handleGenerateComment = async (postUrn: string, postContent: string) => {
     setCommentingOn(postUrn);
     setGeneratingCommentFor(postUrn);
     setCommentText("");
@@ -416,23 +415,10 @@ export default function EngagementPage() {
       const res = await fetch("/api/linkedin/engagement", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dailyLikes: editLikes,
-          dailyComments: editComments,
-        }),
+        body: JSON.stringify({ dailyLikes: editLikes, dailyComments: editComments }),
       });
       if (res.ok) {
-        setEngagementData((prev) =>
-          prev
-            ? {
-                ...prev,
-                objectives: {
-                  dailyLikes: editLikes,
-                  dailyComments: editComments,
-                },
-              }
-            : prev
-        );
+        setEngagementData((prev) => prev ? { ...prev, objectives: { dailyLikes: editLikes, dailyComments: editComments } } : prev);
         setShowGoals(false);
       }
     } finally {
@@ -454,10 +440,7 @@ export default function EngagementPage() {
                 <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                This page contains the team owner&apos;s private LinkedIn
-                engagement data and is not accessible to team members.
-              </p>
+              <p className="text-muted-foreground">This page is not accessible to team members.</p>
             </div>
           </CardContent>
         </Card>
@@ -465,24 +448,10 @@ export default function EngagementPage() {
     );
   }
 
-  const likesProgress = engagementData
-    ? Math.min(
-        100,
-        (engagementData.today.likes /
-          Math.max(1, engagementData.objectives.dailyLikes)) *
-          100
-      )
-    : 0;
-  const commentsProgress = engagementData
-    ? Math.min(
-        100,
-        (engagementData.today.comments /
-          Math.max(1, engagementData.objectives.dailyComments)) *
-          100
-      )
-    : 0;
-
+  const likesProgress = engagementData ? Math.min(100, (engagementData.today.likes / Math.max(1, engagementData.objectives.dailyLikes)) * 100) : 0;
+  const commentsProgress = engagementData ? Math.min(100, (engagementData.today.comments / Math.max(1, engagementData.objectives.dailyComments)) * 100) : 0;
   const totalProfiles = lists.reduce((sum, l) => sum + l.profiles.length, 0);
+  const dialogList = dialogListId ? lists.find((l) => l.id === dialogListId) : null;
 
   return (
     <FeatureGate feature="engagement">
@@ -495,82 +464,41 @@ export default function EngagementPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Engagement</h1>
-              <p className="text-muted-foreground text-sm">
-                Follow LinkedIn profiles and engage with their posts
-              </p>
+              <p className="text-muted-foreground text-sm">Follow LinkedIn profiles and engage with their posts</p>
             </div>
           </div>
 
           {engagementData && (
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Likes progress */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <Heart className="w-4 h-4 text-cyan-500" />
-                <span className="text-sm font-bold">
-                  {engagementData.today.likes}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  / {engagementData.objectives.dailyLikes}
-                </span>
+                <span className="text-sm font-bold">{engagementData.today.likes}</span>
+                <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyLikes}</span>
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-cyan-500 rounded-full transition-all duration-500"
-                    style={{ width: `${likesProgress}%` }}
-                  />
+                  <div className="h-full bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${likesProgress}%` }} />
                 </div>
               </div>
-              {/* Comments progress */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <MessageCircle className="w-4 h-4 text-blue-500" />
-                <span className="text-sm font-bold">
-                  {engagementData.today.comments}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  / {engagementData.objectives.dailyComments}
-                </span>
+                <span className="text-sm font-bold">{engagementData.today.comments}</span>
+                <span className="text-xs text-muted-foreground">/ {engagementData.objectives.dailyComments}</span>
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${commentsProgress}%` }}
-                  />
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${commentsProgress}%` }} />
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => {
-                  setEditLikes(engagementData.objectives.dailyLikes);
-                  setEditComments(engagementData.objectives.dailyComments);
-                  setShowGoals(true);
-                }}
-                title="Edit daily goals"
-              >
+              <Button variant="ghost" size="icon-sm" onClick={() => { setEditLikes(engagementData.objectives.dailyLikes); setEditComments(engagementData.objectives.dailyComments); setShowGoals(true); }} title="Edit daily goals">
                 <Settings className="w-4 h-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => fetchFeed(activeListId)}
-                disabled={isFeedLoading}
-                title="Refresh feed"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${isFeedLoading ? "animate-spin" : ""}`}
-                />
+              <Button variant="ghost" size="icon-sm" onClick={() => fetchFeed(activeListId)} disabled={isFeedLoading} title="Refresh feed">
+                <RefreshCw className={`w-4 h-4 ${isFeedLoading ? "animate-spin" : ""}`} />
               </Button>
-              <Link
-                href="/docs/getting-started/understanding-dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-cyan-600 transition-colors"
-              >
+              <Link href="/docs/getting-started/understanding-dashboard" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-cyan-600 transition-colors">
                 <HelpCircle className="w-4 h-4" />
               </Link>
             </div>
           )}
         </div>
 
-        {/* Loading */}
         {isLoading && (
           <div className="min-h-[50vh] flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
@@ -581,292 +509,50 @@ export default function EngagementPage() {
           <>
             {/* Community App connection */}
             {!engagementData.communityConnected ? (
-              <CommunityConnectBanner
-                isConnected={false}
-                profileName={engagementData.profileName}
-              />
+              <CommunityConnectBanner isConnected={false} profileName={engagementData.profileName} />
             ) : (
-              <CommunityConnectBanner
-                isConnected={true}
-                profileName={engagementData.profileName}
-                onDisconnect={async () => {
-                  await fetch("/api/linkedin/community/disconnect", {
-                    method: "POST",
-                  });
-                  window.location.reload();
-                }}
-              />
+              <CommunityConnectBanner isConnected={true} profileName={engagementData.profileName} onDisconnect={async () => { await fetch("/api/linkedin/community/disconnect", { method: "POST" }); window.location.reload(); }} />
             )}
 
-            {/* Lists Management */}
-            <div className="space-y-4">
-              {/* List tabs */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* "All" tab */}
+            {/* List filter tabs + manage button */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setActiveListId(null)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeListId === null ? "bg-cyan-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"}`}
+              >
+                All ({totalProfiles})
+              </button>
+              {lists.map((list) => (
                 <button
-                  onClick={() => setActiveListId(null)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeListId === null
-                      ? "bg-cyan-500 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  }`}
+                  key={list.id}
+                  onClick={() => setActiveListId(list.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeListId === list.id ? "bg-cyan-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"}`}
                 >
-                  All ({totalProfiles})
+                  {list.name} ({list.profiles.length})
                 </button>
-
-                {/* List tabs */}
-                {lists.map((list) => (
-                  <div key={list.id} className="flex items-center gap-0.5">
-                    {editingListId === list.id ? (
-                      <div className="flex items-center gap-1">
-                        <Input
-                          value={editListName}
-                          onChange={(e) => setEditListName(e.target.value)}
-                          className="h-8 w-32 text-sm"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleRenameList(list.id);
-                            if (e.key === "Escape") setEditingListId(null);
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleRenameList(list.id)}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => setEditingListId(null)}
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setActiveListId(list.id)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            activeListId === list.id
-                              ? "bg-cyan-500 text-white"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                          }`}
-                        >
-                          {list.name} ({list.profiles.length})
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingListId(list.id);
-                            setEditListName(list.name);
-                          }}
-                          className="p-1 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
-                          title="Rename list"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteList(list.id)}
-                          disabled={deletingListId === list.id}
-                          className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
-                          title="Delete list"
-                        >
-                          {deletingListId === list.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3 h-3" />
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                ))}
-
-                {/* New list input */}
-                <div className="flex items-center gap-1">
-                  <Input
-                    placeholder="New list..."
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    className="h-8 w-28 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreateList();
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={handleCreateList}
-                    disabled={isCreatingList || !newListName.trim()}
-                    title="Create list"
-                  >
-                    {isCreatingList ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Plus className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Profiles in active list + Add profile */}
-              {lists.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Show profiles for active list (or all) */}
-                  {(activeListId
-                    ? lists.find((l) => l.id === activeListId)?.profiles || []
-                    : lists.flatMap((l) => l.profiles)
-                  )
-                    .filter(
-                      (p, i, arr) =>
-                        arr.findIndex((x) => x.vanityName === p.vanityName) === i
-                    )
-                    .map((profile) => (
-                      <div
-                        key={profile.id}
-                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 group"
-                      >
-                        {profile.profilePictureUrl ? (
-                          <img
-                            src={profile.profilePictureUrl}
-                            alt={profile.displayName || profile.vanityName}
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                            <span className="text-[10px] font-bold text-white">
-                              {(profile.displayName || profile.vanityName)
-                                .split(" ")
-                                .map((w) => w[0])
-                                .join("")
-                                .substring(0, 2)
-                                .toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        <span className="text-xs font-medium">
-                          {profile.displayName || profile.vanityName}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleRemoveProfile(profile.listId, profile.id)
-                          }
-                          className="p-0.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-
-                  {/* Add profile button */}
-                  {activeListId && (
-                    <>
-                      {addingProfileToList === activeListId ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            placeholder="vanity name or LinkedIn URL..."
-                            value={newVanityName}
-                            onChange={(e) => {
-                              setNewVanityName(e.target.value);
-                              setAddProfileError(null);
-                            }}
-                            className="h-8 w-56 text-sm"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter")
-                                handleAddProfile(activeListId);
-                              if (e.key === "Escape") {
-                                setAddingProfileToList(null);
-                                setNewVanityName("");
-                                setAddProfileError(null);
-                              }
-                            }}
-                          />
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleAddProfile(activeListId)}
-                            disabled={
-                              isAddingProfile || !newVanityName.trim()
-                            }
-                          >
-                            {isAddingProfile ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              "Add"
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => {
-                              setAddingProfileToList(null);
-                              setNewVanityName("");
-                              setAddProfileError(null);
-                            }}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                          {addProfileError && (
-                            <span className="text-xs text-red-500">
-                              {addProfileError}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAddingProfileToList(activeListId)}
-                          className="text-xs"
-                        >
-                          <UserPlus className="w-3.5 h-3.5 mr-1" />
-                          Add Profile
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+              ))}
+              <button
+                onClick={openListDialog}
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-cyan-100 hover:text-cyan-600 dark:hover:bg-cyan-900/30 dark:hover:text-cyan-400 flex items-center justify-center transition-colors"
+                title="Manage lists"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Empty state - no lists */}
+            {/* Empty state */}
             {lists.length === 0 && !isFeedLoading && (
               <Card>
                 <CardContent className="py-16 text-center">
                   <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    Create your first engagement list
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-2">Get started with engagement</h3>
                   <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
-                    Organize LinkedIn profiles into lists (e.g. &quot;Marketing&quot;,
-                    &quot;AI&quot;, &quot;Founders&quot;). We&apos;ll fetch their latest posts so you can
-                    like and comment directly from here.
+                    Click the <strong>+</strong> button above to create a list and add LinkedIn profiles you want to engage with.
                   </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Input
-                      placeholder="List name (e.g. Marketing)"
-                      value={newListName}
-                      onChange={(e) => setNewListName(e.target.value)}
-                      className="w-48"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleCreateList();
-                      }}
-                    />
-                    <Button
-                      variant="primary"
-                      onClick={handleCreateList}
-                      disabled={isCreatingList || !newListName.trim()}
-                    >
-                      {isCreatingList ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="w-4 h-4 mr-2" />
-                      )}
-                      Create List
-                    </Button>
-                  </div>
+                  <Button variant="primary" onClick={openListDialog}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Your First List
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -876,13 +562,7 @@ export default function EngagementPage() {
               <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-sm">
                 <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-amber-700 dark:text-amber-300">
-                  {feedErrors.map((e, i) => (
-                    <p key={i}>
-                      {e.vanityName
-                        ? `${e.vanityName}: ${e.error}`
-                        : e.error}
-                    </p>
-                  ))}
+                  {feedErrors.map((e, i) => <p key={i}>{e.vanityName ? `${e.vanityName}: ${e.error}` : e.error}</p>)}
                 </div>
               </div>
             )}
@@ -891,9 +571,7 @@ export default function EngagementPage() {
             {isFeedLoading && feedPosts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-                <p className="text-muted-foreground text-sm">
-                  Fetching posts from LinkedIn profiles...
-                </p>
+                <p className="text-muted-foreground text-sm">Fetching posts from LinkedIn profiles...</p>
               </div>
             )}
 
@@ -901,256 +579,109 @@ export default function EngagementPage() {
             {feedPosts.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {feedPosts.map((post) => (
-                  <div
-                    key={post.activityUrn}
-                    className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col"
-                  >
-                    {/* Author row */}
+                  <div key={post.activityUrn} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
+                    {/* Author */}
                     <div className="p-4 pb-0">
                       <div className="flex items-start gap-3 mb-3">
                         {post.authorProfilePictureUrl ? (
-                          <img
-                            src={post.authorProfilePictureUrl}
-                            alt={post.authorDisplayName}
-                            className="w-10 h-10 rounded-full object-cover shrink-0"
-                          />
+                          <img src={post.authorProfilePictureUrl} alt={post.authorDisplayName} className="w-10 h-10 rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-white">
-                              {post.authorDisplayName
-                                .split(" ")
-                                .map((w) => w[0])
-                                .join("")
-                                .substring(0, 2)
-                                .toUpperCase()}
-                            </span>
+                            <span className="text-xs font-bold text-white">{post.authorDisplayName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase()}</span>
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <a
-                            href={`https://www.linkedin.com/in/${post.authorVanityName}/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-semibold truncate block hover:text-cyan-600 transition-colors"
-                          >
-                            {post.authorDisplayName}
-                          </a>
-                          {post.authorHeadline && (
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {post.authorHeadline}
-                            </p>
-                          )}
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {timeAgo(post.datePublished)}
-                          </p>
+                          <a href={`https://www.linkedin.com/in/${post.authorVanityName}/`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold truncate block hover:text-cyan-600 transition-colors">{post.authorDisplayName}</a>
+                          {post.authorHeadline && <p className="text-xs text-muted-foreground line-clamp-1">{post.authorHeadline}</p>}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{timeAgo(post.datePublished)}</p>
                         </div>
                       </div>
 
-                      {/* Post text with see more/less */}
+                      {/* Post text */}
                       {post.text ? (
                         <div className="text-sm leading-relaxed">
-                          <p
-                            className={`whitespace-pre-wrap ${
-                              expandedPosts.has(post.activityUrn)
-                                ? ""
-                                : "line-clamp-4"
-                            }`}
-                          >
-                            {post.text}
-                          </p>
+                          <p className={`whitespace-pre-wrap ${expandedPosts.has(post.activityUrn) ? "" : "line-clamp-4"}`}>{post.text}</p>
                           {post.text.length > 200 && (
                             <button
-                              onClick={() =>
-                                setExpandedPosts((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(post.activityUrn))
-                                    next.delete(post.activityUrn);
-                                  else next.add(post.activityUrn);
-                                  return next;
-                                })
-                              }
+                              onClick={() => setExpandedPosts((prev) => { const next = new Set(prev); if (next.has(post.activityUrn)) next.delete(post.activityUrn); else next.add(post.activityUrn); return next; })}
                               className="text-muted-foreground hover:text-foreground font-medium text-xs mt-1 transition-colors"
                             >
-                              {expandedPosts.has(post.activityUrn)
-                                ? "...see less"
-                                : "...see more"}
+                              {expandedPosts.has(post.activityUrn) ? "...see less" : "...see more"}
                             </button>
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                          (Shared content)
-                        </p>
+                        <p className="text-sm text-muted-foreground italic">(Shared content)</p>
                       )}
                     </div>
 
-                    {/* Post image */}
-                    {post.imageUrl && (
+                    {/* Media: Carousel */}
+                    {post.mediaType === "carousel" && post.carouselSlides.length > 0 && (
+                      <CarouselViewer slides={post.carouselSlides} />
+                    )}
+
+                    {/* Media: Video */}
+                    {post.mediaType === "video" && post.videoThumbnailUrl && (
+                      <div className="relative mt-3">
+                        <img src={post.videoThumbnailUrl} alt="" className="w-full max-h-64 object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Media: Single image */}
+                    {post.mediaType === "image" && post.imageUrl && (
                       <div className="mt-3">
-                        <img
-                          src={post.imageUrl}
-                          alt=""
-                          className="w-full max-h-64 object-cover"
-                        />
+                        <img src={post.imageUrl} alt="" className="w-full max-h-64 object-cover" />
+                      </div>
+                    )}
+
+                    {/* Media: No type but has image */}
+                    {!post.mediaType && post.imageUrl && (
+                      <div className="mt-3">
+                        <img src={post.imageUrl} alt="" className="w-full max-h-64 object-cover" />
                       </div>
                     )}
 
                     {/* Social counts */}
                     <div className="px-4 pt-3 mt-auto">
                       <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
-                        {post.likes > 0 && (
-                          <span className="flex items-center gap-1">
-                            <ThumbsUp className="w-3 h-3" />{" "}
-                            {formatCount(post.likes)}
-                          </span>
-                        )}
-                        {post.comments > 0 && (
-                          <span>
-                            {formatCount(post.comments)} comments
-                          </span>
-                        )}
-                        {post.reposts > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Share2 className="w-3 h-3" />{" "}
-                            {formatCount(post.reposts)}
-                          </span>
-                        )}
-                        {post.likes === 0 &&
-                          post.comments === 0 &&
-                          post.reposts === 0 && (
-                            <span className="opacity-50">No reactions yet</span>
-                          )}
+                        {post.likes > 0 && <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {formatCount(post.likes)}</span>}
+                        {post.comments > 0 && <span>{formatCount(post.comments)} comments</span>}
+                        {post.reposts > 0 && <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> {formatCount(post.reposts)}</span>}
+                        {post.likes === 0 && post.comments === 0 && post.reposts === 0 && <span className="opacity-50">No reactions yet</span>}
                       </div>
                     </div>
 
-                    {/* Action buttons */}
+                    {/* Actions */}
                     <div className="px-2 py-1 flex items-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`flex-1 text-xs ${
-                          likedPosts.has(post.activityUrn)
-                            ? "text-cyan-600 dark:text-cyan-400"
-                            : ""
-                        }`}
-                        onClick={() => handleLike(post.activityUrn)}
-                        disabled={
-                          likingPost === post.activityUrn ||
-                          likedPosts.has(post.activityUrn) ||
-                          !engagementData.communityConnected
-                        }
-                      >
-                        {likingPost === post.activityUrn ? (
-                          <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                        ) : (
-                          <ThumbsUp
-                            className={`w-4 h-4 mr-1.5 ${
-                              likedPosts.has(post.activityUrn)
-                                ? "fill-cyan-500 text-cyan-500"
-                                : ""
-                            }`}
-                          />
-                        )}
+                      <Button variant="ghost" size="sm" className={`flex-1 text-xs ${likedPosts.has(post.activityUrn) ? "text-cyan-600 dark:text-cyan-400" : ""}`} onClick={() => handleLike(post.activityUrn)} disabled={likingPost === post.activityUrn || likedPosts.has(post.activityUrn) || !engagementData.communityConnected}>
+                        {likingPost === post.activityUrn ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <ThumbsUp className={`w-4 h-4 mr-1.5 ${likedPosts.has(post.activityUrn) ? "fill-cyan-500 text-cyan-500" : ""}`} />}
                         {likedPosts.has(post.activityUrn) ? "Liked" : "Like"}
                       </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        onClick={() => {
-                          if (commentingOn === post.activityUrn) {
-                            setCommentingOn(null);
-                            setCommentText("");
-                          } else {
-                            setCommentingOn(post.activityUrn);
-                            setCommentText("");
-                          }
-                        }}
-                        disabled={!engagementData.communityConnected}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1.5" />
-                        Comment
+                      <Button variant="ghost" size="sm" className="flex-1 text-xs" onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.communityConnected}>
+                        <MessageCircle className="w-4 h-4 mr-1.5" /> Comment
                       </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="shrink-0"
-                        title="AI-generate a comment"
-                        onClick={() =>
-                          handleGenerateComment(
-                            post.activityUrn,
-                            post.text
-                          )
-                        }
-                        disabled={
-                          generatingCommentFor === post.activityUrn ||
-                          !engagementData.communityConnected
-                        }
-                      >
-                        {generatingCommentFor === post.activityUrn ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-4 h-4 text-amber-500" />
-                        )}
+                      <Button variant="ghost" size="icon-sm" className="shrink-0" title="AI comment" onClick={() => handleGenerateComment(post.activityUrn, post.text)} disabled={generatingCommentFor === post.activityUrn || !engagementData.communityConnected}>
+                        {generatingCommentFor === post.activityUrn ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
                       </Button>
                     </div>
 
-                    {/* Inline comment form */}
+                    {/* Comment form */}
                     {commentingOn === post.activityUrn && (
                       <div className="px-4 pb-4 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                        <Textarea
-                          placeholder="Write a comment..."
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          className="min-h-18 text-sm resize-none"
-                          autoFocus
-                        />
+                        <Textarea placeholder="Write a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} className="min-h-18 text-sm resize-none" autoFocus />
                         <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setCommentingOn(null);
-                              setCommentText("");
-                            }}
-                          >
-                            <X className="w-3.5 h-3.5 mr-1" /> Cancel
-                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setCommentingOn(null); setCommentText(""); }}><X className="w-3.5 h-3.5 mr-1" /> Cancel</Button>
                           <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleGenerateComment(
-                                  post.activityUrn,
-                                  post.text
-                                )
-                              }
-                              disabled={
-                                generatingCommentFor === post.activityUrn
-                              }
-                            >
-                              {generatingCommentFor === post.activityUrn ? (
-                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                              ) : (
-                                <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" />
-                              )}
-                              AI
+                            <Button variant="ghost" size="sm" onClick={() => handleGenerateComment(post.activityUrn, post.text)} disabled={generatingCommentFor === post.activityUrn}>
+                              {generatingCommentFor === post.activityUrn ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" />} AI
                             </Button>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleComment(post.activityUrn)}
-                              disabled={isCommenting || !commentText.trim()}
-                            >
-                              {isCommenting ? (
-                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                              ) : (
-                                <Send className="w-3.5 h-3.5 mr-1" />
-                              )}
-                              Post
+                            <Button variant="primary" size="sm" onClick={() => handleComment(post.activityUrn)} disabled={isCommenting || !commentText.trim()}>
+                              {isCommenting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />} Post
                             </Button>
                           </div>
                         </div>
@@ -1161,27 +692,159 @@ export default function EngagementPage() {
               </div>
             )}
 
-            {/* Empty feed with lists but no profiles */}
-            {!isFeedLoading &&
-              feedPosts.length === 0 &&
-              lists.length > 0 &&
-              totalProfiles === 0 && (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <UserPlus className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      Add profiles to your lists
-                    </h3>
-                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                      Click on a list tab above, then click &quot;Add Profile&quot; to
-                      start following LinkedIn profiles. Enter their vanity name
-                      (e.g. justinwelsh) or paste a full LinkedIn URL.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+            {/* Empty feed with profiles */}
+            {!isFeedLoading && feedPosts.length === 0 && lists.length > 0 && totalProfiles === 0 && (
+              <Card>
+                <CardContent className="py-16 text-center">
+                  <UserPlus className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Add profiles to your lists</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto mb-4">
+                    Click the <strong>+</strong> button, select a list, and add LinkedIn profiles (e.g. lecocq-nicolas) to start seeing their posts here.
+                  </p>
+                  <Button variant="primary" onClick={openListDialog}>
+                    <UserPlus className="w-4 h-4 mr-2" /> Add Profiles
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
+
+        {/* ============================================ */}
+        {/* LIST MANAGEMENT DIALOG */}
+        {/* ============================================ */}
+        <Dialog open={showListDialog} onOpenChange={setShowListDialog}>
+          <DialogContent className="max-w-md">
+            {dialogView === "lists" ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Manage Lists</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                  {/* Existing lists */}
+                  {lists.length > 0 ? (
+                    <div className="space-y-1">
+                      {lists.map((list) => (
+                        <div key={list.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                          <button onClick={() => openListDetail(list.id)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                            <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
+                              <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold truncate">{list.name}</p>
+                              <p className="text-xs text-muted-foreground">{list.profiles.length} profile{list.profiles.length !== 1 ? "s" : ""}</p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteList(list.id)}
+                            disabled={deletingListId === list.id}
+                            className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete list"
+                          >
+                            {deletingListId === list.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <FolderOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">No lists yet. Create one to get started.</p>
+                    </div>
+                  )}
+
+                  {/* Create new list */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <Input
+                      placeholder="New list name..."
+                      value={newListName}
+                      onChange={(e) => setNewListName(e.target.value)}
+                      className="flex-1"
+                      onKeyDown={(e) => { if (e.key === "Enter") handleCreateList(); }}
+                      autoFocus={lists.length === 0}
+                    />
+                    <Button variant="primary" onClick={handleCreateList} disabled={isCreatingList || !newListName.trim()}>
+                      {isCreatingList ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+                      Create
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : dialogView === "list-detail" && dialogList ? (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setDialogView("lists")} className="p-1 -ml-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <DialogTitle>{dialogList.name}</DialogTitle>
+                  </div>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                  {/* Add profile input */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="LinkedIn vanity name or URL..."
+                        value={newVanityName}
+                        onChange={(e) => { setNewVanityName(e.target.value); setAddProfileError(null); }}
+                        className="flex-1"
+                        onKeyDown={(e) => { if (e.key === "Enter" && dialogListId) handleAddProfile(dialogListId); }}
+                        autoFocus
+                      />
+                      <Button variant="primary" onClick={() => dialogListId && handleAddProfile(dialogListId)} disabled={isAddingProfile || !newVanityName.trim()}>
+                        {isAddingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4 mr-1" />}
+                        Add
+                      </Button>
+                    </div>
+                    {addProfileError && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {addProfileError}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      Enter a vanity name (e.g. lecocq-nicolas) or paste a full LinkedIn profile URL
+                    </p>
+                  </div>
+
+                  {/* Profiles in list */}
+                  {dialogList.profiles.length > 0 ? (
+                    <div className="space-y-1 max-h-72 overflow-y-auto">
+                      {dialogList.profiles.map((profile) => (
+                        <div key={profile.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                          {profile.profilePictureUrl ? (
+                            <img src={profile.profilePictureUrl} alt={profile.displayName || profile.vanityName} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-bold text-white">{(profile.displayName || profile.vanityName).split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase()}</span>
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{profile.displayName || profile.vanityName}</p>
+                            {profile.headline && <p className="text-[11px] text-muted-foreground truncate">{profile.headline}</p>}
+                            {!profile.headline && profile.displayName && <p className="text-[11px] text-muted-foreground">@{profile.vanityName}</p>}
+                          </div>
+                          <button
+                            onClick={() => handleRemoveProfile(dialogList.id, profile.id)}
+                            className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                            title="Remove"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <UserPlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Add LinkedIn profiles to this list</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         {/* Goals dialog */}
         <Dialog open={showGoals} onOpenChange={setShowGoals}>
@@ -1192,49 +855,23 @@ export default function EngagementPage() {
             <div className="space-y-6 py-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-cyan-500" /> Daily Likes
-                  </label>
+                  <label className="text-sm font-medium flex items-center gap-2"><Heart className="w-4 h-4 text-cyan-500" /> Daily Likes</label>
                   <span className="text-sm font-bold">{editLikes}</span>
                 </div>
-                <Slider
-                  value={[editLikes]}
-                  onValueChange={([v]) => setEditLikes(v)}
-                  min={1}
-                  max={100}
-                  step={1}
-                />
+                <Slider value={[editLikes]} onValueChange={([v]) => setEditLikes(v)} min={1} max={100} step={1} />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-blue-500" /> Daily
-                    Comments
-                  </label>
+                  <label className="text-sm font-medium flex items-center gap-2"><MessageCircle className="w-4 h-4 text-blue-500" /> Daily Comments</label>
                   <span className="text-sm font-bold">{editComments}</span>
                 </div>
-                <Slider
-                  value={[editComments]}
-                  onValueChange={([v]) => setEditComments(v)}
-                  min={1}
-                  max={50}
-                  step={1}
-                />
+                <Slider value={[editComments]} onValueChange={([v]) => setEditComments(v)} min={1} max={50} step={1} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowGoals(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveGoals}
-                disabled={isSavingGoals}
-              >
-                {isSavingGoals && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                Save
+              <Button variant="outline" onClick={() => setShowGoals(false)}>Cancel</Button>
+              <Button variant="primary" onClick={handleSaveGoals} disabled={isSavingGoals}>
+                {isSavingGoals && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save
               </Button>
             </div>
           </DialogContent>
