@@ -113,16 +113,49 @@ function formatCount(n: number): string {
 }
 
 /**
- * Truncate text exactly like LinkedIn does:
- * - ~210 chars for short posts (< 5 lines)
- * - Cuts at word boundary, adds "...more"
+ * Truncate text like LinkedIn: max ~3 visual lines.
+ * Each \n counts as a line. Long lines (~55 chars in a card) wrap.
  */
-function linkedInTruncate(text: string, maxChars = 210): { truncated: string; isTruncated: boolean } {
-  if (text.length <= maxChars) return { truncated: text, isTruncated: false };
-  // Find the last space before maxChars
-  let cutoff = text.lastIndexOf(" ", maxChars);
-  if (cutoff < maxChars * 0.6) cutoff = maxChars; // no good space found, hard cut
-  return { truncated: text.substring(0, cutoff), isTruncated: true };
+function linkedInTruncate(text: string): { truncated: string; isTruncated: boolean } {
+  const MAX_VISUAL_LINES = 3;
+  const CHARS_PER_LINE = 55; // approximate for card width
+
+  const lines = text.split("\n");
+  let visualLines = 0;
+  let charCount = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Empty lines count as 1 visual line
+    const lineVisualLines = line.length === 0 ? 1 : Math.ceil(line.length / CHARS_PER_LINE);
+
+    if (visualLines + lineVisualLines > MAX_VISUAL_LINES) {
+      // This line would exceed the limit
+      const remainingLines = MAX_VISUAL_LINES - visualLines;
+      const charsToKeep = remainingLines * CHARS_PER_LINE;
+      // Cut within this line at a word boundary
+      const cutText = line.substring(0, charsToKeep);
+      const lastSpace = cutText.lastIndexOf(" ");
+      const safeCut = lastSpace > charsToKeep * 0.5 ? lastSpace : charsToKeep;
+      charCount += safeCut;
+      return {
+        truncated: text.substring(0, charCount + safeCut > text.length ? text.length : charCount + safeCut),
+        isTruncated: true,
+      };
+    }
+
+    visualLines += lineVisualLines;
+    charCount += line.length + 1; // +1 for \n
+
+    if (visualLines >= MAX_VISUAL_LINES && i < lines.length - 1) {
+      return {
+        truncated: text.substring(0, charCount - 1),
+        isTruncated: true,
+      };
+    }
+  }
+
+  return { truncated: text, isTruncated: false };
 }
 
 function ExternalLinkIcon({ className }: { className?: string }) {
@@ -246,11 +279,12 @@ export default function EngagementPage() {
     }
   }, []);
 
-  const fetchFeed = useCallback(async (listId?: string | null) => {
+  const fetchFeed = useCallback(async (listId?: string | null, forceRefresh = false) => {
     setIsFeedLoading(true);
     setFeedErrors([]);
     try {
-      const url = listId ? `/api/engagement/feed?listId=${listId}` : "/api/engagement/feed";
+      let url = listId ? `/api/engagement/feed?listId=${listId}` : "/api/engagement/feed";
+      if (forceRefresh) url += (url.includes("?") ? "&" : "?") + "forceRefresh=true";
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -373,20 +407,27 @@ export default function EngagementPage() {
   // POST INTERACTIONS
   // ============================================
 
+  const [interactError, setInteractError] = useState<string | null>(null);
+
   const handleLike = async (postUrn: string) => {
     setLikingPost(postUrn);
+    setInteractError(null);
     try {
       const res = await fetch("/api/engagement/interact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "like", postUrn }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setLikedPosts((prev) => new Set([...prev, postUrn]));
         setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, likes: p.likes + 1 } : p));
         if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
+      } else {
+        setInteractError(data.error || "Like failed");
       }
+    } catch {
+      setInteractError("Failed to like post");
     } finally {
       setLikingPost(null);
     }
@@ -512,7 +553,7 @@ export default function EngagementPage() {
               <Button variant="ghost" size="icon-sm" onClick={() => { setEditLikes(engagementData.objectives.dailyLikes); setEditComments(engagementData.objectives.dailyComments); setShowGoals(true); }} title="Edit daily goals">
                 <Settings className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => fetchFeed(activeListId)} disabled={isFeedLoading} title="Refresh feed">
+              <Button variant="ghost" size="icon-sm" onClick={() => fetchFeed(activeListId, true)} disabled={isFeedLoading} title="Refresh feed (clear cache)">
                 <RefreshCw className={`w-4 h-4 ${isFeedLoading ? "animate-spin" : ""}`} />
               </Button>
               <Link href="/docs/getting-started/understanding-dashboard" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-cyan-600 transition-colors">
@@ -580,11 +621,12 @@ export default function EngagementPage() {
               </Card>
             )}
 
-            {/* Feed errors */}
-            {feedErrors.length > 0 && (
+            {/* Errors */}
+            {(feedErrors.length > 0 || interactError) && (
               <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-sm">
                 <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-amber-700 dark:text-amber-300">
+                  {interactError && <p>{interactError}</p>}
                   {feedErrors.map((e, i) => <p key={i}>{e.vanityName ? `${e.vanityName}: ${e.error}` : e.error}</p>)}
                 </div>
               </div>

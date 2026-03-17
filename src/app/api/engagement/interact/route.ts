@@ -47,18 +47,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert urn:li:activity:XXX to urn:li:share:XXX
-    // LinkedIn socialActions API only accepts share URNs, not activity URNs
-    let shareUrn = postUrn;
+    // Convert urn:li:activity:XXX to the format LinkedIn socialActions API expects
     const activityMatch = postUrn.match(/^urn:li:activity:(\d+)$/);
-    if (activityMatch) {
-      shareUrn = `urn:li:share:${activityMatch[1]}`;
-    }
+    const activityId = activityMatch ? activityMatch[1] : null;
 
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, shareUrn, user.linkedinProfileId);
+      // Try urn:li:share first, fall back to urn:li:ugcPost
+      let likeError: Error | null = null;
+      const urnFormats = activityId
+        ? [`urn:li:share:${activityId}`, `urn:li:ugcPost:${activityId}`, postUrn]
+        : [postUrn];
+
+      for (const urn of urnFormats) {
+        try {
+          await likeLinkedInPost(accessToken, urn, user.linkedinProfileId);
+          likeError = null;
+          break;
+        } catch (err) {
+          likeError = err instanceof Error ? err : new Error(String(err));
+        }
+      }
+      if (likeError) throw likeError;
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -76,12 +87,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await createLinkedInComment(
-        accessToken,
-        shareUrn,
-        user.linkedinProfileId,
-        text.trim()
-      );
+      // Try urn:li:share first, fall back to urn:li:ugcPost
+      let commentError: Error | null = null;
+      const commentUrnFormats = activityId
+        ? [`urn:li:share:${activityId}`, `urn:li:ugcPost:${activityId}`, postUrn]
+        : [postUrn];
+
+      for (const urn of commentUrnFormats) {
+        try {
+          await createLinkedInComment(accessToken, urn, user.linkedinProfileId, text.trim());
+          commentError = null;
+          break;
+        } catch (err) {
+          commentError = err instanceof Error ? err : new Error(String(err));
+        }
+      }
+      if (commentError) throw commentError;
 
       await db.insert(engagementActions).values({
         id: randomUUID(),

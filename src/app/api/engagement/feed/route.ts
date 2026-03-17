@@ -42,6 +42,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const listId = searchParams.get("listId");
     const refreshVanity = searchParams.get("refresh"); // force refresh a specific profile
+    const forceRefreshAll = searchParams.get("forceRefresh") === "true"; // clear all cache and re-scrape
+
+    // If force refresh, delete all cache entries for this user's profiles
+    if (forceRefreshAll) {
+      // We'll handle this by treating all profiles as needing refresh
+    }
 
     // Get all profiles from user's lists (or specific list)
     let profileRows;
@@ -107,7 +113,7 @@ export async function GET(request: NextRequest) {
         .from(linkedinProfilePostsCache)
         .where(eq(linkedinProfilePostsCache.vanityName, profile.vanityName));
 
-      if (cached && isCacheServable(cached.lastFetchedAt)) {
+      if (cached && isCacheServable(cached.lastFetchedAt) && !forceRefreshAll) {
         // Serve from cache (even if stale)
         let posts: ScrapedPost[] = [];
         try {
@@ -140,8 +146,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Scrape profiles that need refreshing (sequentially to respect rate limit)
-    // Only scrape up to 3 profiles per request to keep response time reasonable
-    const toScrapeNow = profilesToRefresh.slice(0, 3);
+    const maxScrape = forceRefreshAll ? 10 : 3;
+    const toScrapeNow = profilesToRefresh.slice(0, maxScrape);
     for (const vanityName of toScrapeNow) {
       try {
         const scraped = await scrapeLinkedInProfile(vanityName);
