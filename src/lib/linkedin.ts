@@ -17,23 +17,20 @@ const POSTER_SCOPES = ['openid', 'profile', 'email', 'w_member_social'];
 // IMPORTANT: When LinkedIn approves your Community Management API access:
 // 1. Uncomment the scopes below based on your approval
 // 2. The headline will automatically be fetched via REST API /rest/me endpoint
-// Community app scopes - must match exactly what LinkedIn provisioned in Developer Portal
-// NOTE: r_member_social is NOT available - use w_member_social_feed / r_organization_social_feed instead
+// Community app scopes - ALL scopes from the Community Management API product
+// NOTE: openid/profile/email are NOT on this app (those are on the Poster App via OpenID Connect product)
 const COMMUNITY_SCOPES = [
-  'openid',
-  'profile',
-  'email',
+  'r_basicprofile',               // Basic profile (name, photo, headline, public URL)
   'w_member_social',              // Create/modify/delete posts, comments, reactions as member
   'w_member_social_feed',         // Create/modify/delete comments and reactions on posts on member behalf
+  'r_member_postAnalytics',       // Retrieve member post analytics/reporting
+  'r_member_profileAnalytics',    // Retrieve profile analytics (viewers, followers, search appearances)
   'r_organization_social',        // Retrieve org posts, comments, reactions, engagement data
   'w_organization_social',        // Create/modify/delete posts, comments, reactions on org behalf
   'r_organization_social_feed',   // Retrieve comments, reactions on org posts
   'w_organization_social_feed',   // Create/modify/delete comments and reactions on org posts
-  'r_member_postAnalytics',       // Retrieve member post analytics/reporting
-  'r_member_profileAnalytics',    // Retrieve profile analytics (viewers, followers, search appearances)
   'r_organization_followers',     // Retrieve org followers data
   'rw_organization_admin',        // Manage org pages and reporting data
-  'r_basicprofile',               // Basic profile (name, photo, headline, public URL)
   'r_1st_connections_size',       // Number of 1st-degree connections
 ];
 
