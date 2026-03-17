@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
 import { scheduleFirstComment } from '@/lib/qstash';
+import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
 import { eq } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
@@ -193,6 +194,15 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error("[First Comment] Failed to schedule:", error);
         }
+      }
+    }
+
+    // Schedule team auto-engagement for company page posts
+    if (isOrganization && postId) {
+      try {
+        await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
+      } catch (error) {
+        console.error("[Team Engage] Failed to schedule:", error);
       }
     }
 

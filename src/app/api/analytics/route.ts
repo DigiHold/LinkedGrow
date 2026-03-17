@@ -11,6 +11,7 @@ import {
   getMemberAllPostsAnalytics,
   getMemberFollowerCount,
   getMemberFollowersGained,
+  getMemberFollowerStats,
   getOrganizationFollowerCount,
   getOrganizationShareStatistics,
   getOrganizationPageStatistics,
@@ -51,6 +52,7 @@ interface PostAnalyticsData {
 interface AnalyticsResponse {
   summary: AnalyticsSummary;
   posts: PostAnalyticsData[];
+  followerGrowth?: Array<{ date: string; count: number }>;
   capabilities: {
     canFetchPostStats: boolean;
     canFetchFollowerCount: boolean;
@@ -72,6 +74,7 @@ interface AnalyticsResponse {
       bestHour: string;
       insight: string;
     };
+    postingTimeHeatmap?: Array<{ day: number; hour: number; avgEngagement: number; postCount: number }>;
     pageViews?: number;
     uniqueVisitors?: number;
     followerDemographics?: {
@@ -151,6 +154,7 @@ export async function GET(request: NextRequest) {
     let followersGained: number | undefined;
     let membersReached: number | undefined;
     let linkedinPostAnalytics: Map<string, MemberPostAnalytics> = new Map();
+    let followerGrowth: Array<{ date: string; count: number }> | undefined;
     let pageViews: number | undefined;
     let uniqueVisitors: number | undefined;
     let followerDemographics: AnalyticsResponse["advanced"];
@@ -258,11 +262,23 @@ export async function GET(request: NextRequest) {
             followerCount = memberFollowers;
           }
 
-          // Get followers gained in date range
-          followersGained = await getMemberFollowersGained(
+          // Get followers gained and time-series data
+          const followerStats = await getMemberFollowerStats(
             accessToken,
             { start: startDate, end: endDate }
           );
+          if (followerStats && followerStats.followersByDateRange) {
+            followersGained = followerStats.followersByDateRange.reduce(
+              (sum: number, day: { count: number }) => sum + day.count,
+              0
+            );
+            followerGrowth = followerStats.followersByDateRange;
+          } else {
+            followersGained = await getMemberFollowersGained(
+              accessToken,
+              { start: startDate, end: endDate }
+            );
+          }
         }
       } catch (linkedinError) {
         console.error("Failed to fetch LinkedIn analytics:", linkedinError);
@@ -342,6 +358,7 @@ export async function GET(request: NextRequest) {
         membersReached,
       },
       posts: postsWithAnalytics,
+      followerGrowth,
       capabilities: {
         ...capabilities,
         hasLinkedInConnected,
@@ -393,6 +410,7 @@ export async function GET(request: NextRequest) {
         })),
         engagementTrend: calculateWeeklyTrend(analyticsData),
         bestPostingTimes: calculateBestPostingTimes(postsWithAnalytics),
+        postingTimeHeatmap: calculatePostingTimeHeatmap(postsWithAnalytics),
         pageViews,
         uniqueVisitors,
         followerDemographics: followerDemographics?.followerDemographics,
@@ -513,4 +531,37 @@ function calculateBestPostingTimes(posts: PostAnalyticsData[]): {
     bestHour: formatHour(bestHour),
     insight: `Your audience engages most on ${dayNames[bestDay]}s around ${formatHour(bestHour)}`,
   };
+}
+
+function calculatePostingTimeHeatmap(
+  posts: PostAnalyticsData[]
+): Array<{ day: number; hour: number; avgEngagement: number; postCount: number }> {
+  const grid: Record<string, { totalEngagement: number; count: number }> = {};
+
+  posts.forEach((post) => {
+    if (!post.publishedAt || !post.analytics) return;
+
+    const date = new Date(post.publishedAt);
+    const day = date.getDay();
+    const hour = date.getHours();
+    const key = `${day}-${hour}`;
+
+    const engagement = post.analytics.impressions > 0
+      ? ((post.analytics.reactions + post.analytics.comments + post.analytics.reshares) / post.analytics.impressions) * 100
+      : 0;
+
+    if (!grid[key]) grid[key] = { totalEngagement: 0, count: 0 };
+    grid[key].totalEngagement += engagement;
+    grid[key].count++;
+  });
+
+  return Object.entries(grid).map(([key, data]) => {
+    const [day, hour] = key.split("-").map(Number);
+    return {
+      day,
+      hour,
+      avgEngagement: data.count > 0 ? parseFloat((data.totalEngagement / data.count).toFixed(2)) : 0,
+      postCount: data.count,
+    };
+  });
 }

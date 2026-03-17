@@ -1,0 +1,112 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Clock } from "lucide-react";
+
+interface PostingHeatmapProps {
+  data: Array<{ day: number; hour: number; avgEngagement: number; postCount: number }>;
+}
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+export function PostingHeatmap({ data }: PostingHeatmapProps) {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-500" />
+            Posting Times Heatmap
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            Publish more posts at different times to see your heatmap.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Build a lookup map
+  const grid: Record<string, { avgEngagement: number; postCount: number }> = {};
+  let maxEngagement = 0;
+  data.forEach((d) => {
+    grid[`${d.day}-${d.hour}`] = { avgEngagement: d.avgEngagement, postCount: d.postCount };
+    if (d.avgEngagement > maxEngagement) maxEngagement = d.avgEngagement;
+  });
+
+  const getOpacity = (day: number, hour: number): number => {
+    const cell = grid[`${day}-${hour}`];
+    if (!cell || maxEngagement === 0) return 0;
+    return Math.max(0.1, cell.avgEngagement / maxEngagement);
+  };
+
+  const getCount = (day: number, hour: number): number => {
+    return grid[`${day}-${hour}`]?.postCount || 0;
+  };
+
+  const getEngagement = (day: number, hour: number): number => {
+    return grid[`${day}-${hour}`]?.avgEngagement || 0;
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-orange-500" />
+          Posting Times Heatmap
+        </h3>
+        <div className="overflow-x-auto -mx-6 px-6">
+          <div className="min-w-[700px]">
+            {/* Hour labels */}
+            <div className="flex ml-10 mb-1">
+              {HOURS.filter((_, i) => i % 3 === 0).map((hour) => (
+                <div key={hour} className="text-[10px] text-muted-foreground" style={{ width: `${(100 / 8)}%` }}>
+                  {hour === 0 ? '12a' : hour < 12 ? `${hour}a` : hour === 12 ? '12p' : `${hour - 12}p`}
+                </div>
+              ))}
+            </div>
+            {/* Grid rows */}
+            {DAYS.map((day, dayIndex) => (
+              <div key={day} className="flex items-center gap-1 mb-1">
+                <div className="w-9 text-xs text-muted-foreground text-right pr-1 shrink-0">{day}</div>
+                <div className="flex-1 flex gap-px">
+                  {HOURS.map((hour) => {
+                    const count = getCount(dayIndex, hour);
+                    const engagement = getEngagement(dayIndex, hour);
+                    const opacity = getOpacity(dayIndex, hour);
+                    return (
+                      <div
+                        key={hour}
+                        className="flex-1 aspect-square rounded-sm cursor-pointer relative group"
+                        style={{
+                          backgroundColor: count > 0
+                            ? `rgba(6, 182, 212, ${opacity})`
+                            : 'var(--color-muted)',
+                          opacity: count > 0 ? 1 : 0.3,
+                        }}
+                        title={count > 0 ? `${day} ${hour}:00 - ${count} post(s), ${engagement.toFixed(1)}% engagement` : `${day} ${hour}:00 - No data`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {/* Legend */}
+            <div className="flex items-center gap-2 mt-3 ml-10">
+              <span className="text-[10px] text-muted-foreground">Less</span>
+              {[0.1, 0.3, 0.5, 0.7, 1].map((opacity) => (
+                <div
+                  key={opacity}
+                  className="w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: `rgba(6, 182, 212, ${opacity})` }}
+                />
+              ))}
+              <span className="text-[10px] text-muted-foreground">More engagement</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -78,4 +78,51 @@ export async function scheduleFirstComment(
   return response.messageId;
 }
 
+/**
+ * Schedule team auto-engagement jobs (like, comment, share) with staggered delays.
+ * Each job is sent to QStash with a unique delay so team members engage naturally over time.
+ */
+export async function scheduleTeamEngagement(
+  postId: string,
+  linkedinPostId: string,
+  jobs: Array<{
+    jobId: string;
+    userId: string;
+    actionType: string;
+    delaySeconds: number;
+    commentText?: string;
+  }>
+): Promise<void> {
+  // Import here to avoid circular dependency (team-engagement.ts imports from qstash.ts)
+  const { db } = await import("@/lib/db");
+  const { teamEngagementJobs } = await import("@/lib/db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  for (const job of jobs) {
+    try {
+      const response = await qstash.publishJSON({
+        url: `${APP_URL}/api/qstash/team-engage`,
+        body: {
+          jobId: job.jobId,
+          postId,
+          linkedinPostId,
+          userId: job.userId,
+          actionType: job.actionType,
+          commentText: job.commentText,
+        },
+        delay: job.delaySeconds,
+        retries: 3,
+      });
+
+      // Update the job record with the QStash message ID
+      await db
+        .update(teamEngagementJobs)
+        .set({ qstashMessageId: response.messageId })
+        .where(eq(teamEngagementJobs.id, job.jobId));
+    } catch (error) {
+      console.error(`[Team Engage QStash] Failed to schedule job ${job.jobId}:`, error);
+    }
+  }
+}
+
 export { qstash };

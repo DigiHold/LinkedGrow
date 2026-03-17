@@ -21,11 +21,10 @@ const COMMUNITY_SCOPES = [
   'openid',
   'profile',
   'email',
-  'w_member_social',            // Post/interact as member (Development Tier)
-  // After Community Management API approval, uncomment these:
-  // 'r_member_social',         // Read member profile including HEADLINE
-  // 'r_organization_social',   // Read org content (comments, reactions)
-  // 'w_organization_social',   // Post/comment as organization
+  'w_member_social',            // Post/interact as member
+  'r_member_social',            // Read member profile including HEADLINE
+  'r_organization_social',      // Read org content (comments, reactions)
+  'w_organization_social',      // Post/comment as organization
 ];
 
 // LinkedIn API endpoints
@@ -1587,6 +1586,236 @@ export async function getOrganizationFollowerDemographics(
     console.error('Failed to fetch follower demographics:', error);
     return null;
   }
+}
+
+// ============================================
+// ENGAGEMENT FUNCTIONS (Community Management API)
+// ============================================
+
+/**
+ * Like a LinkedIn post
+ * Uses the REST API socialActions endpoint
+ * Requires w_member_social scope
+ */
+export async function likeLinkedInPost(
+  accessToken: string,
+  postUrn: string,
+  actorId: string,
+  actorType: 'person' | 'organization' = 'person'
+): Promise<{ success: boolean }> {
+  const actorUrn = actorType === 'organization'
+    ? `urn:li:organization:${actorId}`
+    : `urn:li:person:${actorId}`;
+
+  const encodedPostUrn = encodeURIComponent(postUrn);
+  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes`;
+  const requestBody = {
+    actor: actorUrn,
+    object: postUrn,
+  };
+
+  console.log('[LinkedIn Like] Request:', { url, actor: actorUrn, object: postUrn });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[LinkedIn Like] Error:', { status: response.status, error });
+    throw new Error(`Failed to like LinkedIn post (${response.status}): ${error}`);
+  }
+
+  console.log('[LinkedIn Like] Success:', { postUrn });
+  return { success: true };
+}
+
+/**
+ * Unlike a LinkedIn post
+ * Uses the REST API socialActions endpoint
+ */
+export async function unlikeLinkedInPost(
+  accessToken: string,
+  postUrn: string,
+  actorId: string,
+  actorType: 'person' | 'organization' = 'person'
+): Promise<{ success: boolean }> {
+  const actorUrn = actorType === 'organization'
+    ? `urn:li:organization:${actorId}`
+    : `urn:li:person:${actorId}`;
+
+  const encodedPostUrn = encodeURIComponent(postUrn);
+  const encodedActorUrn = encodeURIComponent(actorUrn);
+  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`;
+
+  console.log('[LinkedIn Unlike] Request:', { url, actor: actorUrn, object: postUrn });
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[LinkedIn Unlike] Error:', { status: response.status, error });
+    throw new Error(`Failed to unlike LinkedIn post (${response.status}): ${error}`);
+  }
+
+  console.log('[LinkedIn Unlike] Success:', { postUrn });
+  return { success: true };
+}
+
+/**
+ * Reshare a LinkedIn post on a person's profile
+ * Creates a new UGC post with resharedContent pointing to the original
+ */
+export async function reshareLinkedInPost(
+  accessToken: string,
+  actorId: string,
+  postUrn: string,
+  commentary: string = ''
+): Promise<{ id: string }> {
+  const authorUrn = `urn:li:person:${actorId}`;
+
+  const postData = {
+    author: authorUrn,
+    lifecycleState: 'PUBLISHED',
+    specificContent: {
+      'com.linkedin.ugc.ShareContent': {
+        shareCommentary: {
+          text: commentary,
+        },
+        shareMediaCategory: 'NONE',
+      },
+    },
+    resharedContent: {
+      shareUrn: postUrn,
+    },
+    visibility: {
+      'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+    },
+  };
+
+  console.log('[LinkedIn Reshare] Request:', { actor: authorUrn, originalPost: postUrn });
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[LinkedIn Reshare] Error:', { status: response.status, error });
+    throw new Error(`Failed to reshare LinkedIn post (${response.status}): ${error}`);
+  }
+
+  const data = await response.json();
+  console.log('[LinkedIn Reshare] Success:', { id: data.id });
+  return { id: data.id };
+}
+
+/**
+ * Get LinkedIn feed posts for the authenticated member
+ * Requires r_member_social scope (Community Management API)
+ */
+export async function getLinkedInFeed(
+  accessToken: string,
+  count: number = 20,
+  start: number = 0
+): Promise<{ posts: LinkedInFeedPost[]; total: number }> {
+  const url = `${LINKEDIN_REST_API_BASE}/posts?q=feed&count=${count}&start=${start}`;
+
+  console.log('[LinkedIn Feed] Request:', { url, count, start });
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[LinkedIn Feed] Error:', { status: response.status, error });
+    throw new Error(`Failed to fetch LinkedIn feed (${response.status}): ${error}`);
+  }
+
+  const data = await response.json();
+  const posts: LinkedInFeedPost[] = (data.elements || []).map((element: Record<string, unknown>) => ({
+    urn: (element.id as string) || '',
+    author: (element.author as string) || '',
+    commentary: (element.commentary as string) || '',
+    publishedAt: (element.publishedAt as string) || '',
+    lifecycleState: (element.lifecycleState as string) || '',
+    visibility: (element.visibility as string) || '',
+    content: element.content || null,
+    socialDetail: element.socialDetail || null,
+  }));
+
+  console.log('[LinkedIn Feed] Success:', { count: posts.length });
+  return { posts, total: data.paging?.total || posts.length };
+}
+
+/**
+ * Get social actions (likes, comments count) for a post
+ * Requires r_member_social or r_organization_social scope
+ */
+export async function getLinkedInPostSocialActions(
+  accessToken: string,
+  postUrn: string
+): Promise<{ likes: number; comments: number; shares: number }> {
+  const encodedPostUrn = encodeURIComponent(postUrn);
+  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    return { likes: 0, comments: 0, shares: 0 };
+  }
+
+  const data = await response.json();
+  return {
+    likes: data.likesSummary?.totalLikes || 0,
+    comments: data.commentsSummary?.totalFirstLevelComments || 0,
+    shares: data.sharesSummary?.totalShares || 0,
+  };
+}
+
+// Feed post interface for Community Management API
+export interface LinkedInFeedPost {
+  urn: string;
+  author: string;
+  commentary: string;
+  publishedAt: string;
+  lifecycleState: string;
+  visibility: string;
+  content: Record<string, unknown> | null;
+  socialDetail: Record<string, unknown> | null;
 }
 
 /**

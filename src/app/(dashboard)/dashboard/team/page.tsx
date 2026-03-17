@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { cn } from "@/lib/utils";
+import { TeamAutoEngagement } from "@/components/dashboard/team-auto-engagement";
 
 interface TeamMember {
   id: string;
@@ -70,24 +71,23 @@ export default function TeamPage() {
   const isTeamMember = session?.user?.isTeamMember === true;
   const teamRole = session?.user?.teamRole;
 
-  // Only "member" role is restricted - "admin" role can access the team page
+  // "member" role sees only auto-engagement settings, not team management
   if (isTeamMember && teamRole === "member") {
     return (
       <FeatureGate feature="teamCollaboration">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
-            <CardContent className="py-12 px-8">
-              <div className="text-center max-w-md mx-auto">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
-                  <Shield className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-                <p className="text-muted-foreground">
-                  Team management is only available to team owners and admins. As a team member, you can create and publish content but cannot manage team settings or members.
-                </p>
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              Team
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Configure your auto-engagement settings for company posts
+            </p>
+          </div>
+          <TeamAutoEngagement isOwnerOrAdmin={false} />
         </div>
       </FeatureGate>
     );
@@ -994,6 +994,19 @@ export default function TeamPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Auto-Engagement Section */}
+        {!isLoading && teams.length > 0 && (
+          <TeamAutoEngagement
+            isOwnerOrAdmin={!isTeamMember || teamRole === "admin"}
+            teamMembers={selectedTeam?.members.map((m) => ({
+              userId: m.userId,
+              name: m.name,
+              email: m.email,
+              role: m.role,
+            }))}
+          />
         )}
       </div>
     </FeatureGate>

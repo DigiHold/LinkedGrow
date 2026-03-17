@@ -1,25 +1,114 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   BarChart3,
-  Lightbulb,
-  PartyPopper,
-  TrendingUp,
   Eye,
-  PieChart,
-  Calendar,
+  Heart,
+  Users,
+  TrendingUp,
   ShieldX,
   HelpCircle,
+  Loader2,
+  RefreshCw,
+  ArrowRight,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { DateRangeSelector } from "@/components/dashboard/analytics/date-range-selector";
+import { StatCard } from "@/components/dashboard/analytics/stat-card";
+import { AnalyticsEmptyState } from "@/components/dashboard/analytics/empty-state";
+import { FollowerChart } from "@/components/dashboard/analytics/follower-chart";
+import { BestTimeCard } from "@/components/dashboard/analytics/best-time-card";
+import { PostPerformanceTable } from "@/components/dashboard/analytics/post-performance-table";
+
+interface AnalyticsData {
+  summary: {
+    totalPosts: number;
+    totalImpressions: number;
+    totalReactions: number;
+    totalComments: number;
+    totalShares: number;
+    avgEngagement: string;
+    followerCount?: number;
+    followersGained?: number;
+    membersReached?: number;
+  };
+  posts: Array<{
+    id: string;
+    content: string | null;
+    postType: string | null;
+    status: string | null;
+    publishedAt: string | null;
+    createdAt: string | null;
+    linkedinPostId?: string | null;
+    analytics?: {
+      impressions: number;
+      reactions: number;
+      comments: number;
+      reshares: number;
+      membersReached?: number;
+    };
+  }>;
+  followerGrowth?: Array<{ date: string; count: number }>;
+  capabilities: {
+    canFetchPostStats: boolean;
+    canFetchFollowerCount: boolean;
+    canFetchFollowerDemographics: boolean;
+    canFetchPageViews: boolean;
+    isOrganization: boolean;
+    hasLinkedInConnected: boolean;
+    postingTarget: "profile" | "organization" | null;
+  };
+  advanced?: {
+    bestPostingTimes?: {
+      bestDay: string;
+      bestHour: string;
+      insight: string;
+    };
+  };
+}
 
 export default function AnalyticsPage() {
   const { data: session } = useSession();
   const isTeamMember = session?.user?.isTeamMember === true;
   const teamRole = session?.user?.teamRole;
+  const isBusinessPlan = session?.user?.plan === "business";
+
+  const [days, setDays] = useState(30);
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnalytics = useCallback(async (refresh = false) => {
+    try {
+      if (refresh) setIsRefreshing(true);
+      else setIsLoading(true);
+      setError(null);
+
+      const res = await fetch(`/api/analytics?days=${days}${refresh ? "&refresh=true" : ""}`);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to fetch analytics");
+      }
+
+      const result = await res.json();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch analytics");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [days]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   // Only "member" role is restricted - admins can view analytics
   if (isTeamMember && teamRole === "member") {
@@ -44,7 +133,7 @@ export default function AnalyticsPage() {
 
   return (
     <FeatureGate feature="analytics">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -58,77 +147,130 @@ export default function AnalyticsPage() {
               Track your LinkedIn performance and growth
             </p>
           </div>
-          <Link href="/docs/getting-started/understanding-dashboard" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <DateRangeSelector value={days} onChange={setDays} />
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => fetchAnalytics(true)}
+              disabled={isRefreshing}
+              title="Refresh data"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            </Button>
+            <Link
+              href="/docs/getting-started/understanding-dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
-        {/* Coming Soon Banner */}
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
-          <CardContent className="py-12 px-8">
-            <div className="text-center max-w-lg mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                <Lightbulb className="w-10 h-10 text-white" />
+        {/* Advanced Analytics Link */}
+        {isBusinessPlan && (
+          <Link
+            href="/dashboard/analytics/advanced"
+            className="block p-3 rounded-xl bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  Advanced Analytics available
+                </span>
+                <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                  Demographics, content performance, export reports
+                </span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-              <p className="text-muted-foreground mb-4">
-                We&apos;re working hard to bring you LinkedIn analytics. This feature will allow you to track impressions, engagement, follower growth, and post performance - all from LinkedGrow.
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 rounded-lg p-3">
-                This feature requires LinkedIn&apos;s Community Management API approval. We&apos;re in the process of getting access and will notify you when it&apos;s ready.
-              </p>
+              <ArrowRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-          </CardContent>
-        </Card>
+          </Link>
+        )}
 
-        {/* Preview of what's coming */}
-        <Card>
-          <CardContent className="p-6">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <PartyPopper className="w-5 h-5 text-cyan-500" />
-              What to expect
-            </h4>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Impressions Tracking</p>
-                  <p className="text-xs text-muted-foreground">See how many people view your posts</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Engagement Metrics</p>
-                  <p className="text-xs text-muted-foreground">Track likes, comments, and shares</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                  <PieChart className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Top Performing Posts</p>
-                  <p className="text-xs text-muted-foreground">Discover what content resonates best</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-                  <Calendar className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Best Posting Times</p>
-                  <p className="text-xs text-muted-foreground">Learn when your audience is most active</p>
-                </div>
-              </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <Card className="border-red-200 dark:border-red-800">
+            <CardContent className="py-8 px-6 text-center">
+              <p className="text-red-600 dark:text-red-400 text-sm mb-3">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => fetchAnalytics()}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* No LinkedIn Connected */}
+        {data && !data.capabilities.hasLinkedInConnected && !isLoading && (
+          <AnalyticsEmptyState type="no-linkedin" />
+        )}
+
+        {/* Analytics Content */}
+        {data && data.capabilities.hasLinkedInConnected && !isLoading && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                icon={Eye}
+                iconColor="text-blue-600"
+                iconBg="bg-blue-100 dark:bg-blue-900/30"
+                label="Total Impressions"
+                value={data.summary.totalImpressions}
+              />
+              <StatCard
+                icon={Heart}
+                iconColor="text-emerald-600"
+                iconBg="bg-emerald-100 dark:bg-emerald-900/30"
+                label="Total Reactions"
+                value={data.summary.totalReactions}
+              />
+              <StatCard
+                icon={Users}
+                iconColor="text-purple-600"
+                iconBg="bg-purple-100 dark:bg-purple-900/30"
+                label="Followers"
+                value={data.summary.followerCount || 0}
+                change={data.summary.followersGained ? `+${data.summary.followersGained} gained` : undefined}
+                changeType="positive"
+              />
+              <StatCard
+                icon={TrendingUp}
+                iconColor="text-amber-600"
+                iconBg="bg-amber-100 dark:bg-amber-900/30"
+                label="Engagement Rate"
+                value={`${data.summary.avgEngagement}%`}
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Follower Growth Chart */}
+            <FollowerChart data={data.followerGrowth || []} />
+
+            {/* Best Time to Post */}
+            <BestTimeCard
+              bestDay={data.advanced?.bestPostingTimes?.bestDay}
+              bestHour={data.advanced?.bestPostingTimes?.bestHour}
+              insight={data.advanced?.bestPostingTimes?.insight}
+            />
+
+            {/* Post Performance Table */}
+            <PostPerformanceTable posts={data.posts} />
+
+            {/* No Posts State */}
+            {data.summary.totalPosts === 0 && (
+              <AnalyticsEmptyState type="no-data" />
+            )}
+          </>
+        )}
       </div>
     </FeatureGate>
   );

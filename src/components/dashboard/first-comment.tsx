@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Sparkles, Loader2, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
-// Community Management API not yet approved by LinkedIn - feature is ready but comments API requires w_member_social_feed scope
-const COMING_SOON = true;
+// Community Management API available in developer mode
+const COMING_SOON = false;
 
 interface FirstCommentProps {
   value: string;

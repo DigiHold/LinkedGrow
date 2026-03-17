@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment } from "@/lib/qstash";
+import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
 
 // Initialize QStash receiver for signature verification
 const receiver = new Receiver({
@@ -200,6 +201,15 @@ export async function POST(request: NextRequest) {
         await scheduleFirstComment(postId, delaySeconds);
       } catch (error) {
         console.error("Failed to schedule first comment:", error);
+      }
+    }
+
+    // Schedule team auto-engagement for company page posts
+    if (isOrganization) {
+      try {
+        await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
+      } catch (error) {
+        console.error("Failed to schedule team engagement:", error);
       }
     }
 

@@ -300,6 +300,10 @@ export const teamMembers = sqliteTable("team_members", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   role: text("role", { enum: ["owner", "admin", "member"] }).default("member"),
+  // Auto-engagement opt-in settings
+  autoEngageLike: integer("auto_engage_like", { mode: "boolean" }).default(true),
+  autoEngageComment: integer("auto_engage_comment", { mode: "boolean" }).default(true),
+  autoEngageShare: integer("auto_engage_share", { mode: "boolean" }).default(false),
   invitedAt: integer("invited_at", { mode: "timestamp" }).default(new Date()),
   acceptedAt: integer("accepted_at", { mode: "timestamp" }),
 });
@@ -387,6 +391,32 @@ export const engagementObjectives = sqliteTable("engagement_objectives", {
   dailyLikes: integer("daily_likes").default(10),
   dailyComments: integer("daily_comments").default(5),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
+// TEAM AUTO-ENGAGEMENT
+// ============================================
+
+// Track individual auto-engagement jobs per team member per post
+export const teamEngagementJobs = sqliteTable("team_engagement_jobs", {
+  id: text("id").primaryKey(),
+  postId: text("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  teamMemberId: text("team_member_id")
+    .notNull()
+    .references(() => teamMembers.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  actionType: text("action_type", { enum: ["like", "comment", "share"] }).notNull(),
+  status: text("status", { enum: ["pending", "completed", "failed", "skipped"] }).default("pending"),
+  qstashMessageId: text("qstash_message_id"),
+  commentText: text("comment_text"), // AI-generated comment (only for comment actions)
+  errorMessage: text("error_message"),
+  delaySeconds: integer("delay_seconds"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
 // ============================================
