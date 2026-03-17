@@ -14,6 +14,7 @@ const receiver = new Receiver({
 });
 
 export async function POST(request: NextRequest) {
+  let parsedPostId: string | null = null;
   try {
     // Get the raw body for signature verification
     const body = await request.text();
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Parse the body
     const { postId } = JSON.parse(body);
+    parsedPostId = postId;
 
     if (!postId) {
       return NextResponse.json({ error: "Post ID is required" }, { status: 400 });
@@ -222,21 +224,19 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("QStash publish error:", error);
 
-    // Try to get postId from body to mark as failed
-    try {
-      const body = await request.clone().text();
-      const { postId } = JSON.parse(body);
-      if (postId) {
+    // Mark post as failed using the postId we extracted earlier
+    if (parsedPostId) {
+      try {
         await db.update(posts)
           .set({
             status: "failed",
             errorMessage: error instanceof Error ? error.message : "Unknown error",
             updatedAt: new Date(),
           })
-          .where(eq(posts.id, postId));
+          .where(eq(posts.id, parsedPostId));
+      } catch {
+        // Ignore errors trying to mark post as failed
       }
-    } catch {
-      // Ignore errors trying to mark post as failed
     }
 
     return NextResponse.json(

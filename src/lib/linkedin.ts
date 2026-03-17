@@ -69,42 +69,6 @@ export interface LinkedInOrganization {
   logoUrl?: string;
 }
 
-interface LinkedInPostRequest {
-  author: string;
-  lifecycleState: 'PUBLISHED' | 'DRAFT';
-  specificContent: {
-    'com.linkedin.ugc.ShareContent': {
-      shareCommentary: {
-        text: string;
-      };
-      shareMediaCategory: 'NONE' | 'ARTICLE' | 'IMAGE';
-      media?: Array<{
-        status: 'READY';
-        originalUrl?: string;
-        media?: string; // Asset URN for native image uploads
-        title?: { text: string };
-        description?: { text: string };
-      }>;
-    };
-  };
-  visibility: {
-    'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' | 'CONNECTIONS';
-  };
-}
-
-interface LinkedInRegisterUploadResponse {
-  value: {
-    uploadMechanism: {
-      'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': {
-        uploadUrl: string;
-        headers: Record<string, string>;
-      };
-    };
-    asset: string;
-    mediaArtifact: string;
-  };
-}
-
 export type LinkedInAppType = 'poster' | 'community';
 
 /**
@@ -372,6 +336,23 @@ export function isLinkedInConfigured(): boolean {
 }
 
 /**
+ * Extract post URN from REST Posts API response.
+ * The REST API returns the post URN in the x-restli-id header.
+ */
+async function getPostIdFromRestResponse(response: Response): Promise<{ id: string }> {
+  const postUrn = response.headers.get('x-restli-id');
+  if (postUrn) {
+    return { id: postUrn };
+  }
+  try {
+    const data = await response.json();
+    return { id: data.id || data.value?.id || '' };
+  } catch {
+    return { id: '' };
+  }
+}
+
+/**
  * Create a LinkedIn post
  * @param authorId - Either a person ID or organization ID
  * @param authorType - 'person' for personal profile or 'organization' for company page
@@ -387,27 +368,25 @@ export async function createLinkedInPost(
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
 
-  const postData: LinkedInPostRequest = {
+  const postData = {
     author: authorUrn,
+    commentary: text,
+    visibility: visibility,
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
     lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: {
-          text: text,
-        },
-        shareMediaCategory: 'NONE',
-      },
-    },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
-    },
+    isReshareDisabledByAuthor: false,
   };
 
-  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
       'X-Restli-Protocol-Version': '2.0.0',
     },
     body: JSON.stringify(postData),
@@ -418,8 +397,7 @@ export async function createLinkedInPost(
     throw new Error(`Failed to create LinkedIn post: ${error}`);
   }
 
-  const data = await response.json();
-  return { id: data.id };
+  return getPostIdFromRestResponse(response);
 }
 
 /**
@@ -479,28 +457,19 @@ export async function createLinkedInComment(
 async function registerImageUpload(
   accessToken: string,
   ownerUrn: string
-): Promise<{ uploadUrl: string; asset: string }> {
-  const registerRequest = {
-    registerUploadRequest: {
-      recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-      owner: ownerUrn,
-      serviceRelationships: [
-        {
-          relationshipType: 'OWNER',
-          identifier: 'urn:li:userGeneratedContent',
-        },
-      ],
-    },
-  };
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+): Promise<{ uploadUrl: string; image: string }> {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/images?action=initializeUpload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify(registerRequest),
+    body: JSON.stringify({
+      initializeUploadRequest: {
+        owner: ownerUrn,
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -508,11 +477,11 @@ async function registerImageUpload(
     throw new Error(`Failed to register image upload: ${error}`);
   }
 
-  const data: LinkedInRegisterUploadResponse = await response.json();
-  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
-  const asset = data.value.asset;
+  const data = await response.json();
+  const uploadUrl = data.value.uploadUrl;
+  const image = data.value.image;
 
-  return { uploadUrl, asset };
+  return { uploadUrl, image };
 }
 
 /**
@@ -520,13 +489,13 @@ async function registerImageUpload(
  */
 async function uploadImageToLinkedIn(
   uploadUrl: string,
-  imageBlob: Blob,
-  contentType: string
+  imageBlob: Blob
 ): Promise<void> {
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': contentType,
+      'Content-Type': 'application/octet-stream',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
     body: imageBlob,
   });
@@ -572,43 +541,40 @@ export async function createLinkedInPostWithImage(
     : `urn:li:person:${authorId}`;
 
   // Step 1: Fetch the image from R2/external URL
-  const { blob, contentType } = await fetchImageAsBlob(imageUrl);
+  const { blob } = await fetchImageAsBlob(imageUrl);
 
-  // Step 2: Register the upload with LinkedIn
-  const { uploadUrl, asset } = await registerImageUpload(accessToken, authorUrn);
+  // Step 2: Register the upload with LinkedIn Images API
+  const { uploadUrl, image: imageUrn } = await registerImageUpload(accessToken, authorUrn);
 
   // Step 3: Upload the actual image binary to LinkedIn
-  await uploadImageToLinkedIn(uploadUrl, blob, contentType);
+  await uploadImageToLinkedIn(uploadUrl, blob);
 
-  // Step 4: Create the post with the uploaded image asset
-  const postData: LinkedInPostRequest = {
+  // Step 4: Create the post using the REST Posts API with the image
+  const postData = {
     author: authorUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: {
-          text: text,
-        },
-        shareMediaCategory: 'IMAGE',
-        media: [
-          {
-            status: 'READY',
-            media: asset,
-            title: imageTitle ? { text: imageTitle } : undefined,
-          },
-        ],
+    commentary: text,
+    visibility: visibility,
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    content: {
+      media: {
+        title: imageTitle || undefined,
+        id: imageUrn,
       },
     },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
-    },
+    lifecycleState: 'PUBLISHED',
+    isReshareDisabledByAuthor: false,
   };
 
-  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
       'X-Restli-Protocol-Version': '2.0.0',
     },
     body: JSON.stringify(postData),
@@ -619,8 +585,7 @@ export async function createLinkedInPostWithImage(
     throw new Error(`Failed to create LinkedIn post with image: ${error}`);
   }
 
-  const data = await response.json();
-  return { id: data.id };
+  return getPostIdFromRestResponse(response);
 }
 
 /**
@@ -631,30 +596,22 @@ async function registerVideoUpload(
   accessToken: string,
   ownerUrn: string,
   fileSizeBytes: number
-): Promise<{ uploadUrl: string; asset: string }> {
-  const registerRequest = {
-    registerUploadRequest: {
-      recipes: ['urn:li:digitalmediaRecipe:feedshare-video'],
-      owner: ownerUrn,
-      serviceRelationships: [
-        {
-          relationshipType: 'OWNER',
-          identifier: 'urn:li:userGeneratedContent',
-        },
-      ],
-      supportedUploadMechanism: ['SINGLE_REQUEST_UPLOAD'],
-      fileSize: fileSizeBytes,
-    },
-  };
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+): Promise<{ uploadUrl: string; video: string }> {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/videos?action=initializeUpload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify(registerRequest),
+    body: JSON.stringify({
+      initializeUploadRequest: {
+        owner: ownerUrn,
+        fileSizeBytes: fileSizeBytes,
+        uploadCaptions: false,
+        uploadThumbnail: false,
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -662,11 +619,11 @@ async function registerVideoUpload(
     throw new Error(`Failed to register video upload: ${error}`);
   }
 
-  const data: LinkedInRegisterUploadResponse = await response.json();
-  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
-  const asset = data.value.asset;
+  const data = await response.json();
+  const uploadUrl = data.value.uploadInstructions[0].uploadUrl;
+  const video = data.value.video;
 
-  return { uploadUrl, asset };
+  return { uploadUrl, video };
 }
 
 /**
@@ -674,13 +631,13 @@ async function registerVideoUpload(
  */
 async function uploadVideoToLinkedIn(
   uploadUrl: string,
-  videoBlob: Blob,
-  contentType: string
+  videoBlob: Blob
 ): Promise<void> {
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': contentType,
+      'Content-Type': 'application/octet-stream',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
     body: videoBlob,
   });
@@ -729,50 +686,61 @@ export async function createLinkedInPostWithVideo(
     : `urn:li:person:${authorId}`;
 
   // Step 1: Fetch the video from R2
-  const { blob: videoBlob, contentType } = await fetchVideoAsBlob(videoUrl);
-  const actualMimeType = videoMimeType || contentType;
+  const { blob: videoBlob } = await fetchVideoAsBlob(videoUrl);
 
-  // Step 2: Register the video upload with LinkedIn
-  const { uploadUrl, asset } = await registerVideoUpload(
+  // Step 2: Register the video upload with LinkedIn Videos API
+  const { uploadUrl, video: videoUrn } = await registerVideoUpload(
     accessToken,
     authorUrn,
     videoBlob.size
   );
 
   // Step 3: Upload the video binary to LinkedIn
-  await uploadVideoToLinkedIn(uploadUrl, videoBlob, actualMimeType);
+  await uploadVideoToLinkedIn(uploadUrl, videoBlob);
 
-  // Step 4: Create the post with the uploaded video asset
-  // Note: We don't wait for video processing - LinkedIn handles this automatically
-  // and shows a "processing" indicator to viewers until ready
-  const postData = {
-    author: authorUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: {
-          text: text,
-        },
-        shareMediaCategory: 'VIDEO',
-        media: [
-          {
-            status: 'READY',
-            media: asset,
-            title: videoTitle ? { text: videoTitle } : undefined,
-          },
-        ],
-      },
-    },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
-    },
-  };
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+  // Step 4: Finalize the video upload
+  await fetch(`${LINKEDIN_REST_API_BASE}/videos?action=finalizeUpload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
+    },
+    body: JSON.stringify({
+      finalizeUploadRequest: {
+        video: videoUrn,
+        uploadToken: '',
+        uploadedPartIds: [],
+      },
+    }),
+  });
+
+  // Step 5: Create the post using the REST Posts API with the video
+  const postData = {
+    author: authorUrn,
+    commentary: text,
+    visibility: visibility,
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    content: {
+      media: {
+        title: videoTitle || undefined,
+        id: videoUrn,
+      },
+    },
+    lifecycleState: 'PUBLISHED',
+    isReshareDisabledByAuthor: false,
+  };
+
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
       'X-Restli-Protocol-Version': '2.0.0',
     },
     body: JSON.stringify(postData),
@@ -783,8 +751,7 @@ export async function createLinkedInPostWithVideo(
     throw new Error(`Failed to create LinkedIn post with video: ${error}`);
   }
 
-  const data = await response.json();
-  return { id: data.id };
+  return getPostIdFromRestResponse(response);
 }
 
 /**
@@ -794,28 +761,19 @@ export async function createLinkedInPostWithVideo(
 async function registerDocumentUpload(
   accessToken: string,
   ownerUrn: string
-): Promise<{ uploadUrl: string; asset: string }> {
-  const registerRequest = {
-    registerUploadRequest: {
-      recipes: ['urn:li:digitalmediaRecipe:feedshare-document'],
-      owner: ownerUrn,
-      serviceRelationships: [
-        {
-          relationshipType: 'OWNER',
-          identifier: 'urn:li:userGeneratedContent',
-        },
-      ],
-    },
-  };
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/assets?action=registerUpload`, {
+): Promise<{ uploadUrl: string; document: string }> {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/documents?action=initializeUpload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
-    body: JSON.stringify(registerRequest),
+    body: JSON.stringify({
+      initializeUploadRequest: {
+        owner: ownerUrn,
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -823,11 +781,11 @@ async function registerDocumentUpload(
     throw new Error(`Failed to register document upload: ${error}`);
   }
 
-  const data: LinkedInRegisterUploadResponse = await response.json();
-  const uploadUrl = data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
-  const asset = data.value.asset;
+  const data = await response.json();
+  const uploadUrl = data.value.uploadUrl;
+  const document = data.value.document;
 
-  return { uploadUrl, asset };
+  return { uploadUrl, document };
 }
 
 /**
@@ -835,13 +793,13 @@ async function registerDocumentUpload(
  */
 async function uploadDocumentToLinkedIn(
   uploadUrl: string,
-  documentBlob: Blob,
-  contentType: string
+  documentBlob: Blob
 ): Promise<void> {
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': contentType,
+      'Content-Type': 'application/octet-stream',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
     },
     body: documentBlob,
   });
@@ -889,46 +847,40 @@ export async function createLinkedInPostWithDocument(
     : `urn:li:person:${authorId}`;
 
   // Step 1: Fetch the document from R2
-  const { blob: documentBlob, contentType } = await fetchDocumentAsBlob(documentUrl);
+  const { blob: documentBlob } = await fetchDocumentAsBlob(documentUrl);
 
-  // Step 2: Register the document upload with LinkedIn
-  const { uploadUrl, asset } = await registerDocumentUpload(accessToken, authorUrn);
+  // Step 2: Register the document upload with LinkedIn Documents API
+  const { uploadUrl, document: documentUrn } = await registerDocumentUpload(accessToken, authorUrn);
 
   // Step 3: Upload the document binary to LinkedIn
-  await uploadDocumentToLinkedIn(uploadUrl, documentBlob, contentType);
+  await uploadDocumentToLinkedIn(uploadUrl, documentBlob);
 
-  // Step 4: Create the post with the uploaded document asset
-  const postData: LinkedInPostRequest = {
+  // Step 4: Create the post using the REST Posts API with the document
+  const postData = {
     author: authorUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: {
-          text: text,
-        },
-        shareMediaCategory: 'NONE',
-        media: [
-          {
-            status: 'READY',
-            media: asset,
-            title: documentTitle ? { text: documentTitle } : { text: 'Carousel' },
-          },
-        ],
+    commentary: text,
+    visibility: visibility,
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    content: {
+      media: {
+        title: documentTitle || 'Carousel',
+        id: documentUrn,
       },
     },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
-    },
+    lifecycleState: 'PUBLISHED',
+    isReshareDisabledByAuthor: false,
   };
 
-  // Document posts use RICH media category
-  (postData.specificContent['com.linkedin.ugc.ShareContent'] as Record<string, unknown>).shareMediaCategory = 'RICH';
-
-  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
       'X-Restli-Protocol-Version': '2.0.0',
     },
     body: JSON.stringify(postData),
@@ -939,8 +891,7 @@ export async function createLinkedInPostWithDocument(
     throw new Error(`Failed to create LinkedIn post with document: ${error}`);
   }
 
-  const data = await response.json();
-  return { id: data.id };
+  return getPostIdFromRestResponse(response);
 }
 
 /**
@@ -2027,30 +1978,28 @@ export async function reshareLinkedInPost(
 
   const postData = {
     author: authorUrn,
+    commentary: commentary,
+    visibility: 'PUBLIC',
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    reshareContext: {
+      parent: postUrn,
+    },
     lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: {
-          text: commentary,
-        },
-        shareMediaCategory: 'NONE',
-      },
-    },
-    resharedContent: {
-      shareUrn: postUrn,
-    },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-    },
+    isReshareDisabledByAuthor: false,
   };
 
   console.log('[LinkedIn Reshare] Request:', { actor: authorUrn, originalPost: postUrn });
 
-  const response = await fetch(`${LINKEDIN_API_BASE}/ugcPosts`, {
+  const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
+      'LinkedIn-Version': LINKEDIN_API_VERSION,
       'X-Restli-Protocol-Version': '2.0.0',
     },
     body: JSON.stringify(postData),
@@ -2062,9 +2011,9 @@ export async function reshareLinkedInPost(
     throw new Error(`Failed to reshare LinkedIn post (${response.status}): ${error}`);
   }
 
-  const data = await response.json();
-  console.log('[LinkedIn Reshare] Success:', { id: data.id });
-  return { id: data.id };
+  const result = await getPostIdFromRestResponse(response);
+  console.log('[LinkedIn Reshare] Success:', { id: result.id });
+  return result;
 }
 
 /**
