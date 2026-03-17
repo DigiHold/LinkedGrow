@@ -205,7 +205,7 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
   },
   analytics: {
     name: "Analytics Dashboard",
-    description: "Track performance and optimize your content",
+    description: "Track followers, impressions, reactions, and post performance",
     icon: "chart",
   },
   contentRepurposing: {
@@ -220,7 +220,7 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
   },
   engagement: {
     name: "Engagement Tools",
-    description: "Manage comments and grow your network",
+    description: "Like and comment on LinkedIn posts to grow your network",
     icon: "users",
   },
   algorithmOptimizer: {
@@ -240,7 +240,7 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
   },
   advancedAnalytics: {
     name: "Advanced Analytics",
-    description: "Deep insights with trends, heatmaps, and exports",
+    description: "Content performance, posting heatmap, demographics, and export reports",
     icon: "trending-up",
   },
   apiAccess: {
