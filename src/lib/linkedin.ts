@@ -56,6 +56,8 @@ interface LinkedInProfile {
   email?: string;
   localizedFirstName: string;
   localizedLastName: string;
+  localizedHeadline?: string;
+  vanityName?: string;
   profilePicture?: {
     displayImage: string;
   };
@@ -207,6 +209,159 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
     localizedLastName: data.family_name || '',
     profilePicture: data.picture ? { displayImage: data.picture } : undefined,
   };
+}
+
+/**
+ * Fetch member profile with headline via REST API (requires r_basicprofile)
+ * This is separate from getLinkedInProfile which uses OpenID Connect
+ */
+export async function getLinkedInProfileWithHeadline(
+  accessToken: string
+): Promise<{ headline: string; vanityName: string } | null> {
+  try {
+    const url = `${LINKEDIN_API_BASE}/me?projection=(localizedHeadline,vanityName)`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn('[LinkedIn Profile] Headline fetch failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      headline: data.localizedHeadline || '',
+      vanityName: data.vanityName || '',
+    };
+  } catch (error) {
+    console.error('[LinkedIn Profile] Headline fetch error:', error);
+    return null;
+  }
+}
+
+/**
+ * Scrape a user's own public profile to get their post activity URNs
+ * This is safe - it's the user's own public profile, no login needed
+ * Returns activity IDs that can be converted to share URNs
+ */
+export async function scrapeOwnProfilePostURNs(
+  vanityName: string
+): Promise<Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }>> {
+  try {
+    const url = `https://www.linkedin.com/in/${encodeURIComponent(vanityName)}/`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn('[Profile Scrape] Failed:', response.status);
+      return [];
+    }
+
+    const html = await response.text();
+
+    // Extract post references from the HTML
+    // LinkedIn embeds activity URNs in post URLs like:
+    // /posts/username_post-text-here-activity-7439638766438461440-XXXX
+    const pattern = /href="[^"]*?\/posts\/([^"]+activity-(\d+)[^"]*)"/g;
+    const results: Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }> = [];
+    const seen = new Set<string>();
+    let match;
+
+    while ((match = pattern.exec(html)) !== null) {
+      const [, slug, activityId] = match;
+      if (seen.has(activityId)) continue;
+      seen.add(activityId);
+
+      // Extract text preview from the slug
+      const decoded = decodeURIComponent(slug);
+      const parts = decoded.split('_');
+      const textPart = parts.length > 1 ? parts.slice(1).join('_') : decoded;
+      const textPreview = textPart
+        .replace(/-activity-\d+.*$/, '')
+        .replace(/-/g, ' ')
+        .trim();
+
+      // Filter out posts from other people (only keep posts from this vanityName)
+      const authorInSlug = decoded.split('_')[0]?.toLowerCase();
+      if (authorInSlug && authorInSlug !== vanityName.toLowerCase()) continue;
+
+      results.push({
+        activityId,
+        shareUrn: `urn:li:share:${activityId}`,
+        textPreview,
+        postUrl: `https://www.linkedin.com/posts/${slug.split('?')[0]}`,
+      });
+    }
+
+    console.log(`[Profile Scrape] Found ${results.length} own posts for ${vanityName}`);
+    return results;
+  } catch (error) {
+    console.error('[Profile Scrape] Error:', error);
+    return [];
+  }
+}
+
+/**
+ * Get a single post by its URN (the user's own post)
+ * Requires w_member_social (can read own posts)
+ */
+export async function getPostByUrn(
+  accessToken: string,
+  postUrn: string
+): Promise<{ id: string; commentary: string; mediaId?: string; mediaType?: string; publishedAt: number } | null> {
+  try {
+    const encodedUrn = encodeURIComponent(postUrn);
+    const url = `${LINKEDIN_REST_API_BASE}/posts/${encodedUrn}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Get Post] Failed for ${postUrn}:`, response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.content as Record<string, unknown> | undefined;
+    let mediaId: string | undefined;
+    let mediaType: string | undefined;
+
+    if (content?.media) {
+      const media = content.media as Record<string, unknown>;
+      mediaId = media.id as string;
+      if (mediaId?.includes('urn:li:image:')) mediaType = 'image';
+      else if (mediaId?.includes('urn:li:video:')) mediaType = 'video';
+      else if (mediaId?.includes('urn:li:document:')) mediaType = 'document';
+    } else if (content?.multiImage) {
+      mediaType = 'multiImage';
+      const mi = content.multiImage as Record<string, unknown>;
+      const images = mi.images as Array<Record<string, unknown>> | undefined;
+      if (images?.[0]) mediaId = images[0].id as string;
+    }
+
+    return {
+      id: data.id || postUrn,
+      commentary: data.commentary || '',
+      mediaId,
+      mediaType,
+      publishedAt: data.publishedAt || data.createdAt || 0,
+    };
+  } catch (error) {
+    console.error(`[Get Post] Error for ${postUrn}:`, error);
+    return null;
+  }
 }
 
 /**

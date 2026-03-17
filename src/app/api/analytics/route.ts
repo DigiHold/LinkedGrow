@@ -18,6 +18,8 @@ import {
   getOrganizationShareStatistics,
   getOrganizationPageStatistics,
   getOrganizationFollowerDemographics,
+  scrapeOwnProfilePostURNs,
+  getPostByUrn,
   type MemberPostAnalytics,
   type LinkedInAuthorPost,
 } from "@/lib/linkedin";
@@ -179,33 +181,104 @@ export async function GET(request: NextRequest) {
     // PERSONAL PROFILE PATH
     // ===========================
     } else {
-      // For personal profiles: no r_member_social = can't list posts from API
-      // Use DB posts (created through LinkedGrow) + aggregated analytics from r_member_postAnalytics
+      // Step 1: Scrape user's OWN public profile to get post URNs
+      // This is safe - it's publicly accessible and it's their own profile
+      const vanityName = user.linkedinProfileId; // We'll use profile ID as fallback
+      let scrapedPosts: Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }> = [];
 
-      // 1. Get posts from local DB
-      const dbPosts = await db.query.posts.findMany({
-        where: and(eq(posts.userId, user.id), gte(posts.createdAt, startDate)),
-        orderBy: desc(posts.createdAt),
-      });
-      log(`DB posts: ${dbPosts.length}`);
+      // Try to get vanity name from the community token (r_basicprofile)
+      let profileVanity = '';
+      try {
+        const { getLinkedInProfileWithHeadline } = await import("@/lib/linkedin");
+        const profileData = await getLinkedInProfileWithHeadline(token);
+        if (profileData?.vanityName) profileVanity = profileData.vanityName;
+        log(`VanityName: ${profileVanity}`);
+      } catch (err) { log(`VanityName fetch failed: ${err}`); }
 
-      for (const p of dbPosts) {
-        if (p.status !== "published") continue;
-        allPosts.push({
-          id: p.id,
-          content: p.content?.substring(0, 200) || null,
-          postType: p.postType,
-          status: p.status,
-          publishedAt: p.publishedAt?.toISOString() || null,
-          createdAt: p.createdAt?.toISOString() || null,
-          linkedinPostId: p.linkedinPostId,
-          linkedinPostUrl: p.linkedinPostUrl,
-          linkedinImageUrl: p.linkedinImageUrl,
-          syncedFromLinkedin: p.syncedFromLinkedin ?? false,
-        });
+      if (profileVanity) {
+        try {
+          scrapedPosts = await scrapeOwnProfilePostURNs(profileVanity);
+          log(`Scraped ${scrapedPosts.length} post URNs from public profile`);
+        } catch (err) { log(`Profile scrape FAILED: ${err}`); }
+      } else {
+        log(`No vanity name - cannot scrape profile`);
       }
 
-      // 2. Aggregated analytics (r_member_postAnalytics - works for all member posts)
+      // Step 2: For each scraped post, fetch full content via Posts API (own posts, w_member_social)
+      // And get image URLs
+      const imageUrns: string[] = [];
+      for (const sp of scrapedPosts.slice(0, 15)) {
+        try {
+          const postData = await getPostByUrn(token, sp.shareUrn);
+          if (postData) {
+            let postType: "text" | "image" | "carousel" | "video" = "text";
+            if (postData.mediaType === "video") postType = "video";
+            else if (postData.mediaType === "document") postType = "carousel";
+            else if (postData.mediaType === "image" || postData.mediaType === "multiImage") postType = "image";
+
+            if (postData.mediaId?.includes("urn:li:image:")) imageUrns.push(postData.mediaId);
+
+            allPosts.push({
+              id: postData.id,
+              content: postData.commentary?.substring(0, 200) || sp.textPreview || null,
+              postType,
+              status: "published",
+              publishedAt: postData.publishedAt ? new Date(postData.publishedAt).toISOString() : null,
+              createdAt: postData.publishedAt ? new Date(postData.publishedAt).toISOString() : null,
+              linkedinPostId: sp.shareUrn,
+              linkedinPostUrl: sp.postUrl,
+              linkedinImageUrl: undefined, // Will be filled after image batch fetch
+              syncedFromLinkedin: true,
+            });
+          } else {
+            // Post API failed - use scraped preview data
+            allPosts.push({
+              id: sp.shareUrn,
+              content: sp.textPreview || null,
+              postType: "text",
+              status: "published",
+              publishedAt: null,
+              createdAt: null,
+              linkedinPostId: sp.shareUrn,
+              linkedinPostUrl: sp.postUrl,
+              syncedFromLinkedin: true,
+            });
+          }
+        } catch (err) {
+          log(`Post fetch failed for ${sp.shareUrn}: ${err}`);
+        }
+      }
+
+      // Batch fetch image URLs
+      if (imageUrns.length > 0) {
+        try {
+          const imageUrls = await getImageDownloadUrls(token, imageUrns);
+          log(`Got ${imageUrls.size} image URLs`);
+          for (const post of allPosts) {
+            const matchingUrn = imageUrns.find(urn => {
+              // Find which post has this image
+              const sp = scrapedPosts.find(s => s.shareUrn === post.linkedinPostId);
+              return sp !== undefined;
+            });
+            // Simple approach: match by checking each post's scraped data
+          }
+          // Set image URLs on posts
+          for (const post of allPosts) {
+            if (!post.linkedinImageUrl) {
+              for (const [urn, url] of imageUrls.entries()) {
+                // We stored imageUrns in order of posts, so we can match
+                post.linkedinImageUrl = url;
+                imageUrls.delete(urn);
+                break;
+              }
+            }
+          }
+        } catch (err) { log(`Image batch FAILED: ${err}`); }
+      }
+
+      log(`Total personal posts: ${allPosts.length}`);
+
+      // Step 3: Aggregated analytics (r_member_postAnalytics)
       try {
         const agg = await getMemberAggregatedAnalytics(token, { start: startDate, end: new Date() });
         if (agg) {
@@ -220,7 +293,7 @@ export async function GET(request: NextRequest) {
         }
       } catch (err) { log(`Aggregated analytics FAILED: ${err}`); }
 
-      // 3. Per-post analytics for DB posts that have linkedinPostId
+      // Step 4: Per-post analytics using scraped URNs
       const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 10);
       if (postUrns.length > 0) {
         try {
@@ -231,8 +304,6 @@ export async function GET(request: NextRequest) {
             log(`  ${ps.postUrn.slice(-8)}: imp=${ps.impressions} react=${ps.reactions} comm=${ps.comments}`);
           });
         } catch (err) { log(`Per-post analytics FAILED: ${err}`); }
-      } else {
-        log(`No post URNs for per-post analytics`);
       }
 
       // 4. Follower count

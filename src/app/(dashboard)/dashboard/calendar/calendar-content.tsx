@@ -155,6 +155,7 @@ export function CalendarContent() {
   // LinkedIn profile data for preview
   const [linkedInProfile, setLinkedInProfile] = useState<{
     name: string;
+    headline: string;
     image: string | null;
   } | null>(null);
 
@@ -242,6 +243,7 @@ export function CalendarContent() {
           const data = await response.json();
           setLinkedInProfile({
             name: data.linkedinProfileName || data.name || "Your Name",
+            headline: data.linkedinHeadline || "",
             image: data.image && data.image.trim() !== "" ? data.image : null,
           });
         }
@@ -1368,7 +1370,7 @@ export function CalendarContent() {
                                 )}
                                 <div className="flex flex-col ml-2.5">
                                   <h3 className="font-semibold">{linkedInProfile?.name || session?.user?.name || "Your LinkedIn Profile"}</h3>
-                                  <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
+                                  <div className="text-sm text-muted-foreground line-clamp-1">{linkedInProfile?.headline || ""}</div>
                                 </div>
                               </div>
                               <div className="relative" ref={postMenuRef}>
@@ -1909,7 +1911,7 @@ Tips for viral posts:
                               )}
                               <div className="flex flex-col ml-2.5">
                                 <h3 className="font-semibold">{linkedInProfile?.name || session?.user?.name || "Your LinkedIn Profile"}</h3>
-                                <div className="text-sm text-muted-foreground line-clamp-1">Your headline here</div>
+                                <div className="text-sm text-muted-foreground line-clamp-1">{linkedInProfile?.headline || ""}</div>
                               </div>
                             </div>
                           </div>

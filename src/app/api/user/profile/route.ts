@@ -16,6 +16,7 @@ export async function GET() {
       columns: {
         name: true,
         linkedinProfileName: true,
+        linkedinHeadline: true,
         image: true,
       },
     });
@@ -27,6 +28,7 @@ export async function GET() {
     return NextResponse.json({
       name: user.name,
       linkedinProfileName: user.linkedinProfileName,
+      linkedinHeadline: user.linkedinHeadline,
       image: user.image,
     });
   } catch {

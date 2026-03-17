@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForToken, getLinkedInProfile, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
+import { exchangeCodeForToken, getLinkedInProfile, getLinkedInProfileWithHeadline, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { db, users, accounts, betaUsers } from '@/lib/db';
 import { affiliates, affiliateReferrals } from '@/lib/db/schema';
@@ -165,11 +165,14 @@ export async function GET(request: NextRequest) {
     // Exchange code for access token
     const tokenData = await exchangeCodeForToken(appType, code, redirectUri);
 
-    // For community app connect flow, skip profile fetch (no openid scope)
-    // Just store the tokens and return
+    // For community app connect flow, skip OpenID profile fetch (no openid scope)
+    // But DO fetch headline via r_basicprofile REST API
     if (appType === 'community' && mode === 'connect') {
       const session = await auth();
       if (session?.user?.id) {
+        // Fetch headline + vanity name via r_basicprofile
+        const profileData = await getLinkedInProfileWithHeadline(tokenData.access_token);
+
         await db
           .update(users)
           .set({
@@ -178,6 +181,7 @@ export async function GET(request: NextRequest) {
             linkedinCommunityTokenExpiry: tokenData.expires_in
               ? new Date(Date.now() + tokenData.expires_in * 1000)
               : null,
+            linkedinHeadline: profileData?.headline || null,
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));

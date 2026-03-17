@@ -87,6 +87,7 @@ export default function PostsPage() {
   // LinkedIn profile data for preview
   const [linkedInProfile, setLinkedInProfile] = useState<{
     name: string;
+    headline: string;
     image: string | null;
   } | null>(null);
 
@@ -99,6 +100,7 @@ export default function PostsPage() {
           const data = await response.json();
           setLinkedInProfile({
             name: data.linkedinProfileName || data.name || "Your Name",
+            headline: data.linkedinHeadline || "",
             image: data.image || null,
           });
         }
@@ -842,7 +844,7 @@ export default function PostsPage() {
                     <p className="text-sm text-muted-foreground">
                       {isTeamView && previewPost.author && !previewPost.author.isOwner
                         ? "Team Member"
-                        : "Your headline here"}
+                        : linkedInProfile?.headline || ""}
                     </p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />
