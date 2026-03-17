@@ -1912,6 +1912,7 @@ export async function getLinkedInFeed(
       Authorization: `Bearer ${accessToken}`,
       'X-Restli-Protocol-Version': '2.0.0',
       'LinkedIn-Version': LINKEDIN_API_VERSION,
+      'X-RestLi-Method': 'FINDER',
     },
   });
 
