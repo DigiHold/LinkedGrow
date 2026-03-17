@@ -92,6 +92,7 @@ export default function EngagementPage() {
   const [commentText, setCommentText] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
 
   const fetchEngagement = useCallback(async () => {
     try {
@@ -362,10 +363,29 @@ export default function EngagementPage() {
                         </div>
                       </div>
 
-                      {/* Post text */}
-                      <p className="text-sm leading-relaxed line-clamp-5 whitespace-pre-wrap">
-                        {post.commentary || "(No text)"}
-                      </p>
+                      {/* Post text with see more/less */}
+                      {post.commentary ? (
+                        <div className="text-sm leading-relaxed">
+                          <p className={`whitespace-pre-wrap ${expandedPosts.has(post.urn) ? "" : "line-clamp-4"}`}>
+                            {post.commentary}
+                          </p>
+                          {post.commentary.length > 200 && (
+                            <button
+                              onClick={() => setExpandedPosts((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(post.urn)) next.delete(post.urn);
+                                else next.add(post.urn);
+                                return next;
+                              })}
+                              className="text-muted-foreground hover:text-foreground font-medium text-xs mt-1 transition-colors"
+                            >
+                              {expandedPosts.has(post.urn) ? "...see less" : "...see more"}
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">(No text)</p>
+                      )}
                     </div>
 
                     {/* Media */}
