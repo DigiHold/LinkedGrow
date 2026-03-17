@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 // ============================================
 // TYPES
@@ -45,17 +45,15 @@ function fetchProfileHtml(vanityName: string): string {
 
   const url = `https://www.linkedin.com/in/${encodeURIComponent(vanityName)}/`;
 
-  const curlCmd = [
-    "curl", "-s", "--max-time", "25",
+  return execFileSync("curl", [
+    "-s", "--max-time", "25",
     "--proxy", `socks5://${user}:${pass}@${host}:${port}`,
     "-L",
     "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "-H", "Accept-Language: en-US,en;q=0.9",
-    `"${url}"`,
-  ].join(" ");
-
-  return execSync(curlCmd, {
+    url,
+  ], {
     encoding: "utf-8",
     timeout: 30000,
     maxBuffer: 5 * 1024 * 1024,
