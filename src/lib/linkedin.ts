@@ -1021,63 +1021,60 @@ export async function getMemberAggregatedAnalytics(
   dateRange?: { start: Date; end: Date }
 ): Promise<MemberAggregatedAnalytics | null> {
   try {
-    let url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me`;
+    // The memberCreatorPostAnalytics API requires one call PER metric type
+    const metrics = ['IMPRESSION', 'MEMBERS_REACHED', 'REACTION', 'COMMENT', 'RESHARE'] as const;
 
-    // Add date range if provided
+    let dateRangeParam = '';
     if (dateRange) {
-      const startYear = dateRange.start.getFullYear();
-      const startMonth = dateRange.start.getMonth() + 1;
-      const startDay = dateRange.start.getDate();
-      const endYear = dateRange.end.getFullYear();
-      const endMonth = dateRange.end.getMonth() + 1;
-      const endDay = dateRange.end.getDate();
-
-      url += `&dateRange=(start:(year:${startYear},month:${startMonth},day:${startDay}),end:(year:${endYear},month:${endMonth},day:${endDay}))`;
+      const s = dateRange.start;
+      const e = dateRange.end;
+      dateRangeParam = `&dateRange=(start:(year:${s.getFullYear()},month:${s.getMonth() + 1},day:${s.getDate()}),end:(year:${e.getFullYear()},month:${e.getMonth() + 1},day:${e.getDate()}))`;
     }
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': LINKEDIN_API_VERSION,
-        'Content-Type': 'application/json',
-      },
-    });
+    const results: Record<string, number> = {};
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('Failed to fetch member aggregated analytics:', response.status, errorText);
-      return null;
-    }
+    // Fetch each metric type in parallel
+    await Promise.all(
+      metrics.map(async (metric) => {
+        try {
+          const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
 
-    const data = await response.json();
+          const response = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': LINKEDIN_API_VERSION,
+            },
+          });
 
-    // Aggregate all post statistics
-    let totalImpressions = 0;
-    let totalMembersReached = 0;
-    let totalReactions = 0;
-    let totalComments = 0;
-    let totalReshares = 0;
-    let postCount = 0;
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.warn(`[Analytics] ${metric} failed:`, response.status, errorText.substring(0, 200));
+            return;
+          }
 
-    if (data.elements && Array.isArray(data.elements)) {
-      for (const element of data.elements) {
-        totalImpressions += element.impressionCount || 0;
-        totalMembersReached += element.uniqueImpressionsCount || element.membersReachedCount || 0;
-        totalReactions += element.reactionCount || element.likeCount || 0;
-        totalComments += element.commentCount || 0;
-        totalReshares += element.shareCount || element.reshareCount || 0;
-        postCount++;
-      }
-    }
+          const data = await response.json();
+          let total = 0;
+          if (data.elements && Array.isArray(data.elements)) {
+            for (const el of data.elements) {
+              total += el.count || 0;
+            }
+          }
+          results[metric] = total;
+          console.log(`[Analytics] ${metric}: ${total}`);
+        } catch (err) {
+          console.warn(`[Analytics] ${metric} error:`, err);
+        }
+      })
+    );
 
     return {
-      totalImpressions,
-      totalMembersReached,
-      totalReactions,
-      totalComments,
-      totalReshares,
-      postCount,
+      totalImpressions: results['IMPRESSION'] || 0,
+      totalMembersReached: results['MEMBERS_REACHED'] || 0,
+      totalReactions: results['REACTION'] || 0,
+      totalComments: results['COMMENT'] || 0,
+      totalReshares: results['RESHARE'] || 0,
+      postCount: 0, // Not available from aggregated endpoint
     };
   } catch (error) {
     console.error('Failed to fetch member aggregated analytics:', error);
@@ -1090,60 +1087,80 @@ export async function getMemberAggregatedAnalytics(
  * Returns array of analytics for each post
  * Requires r_member_postAnalytics scope
  */
+/**
+ * Get analytics for individual posts by their URNs
+ * Uses q=entity finder - one call per post per metric
+ * For efficiency, fetches IMPRESSION as TOTAL for each post
+ */
 export async function getMemberAllPostsAnalytics(
   accessToken: string,
-  dateRange?: { start: Date; end: Date }
+  dateRange?: { start: Date; end: Date },
+  postUrns?: string[]
 ): Promise<MemberPostAnalytics[]> {
-  try {
-    let url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me`;
+  if (!postUrns || postUrns.length === 0) return [];
 
-    if (dateRange) {
-      const startYear = dateRange.start.getFullYear();
-      const startMonth = dateRange.start.getMonth() + 1;
-      const startDay = dateRange.start.getDate();
-      const endYear = dateRange.end.getFullYear();
-      const endMonth = dateRange.end.getMonth() + 1;
-      const endDay = dateRange.end.getDate();
-
-      url += `&dateRange=(start:(year:${startYear},month:${startMonth},day:${startDay}),end:(year:${endYear},month:${endMonth},day:${endDay}))`;
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': LINKEDIN_API_VERSION,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('Failed to fetch member posts analytics:', response.status, errorText);
-      return [];
-    }
-
-    const data = await response.json();
-    const posts: MemberPostAnalytics[] = [];
-
-    if (data.elements && Array.isArray(data.elements)) {
-      for (const element of data.elements) {
-        posts.push({
-          postUrn: element.post || element.entity || '',
-          impressions: element.impressionCount || 0,
-          membersReached: element.uniqueImpressionsCount || element.membersReachedCount || 0,
-          reactions: element.reactionCount || element.likeCount || 0,
-          comments: element.commentCount || 0,
-          reshares: element.shareCount || element.reshareCount || 0,
-        });
-      }
-    }
-
-    return posts;
-  } catch (error) {
-    console.error('Failed to fetch member posts analytics:', error);
-    return [];
+  let dateRangeParam = '';
+  if (dateRange) {
+    const s = dateRange.start;
+    const e = dateRange.end;
+    dateRangeParam = `&dateRange=(start:(year:${s.getFullYear()},month:${s.getMonth() + 1},day:${s.getDate()}),end:(year:${e.getFullYear()},month:${e.getMonth() + 1},day:${e.getDate()}))`;
   }
+
+  const metrics = ['IMPRESSION', 'REACTION', 'COMMENT', 'RESHARE'] as const;
+  const postStats = new Map<string, MemberPostAnalytics>();
+
+  // Limit to 20 posts to avoid too many API calls
+  const urnsToFetch = postUrns.slice(0, 20);
+
+  // For each post, fetch all metrics in parallel
+  await Promise.all(
+    urnsToFetch.map(async (postUrn) => {
+      const stats: MemberPostAnalytics = {
+        postUrn,
+        impressions: 0,
+        membersReached: 0,
+        reactions: 0,
+        comments: 0,
+        reshares: 0,
+      };
+
+      // Determine entity param format
+      const entityParam = postUrn.includes('ugcPost')
+        ? `(ugc:${encodeURIComponent(postUrn)})`
+        : `(share:${encodeURIComponent(postUrn)})`;
+
+      await Promise.all(
+        metrics.map(async (metric) => {
+          try {
+            const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=entity&entity=${entityParam}&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
+
+            const response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'X-Restli-Protocol-Version': '2.0.0',
+                'LinkedIn-Version': LINKEDIN_API_VERSION,
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const count = data.elements?.[0]?.count || 0;
+              if (metric === 'IMPRESSION') stats.impressions = count;
+              else if (metric === 'REACTION') stats.reactions = count;
+              else if (metric === 'COMMENT') stats.comments = count;
+              else if (metric === 'RESHARE') stats.reshares = count;
+            }
+          } catch {
+            // Skip failed individual metric
+          }
+        })
+      );
+
+      postStats.set(postUrn, stats);
+    })
+  );
+
+  return Array.from(postStats.values());
 }
 
 // ============================================

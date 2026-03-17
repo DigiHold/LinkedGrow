@@ -251,15 +251,23 @@ export async function GET(request: NextRequest) {
             membersReached = memberAnalytics.totalMembersReached;
           }
 
-          // Get individual post analytics
-          const allPostAnalytics = await getMemberAllPostsAnalytics(
-            accessToken,
-            { start: startDate, end: endDate }
-          );
+          // Get individual post analytics (need post URNs from DB)
+          const publishedPostUrns = userPosts
+            .filter(p => p.linkedinPostId)
+            .map(p => p.linkedinPostId!)
+            .slice(0, 20); // Limit to avoid too many API calls
 
-          allPostAnalytics.forEach((postStats) => {
-            linkedinPostAnalytics.set(postStats.postUrn, postStats);
-          });
+          if (publishedPostUrns.length > 0) {
+            const allPostAnalytics = await getMemberAllPostsAnalytics(
+              accessToken,
+              { start: startDate, end: endDate },
+              publishedPostUrns
+            );
+
+            allPostAnalytics.forEach((postStats) => {
+              linkedinPostAnalytics.set(postStats.postUrn, postStats);
+            });
+          }
 
           // Get follower count
           const memberFollowers = await getMemberFollowerCount(accessToken);
