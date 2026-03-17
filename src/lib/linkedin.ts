@@ -1999,10 +1999,22 @@ export async function getLinkedInFeed(
   });
 
   // Resolve in parallel: author profiles, image URLs, social counts
+  // Each resolver handles its own errors so one failure doesn't break everything
   const [authorProfiles, imageDownloadUrls, socialCounts] = await Promise.all([
-    resolveAuthorProfiles(accessToken, Array.from(authorUrns)),
-    imageUrns.length > 0 ? getImageDownloadUrls(accessToken, imageUrns) : Promise.resolve(new Map<string, string>()),
-    resolveSocialCounts(accessToken, postUrns),
+    resolveAuthorProfiles(accessToken, Array.from(authorUrns)).catch((err) => {
+      console.error('[LinkedIn Feed] Failed to resolve author profiles:', err);
+      return new Map<string, { name: string; headline: string; profilePicture: string }>();
+    }),
+    imageUrns.length > 0
+      ? getImageDownloadUrls(accessToken, imageUrns).catch((err) => {
+          console.error('[LinkedIn Feed] Failed to get image URLs:', err);
+          return new Map<string, string>();
+        })
+      : Promise.resolve(new Map<string, string>()),
+    resolveSocialCounts(accessToken, postUrns).catch((err) => {
+      console.error('[LinkedIn Feed] Failed to resolve social counts:', err);
+      return new Map<string, { likes: number; comments: number; shares: number }>();
+    }),
   ]);
 
   // Build enriched feed posts

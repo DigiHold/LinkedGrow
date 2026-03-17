@@ -59,8 +59,9 @@ export async function GET() {
     const result = await getLinkedInFeed(accessToken, 20);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch feed:", error);
-    return NextResponse.json({ error: "Failed to fetch feed" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to fetch feed:", message, error);
+    return NextResponse.json({ error: `Failed to fetch feed: ${message}` }, { status: 500 });
   }
 }
 
