@@ -261,7 +261,6 @@ export default function EngagementPage() {
   const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const [reactionMenuPost, setReactionMenuPost] = useState<string | null>(null);
-  const [displayCount, setDisplayCount] = useState(12);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const reactionMenuTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -300,21 +299,22 @@ export default function EngagementPage() {
     }
   }, []);
 
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const fetchFeed = useCallback(async (listId?: string | null, forceRefresh = false) => {
     setIsFeedLoading(true);
     setFeedErrors([]);
     try {
       let url = listId ? `/api/engagement/feed?listId=${listId}` : "/api/engagement/feed";
-      if (forceRefresh) url += (url.includes("?") ? "&" : "?") + "forceRefresh=true";
+      url += (url.includes("?") ? "&" : "?") + "limit=12&offset=0";
+      if (forceRefresh) url += "&forceRefresh=true";
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setFeedPosts(data.posts || []);
+        setHasMorePosts(data.hasMore ?? false);
         setFeedErrors(data.errors || []);
-        // If there are more profiles to scrape, auto-fetch again after a short delay
-        if (data.remaining && data.remaining > 0 && !forceRefresh) {
-          setTimeout(() => fetchFeed(listId), 500);
-        }
       } else {
         const err = await res.json().catch(() => ({ error: "Failed to load feed" }));
         setFeedErrors([{ vanityName: "", error: err.error }]);
@@ -325,6 +325,26 @@ export default function EngagementPage() {
       setIsFeedLoading(false);
     }
   }, []);
+
+  const loadMorePosts = useCallback(async () => {
+    if (isLoadingMore || !hasMorePosts) return;
+    setIsLoadingMore(true);
+    try {
+      let url = activeListId ? `/api/engagement/feed?listId=${activeListId}` : "/api/engagement/feed";
+      url += (url.includes("?") ? "&" : "?") + `limit=12&offset=${feedPosts.length}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const newPosts = data.posts || [];
+        if (newPosts.length > 0) {
+          setFeedPosts((prev) => [...prev, ...newPosts]);
+        }
+        setHasMorePosts(data.hasMore ?? false);
+      }
+    } catch { /* ignore */ } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeListId, feedPosts.length, isLoadingMore, hasMorePosts]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -338,7 +358,7 @@ export default function EngagementPage() {
   // Load which posts the user has already liked/commented (from DB)
   useEffect(() => {
     if (feedPosts.length === 0) return;
-    setDisplayCount(12); // Reset pagination when feed changes
+    // Load engagement history for visible posts
     const postUrns = feedPosts.map((p) => p.activityUrn);
     fetch("/api/engagement/history", {
       method: "POST",
@@ -355,21 +375,21 @@ export default function EngagementPage() {
       .catch(() => {});
   }, [feedPosts]);
 
-  // Infinite scroll - load more posts when scrolling near bottom
+  // Infinite scroll - load more posts from API when scrolling near bottom
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setDisplayCount((prev) => prev + 12);
+          loadMorePosts();
         }
       },
       { rootMargin: "400px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [feedPosts.length]);
+  }, [loadMorePosts]);
 
   // ============================================
   // LIST MANAGEMENT (DIALOG)
@@ -724,21 +744,9 @@ export default function EngagementPage() {
             )}
 
             {/* Post Feed Grid */}
-            {feedPosts.length > 0 && (() => {
-              // Limit posts per profile based on user setting
-              const ppp = engagementData?.objectives.postsPerProfile ?? 2;
-              const authorCounts = new Map<string, number>();
-              const allFilteredPosts = feedPosts.filter((post) => {
-                const count = authorCounts.get(post.authorVanityName) || 0;
-                if (count >= ppp) return false;
-                authorCounts.set(post.authorVanityName, count + 1);
-                return true;
-              });
-              const visiblePosts = allFilteredPosts.slice(0, displayCount);
-              const hasMore = visiblePosts.length < allFilteredPosts.length;
-              return (<>
+            {feedPosts.length > 0 && (<>
               <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
-                {visiblePosts.map((post) => (
+                {feedPosts.map((post) => (
                   <div key={post.activityUrn} className="break-inside-avoid rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
                     {/* Author */}
                     <div className="p-4 pb-0">
@@ -886,13 +894,12 @@ export default function EngagementPage() {
                   </div>
                 ))}
               </div>
-              {hasMore && (
+              {(hasMorePosts || isLoadingMore) && (
                 <div ref={loadMoreRef} className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
                 </div>
               )}
-              </>);
-            })()}
+            </>)}
 
             {/* Empty feed with profiles */}
             {!isFeedLoading && feedPosts.length === 0 && lists.length > 0 && totalProfiles === 0 && (
