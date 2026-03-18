@@ -28,6 +28,7 @@ export const users = sqliteTable("users", {
   linkedinRefreshToken: text("linkedin_refresh_token"),
   linkedinTokenExpiry: integer("linkedin_token_expiry", { mode: "timestamp" }),
   linkedinProfileId: text("linkedin_profile_id"),
+  linkedinMemberId: text("linkedin_member_id"),
   linkedinProfileName: text("linkedin_profile_name"),
   linkedinHeadline: text("linkedin_headline"), // User's headline from r_basicprofile
   linkedinVanityName: text("linkedin_vanity_name"), // User's vanity name (e.g., "nicolas-lecocq")
