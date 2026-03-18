@@ -150,7 +150,7 @@ export interface PrelaunchTranslations {
 // ============================================
 
 // Hero Section with Floating Elements
-function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
+function HeroSection({ firstName, setFirstName, email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, isMounted, translations }: HeroProps) {
   return (
     <section className="relative z-10 pt-8 md:pt-16 pb-16 md:pb-24 px-4 overflow-hidden">
       {/* Floating Elements with Official AI Brand Logos - hidden on mobile for performance */}
@@ -372,6 +372,13 @@ function HeroSection({ email, setEmail, honeypot, setHoneypot, handleSubmit, isL
               />
               <div className="relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <input
+                  type="text"
+                  placeholder="Your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+                <input
                   type="email"
                   placeholder={translations.hero.emailPlaceholder}
                   value={email}
@@ -472,6 +479,8 @@ function SuccessMessage({ translations }: { translations: PrelaunchTranslations 
 }
 
 interface HeroProps {
+  firstName: string;
+  setFirstName: (name: string) => void;
   email: string;
   setEmail: (email: string) => void;
   honeypot: string;
@@ -1763,6 +1772,8 @@ function FAQSection({ translations }: { translations: PrelaunchTranslations }) {
 
 interface CTAProps {
   timeLeft: { days: number; hours: number; minutes: number; seconds: number };
+  firstName: string;
+  setFirstName: (name: string) => void;
   email: string;
   setEmail: (email: string) => void;
   honeypot: string;
@@ -1775,7 +1786,7 @@ interface CTAProps {
 }
 
 // Shared form component for all CTA variants
-function CTAForm({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
+function CTAForm({ firstName, setFirstName, email, setEmail, honeypot, setHoneypot, handleSubmit, isLoading, isSuccess, error, variant = "dark" }: CTAProps & { variant?: "dark" | "light" }) {
   const isDark = variant === "dark";
 
   if (isSuccess) {
@@ -1810,6 +1821,13 @@ function CTAForm({ email, setEmail, honeypot, setHoneypot, handleSubmit, isLoadi
       <div className="relative">
         {isDark && <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
         <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
+          <input
+            type="text"
+            placeholder="Your first name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className={`flex-1 min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+          />
           <input
             type="email"
             placeholder="Enter your email"
@@ -1877,6 +1895,13 @@ function CTASection(props: CTAProps) {
                 aria-hidden="true"
               />
               <input
+                type="text"
+                placeholder="Your first name"
+                value={props.firstName}
+                onChange={(e) => props.setFirstName(e.target.value)}
+                className="flex-1 min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+              />
+              <input
                 type="email"
                 placeholder={props.translations.hero.emailPlaceholder}
                 value={props.email}
@@ -1917,6 +1942,7 @@ function CTASection(props: CTAProps) {
 
 export default function PreLaunchPage({ translations }: { translations: PrelaunchTranslations }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Bot trap - should stay empty
   const [isLoading, setIsLoading] = useState(false);
@@ -1964,7 +1990,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, _hp: honeypot, _ts: formLoadTime.toString() }),
+        body: JSON.stringify({ email, name: firstName, _hp: honeypot, _ts: formLoadTime.toString() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -1976,17 +2002,19 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
-  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string) => {
+  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string, exitFirstName: string) => {
     const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: exitEmail, _hp: exitHoneypot, _ts: exitFormLoadTime.toString() }),
+      body: JSON.stringify({ email: exitEmail, name: exitFirstName, _hp: exitHoneypot, _ts: exitFormLoadTime.toString() }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to subscribe");
   };
 
   const heroProps: HeroProps = {
+    firstName,
+    setFirstName,
     email,
     setEmail,
     honeypot,
@@ -2161,6 +2189,8 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
       {/* Final CTA Section */}
       <CTASection
         timeLeft={timeLeft}
+        firstName={firstName}
+        setFirstName={setFirstName}
         email={email}
         setEmail={setEmail}
         honeypot={honeypot}

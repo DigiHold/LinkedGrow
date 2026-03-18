@@ -6,12 +6,13 @@ import { X, Gift, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExitIntentPopupProps {
-  onSubmit: (email: string, formLoadTime: number, honeypot: string) => Promise<void>;
+  onSubmit: (email: string, formLoadTime: number, honeypot: string, firstName: string) => Promise<void>;
 }
 
 export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [hasShown, setHasShown] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Bot trap - should stay empty
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +57,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
     setError("");
 
     try {
-      await onSubmit(email, formLoadTime, honeypot);
+      await onSubmit(email, formLoadTime, honeypot, firstName);
       setIsSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
@@ -153,6 +154,15 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
                         autoComplete="off"
                         aria-hidden="true"
                       />
+                      <div>
+                        <input
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="Your first name"
+                          className="w-full h-14 min-h-[54px] px-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                        />
+                      </div>
                       <div>
                         <input
                           type="email"
