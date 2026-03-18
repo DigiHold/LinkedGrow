@@ -421,11 +421,11 @@ export async function createLinkedInComment(
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
     const encoded = encodeURIComponent(urn);
-    const body = { actor: actorUrn, object: urn, message: { text: commentText } };
+    // Comments endpoint (Community Management API)
     attempts.push(
-      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/comments`, body, version: null },
-      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/comments`, body, version: LINKEDIN_API_VERSION },
-      { url: `${LINKEDIN_REST_API_BASE}/comments`, body, version: LINKEDIN_API_VERSION },
+      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: LINKEDIN_API_VERSION },
+      { url: `${LINKEDIN_REST_API_BASE}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: LINKEDIN_API_VERSION },
+      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: null },
     );
   }
 
@@ -1907,14 +1907,18 @@ export async function likeLinkedInPost(
 
   const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
-  // Try every combination of URN format x endpoint
+  // Try reactions endpoint first (Community Management API), then socialActions
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
     const encoded = encodeURIComponent(urn);
+    // Reactions endpoint (needs actor field!)
     attempts.push(
-      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: null },
+      { url: `${LINKEDIN_REST_API_BASE}/reactions`, body: { actor: actorUrn, root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
+    );
+    // socialActions endpoints
+    attempts.push(
       { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: LINKEDIN_API_VERSION },
-      { url: `${LINKEDIN_REST_API_BASE}/reactions`, body: { root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
+      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: null },
     );
   }
 
