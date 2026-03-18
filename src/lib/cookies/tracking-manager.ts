@@ -1,12 +1,10 @@
 // Unified Tracking Manager for Dynamic Script Loading/Unloading
-// Supports: Google Tag Manager, Meta Pixel, Hotjar, and future scripts
+// Supports: Google Tag Manager, Meta Pixel, and future scripts
 
 export interface TrackingConfig {
   gtmId?: string;
   ga4MeasurementId?: string; // G-XXXXXXX - for direct cookie creation on consent
   metaPixelId?: string;
-  hotjarId?: string;
-  hotjarVersion?: number;
 }
 
 interface ConsentPreferences {
@@ -22,9 +20,6 @@ const TRACKING_COOKIES = [
   '__utma', '__utmb', '__utmc', '__utmz', '__utmv', '__utmt',
   // Meta/Facebook
   '_fbp', '_fbc', 'fr', 'datr', 'sb', 'wd',
-  // Hotjar
-  '_hjSessionUser', '_hjSession', '_hjid', '_hjFirstSeen', '_hjIncludedInSessionSample',
-  '_hjAbsoluteSessionInProgress', '_hjTLDTest', '_hjIncludedInPageviewSample',
   // Bing/Microsoft
   '_uetmsclkid', '_uetsid', '_uetvid', 'MUID',
   // TikTok
@@ -261,37 +256,6 @@ export function injectMetaPixel(pixelId: string): void {
 }
 
 /**
- * Inject Hotjar script
- */
-export function injectHotjar(hjId: string, hjVersion: number = 6): void {
-  if (typeof window === 'undefined' || !hjId) return;
-
-  const scriptId = `hotjar-${hjId}`;
-  if (loadedScripts.has(scriptId)) return;
-
-  // Initialize Hotjar with proper typing
-  const hjFunc: HotjarFunction = function(...args: unknown[]) {
-    hjFunc.q = hjFunc.q || [];
-    hjFunc.q.push(args);
-  };
-  hjFunc.q = [];
-
-  window.hj = window.hj || hjFunc;
-  window._hjSettings = { hjid: parseInt(hjId), hjsv: hjVersion };
-
-  const script = document.createElement('script');
-  script.id = scriptId;
-  script.async = true;
-  script.src = `https://static.hotjar.com/c/hotjar-${hjId}.js?sv=${hjVersion}`;
-
-  script.onload = () => {
-    loadedScripts.add(scriptId);
-  };
-
-  document.head.appendChild(script);
-}
-
-/**
  * Remove a script by ID pattern
  */
 function removeScript(idPattern: string): void {
@@ -306,7 +270,6 @@ function removeScript(idPattern: string): void {
   const srcPatterns: Record<string, string[]> = {
     'gtm': ['googletagmanager.com/gtm.js'],
     'meta-pixel': ['connect.facebook.net', 'fbevents.js'],
-    'hotjar': ['static.hotjar.com'],
   };
 
   const patterns = srcPatterns[idPattern] || [];
@@ -367,7 +330,6 @@ export function clearAllTrackingCookies(): void {
       name.startsWith('_gat') ||
       name.startsWith('_gcl') ||
       name.startsWith('_fb') ||
-      name.startsWith('_hj') ||
       name.startsWith('_tt') ||
       name.startsWith('__utm')
     ) {
@@ -385,7 +347,6 @@ export function removeAllTrackingScripts(): void {
   // Remove scripts
   removeScript('gtm');
   removeScript('meta-pixel');
-  removeScript('hotjar');
 
   // Clear globals
   if (window.google_tag_manager) {
@@ -395,14 +356,6 @@ export function removeAllTrackingScripts(): void {
   // Reset fbq
   if (window.fbq) {
     window.fbq = undefined;
-  }
-
-  // Reset Hotjar
-  if (window.hj) {
-    window.hj = undefined;
-  }
-  if (window._hjSettings) {
-    delete window._hjSettings;
   }
 
   // Clear dataLayer (keep array but empty it)
@@ -438,10 +391,6 @@ export function activateTracking(config: TrackingConfig, preferences: ConsentPre
     injectMetaPixel(config.metaPixelId);
   }
 
-  // Load Hotjar if analytics is enabled
-  if (preferences.analytics && config.hotjarId) {
-    injectHotjar(config.hotjarId, config.hotjarVersion);
-  }
 }
 
 /**
@@ -481,8 +430,6 @@ declare global {
     dataLayer: unknown[];
     gtag?: (...args: unknown[]) => void;
     fbq?: FbqFunction;
-    hj?: HotjarFunction;
-    _hjSettings?: { hjid: number; hjsv: number };
     google_tag_manager?: unknown;
   }
 }
@@ -494,11 +441,6 @@ interface FbqFunction {
   version?: string;
   queue: unknown[];
   callMethod?: (...args: unknown[]) => void;
-}
-
-interface HotjarFunction {
-  (...args: unknown[]): void;
-  q?: unknown[];
 }
 
 export {};
