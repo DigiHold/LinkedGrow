@@ -418,8 +418,11 @@ export async function createLinkedInComment(
 
   const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
-  // LinkedIn Comments API: POST /rest/socialActions/{activityUrn}/comments
+  // LinkedIn Comments API (official docs):
+  // POST /rest/socialActions/{shareUrn|ugcPostUrn|commentUrn}/comments
   // Body: { "actor": "urn:li:person:XXX", "object": "urn:li:activity:XXX", "message": { "text": "..." } }
+  // Requires: w_member_social scope (comments still use old scope per docs)
+  // Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/comments-api
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
     const encoded = encodeURIComponent(urn);
@@ -1906,12 +1909,14 @@ export async function likeLinkedInPost(
 
   const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
-  // LinkedIn Reactions API: actor in URL query param, root+reactionType in body
-  // Docs: POST /rest/reactions?actor=urn:li:person:XXX { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
+  // LinkedIn Reactions API (official docs):
+  // POST /rest/reactions?actor={encoded personUrn}
+  // Body: { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
+  // Requires: w_member_social_feed scope
+  // Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api
   const encodedActor = encodeURIComponent(actorUrn);
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
-    // Reactions API (official Community Management API endpoint)
     attempts.push(
       { url: `${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, body: { root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
     );
