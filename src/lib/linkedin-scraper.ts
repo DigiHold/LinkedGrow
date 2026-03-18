@@ -254,9 +254,10 @@ function extractProfilePicture(html: string): string | null {
 
 export async function scrapeLinkedInProfile(
   vanityName: string,
-  maxRetries = 3
+  maxRetries = 4
 ): Promise<ScrapedProfile> {
   let lastError: Error | null = null;
+  let bestResult: ScrapedProfile | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -279,7 +280,7 @@ export async function scrapeLinkedInProfile(
         profile.profilePictureUrl = extractProfilePicture(html) || "";
       }
 
-      return {
+      const result: ScrapedProfile = {
         vanityName,
         displayName: profile.displayName || vanityName,
         headline: profile.headline || "",
@@ -287,6 +288,23 @@ export async function scrapeLinkedInProfile(
         followerCount: profile.followerCount || 0,
         posts: posts.slice(0, 10),
       };
+
+      // LinkedIn serves full pages (~500KB+ with JSON-LD posts) or stripped pages (~300KB without).
+      // If we got a stripped page (0 posts), retry with a different IP to get the full one.
+      if (posts.length > 0) {
+        return result; // Got full page with posts - done
+      }
+
+      // Keep the best result (with profile info even if no posts)
+      if (!bestResult || result.displayName !== vanityName) {
+        bestResult = result;
+      }
+
+      // Only retry for stripped pages, not authwalls
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        continue; // retry to get full page
+      }
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       if (attempt < maxRetries) {
@@ -294,6 +312,9 @@ export async function scrapeLinkedInProfile(
       }
     }
   }
+
+  // Return best result even if it has 0 posts (profile info is still useful)
+  if (bestResult) return bestResult;
 
   throw lastError || new Error("Failed to scrape profile after retries");
 }
