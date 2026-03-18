@@ -149,21 +149,43 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
 }
 
 function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
+  const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["']/g, "");
+
+  // Build a map of activity positions in HTML (sorted by position)
+  // Each post's content is between its activity ref and the next one
+  const activityPositions: { id: string; pos: number }[] = [];
+  for (const post of posts) {
+    const id = post.activityUrn.split(":").pop();
+    if (!id) continue;
+    // Find ALL occurrences, pick the one closest to the social counts area (after pos 100000)
+    let searchPos = 0;
+    let bestPos = -1;
+    while (true) {
+      const idx = html.indexOf(`activity-${id}`, searchPos);
+      if (idx < 0) break;
+      bestPos = idx; // keep the last (usually deepest) occurrence
+      searchPos = idx + 1;
+    }
+    if (bestPos > 0) {
+      activityPositions.push({ id, pos: bestPos });
+    }
+  }
+
+  // Sort by position in HTML
+  activityPositions.sort((a, b) => a.pos - b.pos);
+
   for (const post of posts) {
     const activityId = post.activityUrn.split(":").pop();
     if (!activityId) continue;
 
-    // Find the post section in HTML - try activity URN first, then post URL slug
-    let chunkStart = html.indexOf(`urn:li:activity:${activityId}`);
-    if (chunkStart < 0) {
-      chunkStart = html.indexOf(`activity-${activityId}`);
-    }
-    if (chunkStart < 0) continue;
+    const posEntry = activityPositions.find((p) => p.id === activityId);
+    if (!posEntry) continue;
 
-    // Search backwards to find the card start (profile-activity-card)
-    const cardStart = html.lastIndexOf("profile-activity-card", chunkStart);
-    const searchFrom = cardStart > 0 ? cardStart : chunkStart;
-    const chunk = html.substring(searchFrom, Math.min(html.length, searchFrom + 20000));
+    // Window: from this activity ref to the next one (or +30KB)
+    const currentIdx = activityPositions.indexOf(posEntry);
+    const nextEntry = activityPositions[currentIdx + 1];
+    const windowEnd = nextEntry ? nextEntry.pos : posEntry.pos + 30000;
+    const chunk = html.substring(posEntry.pos, Math.min(html.length, windowEnd));
 
     // Reactions
     const reactionsMatch = chunk.match(/([\d,]+)\s*Reactions?/i);
@@ -184,38 +206,42 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
       post.reposts = parseInt(repostsMatch[1].replace(/,/g, ""), 10);
     }
 
-    // Match LinkedIn CDN image URLs (handle &amp; HTML encoding)
-    const urlPattern = (keyword: string) =>
-      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/[^"\\s]*${keyword}[^"\\s]*`, "g");
-    const urlPatternAny = (keyword: string) =>
-      new RegExp(`https://(?:dms|media)\\.licdn\\.com/[^"\\s]*${keyword}[^"\\s]*`);
+    // Image detection - only match actual post images, exclude profile/banner
+    const isPostImage = (url: string) =>
+      !url.includes("profile-displayphoto") &&
+      !url.includes("profile-displaybackground") &&
+      !url.includes("company-logo") &&
+      !url.includes("aero-v1");
 
-    const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["']/g, "");
-
-    // Carousel/document detection
-    const carouselCovers = chunk.match(urlPattern("feedshare-document-cover-images"));
-    if (carouselCovers && carouselCovers.length > 0) {
+    // Carousel/document
+    const carouselMatches = chunk.match(
+      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s]*feedshare-document-cover-images[^"\s]*/g
+    );
+    if (carouselMatches && carouselMatches.length > 0) {
       post.mediaType = "carousel";
-      const uniqueSlides = [...new Set(carouselCovers.map(cleanUrl))];
-      post.carouselSlides = uniqueSlides;
-      post.imageUrl = uniqueSlides[0] || null;
+      post.carouselSlides = [...new Set(carouselMatches.map(cleanUrl))];
+      post.imageUrl = post.carouselSlides[0] || null;
       continue;
     }
 
-    // Video detection
-    const videoThumb = chunk.match(urlPatternAny("feedshare-video-thumbnail"));
-    if (videoThumb) {
+    // Video
+    const videoMatch = chunk.match(
+      /https:\/\/(?:dms|media)\.licdn\.com\/[^"\s]*feedshare-video-thumbnail[^"\s]*/
+    );
+    if (videoMatch) {
       post.mediaType = "video";
-      post.videoThumbnailUrl = cleanUrl(videoThumb[0]);
+      post.videoThumbnailUrl = cleanUrl(videoMatch[0]);
       post.imageUrl = post.videoThumbnailUrl;
       continue;
     }
 
-    // Single image (feedshare or image-shrink, but NOT profile photos)
-    const imgMatch = chunk.match(urlPattern("(?:feedshare-shrink|image-shrink)"));
+    // Single image (feedshare-shrink only - the actual post images)
+    const imgMatch = chunk.match(
+      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s]*feedshare-shrink[^"\s]*/
+    );
     if (imgMatch) {
       const url = cleanUrl(imgMatch[0]);
-      if (!url.includes("profile-displayphoto")) {
+      if (isPostImage(url)) {
         post.mediaType = "image";
         post.imageUrl = url;
       }

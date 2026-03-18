@@ -146,8 +146,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Scrape profiles that need refreshing (sequentially to respect rate limit)
-    const maxScrape = forceRefreshAll ? 10 : 3;
-    const toScrapeNow = profilesToRefresh.slice(0, maxScrape);
+    // Scrape all that need it - the rate limiter in the scraper handles pacing
+    const toScrapeNow = profilesToRefresh;
     for (const vanityName of toScrapeNow) {
       try {
         const scraped = await scrapeLinkedInProfile(vanityName);
