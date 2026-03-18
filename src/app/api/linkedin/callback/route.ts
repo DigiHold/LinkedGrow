@@ -187,6 +187,7 @@ export async function GET(request: NextRequest) {
               : null,
             linkedinHeadline: profileData?.headline || null,
             linkedinVanityName: profileData?.vanityName || null,
+            linkedinMemberId: profileData?.memberId || null,
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));

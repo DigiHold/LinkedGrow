@@ -41,7 +41,7 @@ const LINKEDIN_API_BASE = 'https://api.linkedin.com/v2';
 const LINKEDIN_REST_API_BASE = 'https://api.linkedin.com/rest';
 
 // LinkedIn API version for REST API (YYYYMM format)
-const LINKEDIN_API_VERSION = '202506';
+const LINKEDIN_API_VERSION = '202603';
 
 interface LinkedInTokenResponse {
   access_token: string;
@@ -181,26 +181,25 @@ export async function getLinkedInProfile(accessToken: string): Promise<LinkedInP
  */
 export async function getLinkedInProfileWithHeadline(
   accessToken: string
-): Promise<{ headline: string; vanityName: string } | null> {
+): Promise<{ headline: string; vanityName: string; memberId: string } | null> {
   try {
-    const url = `${LINKEDIN_API_BASE}/me?projection=(localizedHeadline,vanityName)`;
-    const response = await fetch(url, {
+    const restResponse = await fetch(`${LINKEDIN_REST_API_BASE}/me`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
       },
     });
-
-    if (!response.ok) {
-      console.warn('[LinkedIn Profile] Headline fetch failed:', response.status);
-      return null;
+    if (restResponse.ok) {
+      const data = await restResponse.json();
+      return { headline: data.localizedHeadline || '', vanityName: data.vanityName || '', memberId: data.id || '' };
     }
-
+    const response = await fetch(`${LINKEDIN_API_BASE}/me?projection=(localizedHeadline,vanityName)`, {
+      headers: { Authorization: `Bearer ${accessToken}`, 'X-Restli-Protocol-Version': '2.0.0' },
+    });
+    if (!response.ok) return null;
     const data = await response.json();
-    return {
-      headline: data.localizedHeadline || '',
-      vanityName: data.vanityName || '',
-    };
+    return { headline: data.localizedHeadline || '', vanityName: data.vanityName || '', memberId: data.id || '' };
   } catch (error) {
     console.error('[LinkedIn Profile] Headline fetch error:', error);
     return null;
