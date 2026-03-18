@@ -407,7 +407,7 @@ export async function createLinkedInPost(
  */
 export async function createLinkedInComment(
   accessToken: string,
-  postUrn: string,
+  postUrns: string | string[],
   authorId: string,
   commentText: string,
   authorType: 'person' | 'organization' = 'person'
@@ -416,26 +416,29 @@ export async function createLinkedInComment(
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const commentBody = { actor: actorUrn, object: postUrn, message: { text: commentText } };
+  const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
-  // Try multiple endpoints
-  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [
-    { url: `${LINKEDIN_REST_API_BASE}/comments`, body: commentBody, version: LINKEDIN_API_VERSION },
-    { url: `https://api.linkedin.com/v2/socialActions/${encodedPostUrn}/comments`, body: commentBody, version: null },
-    { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`, body: commentBody, version: LINKEDIN_API_VERSION },
-  ];
+  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
+  for (const urn of urns) {
+    const encoded = encodeURIComponent(urn);
+    const body = { actor: actorUrn, object: urn, message: { text: commentText } };
+    attempts.push(
+      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/comments`, body, version: null },
+      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/comments`, body, version: LINKEDIN_API_VERSION },
+      { url: `${LINKEDIN_REST_API_BASE}/comments`, body, version: LINKEDIN_API_VERSION },
+    );
+  }
 
   let lastError = '';
   for (const attempt of attempts) {
-    console.log('[LinkedIn Comment] Trying:', attempt.url.substring(0, 80));
-
     const headers: Record<string, string> = {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'X-Restli-Protocol-Version': '2.0.0',
     };
     if (attempt.version) headers['LinkedIn-Version'] = attempt.version;
+
+    console.log('[LinkedIn Comment] Trying:', attempt.url.substring(0, 100));
 
     const response = await fetch(attempt.url, {
       method: 'POST',
@@ -446,12 +449,12 @@ export async function createLinkedInComment(
     if (response.ok || response.status === 201) {
       let data;
       try { data = await response.json(); } catch { data = {}; }
-      console.log('[LinkedIn Comment] Success via:', attempt.url.substring(0, 80));
+      console.log('[LinkedIn Comment] SUCCESS via:', attempt.url.substring(0, 100));
       return { id: data.id || data['$URN'] || 'comment-created' };
     }
 
     lastError = await response.text();
-    console.log('[LinkedIn Comment] Failed:', response.status, lastError.substring(0, 200));
+    console.log('[LinkedIn Comment] Failed:', response.status, lastError.substring(0, 300));
   }
 
   throw new Error(`Failed to comment: ${lastError}`);
@@ -1894,7 +1897,7 @@ export interface LinkedInAuthorPost {
  */
 export async function likeLinkedInPost(
   accessToken: string,
-  postUrn: string,
+  postUrns: string | string[],
   actorId: string,
   actorType: 'person' | 'organization' = 'person'
 ): Promise<{ success: boolean }> {
@@ -1902,24 +1905,30 @@ export async function likeLinkedInPost(
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
 
-  // LinkedIn has 3 different endpoints/formats for liking. Try all of them.
-  const encodedUrn = encodeURIComponent(postUrn);
-  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [
-    { url: `${LINKEDIN_REST_API_BASE}/reactions`, body: { root: postUrn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
-    { url: `https://api.linkedin.com/v2/socialActions/${encodedUrn}/likes`, body: { actor: actorUrn, object: postUrn }, version: null },
-    { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/likes`, body: { actor: actorUrn, object: postUrn }, version: LINKEDIN_API_VERSION },
-  ];
+  const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
+
+  // Try every combination of URN format x endpoint
+  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
+  for (const urn of urns) {
+    const encoded = encodeURIComponent(urn);
+    attempts.push(
+      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: null },
+      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: LINKEDIN_API_VERSION },
+      { url: `${LINKEDIN_REST_API_BASE}/reactions`, body: { root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
+    );
+  }
 
   let lastError = '';
+  let lastStatus = 0;
   for (const attempt of attempts) {
-    console.log('[LinkedIn Like] Trying:', attempt.url.substring(0, 80));
-
     const headers: Record<string, string> = {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'X-Restli-Protocol-Version': '2.0.0',
     };
     if (attempt.version) headers['LinkedIn-Version'] = attempt.version;
+
+    console.log('[LinkedIn Like] Trying:', attempt.url.substring(0, 100));
 
     const response = await fetch(attempt.url, {
       method: 'POST',
@@ -1928,15 +1937,22 @@ export async function likeLinkedInPost(
     });
 
     if (response.ok || response.status === 201) {
-      console.log('[LinkedIn Like] Success via:', attempt.url.substring(0, 80));
+      console.log('[LinkedIn Like] SUCCESS via:', attempt.url.substring(0, 100));
       return { success: true };
     }
 
+    lastStatus = response.status;
     lastError = await response.text();
-    console.log('[LinkedIn Like] Failed:', response.status, lastError.substring(0, 200));
+    console.log('[LinkedIn Like] Failed:', response.status, lastError.substring(0, 300));
+
+    // 409 = already liked, treat as success
+    if (response.status === 409) {
+      console.log('[LinkedIn Like] Already liked (409), treating as success');
+      return { success: true };
+    }
   }
 
-  throw new Error(`Failed to like post: ${lastError}`);
+  throw new Error(`Failed to like post (${lastStatus}): ${lastError}`);
 }
 
 /**

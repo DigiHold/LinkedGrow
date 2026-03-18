@@ -47,17 +47,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert urn:li:activity:XXX to urn:li:share:XXX for the LinkedIn API
-    let apiUrn = postUrn;
+    // Build all possible URN formats from the activity ID
     const activityMatch = postUrn.match(/^urn:li:activity:(\d+)$/);
-    if (activityMatch) {
-      apiUrn = `urn:li:share:${activityMatch[1]}`;
-    }
+    const urnVariants = activityMatch
+      ? [
+          postUrn, // urn:li:activity:XXX (original)
+          `urn:li:share:${activityMatch[1]}`, // urn:li:share:XXX
+          `urn:li:ugcPost:${activityMatch[1]}`, // urn:li:ugcPost:XXX
+        ]
+      : [postUrn];
 
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, apiUrn, user.linkedinProfileId);
+      await likeLinkedInPost(accessToken, urnVariants, user.linkedinProfileId);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await createLinkedInComment(accessToken, apiUrn, user.linkedinProfileId, text.trim());
+      await createLinkedInComment(accessToken, urnVariants, user.linkedinProfileId, text.trim());
 
       await db.insert(engagementActions).values({
         id: randomUUID(),

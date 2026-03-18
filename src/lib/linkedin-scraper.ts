@@ -181,11 +181,14 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
     const posEntry = activityPositions.find((p) => p.id === activityId);
     if (!posEntry) continue;
 
-    // Window: from this activity ref to the next one (or +30KB)
+    // The activity ref is at the END of each card (in the post URL link).
+    // The card content (social counts, images) is BEFORE the activity ref.
+    // Window: from PREVIOUS activity ref to THIS one.
     const currentIdx = activityPositions.indexOf(posEntry);
-    const nextEntry = activityPositions[currentIdx + 1];
-    const windowEnd = nextEntry ? nextEntry.pos : posEntry.pos + 30000;
-    const chunk = html.substring(posEntry.pos, Math.min(html.length, windowEnd));
+    const prevEntry = activityPositions[currentIdx - 1];
+    // For the first post, limit backwards search to 8KB (cards are ~5-8KB)
+    const windowStart = prevEntry ? prevEntry.pos + 50 : Math.max(0, posEntry.pos - 8000);
+    const chunk = html.substring(windowStart, posEntry.pos + 500);
 
     // Reactions
     const reactionsMatch = chunk.match(/([\d,]+)\s*Reactions?/i);
