@@ -498,6 +498,11 @@ export default function EngagementPage() {
   };
 
   const handleGenerateComment = async (postUrn: string, postContent: string) => {
+    if (generatingCommentFor) {
+      setInteractError("Please wait for the current AI comment to finish generating.");
+      return;
+    }
+    setInteractError(null);
     setCommentingOn(postUrn);
     setGeneratingCommentFor(postUrn);
     setCommentText("");
