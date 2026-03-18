@@ -197,14 +197,46 @@ export async function GET(request: NextRequest) {
     // PERSONAL PROFILE PATH
     // ===========================
     } else {
-      // Step 1: Get vanity name (stored in DB from community app callback, or fetch now)
+      // Step 1: Load LinkedGrow-published posts from DB (reliable - we have the URNs)
+      const dbPosts = await db.select().from(posts)
+        .where(and(
+          eq(posts.userId, user.id),
+          eq(posts.status, "published"),
+        ))
+        .orderBy(desc(posts.publishedAt))
+        .limit(50);
+
+      const dbPostsWithLinkedin = dbPosts.filter(p => p.linkedinPostId);
+      log(`DB posts: ${dbPosts.length} total, ${dbPostsWithLinkedin.length} with LinkedIn URN`);
+
+      const knownUrns = new Set<string>();
+      for (const p of dbPostsWithLinkedin) {
+        const published = p.publishedAt ? new Date(p.publishedAt) : null;
+        if (published && published < startDate) continue;
+
+        knownUrns.add(p.linkedinPostId!);
+        allPosts.push({
+          id: p.id,
+          content: p.content?.substring(0, 200) || null,
+          postType: (p.postType as "text" | "image" | "carousel" | "video") || "text",
+          status: "published",
+          publishedAt: published?.toISOString() || null,
+          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
+          linkedinPostId: p.linkedinPostId,
+          linkedinPostUrl: p.linkedinPostUrl || null,
+          linkedinImageUrl: p.linkedinImageUrl || null,
+          syncedFromLinkedin: false,
+        });
+      }
+      log(`LinkedGrow posts in date range: ${allPosts.length}`);
+
+      // Step 2: Also try scraping public profile for non-LinkedGrow posts
       let vanityName = user.linkedinVanityName || '';
       if (!vanityName) {
         try {
           const profileData = await getLinkedInProfileWithHeadline(token);
           if (profileData?.vanityName) {
             vanityName = profileData.vanityName;
-            // Store for next time
             await db.update(users).set({ linkedinVanityName: vanityName }).where(eq(users.id, user.id));
           }
           log(`Fetched vanityName: ${vanityName}`);
@@ -213,18 +245,19 @@ export async function GET(request: NextRequest) {
         log(`Using stored vanityName: ${vanityName}`);
       }
 
-      // Step 2: Scrape own public profile for post URNs
       let scrapedPosts: Array<{ activityId: string; shareUrn: string; textPreview: string; postUrl: string }> = [];
       if (vanityName) {
         try {
           scrapedPosts = await scrapeOwnProfilePostURNs(vanityName);
           log(`Scraped ${scrapedPosts.length} post URNs from public profile`);
-        } catch (err) { log(`Profile scrape FAILED: ${err}`); }
+        } catch (err) { log(`Profile scrape FAILED (non-critical, DB posts still work): ${err}`); }
       }
 
-      // Step 3: For each post, try to get full content + media via Posts API
-      const postImageMap = new Map<string, string>(); // shareUrn -> imageUrn
+      // Step 3: For scraped posts NOT already in DB, try to get full content via Posts API
+      const postImageMap = new Map<string, string>();
       for (const sp of scrapedPosts.slice(0, 15)) {
+        if (knownUrns.has(sp.shareUrn)) continue; // Already have this from DB
+
         try {
           const postData = await getPostByUrn(token, sp.shareUrn);
           if (postData) {
@@ -241,36 +274,37 @@ export async function GET(request: NextRequest) {
               createdAt: postData.publishedAt ? new Date(postData.publishedAt).toISOString() : null,
               linkedinPostId: sp.shareUrn, linkedinPostUrl: sp.postUrl, syncedFromLinkedin: true,
             });
-            log(`  Post ${sp.activityId.slice(-6)}: ${postData.commentary?.substring(0, 40) || sp.textPreview.substring(0, 40)}`);
+            log(`  Scraped post ${sp.activityId.slice(-6)}: ${postData.commentary?.substring(0, 40) || sp.textPreview.substring(0, 40)}`);
           } else {
-            // Posts API failed - use text preview from scrape
             allPosts.push({
               id: sp.shareUrn, content: sp.textPreview || null,
               postType: "text", status: "published",
               publishedAt: null, createdAt: null,
               linkedinPostId: sp.shareUrn, linkedinPostUrl: sp.postUrl, syncedFromLinkedin: true,
             });
-            log(`  Post ${sp.activityId.slice(-6)}: API failed, using preview: ${sp.textPreview.substring(0, 40)}`);
+            log(`  Scraped post ${sp.activityId.slice(-6)}: API failed, using preview`);
           }
-        } catch (err) { log(`Post ${sp.activityId.slice(-6)} FAILED: ${err}`); }
+        } catch (err) { log(`Scraped post ${sp.activityId.slice(-6)} FAILED: ${err}`); }
       }
 
-      // Step 4: Batch fetch image URLs
+      // Step 4: Batch fetch image URLs for scraped posts
       const imageUrns = Array.from(postImageMap.values());
       if (imageUrns.length > 0) {
         try {
           const imageUrls = await getImageDownloadUrls(token, imageUrns);
           log(`Got ${imageUrls.size} image URLs`);
           for (const post of allPosts) {
-            const imgUrn = postImageMap.get(post.linkedinPostId || '');
-            if (imgUrn && imageUrls.has(imgUrn)) {
-              post.linkedinImageUrl = imageUrls.get(imgUrn);
+            if (post.syncedFromLinkedin) {
+              const imgUrn = postImageMap.get(post.linkedinPostId || '');
+              if (imgUrn && imageUrls.has(imgUrn)) {
+                post.linkedinImageUrl = imageUrls.get(imgUrn);
+              }
             }
           }
         } catch (err) { log(`Image batch FAILED: ${err}`); }
       }
 
-      log(`Total personal posts: ${allPosts.length}`);
+      log(`Total personal posts: ${allPosts.length} (${dbPostsWithLinkedin.length} from LinkedGrow, ${allPosts.length - dbPostsWithLinkedin.length} scraped)`);
 
       // Step 5: Aggregated analytics (r_member_postAnalytics)
       try {

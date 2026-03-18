@@ -250,6 +250,11 @@ export default function AdvancedAnalyticsPage() {
                 dateRange: dateRangeLabel,
               }}
             />
+
+            {/* Disclaimer */}
+            <p className="text-xs text-muted-foreground/70 text-center pt-4">
+              Overall statistics reflect all your LinkedIn activity. Per-post analytics are fully available for posts published through LinkedGrow. Posts published directly on LinkedIn may appear with limited or no individual metrics.
+            </p>
           </>
         )}
 
