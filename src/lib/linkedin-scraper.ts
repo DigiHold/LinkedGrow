@@ -190,24 +190,11 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
     const windowStart = prevEntry ? prevEntry.pos + 50 : Math.max(0, posEntry.pos - 8000);
     const chunk = html.substring(windowStart, posEntry.pos + 500);
 
-    // Reactions
-    const reactionsMatch = chunk.match(/([\d,]+)\s*Reactions?/i);
-    if (reactionsMatch) {
-      const count = parseInt(reactionsMatch[1].replace(/,/g, ""), 10);
-      if (count > 0) post.likes = count;
-    }
-
-    // Comments
-    const commentsMatch = chunk.match(/([\d,]+)\s*Comments?/i);
-    if (commentsMatch) {
-      post.comments = parseInt(commentsMatch[1].replace(/,/g, ""), 10);
-    }
-
-    // Reposts
-    const repostsMatch = chunk.match(/([\d,]+)\s*Reposts?/i);
-    if (repostsMatch) {
-      post.reposts = parseInt(repostsMatch[1].replace(/,/g, ""), 10);
-    }
+    // Social counts: JSON-LD likes are accurate, DON'T override them.
+    // LinkedIn puts social count text in a DIFFERENT HTML section (not near activity refs).
+    // Overriding JSON-LD likes with HTML text picks up wrong numbers from unrelated content.
+    // Only look for comments/reposts if the post has 0 (JSON-LD doesn't provide them).
+    // We skip HTML reaction matching entirely - JSON-LD interactionStatistic is the source of truth.
 
     // Image URL regex - stop at quotes, whitespace, parens, angle brackets
     // Allow ; because LinkedIn CDN uses &amp; which contains ;
