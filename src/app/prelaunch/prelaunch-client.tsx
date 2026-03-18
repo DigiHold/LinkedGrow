@@ -370,26 +370,28 @@ function HeroSection({ firstName, setFirstName, email, setEmail, honeypot, setHo
                 animate={{ opacity: [0.2, 0.4, 0.2] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              <div className="relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
-                <input
-                  type="text"
-                  placeholder="Your first name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
-                <input
-                  type="email"
-                  placeholder={translations.hero.emailPlaceholder}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-[2] min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
+              <div className="relative space-y-3 p-2 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Your first name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                  <input
+                    type="email"
+                    placeholder={translations.hero.emailPlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-16 min-h-[54px] px-6 rounded-xl border-0 bg-slate-50 dark:bg-slate-900 text-lg flex-1 min-w-0 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40 shrink-0"
+                  className="w-full h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/40"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{translations.hero.cta} <ArrowRight className="w-5 h-5 ml-2" /></>}
                 </Button>
@@ -1820,26 +1822,28 @@ function CTAForm({ firstName, setFirstName, email, setEmail, honeypot, setHoneyp
       />
       <div className="relative">
         {isDark && <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
-        <div className={`relative flex flex-col sm:flex-row gap-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
-          <input
-            type="text"
-            placeholder="Your first name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className={`flex-1 min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
-          />
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={`flex-[2] min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
-          />
+        <div className={`relative space-y-3 p-2 rounded-2xl ${isDark ? "bg-white/10 backdrop-blur-sm border border-white/20" : "bg-white shadow-xl border border-slate-200"}`}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="Your first name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className={`flex-1 min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+            />
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={`flex-1 min-w-0 h-14 md:h-16 min-h-[54px] px-6 rounded-xl border-0 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${isDark ? "bg-white/10 text-white placeholder:text-slate-400" : "bg-slate-50 text-slate-900 placeholder:text-slate-500"}`}
+            />
+          </div>
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-14 md:h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0"
+            className="w-full h-14 md:h-16 px-8 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-cyan-500/30 whitespace-nowrap"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Get Early Access <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
@@ -1882,7 +1886,7 @@ function CTASection(props: CTAProps) {
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-3xl mx-auto">
           {!props.isSuccess ? (
-            <form onSubmit={props.handleSubmit} className="flex flex-col sm:flex-row gap-3 relative">
+            <form onSubmit={props.handleSubmit} className="space-y-3 relative">
               {/* Honeypot field - hidden from humans, bots will fill it */}
               <input
                 type="text"
@@ -1894,22 +1898,24 @@ function CTASection(props: CTAProps) {
                 autoComplete="off"
                 aria-hidden="true"
               />
-              <input
-                type="text"
-                placeholder="Your first name"
-                value={props.firstName}
-                onChange={(e) => props.setFirstName(e.target.value)}
-                className="flex-1 min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              />
-              <input
-                type="email"
-                placeholder={props.translations.hero.emailPlaceholder}
-                value={props.email}
-                onChange={(e) => props.setEmail(e.target.value)}
-                required
-                className="flex-[2] min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              />
-              <Button type="submit" disabled={props.isLoading} className="h-16 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shrink-0">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Your first name"
+                  value={props.firstName}
+                  onChange={(e) => props.setFirstName(e.target.value)}
+                  className="flex-1 min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+                <input
+                  type="email"
+                  placeholder={props.translations.hero.emailPlaceholder}
+                  value={props.email}
+                  onChange={(e) => props.setEmail(e.target.value)}
+                  required
+                  className="flex-1 min-w-0 h-16 min-h-[54px] px-6 rounded-xl bg-white border-0 text-slate-900 placeholder:text-slate-500 text-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+              </div>
+              <Button type="submit" disabled={props.isLoading} className="w-full h-16 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg">
                 {props.isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{props.translations.cta.button} <ArrowRight className="w-5 h-5 ml-2" /></>}
               </Button>
             </form>
