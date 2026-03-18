@@ -165,6 +165,10 @@ export async function GET(request: NextRequest) {
     // Exchange code for access token
     const tokenData = await exchangeCodeForToken(appType, code, redirectUri);
 
+    // Log what scopes were actually granted by LinkedIn
+    const tokenDataAny = tokenData as unknown as Record<string, unknown>;
+    console.log(`[LinkedIn Callback] App: ${appType}, Granted scopes: ${tokenDataAny.scope || 'NOT RETURNED'}, Token prefix: ${tokenData.access_token?.substring(0, 10)}...`);
+
     // For community app connect flow, skip OpenID profile fetch (no openid scope)
     // But DO fetch headline via r_basicprofile REST API
     if (appType === 'community' && mode === 'connect') {
