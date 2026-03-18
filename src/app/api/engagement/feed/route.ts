@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { engagementObjectives } from "@/lib/db/schema";
 import {
   scrapeLinkedInProfile,
   isCacheFresh,
@@ -166,13 +167,26 @@ export async function GET(request: NextRequest) {
       return dateB - dateA;
     });
 
+    // Apply posts-per-profile limit from user settings
+    const objectives = await db.query.engagementObjectives.findFirst({
+      where: eq(engagementObjectives.userId, session.user.id),
+    });
+    const ppp = objectives?.postsPerProfile ?? 2;
+    const authorCounts = new Map<string, number>();
+    const filteredPosts = allPosts.filter((post) => {
+      const count = authorCounts.get(post.authorVanityName) || 0;
+      if (count >= ppp) return false;
+      authorCounts.set(post.authorVanityName, count + 1);
+      return true;
+    });
+
     // Paginate
-    const paginatedPosts = allPosts.slice(offset, offset + limit);
-    const hasMore = offset + limit < allPosts.length || uncachedProfiles.length > 0;
+    const paginatedPosts = filteredPosts.slice(offset, offset + limit);
+    const hasMore = offset + limit < filteredPosts.length || uncachedProfiles.length > 0;
 
     return NextResponse.json({
       posts: paginatedPosts,
-      total: allPosts.length,
+      total: filteredPosts.length,
       hasMore,
     });
   } catch (error) {

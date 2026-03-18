@@ -263,12 +263,24 @@ function extractCommentCounts(html: string, posts: ScrapedPost[]): void {
   }
 }
 
-function extractProfilePicture(html: string): string | null {
-  // Use [^"\s)}<>]+ to capture full URL with &amp; encoded params (same pattern as post images)
-  const match = html.match(
+function extractProfilePicture(html: string, vanityName: string): string | null {
+  // The owner's profile picture is in the top card area, near their vanity name.
+  // "People also viewed" section has OTHER people's photos - we must skip those.
+  // Strategy: find the first img with the vanity name nearby (within 2000 chars before)
+  const regex = /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*profile-displayphoto-scale_200_200[^"\s)}<>]*/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    // Check if the owner's vanity name appears within 2000 chars before this image
+    const before = html.substring(Math.max(0, match.index - 2000), match.index);
+    if (before.includes(`/in/${vanityName}`) || before.includes(`"${vanityName}"`) || match.index < 50000) {
+      return match[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
+    }
+  }
+  // Fallback: just get the first 200x200 scale image
+  const fallback = html.match(
     /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*profile-displayphoto-scale_200_200[^"\s)}<>]*/
   );
-  if (match) return match[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
+  if (fallback) return fallback[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
   return null;
 }
 
@@ -298,7 +310,7 @@ export async function scrapeLinkedInProfile(
       extractCommentCounts(html, posts);
 
       if (!profile.profilePictureUrl) {
-        profile.profilePictureUrl = extractProfilePicture(html) || "";
+        profile.profilePictureUrl = extractProfilePicture(html, vanityName) || "";
       }
 
       const result: ScrapedProfile = {
