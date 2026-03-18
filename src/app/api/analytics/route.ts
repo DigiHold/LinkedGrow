@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, users } from "@/lib/db/schema";
+import { posts, users, media } from "@/lib/db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
@@ -67,7 +67,13 @@ export async function GET(request: NextRequest) {
     // Check cache first (1 hour TTL) to avoid rate limits
     const refresh = searchParams.get("refresh") === "true";
     const cacheKey = `${user.id}:${days}:${advanced}`;
-    if (!refresh) {
+    if (refresh) {
+      // Clear ALL cache entries for this user (both basic and advanced, all date ranges)
+      for (const key of analyticsCache.keys()) {
+        if (key.startsWith(`${user.id}:`)) analyticsCache.delete(key);
+      }
+      log(`Cache cleared for user`);
+    } else {
       const cached = analyticsCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         log(`Returning cached data (${Math.round((Date.now() - cached.timestamp) / 60000)}min old)`);
@@ -209,6 +215,23 @@ export async function GET(request: NextRequest) {
       const dbPostsWithLinkedin = dbPosts.filter(p => p.linkedinPostId);
       log(`DB posts: ${dbPosts.length} total, ${dbPostsWithLinkedin.length} with LinkedIn URN`);
 
+      // Fetch first image for each post from media table
+      const postIds = dbPostsWithLinkedin.map(p => p.id);
+      const postMediaMap = new Map<string, string>();
+      if (postIds.length > 0) {
+        const mediaRows = await db.select({ postId: media.postId, storageUrl: media.storageUrl, mimeType: media.mimeType })
+          .from(media)
+          .where(and(
+            eq(media.userId, user.id),
+          ));
+        for (const m of mediaRows) {
+          if (m.postId && !postMediaMap.has(m.postId) && m.mimeType?.startsWith("image/")) {
+            postMediaMap.set(m.postId, m.storageUrl);
+          }
+        }
+        log(`Media images found: ${postMediaMap.size}`);
+      }
+
       const knownUrns = new Set<string>();
       for (const p of dbPostsWithLinkedin) {
         const published = p.publishedAt ? new Date(p.publishedAt) : null;
@@ -224,7 +247,7 @@ export async function GET(request: NextRequest) {
           createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
           linkedinPostId: p.linkedinPostId,
           linkedinPostUrl: p.linkedinPostUrl || null,
-          linkedinImageUrl: p.linkedinImageUrl || null,
+          linkedinImageUrl: p.linkedinImageUrl || postMediaMap.get(p.id) || null,
           syncedFromLinkedin: false,
         });
       }
@@ -354,11 +377,11 @@ export async function GET(request: NextRequest) {
     // BUILD RESPONSE
     // ===========================
 
-    // Attach analytics to posts
+    // Attach analytics to posts (only if at least one metric > 0)
     for (const post of allPosts) {
       if (post.linkedinPostId) {
         const stats = postAnalyticsMap.get(post.linkedinPostId);
-        if (stats) {
+        if (stats && (stats.impressions > 0 || stats.reactions > 0 || stats.comments > 0 || stats.reshares > 0)) {
           post.analytics = {
             impressions: stats.impressions,
             reactions: stats.reactions,
@@ -411,13 +434,15 @@ export async function GET(request: NextRequest) {
         }
       });
 
+      const userTimezone = user.timezone || "America/New_York";
+
       response.advanced = {
         postTypePerformance: Object.entries(typeStats).map(([type, s]) => ({
           type, count: s.count, avgEngagement: s.count > 0 ? (s.totalEng / s.count).toFixed(2) : "0",
         })),
         engagementTrend: [],
-        bestPostingTimes: calculateBestPostingTimes(withAnalytics),
-        postingTimeHeatmap: calculateHeatmap(withAnalytics),
+        bestPostingTimes: calculateBestPostingTimes(withAnalytics, userTimezone),
+        postingTimeHeatmap: calculateHeatmap(withAnalytics, userTimezone),
         pageViews,
         uniqueVisitors,
         followerDemographics,
@@ -434,7 +459,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function calculateBestPostingTimes(posts: PostData[]) {
+// Convert a UTC date to day/hour in the user's timezone
+function getLocalDayHour(date: Date, timezone: string): { day: number; hour: number } {
+  const formatted = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "short",
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(date);
+
+  const weekdayStr = formatted.find(p => p.type === "weekday")?.value || "Mon";
+  const hourStr = formatted.find(p => p.type === "hour")?.value || "12";
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+  return { day: dayMap[weekdayStr] ?? 1, hour: parseInt(hourStr) % 24 };
+}
+
+function calculateBestPostingTimes(posts: PostData[], timezone: string) {
   const valid = posts.filter(p => p.analytics && p.publishedAt);
   if (valid.length < 3) return undefined;
 
@@ -443,9 +484,8 @@ function calculateBestPostingTimes(posts: PostData[]) {
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   valid.forEach(p => {
-    const d = new Date(p.publishedAt!);
     const eng = p.analytics!.impressions > 0 ? ((p.analytics!.reactions + p.analytics!.comments + p.analytics!.reshares) / p.analytics!.impressions) * 100 : 0;
-    const day = d.getDay(), hour = d.getHours();
+    const { day, hour } = getLocalDayHour(new Date(p.publishedAt!), timezone);
     if (!dayStats[day]) dayStats[day] = { total: 0, count: 0 };
     dayStats[day].total += eng; dayStats[day].count++;
     if (!hourStats[hour]) hourStats[hour] = { total: 0, count: 0 };
@@ -461,12 +501,12 @@ function calculateBestPostingTimes(posts: PostData[]) {
   return { bestDay: days[bestDay], bestHour: fh(bestHour), insight: `Your audience engages most on ${days[bestDay]}s around ${fh(bestHour)}` };
 }
 
-function calculateHeatmap(posts: PostData[]) {
+function calculateHeatmap(posts: PostData[], timezone: string) {
   const grid: Record<string, { total: number; count: number }> = {};
   posts.forEach(p => {
     if (!p.publishedAt || !p.analytics) return;
-    const d = new Date(p.publishedAt);
-    const key = `${d.getDay()}-${d.getHours()}`;
+    const { day, hour } = getLocalDayHour(new Date(p.publishedAt), timezone);
+    const key = `${day}-${hour}`;
     const eng = p.analytics.impressions > 0 ? ((p.analytics.reactions + p.analytics.comments + p.analytics.reshares) / p.analytics.impressions) * 100 : 0;
     if (!grid[key]) grid[key] = { total: 0, count: 0 };
     grid[key].total += eng; grid[key].count++;

@@ -1286,9 +1286,11 @@ export async function getMemberAllPostsAnalytics(
               else if (metric === 'REACTION') stats.reactions = count;
               else if (metric === 'COMMENT') stats.comments = count;
               else if (metric === 'RESHARE') stats.reshares = count;
+            } else {
+              console.warn(`[LinkedIn] Per-post analytics failed for ${postUrn.slice(-12)} ${metric}: ${response.status}`);
             }
-          } catch {
-            // Skip failed individual metric
+          } catch (err) {
+            console.warn(`[LinkedIn] Per-post analytics error for ${postUrn.slice(-12)} ${metric}:`, err);
           }
         })
       );

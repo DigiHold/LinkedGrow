@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
@@ -11,6 +12,8 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export function PostingHeatmap({ data }: PostingHeatmapProps) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -49,6 +52,26 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
     return grid[`${day}-${hour}`]?.avgEngagement || 0;
   };
 
+  const formatHour = (h: number) => h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`;
+
+  const handleMouseEnter = (e: React.MouseEvent, dayIndex: number, hour: number) => {
+    const count = getCount(dayIndex, hour);
+    const engagement = getEngagement(dayIndex, hour);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const parentRect = e.currentTarget.closest(".relative")?.getBoundingClientRect();
+    if (!parentRect) return;
+
+    const text = count > 0
+      ? `${DAYS[dayIndex]} ${formatHour(hour)} - ${count} post${count > 1 ? "s" : ""}, ${engagement.toFixed(1)}% eng.`
+      : `${DAYS[dayIndex]} ${formatHour(hour)} - No data`;
+
+    setTooltip({
+      x: rect.left - parentRect.left + rect.width / 2,
+      y: rect.top - parentRect.top - 8,
+      text,
+    });
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -57,7 +80,22 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
           Posting Times Heatmap
         </h3>
         <div className="overflow-x-auto -mx-6 px-6">
-          <div className="min-w-[700px]">
+          <div className="min-w-[700px] relative" onMouseLeave={() => setTooltip(null)}>
+            {/* Tooltip */}
+            {tooltip && (
+              <div
+                className="absolute z-10 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-medium whitespace-nowrap pointer-events-none shadow-lg"
+                style={{
+                  left: tooltip.x,
+                  top: tooltip.y,
+                  transform: "translate(-50%, -100%)",
+                }}
+              >
+                {tooltip.text}
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900 dark:border-t-slate-100" />
+              </div>
+            )}
+
             {/* Hour labels */}
             <div className="flex ml-10 mb-1">
               {HOURS.filter((_, i) => i % 3 === 0).map((hour) => (
@@ -73,19 +111,18 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
                 <div className="flex-1 flex gap-px">
                   {HOURS.map((hour) => {
                     const count = getCount(dayIndex, hour);
-                    const engagement = getEngagement(dayIndex, hour);
                     const opacity = getOpacity(dayIndex, hour);
                     return (
                       <div
                         key={hour}
-                        className="flex-1 aspect-square rounded-sm cursor-pointer relative group"
+                        className="flex-1 aspect-square rounded-sm cursor-pointer"
                         style={{
                           backgroundColor: count > 0
                             ? `rgba(6, 182, 212, ${opacity})`
                             : 'var(--color-muted)',
                           opacity: count > 0 ? 1 : 0.3,
                         }}
-                        title={count > 0 ? `${day} ${hour}:00 - ${count} post(s), ${engagement.toFixed(1)}% engagement` : `${day} ${hour}:00 - No data`}
+                        onMouseEnter={(e) => handleMouseEnter(e, dayIndex, hour)}
                       />
                     );
                   })}
