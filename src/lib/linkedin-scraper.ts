@@ -250,23 +250,22 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
 function extractCommentCounts(html: string, posts: ScrapedPost[]): void {
   if (posts.length === 0) return;
 
-  // Find the section with comment counts (skip articles at the top)
-  // Articles have small numbers, posts have larger engagement
-  // Find all "X Comments" matches after the posts section starts
-  const firstPostUrl = posts[0]?.postUrl || "";
-  const firstPostSlug = firstPostUrl.match(/posts\/[^?]+/)?.[0] || "";
-  const postsStart = firstPostSlug ? html.indexOf(firstPostSlug) : html.length / 3;
-
+  // LinkedIn HTML has comment counts for articles FIRST, then for posts.
+  // We need to skip article comments and only get post comments.
+  // Articles are near "linkedInArticle" or "article-cover" in HTML.
   const commentMatches: number[] = [];
   const regex = /(\d[\d,]*)\s*Comments?/gi;
   let match;
   while ((match = regex.exec(html)) !== null) {
-    if (match.index > postsStart) {
-      commentMatches.push(parseInt(match[1].replace(/,/g, ""), 10));
+    // Check 300 chars before this match - skip if it's near an article
+    const before = html.substring(Math.max(0, match.index - 300), match.index);
+    if (before.includes("linkedInArticle") || before.includes("article-cover") || before.includes("PublicationIssue")) {
+      continue; // Skip article/newsletter comments
     }
+    commentMatches.push(parseInt(match[1].replace(/,/g, ""), 10));
   }
 
-  // Map comment counts to posts by order (1:1 mapping)
+  // Map non-article comment counts to posts by order
   for (let i = 0; i < Math.min(posts.length, commentMatches.length); i++) {
     posts[i].comments = commentMatches[i];
   }

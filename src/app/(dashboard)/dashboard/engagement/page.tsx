@@ -261,6 +261,8 @@ export default function EngagementPage() {
   const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const [reactionMenuPost, setReactionMenuPost] = useState<string | null>(null);
+  const [displayCount, setDisplayCount] = useState(12);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const reactionMenuTimer = useRef<NodeJS.Timeout | null>(null);
 
   const showReactionMenu = (postUrn: string) => {
@@ -332,6 +334,7 @@ export default function EngagementPage() {
   // Load which posts the user has already liked/commented (from DB)
   useEffect(() => {
     if (feedPosts.length === 0) return;
+    setDisplayCount(12); // Reset pagination when feed changes
     const postUrns = feedPosts.map((p) => p.activityUrn);
     fetch("/api/engagement/history", {
       method: "POST",
@@ -347,6 +350,22 @@ export default function EngagementPage() {
       })
       .catch(() => {});
   }, [feedPosts]);
+
+  // Infinite scroll - load more posts when scrolling near bottom
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => prev + 12);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [feedPosts.length]);
 
   // ============================================
   // LIST MANAGEMENT (DIALOG)
@@ -705,13 +724,15 @@ export default function EngagementPage() {
               // Limit posts per profile based on user setting
               const ppp = engagementData?.objectives.postsPerProfile ?? 2;
               const authorCounts = new Map<string, number>();
-              const visiblePosts = feedPosts.filter((post) => {
+              const allFilteredPosts = feedPosts.filter((post) => {
                 const count = authorCounts.get(post.authorVanityName) || 0;
                 if (count >= ppp) return false;
                 authorCounts.set(post.authorVanityName, count + 1);
                 return true;
               });
-              return (
+              const visiblePosts = allFilteredPosts.slice(0, displayCount);
+              const hasMore = visiblePosts.length < allFilteredPosts.length;
+              return (<>
               <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
                 {visiblePosts.map((post) => (
                   <div key={post.activityUrn} className="break-inside-avoid rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
@@ -861,7 +882,12 @@ export default function EngagementPage() {
                   </div>
                 ))}
               </div>
-              );
+              {hasMore && (
+                <div ref={loadMoreRef} className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                </div>
+              )}
+              </>);
             })()}
 
             {/* Empty feed with profiles */}
