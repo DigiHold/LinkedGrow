@@ -342,11 +342,11 @@ export async function GET(request: NextRequest) {
         } else { log(`Aggregated analytics returned null`); }
       } catch (err) { log(`Aggregated analytics FAILED: ${err}`); }
 
-      // Step 6: Per-post analytics
-      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 10);
+      // Step 6: Per-post analytics (no date range = lifetime stats for each post)
+      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 20);
       if (postUrns.length > 0) {
         try {
-          const perPost = await getMemberAllPostsAnalytics(token, { start: startDate, end: new Date() }, postUrns);
+          const perPost = await getMemberAllPostsAnalytics(token, undefined, postUrns);
           log(`Per-post analytics: ${perPost.length} posts`);
           perPost.forEach(ps => {
             postAnalyticsMap.set(ps.postUrn, ps);
@@ -377,11 +377,11 @@ export async function GET(request: NextRequest) {
     // BUILD RESPONSE
     // ===========================
 
-    // Attach analytics to posts (only if at least one metric > 0)
+    // Attach analytics to posts
     for (const post of allPosts) {
       if (post.linkedinPostId) {
         const stats = postAnalyticsMap.get(post.linkedinPostId);
-        if (stats && (stats.impressions > 0 || stats.reactions > 0 || stats.comments > 0 || stats.reshares > 0)) {
+        if (stats) {
           post.analytics = {
             impressions: stats.impressions,
             reactions: stats.reactions,

@@ -31,7 +31,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
   const [sortBy, setSortBy] = useState<SortKey>("impressions");
 
   const postsWithMetrics = posts
-    .filter((p) => p.analytics)
+    .filter((p) => p.analytics && (p.analytics.impressions > 0 || p.analytics.reactions > 0 || p.analytics.comments > 0 || p.analytics.reshares > 0))
     .map((p) => {
       const a = p.analytics!;
       const engagementRate = a.impressions > 0

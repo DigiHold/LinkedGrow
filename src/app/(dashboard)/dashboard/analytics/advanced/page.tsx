@@ -85,8 +85,9 @@ export default function AdvancedAnalyticsPage() {
 
   const fetchAnalytics = useCallback(async (refresh = false) => {
     try {
-      if (refresh) setIsRefreshing(true);
-      else setIsLoading(true);
+      // Only show full loading spinner on initial load (no data yet)
+      if (!data && !refresh) setIsLoading(true);
+      else setIsRefreshing(true);
       setError(null);
 
       const res = await fetch(`/api/analytics?days=${days}&advanced=true${refresh ? "&refresh=true" : ""}`);
@@ -103,6 +104,7 @@ export default function AdvancedAnalyticsPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
   useEffect(() => {
