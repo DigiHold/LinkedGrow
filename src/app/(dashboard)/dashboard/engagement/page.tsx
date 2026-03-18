@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
+import { LikeIcon, LikedIcon, CommentIcon, ReactionMenu } from "@/components/dashboard/engagement/linkedin-icons";
 
 // ============================================
 // TYPES
@@ -251,12 +252,14 @@ export default function EngagementPage() {
 
   // Post interaction states
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [commentedPosts, setCommentedPosts] = useState<Set<string>>(new Set());
   const [likingPost, setLikingPost] = useState<string | null>(null);
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+  const [reactionMenuPost, setReactionMenuPost] = useState<string | null>(null);
 
   // ============================================
   // FETCHERS
@@ -313,6 +316,25 @@ export default function EngagementPage() {
   useEffect(() => {
     if (!isLoading && lists.length > 0) fetchFeed(activeListId);
   }, [isLoading, lists.length, activeListId, fetchFeed]);
+
+  // Load which posts the user has already liked/commented (from DB)
+  useEffect(() => {
+    if (feedPosts.length === 0) return;
+    const postUrns = feedPosts.map((p) => p.activityUrn);
+    fetch("/api/engagement/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postUrns }),
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) {
+          setLikedPosts(new Set(data.liked || []));
+          setCommentedPosts(new Set(data.commented || []));
+        }
+      })
+      .catch(() => {});
+  }, [feedPosts]);
 
   // ============================================
   // LIST MANAGEMENT (DIALOG)
@@ -428,14 +450,15 @@ export default function EngagementPage() {
 
   const [interactError, setInteractError] = useState<string | null>(null);
 
-  const handleLike = async (postUrn: string) => {
+  const handleReaction = async (postUrn: string, reactionType = "LIKE") => {
     setLikingPost(postUrn);
+    setReactionMenuPost(null);
     setInteractError(null);
     try {
       const res = await fetch("/api/engagement/interact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "like", postUrn }),
+        body: JSON.stringify({ action: "like", postUrn, reactionType }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -443,10 +466,10 @@ export default function EngagementPage() {
         setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, likes: p.likes + 1 } : p));
         if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
       } else {
-        setInteractError(data.error || "Like failed");
+        setInteractError(data.error || "Reaction failed");
       }
     } catch {
-      setInteractError("Failed to like post");
+      setInteractError("Failed to react to post");
     } finally {
       setLikingPost(null);
     }
@@ -465,6 +488,7 @@ export default function EngagementPage() {
         const data = await res.json();
         setCommentingOn(null);
         setCommentText("");
+        setCommentedPosts((prev) => new Set([...prev, postUrn]));
         setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, comments: p.comments + 1 } : p));
         if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
       }
@@ -723,7 +747,7 @@ export default function EngagementPage() {
                     {/* Media: Video */}
                     {post.mediaType === "video" && post.videoThumbnailUrl && (
                       <div className="relative mt-3">
-                        <img src={post.videoThumbnailUrl} alt="" className="w-full max-h-64 object-cover" />
+                        <img src={post.videoThumbnailUrl} alt="" className="w-full object-contain" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
                             <Play className="w-5 h-5 text-white fill-white ml-0.5" />
@@ -735,35 +759,59 @@ export default function EngagementPage() {
                     {/* Media: Single image */}
                     {post.mediaType === "image" && post.imageUrl && (
                       <div className="mt-3">
-                        <img src={post.imageUrl} alt="" className="w-full max-h-64 object-cover" />
+                        <img src={post.imageUrl} alt="" className="w-full object-contain" />
                       </div>
                     )}
 
                     {/* Media: No type but has image */}
                     {!post.mediaType && post.imageUrl && (
                       <div className="mt-3">
-                        <img src={post.imageUrl} alt="" className="w-full max-h-64 object-cover" />
+                        <img src={post.imageUrl} alt="" className="w-full object-contain" />
                       </div>
                     )}
 
                     {/* Social counts */}
                     <div className="px-4 pt-3 mt-auto">
                       <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
-                        {post.likes > 0 && <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {formatCount(post.likes)}</span>}
+                        {post.likes > 0 && <span className="flex items-center gap-1"><LikedIcon className="w-4 h-4" /> {formatCount(post.likes)}</span>}
                         {post.comments > 0 && <span>{formatCount(post.comments)} comments</span>}
                         {post.reposts > 0 && <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> {formatCount(post.reposts)}</span>}
                         {post.likes === 0 && post.comments === 0 && post.reposts === 0 && <span className="opacity-50">No reactions yet</span>}
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="px-2 py-1 flex items-center">
-                      <Button variant="ghost" size="sm" className={`flex-1 text-xs ${likedPosts.has(post.activityUrn) ? "text-cyan-600 dark:text-cyan-400" : ""}`} onClick={() => handleLike(post.activityUrn)} disabled={likingPost === post.activityUrn || likedPosts.has(post.activityUrn) || !engagementData.communityConnected}>
-                        {likingPost === post.activityUrn ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <ThumbsUp className={`w-4 h-4 mr-1.5 ${likedPosts.has(post.activityUrn) ? "fill-cyan-500 text-cyan-500" : ""}`} />}
-                        {likedPosts.has(post.activityUrn) ? "Liked" : "Like"}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex-1 text-xs" onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.communityConnected}>
-                        <MessageCircle className="w-4 h-4 mr-1.5" /> Comment
+                    {/* Actions - LinkedIn style */}
+                    <div className="px-2 py-1 flex items-center relative">
+                      {/* Reaction menu (shows on hover/click) */}
+                      {reactionMenuPost === post.activityUrn && (
+                        <div className="absolute bottom-full left-0 mb-1 z-10">
+                          <ReactionMenu onReact={(type) => handleReaction(post.activityUrn, type)} />
+                        </div>
+                      )}
+                      <div
+                        className="flex-1"
+                        onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.communityConnected && setReactionMenuPost(post.activityUrn)}
+                        onMouseLeave={() => setReactionMenuPost(null)}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`w-full text-xs ${likedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`}
+                          onClick={() => handleReaction(post.activityUrn)}
+                          disabled={likingPost === post.activityUrn || likedPosts.has(post.activityUrn) || !engagementData.communityConnected}
+                        >
+                          {likingPost === post.activityUrn ? (
+                            <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                          ) : likedPosts.has(post.activityUrn) ? (
+                            <LikedIcon className="w-4 h-4 mr-1.5" />
+                          ) : (
+                            <LikeIcon className="w-4 h-4 mr-1.5" />
+                          )}
+                          {likedPosts.has(post.activityUrn) ? "Liked" : "Like"}
+                        </Button>
+                      </div>
+                      <Button variant="ghost" size="sm" className={`flex-1 text-xs ${commentedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`} onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.communityConnected}>
+                        <CommentIcon className="w-4 h-4 mr-1.5" /> Comment
                       </Button>
                       <Button variant="ghost" size="icon-sm" className="shrink-0" title="AI comment" onClick={() => handleGenerateComment(post.activityUrn, post.text)} disabled={generatingCommentFor === post.activityUrn || !engagementData.communityConnected}>
                         {generatingCommentFor === post.activityUrn ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}

@@ -151,85 +151,93 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
 function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
   const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
 
-  // Build a map of activity positions in HTML (sorted by position)
-  // Each post's content is between its activity ref and the next one
-  const activityPositions: { id: string; pos: number }[] = [];
-  for (const post of posts) {
-    const id = post.activityUrn.split(":").pop();
-    if (!id) continue;
-    // Find ALL occurrences, pick the one closest to the social counts area (after pos 100000)
-    let searchPos = 0;
-    let bestPos = -1;
-    while (true) {
-      const idx = html.indexOf(`activity-${id}`, searchPos);
-      if (idx < 0) break;
-      bestPos = idx; // keep the last (usually deepest) occurrence
-      searchPos = idx + 1;
-    }
-    if (bestPos > 0) {
-      activityPositions.push({ id, pos: bestPos });
-    }
-  }
+  // LinkedIn card structure (public profile):
+  //   <a href="...activity-{ID}..." data-tracking-control-name="public_profile">
+  //     <span class="sr-only">post text</span>
+  //   </a>
+  //   <div class="base-main-card__media">
+  //     <img class="main-activity-card__img" data-delayed-url="IMAGE_URL">
+  //   </div>
+  //
+  // The image is AFTER the activity ref (~500-700 chars forward), not before it.
+  // Each activity ID appears multiple times in the HTML (JSON-LD, ellipsis menu, etc.)
+  // The correct one has data-tracking-control-name="public_profile" right after it.
 
-  // Sort by position in HTML
-  activityPositions.sort((a, b) => a.pos - b.pos);
+  const IMG_URL_CHARS = `[^"'\\s)}<>]+`;
 
   for (const post of posts) {
     const activityId = post.activityUrn.split(":").pop();
     if (!activityId) continue;
 
-    const posEntry = activityPositions.find((p) => p.id === activityId);
-    if (!posEntry) continue;
+    // Find the activity ref that's in the card link (with public_profile tracking)
+    const searchStr = `activity-${activityId}`;
+    let searchPos = 0;
+    let cardPos = -1;
 
-    // The activity ref is at the END of each card (in the post URL link).
-    // The card content (social counts, images) is BEFORE the activity ref.
-    // Window: from PREVIOUS activity ref to THIS one.
-    const currentIdx = activityPositions.indexOf(posEntry);
-    const prevEntry = activityPositions[currentIdx - 1];
-    // For the first post, limit backwards search to 8KB (cards are ~5-8KB)
-    const windowStart = prevEntry ? prevEntry.pos + 50 : Math.max(0, posEntry.pos - 8000);
-    const chunk = html.substring(windowStart, posEntry.pos + 500);
+    while (true) {
+      const idx = html.indexOf(searchStr, searchPos);
+      if (idx < 0) break;
 
-    // Social counts: JSON-LD likes are accurate, DON'T override them.
-    // LinkedIn puts social count text in a DIFFERENT HTML section (not near activity refs).
-    // Overriding JSON-LD likes with HTML text picks up wrong numbers from unrelated content.
-    // Only look for comments/reposts if the post has 0 (JSON-LD doesn't provide them).
-    // We skip HTML reaction matching entirely - JSON-LD interactionStatistic is the source of truth.
+      // Check if this occurrence has the card tracking attribute within 150 chars
+      const afterSnippet = html.substring(idx, idx + 150);
+      if (afterSnippet.includes('data-tracking-control-name="public_profile"')) {
+        cardPos = idx;
+        break;
+      }
+      searchPos = idx + 1;
+    }
 
-    // Image URL regex - stop at quotes, whitespace, parens, angle brackets
-    // Allow ; because LinkedIn CDN uses &amp; which contains ;
-    const IMG_URL_CHARS = `[^"'\\s)}<>]+`;
+    if (cardPos < 0) continue;
+
+    // Look FORWARD from the card link for the image (within 2000 chars)
+    const chunk = html.substring(cardPos, cardPos + 2000);
+
+    // Find the main-activity-card__img data-delayed-url
+    const imgTagMatch = chunk.match(/main-activity-card__img[^"]*"[^>]*data-delayed-url="([^"]+)"/);
+    if (!imgTagMatch) continue;
+
+    const imgUrl = imgTagMatch[1];
+
+    // Skip ghost/placeholder images (text-only posts)
+    if (imgUrl.includes("aero-v1") || imgUrl.includes("static.licdn.com")) continue;
+
+    const resolvedUrl = cleanUrl(imgUrl);
 
     // Carousel/document
-    const carouselMatches = chunk.match(
-      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-document-cover-images${IMG_URL_CHARS}`, "g")
-    );
-    if (carouselMatches && carouselMatches.length > 0) {
+    if (resolvedUrl.includes("feedshare-document-cover")) {
       post.mediaType = "carousel";
-      post.carouselSlides = [...new Set(carouselMatches.map(cleanUrl))];
-      post.imageUrl = post.carouselSlides[0] || null;
+      // For carousels, find all document-cover URLs in a wider window
+      const wideChunk = html.substring(cardPos, cardPos + 5000);
+      const carouselMatches = wideChunk.match(
+        new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-document-cover-images${IMG_URL_CHARS}`, "g")
+      );
+      if (carouselMatches) {
+        post.carouselSlides = [...new Set(carouselMatches.map(cleanUrl))];
+        post.imageUrl = post.carouselSlides[0] || null;
+      }
       continue;
     }
 
-    // Video
-    const videoMatch = chunk.match(
-      new RegExp(`https://(?:dms|media)\\.licdn\\.com/${IMG_URL_CHARS}feedshare-video-thumbnail${IMG_URL_CHARS}`)
-    );
-    if (videoMatch) {
+    // Video (videocover-high or feedshare-video-thumbnail)
+    if (resolvedUrl.includes("videocover") || resolvedUrl.includes("feedshare-video-thumbnail")) {
       post.mediaType = "video";
-      post.videoThumbnailUrl = cleanUrl(videoMatch[0]);
-      post.imageUrl = post.videoThumbnailUrl;
+      post.videoThumbnailUrl = resolvedUrl;
+      post.imageUrl = resolvedUrl;
       continue;
     }
 
-    // Single image - ONLY feedshare-shrink (actual post images)
-    // Explicitly exclude profile photos and banners
-    const imgMatch = chunk.match(
-      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-shrink${IMG_URL_CHARS}`)
-    );
-    if (imgMatch) {
+    // Single image (feedshare-shrink or image-shrink)
+    if (resolvedUrl.includes("feedshare-shrink") || resolvedUrl.includes("image-shrink")) {
       post.mediaType = "image";
-      post.imageUrl = cleanUrl(imgMatch[0]);
+      post.imageUrl = resolvedUrl;
+      continue;
+    }
+
+    // Article share (articleshare-shrink)
+    if (resolvedUrl.includes("articleshare")) {
+      post.mediaType = "article";
+      post.imageUrl = resolvedUrl;
+      continue;
     }
   }
 }

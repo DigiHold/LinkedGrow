@@ -427,7 +427,6 @@ export async function createLinkedInComment(
 
   let lastError = '';
   for (const token of tokens) {
-    console.log('[LinkedIn Comment] Trying with token ending:', token.slice(-6));
 
     const response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/comments`, {
       method: 'POST',
@@ -443,12 +442,10 @@ export async function createLinkedInComment(
     if (response.ok || response.status === 201) {
       let data;
       try { data = await response.json(); } catch { data = {}; }
-      console.log('[LinkedIn Comment] SUCCESS');
       return { id: data.id || data['$URN'] || 'comment-created' };
     }
 
     lastError = await response.text();
-    console.log('[LinkedIn Comment] Failed:', response.status, lastError.substring(0, 200));
   }
 
   throw new Error(`Failed to comment: ${lastError}`);
@@ -1896,7 +1893,8 @@ export async function likeLinkedInPost(
   accessTokens: string | string[],
   postUrn: string,
   actorId: string,
-  actorType: 'person' | 'organization' = 'person'
+  actorType: 'person' | 'organization' = 'person',
+  reactionType: string = 'LIKE'
 ): Promise<{ success: boolean }> {
   const actorUrn = actorType === 'organization'
     ? `urn:li:organization:${actorId}`
@@ -1910,7 +1908,6 @@ export async function likeLinkedInPost(
 
   for (const token of tokens) {
     // 1. Reactions API (w_member_social_feed)
-    console.log('[LinkedIn Like] Trying reactions API with token ending:', token.slice(-6));
     let response = await fetch(`${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, {
       method: 'POST',
       headers: {
@@ -1919,19 +1916,16 @@ export async function likeLinkedInPost(
         'X-Restli-Protocol-Version': '2.0.0',
         'LinkedIn-Version': LINKEDIN_API_VERSION,
       },
-      body: JSON.stringify({ root: postUrn, reactionType: 'LIKE' }),
+      body: JSON.stringify({ root: postUrn, reactionType }),
     });
 
     if (response.ok || response.status === 201 || response.status === 409) {
-      console.log('[LinkedIn Like] SUCCESS via reactions API');
       return { success: true };
     }
     lastStatus = response.status;
     lastError = await response.text();
-    console.log('[LinkedIn Like] Reactions failed:', response.status, lastError.substring(0, 200));
 
     // 2. socialActions/likes fallback (w_member_social)
-    console.log('[LinkedIn Like] Trying socialActions fallback');
     response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/likes`, {
       method: 'POST',
       headers: {
@@ -1944,12 +1938,10 @@ export async function likeLinkedInPost(
     });
 
     if (response.ok || response.status === 201 || response.status === 409) {
-      console.log('[LinkedIn Like] SUCCESS via socialActions');
       return { success: true };
     }
     lastStatus = response.status;
     lastError = await response.text();
-    console.log('[LinkedIn Like] socialActions failed:', response.status, lastError.substring(0, 200));
   }
 
   throw new Error(`Failed to like post (${lastStatus}): ${lastError}`);

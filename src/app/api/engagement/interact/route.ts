@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, postUrn, text } = body;
+    const { action, postUrn, text, reactionType } = body;
 
     if (!action || !postUrn) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, postUrn, memberId);
+      await likeLinkedInPost(accessToken, postUrn, memberId, 'person', reactionType || 'LIKE');
 
       await db.insert(engagementActions).values({
         id: randomUUID(),

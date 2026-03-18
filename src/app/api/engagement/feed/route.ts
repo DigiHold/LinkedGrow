@@ -154,7 +154,6 @@ export async function GET(request: NextRequest) {
 
         // Don't cache empty results (authwall/failure) - keep stale data
         if (scraped.posts.length === 0) {
-          console.log(`[Feed] Skipping cache update for ${vanityName} - no posts found (authwall?)`);
           continue;
         }
 
