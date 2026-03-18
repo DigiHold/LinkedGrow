@@ -28,18 +28,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Requires Pro plan" }, { status: 403 });
     }
 
-    // Collect both tokens - try Community App first (w_member_social_feed), then Poster App (w_member_social)
-    const communityToken = user.linkedinCommunityAccessToken;
-    const posterToken = user.linkedinAccessToken;
-    if (!communityToken && !posterToken) {
+    // Community App token (w_member_social_feed for reactions/comments)
+    const accessToken = user.linkedinCommunityAccessToken;
+    // CRITICAL: Use REST API member ID, NOT OpenID Connect sub (linkedinProfileId)
+    // These are DIFFERENT IDs for the same LinkedIn user
+    const memberId = user.linkedinMemberId || user.linkedinProfileId;
+
+    if (!accessToken) {
       return NextResponse.json(
-        { error: "Connect your LinkedIn account to like and comment" },
+        { error: "Connect the Community App to like and comment" },
         { status: 400 }
       );
     }
-    if (!user.linkedinProfileId) {
+    if (!memberId) {
       return NextResponse.json(
-        { error: "LinkedIn profile ID not found. Reconnect your LinkedIn account." },
+        { error: "LinkedIn member ID not found. Disconnect and reconnect the Community App." },
         { status: 400 }
       );
     }
@@ -54,13 +57,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use activity URN directly (confirmed by LinkedIn docs)
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      // Try both tokens - Community App has w_member_social_feed, Poster App has w_member_social
-      const tokens = [communityToken, posterToken].filter(Boolean) as string[];
-      await likeLinkedInPost(tokens, postUrn, user.linkedinProfileId);
+      await likeLinkedInPost(accessToken, postUrn, memberId);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -78,9 +78,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Comments work with w_member_social (old scope) - try both tokens
-      const commentTokens = [communityToken, posterToken].filter(Boolean) as string[];
-      await createLinkedInComment(commentTokens, postUrn, user.linkedinProfileId, text.trim());
+      await createLinkedInComment(accessToken, postUrn, memberId, text.trim());
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
