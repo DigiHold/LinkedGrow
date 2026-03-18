@@ -34,9 +34,9 @@ export interface ScrapedProfile {
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours - posts don't change fast, saves proxy bandwidth
 const STALE_SERVE_MS = 24 * 60 * 60 * 1000; // Serve stale cache up to 24h while refreshing in background
 
-// Global rate limiter - max 1 fetch every 3 seconds across all users
+// Global rate limiter - 1 second between fetches (fast enough for Vercel timeout)
 let lastFetchTime = 0;
-const MIN_FETCH_INTERVAL_MS = 3000;
+const MIN_FETCH_INTERVAL_MS = 1000;
 
 async function waitForRateLimit(): Promise<void> {
   const now = Date.now();
@@ -252,7 +252,7 @@ function extractProfilePicture(html: string): string | null {
 
 export async function scrapeLinkedInProfile(
   vanityName: string,
-  maxRetries = 4
+  maxRetries = 2
 ): Promise<ScrapedProfile> {
   let lastError: Error | null = null;
   let bestResult: ScrapedProfile | null = null;

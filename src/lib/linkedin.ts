@@ -446,6 +446,30 @@ export async function createLinkedInComment(
     }
 
     lastError = await response.text();
+
+    // LinkedIn may return the correct threadUrn in the error. Extract and retry.
+    const threadUrnMatch = lastError.match(/actual threadUrn: (urn:li:\w+:\d+)/);
+    if (threadUrnMatch) {
+      const correctUrn = threadUrnMatch[1];
+      const retryEncoded = encodeURIComponent(correctUrn);
+      const retryBody = { ...body, object: correctUrn };
+      const retryResponse = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${retryEncoded}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+        body: JSON.stringify(retryBody),
+      });
+      if (retryResponse.ok || retryResponse.status === 201) {
+        let data;
+        try { data = await retryResponse.json(); } catch { data = {}; }
+        return { id: data.id || data['$URN'] || 'comment-created' };
+      }
+      lastError = await retryResponse.text();
+    }
   }
 
   throw new Error(`Failed to comment: ${lastError}`);

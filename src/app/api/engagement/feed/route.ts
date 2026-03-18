@@ -145,9 +145,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Step 2: Scrape profiles that need refreshing (sequentially to respect rate limit)
-    // Scrape all that need it - the rate limiter in the scraper handles pacing
-    const toScrapeNow = profilesToRefresh;
+    // Step 2: Scrape profiles that need refreshing (max 5 per request to stay within Vercel timeout)
+    const toScrapeNow = profilesToRefresh.slice(0, 5);
     for (const vanityName of toScrapeNow) {
       try {
         const scraped = await scrapeLinkedInProfile(vanityName);

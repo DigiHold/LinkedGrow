@@ -695,9 +695,9 @@ export default function EngagementPage() {
                 return true;
               });
               return (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
                 {visiblePosts.map((post) => (
-                  <div key={post.activityUrn} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
+                  <div key={post.activityUrn} className="break-inside-avoid rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all flex flex-col">
                     {/* Author */}
                     <div className="p-4 pb-0">
                       <div className="flex items-start gap-3 mb-3">
