@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Card, CardContent } from "@/components/ui/card";
@@ -260,6 +260,17 @@ export default function EngagementPage() {
   const [generatingCommentFor, setGeneratingCommentFor] = useState<string | null>(null);
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const [reactionMenuPost, setReactionMenuPost] = useState<string | null>(null);
+  const reactionMenuTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const showReactionMenu = (postUrn: string) => {
+    if (reactionMenuTimer.current) clearTimeout(reactionMenuTimer.current);
+    setReactionMenuPost(postUrn);
+  };
+
+  const hideReactionMenu = () => {
+    // 500ms delay before hiding (like LinkedIn)
+    reactionMenuTimer.current = setTimeout(() => setReactionMenuPost(null), 500);
+  };
 
   // ============================================
   // FETCHERS
@@ -779,7 +790,7 @@ export default function EngagementPage() {
                     <div className="px-4 pt-3 mt-auto">
                       <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
                         {post.likes > 0 && <span className="flex items-center gap-1"><LikedIcon className="w-4 h-4" /> {formatCount(post.likes)}</span>}
-                        {post.comments > 0 && <span>{formatCount(post.comments)} comments</span>}
+                        {post.comments > 0 && <span className="flex items-center gap-1"><CommentIcon className="w-3 h-3" /> {formatCount(post.comments)}</span>}
                         {post.reposts > 0 && <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> {formatCount(post.reposts)}</span>}
                         {post.likes === 0 && post.comments === 0 && post.reposts === 0 && <span className="opacity-50">No reactions yet</span>}
                       </div>
@@ -790,8 +801,8 @@ export default function EngagementPage() {
                       {/* Like button + reaction menu wrapper - single hover area */}
                       <div
                         className="flex-1 relative"
-                        onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.communityConnected && setReactionMenuPost(post.activityUrn)}
-                        onMouseLeave={() => setReactionMenuPost(null)}
+                        onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.communityConnected && showReactionMenu(post.activityUrn)}
+                        onMouseLeave={hideReactionMenu}
                       >
                         {reactionMenuPost === post.activityUrn && (
                           <div className="absolute bottom-full left-0 mb-1 z-10">
