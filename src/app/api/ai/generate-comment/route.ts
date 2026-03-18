@@ -40,67 +40,67 @@ async function generateComment(
   businessDescription?: string | null,
   targetAudience?: string | null,
   writingTone?: string | null,
-  isEngagement?: boolean
+  isEngagement?: boolean,
+  samplePosts?: string | null,
+  neverMention?: string | null
 ): Promise<string> {
   let businessContext = "";
-  if (businessDescription || targetAudience || writingTone) {
-    businessContext = "\n\n=== AUTHOR CONTEXT ===";
-    if (businessDescription) businessContext += `\nBusiness: ${businessDescription}`;
-    if (targetAudience) businessContext += `\nAudience: ${targetAudience}`;
-    if (writingTone) businessContext += `\nTone: ${writingTone}`;
-    businessContext += "\n=== END CONTEXT ===";
+  if (businessDescription || targetAudience || writingTone || samplePosts || neverMention) {
+    businessContext = "\n\n=== YOUR PROFILE (the person commenting) ===";
+    if (businessDescription) businessContext += `\nWhat you do: ${businessDescription}`;
+    if (targetAudience) businessContext += `\nYour audience: ${targetAudience}`;
+    if (writingTone) businessContext += `\nYour tone: ${writingTone}`;
+    if (neverMention) businessContext += `\nNEVER mention or reference: ${neverMention}`;
+    if (samplePosts) {
+      try {
+        const samples = JSON.parse(samplePosts);
+        if (Array.isArray(samples) && samples.length > 0) {
+          businessContext += `\nYour writing style (match this voice):\n${samples.slice(0, 2).map((s: string) => `"${s.substring(0, 200)}"`).join("\n")}`;
+        }
+      } catch { /* ignore */ }
+    }
+    businessContext += "\n=== END PROFILE ===";
   }
 
-  const prompt = isEngagement ? `You are commenting on SOMEONE ELSE's LinkedIn post. You are NOT the author. You are a reader engaging with their content.
+  const prompt = isEngagement ? `You are commenting on someone else's LinkedIn post. Write a genuine comment as a real human would.
 
 === THE POST ===
 ${postContent}
 === END POST ===${businessContext}
 
-=== YOUR GOAL ===
+=== WHAT TO DO ===
 
-Write a thoughtful, genuine comment that adds value to the conversation. You want to:
-- Show you actually read and understood the post
-- Share your own perspective, experience, or insight related to the topic
-- Be authentic and conversational - like talking to a colleague
-- Build a connection with the author
+Pick ONE approach based on what fits the post naturally. Do NOT always share personal experience - most comments don't need that. Vary your approach:
 
-=== APPROACHES (pick the best one) ===
+- AGREE and add a short insight: "The part about X is spot on. I'd add that..."
+- RESPECTFULLY CHALLENGE: "Interesting take. I've seen the opposite where..."
+- ASK ONE SPECIFIC QUESTION about something they said
+- SHARE A QUICK DATA POINT or fact that supports/extends their point
+- GIVE A CONCRETE EXAMPLE related to their topic
+- SIMPLY REACT with a specific thought: "The bit about X really stuck with me because..."
 
-1. SHARE YOUR EXPERIENCE - Relate to the topic:
-   - "I went through something similar when..."
-   - "This resonates because in my experience..."
-   - Share a specific example or result
+=== BANNED (AI SLOP) ===
 
-2. ADD A NEW ANGLE - Expand on their point:
-   - Build on what they said with an additional insight
-   - Respectfully offer a complementary perspective
-   - Connect their topic to a related trend or idea
+NEVER use these words or patterns:
+- "This resonates" / "resonated with me"
+- "Great post" / "Love this" / "So true" / "Nailed it" / "Spot on"
+- "Thanks for sharing"
+- "This is a great reminder"
+- "Couldn't agree more"
+- "game-changer" / "dive deep" / "unpack" / "landscape" / "leverage"
+- "In my experience" as the opening line
+- Any question ending with "?" that sounds like an interview
+- Starting with an emoji
+- "As someone who..." as opener
 
-3. ASK A GENUINE QUESTION - Show curiosity:
-   - Ask about something specific they mentioned
-   - Ask for their advice on a related challenge
-   - Dig deeper into one of their points
+=== FORMAT ===
 
-4. GIVE SPECIFIC FEEDBACK - Acknowledge their work:
-   - Highlight a specific point that resonated and explain WHY
-   - Share how their advice helped or could help you
-   - Reference a specific detail from their post (not generic praise)
+- 1-3 SHORT sentences. Under 250 characters.
+- No hashtags. No em dashes. No links.
+- Sound like a real person typing on their phone, not a marketing AI.
+- Reference something SPECIFIC from the post (a word, phrase, or idea).
 
-=== STRICT RULES ===
-
-- You are a READER commenting on SOMEONE ELSE's post
-- 2-4 sentences max (under 300 characters)
-- NO generic praise ("Great post!", "Love this!", "So true!", "Nailed it!")
-- NO hashtags
-- NEVER use em dashes or en dashes. Use commas or " - " instead
-- NO questions that sound like you're interviewing them
-- NO self-promotion or links
-- Write naturally, like a real person having a conversation
-- Reference something SPECIFIC from the post to show you read it
-- Be genuine - don't sound like a bot or a salesperson
-
-Return ONLY the comment text. No quotes, no explanations.` :
+Return ONLY the comment text.` :
 
   `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
 
@@ -401,7 +401,9 @@ export async function POST(request: NextRequest) {
       aiSettingsUser.businessDescription,
       aiSettingsUser.targetAudience,
       aiSettingsUser.writingTone,
-      isEngagement === true
+      isEngagement === true,
+      aiSettingsUser.samplePosts,
+      aiSettingsUser.neverMention
     );
 
     return NextResponse.json({ comment });
