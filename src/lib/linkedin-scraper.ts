@@ -149,7 +149,7 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
 }
 
 function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
-  const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["']/g, "");
+  const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
 
   // Build a map of activity positions in HTML (sorted by position)
   // Each post's content is between its activity ref and the next one
@@ -206,16 +206,13 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
       post.reposts = parseInt(repostsMatch[1].replace(/,/g, ""), 10);
     }
 
-    // Image detection - only match actual post images, exclude profile/banner
-    const isPostImage = (url: string) =>
-      !url.includes("profile-displayphoto") &&
-      !url.includes("profile-displaybackground") &&
-      !url.includes("company-logo") &&
-      !url.includes("aero-v1");
+    // Image URL regex - stop at quotes, whitespace, parens, angle brackets
+    // Allow ; because LinkedIn CDN uses &amp; which contains ;
+    const IMG_URL_CHARS = `[^"'\\s)}<>]+`;
 
     // Carousel/document
     const carouselMatches = chunk.match(
-      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s]*feedshare-document-cover-images[^"\s]*/g
+      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-document-cover-images${IMG_URL_CHARS}`, "g")
     );
     if (carouselMatches && carouselMatches.length > 0) {
       post.mediaType = "carousel";
@@ -226,7 +223,7 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
 
     // Video
     const videoMatch = chunk.match(
-      /https:\/\/(?:dms|media)\.licdn\.com\/[^"\s]*feedshare-video-thumbnail[^"\s]*/
+      new RegExp(`https://(?:dms|media)\\.licdn\\.com/${IMG_URL_CHARS}feedshare-video-thumbnail${IMG_URL_CHARS}`)
     );
     if (videoMatch) {
       post.mediaType = "video";
@@ -235,16 +232,14 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
       continue;
     }
 
-    // Single image (feedshare-shrink only - the actual post images)
+    // Single image - ONLY feedshare-shrink (actual post images)
+    // Explicitly exclude profile photos and banners
     const imgMatch = chunk.match(
-      /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s]*feedshare-shrink[^"\s]*/
+      new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-shrink${IMG_URL_CHARS}`)
     );
     if (imgMatch) {
-      const url = cleanUrl(imgMatch[0]);
-      if (isPostImage(url)) {
-        post.mediaType = "image";
-        post.imageUrl = url;
-      }
+      post.mediaType = "image";
+      post.imageUrl = cleanUrl(imgMatch[0]);
     }
   }
 }
