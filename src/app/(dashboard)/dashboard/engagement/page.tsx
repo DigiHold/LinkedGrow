@@ -311,6 +311,10 @@ export default function EngagementPage() {
         const data = await res.json();
         setFeedPosts(data.posts || []);
         setFeedErrors(data.errors || []);
+        // If there are more profiles to scrape, auto-fetch again after a short delay
+        if (data.remaining && data.remaining > 0 && !forceRefresh) {
+          setTimeout(() => fetchFeed(listId), 500);
+        }
       } else {
         const err = await res.json().catch(() => ({ error: "Failed to load feed" }));
         setFeedErrors([{ vanityName: "", error: err.error }]);

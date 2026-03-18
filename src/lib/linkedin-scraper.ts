@@ -264,10 +264,11 @@ function extractCommentCounts(html: string, posts: ScrapedPost[]): void {
 }
 
 function extractProfilePicture(html: string): string | null {
+  // Use [^"\s)}<>]+ to capture full URL with &amp; encoded params (same pattern as post images)
   const match = html.match(
-    /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*profile-displayphoto-scale_200_200[^"&]*/
+    /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*profile-displayphoto-scale_200_200[^"\s)}<>]*/
   );
-  if (match) return match[0].replace(/&amp;/g, "&");
+  if (match) return match[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
   return null;
 }
 

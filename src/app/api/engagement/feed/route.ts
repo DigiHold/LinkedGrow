@@ -196,9 +196,13 @@ export async function GET(request: NextRequest) {
       return dateB - dateA;
     });
 
+    // Tell frontend how many profiles still need scraping
+    const remainingToScrape = profilesToRefresh.length - toScrapeNow.length;
+
     return NextResponse.json({
       posts: allPosts,
       errors: errors.length > 0 ? errors : undefined,
+      remaining: remainingToScrape > 0 ? remainingToScrape : undefined,
     });
   } catch (error) {
     console.error("Failed to fetch engagement feed:", error);
