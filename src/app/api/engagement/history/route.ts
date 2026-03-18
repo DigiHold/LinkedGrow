@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       .select({
         type: engagementActions.type,
         linkedinPostId: engagementActions.linkedinPostId,
+        reactionType: engagementActions.reactionType,
       })
       .from(engagementActions)
       .where(
@@ -32,7 +33,13 @@ export async function POST(request: NextRequest) {
         )
       );
 
-    const liked = [...new Set(actions.filter((a) => a.type === "like").map((a) => a.linkedinPostId).filter(Boolean))];
+    // liked: Map of postUrn -> reactionType
+    const liked: Record<string, string> = {};
+    for (const a of actions) {
+      if (a.type === "like" && a.linkedinPostId) {
+        liked[a.linkedinPostId] = a.reactionType || "LIKE";
+      }
+    }
     const commented = [...new Set(actions.filter((a) => a.type === "comment").map((a) => a.linkedinPostId).filter(Boolean))];
 
     return NextResponse.json({ liked, commented });

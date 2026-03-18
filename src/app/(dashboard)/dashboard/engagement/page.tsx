@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
-import { LikeIcon, LikedIcon, CommentIcon, ReactionMenu } from "@/components/dashboard/engagement/linkedin-icons";
+import { LikeIcon, LikedIcon, CommentIcon, ReactionMenu, REACTIONS } from "@/components/dashboard/engagement/linkedin-icons";
 
 // ============================================
 // TYPES
@@ -251,7 +251,8 @@ export default function EngagementPage() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Post interaction states
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  // Map of postUrn -> reactionType (e.g., "LIKE", "PRAISE", "EMPATHY")
+  const [likedPosts, setLikedPosts] = useState<Map<string, string>>(new Map());
   const [commentedPosts, setCommentedPosts] = useState<Set<string>>(new Set());
   const [likingPost, setLikingPost] = useState<string | null>(null);
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
@@ -340,7 +341,7 @@ export default function EngagementPage() {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data) {
-          setLikedPosts(new Set(data.liked || []));
+          setLikedPosts(new Map(Object.entries(data.liked || {})));
           setCommentedPosts(new Set(data.commented || []));
         }
       })
@@ -473,7 +474,7 @@ export default function EngagementPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setLikedPosts((prev) => new Set([...prev, postUrn]));
+        setLikedPosts((prev) => new Map([...prev, [postUrn, reactionType]]));
         setFeedPosts((prev) => prev.map((p) => p.activityUrn === postUrn ? { ...p, likes: p.likes + 1 } : p));
         if (data.today) setEngagementData((prev) => prev ? { ...prev, today: data.today } : prev);
       } else {
@@ -809,22 +810,28 @@ export default function EngagementPage() {
                             <ReactionMenu onReact={(type) => handleReaction(post.activityUrn, type)} />
                           </div>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`w-full text-xs ${likedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`}
-                          onClick={() => handleReaction(post.activityUrn)}
-                          disabled={likingPost === post.activityUrn || likedPosts.has(post.activityUrn) || !engagementData.communityConnected}
-                        >
-                          {likingPost === post.activityUrn ? (
-                            <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                          ) : likedPosts.has(post.activityUrn) ? (
-                            <LikedIcon className="w-4 h-4 mr-1.5" />
-                          ) : (
-                            <LikeIcon className="w-4 h-4 mr-1.5" />
-                          )}
-                          {likedPosts.has(post.activityUrn) ? "Liked" : "Like"}
-                        </Button>
+                        {(() => {
+                          const userReaction = likedPosts.get(post.activityUrn);
+                          const reactionInfo = userReaction ? REACTIONS.find((r) => r.type === userReaction) : null;
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`w-full text-xs ${userReaction ? "text-[#378fe9] font-semibold" : ""}`}
+                              onClick={() => handleReaction(post.activityUrn)}
+                              disabled={likingPost === post.activityUrn || !!userReaction || !engagementData.communityConnected}
+                            >
+                              {likingPost === post.activityUrn ? (
+                                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                              ) : reactionInfo ? (
+                                <img src={reactionInfo.src} alt={reactionInfo.label} className="w-4 h-4 mr-1.5" />
+                              ) : (
+                                <LikeIcon className="w-4 h-4 mr-1.5" />
+                              )}
+                              {reactionInfo ? reactionInfo.label : "Like"}
+                            </Button>
+                          );
+                        })()}
                       </div>
                       <Button variant="ghost" size="sm" className={`flex-1 text-xs ${commentedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`} onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.communityConnected}>
                         <CommentIcon className="w-4 h-4 mr-1.5" /> Comment

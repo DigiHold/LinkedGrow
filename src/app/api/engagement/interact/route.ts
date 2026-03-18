@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         type: "like",
         linkedinPostId: postUrn,
+        reactionType: reactionType || "LIKE",
         date: today,
         createdAt: new Date(),
       });

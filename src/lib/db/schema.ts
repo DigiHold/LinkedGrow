@@ -380,8 +380,9 @@ export const engagementActions = sqliteTable("engagement_actions", {
     .references(() => users.id, { onDelete: "cascade" }),
   type: text("type", { enum: ["like", "comment"] }).notNull(),
   linkedinPostId: text("linkedin_post_id"), // The LinkedIn post URN that was liked/commented
-  commentContent: text("comment_content"), // If type is comment, store the comment text
-  date: text("date").notNull(), // YYYY-MM-DD format for easy daily grouping
+  commentContent: text("comment_content"),
+  reactionType: text("reaction_type").default("LIKE"), // LIKE, PRAISE, APPRECIATION, EMPATHY, INTEREST, ENTERTAINMENT
+  date: text("date").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
