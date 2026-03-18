@@ -39,7 +39,8 @@ async function generateComment(
   model: string,
   businessDescription?: string | null,
   targetAudience?: string | null,
-  writingTone?: string | null
+  writingTone?: string | null,
+  isEngagement?: boolean
 ): Promise<string> {
   let businessContext = "";
   if (businessDescription || targetAudience || writingTone) {
@@ -50,7 +51,58 @@ async function generateComment(
     businessContext += "\n=== END CONTEXT ===";
   }
 
-  const prompt = `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
+  const prompt = isEngagement ? `You are commenting on SOMEONE ELSE's LinkedIn post. You are NOT the author. You are a reader engaging with their content.
+
+=== THE POST ===
+${postContent}
+=== END POST ===${businessContext}
+
+=== YOUR GOAL ===
+
+Write a thoughtful, genuine comment that adds value to the conversation. You want to:
+- Show you actually read and understood the post
+- Share your own perspective, experience, or insight related to the topic
+- Be authentic and conversational - like talking to a colleague
+- Build a connection with the author
+
+=== APPROACHES (pick the best one) ===
+
+1. SHARE YOUR EXPERIENCE - Relate to the topic:
+   - "I went through something similar when..."
+   - "This resonates because in my experience..."
+   - Share a specific example or result
+
+2. ADD A NEW ANGLE - Expand on their point:
+   - Build on what they said with an additional insight
+   - Respectfully offer a complementary perspective
+   - Connect their topic to a related trend or idea
+
+3. ASK A GENUINE QUESTION - Show curiosity:
+   - Ask about something specific they mentioned
+   - Ask for their advice on a related challenge
+   - Dig deeper into one of their points
+
+4. GIVE SPECIFIC FEEDBACK - Acknowledge their work:
+   - Highlight a specific point that resonated and explain WHY
+   - Share how their advice helped or could help you
+   - Reference a specific detail from their post (not generic praise)
+
+=== STRICT RULES ===
+
+- You are a READER commenting on SOMEONE ELSE's post
+- 2-4 sentences max (under 300 characters)
+- NO generic praise ("Great post!", "Love this!", "So true!", "Nailed it!")
+- NO hashtags
+- NEVER use em dashes or en dashes. Use commas or " - " instead
+- NO questions that sound like you're interviewing them
+- NO self-promotion or links
+- Write naturally, like a real person having a conversation
+- Reference something SPECIFIC from the post to show you read it
+- Be genuine - don't sound like a bot or a salesperson
+
+Return ONLY the comment text. No quotes, no explanations.` :
+
+  `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
 
 === YOUR POST ===
 ${postContent}
@@ -278,7 +330,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { postContent } = body;
+    const { postContent, isEngagement } = body;
 
     if (!postContent || typeof postContent !== "string") {
       return NextResponse.json({ error: "Post content is required" }, { status: 400 });
@@ -348,7 +400,8 @@ export async function POST(request: NextRequest) {
       model,
       aiSettingsUser.businessDescription,
       aiSettingsUser.targetAudience,
-      aiSettingsUser.writingTone
+      aiSettingsUser.writingTone,
+      isEngagement === true
     );
 
     return NextResponse.json({ comment });

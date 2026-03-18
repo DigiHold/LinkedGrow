@@ -34,17 +34,9 @@ export interface ScrapedProfile {
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours - posts don't change fast, saves proxy bandwidth
 const STALE_SERVE_MS = 24 * 60 * 60 * 1000; // Serve stale cache up to 24h while refreshing in background
 
-// Global rate limiter - 1 second between fetches (fast enough for Vercel timeout)
-let lastFetchTime = 0;
-const MIN_FETCH_INTERVAL_MS = 1000;
-
+// No rate limiter - rely on proxy rotation for IP diversity
 async function waitForRateLimit(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastFetchTime;
-  if (elapsed < MIN_FETCH_INTERVAL_MS) {
-    await new Promise((resolve) => setTimeout(resolve, MIN_FETCH_INTERVAL_MS - elapsed));
-  }
-  lastFetchTime = Date.now();
+  // no-op - removed to allow faster scraping within Vercel timeout
 }
 
 function fetchProfileHtml(vanityName: string): string {
@@ -60,7 +52,7 @@ function fetchProfileHtml(vanityName: string): string {
   const url = `https://www.linkedin.com/in/${encodeURIComponent(vanityName)}/`;
 
   return execFileSync("curl", [
-    "-s", "--max-time", "25",
+    "-s", "--max-time", "12",
     "--proxy", `socks5://${user}:${pass}@${host}:${port}`,
     "-L",
     "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -69,7 +61,7 @@ function fetchProfileHtml(vanityName: string): string {
     url,
   ], {
     encoding: "utf-8",
-    timeout: 30000,
+    timeout: 15000,
     maxBuffer: 5 * 1024 * 1024,
   });
 }
@@ -281,7 +273,7 @@ function extractProfilePicture(html: string): string | null {
 
 export async function scrapeLinkedInProfile(
   vanityName: string,
-  maxRetries = 2
+  maxRetries = 1
 ): Promise<ScrapedProfile> {
   let lastError: Error | null = null;
   let bestResult: ScrapedProfile | null = null;

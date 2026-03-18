@@ -541,7 +541,7 @@ export default function EngagementPage() {
       const res = await fetch("/api/ai/generate-comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postContent }),
+        body: JSON.stringify({ postContent, isEngagement: true }),
       });
       if (res.ok) {
         const data = await res.json();

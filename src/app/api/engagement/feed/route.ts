@@ -145,80 +145,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Step 2: Scrape profiles that need refreshing (max 5 per request to stay within Vercel timeout)
-    const toScrapeNow = profilesToRefresh.slice(0, 5);
-    for (const vanityName of toScrapeNow) {
-      try {
-        const scraped = await scrapeLinkedInProfile(vanityName);
-
-        // Don't cache empty results (authwall/failure) - keep stale data
-        if (scraped.posts.length === 0) {
+    // Step 2: Scrape profiles in parallel (3 at a time)
+    // Only scrape enough to have content - if we already have posts from cache, scrape fewer
+    const postsFromCache = allPosts.length;
+    const maxProfilesToScrape = postsFromCache >= 12 ? 3 : Math.min(profilesToRefresh.length, 6);
+    const toScrapeNow = profilesToRefresh.slice(0, maxProfilesToScrape);
+    const CONCURRENCY = 3;
+    for (let batch = 0; batch < toScrapeNow.length; batch += CONCURRENCY) {
+      const batchNames = toScrapeNow.slice(batch, batch + CONCURRENCY);
+      const results = await Promise.allSettled(batchNames.map((vn) => scrapeLinkedInProfile(vn)));
+      for (let j = 0; j < batchNames.length; j++) {
+        const vanityName = batchNames[j];
+        const result = results[j];
+        if (result.status === "rejected") {
+          const hasExistingPosts = allPosts.some((p) => p.authorVanityName === vanityName);
+          if (!hasExistingPosts) {
+            errors.push({ vanityName, error: result.reason?.message || "Failed" });
+          }
           continue;
         }
-
-        const profileData = {
-          displayName: scraped.displayName,
-          headline: scraped.headline,
-          profilePictureUrl: scraped.profilePictureUrl,
-        };
-
-        // Update cache
-        await db
-          .insert(linkedinProfilePostsCache)
-          .values({
-            vanityName,
-            displayName: scraped.displayName,
-            headline: scraped.headline,
-            profilePictureUrl: scraped.profilePictureUrl,
-            followerCount: scraped.followerCount,
-            postsJson: JSON.stringify(scraped.posts),
-            lastFetchedAt: new Date(),
-            status: "success",
-          })
-          .onConflictDoUpdate({
-            target: linkedinProfilePostsCache.vanityName,
-            set: {
-              displayName: scraped.displayName,
-              headline: scraped.headline,
-              profilePictureUrl: scraped.profilePictureUrl,
-              followerCount: scraped.followerCount,
-              postsJson: JSON.stringify(scraped.posts),
-              lastFetchedAt: new Date(),
-              status: "success",
-            },
-          });
-
-        // Update list profile info
-        await db
-          .update(engagementListProfiles)
-          .set({
-            displayName: scraped.displayName,
-            headline: scraped.headline,
-            profilePictureUrl: scraped.profilePictureUrl,
-          })
-          .where(eq(engagementListProfiles.vanityName, vanityName));
-
-        // Remove old posts from this author and add fresh ones
+        const scraped = result.value;
+        if (scraped.posts.length === 0) continue;
+        const profileData = { displayName: scraped.displayName, headline: scraped.headline, profilePictureUrl: scraped.profilePictureUrl };
+        await db.insert(linkedinProfilePostsCache).values({
+          vanityName, displayName: scraped.displayName, headline: scraped.headline,
+          profilePictureUrl: scraped.profilePictureUrl, followerCount: scraped.followerCount,
+          postsJson: JSON.stringify(scraped.posts), lastFetchedAt: new Date(), status: "success",
+        }).onConflictDoUpdate({
+          target: linkedinProfilePostsCache.vanityName,
+          set: { displayName: scraped.displayName, headline: scraped.headline, profilePictureUrl: scraped.profilePictureUrl,
+            followerCount: scraped.followerCount, postsJson: JSON.stringify(scraped.posts), lastFetchedAt: new Date(), status: "success" },
+        });
+        await db.update(engagementListProfiles).set({
+          displayName: scraped.displayName, headline: scraped.headline, profilePictureUrl: scraped.profilePictureUrl,
+        }).where(eq(engagementListProfiles.vanityName, vanityName));
         const filtered = allPosts.filter((p) => p.authorVanityName !== vanityName);
         allPosts.length = 0;
         allPosts.push(...filtered);
         for (const post of scraped.posts) {
-          allPosts.push({
-            ...post,
-            authorVanityName: vanityName,
-            authorDisplayName: profileData.displayName,
-            authorHeadline: profileData.headline,
-            authorProfilePictureUrl: profileData.profilePictureUrl,
-          });
-        }
-      } catch (err) {
-        // Only error if we have NO cached data for this profile
-        const hasExistingPosts = allPosts.some((p) => p.authorVanityName === vanityName);
-        if (!hasExistingPosts) {
-          errors.push({
-            vanityName,
-            error: err instanceof Error ? err.message : "Failed to fetch profile",
-          });
+          allPosts.push({ ...post, authorVanityName: vanityName, authorDisplayName: profileData.displayName,
+            authorHeadline: profileData.headline, authorProfilePictureUrl: profileData.profilePictureUrl });
         }
       }
     }
