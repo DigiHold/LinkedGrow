@@ -39,6 +39,7 @@ import {
   ChevronRight,
   Play,
   FileText,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
@@ -235,6 +236,8 @@ export default function EngagementPage() {
   const [newListName, setNewListName] = useState("");
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [deletingListId, setDeletingListId] = useState<string | null>(null);
+  const [renamingListId, setRenamingListId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [newVanityName, setNewVanityName] = useState("");
   const [isAddingProfile, setIsAddingProfile] = useState(false);
   const [addProfileError, setAddProfileError] = useState<string | null>(null);
@@ -364,6 +367,21 @@ export default function EngagementPage() {
     } finally {
       setDeletingListId(null);
     }
+  };
+
+  const handleRenameList = async (listId: string) => {
+    if (!renameValue.trim()) return;
+    try {
+      const res = await fetch(`/api/engagement/lists/${listId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      });
+      if (res.ok) {
+        setLists((prev) => prev.map((l) => l.id === listId ? { ...l, name: renameValue.trim() } : l));
+        setRenamingListId(null);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleAddProfile = async (listId: string) => {
@@ -809,23 +827,55 @@ export default function EngagementPage() {
                     <div className="space-y-1">
                       {lists.map((list) => (
                         <div key={list.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                          <button onClick={() => openListDetail(list.id)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                            <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-                              <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                          {renamingListId === list.id ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                className="h-8 flex-1 text-sm"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleRenameList(list.id);
+                                  if (e.key === "Escape") setRenamingListId(null);
+                                }}
+                              />
+                              <Button variant="ghost" size="icon-sm" onClick={() => handleRenameList(list.id)}>
+                                <Check className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" onClick={() => setRenamingListId(null)}>
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold truncate">{list.name}</p>
-                              <p className="text-xs text-muted-foreground">{list.profiles.length} profile{list.profiles.length !== 1 ? "s" : ""}</p>
-                            </div>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteList(list.id)}
-                            disabled={deletingListId === list.id}
-                            className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Delete list"
-                          >
-                            {deletingListId === list.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
+                          ) : (
+                            <>
+                              <button onClick={() => openListDetail(list.id)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                                <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
+                                  <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold truncate">{list.name}</p>
+                                  <p className="text-xs text-muted-foreground">{list.profiles.length} profile{list.profiles.length !== 1 ? "s" : ""}</p>
+                                </div>
+                              </button>
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => { setRenamingListId(list.id); setRenameValue(list.name); }}
+                                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                                  title="Rename list"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteList(list.id)}
+                                  disabled={deletingListId === list.id}
+                                  className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors"
+                                  title="Delete list"
+                                >
+                                  {deletingListId === list.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
