@@ -142,94 +142,70 @@ function parseJsonLd(html: string): { posts: ScrapedPost[]; profile: Partial<Scr
 
 function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
   const cleanUrl = (u: string) => u.replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
+  const IMG_PATTERN = /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]+/g;
 
-  // LinkedIn card structure (public profile):
-  //   <a href="...activity-{ID}..." data-tracking-control-name="public_profile">
-  //     <span class="sr-only">post text</span>
-  //   </a>
-  //   <div class="base-main-card__media">
-  //     <img class="main-activity-card__img" data-delayed-url="IMAGE_URL">
-  //   </div>
-  //
-  // The image is AFTER the activity ref (~500-700 chars forward), not before it.
-  // Each activity ID appears multiple times in the HTML (JSON-LD, ellipsis menu, etc.)
-  // The correct one has data-tracking-control-name="public_profile" right after it.
+  // Collect ALL media URLs with their positions
+  const mediaItems: { url: string; pos: number; type: string }[] = [];
+  let m;
+  while ((m = IMG_PATTERN.exec(html)) !== null) {
+    const url = cleanUrl(m[0]);
+    if (url.includes("profile-displayphoto") || url.includes("profile-displaybackground") ||
+        url.includes("company-logo") || url.includes("aero-v1") || url.includes("article-cover")) continue;
+    let type = "unknown";
+    if (url.includes("feedshare-shrink") || url.includes("image-shrink")) type = "image";
+    else if (url.includes("feedshare-document-cover")) type = "carousel";
+    else if (url.includes("videocover") || url.includes("video-thumbnail")) type = "video";
+    if (type !== "unknown") mediaItems.push({ url, pos: m.index, type });
+  }
 
-  const IMG_URL_CHARS = `[^"'\\s)}<>]+`;
-
+  // For each post, find the CLOSEST media item to any of its activity refs
   for (const post of posts) {
     const activityId = post.activityUrn.split(":").pop();
     if (!activityId) continue;
 
-    // Find the activity ref that's in the card link (with public_profile tracking)
-    const searchStr = `activity-${activityId}`;
+    // Find ALL positions of this activity ID in the HTML
+    const positions: number[] = [];
     let searchPos = 0;
-    let cardPos = -1;
-
     while (true) {
-      const idx = html.indexOf(searchStr, searchPos);
+      const idx = html.indexOf(`activity-${activityId}`, searchPos);
       if (idx < 0) break;
-
-      // Check if this occurrence has the card tracking attribute within 150 chars
-      const afterSnippet = html.substring(idx, idx + 150);
-      if (afterSnippet.includes('data-tracking-control-name="public_profile"')) {
-        cardPos = idx;
-        break;
-      }
+      positions.push(idx);
       searchPos = idx + 1;
     }
+    if (positions.length === 0) continue;
 
-    if (cardPos < 0) continue;
-
-    // Look FORWARD from the card link for the image (within 2000 chars)
-    const chunk = html.substring(cardPos, cardPos + 2000);
-
-    // Find the main-activity-card__img data-delayed-url
-    const imgTagMatch = chunk.match(/main-activity-card__img[^"]*"[^>]*data-delayed-url="([^"]+)"/);
-    if (!imgTagMatch) continue;
-
-    const imgUrl = imgTagMatch[1];
-
-    // Skip ghost/placeholder images (text-only posts)
-    if (imgUrl.includes("aero-v1") || imgUrl.includes("static.licdn.com")) continue;
-
-    const resolvedUrl = cleanUrl(imgUrl);
-
-    // Carousel/document
-    if (resolvedUrl.includes("feedshare-document-cover")) {
-      post.mediaType = "carousel";
-      // For carousels, find all document-cover URLs in a wider window
-      const wideChunk = html.substring(cardPos, cardPos + 5000);
-      const carouselMatches = wideChunk.match(
-        new RegExp(`https://media\\.licdn\\.com/dms/image/v2/${IMG_URL_CHARS}feedshare-document-cover-images${IMG_URL_CHARS}`, "g")
-      );
-      if (carouselMatches) {
-        post.carouselSlides = [...new Set(carouselMatches.map(cleanUrl))];
-        post.imageUrl = post.carouselSlides[0] || null;
+    // Find the closest media item (within 5000 chars of any activity ref position)
+    let bestMedia: { url: string; type: string; dist: number } | null = null;
+    for (const refPos of positions) {
+      for (const media of mediaItems) {
+        const dist = Math.abs(media.pos - refPos);
+        if (dist < 5000 && (!bestMedia || dist < bestMedia.dist)) {
+          bestMedia = { url: media.url, type: media.type, dist };
+        }
       }
-      continue;
     }
 
-    // Video (videocover-high or feedshare-video-thumbnail)
-    if (resolvedUrl.includes("videocover") || resolvedUrl.includes("feedshare-video-thumbnail")) {
-      post.mediaType = "video";
-      post.videoThumbnailUrl = resolvedUrl;
-      post.imageUrl = resolvedUrl;
-      continue;
-    }
+    if (!bestMedia) continue;
 
-    // Single image (feedshare-shrink or image-shrink)
-    if (resolvedUrl.includes("feedshare-shrink") || resolvedUrl.includes("image-shrink")) {
+    // Mark the media item as used so it's not assigned to another post
+    const mediaIdx = mediaItems.findIndex((mi) => mi.url === bestMedia!.url);
+    if (mediaIdx >= 0) mediaItems.splice(mediaIdx, 1);
+
+    if (bestMedia.type === "image") {
       post.mediaType = "image";
-      post.imageUrl = resolvedUrl;
-      continue;
-    }
-
-    // Article share (articleshare-shrink)
-    if (resolvedUrl.includes("articleshare")) {
-      post.mediaType = "article";
-      post.imageUrl = resolvedUrl;
-      continue;
+      post.imageUrl = bestMedia.url;
+    } else if (bestMedia.type === "video") {
+      post.mediaType = "video";
+      post.videoThumbnailUrl = bestMedia.url;
+      post.imageUrl = bestMedia.url;
+    } else if (bestMedia.type === "carousel") {
+      post.mediaType = "carousel";
+      post.imageUrl = bestMedia.url;
+      // Find all carousel slides near this position
+      const nearbySlides = [...html.matchAll(/https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*feedshare-document-cover[^"\s)}<>]*/g)]
+        .filter((s) => positions.some((p) => Math.abs(s.index - p) < 8000))
+        .map((s) => cleanUrl(s[0]));
+      post.carouselSlides = [...new Set(nearbySlides)];
     }
   }
 }
@@ -264,23 +240,12 @@ function extractCommentCounts(html: string, posts: ScrapedPost[]): void {
 }
 
 function extractProfilePicture(html: string, vanityName: string): string | null {
-  // The owner's profile picture is in the top card area, near their vanity name.
-  // "People also viewed" section has OTHER people's photos - we must skip those.
-  // Strategy: find the first img with the vanity name nearby (within 2000 chars before)
-  const regex = /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*profile-displayphoto-scale_200_200[^"\s)}<>]*/g;
-  let match;
-  while ((match = regex.exec(html)) !== null) {
-    // Check if the owner's vanity name appears within 2000 chars before this image
-    const before = html.substring(Math.max(0, match.index - 2000), match.index);
-    if (before.includes(`/in/${vanityName}`) || before.includes(`"${vanityName}"`) || match.index < 50000) {
-      return match[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
-    }
-  }
-  // Fallback: just get the first 200x200 scale image
-  const fallback = html.match(
+  // The owner's photo uses "scale_200_200" (not "shrink_200_200" which is for related profiles).
+  // The FIRST scale_200_200 in the HTML is the profile owner's photo.
+  const match = html.match(
     /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"\s)}<>]*profile-displayphoto-scale_200_200[^"\s)}<>]*/
   );
-  if (fallback) return fallback[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
+  if (match) return match[0].replace(/&amp;/g, "&").replace(/["')}<>]/g, "");
   return null;
 }
 
