@@ -418,14 +418,13 @@ export async function createLinkedInComment(
 
   const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
+  // LinkedIn Comments API: POST /rest/socialActions/{activityUrn}/comments
+  // Body: { "actor": "urn:li:person:XXX", "object": "urn:li:activity:XXX", "message": { "text": "..." } }
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
     const encoded = encodeURIComponent(urn);
-    // Comments endpoint (Community Management API)
     attempts.push(
       { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: LINKEDIN_API_VERSION },
-      { url: `${LINKEDIN_REST_API_BASE}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: LINKEDIN_API_VERSION },
-      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: null },
     );
   }
 
@@ -1907,18 +1906,14 @@ export async function likeLinkedInPost(
 
   const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
 
-  // Try reactions endpoint first (Community Management API), then socialActions
+  // LinkedIn Reactions API: actor in URL query param, root+reactionType in body
+  // Docs: POST /rest/reactions?actor=urn:li:person:XXX { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
+  const encodedActor = encodeURIComponent(actorUrn);
   const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
   for (const urn of urns) {
-    const encoded = encodeURIComponent(urn);
-    // Reactions endpoint (needs actor field!)
+    // Reactions API (official Community Management API endpoint)
     attempts.push(
-      { url: `${LINKEDIN_REST_API_BASE}/reactions`, body: { actor: actorUrn, root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
-    );
-    // socialActions endpoints
-    attempts.push(
-      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: LINKEDIN_API_VERSION },
-      { url: `https://api.linkedin.com/v2/socialActions/${encoded}/likes`, body: { actor: actorUrn, object: urn }, version: null },
+      { url: `${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, body: { root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
     );
   }
 
@@ -1972,28 +1967,25 @@ export async function unlikeLinkedInPost(
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const encodedActorUrn = encodeURIComponent(actorUrn);
+  // DELETE /rest/reactions/(actor:{actorUrn},entity:{postUrn})?actor={actorUrn}
+  const encodedActor = encodeURIComponent(actorUrn);
+  const encodedPost = encodeURIComponent(postUrn);
 
-  // Try v2 first (most reliable), then versioned REST
-  const urls = [
-    `https://api.linkedin.com/v2/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`,
-    `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`,
-  ];
-
-  for (const url of urls) {
-    const response = await fetch(url, {
+  const response = await fetch(
+    `${LINKEDIN_REST_API_BASE}/reactions/(actor:${encodedActor},entity:${encodedPost})?actor=${encodedActor}`,
+    {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
       },
-    });
+    }
+  );
 
-    if (response.ok) return { success: true };
-  }
-
-  throw new Error('Failed to unlike post');
+  if (response.ok) return { success: true };
+  const error = await response.text();
+  throw new Error(`Failed to unlike post (${response.status}): ${error}`);
 }
 
 /**
