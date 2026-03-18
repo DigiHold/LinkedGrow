@@ -242,6 +242,36 @@ function enrichFromHtml(html: string, posts: ScrapedPost[]): void {
   }
 }
 
+/**
+ * Extract comment counts from HTML and map to posts by order.
+ * LinkedIn puts social counts in a separate HTML section from the post cards,
+ * but they appear in the same order as the posts.
+ */
+function extractCommentCounts(html: string, posts: ScrapedPost[]): void {
+  if (posts.length === 0) return;
+
+  // Find the section with comment counts (skip articles at the top)
+  // Articles have small numbers, posts have larger engagement
+  // Find all "X Comments" matches after the posts section starts
+  const firstPostUrl = posts[0]?.postUrl || "";
+  const firstPostSlug = firstPostUrl.match(/posts\/[^?]+/)?.[0] || "";
+  const postsStart = firstPostSlug ? html.indexOf(firstPostSlug) : html.length / 3;
+
+  const commentMatches: number[] = [];
+  const regex = /(\d[\d,]*)\s*Comments?/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    if (match.index > postsStart) {
+      commentMatches.push(parseInt(match[1].replace(/,/g, ""), 10));
+    }
+  }
+
+  // Map comment counts to posts by order (1:1 mapping)
+  for (let i = 0; i < Math.min(posts.length, commentMatches.length); i++) {
+    posts[i].comments = commentMatches[i];
+  }
+}
+
 function extractProfilePicture(html: string): string | null {
   const match = html.match(
     /https:\/\/media\.licdn\.com\/dms\/image\/v2\/[^"&]*profile-displayphoto-scale_200_200[^"&]*/
@@ -273,6 +303,7 @@ export async function scrapeLinkedInProfile(
       const { posts, profile } = parseJsonLd(html);
 
       enrichFromHtml(html, posts);
+      extractCommentCounts(html, posts);
 
       if (!profile.profilePictureUrl) {
         profile.profilePictureUrl = extractProfilePicture(html) || "";

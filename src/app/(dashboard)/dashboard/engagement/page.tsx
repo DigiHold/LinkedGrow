@@ -786,18 +786,18 @@ export default function EngagementPage() {
                     </div>
 
                     {/* Actions - LinkedIn style */}
-                    <div className="px-2 py-1 flex items-center relative">
-                      {/* Reaction menu (shows on hover/click) */}
-                      {reactionMenuPost === post.activityUrn && (
-                        <div className="absolute bottom-full left-0 mb-1 z-10">
-                          <ReactionMenu onReact={(type) => handleReaction(post.activityUrn, type)} />
-                        </div>
-                      )}
+                    <div className="px-2 py-1 flex items-center">
+                      {/* Like button + reaction menu wrapper - single hover area */}
                       <div
-                        className="flex-1"
+                        className="flex-1 relative"
                         onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.communityConnected && setReactionMenuPost(post.activityUrn)}
                         onMouseLeave={() => setReactionMenuPost(null)}
                       >
+                        {reactionMenuPost === post.activityUrn && (
+                          <div className="absolute bottom-full left-0 mb-1 z-10">
+                            <ReactionMenu onReact={(type) => handleReaction(post.activityUrn, type)} />
+                          </div>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
