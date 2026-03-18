@@ -28,11 +28,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Requires Pro plan" }, { status: 403 });
     }
 
-    // Community App token has w_member_social from Community Management API
-    const accessToken = user.linkedinCommunityAccessToken;
-    if (!accessToken || !user.linkedinProfileId) {
+    // Collect both tokens - try Community App first (w_member_social_feed), then Poster App (w_member_social)
+    const communityToken = user.linkedinCommunityAccessToken;
+    const posterToken = user.linkedinAccessToken;
+    if (!communityToken && !posterToken) {
       return NextResponse.json(
-        { error: "Connect the Community App from Settings to like and comment" },
+        { error: "Connect your LinkedIn account to like and comment" },
+        { status: 400 }
+      );
+    }
+    if (!user.linkedinProfileId) {
+      return NextResponse.json(
+        { error: "LinkedIn profile ID not found. Reconnect your LinkedIn account." },
         { status: 400 }
       );
     }
@@ -47,20 +54,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build all possible URN formats from the activity ID
-    const activityMatch = postUrn.match(/^urn:li:activity:(\d+)$/);
-    const urnVariants = activityMatch
-      ? [
-          postUrn, // urn:li:activity:XXX (original)
-          `urn:li:share:${activityMatch[1]}`, // urn:li:share:XXX
-          `urn:li:ugcPost:${activityMatch[1]}`, // urn:li:ugcPost:XXX
-        ]
-      : [postUrn];
-
+    // Use activity URN directly (confirmed by LinkedIn docs)
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, urnVariants, user.linkedinProfileId);
+      // Try both tokens - Community App has w_member_social_feed, Poster App has w_member_social
+      const tokens = [communityToken, posterToken].filter(Boolean) as string[];
+      await likeLinkedInPost(tokens, postUrn, user.linkedinProfileId);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await createLinkedInComment(accessToken, urnVariants, user.linkedinProfileId, text.trim());
+      // Comments work with w_member_social (old scope) - try both tokens
+      const commentTokens = [communityToken, posterToken].filter(Boolean) as string[];
+      await createLinkedInComment(commentTokens, postUrn, user.linkedinProfileId, text.trim());
 
       await db.insert(engagementActions).values({
         id: randomUUID(),

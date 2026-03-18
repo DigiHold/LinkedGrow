@@ -405,9 +405,16 @@ export async function createLinkedInPost(
  * Uses the REST API socialActions endpoint
  * Requires w_member_social scope (already available via Poster App)
  */
+/**
+ * Post a comment on a LinkedIn post
+ * POST /rest/socialActions/{activityUrn}/comments
+ * Body: { "actor": "urn:li:person:XXX", "object": "urn:li:activity:XXX", "message": { "text": "..." } }
+ * Requires: w_member_social or w_member_social_feed scope
+ * Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/comments-api
+ */
 export async function createLinkedInComment(
-  accessToken: string,
-  postUrns: string | string[],
+  accessTokens: string | string[],
+  postUrn: string,
   authorId: string,
   commentText: string,
   authorType: 'person' | 'organization' = 'person'
@@ -415,48 +422,34 @@ export async function createLinkedInComment(
   const actorUrn = authorType === 'organization'
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
-
-  const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
-
-  // LinkedIn Comments API (official docs):
-  // POST /rest/socialActions/{shareUrn|ugcPostUrn|commentUrn}/comments
-  // Body: { "actor": "urn:li:person:XXX", "object": "urn:li:activity:XXX", "message": { "text": "..." } }
-  // Requires: w_member_social scope (comments still use old scope per docs)
-  // Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/comments-api
-  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
-  for (const urn of urns) {
-    const encoded = encodeURIComponent(urn);
-    attempts.push(
-      { url: `${LINKEDIN_REST_API_BASE}/socialActions/${encoded}/comments`, body: { actor: actorUrn, object: urn, message: { text: commentText } }, version: LINKEDIN_API_VERSION },
-    );
-  }
+  const encodedUrn = encodeURIComponent(postUrn);
+  const tokens = Array.isArray(accessTokens) ? accessTokens : [accessTokens];
+  const body = { actor: actorUrn, object: postUrn, message: { text: commentText } };
 
   let lastError = '';
-  for (const attempt of attempts) {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
-    };
-    if (attempt.version) headers['LinkedIn-Version'] = attempt.version;
+  for (const token of tokens) {
+    console.log('[LinkedIn Comment] Trying with token ending:', token.slice(-6));
 
-    console.log('[LinkedIn Comment] Trying:', attempt.url.substring(0, 100));
-
-    const response = await fetch(attempt.url, {
+    const response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/comments`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(attempt.body),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify(body),
     });
 
     if (response.ok || response.status === 201) {
       let data;
       try { data = await response.json(); } catch { data = {}; }
-      console.log('[LinkedIn Comment] SUCCESS via:', attempt.url.substring(0, 100));
+      console.log('[LinkedIn Comment] SUCCESS');
       return { id: data.id || data['$URN'] || 'comment-created' };
     }
 
     lastError = await response.text();
-    console.log('[LinkedIn Comment] Failed:', response.status, lastError.substring(0, 300));
+    console.log('[LinkedIn Comment] Failed:', response.status, lastError.substring(0, 200));
   }
 
   throw new Error(`Failed to comment: ${lastError}`);
@@ -1894,66 +1887,70 @@ export interface LinkedInAuthorPost {
 
 /**
  * Like a LinkedIn post
- * Uses the REST API socialActions endpoint
- * Requires w_member_social scope
+ * Reactions API: POST /rest/reactions?actor={encoded personUrn}
+ * Body: { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
+ * Requires: w_member_social_feed scope (Community Management API)
+ * Fallback: socialActions endpoint with w_member_social scope
+ * Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api
  */
 export async function likeLinkedInPost(
-  accessToken: string,
-  postUrns: string | string[],
+  accessTokens: string | string[],
+  postUrn: string,
   actorId: string,
   actorType: 'person' | 'organization' = 'person'
 ): Promise<{ success: boolean }> {
   const actorUrn = actorType === 'organization'
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
-
-  const urns = Array.isArray(postUrns) ? postUrns : [postUrns];
-
-  // LinkedIn Reactions API (official docs):
-  // POST /rest/reactions?actor={encoded personUrn}
-  // Body: { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
-  // Requires: w_member_social_feed scope
-  // Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api
   const encodedActor = encodeURIComponent(actorUrn);
-  const attempts: { url: string; body: Record<string, unknown>; version: string | null }[] = [];
-  for (const urn of urns) {
-    attempts.push(
-      { url: `${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, body: { root: urn, reactionType: 'LIKE' }, version: LINKEDIN_API_VERSION },
-    );
-  }
+  const encodedUrn = encodeURIComponent(postUrn);
+  const tokens = Array.isArray(accessTokens) ? accessTokens : [accessTokens];
 
   let lastError = '';
   let lastStatus = 0;
-  for (const attempt of attempts) {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
-    };
-    if (attempt.version) headers['LinkedIn-Version'] = attempt.version;
 
-    console.log('[LinkedIn Like] Trying:', attempt.url.substring(0, 100));
-
-    const response = await fetch(attempt.url, {
+  for (const token of tokens) {
+    // 1. Reactions API (w_member_social_feed)
+    console.log('[LinkedIn Like] Trying reactions API with token ending:', token.slice(-6));
+    let response = await fetch(`${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(attempt.body),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify({ root: postUrn, reactionType: 'LIKE' }),
     });
 
-    if (response.ok || response.status === 201) {
-      console.log('[LinkedIn Like] SUCCESS via:', attempt.url.substring(0, 100));
+    if (response.ok || response.status === 201 || response.status === 409) {
+      console.log('[LinkedIn Like] SUCCESS via reactions API');
       return { success: true };
     }
-
     lastStatus = response.status;
     lastError = await response.text();
-    console.log('[LinkedIn Like] Failed:', response.status, lastError.substring(0, 300));
+    console.log('[LinkedIn Like] Reactions failed:', response.status, lastError.substring(0, 200));
 
-    // 409 = already liked, treat as success
-    if (response.status === 409) {
-      console.log('[LinkedIn Like] Already liked (409), treating as success');
+    // 2. socialActions/likes fallback (w_member_social)
+    console.log('[LinkedIn Like] Trying socialActions fallback');
+    response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/likes`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify({ actor: actorUrn, object: postUrn }),
+    });
+
+    if (response.ok || response.status === 201 || response.status === 409) {
+      console.log('[LinkedIn Like] SUCCESS via socialActions');
       return { success: true };
     }
+    lastStatus = response.status;
+    lastError = await response.text();
+    console.log('[LinkedIn Like] socialActions failed:', response.status, lastError.substring(0, 200));
   }
 
   throw new Error(`Failed to like post (${lastStatus}): ${lastError}`);
