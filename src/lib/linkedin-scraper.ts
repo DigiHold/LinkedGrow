@@ -52,7 +52,7 @@ function fetchProfileHtml(vanityName: string): string {
   const url = `https://www.linkedin.com/in/${encodeURIComponent(vanityName)}/`;
 
   return execFileSync("curl", [
-    "-s", "--max-time", "12",
+    "-s", "--max-time", "20",
     "--proxy", `socks5://${user}:${pass}@${host}:${port}`,
     "-L",
     "-H", "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -61,7 +61,7 @@ function fetchProfileHtml(vanityName: string): string {
     url,
   ], {
     encoding: "utf-8",
-    timeout: 15000,
+    timeout: 25000,
     maxBuffer: 5 * 1024 * 1024,
   });
 }
@@ -286,7 +286,7 @@ function extractProfilePicture(html: string, vanityName: string): string | null 
 
 export async function scrapeLinkedInProfile(
   vanityName: string,
-  maxRetries = 1
+  maxRetries = 2
 ): Promise<ScrapedProfile> {
   let lastError: Error | null = null;
   let bestResult: ScrapedProfile | null = null;
