@@ -1244,70 +1244,60 @@ export async function getMemberAllPostsAnalytics(
   }
 
   const metrics = ['IMPRESSION', 'REACTION', 'COMMENT', 'RESHARE'] as const;
-  const results: MemberPostAnalytics[] = [];
+  const postStats = new Map<string, MemberPostAnalytics>();
 
-  // Process posts SEQUENTIALLY to avoid burst rate limiting
-  // Each post needs 4 API calls (one per metric), metrics fetched in parallel per post
-  for (const postUrn of postUrns.slice(0, 5)) {
-    const stats: MemberPostAnalytics = {
-      postUrn,
-      impressions: 0,
-      membersReached: 0,
-      reactions: 0,
-      comments: 0,
-      reshares: 0,
-    };
+  const urnsToFetch = postUrns.slice(0, 20);
 
-    const entityParam = postUrn.includes('ugcPost')
-      ? `(ugc:${encodeURIComponent(postUrn)})`
-      : `(share:${encodeURIComponent(postUrn)})`;
+  // Fetch all posts and all metrics in parallel
+  await Promise.all(
+    urnsToFetch.map(async (postUrn) => {
+      const stats: MemberPostAnalytics = {
+        postUrn,
+        impressions: 0,
+        membersReached: 0,
+        reactions: 0,
+        comments: 0,
+        reshares: 0,
+      };
 
-    let hitRateLimit = false;
+      const entityParam = postUrn.includes('ugcPost')
+        ? `(ugc:${encodeURIComponent(postUrn)})`
+        : `(share:${encodeURIComponent(postUrn)})`;
 
-    // Fetch all 4 metrics in parallel for this post
-    await Promise.all(
-      metrics.map(async (metric) => {
-        if (hitRateLimit) return; // Stop if rate limited
-        try {
-          const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=entity&entity=${entityParam}&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
+      await Promise.all(
+        metrics.map(async (metric) => {
+          try {
+            const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=entity&entity=${entityParam}&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
 
-          const response = await fetch(url, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': LINKEDIN_API_VERSION,
-            },
-          });
+            const response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'X-Restli-Protocol-Version': '2.0.0',
+                'LinkedIn-Version': LINKEDIN_API_VERSION,
+              },
+            });
 
-          if (response.ok) {
-            const data = await response.json();
-            const count = data.elements?.[0]?.count || 0;
-            if (metric === 'IMPRESSION') stats.impressions = count;
-            else if (metric === 'REACTION') stats.reactions = count;
-            else if (metric === 'COMMENT') stats.comments = count;
-            else if (metric === 'RESHARE') stats.reshares = count;
-          } else if (response.status === 429) {
-            hitRateLimit = true;
-            console.warn(`[LinkedIn] Rate limited (429) on per-post analytics - stopping`);
-          } else {
-            console.warn(`[LinkedIn] Per-post analytics failed for ${postUrn.slice(-12)} ${metric}: ${response.status}`);
+            if (response.ok) {
+              const data = await response.json();
+              const count = data.elements?.[0]?.count || 0;
+              if (metric === 'IMPRESSION') stats.impressions = count;
+              else if (metric === 'REACTION') stats.reactions = count;
+              else if (metric === 'COMMENT') stats.comments = count;
+              else if (metric === 'RESHARE') stats.reshares = count;
+            } else {
+              console.warn(`[LinkedIn] Per-post analytics ${postUrn.slice(-12)} ${metric}: ${response.status}`);
+            }
+          } catch (err) {
+            console.warn(`[LinkedIn] Per-post analytics error ${postUrn.slice(-12)} ${metric}:`, err);
           }
-        } catch (err) {
-          console.warn(`[LinkedIn] Per-post analytics error for ${postUrn.slice(-12)} ${metric}:`, err);
-        }
-      })
-    );
+        })
+      );
 
-    results.push(stats);
+      postStats.set(postUrn, stats);
+    })
+  );
 
-    // If rate limited, stop fetching more posts
-    if (hitRateLimit) {
-      console.warn(`[LinkedIn] Rate limit hit - skipping remaining ${postUrns.length - results.length} posts`);
-      break;
-    }
-  }
-
-  return results;
+  return Array.from(postStats.values());
 }
 
 // ============================================
