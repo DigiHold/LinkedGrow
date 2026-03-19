@@ -106,6 +106,7 @@ export async function GET(request: NextRequest) {
 
     const allPosts: PostData[] = [];
     const postAnalyticsMap = new Map<string, MemberPostAnalytics>();
+    let perPostDebug: Record<string, unknown> = {};
 
     if (!hasLinkedIn || !token) {
       log(`No LinkedIn connection`);
@@ -344,7 +345,28 @@ export async function GET(request: NextRequest) {
 
       // Step 6: Per-post analytics (no date range = lifetime stats for each post)
       const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 20);
+      // Debug: test a single per-post API call to see raw LinkedIn response
       if (postUrns.length > 0) {
+        const testUrn = postUrns[0];
+        const testEntityParam = testUrn.includes('ugcPost')
+          ? `(ugc:${encodeURIComponent(testUrn)})`
+          : `(share:${encodeURIComponent(testUrn)})`;
+        const testUrl = `https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=entity&entity=${testEntityParam}&queryType=IMPRESSION&aggregation=TOTAL`;
+        try {
+          const testRes = await fetch(testUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202603',
+            },
+          });
+          const testBody = await testRes.text();
+          log(`DEBUG per-post test: status=${testRes.status} body=${testBody.substring(0, 300)}`);
+          perPostDebug = { testUrn, entityParam: testEntityParam, status: testRes.status, body: testBody.substring(0, 500) };
+        } catch (err) {
+          perPostDebug = { error: String(err) };
+        }
+
         try {
           const perPost = await getMemberAllPostsAnalytics(token, undefined, postUrns);
           log(`Per-post analytics: ${perPost.length} posts`);
@@ -430,6 +452,7 @@ export async function GET(request: NextRequest) {
         scrapedPostsFound: allPosts.filter(p => p.syncedFromLinkedin).length,
         postsWithAnalytics: withAnalytics.length,
         postUrns: allPosts.slice(0, 5).map(p => p.linkedinPostId?.slice(-12)),
+        perPostTest: perPostDebug,
       },
       _v: 2,
     };
