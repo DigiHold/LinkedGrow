@@ -51,8 +51,7 @@ interface PostData {
 }
 
 export async function GET(request: NextRequest) {
-  const logs: string[] = [];
-  const log = (msg: string) => { logs.push(msg); console.log(`[Analytics] ${msg}`); };
+  const log = (_msg: string) => { /* silent */ };
 
   try {
     const session = await auth();
@@ -423,13 +422,11 @@ export async function GET(request: NextRequest) {
       },
       posts: sortedPosts,
       followerGrowth,
-      capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, postingTarget },
-      linkedinData: { source: "linkedin_api", fetchedAt: new Date().toISOString() },
+      capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, hasCommunityConnected: !!communityToken, postingTarget },
       // Always calculate best posting times (used by basic analytics page)
       advanced: {
         bestPostingTimes: calculateBestPostingTimes(withAnalytics, userTimezone),
       },
-      _v: 3,
     };
 
     // Advanced (full data)
