@@ -25,9 +25,10 @@ import {
   type LinkedInAuthorPost,
 } from "@/lib/linkedin";
 
-// In-memory cache to avoid burning rate limits (Dev Tier: 100 req/member/day)
+// Cache to avoid burning rate limits (Dev Tier: ~100 req/day)
+// 6-hour TTL - analytics data doesn't change rapidly
 const analyticsCache = new Map<string, { data: Record<string, unknown>; timestamp: number }>();
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 interface PostData {
   id: string;
@@ -343,37 +344,24 @@ export async function GET(request: NextRequest) {
         } else { log(`Aggregated analytics returned null`); }
       } catch (err) { log(`Aggregated analytics FAILED: ${err}`); }
 
-      // Step 6: Per-post analytics (no date range = lifetime stats for each post)
-      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 20);
-      // Debug: test a single per-post API call to see raw LinkedIn response
+      // Step 6: Per-post analytics - limit to 5 most recent posts to stay within rate limits
+      // Dev Tier: ~100 calls/day. 5 posts × 4 metrics = 20 calls (manageable with 6h cache)
+      const postUrns = allPosts.map(p => p.linkedinPostId).filter((id): id is string => !!id).slice(0, 5);
       if (postUrns.length > 0) {
-        const testUrn = postUrns[0];
-        const testEntityParam = testUrn.includes('ugcPost')
-          ? `(ugc:${encodeURIComponent(testUrn)})`
-          : `(share:${encodeURIComponent(testUrn)})`;
-        const testUrl = `https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=entity&entity=${testEntityParam}&queryType=IMPRESSION&aggregation=TOTAL`;
-        try {
-          const testRes = await fetch(testUrl, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'X-Restli-Protocol-Version': '2.0.0',
-              'LinkedIn-Version': '202603',
-            },
-          });
-          const testBody = await testRes.text();
-          log(`DEBUG per-post test: status=${testRes.status} body=${testBody.substring(0, 300)}`);
-          perPostDebug = { testUrn, entityParam: testEntityParam, status: testRes.status, body: testBody.substring(0, 500) };
-        } catch (err) {
-          perPostDebug = { error: String(err) };
-        }
-
         try {
           const perPost = await getMemberAllPostsAnalytics(token, undefined, postUrns);
           log(`Per-post analytics: ${perPost.length} posts`);
+          let rateLimited = false;
           perPost.forEach(ps => {
             postAnalyticsMap.set(ps.postUrn, ps);
+            if (ps.impressions === 0 && ps.reactions === 0 && ps.comments === 0 && ps.reshares === 0) {
+              rateLimited = true; // Likely 429 for all metrics
+            }
             log(`  ${ps.postUrn.slice(-8)}: imp=${ps.impressions} react=${ps.reactions} comm=${ps.comments}`);
           });
+          if (rateLimited) {
+            perPostDebug = { warning: "Per-post analytics returned all zeros - likely rate limited (429). Data will refresh when cache expires (6h)." };
+          }
         } catch (err) { log(`Per-post analytics FAILED: ${err}`); }
       }
 
