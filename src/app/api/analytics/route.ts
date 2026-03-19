@@ -393,15 +393,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Top 10 posts by impressions (with analytics), plus fill to 10 without
+    // All posts sorted by impressions (with analytics first, then without)
     const withAnalytics = allPosts.filter(p => p.analytics).sort((a, b) => (b.analytics?.impressions || 0) - (a.analytics?.impressions || 0));
     const withoutAnalytics = allPosts.filter(p => !p.analytics);
-    const top10 = [...withAnalytics.slice(0, 10), ...withoutAnalytics.slice(0, Math.max(0, 10 - withAnalytics.length))];
+    const sortedPosts = [...withAnalytics, ...withoutAnalytics];
 
     const totalEngagements = totalReactions + totalComments + totalShares;
     const avgEngagement = totalImpressions > 0 ? ((totalEngagements / totalImpressions) * 100).toFixed(2) : "0.00";
 
-    log(`RESULT: ${allPosts.length} total posts, ${withAnalytics.length} with analytics, returning ${top10.length}`);
+    log(`RESULT: ${allPosts.length} total posts, ${withAnalytics.length} with analytics, returning ${sortedPosts.length}`);
+
+    const userTimezone = user.timezone || "America/New_York";
 
     const response: Record<string, unknown> = {
       summary: {
@@ -415,14 +417,24 @@ export async function GET(request: NextRequest) {
         followersGained,
         membersReached,
       },
-      posts: top10,
+      posts: sortedPosts,
       followerGrowth,
       capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, postingTarget },
       linkedinData: { source: "linkedin_api", fetchedAt: new Date().toISOString() },
-      _v: 1,
+      // Always calculate best posting times (used by basic analytics page)
+      advanced: {
+        bestPostingTimes: calculateBestPostingTimes(withAnalytics, userTimezone),
+      },
+      _debug: {
+        dbPostsFound: allPosts.filter(p => !p.syncedFromLinkedin).length,
+        scrapedPostsFound: allPosts.filter(p => p.syncedFromLinkedin).length,
+        postsWithAnalytics: withAnalytics.length,
+        postUrns: allPosts.slice(0, 5).map(p => p.linkedinPostId?.slice(-12)),
+      },
+      _v: 2,
     };
 
-    // Advanced
+    // Advanced (full data)
     if (advanced) {
       const typeStats: Record<string, { count: number; totalEng: number }> = {};
       allPosts.forEach(p => {
@@ -433,8 +445,6 @@ export async function GET(request: NextRequest) {
           typeStats[t].totalEng += ((p.analytics.reactions + p.analytics.comments + p.analytics.reshares) / p.analytics.impressions) * 100;
         }
       });
-
-      const userTimezone = user.timezone || "America/New_York";
 
       response.advanced = {
         postTypePerformance: Object.entries(typeStats).map(([type, s]) => ({
