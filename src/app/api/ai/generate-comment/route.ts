@@ -39,18 +39,70 @@ async function generateComment(
   model: string,
   businessDescription?: string | null,
   targetAudience?: string | null,
-  writingTone?: string | null
+  writingTone?: string | null,
+  isEngagement?: boolean,
+  samplePosts?: string | null,
+  neverMention?: string | null
 ): Promise<string> {
   let businessContext = "";
-  if (businessDescription || targetAudience || writingTone) {
-    businessContext = "\n\n=== AUTHOR CONTEXT ===";
-    if (businessDescription) businessContext += `\nBusiness: ${businessDescription}`;
-    if (targetAudience) businessContext += `\nAudience: ${targetAudience}`;
-    if (writingTone) businessContext += `\nTone: ${writingTone}`;
-    businessContext += "\n=== END CONTEXT ===";
+  if (businessDescription || targetAudience || writingTone || samplePosts || neverMention) {
+    businessContext = "\n\n=== YOUR PROFILE (the person commenting) ===";
+    if (businessDescription) businessContext += `\nWhat you do: ${businessDescription}`;
+    if (targetAudience) businessContext += `\nYour audience: ${targetAudience}`;
+    if (writingTone) businessContext += `\nYour tone: ${writingTone}`;
+    if (neverMention) businessContext += `\nNEVER mention or reference: ${neverMention}`;
+    if (samplePosts) {
+      try {
+        const samples = JSON.parse(samplePosts);
+        if (Array.isArray(samples) && samples.length > 0) {
+          businessContext += `\nYour writing style (match this voice):\n${samples.slice(0, 2).map((s: string) => `"${s.substring(0, 200)}"`).join("\n")}`;
+        }
+      } catch { /* ignore */ }
+    }
+    businessContext += "\n=== END PROFILE ===";
   }
 
-  const prompt = `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
+  const prompt = isEngagement ? `You are commenting on someone else's LinkedIn post. Write a genuine comment as a real human would.
+
+=== THE POST ===
+${postContent}
+=== END POST ===${businessContext}
+
+=== WHAT TO DO ===
+
+Pick ONE approach based on what fits the post naturally. Do NOT always share personal experience - most comments don't need that. Vary your approach:
+
+- AGREE and add a short insight: "The part about X is spot on. I'd add that..."
+- RESPECTFULLY CHALLENGE: "Interesting take. I've seen the opposite where..."
+- ASK ONE SPECIFIC QUESTION about something they said
+- SHARE A QUICK DATA POINT or fact that supports/extends their point
+- GIVE A CONCRETE EXAMPLE related to their topic
+- SIMPLY REACT with a specific thought: "The bit about X really stuck with me because..."
+
+=== BANNED (AI SLOP) ===
+
+NEVER use these words or patterns:
+- "This resonates" / "resonated with me"
+- "Great post" / "Love this" / "So true" / "Nailed it" / "Spot on"
+- "Thanks for sharing"
+- "This is a great reminder"
+- "Couldn't agree more"
+- "game-changer" / "dive deep" / "unpack" / "landscape" / "leverage"
+- "In my experience" as the opening line
+- Any question ending with "?" that sounds like an interview
+- Starting with an emoji
+- "As someone who..." as opener
+
+=== FORMAT ===
+
+- 1-3 SHORT sentences. Under 250 characters.
+- No hashtags. No em dashes. No links.
+- Sound like a real person typing on their phone, not a marketing AI.
+- Reference something SPECIFIC from the post (a word, phrase, or idea).
+
+Return ONLY the comment text.` :
+
+  `You are writing a FIRST COMMENT on your OWN LinkedIn post. This is YOUR post - you are the author commenting on it yourself.
 
 === YOUR POST ===
 ${postContent}
@@ -278,7 +330,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { postContent } = body;
+    const { postContent, isEngagement } = body;
 
     if (!postContent || typeof postContent !== "string") {
       return NextResponse.json({ error: "Post content is required" }, { status: 400 });
@@ -348,7 +400,10 @@ export async function POST(request: NextRequest) {
       model,
       aiSettingsUser.businessDescription,
       aiSettingsUser.targetAudience,
-      aiSettingsUser.writingTone
+      aiSettingsUser.writingTone,
+      isEngagement === true,
+      aiSettingsUser.samplePosts,
+      aiSettingsUser.neverMention
     );
 
     return NextResponse.json({ comment });

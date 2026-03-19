@@ -121,8 +121,7 @@ export function CommunityConnectBanner({
               Connect Community App
             </h3>
             <p className="text-xs text-blue-700/80 dark:text-blue-300/80">
-              Connect your LinkedIn Community App to view your feed, like, and
-              comment on posts directly from LinkedGrow.
+              Connect your LinkedIn Community App to unlock per-post analytics, follower growth tracking, and personalized best time to post recommendations.
             </p>
           </div>
           <Button

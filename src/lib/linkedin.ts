@@ -4,7 +4,15 @@
  * Uses two LinkedIn apps:
  * - Poster App: For publishing posts to LinkedIn
  * - Community App: For engagement features
+ *
+ * Token auto-refresh:
+ * - Access tokens expire every 2 months
+ * - Refresh tokens expire every 12 months
+ * - Call ensureFreshTokens() before using tokens to auto-refresh if needed
  */
+
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 // LinkedIn OAuth scopes
 // Poster app: Sign-in + Share on LinkedIn
@@ -108,6 +116,108 @@ export function getLinkedInAuthUrl(
   });
 
   return `${LINKEDIN_AUTH_URL}?${params.toString()}`;
+}
+
+/**
+ * Refresh an expired LinkedIn access token using a refresh token.
+ * Returns new token data, or null if refresh failed (user must reconnect).
+ */
+export async function refreshLinkedInToken(
+  appType: LinkedInAppType,
+  refreshToken: string,
+): Promise<LinkedInTokenResponse | null> {
+  const config = getLinkedInConfig(appType);
+
+  try {
+    const response = await fetch(LINKEDIN_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[LinkedIn] Token refresh failed (${response.status}): ${await response.text()}`);
+      return null;
+    }
+
+    const tokenData: LinkedInTokenResponse = await response.json();
+    console.log(`[LinkedIn] Token refreshed successfully for ${appType} app`);
+    return tokenData;
+  } catch (err) {
+    console.error(`[LinkedIn] Token refresh error:`, err);
+    return null;
+  }
+}
+
+/**
+ * Check if a token is expired or will expire within the buffer period.
+ * Buffer: 24 hours before actual expiry to avoid edge cases.
+ */
+export function isTokenExpired(tokenExpiry: Date | null): boolean {
+  if (!tokenExpiry) return false; // No expiry stored, assume valid
+  const buffer = 24 * 60 * 60 * 1000; // 24 hours
+  return new Date(tokenExpiry).getTime() - buffer < Date.now();
+}
+
+/**
+ * Ensure LinkedIn tokens are fresh for a user. Auto-refreshes if expired.
+ * Updates the DB with new tokens and returns the fresh access tokens.
+ *
+ * Call this at the start of any API route that uses LinkedIn tokens.
+ */
+export async function ensureFreshTokens(userId: string): Promise<{
+  posterToken: string | null;
+  communityToken: string | null;
+  refreshed: boolean;
+}> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return { posterToken: null, communityToken: null, refreshed: false };
+
+  let posterToken = user.linkedinAccessToken;
+  let communityToken = user.linkedinCommunityAccessToken;
+  let refreshed = false;
+
+  // Check and refresh poster app token
+  if (posterToken && isTokenExpired(user.linkedinTokenExpiry) && user.linkedinRefreshToken) {
+    const newTokens = await refreshLinkedInToken('poster', user.linkedinRefreshToken);
+    if (newTokens) {
+      posterToken = newTokens.access_token;
+      await db.update(users).set({
+        linkedinAccessToken: newTokens.access_token,
+        linkedinRefreshToken: newTokens.refresh_token || user.linkedinRefreshToken,
+        linkedinTokenExpiry: new Date(Date.now() + newTokens.expires_in * 1000),
+      }).where(eq(users.id, userId));
+      refreshed = true;
+    } else {
+      // Refresh failed - token is dead, user must reconnect
+      posterToken = null;
+    }
+  }
+
+  // Check and refresh community app token
+  if (communityToken && isTokenExpired(user.linkedinCommunityTokenExpiry) && user.linkedinCommunityRefreshToken) {
+    const newTokens = await refreshLinkedInToken('community', user.linkedinCommunityRefreshToken);
+    if (newTokens) {
+      communityToken = newTokens.access_token;
+      await db.update(users).set({
+        linkedinCommunityAccessToken: newTokens.access_token,
+        linkedinCommunityRefreshToken: newTokens.refresh_token || user.linkedinCommunityRefreshToken,
+        linkedinCommunityTokenExpiry: new Date(Date.now() + newTokens.expires_in * 1000),
+      }).where(eq(users.id, userId));
+      refreshed = true;
+    } else {
+      communityToken = null;
+    }
+  }
+
+  return { posterToken, communityToken, refreshed };
 }
 
 /**
@@ -404,8 +514,15 @@ export async function createLinkedInPost(
  * Uses the REST API socialActions endpoint
  * Requires w_member_social scope (already available via Poster App)
  */
+/**
+ * Post a comment on a LinkedIn post
+ * POST /rest/socialActions/{activityUrn}/comments
+ * Body: { "actor": "urn:li:person:XXX", "object": "urn:li:activity:XXX", "message": { "text": "..." } }
+ * Requires: w_member_social or w_member_social_feed scope
+ * Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/comments-api
+ */
 export async function createLinkedInComment(
-  accessToken: string,
+  accessTokens: string | string[],
   postUrn: string,
   authorId: string,
   commentText: string,
@@ -414,39 +531,58 @@ export async function createLinkedInComment(
   const actorUrn = authorType === 'organization'
     ? `urn:li:organization:${authorId}`
     : `urn:li:person:${authorId}`;
+  const encodedUrn = encodeURIComponent(postUrn);
+  const tokens = Array.isArray(accessTokens) ? accessTokens : [accessTokens];
+  const body = { actor: actorUrn, object: postUrn, message: { text: commentText } };
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/comments`;
-  const requestBody = {
-    actor: actorUrn,
-    object: postUrn,
-    message: {
-      text: commentText,
-    },
-  };
+  let lastError = '';
+  for (const token of tokens) {
 
-  console.log('[LinkedIn Comment] Request:', { url, actor: actorUrn, object: postUrn, commentLength: commentText.length });
+    const response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/comments`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify(body),
+    });
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
-      'LinkedIn-Version': LINKEDIN_API_VERSION,
-    },
-    body: JSON.stringify(requestBody),
-  });
+    if (response.ok || response.status === 201) {
+      let data;
+      try { data = await response.json(); } catch { data = {}; }
+      return { id: data.id || data['$URN'] || 'comment-created' };
+    }
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Comment] Error:', { status: response.status, error });
-    throw new Error(`Failed to create LinkedIn comment (${response.status}): ${error}`);
+    lastError = await response.text();
+
+    // LinkedIn may return the correct threadUrn in the error. Extract and retry.
+    const threadUrnMatch = lastError.match(/actual threadUrn: (urn:li:\w+:\d+)/);
+    if (threadUrnMatch) {
+      const correctUrn = threadUrnMatch[1];
+      const retryEncoded = encodeURIComponent(correctUrn);
+      const retryBody = { ...body, object: correctUrn };
+      const retryResponse = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${retryEncoded}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+        body: JSON.stringify(retryBody),
+      });
+      if (retryResponse.ok || retryResponse.status === 201) {
+        let data;
+        try { data = await retryResponse.json(); } catch { data = {}; }
+        return { id: data.id || data['$URN'] || 'comment-created' };
+      }
+      lastError = await retryResponse.text();
+    }
   }
 
-  const data = await response.json();
-  console.log('[LinkedIn Comment] Success:', { id: data.id || data['$URN'] });
-  return { id: data.id || data['$URN'] || 'comment-created' };
+  throw new Error(`Failed to comment: ${lastError}`);
 }
 
 /**
@@ -1220,10 +1356,9 @@ export async function getMemberAllPostsAnalytics(
   const metrics = ['IMPRESSION', 'REACTION', 'COMMENT', 'RESHARE'] as const;
   const postStats = new Map<string, MemberPostAnalytics>();
 
-  // Limit to 20 posts to avoid too many API calls
   const urnsToFetch = postUrns.slice(0, 20);
 
-  // For each post, fetch all metrics in parallel
+  // Fetch all posts and all metrics in parallel
   await Promise.all(
     urnsToFetch.map(async (postUrn) => {
       const stats: MemberPostAnalytics = {
@@ -1235,7 +1370,6 @@ export async function getMemberAllPostsAnalytics(
         reshares: 0,
       };
 
-      // Determine entity param format
       const entityParam = postUrn.includes('ugcPost')
         ? `(ugc:${encodeURIComponent(postUrn)})`
         : `(share:${encodeURIComponent(postUrn)})`;
@@ -1881,52 +2015,72 @@ export interface LinkedInAuthorPost {
 
 /**
  * Like a LinkedIn post
- * Uses the REST API socialActions endpoint
- * Requires w_member_social scope
+ * Reactions API: POST /rest/reactions?actor={encoded personUrn}
+ * Body: { "root": "urn:li:activity:XXX", "reactionType": "LIKE" }
+ * Requires: w_member_social_feed scope (Community Management API)
+ * Fallback: socialActions endpoint with w_member_social scope
+ * Source: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api
  */
 export async function likeLinkedInPost(
-  accessToken: string,
+  accessTokens: string | string[],
   postUrn: string,
   actorId: string,
-  actorType: 'person' | 'organization' = 'person'
+  actorType: 'person' | 'organization' = 'person',
+  reactionType: string = 'LIKE'
 ): Promise<{ success: boolean }> {
   const actorUrn = actorType === 'organization'
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
+  const encodedActor = encodeURIComponent(actorUrn);
+  const encodedUrn = encodeURIComponent(postUrn);
+  const tokens = Array.isArray(accessTokens) ? accessTokens : [accessTokens];
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes`;
-  const requestBody = {
-    actor: actorUrn,
-    object: postUrn,
-  };
+  let lastError = '';
+  let lastStatus = 0;
 
-  console.log('[LinkedIn Like] Request:', { url, actor: actorUrn, object: postUrn });
+  for (const token of tokens) {
+    // 1. Reactions API (w_member_social_feed)
+    let response = await fetch(`${LINKEDIN_REST_API_BASE}/reactions?actor=${encodedActor}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify({ root: postUrn, reactionType }),
+    });
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
-      'LinkedIn-Version': LINKEDIN_API_VERSION,
-    },
-    body: JSON.stringify(requestBody),
-  });
+    if (response.ok || response.status === 201 || response.status === 409) {
+      return { success: true };
+    }
+    lastStatus = response.status;
+    lastError = await response.text();
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Like] Error:', { status: response.status, error });
-    throw new Error(`Failed to like LinkedIn post (${response.status}): ${error}`);
+    // 2. socialActions/likes fallback (w_member_social)
+    response = await fetch(`${LINKEDIN_REST_API_BASE}/socialActions/${encodedUrn}/likes`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+      body: JSON.stringify({ actor: actorUrn, object: postUrn }),
+    });
+
+    if (response.ok || response.status === 201 || response.status === 409) {
+      return { success: true };
+    }
+    lastStatus = response.status;
+    lastError = await response.text();
   }
 
-  console.log('[LinkedIn Like] Success:', { postUrn });
-  return { success: true };
+  throw new Error(`Failed to like post (${lastStatus}): ${lastError}`);
 }
 
 /**
  * Unlike a LinkedIn post
- * Uses the REST API socialActions endpoint
  */
 export async function unlikeLinkedInPost(
   accessToken: string,
@@ -1938,29 +2092,25 @@ export async function unlikeLinkedInPost(
     ? `urn:li:organization:${actorId}`
     : `urn:li:person:${actorId}`;
 
-  const encodedPostUrn = encodeURIComponent(postUrn);
-  const encodedActorUrn = encodeURIComponent(actorUrn);
-  const url = `${LINKEDIN_REST_API_BASE}/socialActions/${encodedPostUrn}/likes/${encodedActorUrn}`;
+  // DELETE /rest/reactions/(actor:{actorUrn},entity:{postUrn})?actor={actorUrn}
+  const encodedActor = encodeURIComponent(actorUrn);
+  const encodedPost = encodeURIComponent(postUrn);
 
-  console.log('[LinkedIn Unlike] Request:', { url, actor: actorUrn, object: postUrn });
+  const response = await fetch(
+    `${LINKEDIN_REST_API_BASE}/reactions/(actor:${encodedActor},entity:${encodedPost})?actor=${encodedActor}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+    }
+  );
 
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'X-Restli-Protocol-Version': '2.0.0',
-      'LinkedIn-Version': LINKEDIN_API_VERSION,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Unlike] Error:', { status: response.status, error });
-    throw new Error(`Failed to unlike LinkedIn post (${response.status}): ${error}`);
-  }
-
-  console.log('[LinkedIn Unlike] Success:', { postUrn });
-  return { success: true };
+  if (response.ok) return { success: true };
+  const error = await response.text();
+  throw new Error(`Failed to unlike post (${response.status}): ${error}`);
 }
 
 /**

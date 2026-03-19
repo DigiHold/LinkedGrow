@@ -34,6 +34,7 @@ export async function GET() {
 
     const dailyLikes = objectives?.dailyLikes ?? 10;
     const dailyComments = objectives?.dailyComments ?? 5;
+    const postsPerProfile = objectives?.postsPerProfile ?? 2;
 
     // Count today's likes
     const likesResult = await db
@@ -76,6 +77,7 @@ export async function GET() {
       objectives: {
         dailyLikes,
         dailyComments,
+        postsPerProfile,
       },
       today: {
         likes: todayLikes,
@@ -196,15 +198,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { dailyLikes, dailyComments } = body;
+    const { dailyLikes, dailyComments, postsPerProfile } = body;
 
     // Validate inputs
     if (
       (dailyLikes !== undefined && (typeof dailyLikes !== 'number' || dailyLikes < 1 || dailyLikes > 100)) ||
-      (dailyComments !== undefined && (typeof dailyComments !== 'number' || dailyComments < 1 || dailyComments > 50))
+      (dailyComments !== undefined && (typeof dailyComments !== 'number' || dailyComments < 1 || dailyComments > 50)) ||
+      (postsPerProfile !== undefined && (typeof postsPerProfile !== 'number' || postsPerProfile < 1 || postsPerProfile > 10))
     ) {
       return NextResponse.json(
-        { error: 'Invalid objectives. Likes must be 1-100, comments must be 1-50.' },
+        { error: 'Invalid settings. Likes 1-100, comments 1-50, posts per profile 1-10.' },
         { status: 400 }
       );
     }
@@ -217,22 +220,22 @@ export async function PUT(request: NextRequest) {
     });
 
     if (existing) {
-      // Update existing
       await db
         .update(engagementObjectives)
         .set({
           dailyLikes: dailyLikes ?? existing.dailyLikes,
           dailyComments: dailyComments ?? existing.dailyComments,
+          postsPerProfile: postsPerProfile ?? existing.postsPerProfile,
           updatedAt: new Date(),
         })
         .where(eq(engagementObjectives.userId, userId));
     } else {
-      // Insert new
       await db.insert(engagementObjectives).values({
         id: nanoid(),
         userId,
         dailyLikes: dailyLikes ?? 10,
         dailyComments: dailyComments ?? 5,
+        postsPerProfile: postsPerProfile ?? 2,
         updatedAt: new Date(),
       });
     }
@@ -242,6 +245,7 @@ export async function PUT(request: NextRequest) {
       objectives: {
         dailyLikes: dailyLikes ?? existing?.dailyLikes ?? 10,
         dailyComments: dailyComments ?? existing?.dailyComments ?? 5,
+        postsPerProfile: postsPerProfile ?? existing?.postsPerProfile ?? 2,
       },
     });
   } catch (error) {

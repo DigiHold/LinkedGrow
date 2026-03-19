@@ -380,8 +380,9 @@ export const engagementActions = sqliteTable("engagement_actions", {
     .references(() => users.id, { onDelete: "cascade" }),
   type: text("type", { enum: ["like", "comment"] }).notNull(),
   linkedinPostId: text("linkedin_post_id"), // The LinkedIn post URN that was liked/commented
-  commentContent: text("comment_content"), // If type is comment, store the comment text
-  date: text("date").notNull(), // YYYY-MM-DD format for easy daily grouping
+  commentContent: text("comment_content"),
+  reactionType: text("reaction_type").default("LIKE"), // LIKE, PRAISE, APPRECIATION, EMPATHY, INTEREST, ENTERTAINMENT
+  date: text("date").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
@@ -394,7 +395,47 @@ export const engagementObjectives = sqliteTable("engagement_objectives", {
     .references(() => users.id, { onDelete: "cascade" }),
   dailyLikes: integer("daily_likes").default(10),
   dailyComments: integer("daily_comments").default(5),
+  postsPerProfile: integer("posts_per_profile").default(2),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// ============================================
+// ENGAGEMENT LISTS (for following LinkedIn profiles)
+// ============================================
+
+// User-created engagement lists (e.g., "Marketing", "AI")
+export const engagementLists = sqliteTable("engagement_lists", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// LinkedIn profiles added to engagement lists
+export const engagementListProfiles = sqliteTable("engagement_list_profiles", {
+  id: text("id").primaryKey(),
+  listId: text("list_id")
+    .notNull()
+    .references(() => engagementLists.id, { onDelete: "cascade" }),
+  vanityName: text("vanity_name").notNull(),
+  displayName: text("display_name"),
+  headline: text("headline"),
+  profilePictureUrl: text("profile_picture_url"),
+  addedAt: integer("added_at", { mode: "timestamp" }).default(new Date()),
+});
+
+// Shared cache of scraped LinkedIn profile posts (across all users)
+export const linkedinProfilePostsCache = sqliteTable("linkedin_profile_posts_cache", {
+  vanityName: text("vanity_name").primaryKey(),
+  displayName: text("display_name"),
+  headline: text("headline"),
+  profilePictureUrl: text("profile_picture_url"),
+  followerCount: integer("follower_count").default(0),
+  postsJson: text("posts_json").notNull(), // JSON array of scraped posts
+  lastFetchedAt: integer("last_fetched_at", { mode: "timestamp" }).notNull(),
+  status: text("status").default("success"), // success, authwall, error
 });
 
 // ============================================
