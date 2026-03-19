@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Linkedin, BarChart3, Lock } from "lucide-react";
+import { Linkedin, BarChart3, Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface EmptyStateProps {
@@ -11,6 +12,41 @@ interface EmptyStateProps {
 }
 
 export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptyStateProps) {
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleConnect = () => {
+    setIsConnecting(true);
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.innerWidth - width) / 2;
+    const top = window.screenY + (window.innerHeight - height) / 2;
+
+    const popup = window.open(
+      "/api/linkedin/auth?app=community&popup=true&mode=connect",
+      "linkedin-community-auth",
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+    );
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "linkedin-success" || event.data?.type === "linkedin-error") {
+        setIsConnecting(false);
+        window.removeEventListener("message", handleMessage);
+        if (event.data?.type === "linkedin-success") {
+          window.location.reload();
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+
+    const checkInterval = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(checkInterval);
+        setIsConnecting(false);
+        window.removeEventListener("message", handleMessage);
+      }
+    }, 1000);
+  };
+
   if (type === "no-linkedin") {
     return (
       <Card>
@@ -23,11 +59,19 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
             <p className="text-muted-foreground text-sm mb-4">
               Connect your LinkedIn account to start tracking your analytics and performance metrics.
             </p>
-            <Link href="/dashboard/settings">
-              <Button variant="primary" size="sm">
-                Go to Settings
-              </Button>
-            </Link>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConnect}
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Linkedin className="w-4 h-4 mr-2" />
+              )}
+              Connect LinkedIn
+            </Button>
           </div>
         </CardContent>
       </Card>
