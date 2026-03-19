@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { createLinkedInComment } from "@/lib/linkedin";
+import { createLinkedInComment, ensureFreshTokens } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 
 const receiver = new Receiver({
@@ -73,12 +73,19 @@ export async function POST(request: NextRequest) {
     // Get LinkedIn credentials (handles team members via owner's credentials)
     const result = await getLinkedInUser(post.userId);
 
-    if (!result?.linkedInUser?.linkedinAccessToken || !result?.linkedInUser?.linkedinProfileId) {
+    if (!result?.linkedInUser?.linkedinProfileId) {
       console.error("[First Comment Webhook] LinkedIn not connected for user:", post.userId);
       return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
     const { linkedInUser } = result;
+
+    // Auto-refresh tokens if expired
+    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    if (!posterToken) {
+      console.error("[First Comment Webhook] LinkedIn token expired for user:", post.userId);
+      return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
+    }
 
     // Check token expiry
     if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
@@ -101,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Post the comment on LinkedIn
     const commentResult = await createLinkedInComment(
-      linkedInUser.linkedinAccessToken!,
+      posterToken,
       post.linkedinPostId!,
       authorId!,
       post.firstComment!,

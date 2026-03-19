@@ -4,7 +4,15 @@
  * Uses two LinkedIn apps:
  * - Poster App: For publishing posts to LinkedIn
  * - Community App: For engagement features
+ *
+ * Token auto-refresh:
+ * - Access tokens expire every 2 months
+ * - Refresh tokens expire every 12 months
+ * - Call ensureFreshTokens() before using tokens to auto-refresh if needed
  */
+
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 // LinkedIn OAuth scopes
 // Poster app: Sign-in + Share on LinkedIn
@@ -108,6 +116,108 @@ export function getLinkedInAuthUrl(
   });
 
   return `${LINKEDIN_AUTH_URL}?${params.toString()}`;
+}
+
+/**
+ * Refresh an expired LinkedIn access token using a refresh token.
+ * Returns new token data, or null if refresh failed (user must reconnect).
+ */
+export async function refreshLinkedInToken(
+  appType: LinkedInAppType,
+  refreshToken: string,
+): Promise<LinkedInTokenResponse | null> {
+  const config = getLinkedInConfig(appType);
+
+  try {
+    const response = await fetch(LINKEDIN_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[LinkedIn] Token refresh failed (${response.status}): ${await response.text()}`);
+      return null;
+    }
+
+    const tokenData: LinkedInTokenResponse = await response.json();
+    console.log(`[LinkedIn] Token refreshed successfully for ${appType} app`);
+    return tokenData;
+  } catch (err) {
+    console.error(`[LinkedIn] Token refresh error:`, err);
+    return null;
+  }
+}
+
+/**
+ * Check if a token is expired or will expire within the buffer period.
+ * Buffer: 24 hours before actual expiry to avoid edge cases.
+ */
+export function isTokenExpired(tokenExpiry: Date | null): boolean {
+  if (!tokenExpiry) return false; // No expiry stored, assume valid
+  const buffer = 24 * 60 * 60 * 1000; // 24 hours
+  return new Date(tokenExpiry).getTime() - buffer < Date.now();
+}
+
+/**
+ * Ensure LinkedIn tokens are fresh for a user. Auto-refreshes if expired.
+ * Updates the DB with new tokens and returns the fresh access tokens.
+ *
+ * Call this at the start of any API route that uses LinkedIn tokens.
+ */
+export async function ensureFreshTokens(userId: string): Promise<{
+  posterToken: string | null;
+  communityToken: string | null;
+  refreshed: boolean;
+}> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return { posterToken: null, communityToken: null, refreshed: false };
+
+  let posterToken = user.linkedinAccessToken;
+  let communityToken = user.linkedinCommunityAccessToken;
+  let refreshed = false;
+
+  // Check and refresh poster app token
+  if (posterToken && isTokenExpired(user.linkedinTokenExpiry) && user.linkedinRefreshToken) {
+    const newTokens = await refreshLinkedInToken('poster', user.linkedinRefreshToken);
+    if (newTokens) {
+      posterToken = newTokens.access_token;
+      await db.update(users).set({
+        linkedinAccessToken: newTokens.access_token,
+        linkedinRefreshToken: newTokens.refresh_token || user.linkedinRefreshToken,
+        linkedinTokenExpiry: new Date(Date.now() + newTokens.expires_in * 1000),
+      }).where(eq(users.id, userId));
+      refreshed = true;
+    } else {
+      // Refresh failed - token is dead, user must reconnect
+      posterToken = null;
+    }
+  }
+
+  // Check and refresh community app token
+  if (communityToken && isTokenExpired(user.linkedinCommunityTokenExpiry) && user.linkedinCommunityRefreshToken) {
+    const newTokens = await refreshLinkedInToken('community', user.linkedinCommunityRefreshToken);
+    if (newTokens) {
+      communityToken = newTokens.access_token;
+      await db.update(users).set({
+        linkedinCommunityAccessToken: newTokens.access_token,
+        linkedinCommunityRefreshToken: newTokens.refresh_token || user.linkedinCommunityRefreshToken,
+        linkedinCommunityTokenExpiry: new Date(Date.now() + newTokens.expires_in * 1000),
+      }).where(eq(users.id, userId));
+      refreshed = true;
+    } else {
+      communityToken = null;
+    }
+  }
+
+  return { posterToken, communityToken, refreshed };
 }
 
 /**

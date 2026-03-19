@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument } from "@/lib/linkedin";
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     const { linkedInUser } = result;
 
-    if (!linkedInUser?.linkedinAccessToken || !linkedInUser?.linkedinProfileId) {
+    if (!linkedInUser?.linkedinProfileId) {
       // Mark post as failed
       await db.update(posts)
         .set({
@@ -111,12 +111,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
-    // Check if token has expired
-    if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
+    // Auto-refresh tokens if expired
+    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    if (!posterToken) {
       await db.update(posts)
         .set({
           status: "failed",
-          errorMessage: "LinkedIn token expired - please reconnect your account",
+          errorMessage: "LinkedIn token expired and could not be refreshed - please reconnect your account",
           updatedAt: new Date(),
         })
         .where(eq(posts.id, postId));
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (firstDocument?.storageUrl) {
       // Post with document/PDF (carousel) from R2
       postResult = await createLinkedInPostWithDocument(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         post.content,
         firstDocument.storageUrl,
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     } else if (firstVideo?.storageUrl) {
       // Post with video from R2
       postResult = await createLinkedInPostWithVideo(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         post.content,
         firstVideo.storageUrl,
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest) {
     } else if (firstImage?.storageUrl) {
       // Post with image from R2
       postResult = await createLinkedInPostWithImage(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         post.content,
         firstImage.storageUrl,
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         post.content,
         "PUBLIC",

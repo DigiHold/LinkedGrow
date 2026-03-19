@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument } from '@/lib/linkedin';
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
@@ -98,10 +98,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if token has expired
-    if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
+    // Auto-refresh tokens if expired
+    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    if (!posterToken) {
       return NextResponse.json(
-        { error: 'LinkedIn token has expired. Please ask the team owner to reconnect their account in Settings.' },
+        { error: 'LinkedIn token has expired and could not be refreshed. Please reconnect your account in Settings.' },
         { status: 401 }
       );
     }
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (documentUrl) {
       // Document/PDF post (carousel) - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithDocument(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         text,
         documentUrl,
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
     } else if (videoUrl && videoMimeType) {
       // Video post - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithVideo(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         text,
         videoUrl,
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
     } else if (imageUrl) {
       // Image post - fetch from R2 URL and upload to LinkedIn
       postResult = await createLinkedInPostWithImage(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         text,
         imageUrl,
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        linkedInUser.linkedinAccessToken,
+        posterToken,
         authorId,
         text,
         visibility,

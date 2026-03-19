@@ -21,6 +21,7 @@ import {
   scrapeOwnProfilePostURNs,
   getPostByUrn,
   getLinkedInProfileWithHeadline,
+  ensureFreshTokens,
   type MemberPostAnalytics,
   type LinkedInAuthorPost,
 } from "@/lib/linkedin";
@@ -91,8 +92,11 @@ export async function GET(request: NextRequest) {
     const postingTarget = user.linkedinPostingTarget as "profile" | "organization" | null;
     const hasLinkedIn = !!(user.linkedinAccessToken && user.linkedinProfileId);
     const capabilities = getAnalyticsCapabilities(postingTarget);
-    const token = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
     const isOrg = postingTarget === "organization" && user.linkedinSelectedOrgId;
+
+    // Auto-refresh tokens if expired
+    const { posterToken, communityToken } = await ensureFreshTokens(user.id);
+    const token = communityToken || posterToken;
 
     log(`User: ${user.email} | Plan: ${user.plan} | Target: ${postingTarget} | Org: ${isOrg ? user.linkedinSelectedOrgId : 'no'}`);
     log(`CommunityToken: ${!!user.linkedinCommunityAccessToken} | PosterToken: ${!!user.linkedinAccessToken}`);
