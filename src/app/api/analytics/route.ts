@@ -393,10 +393,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // All posts sorted by impressions (with analytics first, then without)
+    // Top 15 posts by impressions (with analytics first)
     const withAnalytics = allPosts.filter(p => p.analytics).sort((a, b) => (b.analytics?.impressions || 0) - (a.analytics?.impressions || 0));
     const withoutAnalytics = allPosts.filter(p => !p.analytics);
-    const sortedPosts = [...withAnalytics, ...withoutAnalytics];
+    const sortedPosts = [...withAnalytics.slice(0, 15), ...withoutAnalytics.slice(0, Math.max(0, 15 - withAnalytics.length))];
 
     const totalEngagements = totalReactions + totalComments + totalShares;
     const avgEngagement = totalImpressions > 0 ? ((totalEngagements / totalImpressions) * 100).toFixed(2) : "0.00";
