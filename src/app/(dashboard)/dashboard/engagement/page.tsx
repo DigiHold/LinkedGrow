@@ -216,6 +216,37 @@ function CarouselViewer({ slides }: { slides: string[] }) {
 // ============================================
 
 export default function EngagementPage() {
+  return (
+    <FeatureGate feature="engagement">
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        <div className="flex flex-col items-center justify-center text-center py-16 sm:py-24 space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Users className="w-8 h-8 text-white" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold">Engagement Tools</h1>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-md">
+              Like, comment, and interact with LinkedIn posts directly from your dashboard. Build meaningful connections and grow your network faster.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Coming Soon</span>
+          </div>
+          <p className="text-xs text-muted-foreground max-w-sm">
+            We are finalizing the LinkedIn Community Management API integration. This feature will be available shortly.
+          </p>
+        </div>
+      </div>
+    </FeatureGate>
+  );
+}
+
+// ============================================
+// ORIGINAL ENGAGEMENT PAGE (preserved for when feature launches)
+// ============================================
+
+function _EngagementPageFull() {
   const { data: session } = useSession();
   const isTeamMember = session?.user?.isTeamMember === true;
 

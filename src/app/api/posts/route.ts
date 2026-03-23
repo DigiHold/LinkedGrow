@@ -173,7 +173,8 @@ export async function GET(request: NextRequest) {
     const counts: Record<string, number> = {};
     let total = 0;
     for (const row of statusCounts) {
-      counts[row.status] = row.count;
+      const key = row.status || "unknown";
+      counts[key] = row.count;
       total += row.count;
     }
 
