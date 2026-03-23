@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* Setup wizard for first-time users (any dashboard page) */}
+      <OnboardingCheck />
     </div>
   );
 }

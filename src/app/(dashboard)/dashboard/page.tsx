@@ -21,7 +21,6 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
-import { SetupWizard } from "@/components/dashboard/setup-wizard";
 
 const quickActions = [
   {
@@ -78,7 +77,6 @@ interface SettingsResponse {
   aiProvider: string | null;
   linkedinConnected: boolean;
   timezone: string | null;
-  onboardingCompleted: boolean;
 }
 
 interface DashboardStats {
@@ -102,7 +100,6 @@ export default function DashboardPage() {
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showWizard, setShowWizard] = useState(false);
 
   // Get user's first name
   const userName = session?.user?.name?.split(" ")[0] ||
@@ -150,9 +147,6 @@ export default function DashboardPage() {
           setLinkedinConnected(settingsData.linkedinConnected);
           if (settingsData.timezone) {
             setUserTimezone(settingsData.timezone);
-          }
-          if (!settingsData.onboardingCompleted) {
-            setShowWizard(true);
           }
         }
       } catch (error) {
@@ -215,9 +209,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 sm:space-y-8">
-      {/* Setup Wizard for first-time users */}
-      {showWizard && <SetupWizard onComplete={() => setShowWizard(false)} />}
-
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
