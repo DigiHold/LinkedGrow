@@ -724,7 +724,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                             <provider.icon />
                           </div>
                           <p className="font-semibold text-sm">{provider.name}</p>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500">{provider.description}</p>
                         </button>
                       ))}
                     </div>
