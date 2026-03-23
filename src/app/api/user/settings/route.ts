@@ -124,6 +124,8 @@ export async function GET() {
       brandColors: user.brandColors ? (() => { try { return JSON.parse(user.brandColors); } catch { return []; } })() : [],
       // Timezone
       timezone: user.timezone,
+      // Onboarding
+      onboardingCompleted: !!user.onboardingCompleted,
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
@@ -322,6 +324,10 @@ export async function PUT(request: NextRequest) {
 
     if (timezone !== undefined) {
       updateData.timezone = timezone || null;
+    }
+
+    if (body.onboardingCompleted !== undefined) {
+      updateData.onboardingCompleted = !!body.onboardingCompleted;
     }
 
     if (body.brandColors !== undefined) {
