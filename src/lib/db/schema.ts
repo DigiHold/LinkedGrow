@@ -103,6 +103,9 @@ export const users = sqliteTable("users", {
 
   // Timezone (for scheduling posts)
   timezone: text("timezone"), // IANA timezone (e.g., "America/Los_Angeles", "Europe/Paris")
+
+  // Onboarding
+  onboardingCompleted: integer("onboarding_completed", { mode: "boolean" }).default(false),
 });
 
 // Sessions table for NextAuth
