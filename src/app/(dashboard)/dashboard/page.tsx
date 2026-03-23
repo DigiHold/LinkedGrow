@@ -68,6 +68,8 @@ interface Post {
 
 interface PostsResponse {
   posts: Post[];
+  counts?: Record<string, number>;
+  pagination?: { total: number };
 }
 
 interface SettingsResponse {
@@ -118,12 +120,13 @@ export default function DashboardPage() {
           const postsData: PostsResponse = await postsRes.json();
           const posts = postsData.posts || [];
 
-          // Calculate stats
+          // Use server-side counts for accurate stats
+          const counts = postsData.counts || {};
           setStats({
-            totalPosts: posts.length,
-            drafts: posts.filter(p => p.status === "draft").length,
-            scheduled: posts.filter(p => p.status === "scheduled").length,
-            published: posts.filter(p => p.status === "published").length,
+            totalPosts: postsData.pagination?.total || posts.length,
+            drafts: counts.draft || 0,
+            scheduled: counts.scheduled || 0,
+            published: counts.published || 0,
           });
 
           // Get recent posts (last 3)

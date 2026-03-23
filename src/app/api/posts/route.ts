@@ -160,13 +160,31 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Get accurate total count and per-status counts
+    const statusCounts = await db
+      .select({
+        status: posts.status,
+        count: count(),
+      })
+      .from(posts)
+      .where(userCondition)
+      .groupBy(posts.status);
+
+    const counts: Record<string, number> = {};
+    let total = 0;
+    for (const row of statusCounts) {
+      counts[row.status] = row.count;
+      total += row.count;
+    }
+
     return NextResponse.json({
       posts: postsWithMedia,
       pagination: {
         limit,
         offset,
-        total: userPosts.length, // Would need COUNT query for accurate total
+        total,
       },
+      counts,
       isTeamView: (isTeamOwner || isTeamAdmin) && userIdsToFetch.length > 1,
     });
   } catch (error) {
