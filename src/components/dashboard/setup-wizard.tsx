@@ -593,27 +593,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       Let&apos;s get everything ready in about 2 minutes. We&apos;ll walk you through 3 quick steps so you can start creating content right away.
                     </p>
 
-                    <div className="flex flex-col gap-3 max-w-xs mx-auto mb-8 text-left">
-                      {[
-                        { icon: Linkedin, text: "Connect your LinkedIn account", color: "text-[#0A66C2]" },
-                        { icon: Key, text: "Set up your AI provider", color: "text-amber-500" },
-                        { icon: Mic, text: "Personalize your content voice", color: "text-purple-500" },
-                      ].map((item, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.3 + i * 0.1 }}
-                          className="flex items-center gap-3"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-                            <item.icon className={`w-4 h-4 ${item.color}`} />
-                          </div>
-                          <span className="text-sm">{item.text}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-
                     <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-6">
                       <Clock className="w-3.5 h-3.5" />
                       <span>Takes about 2 minutes</span>
