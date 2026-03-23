@@ -1031,7 +1031,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <Button
                   size="sm"
                   onClick={handleContinue}
-                  disabled={isSaving || (step === 2 && selectedProvider !== null && apiKey.length <= 5 && !aiSaved)}
+                  disabled={isSaving || (step === 2 && !aiSaved && (selectedProvider === null || apiKey.length <= 5))}
                   className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white min-w-[110px] shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
