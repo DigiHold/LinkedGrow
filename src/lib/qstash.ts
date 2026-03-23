@@ -7,7 +7,9 @@ const qstash = new Client({
   baseUrl: QSTASH_BASE_URL,
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
+// Always use production URL for QStash webhooks - staging deployments have
+// Vercel deployment protection that blocks QStash callbacks with 401
+const APP_URL = "https://linkedgrow.ai";
 
 /**
  * Schedule a post to be published at a specific time
