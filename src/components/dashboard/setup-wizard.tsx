@@ -623,7 +623,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       <span className="text-[#0A66C2]">LinkedIn</span>
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
-                      We request permissions to publish posts, view your feed, and interact with content so LinkedGrow can work at its full potential. Your data stays private and secure.
+                      We request permissions to publish, schedule, and engage with content on your behalf so LinkedGrow can work at its full potential. Your data stays private and secure.
                     </p>
 
                     {linkedinConnected ? (
