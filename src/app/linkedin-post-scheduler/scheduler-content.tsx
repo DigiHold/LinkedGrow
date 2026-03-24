@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -327,6 +328,15 @@ export function PostSchedulerContent() {
             answer:
               "Yes. Attach photos, AI-generated images, or carousels before scheduling. Media is stored in Cloudflare R2 and published alongside your text.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "Post Scheduling", href: "/features/post-scheduling" },
+          { title: "Content Calendar", href: "/features/content-calendar" },
+          { title: "Best Time to Post on LinkedIn", href: "/blog/best-time-to-post-linkedin" },
         ]}
       />
 

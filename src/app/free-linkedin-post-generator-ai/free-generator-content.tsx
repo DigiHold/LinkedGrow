@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -327,6 +328,15 @@ export function FreePostGeneratorContent() {
             answer:
               "Yes. Connect your LinkedIn account and publish directly. Scheduling requires Starter plan or above.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "AI LinkedIn Posts Without Sounding Robotic", href: "/blog/ai-linkedin-posts-without-sounding-robotic" },
+          { title: "Best AI LinkedIn Post Generator", href: "/best-ai-linkedin-post-generator" },
         ]}
       />
 

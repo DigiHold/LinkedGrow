@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -336,6 +337,15 @@ export function CarouselGeneratorContent() {
             answer:
               "No. The AI generates content, templates provide the structure, and brand settings handle the visual consistency. Just enter your topic and customize.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "Carousel Generator", href: "/features/carousel-generator" },
+          { title: "LinkedIn Carousel Guide", href: "/blog/linkedin-carousel-guide" },
+          { title: "LinkedIn Image Sizes", href: "/free-tools/linkedin-image-sizes" },
         ]}
       />
 
