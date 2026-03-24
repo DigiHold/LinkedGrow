@@ -311,11 +311,17 @@ export function CalendarContent() {
     const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const tz = resolveTimezone(userTimezone);
     return posts.filter((post) => {
-      // For drafts without scheduledAt, use createdAt
-      // For scheduled/published, use scheduledAt or publishedAt
-      const postDate = post.status === "draft" && !post.scheduledAt
-        ? post.createdAt
-        : (post.scheduledAt || post.publishedAt);
+      // Published posts use publishedAt (actual publish date)
+      // Scheduled posts use scheduledAt (planned date)
+      // Drafts use scheduledAt if set, otherwise createdAt
+      let postDate: string | Date | null | undefined;
+      if (post.status === "published") {
+        postDate = post.publishedAt || post.scheduledAt;
+      } else if (post.status === "scheduled") {
+        postDate = post.scheduledAt;
+      } else {
+        postDate = post.scheduledAt || post.createdAt;
+      }
       if (!postDate) return false;
       const { date: postDateStr } = utcToLocal(postDate, tz);
       return postDateStr === dateStr;
@@ -369,6 +375,15 @@ export function CalendarContent() {
   for (let i = 1; i <= remainingCells; i++) {
     days.push({ day: i, month: nextMonthIndex, year: nextMonthYear, isCurrentMonth: false });
   }
+
+  // Get the most relevant date for a post based on its status
+  // Published -> publishedAt, Scheduled -> scheduledAt, Draft -> scheduledAt or createdAt
+  const getPostDisplayDate = (post: Post): string => {
+    if (post.status === "published" && post.publishedAt) {
+      return post.publishedAt;
+    }
+    return post.scheduledAt || post.createdAt;
+  };
 
   const formatTime = (dateStr: string) => {
     const tz = resolveTimezone(userTimezone);
@@ -1168,7 +1183,7 @@ export function CalendarContent() {
                           </div>
                           <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
                             <Calendar className="w-2.5 h-2.5" />
-                            <span className="font-medium">{formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}</span>
+                            <span className="font-medium">{formatTime(getPostDisplayDate(post))}</span>
                           </div>
                         </button>
                       ))}
@@ -1465,7 +1480,7 @@ export function CalendarContent() {
                           {selectedPost.status === "published" ? "Post published" : selectedPost.status === "draft" ? "Created on" : "Scheduled for"}
                         </p>
                         <p className="text-base font-bold">
-                          {formatFullDate(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)} - {formatTime(selectedPost.scheduledAt || selectedPost.publishedAt || selectedPost.createdAt)}
+                          {formatFullDate(getPostDisplayDate(selectedPost))} - {formatTime(getPostDisplayDate(selectedPost))}
                         </p>
                       </div>
                     </div>
@@ -2080,7 +2095,7 @@ Tips for viral posts:
                                           {getStatusLabel(post.status)}
                                         </span>
                                         <span className="text-xs text-muted-foreground">
-                                          {formatTime(post.scheduledAt || post.publishedAt || post.createdAt)}
+                                          {formatTime(getPostDisplayDate(post))}
                                         </span>
                                       </div>
                                       <p className="text-sm line-clamp-2 text-gray-700 dark:text-gray-300">
