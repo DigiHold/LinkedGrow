@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLinkedInProfile, getLinkedInProfileWithHeadline, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
-import { db, users, accounts, betaUsers } from '@/lib/db';
+import { db, users, accounts } from '@/lib/db';
 import { affiliates, affiliateReferrals } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
@@ -248,15 +248,6 @@ export async function GET(request: NextRequest) {
         // Create new user
         const userId = randomUUID();
 
-        // Check if email is in beta users list - they get free business plan
-        const normalizedEmail = linkedInEmail.toLowerCase().trim();
-        const betaUser = await db.query.betaUsers.findFirst({
-          where: eq(betaUsers.email, normalizedEmail),
-        });
-
-        const isBetaTester = betaUser && !betaUser.converted;
-        const userPlan = isBetaTester ? 'business' : 'free';
-
         // Download and store profile picture in R2
         let storedPictureUrl: string | null = null;
         if (linkedInPictureUrl) {
@@ -284,7 +275,7 @@ export async function GET(request: NextRequest) {
           name: fullName,
           image: storedPictureUrl,
           emailVerified: new Date(), // LinkedIn emails are verified
-          plan: userPlan,
+          plan: 'free',
           twoFactorEnabled: false,
           referredBy: validAffiliate?.referralCode || null,
           // Auto-connect LinkedIn for posting
@@ -315,17 +306,6 @@ export async function GET(request: NextRequest) {
               updatedAt: new Date(),
             })
             .where(eq(affiliates.id, validAffiliate.id));
-        }
-
-        // Mark beta user as converted if applicable
-        if (isBetaTester) {
-          await db
-            .update(betaUsers)
-            .set({
-              converted: true,
-              convertedAt: new Date(),
-            })
-            .where(eq(betaUsers.email, normalizedEmail));
         }
 
         // Link LinkedIn account

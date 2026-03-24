@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeGoogleCodeForToken, getGoogleUserInfo } from '@/lib/google';
-import { db, users, accounts, betaUsers } from '@/lib/db';
+import { db, users, accounts } from '@/lib/db';
 import { affiliates, affiliateReferrals } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -131,15 +131,6 @@ export async function GET(request: NextRequest) {
       // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
 
-      // Check if email is in beta users list - they get free business plan
-      const normalizedEmail = googleUser.email.toLowerCase().trim();
-      const betaUser = await db.query.betaUsers.findFirst({
-        where: eq(betaUsers.email, normalizedEmail),
-      });
-
-      const isBetaTester = betaUser && !betaUser.converted;
-      const userPlan = isBetaTester ? 'business' : 'free';
-
       // Check for affiliate referral cookie
       const refCode = request.cookies.get('lg_ref')?.value;
       let validAffiliate: { id: string; referralCode: string } | null = null;
@@ -161,7 +152,7 @@ export async function GET(request: NextRequest) {
         name: googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim(),
         image: null,
         emailVerified: googleUser.verified_email ? new Date() : null,
-        plan: userPlan,
+        plan: 'free',
         twoFactorEnabled: false,
         referredBy: validAffiliate?.referralCode || null,
         createdAt: new Date(),
@@ -184,17 +175,6 @@ export async function GET(request: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(affiliates.id, validAffiliate.id));
-      }
-
-      // Mark beta user as converted if applicable
-      if (isBetaTester) {
-        await db
-          .update(betaUsers)
-          .set({
-            converted: true,
-            convertedAt: new Date(),
-          })
-          .where(eq(betaUsers.email, normalizedEmail));
       }
 
       // Link Google account

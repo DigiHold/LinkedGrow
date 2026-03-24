@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, users, betaUsers } from "@/lib/db";
+import { db, users } from "@/lib/db";
 import { affiliates, affiliateReferrals } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -79,15 +79,6 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Check if email is in beta users list - they get free business plan
-    const normalizedEmail = email.toLowerCase().trim();
-    const betaUser = await db.query.betaUsers.findFirst({
-      where: eq(betaUsers.email, normalizedEmail),
-    });
-
-    const isBetaTester = betaUser && !betaUser.converted;
-    const userPlan = isBetaTester ? "business" : "free";
-
     // Check for affiliate referral cookie
     const refCode = request.cookies.get("lg_ref")?.value;
     let validAffiliate: { id: string; referralCode: string } | null = null;
@@ -110,7 +101,7 @@ export async function POST(request: NextRequest) {
       name: name || null,
       email: email,
       password: hashedPassword,
-      plan: userPlan,
+      plan: "free",
       twoFactorEnabled: false,
       referredBy: validAffiliate?.referralCode || null,
       createdAt: new Date(),
@@ -134,17 +125,6 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date(),
         })
         .where(eq(affiliates.id, validAffiliate.id));
-    }
-
-    // Mark beta user as converted if applicable
-    if (isBetaTester) {
-      await db
-        .update(betaUsers)
-        .set({
-          converted: true,
-          convertedAt: new Date(),
-        })
-        .where(eq(betaUsers.email, normalizedEmail));
     }
 
     // Subscribe to newsletter if opted in (non-blocking)

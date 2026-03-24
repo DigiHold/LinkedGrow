@@ -711,6 +711,14 @@ Article content here...
 5. **Keep articles accurate**: The chatbot will use this content to answer users. Outdated or wrong information means wrong chatbot answers. When features change, update the relevant docs articles.
 6. **Do NOT write docs for unimplemented features**: Analytics, Advanced Analytics, and Engagement features are not done yet (waiting for LinkedIn API). Do not create docs articles for these until they are implemented.
 
+## Writing Commands
+
+| Command | Guide | What it does |
+|---------|-------|-------------|
+| "write linkedin" | `LINKEDIN-POST-GUIDE.md` | Write a LinkedIn post for today's format (Authority/Carousel/Lead Magnet/Hot Take/Blog Promo), generate image, schedule via API |
+
+When the user says any of these commands, read the corresponding guide and follow it step by step.
+
 ## Founders
 
 -   **Nicolas Lecocq** - Founder & Developer (15+ years web dev, created OceanWP)
