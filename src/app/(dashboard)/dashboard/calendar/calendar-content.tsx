@@ -51,7 +51,7 @@ import { FirstComment } from "@/components/dashboard/first-comment";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
-import { localToUTC, formatInTimezone, resolveTimezone } from "@/lib/timezone";
+import { localToUTC, utcToLocal, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = [
@@ -309,6 +309,7 @@ export function CalendarContent() {
 
   const getPostsForDate = (day: number, m: number, y: number) => {
     const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const tz = resolveTimezone(userTimezone);
     return posts.filter((post) => {
       // For drafts without scheduledAt, use createdAt
       // For scheduled/published, use scheduledAt or publishedAt
@@ -316,16 +317,17 @@ export function CalendarContent() {
         ? post.createdAt
         : (post.scheduledAt || post.publishedAt);
       if (!postDate) return false;
-      const postDateStr = new Date(postDate).toISOString().split("T")[0];
+      const { date: postDateStr } = utcToLocal(postDate, tz);
       return postDateStr === dateStr;
     });
   };
 
   const getIdeasForDate = (day: number, m: number, y: number) => {
     const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const tz = resolveTimezone(userTimezone);
     return ideas.filter((idea) => {
       if (!idea.createdAt) return false;
-      const ideaDateStr = new Date(idea.createdAt).toISOString().split("T")[0];
+      const { date: ideaDateStr } = utcToLocal(idea.createdAt, tz);
       return ideaDateStr === dateStr;
     });
   };
@@ -542,8 +544,8 @@ export function CalendarContent() {
       const originalDate = post.scheduledAt || post.createdAt;
       if (!originalDate) return;
 
-      // Skip if same day
-      const existingDateStr = new Date(originalDate).toISOString().split("T")[0];
+      // Skip if same day (compare in user's timezone)
+      const { date: existingDateStr } = utcToLocal(originalDate, tz);
       if (existingDateStr === newDateStr) return;
 
       // Preserve time in user's timezone
@@ -596,8 +598,8 @@ export function CalendarContent() {
       const idea = draggedIdea;
       setDraggedIdea(null);
 
-      // Skip if same day
-      const existingDateStr = new Date(idea.createdAt).toISOString().split("T")[0];
+      // Skip if same day (compare in user's timezone)
+      const { date: existingDateStr } = utcToLocal(idea.createdAt, tz);
       if (existingDateStr === newDateStr) return;
 
       // Preserve time from original createdAt
@@ -901,12 +903,17 @@ export function CalendarContent() {
     } else {
       setEditAttachedImage(null);
     }
-    // Parse the scheduled date and time
-    const scheduledDate = post.scheduledAt ? new Date(post.scheduledAt) : new Date();
-    setEditScheduleDate(scheduledDate.toISOString().split('T')[0]);
-    const hours = scheduledDate.getHours().toString().padStart(2, '0');
-    const minutes = scheduledDate.getMinutes().toString().padStart(2, '0');
-    setEditScheduleTime(`${hours}:${minutes}`);
+    // Parse the scheduled date and time in user's timezone
+    if (post.scheduledAt) {
+      const tz = resolveTimezone(userTimezone);
+      const { date, time } = utcToLocal(post.scheduledAt, tz);
+      setEditScheduleDate(date);
+      setEditScheduleTime(time);
+    } else {
+      const now = new Date();
+      setEditScheduleDate(now.toISOString().split('T')[0]);
+      setEditScheduleTime("12:00");
+    }
     setDrawerView("edit-post");
     setPostMenuOpen(false);
   };
