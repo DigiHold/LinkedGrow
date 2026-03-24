@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -336,6 +337,15 @@ export function BestPostGeneratorContent() {
             answer:
               "Yes. Publish immediately or schedule for later. Content calendar, optimal time suggestions, profiles and company pages supported.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
+          { title: "Free LinkedIn Post Generator", href: "/free-linkedin-post-generator-ai" },
         ]}
       />
 

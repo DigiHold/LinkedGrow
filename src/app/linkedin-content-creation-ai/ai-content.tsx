@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -336,6 +337,15 @@ export function ContentCreationAiContent() {
             answer:
               "Yes. Schedule posts to publish at optimal times directly from the editor. Visual content calendar, auto-publish to LinkedIn profiles and company pages.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "Voice Training", href: "/features/voice-training" },
+          { title: "AI LinkedIn Posts Without Sounding Robotic", href: "/blog/ai-linkedin-posts-without-sounding-robotic" },
         ]}
       />
 

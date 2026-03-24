@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
   Zap,
@@ -336,6 +337,15 @@ export function ContentCreationToolsContent() {
             answer:
               "Yes. Starter includes 10 scheduled posts, Pro and Business include unlimited scheduling. Schedule through the content calendar with a visual timeline, set custom publish times in your timezone, and LinkedGrow publishes to your LinkedIn profile or company page automatically.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
+          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "Carousel Generator", href: "/features/carousel-generator" },
         ]}
       />
 

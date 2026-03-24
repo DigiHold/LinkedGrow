@@ -12,6 +12,7 @@ import { LandingTestimonials } from "@/components/landing/landing-testimonials";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Image,
   Zap,
@@ -328,6 +329,14 @@ export function PhotoGeneratorContent() {
             answer:
               "Every photo is automatically uploaded to Cloudflare R2 cloud storage and served via a global CDN. Photos load instantly when your LinkedIn post is published and remain available as long as your account is active.",
           },
+        ]}
+      />
+
+      <LandingRelatedContent
+        headline="Related Resources"
+        links={[
+          { title: "AI Image Generation", href: "/features/ai-image-generation" },
+          { title: "LinkedIn Image Sizes", href: "/free-tools/linkedin-image-sizes" },
         ]}
       />
 
