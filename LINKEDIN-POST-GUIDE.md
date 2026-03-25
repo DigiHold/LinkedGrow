@@ -395,7 +395,7 @@ Output the post in this format:
 
 ```
 📅 [DAY] — [Format]
-Scheduled for: [next weekday occurrence] at 8:00 AM LA time
+Will be saved as: Draft
 
 ---
 
@@ -494,14 +494,9 @@ curl -s -o /tmp/linkedin-blog-image.webp "FEATURED_WEBP_URL_FROM_RSS"
 
 ---
 
-## Step 8: Schedule on LinkedGrow
+## Step 8: Save as Draft on LinkedGrow
 
-Calculate the scheduling date:
-- Find the next occurrence of today's weekday
-- If today IS the right weekday and it's before 8 AM LA time, schedule for today
-- Otherwise schedule for next week's occurrence
-- Time: always `T08:00:00-07:00` (8 AM Los Angeles)
-- Check against existing scheduled dates — if there's a conflict, use the week after
+Save the post as a **draft**. The user will schedule it manually.
 
 ### Posts with AI-generated image (Authority, Lead Magnet, Hot Take)
 
@@ -510,7 +505,7 @@ IMAGE_BASE64=$(base64 -i /tmp/linkedin-post-image.webp)
 curl -s -X POST "https://linkedgrow.ai/api/v1/posts" \
   -H "Authorization: Bearer REMOVED" \
   -H "Content-Type: application/json" \
-  -d '{"content": "POST_TEXT", "status": "scheduled", "scheduledAt": "DATETIME", "firstComment": "COMMENT_TEXT", "mediaData": {"base64": "data:image/webp;base64,'"$IMAGE_BASE64"'"}}'
+  -d '{"content": "POST_TEXT", "status": "draft", "firstComment": "COMMENT_TEXT", "mediaData": {"base64": "data:image/webp;base64,'"$IMAGE_BASE64"'"}}'
 ```
 
 ### Posts with blog featured image (Blog Promotion)
@@ -520,7 +515,7 @@ IMAGE_BASE64=$(base64 -i /tmp/linkedin-blog-image.webp)
 curl -s -X POST "https://linkedgrow.ai/api/v1/posts" \
   -H "Authorization: Bearer REMOVED" \
   -H "Content-Type: application/json" \
-  -d '{"content": "POST_TEXT", "status": "scheduled", "scheduledAt": "DATETIME", "firstComment": "COMMENT_TEXT", "mediaData": {"base64": "data:image/webp;base64,'"$IMAGE_BASE64"'"}}'
+  -d '{"content": "POST_TEXT", "status": "draft", "firstComment": "COMMENT_TEXT", "mediaData": {"base64": "data:image/webp;base64,'"$IMAGE_BASE64"'"}}'
 ```
 
 ### Carousel (text only, no image)
@@ -529,15 +524,14 @@ curl -s -X POST "https://linkedgrow.ai/api/v1/posts" \
 curl -s -X POST "https://linkedgrow.ai/api/v1/posts" \
   -H "Authorization: Bearer REMOVED" \
   -H "Content-Type: application/json" \
-  -d '{"content": "COMPANION_POST_TEXT", "status": "scheduled", "scheduledAt": "DATETIME", "firstComment": "COMMENT_TEXT"}'
+  -d '{"content": "COMPANION_POST_TEXT", "status": "draft", "firstComment": "COMMENT_TEXT"}'
 ```
 
-### After scheduling, show:
+### After saving, show:
 
 ```
-✅ Post scheduled!
+✅ Post saved as draft!
 Format: [format]
-Date: [date] at 8:00 AM LA time
 Post ID: [id from API response]
 LinkedGrow: https://linkedgrow.ai/dashboard/editor?edit=[post_id]
 [For carousel: "Add your carousel slides in the LinkedGrow editor"]

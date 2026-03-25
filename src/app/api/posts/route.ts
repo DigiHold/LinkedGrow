@@ -101,7 +101,10 @@ export async function GET(request: NextRequest) {
       .select()
       .from(posts)
       .where(and(...conditions))
-      .orderBy(desc(sql`COALESCE(${posts.scheduledAt}, ${posts.publishedAt}, ${posts.updatedAt})`))
+      .orderBy(
+          sql`CASE ${posts.status} WHEN 'draft' THEN 0 WHEN 'scheduled' THEN 1 WHEN 'failed' THEN 2 WHEN 'published' THEN 3 END`,
+          desc(sql`COALESCE(${posts.scheduledAt}, ${posts.publishedAt}, ${posts.updatedAt})`)
+        )
       .limit(limit)
       .offset(offset);
 
