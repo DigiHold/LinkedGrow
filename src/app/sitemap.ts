@@ -15,6 +15,9 @@ const EXCLUDED_PATHS = [
   "/maintenance",
   "/reset-password", // Has dynamic token
   "/team/invite", // Private team invite page
+  "/sign-in", // Auth pages waste crawl budget
+  "/sign-up",
+  "/forgot-password",
 ];
 
 // Priority configuration for different page types
@@ -25,9 +28,6 @@ const PRIORITY_CONFIG: Record<string, { priority: number; changeFrequency: "alwa
   "/privacy": { priority: 0.3, changeFrequency: "yearly" },
   "/cookies": { priority: 0.3, changeFrequency: "yearly" },
   "/terms": { priority: 0.3, changeFrequency: "yearly" },
-  "/sign-in": { priority: 0.5, changeFrequency: "monthly" },
-  "/sign-up": { priority: 0.6, changeFrequency: "monthly" },
-  "/forgot-password": { priority: 0.4, changeFrequency: "monthly" },
   "/blog": { priority: 0.9, changeFrequency: "weekly" },
   "/pricing": { priority: 0.8, changeFrequency: "monthly" },
   "/affiliate": { priority: 0.7, changeFrequency: "monthly" },
@@ -133,7 +133,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/blog/${post.slug}`,
       lastModified: post.updatedAt || post.publishedAt,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.8,
     });
   }
 
