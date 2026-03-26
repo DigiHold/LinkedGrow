@@ -110,7 +110,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add a value-adding comment - a question, extra insight, or useful link..."
           className="min-h-20 resize-none"
-          maxLength={300}
+          maxLength={1250}
         />
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">
@@ -119,7 +119,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
           {value && (
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs text-muted-foreground">
-                {value.length}/300
+                {value.length}/1250
               </span>
               <button
                 onClick={() => onChange("")}
