@@ -98,12 +98,26 @@ export default auth(async (req) => {
     return NextResponse.redirect(signInUrl);
   }
 
+  // Protect non-public API routes
+  if (nextUrl.pathname.startsWith("/api/") && !isLoggedIn) {
+    const publicApiPrefixes = [
+      "/api/auth/", "/api/waitlist", "/api/stripe/webhook",
+      "/api/blog/comments", "/api/blog/schedule", "/api/docs/feedback",
+      "/api/docs/search", "/api/geo", "/api/indexnow",
+      "/api/qstash/", "/api/v1/", "/api/cron/",
+    ];
+    const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
+    if (!isPublic) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // Match all routes except static files and api
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
+    // Match all routes except static files
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
   ],
 };
