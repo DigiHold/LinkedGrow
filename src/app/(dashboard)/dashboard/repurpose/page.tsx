@@ -94,11 +94,13 @@ interface ContentData {
   source: "reddit" | "youtube" | "webpage" | "blog";
   title: string;
   content: string;
+  wordCount?: number;
   metadata?: {
     subreddit?: string;
     score?: number;
     commentCount?: number;
     duration?: number;
+    durationMinutes?: number;
     excerpt?: string;
     comments?: Array<{ body: string; score: number }>;
   };
@@ -191,25 +193,80 @@ async function fetchRedditPost(url: string): Promise<ContentData> {
   };
 }
 
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/<[^>]*>/g, "").replace(/\n/g, " ").trim();
+}
+
 async function fetchYoutubeContent(url: string): Promise<ContentData & { warning?: string }> {
-  const response = await fetch("/api/content/youtube", {
+  // Step 1: Get caption track URL from our server (lightweight InnerTube metadata call)
+  const trackResponse = await fetch("/api/content/youtube-tracks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
 
-  if (!response.ok) {
+  if (!trackResponse.ok) {
     let errorMsg = "Failed to extract YouTube content";
     try {
-      const data = await response.json();
+      const data = await trackResponse.json();
       errorMsg = data.error || errorMsg;
-    } catch {
-      // Server returned non-JSON error
-    }
+    } catch {}
     throw new Error(errorMsg);
   }
 
-  return response.json();
+  const { title, trackUrl } = await trackResponse.json();
+
+  // Step 2: Fetch the actual transcript XML from the user's browser (CORS allowed on timedtext)
+  // This uses the user's residential IP, so YouTube never blocks it
+  const xmlResponse = await fetch(trackUrl);
+  if (!xmlResponse.ok) {
+    throw new Error("Failed to download transcript from YouTube");
+  }
+
+  const xml = await xmlResponse.text();
+
+  // Parse XML transcript segments
+  const segments: { start: number; dur: number; text: string }[] = [];
+  const regex = /<text\s+start="([^"]*)"(?:\s+dur="([^"]*)")?[^>]*>([\s\S]*?)<\/text>/g;
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    const text = decodeHtmlEntities(match[3]);
+    if (text) segments.push({ start: parseFloat(match[1]), dur: parseFloat(match[2] || "0"), text });
+  }
+
+  if (segments.length === 0) {
+    throw new Error("Could not parse transcript from this video. Try a different video.");
+  }
+
+  // Combine into full transcript
+  const transcript = segments.map((s) => s.text).join(" ");
+  const lastSegment = segments[segments.length - 1];
+  const videoDurationSeconds = lastSegment.start + lastSegment.dur;
+  const durationMinutes = Math.round(videoDurationSeconds / 60);
+
+  // Trim to 4,000 words (~30 min of content)
+  const words = transcript.split(/\s+/);
+  const trimmedTranscript = words.slice(0, 4000).join(" ");
+
+  let warning: string | undefined;
+  if (videoDurationSeconds > 3600) {
+    warning = "This video is over 60 minutes. The AI will focus on the first ~30 minutes of content.";
+  }
+
+  return {
+    source: "youtube",
+    title,
+    content: trimmedTranscript,
+    wordCount: words.length,
+    metadata: {
+      duration: Math.round(videoDurationSeconds),
+      durationMinutes,
+    },
+    warning,
+  };
 }
 
 async function fetchWebpageContent(url: string): Promise<ContentData & { warning?: string }> {
