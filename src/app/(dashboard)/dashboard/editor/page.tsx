@@ -348,10 +348,7 @@ function EditorContent() {
       if (!response.ok) throw new Error("Failed to save changes");
       setSuccessMessage("Changes saved!");
       setShowSuccessToast(true);
-      setTimeout(() => {
-        setShowSuccessToast(false);
-        router.push("/dashboard/posts");
-      }, 1500);
+      setTimeout(() => setShowSuccessToast(false), 2000);
     } catch (error) {
       console.error("Save error:", error);
       showError(error instanceof Error ? error.message : "Failed to save changes");
