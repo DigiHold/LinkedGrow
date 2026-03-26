@@ -1,9 +1,24 @@
 import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { MAINTENANCE_MODE, MAINTENANCE_ALLOWED_ROUTES } from "@/lib/maintenance";
 import { db } from "@/lib/db";
 import { affiliates } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
+
+// Sign-out handler - runs BEFORE auth() to prevent session token refresh
+function handleSignOut() {
+  const response = NextResponse.json({ success: true });
+  const secureCookieOpts = { path: "/", secure: true, httpOnly: true, sameSite: "lax" as const, maxAge: 0 };
+  const basicCookieOpts = { path: "/", maxAge: 0 };
+
+  response.cookies.set("__Secure-authjs.session-token", "", secureCookieOpts);
+  response.cookies.set("authjs.session-token", "", basicCookieOpts);
+  response.cookies.set("__Host-authjs.csrf-token", "", { path: "/", secure: true, maxAge: 0 });
+  response.cookies.set("authjs.csrf-token", "", basicCookieOpts);
+  response.cookies.set("__Secure-authjs.callback-url", "", { path: "/", secure: true, maxAge: 0 });
+  response.cookies.set("authjs.callback-url", "", basicCookieOpts);
+  return response;
+}
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -17,30 +32,9 @@ const authRoutes = [
   "/sign-up",
 ];
 
-export default auth(async (req) => {
+// Wrapper: intercept signout BEFORE auth() touches the request
+const authProxy = auth(async (req) => {
   const { nextUrl } = req;
-
-  // Handle sign-out: clear all auth cookies and return immediately
-  // Must be handled here before auth() can refresh the session token
-  if (nextUrl.pathname === "/api/auth/signout" && req.method === "POST") {
-    const cookieName = process.env.NODE_ENV === "production"
-      ? "__Secure-authjs.session-token"
-      : "authjs.session-token";
-    const response = NextResponse.json({ success: true });
-    response.cookies.set(cookieName, "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-    });
-    response.cookies.set("__Host-authjs.csrf-token", "", { path: "/", secure: true, maxAge: 0 });
-    response.cookies.set("__Secure-authjs.callback-url", "", { path: "/", secure: true, maxAge: 0 });
-    response.cookies.set("authjs.session-token", "", { path: "/", maxAge: 0 });
-    response.cookies.set("authjs.csrf-token", "", { path: "/", maxAge: 0 });
-    response.cookies.set("authjs.callback-url", "", { path: "/", maxAge: 0 });
-    return response;
-  }
 
   // Allow OPTIONS requests to pass through (CORS preflight)
   if (req.method === "OPTIONS") {
@@ -140,6 +134,14 @@ export default auth(async (req) => {
 
   return NextResponse.next();
 });
+
+// Main export: intercept signout before auth() can refresh the session
+export default function proxy(req: NextRequest) {
+  if (req.nextUrl.pathname === "/api/auth/signout" && req.method === "POST") {
+    return handleSignOut();
+  }
+  return authProxy(req, {} as any);
+}
 
 export const config = {
   matcher: [
