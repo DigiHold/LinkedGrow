@@ -104,10 +104,11 @@ export default auth(async (req) => {
       "/api/auth/", "/api/waitlist", "/api/stripe/",
       "/api/blog/", "/api/docs/", "/api/geo", "/api/indexnow",
       "/api/qstash/", "/api/v1/", "/api/cron/",
-      "/api/google/", "/api/linkedin/", "/api/chat/",
+      "/api/google/", "/api/linkedin/", "/api/chat",
       "/api/consent", "/api/email-course", "/api/claude-course",
       "/api/marketing/", "/api/team/invite/validate",
       "/api/affiliate/apply", "/api/beta", "/api/free-tools/",
+      "/api/admin/affiliates/action",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {
