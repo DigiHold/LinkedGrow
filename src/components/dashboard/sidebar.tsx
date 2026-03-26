@@ -169,12 +169,9 @@ export function Sidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setIsUserMenuOpen(false);
-    try {
-      await fetch("/api/auth/signout", { method: "POST" });
-    } catch {}
-    window.location.href = "/";
+    window.location.href = "/api/auth/signout";
   };
 
   const showTooltip = (e: React.MouseEvent, text: string) => {
