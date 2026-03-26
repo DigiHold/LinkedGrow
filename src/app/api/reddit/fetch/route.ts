@@ -93,27 +93,43 @@ export async function POST(request: NextRequest) {
       jsonUrl = jsonUrl.replace(/\/?$/, ".json");
     }
 
-    // Fetch from Reddit server-side with browser-like headers to avoid bot detection
-    const redditResponse = await fetch(jsonUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cache-Control": "no-cache",
-      },
-    });
+    // Rotate User-Agent to reduce Reddit rate limiting on shared Vercel IPs
+    const userAgents = [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15",
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
+    ];
+    const ua = userAgents[Math.floor(Math.random() * userAgents.length)];
 
-    if (!redditResponse.ok) {
-      if (redditResponse.status === 404) {
+    // Fetch with retry (Reddit rate-limits Vercel shared IPs aggressively)
+    let redditResponse: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+      redditResponse = await fetch(jsonUrl, {
+        headers: {
+          "User-Agent": ua,
+          "Accept": "application/json, text/plain, */*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Cache-Control": "no-cache",
+        },
+      });
+      if (redditResponse.ok || redditResponse.status === 404) break;
+      if (redditResponse.status !== 429 && redditResponse.status !== 403) break;
+    }
+
+    if (!redditResponse || !redditResponse.ok) {
+      const status = redditResponse?.status;
+      if (status === 404) {
         return NextResponse.json({ error: "Reddit post not found" }, { status: 404 });
       }
-      if (redditResponse.status === 403) {
+      if (status === 403) {
         return NextResponse.json(
           { error: "Reddit blocked this request. Please try again in a few seconds." },
           { status: 403 }
         );
       }
-      if (redditResponse.status === 429) {
+      if (status === 429) {
         return NextResponse.json(
           { error: "Too many requests to Reddit. Please wait a moment and try again." },
           { status: 429 }
