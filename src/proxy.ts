@@ -105,6 +105,7 @@ export default auth(async (req) => {
       "/api/blog/comments", "/api/blog/schedule", "/api/docs/feedback",
       "/api/docs/search", "/api/geo", "/api/indexnow",
       "/api/qstash/", "/api/v1/", "/api/cron/",
+      "/api/google/", "/api/linkedin/",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {
