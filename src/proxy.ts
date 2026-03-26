@@ -101,11 +101,13 @@ export default auth(async (req) => {
   // Protect non-public API routes
   if (nextUrl.pathname.startsWith("/api/") && !isLoggedIn) {
     const publicApiPrefixes = [
-      "/api/auth/", "/api/waitlist", "/api/stripe/webhook",
-      "/api/blog/comments", "/api/blog/schedule", "/api/docs/feedback",
-      "/api/docs/search", "/api/geo", "/api/indexnow",
+      "/api/auth/", "/api/waitlist", "/api/stripe/",
+      "/api/blog/", "/api/docs/", "/api/geo", "/api/indexnow",
       "/api/qstash/", "/api/v1/", "/api/cron/",
       "/api/google/", "/api/linkedin/", "/api/chat/",
+      "/api/consent", "/api/email-course", "/api/claude-course",
+      "/api/marketing/", "/api/team/invite/validate",
+      "/api/affiliate/apply", "/api/beta", "/api/free-tools/",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {
