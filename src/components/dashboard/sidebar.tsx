@@ -171,7 +171,7 @@ export function Sidebar() {
 
   const handleSignOut = () => {
     setIsUserMenuOpen(false);
-    window.location.href = "/api/auth/signout";
+    window.location.href = "/sign-out";
   };
 
   const showTooltip = (e: React.MouseEvent, text: string) => {
