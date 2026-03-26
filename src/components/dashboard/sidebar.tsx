@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 const navigation = [
   {
@@ -171,7 +171,9 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     setIsUserMenuOpen(false);
-    await signOut({ redirect: false });
+    try {
+      await fetch("/api/auth/signout", { method: "POST" });
+    } catch {}
     window.location.href = "/";
   };
 
