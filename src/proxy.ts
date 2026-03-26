@@ -20,6 +20,28 @@ const authRoutes = [
 export default auth(async (req) => {
   const { nextUrl } = req;
 
+  // Handle sign-out: clear all auth cookies and return immediately
+  // Must be handled here before auth() can refresh the session token
+  if (nextUrl.pathname === "/api/auth/signout" && req.method === "POST") {
+    const cookieName = process.env.NODE_ENV === "production"
+      ? "__Secure-authjs.session-token"
+      : "authjs.session-token";
+    const response = NextResponse.json({ success: true });
+    response.cookies.set(cookieName, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    response.cookies.set("__Host-authjs.csrf-token", "", { path: "/", secure: true, maxAge: 0 });
+    response.cookies.set("__Secure-authjs.callback-url", "", { path: "/", secure: true, maxAge: 0 });
+    response.cookies.set("authjs.session-token", "", { path: "/", maxAge: 0 });
+    response.cookies.set("authjs.csrf-token", "", { path: "/", maxAge: 0 });
+    response.cookies.set("authjs.callback-url", "", { path: "/", maxAge: 0 });
+    return response;
+  }
+
   // Allow OPTIONS requests to pass through (CORS preflight)
   if (req.method === "OPTIONS") {
     return NextResponse.next();
