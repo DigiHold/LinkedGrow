@@ -6,8 +6,9 @@ import { affiliates } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
 // Sign-out handler - runs BEFORE auth() to prevent session token refresh
-function handleSignOut() {
-  const response = NextResponse.json({ success: true });
+// Uses redirect (not fetch) so the browser processes Set-Cookie headers reliably
+function handleSignOut(baseUrl: string) {
+  const response = NextResponse.redirect(new URL("/", baseUrl));
   const secureCookieOpts = { path: "/", secure: true, httpOnly: true, sameSite: "lax" as const, maxAge: 0 };
   const basicCookieOpts = { path: "/", maxAge: 0 };
 
@@ -137,8 +138,8 @@ const authProxy = auth(async (req) => {
 
 // Main export: intercept signout before auth() can refresh the session
 export default function proxy(req: NextRequest) {
-  if (req.nextUrl.pathname === "/api/auth/signout" && req.method === "POST") {
-    return handleSignOut();
+  if (req.nextUrl.pathname === "/api/auth/signout") {
+    return handleSignOut(req.nextUrl.origin);
   }
   return authProxy(req, {} as any);
 }
