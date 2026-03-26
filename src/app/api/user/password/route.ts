@@ -29,6 +29,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (newPassword.length > 128) {
+      return NextResponse.json(
+        { error: "New password must be no more than 128 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: "New password must contain at least one uppercase letter" },
+        { status: 400 }
+      );
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: "New password must contain at least one number" },
+        { status: 400 }
+      );
+    }
+
     // Get user with current password
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id),
@@ -53,11 +74,12 @@ export async function PUT(request: NextRequest) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password
+    // Update password and invalidate all other sessions
     await db
       .update(users)
       .set({
         password: hashedPassword,
+        passwordChangedAt: new Date().toISOString(),
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));

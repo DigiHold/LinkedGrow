@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { generateTOTPSecret, generateTOTPUri } from "@/lib/totp";
+import { rateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 import QRCode from "qrcode";
 
 export async function POST() {
@@ -13,6 +14,14 @@ export async function POST() {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    const rateLimitResult = rateLimit(`2fa-setup:${session.user.id}`, AUTH_RATE_LIMITS.twoFactorSetup);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
       );
     }
 

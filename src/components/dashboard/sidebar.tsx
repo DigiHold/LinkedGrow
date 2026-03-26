@@ -171,7 +171,8 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     setIsUserMenuOpen(false);
-    await signOut({ callbackUrl: "/" });
+    await signOut({ redirect: false });
+    window.location.href = "/";
   };
 
   const showTooltip = (e: React.MouseEvent, text: string) => {

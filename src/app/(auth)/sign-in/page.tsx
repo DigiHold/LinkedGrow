@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { redirectToCheckout } from "@/lib/checkout";
+import { sanitizeCallbackUrl } from "@/lib/url";
 
 // LinkedIn "in" icon only
 function LinkedInIcon({ className }: { className?: string }) {
@@ -33,7 +34,7 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { update: updateSession } = useSession();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
   const error = searchParams.get("error");
   const registered = searchParams.get("registered");
 
@@ -131,7 +132,7 @@ function SignInForm() {
           if (redirected) return;
         }
         // Use callbackUrl from the OAuth response if provided, otherwise use the one from URL
-        const redirectTo = event.data.callbackUrl || callbackUrl;
+        const redirectTo = sanitizeCallbackUrl(event.data.callbackUrl || callbackUrl);
         router.push(redirectTo);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);

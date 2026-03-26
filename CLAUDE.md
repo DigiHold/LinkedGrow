@@ -4,6 +4,48 @@
 >
 > LinkedGrow is pre-launch with ZERO users. Never add backward compatibility code, legacy field mappings, migration shims, or "for old users" logic. If something needs to change, change it directly. Delete unused code completely - no commented code, no "deprecated" markers, no fallbacks.
 
+> **CRITICAL: SECURITY-FIRST DEVELOPMENT**
+>
+> Every piece of code you write MUST be evaluated for security vulnerabilities BEFORE committing. This is non-negotiable. For EVERY new route, page, or feature, run through this checklist:
+>
+> **Authentication & Authorization:**
+> - Does this route require authentication? If yes, verify `await auth()` is checked AND the middleware covers it
+> - Does this route access user-specific data? Verify ownership check (IDOR prevention) - never trust IDs from the client without checking they belong to the authenticated user
+> - For admin routes, verify `session.user.isAdmin` is checked
+>
+> **Input Validation:**
+> - ALL user input MUST be validated: type, length, format, allowed values
+> - Email inputs: normalize with `.toLowerCase().trim()`, validate format
+> - String inputs: enforce max length to prevent DB bloat and DoS
+> - URLs from users: ALWAYS parse with `new URL()` and validate hostname/protocol - NEVER use `.includes()` for URL validation
+> - File uploads: validate type against allowlist, enforce size limits, re-encode images
+> - Passwords: min 8 chars, max 128 chars, require uppercase + number
+>
+> **Rate Limiting:**
+> - ALL public endpoints (no auth required) MUST have IP-based rate limiting
+> - ALL expensive operations (AI generation, file upload, email sending) MUST have per-user rate limiting
+> - Import from `@/lib/rate-limit` and use appropriate limits
+>
+> **Redirect & URL Safety:**
+> - NEVER redirect to a URL from user input without validation
+> - Use `sanitizeCallbackUrl()` from `@/lib/url` for any callback/redirect URLs
+> - NEVER use `router.push(userInput)` without sanitization
+>
+> **Data Exposure:**
+> - NEVER return sensitive data in API responses (passwords, API keys, tokens, secrets)
+> - NEVER log sensitive data (passwords, tokens, full API keys)
+> - Use gravatar hash instead of raw emails in public endpoints
+>
+> **Session Security:**
+> - Any security-sensitive operation (password change, 2FA disable) MUST set `passwordChangedAt` to invalidate existing sessions
+> - The JWT callback in `auth.ts` rejects tokens issued before `passwordChangedAt`
+>
+> **SSRF Prevention:**
+> - When the server fetches a URL provided by the user, validate the hostname against an allowlist
+> - Block localhost, private IPs (10.x, 172.16-31.x, 192.168.x), and internal domains
+>
+> If you're unsure whether something is secure, assume it's NOT and add the protection. False positives are better than vulnerabilities.
+
 ## Project Overview
 
 LinkedGrow is a SaaS platform that helps users create, schedule, and optimize LinkedIn content using AI. The key differentiator is the **BYOK (Bring Your Own Key)** model - users connect their own AI API keys (OpenAI, Anthropic, Google, etc.) for unlimited generations without monthly caps.
@@ -710,6 +752,15 @@ Article content here...
 4. **When adding a new category**: Create a folder in `src/content/docs/` with a `_category.json` containing `{ "title": "Category Name", "description": "...", "order": N }`.
 5. **Keep articles accurate**: The chatbot will use this content to answer users. Outdated or wrong information means wrong chatbot answers. When features change, update the relevant docs articles.
 6. **Do NOT write docs for unimplemented features**: Analytics, Advanced Analytics, and Engagement features are not done yet (waiting for LinkedIn API). Do not create docs articles for these until they are implemented.
+
+## Writing Commands
+
+| Command | Guide | What it does |
+|---------|-------|-------------|
+| "write linkedin" | `LINKEDIN-POST-GUIDE.md` | Write a LinkedIn post for today's format (Authority/Carousel/Lead Magnet/Hot Take/Blog Promo), generate image, schedule via API |
+| "write reddit" | `REDDIT-POST-GUIDE.md` | Research trending AI topics, write a r/WTFisAI post with flair, title, and content ready to paste |
+
+When the user says any of these commands, read the corresponding guide and follow it step by step.
 
 ## Founders
 

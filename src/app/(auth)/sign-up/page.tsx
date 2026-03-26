@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
 import { redirectToCheckout } from "@/lib/checkout";
+import { sanitizeCallbackUrl } from "@/lib/url";
 
 type SocialProvider = "linkedin" | "google" | null;
 
@@ -63,8 +64,8 @@ function SignUpContent() {
     if (subscribeNewsletter) params.set("newsletter", "true");
 
     // Pass through callbackUrl if present (e.g., for team invite flow)
-    const callbackUrl = searchParams.get("callbackUrl");
-    if (callbackUrl) params.set("callbackUrl", callbackUrl);
+    const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+    if (callbackUrl !== "/dashboard") params.set("callbackUrl", callbackUrl);
 
     // Open OAuth in a popup window
     const width = 500;
@@ -97,7 +98,7 @@ function SignUpContent() {
           if (redirected) return;
         }
         // Otherwise use callbackUrl from the OAuth response if provided, or dashboard
-        const redirectTo = event.data.callbackUrl || callbackUrl || '/dashboard';
+        const redirectTo = sanitizeCallbackUrl(event.data.callbackUrl || callbackUrl);
         router.push(redirectTo);
       } else if (event.data.type === `${provider}-error`) {
         window.removeEventListener('message', handleMessage);
@@ -158,13 +159,13 @@ function SignUpContent() {
       }
 
       // Redirect to sign in page, preserving plan selection and callbackUrl
-      const callbackUrl = searchParams.get("callbackUrl");
+      const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
       const plan = searchParams.get("plan");
       const interval = searchParams.get("interval");
       const coupon = searchParams.get("coupon");
 
       const signInParams = new URLSearchParams({ registered: "true" });
-      if (callbackUrl) signInParams.set("callbackUrl", callbackUrl);
+      if (callbackUrl !== "/dashboard") signInParams.set("callbackUrl", callbackUrl);
       if (plan) signInParams.set("plan", plan);
       if (interval) signInParams.set("interval", interval);
       if (coupon) signInParams.set("coupon", coupon);

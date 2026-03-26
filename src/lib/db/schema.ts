@@ -8,6 +8,7 @@ export const users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "timestamp" }),
   image: text("image"),
   password: text("password"), // Hashed password for credentials auth
+  passwordChangedAt: text("password_changed_at"), // ISO timestamp - invalidates JWTs issued before this time
 
   // 2FA fields
   twoFactorEnabled: integer("two_factor_enabled", { mode: "boolean" }).default(false),

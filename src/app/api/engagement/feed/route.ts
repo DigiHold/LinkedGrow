@@ -46,11 +46,6 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 200);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Force refresh: delete all cache so everything gets re-scraped
-    if (forceRefreshAll) {
-      await db.delete(linkedinProfilePostsCache);
-    }
-
     // Get all profiles from user's lists (or specific list)
     let profileRows;
     if (listId) {
@@ -88,6 +83,15 @@ export async function GET(request: NextRequest) {
     >();
     for (const p of profileRows) {
       if (!uniqueProfiles.has(p.vanityName)) uniqueProfiles.set(p.vanityName, p);
+    }
+
+    if (forceRefreshAll) {
+      const vanityNames = Array.from(uniqueProfiles.keys());
+      if (vanityNames.length > 0) {
+        await db.delete(linkedinProfilePostsCache).where(
+          inArray(linkedinProfilePostsCache.vanityName, vanityNames)
+        );
+      }
     }
 
     // Step 1: Load ALL cached posts (fast DB reads)

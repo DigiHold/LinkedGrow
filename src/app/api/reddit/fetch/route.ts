@@ -70,8 +70,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Reddit URL is required" }, { status: 400 });
     }
 
-    // Validate it's a Reddit URL
-    if (!url.includes("reddit.com")) {
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return NextResponse.json({ error: "Invalid Reddit URL" }, { status: 400 });
+    }
+
+    if (
+      parsedUrl.hostname !== "reddit.com" &&
+      !parsedUrl.hostname.endsWith(".reddit.com")
+    ) {
       return NextResponse.json({ error: "Invalid Reddit URL" }, { status: 400 });
     }
 

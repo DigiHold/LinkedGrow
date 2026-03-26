@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
+import { checkAIRateLimit } from "@/lib/rate-limit";
 import sharp from "sharp";
 
 export const maxDuration = 120;
@@ -111,6 +112,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    const aiRateLimit = checkAIRateLimit(session.user.id);
+    if (!aiRateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429 }
       );
     }
 

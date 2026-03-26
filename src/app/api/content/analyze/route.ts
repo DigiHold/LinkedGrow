@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { checkAIRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 120;
 
@@ -318,6 +319,14 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const aiRateLimit = checkAIRateLimit(session.user.id);
+    if (!aiRateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
     }
 
     const body: ContentInput = await request.json();
