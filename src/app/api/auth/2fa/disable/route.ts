@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { rateLimit, AUTH_RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    const rateLimitResult = rateLimit(`2fa-disable:${session.user.id}`, AUTH_RATE_LIMITS.twoFactor);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)) } }
       );
     }
 
@@ -46,12 +55,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Disable 2FA
+    // Disable 2FA and invalidate all existing sessions
     await db
       .update(users)
       .set({
         twoFactorEnabled: false,
         twoFactorSecret: null,
+        passwordChangedAt: new Date().toISOString(),
       })
       .where(eq(users.id, session.user.id));
 

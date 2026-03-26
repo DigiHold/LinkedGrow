@@ -18,7 +18,7 @@ export function generateTOTPToken(secret: string): string {
  * Verify a TOTP token against a secret
  */
 export function verifyTOTP(token: string, secret: string): boolean {
-  const result = verifySync({ token, secret });
+  const result = verifySync({ token, secret, epochTolerance: 1 });
   return result.valid;
 }
 

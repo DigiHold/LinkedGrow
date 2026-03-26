@@ -33,12 +33,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, password, subscribeNewsletter } = body;
+    const { name: rawName, email: rawEmail, password, subscribeNewsletter } = body;
 
-    // Validate input
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    const email = String(rawEmail).toLowerCase().trim();
+    const name = rawName ? String(rawName).trim().slice(0, 100) : null;
+
+    if (!email.includes("@")) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
         { status: 400 }
       );
     }
@@ -46,6 +55,13 @@ export async function POST(request: NextRequest) {
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Password must be at least 8 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length > 128) {
+      return NextResponse.json(
+        { error: "Password must be 128 characters or less" },
         { status: 400 }
       );
     }
@@ -64,7 +80,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email),
     });
@@ -98,7 +113,7 @@ export async function POST(request: NextRequest) {
     const userId = randomUUID();
     await db.insert(users).values({
       id: userId,
-      name: name || null,
+      name: name,
       email: email,
       password: hashedPassword,
       plan: "free",
@@ -129,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Subscribe to newsletter if opted in (non-blocking)
     if (subscribeNewsletter) {
-      subscribeToNewsletter({ email, name, source: "email_signup" }).catch((err) => {
+      subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch((err) => {
         console.error("Failed to subscribe to newsletter:", err);
       });
     }

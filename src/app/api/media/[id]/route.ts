@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { media, users } from "@/lib/db/schema";
+import { media, posts, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
 
@@ -97,6 +97,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const body = await request.json();
     const { altText, caption, sortOrder, postId } = body;
+
+    if (postId) {
+      const [targetPost] = await db
+        .select({ id: posts.id })
+        .from(posts)
+        .where(and(eq(posts.id, postId), eq(posts.userId, user.id)))
+        .limit(1);
+
+      if (!targetPost) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+    }
 
     const updateData: Record<string, unknown> = {};
 

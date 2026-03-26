@@ -95,6 +95,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Prevent open redirect attacks - only allow same-origin redirects
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {}
+      return baseUrl;
+    },
     async signIn({ user }) {
       // Allow sign in if user exists
       return !!user;
@@ -102,6 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.issuedAt = Date.now();
       }
 
       // Fetch latest user data from database on sign in or update
@@ -111,6 +120,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (dbUser) {
+          // Invalidate session if password was changed after token was issued
+          if (dbUser.passwordChangedAt && token.issuedAt) {
+            const changedAt = new Date(dbUser.passwordChangedAt as string).getTime();
+            if (changedAt > (token.issuedAt as number)) {
+              return { ...token, id: null };
+            }
+          }
+
           token.email = dbUser.email;
           token.name = dbUser.name;
           token.image = dbUser.image;

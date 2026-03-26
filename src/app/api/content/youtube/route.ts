@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { checkAIRateLimit } from "@/lib/rate-limit";
 
 function extractVideoId(url: string): string | null {
   const patterns = [
@@ -25,6 +26,14 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const aiRateLimit = checkAIRateLimit(session.user.id);
+    if (!aiRateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
     }
 
     // Check plan access

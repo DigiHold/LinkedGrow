@@ -53,6 +53,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (password.length > 128) {
+      return NextResponse.json(
+        { error: "Password must be no more than 128 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return NextResponse.json(
+        { error: "Password must contain at least one uppercase letter" },
+        { status: 400 }
+      );
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return NextResponse.json(
+        { error: "Password must contain at least one number" },
+        { status: 400 }
+      );
+    }
+
     // Hash the incoming token to compare with stored hash
     const tokenHash = hashToken(token);
 
@@ -75,11 +96,12 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Update user's password
+    // Update user's password and invalidate all existing sessions
     await db
       .update(users)
       .set({
         password: hashedPassword,
+        passwordChangedAt: new Date().toISOString(),
         updatedAt: new Date(),
       })
       .where(eq(users.id, resetToken.userId));
@@ -107,6 +129,26 @@ export async function POST(request: NextRequest) {
 // GET - Validate token (for checking before showing the form)
 export async function GET(request: NextRequest) {
   try {
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(
+      `reset-password-validate:${clientIP}`,
+      AUTH_RATE_LIMITS.resetPassword
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { valid: false, error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 

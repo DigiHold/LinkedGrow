@@ -91,14 +91,52 @@ export const AUTH_RATE_LIMITS = {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000,
   },
+  // 2FA verify/disable: 5 attempts per 15 minutes per user
+  twoFactor: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  // 2FA setup: 3 attempts per 15 minutes per user
+  twoFactorSetup: {
+    maxRequests: 3,
+    windowMs: 15 * 60 * 1000,
+  },
+  // Blog comments: 5 per 15 minutes per IP
+  blogComment: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  // AI generation: 30 per minute per user
+  aiGeneration: {
+    maxRequests: 30,
+    windowMs: 60 * 1000,
+  },
+  // Docs feedback: 10 per 15 minutes per IP
+  docsFeedback: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000,
+  },
+  // Google fonts proxy: 10 per minute per IP
+  fontsProxy: {
+    maxRequests: 10,
+    windowMs: 60 * 1000,
+  },
 };
+
+// Helper to check AI generation rate limit for authenticated user
+export function checkAIRateLimit(userId: string): RateLimitResult {
+  return rateLimit(`ai-gen:${userId}`, AUTH_RATE_LIMITS.aiGeneration);
+}
 
 // Helper to get client IP from request headers
 export function getClientIP(request: Request): string {
-  // Check common headers for real IP (behind proxy/CDN)
+  const vercelForwardedFor = request.headers.get("x-vercel-forwarded-for");
+  if (vercelForwardedFor) {
+    return vercelForwardedFor.split(",")[0].trim();
+  }
+
   const forwardedFor = request.headers.get("x-forwarded-for");
   if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
     return forwardedFor.split(",")[0].trim();
   }
 
@@ -107,12 +145,5 @@ export function getClientIP(request: Request): string {
     return realIP;
   }
 
-  // Vercel specific
-  const vercelForwardedFor = request.headers.get("x-vercel-forwarded-for");
-  if (vercelForwardedFor) {
-    return vercelForwardedFor.split(",")[0].trim();
-  }
-
-  // Fallback - this won't work in production but is fine for local dev
   return "127.0.0.1";
 }

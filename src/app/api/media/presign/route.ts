@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { fileName, contentType, fileSize, postId } = body;
 
-    if (!fileName || !contentType) {
+    if (!fileName || !contentType || !fileSize) {
       return NextResponse.json(
-        { error: "fileName and contentType are required" },
+        { error: "fileName, contentType, and fileSize are required" },
         { status: 400 }
       );
     }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file size based on media type
-    if (fileSize) {
+    {
       if (ALLOWED_IMAGE_TYPES.includes(contentType) && fileSize > MAX_IMAGE_SIZE) {
         return NextResponse.json(
           { error: "Image must be less than 5MB (LinkedIn limit)" },

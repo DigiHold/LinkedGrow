@@ -3,9 +3,16 @@ import { nanoid } from "nanoid";
 import { auth } from "@/lib/auth";
 import { db, docsFeedback } from "@/lib/db";
 import { desc, sql, eq } from "drizzle-orm";
+import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(`docs-feedback:${clientIP}`, AUTH_RATE_LIMITS.docsFeedback);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await request.json();
     const { articleSlug, categorySlug, helpful } = body;
 
@@ -32,6 +39,12 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(`docs-feedback:${clientIP}`, AUTH_RATE_LIMITS.docsFeedback);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await request.json();
     const { id, reason, helpful } = body;
 
