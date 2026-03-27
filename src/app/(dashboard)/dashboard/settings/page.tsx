@@ -815,9 +815,22 @@ function SettingsContent() {
                 <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-4">
                     {linkedInSettings?.postingTarget === "organization" ? (
-                      <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                        <Building2 className="w-8 h-8 text-slate-500" />
-                      </div>
+                      (() => {
+                        const selectedOrg = linkedInSettings?.organizations?.find(o => o.id === linkedInSettings?.selectedOrgId);
+                        return selectedOrg?.logoUrl ? (
+                          <Image
+                            src={selectedOrg.logoUrl}
+                            alt={linkedInName}
+                            width={64}
+                            height={64}
+                            className="w-16 h-16 rounded-lg object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                            <Building2 className="w-8 h-8 text-slate-500" />
+                          </div>
+                        );
+                      })()
                     ) : session?.user?.image ? (
                       <Image
                         src={session.user.image}
