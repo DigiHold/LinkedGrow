@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const { linkedInUser } = result;
 
     // Auto-refresh tokens if expired
-    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    const { posterToken, communityToken } = await ensureFreshTokens(linkedInUser.id);
     if (!posterToken) {
       console.error("[First Comment Webhook] LinkedIn token expired for user:", post.userId);
       return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
@@ -106,9 +106,12 @@ export async function POST(request: NextRequest) {
       commentLength: post.firstComment.length,
     });
 
+    // Use community token for org posts (has w_organization_social scope)
+    const token = isOrganization && communityToken ? communityToken : posterToken;
+
     // Post the comment on LinkedIn
     const commentResult = await createLinkedInComment(
-      posterToken,
+      token,
       post.linkedinPostId!,
       authorId!,
       post.firstComment!,

@@ -146,10 +146,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing action or postUrn" }, { status: 400 });
     }
 
+    // Determine actor (profile vs organization)
+    const isOrg = user.linkedinPostingTarget === "organization" && user.linkedinSelectedOrgId;
+    const actorId = isOrg ? user.linkedinSelectedOrgId! : user.linkedinProfileId;
+    const actorType: "person" | "organization" = isOrg ? "organization" : "person";
+
     const today = new Date().toISOString().split("T")[0];
 
     if (action === "like") {
-      await likeLinkedInPost(accessToken, postUrn, user.linkedinProfileId);
+      await likeLinkedInPost(accessToken, postUrn, actorId, actorType);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
@@ -169,7 +174,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Comment text is required" }, { status: 400 });
       }
 
-      await createLinkedInComment(accessToken, postUrn, user.linkedinProfileId, text.trim());
+      await createLinkedInComment(accessToken, postUrn, actorId, text.trim(), actorType);
 
       await db.insert(engagementActions).values({
         id: randomUUID(),
