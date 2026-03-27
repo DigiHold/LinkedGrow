@@ -1996,7 +1996,6 @@ export async function getPostsByAuthor(
   const encodedAuthor = encodeURIComponent(authorUrn);
   const url = `${LINKEDIN_REST_API_BASE}/posts?author=${encodedAuthor}&q=author&count=${count}&start=${start}&sortBy=LAST_MODIFIED`;
 
-  console.log('[LinkedIn Posts Sync] Fetching:', { authorUrn, count, start });
 
   const response = await fetch(url, {
     method: 'GET',
@@ -2060,7 +2059,6 @@ export async function getPostsByAuthor(
 
   const hasMore = (data.paging?.links || []).some((l: Record<string, unknown>) => l.rel === 'next');
 
-  console.log('[LinkedIn Posts Sync] Fetched:', { count: posts.length, hasMore });
   return { posts, total: data.paging?.total || posts.length, hasMore };
 }
 
@@ -2133,7 +2131,6 @@ export async function getImageDownloadUrls(
     }
   }
 
-  console.log('[LinkedIn Images] Got download URLs:', { requested: imageUrns.length, found: result.size });
   return result;
 }
 
@@ -2284,7 +2281,6 @@ export async function reshareLinkedInPost(
     isReshareDisabledByAuthor: false,
   };
 
-  console.log('[LinkedIn Reshare] Request:', { actor: authorUrn, originalPost: postUrn });
 
   const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
     method: 'POST',
@@ -2304,7 +2300,6 @@ export async function reshareLinkedInPost(
   }
 
   const result = await getPostIdFromRestResponse(response);
-  console.log('[LinkedIn Reshare] Success:', { id: result.id });
   return result;
 }
 
@@ -2323,7 +2318,6 @@ export async function getLinkedInFeed(
 ): Promise<{ posts: LinkedInFeedPost[]; total: number }> {
   const url = `${LINKEDIN_REST_API_BASE}/posts?q=feed&count=${count}&start=${start}`;
 
-  console.log('[LinkedIn Feed] Fetching:', { count, start });
 
   const response = await fetch(url, {
     method: 'GET',
@@ -2475,7 +2469,6 @@ export async function getLinkedInFeed(
     };
   });
 
-  console.log('[LinkedIn Feed] Enriched:', { posts: posts.length, authors: authorProfiles.size, images: imageDownloadUrls.size });
   return { posts, total: data.paging?.total || posts.length };
 }
 
