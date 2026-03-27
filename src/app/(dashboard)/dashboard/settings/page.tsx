@@ -174,7 +174,11 @@ function SettingsContent() {
     profileImage?: string | null;
     organizations: Array<{ id: string; name: string; logoUrl?: string }>;
     hasOrganizations: boolean;
+    communityConnected?: boolean;
   } | null>(null);
+
+  // Community App connection
+  const [isConnectingCommunity, setIsConnectingCommunity] = useState(false);
 
   // LinkedIn selection modal
   const [showSelectionModal, setShowSelectionModal] = useState(false);
@@ -215,6 +219,7 @@ function SettingsContent() {
               profileImage: data.profileImage,
               organizations: data.organizations || [],
               hasOrganizations: data.hasOrganizations || false,
+              communityConnected: data.communityConnected || false,
             });
           }
         }
@@ -884,6 +889,93 @@ function SettingsContent() {
             </div>
           )}
         </>
+      )}
+
+      {/* Community Management API Connection - shown below main LinkedIn connect for owners only */}
+      {!isTeamMember && linkedInConnected && (
+        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
+          <div className={cn(
+            "px-5 py-4",
+            linkedInSettings?.communityConnected ? "bg-emerald-600" : "bg-slate-500"
+          )}>
+            <div className="flex items-center gap-3">
+              <Linkedin className="w-6 h-6 text-white" />
+              <div>
+                <h3 className="text-white font-semibold">
+                  {linkedInSettings?.communityConnected ? "Community Management API Connected" : "Community Management API"}
+                </h3>
+                <p className="text-white/80 text-sm">
+                  {linkedInSettings?.communityConnected
+                    ? "Analytics, feed viewing, and engagement features enabled"
+                    : "Connect to unlock per-post analytics and engagement features"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-5">
+            {linkedInSettings?.communityConnected ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Connected</p>
+                    <p className="text-xs text-muted-foreground">Per-post analytics and follower tracking active</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    This second OAuth connection grants access to post analytics, follower growth, and engagement features via LinkedIn&apos;s Community Management API.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setIsConnectingCommunity(true);
+                    const width = 600;
+                    const height = 700;
+                    const left = window.screenX + (window.innerWidth - width) / 2;
+                    const top = window.screenY + (window.innerHeight - height) / 2;
+                    const popup = window.open(
+                      "/api/linkedin/auth?app=community&popup=true&mode=connect",
+                      "linkedin-community-auth",
+                      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+                    );
+                    const handleMessage = (event: MessageEvent) => {
+                      if (event.data?.type === "linkedin-success" || event.data?.type === "linkedin-error") {
+                        setIsConnectingCommunity(false);
+                        window.removeEventListener("message", handleMessage);
+                        if (event.data?.type === "linkedin-success") {
+                          window.location.reload();
+                        }
+                      }
+                    };
+                    window.addEventListener("message", handleMessage);
+                    const checkInterval = setInterval(() => {
+                      if (popup?.closed) {
+                        clearInterval(checkInterval);
+                        setIsConnectingCommunity(false);
+                        window.removeEventListener("message", handleMessage);
+                      }
+                    }, 1000);
+                  }}
+                  disabled={isConnectingCommunity}
+                  className="bg-linkedin hover:bg-linkedin/90 text-white shrink-0"
+                >
+                  {isConnectingCommunity ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Linkedin className="w-4 h-4 mr-2" />
+                  )}
+                  {isConnectingCommunity ? "Connecting..." : "Connect Community API"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Account Settings */}

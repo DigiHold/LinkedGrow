@@ -272,11 +272,11 @@ export function Sidebar() {
         <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
           {navigation
             .filter((item) => {
+              // Hide engagement page entirely (pending Community Management API approval)
+              if (item.href === "/dashboard/engagement") {
+                return false;
+              }
               if (isTeamMember) {
-                // Engagement is always hidden for team members (uses owner's LinkedIn)
-                if (item.href === "/dashboard/engagement") {
-                  return false;
-                }
                 // Analytics: admins can see, members cannot
                 if (item.href === "/dashboard/analytics") {
                   return teamRole === "admin";
