@@ -179,6 +179,7 @@ function SettingsContent() {
 
   // Community App connection
   const [isConnectingCommunity, setIsConnectingCommunity] = useState(false);
+  const [isDisconnectingCommunity, setIsDisconnectingCommunity] = useState(false);
 
   // LinkedIn selection modal
   const [showSelectionModal, setShowSelectionModal] = useState(false);
@@ -937,6 +938,36 @@ function SettingsContent() {
                     <p className="text-xs text-muted-foreground">Per-post analytics and follower tracking active</p>
                   </div>
                 </div>
+                <Button
+                  onClick={async () => {
+                    setIsDisconnectingCommunity(true);
+                    try {
+                      const res = await fetch("/api/linkedin/community/disconnect", { method: "POST" });
+                      if (res.ok) {
+                        setLinkedInSettings(prev => prev ? {
+                          ...prev,
+                          communityConnected: false,
+                          organizations: [],
+                          hasOrganizations: false,
+                        } : prev);
+                        setLinkedInMessage({ type: "success", text: "Community Management API disconnected" });
+                        // Reset posting target display to profile
+                        setLinkedInName(linkedInSettings?.profileName || "");
+                      }
+                    } catch {
+                      setLinkedInMessage({ type: "error", text: "Failed to disconnect Community API" });
+                    } finally {
+                      setIsDisconnectingCommunity(false);
+                    }
+                  }}
+                  disabled={isDisconnectingCommunity}
+                  className="bg-red-600 hover:bg-red-700 text-white border-0"
+                >
+                  {isDisconnectingCommunity ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Disconnect
+                </Button>
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

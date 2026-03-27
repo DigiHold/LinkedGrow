@@ -12,20 +12,24 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Clear community tokens from database
+    // Clear community tokens and organization data from database
     await db
       .update(users)
       .set({
         linkedinCommunityAccessToken: null,
         linkedinCommunityRefreshToken: null,
         linkedinCommunityTokenExpiry: null,
+        linkedinOrganizations: null,
+        linkedinPostingTarget: "profile",
+        linkedinSelectedOrgId: null,
+        linkedinSelectedOrgName: null,
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
 
     return NextResponse.json({
       success: true,
-      message: "LinkedIn engagement features disconnected",
+      message: "Community Management API disconnected",
     });
   } catch (error) {
     console.error("Failed to disconnect community:", error);
