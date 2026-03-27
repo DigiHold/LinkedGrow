@@ -1142,48 +1142,53 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
 
   for (const orgId of orgIds) {
     try {
-      // Try REST API first
-      let response = await fetch(
-        `${LINKEDIN_REST_API_BASE}/organizations/${orgId}`,
+      // Use v2 API with projection to get resolved logo URLs directly
+      const response = await fetch(
+        `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,logoV2(original~:playableStreams))`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-Restli-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': LINKEDIN_API_VERSION,
           },
         }
       );
 
-      if (!response.ok) {
-        // Fallback to v2
-        response = await fetch(
-          `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,logoV2(original~:playableStreams))`,
+      let name = 'Unknown Organization';
+      let logoUrl: string | undefined;
+
+      if (response.ok) {
+        const orgData = await response.json();
+        name = orgData.localizedName || name;
+        // v2 with projection returns resolved image URLs
+        if (orgData.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
+          logoUrl = orgData.logoV2['original~'].elements[0].identifiers[0].identifier;
+        }
+      } else {
+        // Fallback: REST API for name only
+        const restResponse = await fetch(
+          `${LINKEDIN_REST_API_BASE}/organizations/${orgId}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': LINKEDIN_API_VERSION,
             },
           }
         );
+        if (restResponse.ok) {
+          const restData = await restResponse.json();
+          name = restData.localizedName || name;
+          // REST API returns a URN for logo - resolve it via images API
+          const logoUrn = restData.logoV2?.original;
+          if (logoUrn && logoUrn.startsWith('urn:li:')) {
+            const resolved = await getImageDownloadUrls(accessToken, [logoUrn]).catch(() => new Map());
+            logoUrl = resolved.get(logoUrn);
+          }
+        }
       }
 
-      if (response.ok) {
-        const orgData = await response.json();
-        let logoUrl: string | undefined;
-        if (orgData.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
-          logoUrl = orgData.logoV2['original~'].elements[0].identifiers[0].identifier;
-        }
-        // Also check logoV2.original for REST API format
-        if (!logoUrl && orgData.logoV2?.original) {
-          logoUrl = orgData.logoV2.original;
-        }
-
-        organizations.push({
-          id: orgId,
-          name: orgData.localizedName || 'Unknown Organization',
-          logoUrl,
-        });
-      }
+      console.log(`[LinkedIn Orgs] Org ${orgId}: name=${name}, logoUrl=${logoUrl ? 'found' : 'none'}`);
+      organizations.push({ id: orgId, name, logoUrl });
     } catch {
       console.error(`[LinkedIn Orgs] Failed to fetch details for org ${orgId}`);
     }
