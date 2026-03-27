@@ -1682,11 +1682,11 @@ export async function getOrganizationShareStatistics(
     const startTimestamp = start.getTime();
     const endTimestamp = end.getTime();
 
-    // Fetch share statistics for the organization
+    // Fetch share statistics for the organization (REST API doesn't support timeIntervals)
     const encodedShares = shareUrns.map(urn => encodeURIComponent(urn)).join(',');
 
     const response = await fetch(
-      `${LINKEDIN_REST_API_BASE}/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(`urn:li:organization:${organizationId}`)}&shares=List(${encodedShares})&timeIntervals.timeGranularityType=ALL&timeIntervals.timeRange.start=${startTimestamp}&timeIntervals.timeRange.end=${endTimestamp}`,
+      `${LINKEDIN_REST_API_BASE}/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(`urn:li:organization:${organizationId}`)}&shares=List(${encodedShares})`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -1766,8 +1766,22 @@ export async function getOrganizationFollowerCount(
       const stats = data.elements[0];
       const followerGains = stats.followerGains || {};
 
+      // REST API returns followerCountsByAssociationType instead of followerCounts
+      let totalOrganic = 0;
+      let totalPaid = 0;
+      if (stats.followerCounts) {
+        totalOrganic = stats.followerCounts.organicFollowerCount || 0;
+        totalPaid = stats.followerCounts.paidFollowerCount || 0;
+      } else if (stats.followerCountsByGeoCountry) {
+        // Sum from geo breakdown (most reliable total)
+        for (const entry of stats.followerCountsByGeoCountry) {
+          totalOrganic += entry.followerCounts?.organicFollowerCount || 0;
+          totalPaid += entry.followerCounts?.paidFollowerCount || 0;
+        }
+      }
+
       return {
-        followerCount: stats.followerCounts?.organicFollowerCount || 0 + stats.followerCounts?.paidFollowerCount || 0,
+        followerCount: totalOrganic + totalPaid,
         followerGrowth: {
           organicCount: followerGains.organicFollowerGain || 0,
           paidCount: followerGains.paidFollowerGain || 0,
