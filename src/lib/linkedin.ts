@@ -1047,7 +1047,43 @@ export async function validateLinkedInToken(accessToken: string): Promise<boolea
  */
 export async function getAdministeredOrganizations(accessToken: string): Promise<LinkedInOrganization[]> {
   try {
-    // First, get the organization access control to find orgs the user administers
+    // Try REST API first (Community Management API - requires LinkedIn-Version header)
+    console.log('[LinkedIn Orgs] Trying REST API organizationAcls...');
+    const restResponse = await fetch(
+      `${LINKEDIN_REST_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
+        },
+      }
+    );
+
+    if (restResponse.ok) {
+      const restData = await restResponse.json();
+      console.log('[LinkedIn Orgs] REST API response:', JSON.stringify(restData).substring(0, 500));
+      const orgIds: string[] = [];
+
+      if (restData.elements && Array.isArray(restData.elements)) {
+        for (const element of restData.elements) {
+          const orgUrn = element.organization || element.organizationalTarget;
+          if (orgUrn && orgUrn.includes('urn:li:organization:')) {
+            orgIds.push(orgUrn.replace('urn:li:organization:', ''));
+          }
+        }
+      }
+
+      if (orgIds.length > 0) {
+        return await fetchOrganizationDetails(accessToken, orgIds);
+      }
+    } else {
+      const errText = await restResponse.text();
+      console.warn('[LinkedIn Orgs] REST API failed:', restResponse.status, errText.substring(0, 300));
+    }
+
+    // Fallback: v2 API with projection
+    console.log('[LinkedIn Orgs] Trying v2 API organizationAcls...');
     const aclResponse = await fetch(
       `${LINKEDIN_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organization~(localizedName,logoV2(original~:playableStreams))))`,
       {
@@ -1058,44 +1094,102 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
       }
     );
 
-    if (!aclResponse.ok) {
-      // If ACL endpoint fails, try the simpler organizations endpoint
-      console.warn('organizationAcls failed, trying alternate method');
-      return await getOrganizationsAlternate(accessToken);
-    }
+    if (aclResponse.ok) {
+      const aclData = await aclResponse.json();
+      console.log('[LinkedIn Orgs] v2 API response:', JSON.stringify(aclData).substring(0, 500));
+      const organizations: LinkedInOrganization[] = [];
 
-    const aclData = await aclResponse.json();
-    const organizations: LinkedInOrganization[] = [];
+      if (aclData.elements && Array.isArray(aclData.elements)) {
+        for (const element of aclData.elements) {
+          const orgUrn = element.organization;
+          const orgDetails = element['organization~'];
 
-    if (aclData.elements && Array.isArray(aclData.elements)) {
-      for (const element of aclData.elements) {
-        const orgUrn = element.organization;
-        const orgDetails = element['organization~'];
+          if (orgUrn && orgDetails) {
+            const orgId = orgUrn.replace('urn:li:organization:', '');
+            let logoUrl: string | undefined;
+            if (orgDetails.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
+              logoUrl = orgDetails.logoV2['original~'].elements[0].identifiers[0].identifier;
+            }
 
-        if (orgUrn && orgDetails) {
-          // Extract org ID from URN (e.g., "urn:li:organization:12345" -> "12345")
-          const orgId = orgUrn.replace('urn:li:organization:', '');
-
-          // Extract logo URL if available
-          let logoUrl: string | undefined;
-          if (orgDetails.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
-            logoUrl = orgDetails.logoV2['original~'].elements[0].identifiers[0].identifier;
+            organizations.push({
+              id: orgId,
+              name: orgDetails.localizedName || 'Unknown Organization',
+              logoUrl,
+            });
           }
-
-          organizations.push({
-            id: orgId,
-            name: orgDetails.localizedName || 'Unknown Organization',
-            logoUrl,
-          });
         }
       }
+
+      if (organizations.length > 0) return organizations;
+    } else {
+      console.warn('[LinkedIn Orgs] v2 API failed:', aclResponse.status);
     }
 
-    return organizations;
+    // Last fallback: organizationalEntityAcls
+    console.log('[LinkedIn Orgs] Trying organizationalEntityAcls fallback...');
+    return await getOrganizationsAlternate(accessToken);
   } catch (error) {
     console.error('Failed to fetch administered organizations:', error);
     return [];
   }
+}
+
+/**
+ * Fetch organization name and logo for a list of org IDs
+ */
+async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): Promise<LinkedInOrganization[]> {
+  const organizations: LinkedInOrganization[] = [];
+
+  for (const orgId of orgIds) {
+    try {
+      // Try REST API first
+      let response = await fetch(
+        `${LINKEDIN_REST_API_BASE}/organizations/${orgId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': LINKEDIN_API_VERSION,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Fallback to v2
+        response = await fetch(
+          `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,logoV2(original~:playableStreams))`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+            },
+          }
+        );
+      }
+
+      if (response.ok) {
+        const orgData = await response.json();
+        let logoUrl: string | undefined;
+        if (orgData.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
+          logoUrl = orgData.logoV2['original~'].elements[0].identifiers[0].identifier;
+        }
+        // Also check logoV2.original for REST API format
+        if (!logoUrl && orgData.logoV2?.original) {
+          logoUrl = orgData.logoV2.original;
+        }
+
+        organizations.push({
+          id: orgId,
+          name: orgData.localizedName || 'Unknown Organization',
+          logoUrl,
+        });
+      }
+    } catch {
+      console.error(`[LinkedIn Orgs] Failed to fetch details for org ${orgId}`);
+    }
+  }
+
+  return organizations;
 }
 
 // ============================================
