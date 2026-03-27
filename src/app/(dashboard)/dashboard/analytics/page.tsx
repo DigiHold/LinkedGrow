@@ -120,6 +120,13 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
+  // Auto-refresh when posting target changes (profile <-> company page)
+  useEffect(() => {
+    const handleTargetChange = () => fetchAnalytics(true);
+    window.addEventListener("linkedin-target-changed", handleTargetChange);
+    return () => window.removeEventListener("linkedin-target-changed", handleTargetChange);
+  }, [fetchAnalytics]);
+
   const handleSync = async () => {
     setIsSyncing(true);
     setSyncMessage(null);

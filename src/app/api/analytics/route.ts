@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     // Check cache first (1 hour TTL) to avoid rate limits
     const refresh = searchParams.get("refresh") === "true";
-    const cacheKey = `${user.id}:${days}:${advanced}`;
+    const cacheKey = `${user.id}:${days}:${advanced}:${user.linkedinPostingTarget || 'profile'}`;
     if (refresh) {
       // Clear ALL cache entries for this user (both basic and advanced, all date ranges)
       for (const key of analyticsCache.keys()) {
