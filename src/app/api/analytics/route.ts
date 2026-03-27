@@ -418,6 +418,7 @@ export async function GET(request: NextRequest) {
       posts: sortedPosts,
       followerGrowth,
       capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, hasCommunityConnected: !!communityToken, postingTarget },
+      _debug: { target: postingTarget, isOrg: !!isOrg, orgId: user.linkedinSelectedOrgId, hasCommunityToken: !!communityToken, hasPosterToken: !!posterToken, postsFound: allPosts.length, analyticsFound: postAnalyticsMap.size },
       // Always calculate best posting times (used by basic analytics page)
       advanced: {
         bestPostingTimes: calculateBestPostingTimes(withAnalytics, userTimezone),
