@@ -120,17 +120,48 @@ export async function GET(request: NextRequest) {
       const orgId = user.linkedinSelectedOrgId!;
       const orgUrn = `urn:li:organization:${orgId}`;
 
+      // Load local DB posts and their media (images on R2) for matching
+      const dbPosts = await db.select().from(posts)
+        .where(and(eq(posts.userId, user.id), eq(posts.status, "published")))
+        .orderBy(desc(posts.publishedAt))
+        .limit(100);
+      const dbPostsByLinkedinId = new Map<string, typeof dbPosts[0]>();
+      for (const p of dbPosts) {
+        if (p.linkedinPostId) dbPostsByLinkedinId.set(p.linkedinPostId, p);
+      }
+
+      // Load media from R2 for local posts
+      const dbPostIds = dbPosts.map(p => p.id);
+      const localMediaMap = new Map<string, string>();
+      if (dbPostIds.length > 0) {
+        const mediaRows = await db.select({ postId: media.postId, storageUrl: media.storageUrl, mimeType: media.mimeType })
+          .from(media)
+          .where(eq(media.userId, user.id));
+        for (const m of mediaRows) {
+          if (m.postId && !localMediaMap.has(m.postId) && m.mimeType?.startsWith("image/")) {
+            localMediaMap.set(m.postId, m.storageUrl);
+          }
+        }
+      }
+      log(`Local DB: ${dbPosts.length} posts, ${localMediaMap.size} images`);
+
       // 1. Fetch ALL posts from LinkedIn (org has r_organization_social)
       try {
         const result = await getPostsByAuthor(token, orgUrn, 100);
         log(`Org posts fetched: ${result.posts.length}`);
 
-        // Get image URLs
-        const imageUrns = result.posts.filter(p => p.mediaId?.includes("urn:li:image:")).map(p => p.mediaId!);
-        const imageUrls = imageUrns.length > 0
-          ? await getImageDownloadUrls(token, imageUrns).catch(() => new Map<string, string>())
+        // Only fetch LinkedIn images for posts NOT in our DB
+        const needLinkedInImages: string[] = [];
+        for (const p of result.posts) {
+          const dbPost = dbPostsByLinkedinId.get(p.id);
+          if (!dbPost && p.mediaId?.includes("urn:li:image:")) {
+            needLinkedInImages.push(p.mediaId);
+          }
+        }
+        const imageUrls = needLinkedInImages.length > 0
+          ? await getImageDownloadUrls(token, needLinkedInImages).catch(() => new Map<string, string>())
           : new Map<string, string>();
-        log(`Image URLs: ${imageUrls.size}`);
+        log(`LinkedIn image URLs: ${imageUrls.size}, Local images: ${localMediaMap.size}`);
 
         for (const p of result.posts) {
           if (p.lifecycleState !== "PUBLISHED") continue;
@@ -142,17 +173,22 @@ export async function GET(request: NextRequest) {
           else if (p.mediaType === "document") postType = "carousel";
           else if (p.mediaType === "image" || p.mediaType === "multiImage" || p.mediaType === "article") postType = "image";
 
+          // Use local R2 image if post was published through LinkedGrow, otherwise LinkedIn
+          const dbPost = dbPostsByLinkedinId.get(p.id);
+          const localImage = dbPost ? (dbPost.linkedinImageUrl || localMediaMap.get(dbPost.id)) : undefined;
+          const linkedInImage = p.mediaId ? imageUrls.get(p.mediaId) : undefined;
+
           allPosts.push({
-            id: p.id,
+            id: dbPost?.id || p.id,
             content: p.commentary?.substring(0, 200) || null,
             postType,
             status: "published",
             publishedAt: published.toISOString(),
             createdAt: new Date(p.createdAt).toISOString(),
             linkedinPostId: p.id,
-            linkedinPostUrl: `https://www.linkedin.com/feed/update/${p.id}/`,
-            linkedinImageUrl: p.mediaId ? imageUrls.get(p.mediaId) : undefined,
-            syncedFromLinkedin: true,
+            linkedinPostUrl: dbPost?.linkedinPostUrl || `https://www.linkedin.com/feed/update/${p.id}/`,
+            linkedinImageUrl: localImage || linkedInImage || undefined,
+            syncedFromLinkedin: !dbPost,
           });
         }
       } catch (err) {
