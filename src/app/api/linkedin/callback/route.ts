@@ -179,6 +179,16 @@ export async function GET(request: NextRequest) {
         const organizations = await getAdministeredOrganizations(tokenData.access_token);
         const hasOrganizations = organizations.length > 0;
 
+        // Download and store company logos on R2 (same as profile pictures)
+        for (const org of organizations) {
+          if (org.logoUrl) {
+            const storedLogoUrl = await downloadAndStoreProfilePicture(org.logoUrl, `org-${org.id}`);
+            if (storedLogoUrl) {
+              org.logoUrl = storedLogoUrl;
+            }
+          }
+        }
+
         await db
           .update(users)
           .set({
