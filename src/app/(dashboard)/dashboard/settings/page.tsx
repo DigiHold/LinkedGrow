@@ -944,21 +944,34 @@ function SettingsContent() {
                       "linkedin-community-auth",
                       `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
                     );
-                    const handleMessage = (event: MessageEvent) => {
+                    const handleCommunityMessage = (event: MessageEvent) => {
                       if (event.data?.type === "linkedin-success" || event.data?.type === "linkedin-error") {
                         setIsConnectingCommunity(false);
-                        window.removeEventListener("message", handleMessage);
+                        window.removeEventListener("message", handleCommunityMessage);
                         if (event.data?.type === "linkedin-success") {
-                          window.location.reload();
+                          // Refetch settings then show org selection if available
+                          fetch("/api/linkedin/settings").then(r => r.json()).then(data => {
+                            setLinkedInSettings(prev => prev ? {
+                              ...prev,
+                              communityConnected: true,
+                              organizations: data.organizations || [],
+                              hasOrganizations: data.hasOrganizations || false,
+                            } : prev);
+                            if (event.data.showSelection) {
+                              setShowSelectionModal(true);
+                            } else {
+                              setLinkedInMessage({ type: "success", text: "Community Management API connected!" });
+                            }
+                          });
                         }
                       }
                     };
-                    window.addEventListener("message", handleMessage);
+                    window.addEventListener("message", handleCommunityMessage);
                     const checkInterval = setInterval(() => {
                       if (popup?.closed) {
                         clearInterval(checkInterval);
                         setIsConnectingCommunity(false);
-                        window.removeEventListener("message", handleMessage);
+                        window.removeEventListener("message", handleCommunityMessage);
                       }
                     }, 1000);
                   }}

@@ -175,6 +175,10 @@ export async function GET(request: NextRequest) {
         // Fetch headline + vanity name via r_basicprofile
         const profileData = await getLinkedInProfileWithHeadline(tokenData.access_token);
 
+        // Fetch administered organizations (community app has rw_organization_admin scope)
+        const organizations = await getAdministeredOrganizations(tokenData.access_token);
+        const hasOrganizations = organizations.length > 0;
+
         await db
           .update(users)
           .set({
@@ -186,9 +190,22 @@ export async function GET(request: NextRequest) {
             linkedinHeadline: profileData?.headline || null,
             linkedinVanityName: profileData?.vanityName || null,
             linkedinMemberId: profileData?.memberId || null,
+            // Store organizations for page selection
+            linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
+            linkedinPostingTarget: hasOrganizations ? null : 'profile',
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));
+
+        // If user has organizations, show selection modal
+        if (hasOrganizations && isPopup) {
+          const response = createPopupResponse(true, { name: 'Community App', showSelection: true });
+          response.cookies.delete('linkedin_oauth_state');
+          response.cookies.delete('linkedin_app_type');
+          response.cookies.delete('linkedin_oauth_mode');
+          response.cookies.delete('linkedin_popup');
+          return response;
+        }
       }
 
       if (isPopup) {
@@ -201,7 +218,7 @@ export async function GET(request: NextRequest) {
       }
 
       const response = NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/engagement?community=connected`
+        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?community=connected`
       );
       response.cookies.delete('linkedin_oauth_state');
       response.cookies.delete('linkedin_app_type');
@@ -518,10 +535,6 @@ export async function GET(request: NextRequest) {
           storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
         }
 
-        // Fetch administered organizations (only for poster app)
-        const organizations = await getAdministeredOrganizations(tokenData.access_token);
-        const hasOrganizations = organizations.length > 0;
-
         await db
           .update(users)
           .set({
@@ -536,35 +549,11 @@ export async function GET(request: NextRequest) {
             image: storedPictureUrl,
             // Update name if not already set
             name: fullName,
-            // Store organizations for selection
-            linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
-            // Default to profile if no orgs, otherwise keep previous selection or null for selection page
-            linkedinPostingTarget: hasOrganizations ? null : 'profile',
+            // Default posting target to profile (org selection happens after community app connect)
+            linkedinPostingTarget: 'profile',
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id));
-
-        // If user has organizations, signal the parent to show selection modal
-        if (hasOrganizations) {
-          // Handle popup mode with organizations - send message to show selection modal
-          if (isPopup) {
-            const response = createPopupResponse(true, { name: fullName, showSelection: true });
-            response.cookies.delete('linkedin_oauth_state');
-            response.cookies.delete('linkedin_app_type');
-            response.cookies.delete('linkedin_oauth_mode');
-            response.cookies.delete('linkedin_popup');
-            return response;
-          }
-
-          // Non-popup mode - redirect to settings with showSelection param
-          const response = NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?linkedin=connected&name=${encodeURIComponent(fullName)}&showSelection=true`
-          );
-          response.cookies.delete('linkedin_oauth_state');
-          response.cookies.delete('linkedin_app_type');
-          response.cookies.delete('linkedin_oauth_mode');
-          return response;
-        }
       }
     }
 
