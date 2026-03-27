@@ -160,10 +160,19 @@ export async function refreshLinkedInToken(
  * Check if a token is expired or will expire within the buffer period.
  * Buffer: 24 hours before actual expiry to avoid edge cases.
  */
-export function isTokenExpired(tokenExpiry: Date | null): boolean {
+export function isTokenExpired(tokenExpiry: Date | string | number | null): boolean {
   if (!tokenExpiry) return false; // No expiry stored, assume valid
   const buffer = 24 * 60 * 60 * 1000; // 24 hours
-  return new Date(tokenExpiry).getTime() - buffer < Date.now();
+  // Handle Unix seconds (10-digit number) vs milliseconds vs Date string
+  let expiryMs: number;
+  if (typeof tokenExpiry === 'number' || (typeof tokenExpiry === 'string' && /^\d+$/.test(tokenExpiry))) {
+    const num = typeof tokenExpiry === 'string' ? parseInt(tokenExpiry, 10) : tokenExpiry;
+    // If the number is less than year 2000 in ms, it's in seconds
+    expiryMs = num < 946684800000 ? num * 1000 : num;
+  } else {
+    expiryMs = new Date(tokenExpiry).getTime();
+  }
+  return expiryMs - buffer < Date.now();
 }
 
 /**
