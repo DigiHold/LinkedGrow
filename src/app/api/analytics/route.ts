@@ -51,7 +51,7 @@ interface PostData {
 }
 
 export async function GET(request: NextRequest) {
-  const log = (_msg: string) => { /* silent */ };
+  const log = (msg: string) => { console.log(`[Analytics] ${msg}`); };
 
   try {
     const session = await auth();
