@@ -1677,11 +1677,12 @@ export async function getOrganizationShareStatistics(
     const encodedShares = shareUrns.map(urn => encodeURIComponent(urn)).join(',');
 
     const response = await fetch(
-      `${LINKEDIN_API_BASE}/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}&shares=List(${encodedShares})&timeIntervals.timeGranularityType=ALL&timeIntervals.timeRange.start=${startTimestamp}&timeIntervals.timeRange.end=${endTimestamp}`,
+      `${LINKEDIN_REST_API_BASE}/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}&shares=List(${encodedShares})&timeIntervals.timeGranularityType=ALL&timeIntervals.timeRange.start=${startTimestamp}&timeIntervals.timeRange.end=${endTimestamp}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
         },
       }
     );
@@ -1735,11 +1736,12 @@ export async function getOrganizationFollowerCount(
   try {
     // Get follower statistics
     const response = await fetch(
-      `${LINKEDIN_API_BASE}/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}`,
+      `${LINKEDIN_REST_API_BASE}/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
         },
       }
     );
@@ -1781,11 +1783,12 @@ async function getOrganizationFollowerCountAlternate(
 ): Promise<LinkedInOrganizationStats | null> {
   try {
     const response = await fetch(
-      `${LINKEDIN_API_BASE}/networkSizes/urn:li:organization:${organizationId}?edgeType=CompanyFollowedByMember`,
+      `${LINKEDIN_REST_API_BASE}/networkSizes/urn:li:organization:${organizationId}?edgeType=CompanyFollowedByMember`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
         },
       }
     );
@@ -1820,11 +1823,12 @@ export async function getOrganizationPageStatistics(
     const end = timeRange?.end || now;
 
     const response = await fetch(
-      `${LINKEDIN_API_BASE}/organizationPageStatistics?q=organization&organization=urn:li:organization:${organizationId}&timeIntervals.timeGranularityType=ALL&timeIntervals.timeRange.start=${start.getTime()}&timeIntervals.timeRange.end=${end.getTime()}`,
+      `${LINKEDIN_REST_API_BASE}/organizationPageStatistics?q=organization&organization=urn:li:organization:${organizationId}&timeIntervals.timeGranularityType=ALL&timeIntervals.timeRange.start=${start.getTime()}&timeIntervals.timeRange.end=${end.getTime()}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': LINKEDIN_API_VERSION,
         },
       }
     );
@@ -1868,11 +1872,12 @@ export async function getOrganizationFollowerDemographics(
     for (const facet of facets) {
       try {
         const response = await fetch(
-          `${LINKEDIN_API_BASE}/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}&breakdown=${facet}`,
+          `${LINKEDIN_REST_API_BASE}/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:${organizationId}&breakdown=${facet}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': LINKEDIN_API_VERSION,
             },
           }
         );
