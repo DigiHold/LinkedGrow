@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-refresh tokens if expired
-    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    const { posterToken, communityToken } = await ensureFreshTokens(linkedInUser.id);
     if (!posterToken) {
       await db.update(posts)
         .set({
@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
     const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: "person" | "organization" = isOrganization ? "organization" : "person";
 
+    // Use community token for org posts (has w_organization_social), poster token for personal
+    const token = isOrganization && communityToken ? communityToken : posterToken;
+
     // Get attached media if any
     const postMedia = await db
       .select()
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest) {
     if (firstDocument?.storageUrl) {
       // Post with document/PDF (carousel) from R2
       postResult = await createLinkedInPostWithDocument(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstDocument.storageUrl,
@@ -155,7 +158,7 @@ export async function POST(request: NextRequest) {
     } else if (firstVideo?.storageUrl) {
       // Post with video from R2
       postResult = await createLinkedInPostWithVideo(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstVideo.storageUrl,
@@ -167,7 +170,7 @@ export async function POST(request: NextRequest) {
     } else if (firstImage?.storageUrl) {
       // Post with image from R2
       postResult = await createLinkedInPostWithImage(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstImage.storageUrl,
@@ -178,7 +181,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        posterToken,
+        token,
         authorId,
         post.content,
         "PUBLIC",

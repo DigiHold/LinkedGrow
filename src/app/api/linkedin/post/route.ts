@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-refresh tokens if expired
-    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
+    const { posterToken, communityToken } = await ensureFreshTokens(linkedInUser.id);
     if (!posterToken) {
       return NextResponse.json(
         { error: 'LinkedIn token has expired and could not be refreshed. Please reconnect your account in Settings.' },
@@ -112,12 +112,15 @@ export async function POST(request: NextRequest) {
     const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: 'person' | 'organization' = isOrganization ? 'organization' : 'person';
 
+    // Use community token for org posts (has w_organization_social), poster token for personal
+    const token = isOrganization && communityToken ? communityToken : posterToken;
+
     let postResult;
 
     if (documentUrl) {
       // Document/PDF post (carousel) - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithDocument(
-        posterToken,
+        token,
         authorId,
         text,
         documentUrl,
@@ -128,7 +131,7 @@ export async function POST(request: NextRequest) {
     } else if (videoUrl && videoMimeType) {
       // Video post - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithVideo(
-        posterToken,
+        token,
         authorId,
         text,
         videoUrl,
@@ -140,7 +143,7 @@ export async function POST(request: NextRequest) {
     } else if (imageUrl) {
       // Image post - fetch from R2 URL and upload to LinkedIn
       postResult = await createLinkedInPostWithImage(
-        posterToken,
+        token,
         authorId,
         text,
         imageUrl,
@@ -151,7 +154,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        posterToken,
+        token,
         authorId,
         text,
         visibility,
