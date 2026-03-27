@@ -181,9 +181,38 @@ export function Sidebar() {
 
   const hideTooltip = () => setTooltip(null);
 
-  // User display info
-  const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "User";
-  const userImage = session?.user?.image;
+  // Fetch LinkedIn posting target to show company page info in sidebar
+  const [linkedInTarget, setLinkedInTarget] = useState<{
+    postingTarget: string;
+    selectedOrgName?: string | null;
+    selectedOrgLogoUrl?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/linkedin/settings")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.connected && data.postingTarget === "organization") {
+          const orgs = data.organizations || [];
+          const selectedOrg = orgs.find((o: { id: string }) => o.id === data.selectedOrgId);
+          setLinkedInTarget({
+            postingTarget: "organization",
+            selectedOrgName: data.selectedOrgName,
+            selectedOrgLogoUrl: selectedOrg?.logoUrl || null,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // User display info - show company page when posting to org
+  const isPostingToOrg = linkedInTarget?.postingTarget === "organization";
+  const userName = isPostingToOrg && linkedInTarget?.selectedOrgName
+    ? linkedInTarget.selectedOrgName
+    : session?.user?.name || session?.user?.email?.split("@")[0] || "User";
+  const userImage = isPostingToOrg && linkedInTarget?.selectedOrgLogoUrl
+    ? linkedInTarget.selectedOrgLogoUrl
+    : session?.user?.image;
   const userPlan = planNames[session?.user?.plan || "free"] || "Free Plan";
   const userInitials = userName
     .split(" ")
