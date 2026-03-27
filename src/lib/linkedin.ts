@@ -2094,7 +2094,28 @@ export async function getImageDownloadUrls(
       });
 
       if (!response.ok) {
-        console.error('[LinkedIn Images] Batch fetch failed:', response.status);
+        // Retry once after 1s delay on rate limit
+        if (response.status === 429) {
+          await new Promise(r => setTimeout(r, 1000));
+          const retry = await fetch(url, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': LINKEDIN_API_VERSION,
+              'X-RestLi-Method': 'BATCH_GET',
+            },
+          });
+          if (retry.ok) {
+            const retryData = await retry.json();
+            for (const [urn, imageData] of Object.entries(retryData.results || {})) {
+              const img = imageData as Record<string, unknown>;
+              if (img.downloadUrl && img.status === 'AVAILABLE') {
+                result.set(urn, img.downloadUrl as string);
+              }
+            }
+          }
+        }
         continue;
       }
 
