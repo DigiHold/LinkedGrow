@@ -920,8 +920,8 @@ function SettingsContent() {
                 </h3>
                 <p className="text-white/80 text-sm">
                   {linkedInSettings?.communityConnected
-                    ? "Analytics, feed viewing, and engagement features enabled"
-                    : "Connect to unlock per-post analytics and engagement features"}
+                    ? "Post analytics and follower tracking enabled"
+                    : "Connect to unlock per-post analytics and follower tracking"}
                 </p>
               </div>
             </div>
@@ -973,7 +973,7 @@ function SettingsContent() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
-                    This second OAuth connection grants access to post analytics, follower growth, and engagement features via LinkedIn&apos;s Community Management API.
+                    This second OAuth connection grants access to post analytics and follower growth tracking via LinkedIn&apos;s Community Management API.
                   </p>
                 </div>
                 <Button
