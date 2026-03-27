@@ -993,20 +993,8 @@ function SettingsContent() {
                         setIsConnectingCommunity(false);
                         window.removeEventListener("message", handleCommunityMessage);
                         if (event.data?.type === "linkedin-success") {
-                          // Refetch settings then show org selection if available
-                          fetch("/api/linkedin/settings").then(r => r.json()).then(data => {
-                            setLinkedInSettings(prev => prev ? {
-                              ...prev,
-                              communityConnected: true,
-                              organizations: data.organizations || [],
-                              hasOrganizations: data.hasOrganizations || false,
-                            } : prev);
-                            if (event.data.showSelection) {
-                              setShowSelectionModal(true);
-                            } else {
-                              setLinkedInMessage({ type: "success", text: "Community Management API connected!" });
-                            }
-                          });
+                          // Reload page to pick up org data and show Change button
+                          window.location.reload();
                         }
                       }
                     };
