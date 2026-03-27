@@ -64,22 +64,17 @@ export async function GET(request: NextRequest) {
     const days = parseInt(searchParams.get("days") || "30");
     const advanced = searchParams.get("advanced") === "true";
 
-    // Check cache first (1 hour TTL) to avoid rate limits
+    // Cache disabled - always fetch fresh data to avoid stale results when switching targets
     const refresh = searchParams.get("refresh") === "true";
     const cacheKey = `${user.id}:${days}:${advanced}:${user.linkedinPostingTarget || 'profile'}`;
     if (refresh) {
-      // Clear ALL cache entries for this user (both basic and advanced, all date ranges)
       for (const key of analyticsCache.keys()) {
         if (key.startsWith(`${user.id}:`)) analyticsCache.delete(key);
       }
-      log(`Cache cleared for user`);
-    } else {
-      const cached = analyticsCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        log(`Returning cached data (${Math.round((Date.now() - cached.timestamp) / 60000)}min old)`);
-        return NextResponse.json(cached.data);
-      }
     }
+    // Always clear any existing cache entry for this key
+    analyticsCache.delete(cacheKey);
+    log(`Fetching fresh data (target: ${user.linkedinPostingTarget || 'profile'})`);
 
     const userPlan = (user.plan || "free") as PlanId;
     if (!canAccessFeature(userPlan, "analytics")) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
