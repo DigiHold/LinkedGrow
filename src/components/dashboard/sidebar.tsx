@@ -188,7 +188,7 @@ export function Sidebar() {
     selectedOrgLogoUrl?: string | null;
   } | null>(null);
 
-  useEffect(() => {
+  const fetchLinkedInTarget = () => {
     fetch("/api/linkedin/settings")
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -200,9 +200,19 @@ export function Sidebar() {
             selectedOrgName: data.selectedOrgName,
             selectedOrgLogoUrl: selectedOrg?.logoUrl || null,
           });
+        } else {
+          setLinkedInTarget(null);
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchLinkedInTarget();
+    // Listen for posting target changes from settings page
+    const handleTargetChange = () => fetchLinkedInTarget();
+    window.addEventListener("linkedin-target-changed", handleTargetChange);
+    return () => window.removeEventListener("linkedin-target-changed", handleTargetChange);
   }, []);
 
   // User display info - show company page when posting to org

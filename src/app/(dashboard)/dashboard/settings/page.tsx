@@ -677,6 +677,8 @@ function SettingsContent() {
 
       setShowSelectionModal(false);
       setLinkedInMessage({ type: "success", text: `Now posting to ${newName}` });
+      // Notify sidebar to update immediately
+      window.dispatchEvent(new Event("linkedin-target-changed"));
     } catch (err) {
       setLinkedInMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save selection" });
     } finally {

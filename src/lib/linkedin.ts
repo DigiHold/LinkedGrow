@@ -1048,7 +1048,7 @@ export async function validateLinkedInToken(accessToken: string): Promise<boolea
 export async function getAdministeredOrganizations(accessToken: string): Promise<LinkedInOrganization[]> {
   try {
     // Try REST API first (Community Management API - requires LinkedIn-Version header)
-    console.log('[LinkedIn Orgs] Trying REST API organizationAcls...');
+    // Try REST API first (Community Management API)
     const restResponse = await fetch(
       `${LINKEDIN_REST_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR`,
       {
@@ -1062,7 +1062,6 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
 
     if (restResponse.ok) {
       const restData = await restResponse.json();
-      console.log('[LinkedIn Orgs] REST API response:', JSON.stringify(restData).substring(0, 500));
       const orgIds: string[] = [];
 
       if (restData.elements && Array.isArray(restData.elements)) {
@@ -1079,11 +1078,10 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
       }
     } else {
       const errText = await restResponse.text();
-      console.warn('[LinkedIn Orgs] REST API failed:', restResponse.status, errText.substring(0, 300));
     }
 
     // Fallback: v2 API with projection
-    console.log('[LinkedIn Orgs] Trying v2 API organizationAcls...');
+    // Fallback: v2 API with projection
     const aclResponse = await fetch(
       `${LINKEDIN_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organization~(localizedName,logoV2(original~:playableStreams))))`,
       {
@@ -1096,7 +1094,6 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
 
     if (aclResponse.ok) {
       const aclData = await aclResponse.json();
-      console.log('[LinkedIn Orgs] v2 API response:', JSON.stringify(aclData).substring(0, 500));
       const organizations: LinkedInOrganization[] = [];
 
       if (aclData.elements && Array.isArray(aclData.elements)) {
@@ -1122,11 +1119,10 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
 
       if (organizations.length > 0) return organizations;
     } else {
-      console.warn('[LinkedIn Orgs] v2 API failed:', aclResponse.status);
     }
 
     // Last fallback: organizationalEntityAcls
-    console.log('[LinkedIn Orgs] Trying organizationalEntityAcls fallback...');
+    // Last fallback: organizationalEntityAcls
     return await getOrganizationsAlternate(accessToken);
   } catch (error) {
     console.error('Failed to fetch administered organizations:', error);
@@ -1187,7 +1183,6 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
         }
       }
 
-      console.log(`[LinkedIn Orgs] Org ${orgId}: name=${name}, logoUrl=${logoUrl ? 'found' : 'none'}`);
       organizations.push({ id: orgId, name, logoUrl });
     } catch {
       console.error(`[LinkedIn Orgs] Failed to fetch details for org ${orgId}`);
