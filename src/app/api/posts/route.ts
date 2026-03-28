@@ -103,7 +103,12 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
       .orderBy(
           sql`CASE ${posts.status} WHEN 'draft' THEN 0 WHEN 'scheduled' THEN 1 WHEN 'failed' THEN 2 WHEN 'published' THEN 3 END`,
-          desc(sql`COALESCE(${posts.scheduledAt}, ${posts.publishedAt}, ${posts.updatedAt})`)
+          desc(sql`CASE ${posts.status}
+            WHEN 'draft' THEN COALESCE(${posts.updatedAt}, ${posts.createdAt})
+            WHEN 'scheduled' THEN ${posts.scheduledAt}
+            WHEN 'published' THEN COALESCE(${posts.publishedAt}, ${posts.updatedAt})
+            WHEN 'failed' THEN COALESCE(${posts.updatedAt}, ${posts.createdAt})
+          END`)
         )
       .limit(limit)
       .offset(offset);
