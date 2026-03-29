@@ -7,6 +7,7 @@ import {
   analyzeKeywordCannibalization,
   analyzeCanonicals,
 } from "@/lib/page-keywords";
+import { findAllPages, getPublicPagePaths } from "@/lib/public-pages";
 import fs from "fs";
 import path from "path";
 
@@ -138,41 +139,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Paths to exclude from public page listing (same as sitemap)
-const EXCLUDED_PATHS = [
-  "/dashboard",
-  "/api",
-  "/onboarding",
-  "/checkout",
-  "/maintenance",
-  "/reset-password",
-  "/team/invite",
-];
-
-// Recursively find all page.tsx files and convert to URL paths
-function findAllPages(dir: string, basePath: string = ""): string[] {
-  const pages: string[] = [];
-  try {
-    const items = fs.readdirSync(dir);
-    for (const item of items) {
-      const fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) {
-        if (item.startsWith("_") || item === "api" || item === "node_modules") continue;
-        let urlSegment = item;
-        if (item.startsWith("(") && item.endsWith(")")) urlSegment = "";
-        if (item.startsWith("[")) continue;
-        const newBasePath = urlSegment ? `${basePath}/${urlSegment}` : basePath;
-        pages.push(...findAllPages(fullPath, newBasePath));
-      } else if (item === "page.tsx" || item === "page.ts") {
-        pages.push(basePath || "/");
-      }
-    }
-  } catch {
-    // ignore read errors
-  }
-  return pages;
-}
 
 // Convert path to readable label
 function pathToLabel(pagePath: string): string {
@@ -184,18 +150,11 @@ function pathToLabel(pagePath: string): string {
     .join(" > ");
 }
 
-// Get all public pages by scanning the filesystem (same approach as sitemap.ts)
+// Get all public pages by scanning the filesystem (uses shared utility)
 function getPublicPages(): { url: string; label: string }[] {
-  const appDir = path.join(process.cwd(), "src", "app");
-  const allPages = findAllPages(appDir);
+  const pagePaths = getPublicPagePaths();
 
-  return allPages
-    .filter((pagePath) => {
-      if (EXCLUDED_PATHS.some((excluded) => pagePath.startsWith(excluded))) return false;
-      // Skip individual blog articles - they are tracked separately via blog posts section
-      if (pagePath.startsWith("/blog/")) return false;
-      return true;
-    })
+  return pagePaths
     .map((pagePath) => ({
       url: pagePath === "/" ? BASE_URL : `${BASE_URL}${pagePath}`,
       label: pathToLabel(pagePath),
@@ -206,7 +165,7 @@ function getPublicPages(): { url: string; label: string }[] {
 // Scan all page files for broken internal links
 function scanBrokenInternalLinks(): { source: string; href: string; type: "page" | "blog" }[] {
   const appDir = path.join(process.cwd(), "src", "app");
-  const allPages = findAllPages(appDir);
+  const allPages = findAllPages(appDir, "");
   const allPagePaths = new Set(allPages);
 
   // Also add blog article slugs as valid paths
