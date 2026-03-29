@@ -4,14 +4,17 @@
 #
 # Usage: QSTASH_TOKEN=your_token bash scripts/setup-qstash-indexing-cron.sh
 #
-# To list existing schedules: curl -H "Authorization: Bearer $QSTASH_TOKEN" https://qstash.upstash.io/v2/schedules
-# To delete a schedule:       curl -X DELETE -H "Authorization: Bearer $QSTASH_TOKEN" https://qstash.upstash.io/v2/schedules/SCHEDULE_ID
+# QStash region: us-east-1 (QSTASH_URL can override)
+# To list existing schedules: curl -H "Authorization: Bearer $QSTASH_TOKEN" $QSTASH_URL/v2/schedules
+# To delete a schedule:       curl -X DELETE -H "Authorization: Bearer $QSTASH_TOKEN" $QSTASH_URL/v2/schedules/SCHEDULE_ID
 
 if [ -z "$QSTASH_TOKEN" ]; then
   echo "Error: QSTASH_TOKEN environment variable is required"
   echo "Usage: QSTASH_TOKEN=your_token bash scripts/setup-qstash-indexing-cron.sh"
   exit 1
 fi
+
+QSTASH_URL="${QSTASH_URL:-https://qstash-us-east-1.upstash.io}"
 
 DESTINATION="https://linkedgrow.ai/api/cron/index-sitemap"
 # Daily at 8:00 AM UTC (midnight LA / 9 AM Paris)
@@ -23,7 +26,7 @@ echo "  Schedule: $CRON_SCHEDULE (daily at 8 AM UTC)"
 echo ""
 
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -X POST "https://qstash.upstash.io/v2/schedules/$DESTINATION" \
+  -X POST "$QSTASH_URL/v2/schedules/$DESTINATION" \
   -H "Authorization: Bearer $QSTASH_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Upstash-Cron: $CRON_SCHEDULE" \
