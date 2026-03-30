@@ -62,6 +62,7 @@ const MONTHS = [
 interface PostMedia {
   id: string;
   storageUrl: string;
+  storageKey: string;
   mimeType: string;
 }
 
@@ -140,7 +141,7 @@ export function CalendarContent() {
   const [editPostFirstComment, setEditPostFirstComment] = useState("");
   const [editScheduleTime, setEditScheduleTime] = useState("");
   const [editScheduleDate, setEditScheduleDate] = useState("");
-  const [editAttachedImage, setEditAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string } | null>(null);
+  const [editAttachedImage, setEditAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string; storageUrl?: string; storageKey?: string } | null>(null);
 
   // Error toast state
   const [showErrorToast, setShowErrorToast] = useState(false);
@@ -911,9 +912,11 @@ export function CalendarContent() {
     if (post.media && post.media.length > 0) {
       const existingMedia = post.media[0];
       setEditAttachedImage({
-        base64: "", // Empty since we're using existing URL
+        base64: "",
         mimeType: existingMedia.mimeType,
         preview: existingMedia.storageUrl,
+        storageUrl: existingMedia.storageUrl,
+        storageKey: existingMedia.storageKey,
       });
     } else {
       setEditAttachedImage(null);
@@ -956,7 +959,8 @@ export function CalendarContent() {
       // Determine media changes
       const originalHasMedia = selectedPost.media && selectedPost.media.length > 0;
       const currentHasMedia = editAttachedImage !== null;
-      const isNewUpload = currentHasMedia && editAttachedImage?.base64 && editAttachedImage.base64.length > 0;
+      const hasNewR2Media = currentHasMedia && editAttachedImage?.storageUrl && editAttachedImage?.storageKey;
+      const hasNewBase64 = currentHasMedia && editAttachedImage?.base64 && editAttachedImage.base64.length > 0;
 
       // Build request body
       const requestBody: Record<string, unknown> = {
@@ -970,8 +974,17 @@ export function CalendarContent() {
         requestBody.removeMedia = true;
       }
 
-      // If user added new media (has base64 data)
-      if (isNewUpload) {
+      // If user added new media via PostEditor (already on R2)
+      if (hasNewR2Media && !originalHasMedia) {
+        requestBody.mediaInfo = {
+          storageUrl: editAttachedImage!.storageUrl,
+          storageKey: editAttachedImage!.storageKey,
+          mimeType: editAttachedImage!.mimeType,
+        };
+      }
+
+      // If user added new media via base64 upload
+      if (!hasNewR2Media && hasNewBase64) {
         requestBody.mediaData = {
           base64: editAttachedImage!.base64,
           mimeType: editAttachedImage!.mimeType,

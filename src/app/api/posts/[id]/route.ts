@@ -4,7 +4,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
-import { deleteMultipleFromR2 } from "@/lib/storage/r2";
+import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/r2";
+import sharp from "sharp";
 import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 import { PLANS, PlanId } from "@/lib/plans";
@@ -165,7 +166,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { content, status, postType, scheduledAt, metadata, mediaInfo, removeMedia, firstComment } = body;
+    const { content, status, postType, scheduledAt, metadata, mediaInfo, mediaData, removeMedia, firstComment } = body;
 
     // Validate scheduled posts have a future date
     if (status === "scheduled") {
@@ -284,8 +285,56 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.postType = "text";
     }
 
+    // Handle mediaData (base64) by uploading to R2 first, then treat as mediaInfo
+    let processedMediaInfo = mediaInfo;
+    if (mediaData?.base64 && !mediaInfo?.storageUrl) {
+      if (!isR2Configured()) {
+        return NextResponse.json(
+          { error: "Storage not configured" },
+          { status: 503 }
+        );
+      }
+
+      try {
+        const base64Data = mediaData.base64.replace(/^data:[^;]+;base64,/, "");
+        const inputBuffer = Buffer.from(base64Data, "base64");
+
+        if (inputBuffer.length > 10 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: "Image too large (max 10MB)" },
+            { status: 400 }
+          );
+        }
+
+        const optimizedBuffer = await sharp(inputBuffer)
+          .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 85 })
+          .toBuffer();
+
+        const fileName = `post-image-${nanoid()}.webp`;
+        const uploadResult = await uploadToR2(optimizedBuffer, {
+          fileName,
+          contentType: "image/webp",
+          userId: user.id,
+        });
+
+        processedMediaInfo = {
+          storageUrl: uploadResult.url,
+          storageKey: uploadResult.key,
+          mimeType: "image/webp",
+          fileSize: uploadResult.size,
+        };
+      } catch (uploadError) {
+        console.error("Failed to upload image:", uploadError);
+        return NextResponse.json(
+          { error: "Failed to upload image" },
+          { status: 500 }
+        );
+      }
+    }
+
     // Link new R2 media if provided (image already uploaded directly to R2)
-    if (mediaInfo?.storageUrl && mediaInfo?.storageKey) {
+    if (processedMediaInfo?.storageUrl && processedMediaInfo?.storageKey) {
       // Delete old media from R2 if exists
       const existingMedia = await db
         .select()
@@ -303,24 +352,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       // Create new media record
-      const ext = mediaInfo.mimeType?.split("/")[1] || "png";
+      const ext = processedMediaInfo.mimeType?.split("/")[1] || "png";
       const mediaId = nanoid();
       await db.insert(media).values({
         id: mediaId,
         userId: user.id,
         postId,
-        storageKey: mediaInfo.storageKey,
-        storageUrl: mediaInfo.storageUrl,
+        storageKey: processedMediaInfo.storageKey,
+        storageUrl: processedMediaInfo.storageUrl,
         fileName: `post-image-${postId}.${ext}`,
-        mimeType: mediaInfo.mimeType || "image/png",
-        fileSize: mediaInfo.fileSize || 0,
+        mimeType: processedMediaInfo.mimeType || "image/png",
+        fileSize: processedMediaInfo.fileSize || 0,
         status: "ready",
         createdAt: new Date(),
       });
 
-      if (mediaInfo.mimeType === "application/pdf") {
+      if (processedMediaInfo.mimeType === "application/pdf") {
         updateData.postType = "document";
-      } else if (mediaInfo.mimeType?.startsWith("video/")) {
+      } else if (processedMediaInfo.mimeType?.startsWith("video/")) {
         updateData.postType = "video";
       } else {
         updateData.postType = "image";
