@@ -572,7 +572,15 @@ function ContentRepurposingContent() {
 
     setIsSaving(true);
     try {
-      const mediaData = attachedImage ? {
+      // If image was uploaded via PostEditor, it's already on R2 (storageUrl/storageKey set, base64 empty)
+      // If image was uploaded via sidebar button, it only has base64
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -584,6 +592,7 @@ function ContentRepurposingContent() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaInfo,
           mediaData,
           firstComment: firstComment || null,
           metadata: {
@@ -622,10 +631,14 @@ function ContentRepurposingContent() {
     setIsPublishing(true);
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
-      const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
-      const mediaInfo = hasMedia ? {
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
+        base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
 
@@ -637,6 +650,7 @@ function ContentRepurposingContent() {
           status: "draft",
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
+          mediaData,
           firstComment: firstComment || null,
           metadata: {
             source: contentData?.source || "unknown",
@@ -700,7 +714,15 @@ function ContentRepurposingContent() {
 
     setIsSaving(true);
     try {
-      const mediaData = attachedImage ? {
+      // If image was uploaded via PostEditor, it's already on R2 (storageUrl/storageKey set, base64 empty)
+      // If image was uploaded via sidebar button, it only has base64
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -713,6 +735,7 @@ function ContentRepurposingContent() {
           status: "scheduled",
           scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
+          mediaInfo,
           mediaData,
           firstComment: firstComment || null,
           metadata: {
@@ -756,12 +779,14 @@ function ContentRepurposingContent() {
       return;
     }
 
+    const previewUrl = URL.createObjectURL(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
       setAttachedImage({
         base64,
         mimeType: file.type,
+        preview: previewUrl,
       });
     };
     reader.readAsDataURL(file);

@@ -237,9 +237,11 @@ function EditorContent() {
             if (data.post.media && data.post.media.length > 0) {
               const existingMedia = data.post.media[0];
               setAttachedImage({
-                base64: "", // Empty since we're using existing URL
+                base64: "",
                 mimeType: existingMedia.mimeType,
                 preview: existingMedia.storageUrl,
+                storageUrl: existingMedia.storageUrl,
+                storageKey: existingMedia.storageKey,
               });
               setOriginalHadMedia(true);
             }

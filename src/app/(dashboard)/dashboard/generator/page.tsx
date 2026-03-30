@@ -620,8 +620,15 @@ export default function GeneratorPage() {
 
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
+      // If image was uploaded via PostEditor, it's already on R2 (storageUrl/storageKey set, base64 empty)
+      // If image was uploaded via sidebar button, it only has base64
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -633,6 +640,7 @@ export default function GeneratorPage() {
           content: currentPost,
           status: "draft",
           postType: attachedImage ? "image" : "text",
+          mediaInfo,
           mediaData,
           firstComment: firstComment || null,
           metadata: {
@@ -671,11 +679,14 @@ export default function GeneratorPage() {
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
-      // Build media info (images are already on R2)
-      const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
-      const mediaInfo = hasMedia ? {
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
+        base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
 
@@ -688,6 +699,7 @@ export default function GeneratorPage() {
           status: "draft",
           postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
           mediaInfo,
+          mediaData,
           firstComment: firstComment || null,
         }),
       });
@@ -749,8 +761,13 @@ export default function GeneratorPage() {
 
     setIsSaving(true);
     try {
-      // Prepare media data if image is attached
-      const mediaData = attachedImage ? {
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const mediaInfo = hasR2Media ? {
+        storageUrl: attachedImage.storageUrl,
+        storageKey: attachedImage.storageKey,
+        mimeType: attachedImage.mimeType,
+      } : undefined;
+      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -763,6 +780,7 @@ export default function GeneratorPage() {
           status: "scheduled",
           scheduledAt: scheduledAtISO,
           postType: attachedImage ? "image" : "text",
+          mediaInfo,
           mediaData,
           firstComment: firstComment || null,
           metadata: {
@@ -809,12 +827,14 @@ export default function GeneratorPage() {
     }
 
     // Convert to base64
+    const previewUrl = URL.createObjectURL(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
       setAttachedImage({
         base64,
         mimeType: file.type,
+        preview: previewUrl,
       });
     };
     reader.readAsDataURL(file);
