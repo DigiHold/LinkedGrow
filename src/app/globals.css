@@ -297,9 +297,8 @@ textarea {
   animation: gradient 8s linear infinite;
 }
 
-/* Liquid Glass Text Effect */
+/* Liquid Glass Text Effect - text itself IS the glass */
 .liquid-glass-h1 {
-  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -308,114 +307,82 @@ textarea {
 .liquid-glass-h1 .lg-line {
   position: relative;
   display: inline-block;
-  background: linear-gradient(
-    180deg,
-    #0c4a6e 0%,
-    #0e7490 25%,
-    #06b6d4 50%,
-    #22d3ee 70%,
-    #0891b2 100%
-  );
-  background-size: 100% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: lg-gradient-shift 5s ease-in-out infinite;
+  /* Multi-layer background: specular highlight + base gradient */
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 255, 255, 0.8) 43%,
+      rgba(255, 255, 255, 1) 47%,
+      rgba(255, 255, 255, 0.8) 51%,
+      transparent 64%,
+      transparent 100%
+    ),
+    linear-gradient(
+      160deg,
+      #0c4a6e 0%,
+      #0891b2 18%,
+      #22d3ee 35%,
+      #a5f3fc 50%,
+      #22d3ee 65%,
+      #0891b2 82%,
+      #0c4a6e 100%
+    );
+  background-size: 300% 100%, 200% 200%;
+  -webkit-background-clip: text, text;
+  background-clip: text, text;
+  animation: lg-specular 3.5s ease-in-out infinite, lg-base 6s ease-in-out infinite;
+  /* Subtle text-shadow for refraction edge glow */
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.2));
 }
 
-/* Light shimmer sweep across text */
-.liquid-glass-h1 .lg-line::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    transparent 35%,
-    rgba(255, 255, 255, 0.7) 45%,
-    rgba(255, 255, 255, 0.9) 50%,
-    rgba(255, 255, 255, 0.7) 55%,
-    transparent 65%,
-    transparent 100%
-  );
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: lg-shine-sweep 4s ease-in-out infinite;
+/* Second line gets a staggered animation */
+.liquid-glass-h1 .lg-line:nth-child(2) {
+  animation: lg-specular 3.5s ease-in-out 0.4s infinite, lg-base 6s ease-in-out 0.3s infinite;
 }
 
-/* Glass pill behind the entire H1 */
-.liquid-glass-h1::before {
-  content: "";
-  position: absolute;
-  inset: -12px -24px;
-  background: linear-gradient(
-    135deg,
-    rgba(6, 182, 212, 0.06) 0%,
-    rgba(34, 211, 238, 0.1) 50%,
-    rgba(6, 182, 212, 0.04) 100%
-  );
-  border-radius: 24px;
-  border: 1px solid rgba(6, 182, 212, 0.12);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  z-index: -1;
+/* Specular highlight sweep */
+@keyframes lg-specular {
+  0%, 15% { background-position: 150% center, 0% 50%; }
+  55%, 100% { background-position: -50% center, 0% 50%; }
 }
 
-@keyframes lg-gradient-shift {
-  0%, 100% { background-position: 50% 0%; }
-  50% { background-position: 50% 100%; }
+/* Base gradient slow movement */
+@keyframes lg-base {
+  0%, 100% { background-position: 150% center, 0% 0%; }
+  50% { background-position: -50% center, 100% 100%; }
 }
 
-@keyframes lg-shine-sweep {
-  0%, 20% { background-position: 250% center; }
-  60%, 100% { background-position: -100% center; }
-}
-
-/* Dark mode */
+/* ── Dark mode ── */
 .dark .liquid-glass-h1 .lg-line {
-  background: linear-gradient(
-    180deg,
-    #67e8f9 0%,
-    #22d3ee 25%,
-    #a5f3fc 50%,
-    #cffafe 70%,
-    #67e8f9 100%
-  );
-  background-size: 100% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: lg-gradient-shift 5s ease-in-out infinite;
-}
-
-.dark .liquid-glass-h1 .lg-line::after {
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    transparent 35%,
-    rgba(255, 255, 255, 0.5) 45%,
-    rgba(255, 255, 255, 0.7) 50%,
-    rgba(255, 255, 255, 0.5) 55%,
-    transparent 65%,
-    transparent 100%
-  );
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: lg-shine-sweep 4s ease-in-out infinite;
-}
-
-.dark .liquid-glass-h1::before {
-  background: linear-gradient(
-    135deg,
-    rgba(34, 211, 238, 0.08) 0%,
-    rgba(165, 243, 252, 0.12) 50%,
-    rgba(34, 211, 238, 0.06) 100%
-  );
-  border-color: rgba(34, 211, 238, 0.15);
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 255, 255, 0.6) 43%,
+      rgba(255, 255, 255, 0.85) 47%,
+      rgba(255, 255, 255, 0.6) 51%,
+      transparent 64%,
+      transparent 100%
+    ),
+    linear-gradient(
+      160deg,
+      #164e63 0%,
+      #22d3ee 18%,
+      #67e8f9 35%,
+      #cffafe 50%,
+      #67e8f9 65%,
+      #22d3ee 82%,
+      #164e63 100%
+    );
+  background-size: 300% 100%, 200% 200%;
+  -webkit-background-clip: text, text;
+  background-clip: text, text;
+  filter: drop-shadow(0 0 16px rgba(34, 211, 238, 0.3));
 }
 
 /* Shimmer text effect */
