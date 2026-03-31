@@ -28,21 +28,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Requires Pro plan" }, { status: 403 });
     }
 
-    // Community App token (w_member_social_feed for reactions/comments)
-    const accessToken = user.linkedinCommunityAccessToken;
+    const accessToken = user.linkedinAccessToken;
     // CRITICAL: Use REST API member ID, NOT OpenID Connect sub (linkedinProfileId)
     // These are DIFFERENT IDs for the same LinkedIn user
     const memberId = user.linkedinMemberId || user.linkedinProfileId;
 
     if (!accessToken) {
       return NextResponse.json(
-        { error: "Connect the Community App to like and comment" },
+        { error: "Connect LinkedIn to like and comment" },
         { status: 400 }
       );
     }
     if (!memberId) {
       return NextResponse.json(
-        { error: "LinkedIn member ID not found. Disconnect and reconnect the Community App." },
+        { error: "LinkedIn member ID not found. Disconnect and reconnect LinkedIn." },
         { status: 400 }
       );
     }

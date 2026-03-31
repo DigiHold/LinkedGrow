@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-refresh tokens if expired
-    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
-    if (!posterToken) {
+    const { token } = await ensureFreshTokens(linkedInUser.id);
+    if (!token) {
       await db.update(posts)
         .set({
           status: "failed",
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (firstDocument?.storageUrl) {
       // Post with document/PDF (carousel) from R2
       postResult = await createLinkedInPostWithDocument(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstDocument.storageUrl,
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     } else if (firstVideo?.storageUrl) {
       // Post with video from R2
       postResult = await createLinkedInPostWithVideo(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstVideo.storageUrl,
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     } else if (firstImage?.storageUrl) {
       // Post with image from R2
       postResult = await createLinkedInPostWithImage(
-        posterToken,
+        token,
         authorId,
         post.content,
         firstImage.storageUrl,
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        posterToken,
+        token,
         authorId,
         post.content,
         "PUBLIC",

@@ -94,11 +94,10 @@ export async function GET(request: NextRequest) {
     const isOrg = postingTarget === "organization" && user.linkedinSelectedOrgId;
 
     // Auto-refresh tokens if expired
-    const { posterToken, communityToken } = await ensureFreshTokens(user.id);
-    const token = communityToken || posterToken;
+    const { token } = await ensureFreshTokens(user.id);
 
     log(`User: ${user.email} | Plan: ${user.plan} | Target: ${postingTarget} | Org: ${isOrg ? user.linkedinSelectedOrgId : 'no'}`);
-    log(`CommunityToken: ${!!user.linkedinCommunityAccessToken} | PosterToken: ${!!user.linkedinAccessToken}`);
+    log(`Token: ${!!user.linkedinAccessToken}`);
 
     let totalImpressions = 0, totalReactions = 0, totalComments = 0, totalShares = 0;
     let followerCount: number | undefined, followersGained: number | undefined, membersReached: number | undefined;
@@ -422,7 +421,7 @@ export async function GET(request: NextRequest) {
       },
       posts: sortedPosts,
       followerGrowth,
-      capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, hasCommunityConnected: !!communityToken, postingTarget },
+      capabilities: { ...capabilities, hasLinkedInConnected: hasLinkedIn, postingTarget },
       // Always calculate best posting times (used by basic analytics page)
       advanced: {
         bestPostingTimes: calculateBestPostingTimes(withAnalytics, userTimezone),

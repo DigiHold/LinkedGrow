@@ -42,7 +42,6 @@ import {
   Pencil,
 } from "lucide-react";
 import Link from "next/link";
-import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
 import { LikeIcon, LikedIcon, CommentIcon, ReactionMenu, REACTIONS } from "@/components/dashboard/engagement/linkedin-icons";
 
 // ============================================
@@ -85,7 +84,7 @@ interface FeedPost {
 interface EngagementData {
   objectives: { dailyLikes: number; dailyComments: number; postsPerProfile: number };
   today: { likes: number; comments: number };
-  communityConnected: boolean;
+  linkedInConnected: boolean;
   profileName: string;
 }
 
@@ -674,13 +673,6 @@ export default function EngagementPage() {
 
         {!isLoading && engagementData && (
           <>
-            {/* Community App connection */}
-            {!engagementData.communityConnected ? (
-              <CommunityConnectBanner isConnected={false} profileName={engagementData.profileName} />
-            ) : (
-              <CommunityConnectBanner isConnected={true} profileName={engagementData.profileName} onDisconnect={async () => { await fetch("/api/linkedin/community/disconnect", { method: "POST" }); window.location.reload(); }} />
-            )}
-
             {/* List filter tabs + manage button */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -835,7 +827,7 @@ export default function EngagementPage() {
                       {/* Like button + reaction menu wrapper - single hover area */}
                       <div
                         className="flex-1 relative"
-                        onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.communityConnected && showReactionMenu(post.activityUrn)}
+                        onMouseEnter={() => !likedPosts.has(post.activityUrn) && engagementData.linkedInConnected && showReactionMenu(post.activityUrn)}
                         onMouseLeave={hideReactionMenu}
                       >
                         {reactionMenuPost === post.activityUrn && (
@@ -852,7 +844,7 @@ export default function EngagementPage() {
                               size="sm"
                               className={`w-full text-xs ${userReaction ? "text-[#378fe9] font-semibold" : ""}`}
                               onClick={() => handleReaction(post.activityUrn)}
-                              disabled={likingPost === post.activityUrn || !!userReaction || !engagementData.communityConnected}
+                              disabled={likingPost === post.activityUrn || !!userReaction || !engagementData.linkedInConnected}
                             >
                               {likingPost === post.activityUrn ? (
                                 <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
@@ -866,10 +858,10 @@ export default function EngagementPage() {
                           );
                         })()}
                       </div>
-                      <Button variant="ghost" size="sm" className={`flex-1 text-xs ${commentedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`} onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.communityConnected}>
+                      <Button variant="ghost" size="sm" className={`flex-1 text-xs ${commentedPosts.has(post.activityUrn) ? "text-[#378fe9]" : ""}`} onClick={() => { if (commentingOn === post.activityUrn) { setCommentingOn(null); setCommentText(""); } else { setCommentingOn(post.activityUrn); setCommentText(""); } }} disabled={!engagementData.linkedInConnected}>
                         <CommentIcon className="w-4 h-4 mr-1.5" /> Comment
                       </Button>
-                      <Button variant="ghost" size="icon-sm" className="shrink-0" title="AI comment" onClick={() => handleGenerateComment(post.activityUrn, post.text)} disabled={generatingCommentFor === post.activityUrn || !engagementData.communityConnected}>
+                      <Button variant="ghost" size="icon-sm" className="shrink-0" title="AI comment" onClick={() => handleGenerateComment(post.activityUrn, post.text)} disabled={generatingCommentFor === post.activityUrn || !engagementData.linkedInConnected}>
                         {generatingCommentFor === post.activityUrn ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
                       </Button>
                     </div>

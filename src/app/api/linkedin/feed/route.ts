@@ -49,10 +49,10 @@ export async function GET() {
       return NextResponse.json({ error: "Engagement requires Pro plan or higher" }, { status: 403 });
     }
 
-    const accessToken = user.linkedinCommunityAccessToken;
+    const accessToken = user.linkedinAccessToken;
     if (!accessToken) {
       return NextResponse.json(
-        { error: "Community App not connected. Connect it from the Engagement page to view your feed." },
+        { error: "LinkedIn not connected. Connect it from Settings to view your feed." },
         { status: 400 }
       );
     }
@@ -134,9 +134,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Engagement requires Pro plan or higher" }, { status: 403 });
     }
 
-    const accessToken = user.linkedinCommunityAccessToken;
+    const accessToken = user.linkedinAccessToken;
     if (!accessToken || !user.linkedinProfileId) {
-      return NextResponse.json({ error: "Community App not connected" }, { status: 400 });
+      return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
     const body = await request.json();

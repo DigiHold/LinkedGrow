@@ -22,8 +22,8 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
     const top = window.screenY + (window.innerHeight - height) / 2;
 
     const popup = window.open(
-      "/api/linkedin/auth?app=community&popup=true&mode=connect",
-      "linkedin-community-auth",
+      "/api/linkedin/auth?popup=true&mode=connect",
+      "linkedin-auth",
       `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
     );
 

@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-refresh tokens if expired
-    const { posterToken } = await ensureFreshTokens(linkedInUser.id);
-    if (!posterToken) {
+    const { token } = await ensureFreshTokens(linkedInUser.id);
+    if (!token) {
       return NextResponse.json(
         { error: 'LinkedIn token has expired and could not be refreshed. Please reconnect your account in Settings.' },
         { status: 401 }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (documentUrl) {
       // Document/PDF post (carousel) - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithDocument(
-        posterToken,
+        token,
         authorId,
         text,
         documentUrl,
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     } else if (videoUrl && videoMimeType) {
       // Video post - fetch from R2 and upload to LinkedIn
       postResult = await createLinkedInPostWithVideo(
-        posterToken,
+        token,
         authorId,
         text,
         videoUrl,
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     } else if (imageUrl) {
       // Image post - fetch from R2 URL and upload to LinkedIn
       postResult = await createLinkedInPostWithImage(
-        posterToken,
+        token,
         authorId,
         text,
         imageUrl,
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Text-only post
       postResult = await createLinkedInPost(
-        posterToken,
+        token,
         authorId,
         text,
         visibility,
