@@ -109,6 +109,9 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
 
   // Method 2: Try multiple InnerTube clients (from Vercel)
   // YouTube blocks some clients from cloud IPs but not others
+  const debug: string[] = [];
+  if (!WORKER_URL) debug.push("worker: not configured");
+
   const clients = [
     {
       name: "ANDROID",
@@ -149,12 +152,18 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
 
       if (resp.ok) {
         const data = await resp.json();
+        const status = data?.playabilityStatus?.status || "?";
         const trackUrl = findCaptionTrack(data);
         if (trackUrl) {
-          return { title: data?.videoDetails?.title || "", trackUrl, debug: `vercel-${client.name.toLowerCase()}` };
+          return { title: data?.videoDetails?.title || "", trackUrl, debug: [...debug, `${client.name}: OK`].join(" | ") };
         }
+        debug.push(`${client.name}: ${status}, no tracks`);
+      } else {
+        debug.push(`${client.name}: HTTP ${resp.status}`);
       }
-    } catch {}
+    } catch (e) {
+      debug.push(`${client.name}: ${e instanceof Error ? e.message : "error"}`);
+    }
   }
 
   // Method 3: Scrape YouTube watch page HTML (most resilient - YouTube always serves this)
@@ -177,11 +186,20 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
         const trackUrl = findCaptionTrack(playerResponse);
         if (trackUrl) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return { title: (playerResponse as any)?.videoDetails?.title || "", trackUrl, debug: "watch-page" };
+          return { title: (playerResponse as any)?.videoDetails?.title || "", trackUrl, debug: [...debug, "watch-page: OK"].join(" | ") };
         }
+        debug.push("watch-page: no tracks in playerResponse");
+      } else {
+        debug.push(`watch-page: no playerResponse (HTML ${html.length} bytes)`);
       }
+    } else {
+      debug.push(`watch-page: HTTP ${resp.status}`);
     }
-  } catch {}
+  } catch (e) {
+    debug.push(`watch-page: ${e instanceof Error ? e.message : "error"}`);
+  }
+
+  console.error(`YouTube all methods failed for ${videoId}:`, debug.join(" | "));
 
   return null;
 }
@@ -213,8 +231,11 @@ export async function POST(request: NextRequest) {
     const result = await getTrackUrl(videoId);
 
     if (!result) {
+      const isAdmin = session.user.isAdmin;
       return NextResponse.json({
-        error: "Could not get transcript for this video. The video may not have captions available, or YouTube is blocking all extraction methods. Please try a different video.",
+        error: isAdmin
+          ? `YouTube extraction failed. Debug: ${result === null ? "all methods returned null" : "unknown"}. Check server logs.`
+          : "Could not get transcript for this video. Retrying...",
       }, { status: 400 });
     }
 

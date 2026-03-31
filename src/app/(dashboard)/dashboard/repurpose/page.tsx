@@ -202,24 +202,64 @@ function decodeHtmlEntities(text: string): string {
     .replace(/<[^>]*>/g, "").replace(/\n/g, " ").trim();
 }
 
-async function fetchYoutubeContent(url: string): Promise<ContentData & { warning?: string }> {
-  // Step 1: Get caption track URL from our server (lightweight InnerTube metadata call)
-  const trackResponse = await fetch("/api/content/youtube-tracks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
+// CF Worker for YouTube captions - browser calls directly (CORS enabled, Cloudflare edge IPs)
+const YT_WORKER = "https://youtube-captions.digihold-account.workers.dev";
 
-  if (!trackResponse.ok) {
-    let errorMsg = "Failed to extract YouTube content";
+function extractYoutubeVideoId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+async function fetchYoutubeContent(url: string): Promise<ContentData & { warning?: string }> {
+  // Step 1: Get caption track URL
+  // Primary: CF Worker directly from browser (Cloudflare edge IPs, not Vercel)
+  // Fallback: Server route (Vercel, may be blocked by YouTube)
+  let trackUrl = "";
+  let title = "";
+
+  const videoId = extractYoutubeVideoId(url);
+
+  // Try CF Worker directly from browser (same principle as Arctic Shift for Reddit)
+  if (videoId) {
     try {
-      const data = await trackResponse.json();
-      errorMsg = data.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
+      const workerResp = await fetch(YT_WORKER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId }),
+      });
+      if (workerResp.ok) {
+        const data = await workerResp.json();
+        if (data.trackUrl) {
+          trackUrl = data.trackUrl;
+          title = data.title || "";
+        }
+      }
+    } catch {
+      // Worker unavailable, fall through to server
+    }
   }
 
-  const { title, trackUrl } = await trackResponse.json();
+  // Fallback: Server route (tries CF Worker with secret + InnerTube + watch page from Vercel)
+  if (!trackUrl) {
+    const trackResponse = await fetch("/api/content/youtube-tracks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    if (trackResponse.ok) {
+      const data = await trackResponse.json();
+      trackUrl = data.trackUrl;
+      title = data.title || "";
+    } else {
+      let errorMsg = "Failed to extract YouTube content";
+      try {
+        const data = await trackResponse.json();
+        errorMsg = data.error || errorMsg;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+  }
 
   // Step 2: Fetch the actual transcript XML from the user's browser (CORS allowed on timedtext)
   // This uses the user's residential IP, so YouTube never blocks it
