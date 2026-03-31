@@ -220,10 +220,11 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
   const videoId = extractYoutubeVideoId(url);
 
   // Try CF Worker directly from browser (same principle as Arctic Shift for Reddit)
-  // Retry up to 3 times - YouTube rate-limits intermittently per CF edge IP
+  // Worker internally retries watch page on 429, so give it time
+  // If first attempt fails, retry once after 3s (YouTube rate limit clears fast)
   if (videoId) {
-    for (let attempt = 0; attempt < 3 && !trackUrl; attempt++) {
-      if (attempt > 0) await new Promise((r) => setTimeout(r, 1000));
+    for (let attempt = 0; attempt < 2 && !trackUrl; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 3000));
       try {
         const workerResp = await fetch(YT_WORKER, {
           method: "POST",
