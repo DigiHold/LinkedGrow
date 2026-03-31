@@ -87,9 +87,6 @@ const sourceLabels: Record<string, { label: string; icon: React.ElementType; col
   blog: { label: "Blog article", icon: FileText, color: "text-green-500 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" },
 };
 
-// Cloudflare Worker CORS proxy
-const REDDIT_PROXY = "https://reddit-proxy.digihold-account.workers.dev";
-
 interface ContentData {
   source: "reddit" | "youtube" | "webpage" | "blog";
   title: string;
@@ -106,89 +103,94 @@ interface ContentData {
   };
 }
 
-// Trimmed Reddit JSON structure
-interface TrimmedRedditJson {
-  post: {
-    title: string;
-    selftext: string;
-    score: number;
-    upvote_ratio?: number;
-    num_comments: number;
-    subreddit: string;
-    author?: string;
-  };
-  comments: Array<{
-    body: string;
-    score: number;
-  }>;
+// Arctic Shift API - free Reddit mirror with CORS (Access-Control-Allow-Origin: *)
+// Browser fetches directly using user's residential IP. Zero server load, scales infinitely.
+const ARCTIC_SHIFT = "https://arctic-shift.photon-reddit.com/api";
+
+function extractRedditPostId(url: string): string | null {
+  const match = url.match(/reddit\.com\/r\/\w+\/comments\/(\w+)/);
+  return match ? match[1] : null;
 }
 
-// Trim Reddit JSON to reduce token count for AI processing
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function trimRedditData(rawJson: any[]): TrimmedRedditJson {
-  const postData = rawJson[0]?.data?.children?.[0]?.data;
-  const commentsData = rawJson[1]?.data?.children || [];
+async function fetchRedditViaArcticShift(url: string): Promise<ContentData> {
+  const postId = extractRedditPostId(url);
+  if (!postId) throw new Error("Invalid Reddit URL");
 
-  if (!postData) {
-    throw new Error("Invalid Reddit JSON structure");
-  }
+  const subredditMatch = url.match(/reddit\.com\/r\/(\w+)/);
+  const subreddit = subredditMatch ? subredditMatch[1] : "";
 
-  const post = {
-    title: postData.title,
-    selftext: postData.selftext ? postData.selftext.substring(0, 2000) : "",
-    score: postData.score,
-    upvote_ratio: postData.upvote_ratio,
-    num_comments: postData.num_comments,
-    subreddit: postData.subreddit,
-    author: postData.author,
-  };
+  // Fetch post + comments in parallel from Arctic Shift (CORS enabled)
+  const [postRes, commentsRes] = await Promise.all([
+    fetch(`${ARCTIC_SHIFT}/posts/ids?ids=${postId}`),
+    fetch(`${ARCTIC_SHIFT}/comments/search?link_id=${postId}&limit=60`),
+  ]);
 
-  const comments = commentsData
+  if (!postRes.ok) throw new Error("Arctic Shift post fetch failed");
+
+  const postJson = await postRes.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const post: any = postJson.data?.[0];
+  if (!post?.title) throw new Error("Post not found");
+
+  // Parse comments
+  let comments: Array<{ body: string; score: number }> = [];
+  if (commentsRes.ok) {
+    const commentsJson = await commentsRes.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((c: any) => c.kind === "t1" && c.data?.body)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .sort((a: any, b: any) => (b.data?.score || 0) - (a.data?.score || 0))
-    .slice(0, 60)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((c: any) => ({
-      body: c.data.body.substring(0, 500),
-      score: c.data.score,
-    }));
-
-  return { post, comments };
-}
-
-async function fetchRedditPost(url: string): Promise<ContentData> {
-  let jsonUrl = url
-    .replace("old.reddit.com", "www.reddit.com")
-    .replace(/^(https?:\/\/)reddit\.com/, "$1www.reddit.com");
-
-  if (!jsonUrl.endsWith(".json")) {
-    jsonUrl = jsonUrl.replace(/\/?$/, ".json");
+    comments = (commentsJson.data || [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((c: any) => c.body && c.body !== "[deleted]" && c.body !== "[removed]")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
+      .slice(0, 60)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((c: any) => ({ body: c.body.substring(0, 500), score: c.score || 0 }));
   }
-
-  const proxyUrl = `${REDDIT_PROXY}?url=${encodeURIComponent(jsonUrl)}`;
-  const response = await fetch(proxyUrl);
-
-  if (!response.ok) {
-    if (response.status === 404) throw new Error("Reddit post not found");
-    if (response.status === 403) throw new Error("Reddit blocked this request. Please try again in a few seconds.");
-    if (response.status === 429) throw new Error("Too many requests to Reddit. Please wait a moment and try again.");
-    throw new Error("Failed to fetch Reddit post. Please try again.");
-  }
-
-  const rawJson = await response.json();
-  const trimmedJson = trimRedditData(rawJson);
 
   return {
     source: "reddit",
-    title: trimmedJson.post.title || "",
-    content: trimmedJson.post.selftext || "",
+    title: post.title || "",
+    content: post.selftext || "",
     metadata: {
-      subreddit: trimmedJson.post.subreddit,
-      score: trimmedJson.post.score,
-      commentCount: trimmedJson.post.num_comments,
-      comments: trimmedJson.comments,
+      subreddit: post.subreddit || subreddit,
+      score: post.score || 0,
+      commentCount: post.num_comments || 0,
+      comments,
+    },
+  };
+}
+
+async function fetchRedditPost(url: string): Promise<ContentData> {
+  // Primary: Arctic Shift via browser (CORS, user's IP, always works)
+  try {
+    return await fetchRedditViaArcticShift(url);
+  } catch {
+    // Fall through to server fallback
+  }
+
+  // Fallback: Server route (tries Reddit .json direct, then Arctic Shift from server)
+  const response = await fetch("/api/reddit/fetch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to fetch Reddit post. Please try again.");
+  }
+
+  const data = await response.json();
+
+  return {
+    source: "reddit",
+    title: data.title || "",
+    content: data.selftext || "",
+    metadata: {
+      subreddit: data.subreddit,
+      score: data.score,
+      commentCount: data.num_comments,
+      comments: data.trimmedJson?.comments || [],
     },
   };
 }

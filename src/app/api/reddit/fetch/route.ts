@@ -4,47 +4,8 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { fetchRedditContent } from "@/lib/reddit";
 
-// Trim Reddit JSON to reduce token count for AI processing
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function trimRedditData(rawJson: any[]): { post: any; comments: any[] } {
-  // rawJson is an array: [0] = post data, [1] = comments
-  const postData = rawJson[0]?.data?.children?.[0]?.data;
-  const commentsData = rawJson[1]?.data?.children || [];
-
-  if (!postData) {
-    throw new Error("Invalid Reddit JSON structure");
-  }
-
-  // Extract only essential post fields
-  const post = {
-    title: postData.title,
-    selftext: postData.selftext ? postData.selftext.substring(0, 2000) : "",
-    score: postData.score,
-    upvote_ratio: postData.upvote_ratio,
-    num_comments: postData.num_comments,
-    subreddit: postData.subreddit,
-    author: postData.author,
-  };
-
-  // Extract top 60 comments by score, only keep essential fields
-  const comments = commentsData
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((c: any) => c.kind === "t1" && c.data?.body)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .sort((a: any, b: any) => (b.data?.score || 0) - (a.data?.score || 0))
-    .slice(0, 60)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((c: any) => ({
-      body: c.data.body.substring(0, 500),
-      score: c.data.score,
-    }));
-
-  return { post, comments };
-}
-
-// This endpoint fetches Reddit data server-side (no CORS issues) and trims it
-// Server-side fetch bypasses browser CORS restrictions entirely
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -84,69 +45,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid Reddit URL" }, { status: 400 });
     }
 
-    // Normalize and build JSON URL
-    let jsonUrl = url
-      .replace("old.reddit.com", "www.reddit.com")
-      .replace(/^(https?:\/\/)reddit\.com/, "$1www.reddit.com");
+    const trimmedData = await fetchRedditContent(url);
 
-    if (!jsonUrl.endsWith(".json")) {
-      jsonUrl = jsonUrl.replace(/\/?$/, ".json");
-    }
-
-    // Rotate User-Agent to reduce Reddit rate limiting on shared Vercel IPs
-    const userAgents = [
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15",
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0",
-    ];
-    const ua = userAgents[Math.floor(Math.random() * userAgents.length)];
-
-    // Fetch with retry (Reddit rate-limits Vercel shared IPs aggressively)
-    let redditResponse: Response | null = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
-      redditResponse = await fetch(jsonUrl, {
-        headers: {
-          "User-Agent": ua,
-          "Accept": "application/json, text/plain, */*",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Cache-Control": "no-cache",
-        },
-      });
-      if (redditResponse.ok || redditResponse.status === 404) break;
-      if (redditResponse.status !== 429 && redditResponse.status !== 403) break;
-    }
-
-    if (!redditResponse || !redditResponse.ok) {
-      const status = redditResponse?.status;
-      if (status === 404) {
-        return NextResponse.json({ error: "Reddit post not found" }, { status: 404 });
-      }
-      if (status === 403) {
-        return NextResponse.json(
-          { error: "Reddit blocked this request. Please try again in a few seconds." },
-          { status: 403 }
-        );
-      }
-      if (status === 429) {
-        return NextResponse.json(
-          { error: "Too many requests to Reddit. Please wait a moment and try again." },
-          { status: 429 }
-        );
-      }
-      return NextResponse.json(
-        { error: "Failed to fetch Reddit post. Please try again." },
-        { status: 502 }
-      );
-    }
-
-    const rawJson = await redditResponse.json();
-
-    // Trim the Reddit JSON to reduce token count
-    const trimmedData = trimRedditData(rawJson);
-
-    // Return the trimmed JSON structure for AI processing
     return NextResponse.json({
       title: trimmedData.post.title || "",
       selftext: trimmedData.post.selftext || "",
@@ -158,9 +58,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Reddit fetch error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch Reddit data" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Failed to fetch Reddit data";
+    const status = message.includes("not found") ? 404 : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }
