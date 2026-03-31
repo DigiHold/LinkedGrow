@@ -12,6 +12,7 @@ import { Footer } from "@/components/marketing/footer";
 import { FAQJsonLd, linkedGrowFAQs } from "@/components/seo/json-ld";
 import { ConversionElements } from "@/components/marketing/conversion-elements";
 import { AnimatedBackground } from "@/components/marketing/animated-background";
+import { StickyMobileCTA } from "@/components/marketing/sticky-mobile-cta";
 
 // Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
 // Logged-in users and admins can still access this full landing page
@@ -39,6 +40,7 @@ export default function HomePage() {
 
       {/* Conversion optimization elements */}
       <ConversionElements />
+      <StickyMobileCTA />
     </main>
   );
 }
