@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 const navigation = [
   {
@@ -172,7 +172,7 @@ export function Sidebar() {
 
   const handleSignOut = () => {
     setIsUserMenuOpen(false);
-    window.location.href = "/api/auth/signout";
+    signOut({ redirectTo: "/" });
   };
 
   const showTooltip = (e: React.MouseEvent, text: string) => {
