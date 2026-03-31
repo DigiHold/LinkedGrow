@@ -41,8 +41,7 @@ export async function GET() {
       organizations,
     });
   } catch (error) {
-    console.error('Failed to get selection data:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to load selection data' },
       { status: 500 }
     );

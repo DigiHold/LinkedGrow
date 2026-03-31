@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
     if (!imageResponse.ok) {
       // Return a placeholder image instead of error to prevent canvas load failures
       // This prevents Fabric.js loadFromJSON from throwing and wiping carousel data
-      console.warn(`Media proxy: R2 returned ${imageResponse.status} for ${url}`);
-      const placeholder = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#f3f4f6" rx="8"/><text x="200" y="192" text-anchor="middle" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="14">Image unavailable</text><text x="200" y="216" text-anchor="middle" fill="#d1d5db" font-family="system-ui,sans-serif" font-size="12">Re-upload this image</text></svg>`;
+const placeholder = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#f3f4f6" rx="8"/><text x="200" y="192" text-anchor="middle" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="14">Image unavailable</text><text x="200" y="216" text-anchor="middle" fill="#d1d5db" font-family="system-ui,sans-serif" font-size="12">Re-upload this image</text></svg>`;
       return new NextResponse(placeholder, {
         headers: {
           "Content-Type": "image/svg+xml",
@@ -56,8 +55,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Image proxy error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to proxy image" },
       { status: 500 }
     );

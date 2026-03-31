@@ -86,10 +86,7 @@ async function submitIndexNow(
     }
   }
 
-  console.log(
-    `[IndexNow] Submitted ${urls.length} URLs to ${successful}/${INDEXNOW_ENDPOINTS.length} endpoints`
-  );
-  return { success: successful > 0, endpoints: successful, errors };
+return { success: successful > 0, endpoints: successful, errors };
 }
 
 /**
@@ -137,22 +134,17 @@ async function submitGoogleIndexingApi(
     if (failed.length > 0) {
       const firstError =
         failed[0].status === "rejected" ? failed[0].reason?.message : "";
-      console.error(`[Google Indexing] ${failed.length} URLs failed:`, firstError);
-      return {
+return {
         success: results.length > failed.length,
         error: `${failed.length}/${results.length} failed: ${firstError}`,
       };
     }
 
-    console.log(
-      `[Google Indexing] Submitted ${urls.length} URLs successfully`
-    );
-    return { success: true };
+return { success: true };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error";
-    console.error("[Google Indexing] Error:", message);
-    return { success: false, error: message };
+return { success: false, error: message };
   }
 }
 

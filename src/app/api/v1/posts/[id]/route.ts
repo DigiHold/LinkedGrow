@@ -150,8 +150,7 @@ export async function GET(
 
     return apiSuccessResponse(serializePost(post, postMedia));
   } catch (error) {
-    console.error("API: Failed to fetch post:", error);
-    return apiErrorResponse("Failed to fetch post", 500);
+return apiErrorResponse("Failed to fetch post", 500);
   }
 }
 
@@ -365,8 +364,7 @@ export async function PATCH(
 
     return apiSuccessResponse(serializePost(updatedPost!, postMedia));
   } catch (error) {
-    console.error("API: Failed to update post:", error);
-    return apiErrorResponse("Failed to update post", 500);
+return apiErrorResponse("Failed to update post", 500);
   }
 }
 
@@ -426,7 +424,6 @@ export async function DELETE(
 
     return apiSuccessResponse({ deleted: true, id });
   } catch (error) {
-    console.error("API: Failed to delete post:", error);
-    return apiErrorResponse("Failed to delete post", 500);
+return apiErrorResponse("Failed to delete post", 500);
   }
 }

@@ -32,8 +32,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, id });
   } catch (error) {
-    console.error("Error saving docs feedback:", error);
-    return NextResponse.json({ error: "Failed to save feedback" }, { status: 500 });
+return NextResponse.json({ error: "Failed to save feedback" }, { status: 500 });
   }
 }
 
@@ -67,8 +66,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating docs feedback:", error);
-    return NextResponse.json({ error: "Failed to update feedback" }, { status: 500 });
+return NextResponse.json({ error: "Failed to update feedback" }, { status: 500 });
   }
 }
 
@@ -142,7 +140,6 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("Error fetching docs feedback:", error);
-    return NextResponse.json({ error: "Failed to fetch feedback" }, { status: 500 });
+return NextResponse.json({ error: "Failed to fetch feedback" }, { status: 500 });
   }
 }

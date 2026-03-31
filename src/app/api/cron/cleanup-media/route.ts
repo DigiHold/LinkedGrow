@@ -117,10 +117,6 @@ async function runCleanup(): Promise<{
       if (r2Results[j].status === "fulfilled") {
         deletedIds.push(batch[j].id);
       } else {
-        console.error(
-          `Failed to delete R2 key ${batch[j].storageKey}:`,
-          (r2Results[j] as PromiseRejectedResult).reason
-        );
         errors++;
       }
     }
@@ -130,8 +126,7 @@ async function runCleanup(): Promise<{
       try {
         await db.delete(media).where(inArray(media.id, deletedIds));
         deleted += deletedIds.length;
-      } catch (err) {
-        console.error("Failed to delete media records batch:", err);
+      } catch {
         errors += deletedIds.length;
         deleted -= deletedIds.length;
       }
@@ -201,12 +196,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await runCleanup();
-    console.log(
-      `Media cleanup: scanned=${result.scanned} deleted=${result.deleted} errors=${result.errors} batches=${result.batches}`
-    );
     return NextResponse.json(result);
-  } catch (error) {
-    console.error("Media cleanup failed:", error);
+  } catch {
     return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
   }
 }

@@ -91,8 +91,7 @@ export async function GET() {
       brokenLinks,
     });
   } catch (error) {
-    console.error("Admin SEO API error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       {
         error:
           error instanceof Error
@@ -128,8 +127,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("Admin SEO POST error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       {
         error:
           error instanceof Error ? error.message : "Failed to process request",

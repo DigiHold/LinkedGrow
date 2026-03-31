@@ -75,8 +75,7 @@ export default function DocsFeedbackPage() {
       setSummary(data.summary);
       setTotalPages(data.totalPages);
     } catch {
-      console.error("Failed to fetch docs feedback");
-    } finally {
+} finally {
       setLoading(false);
     }
   }

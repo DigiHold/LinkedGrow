@@ -65,8 +65,7 @@ export async function PATCH(
 
     return NextResponse.json({ idea: updatedIdea });
   } catch (error) {
-    console.error("Error updating idea:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update idea" },
       { status: 500 }
     );
@@ -115,8 +114,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting idea:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete idea" },
       { status: 500 }
     );

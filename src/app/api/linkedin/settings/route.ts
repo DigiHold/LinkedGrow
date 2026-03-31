@@ -42,8 +42,7 @@ export async function GET() {
       hasOrganizations: organizations.length > 0,
     });
   } catch (error) {
-    console.error('Failed to get LinkedIn settings:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to load LinkedIn settings' },
       { status: 500 }
     );

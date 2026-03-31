@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
 
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
-      console.error("QStash index-sitemap: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
@@ -31,24 +30,15 @@ export async function POST(request: NextRequest) {
     let isValid = false;
     try {
       isValid = await receiver.verify({ signature, body, url: verifyUrl });
-    } catch (verifyError) {
-      console.warn("QStash index-sitemap: URL-bound verify failed, retrying without URL:", {
-        verifyUrl,
-        error: verifyError instanceof Error ? verifyError.message : verifyError,
-      });
+    } catch {
       try {
         isValid = await receiver.verify({ signature, body });
-      } catch (fallbackError) {
-        console.error("QStash index-sitemap: signature verification failed completely:", {
-          verifyUrl,
-          error: fallbackError instanceof Error ? fallbackError.message : fallbackError,
-        });
+      } catch {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
     if (!isValid) {
-      console.error("QStash index-sitemap: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -58,18 +48,12 @@ export async function POST(request: NextRequest) {
     // Submit all URLs to search engines
     const result = await notifySearchEngines(allUrls);
 
-    console.log(
-      `[Cron] Auto-indexed ${allUrls.length} URLs:`,
-      JSON.stringify(result)
-    );
-
     return NextResponse.json({
       success: true,
       urlCount: allUrls.length,
       result,
     });
   } catch (error) {
-    console.error("[Cron] Index sitemap error:", error);
     return NextResponse.json(
       {
         error:

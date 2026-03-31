@@ -15,16 +15,13 @@ const receiver = new Receiver({
 });
 
 export async function POST(request: NextRequest) {
-  console.log("[Team Engage Webhook] Received request");
-
-  try {
+try {
     const body = await request.text();
 
     // Verify QStash signature
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
-      console.error("[Team Engage Webhook] Missing upstash-signature header");
-      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
     const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qstash/team-engage`;
@@ -36,8 +33,7 @@ export async function POST(request: NextRequest) {
       try {
         isValid = await receiver.verify({ signature, body });
       } catch {
-        console.error("[Team Engage Webhook] Signature verification failed");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
@@ -48,9 +44,7 @@ export async function POST(request: NextRequest) {
     const data = JSON.parse(body);
     const { jobId, postId, linkedinPostId, userId, actionType, commentText } = data;
 
-    console.log("[Team Engage Webhook] Processing:", { jobId, actionType, userId });
-
-    // Get the team member's OWN LinkedIn credentials
+// Get the team member's OWN LinkedIn credentials
     const [user] = await db
       .select()
       .from(users)
@@ -137,13 +131,9 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(teamEngagementJobs.id, jobId));
 
-    console.log("[Team Engage Webhook] Success:", { jobId, actionType });
-    return NextResponse.json({ success: true });
+return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Team Engage Webhook] Failed:", message);
-    console.error("[Team Engage Webhook] Stack:", error instanceof Error ? error.stack : "no stack");
-
     // Try to extract jobId from the body to mark the job as failed
     try {
       const rawBody = await request.clone().text().catch(() => "");
@@ -175,8 +165,7 @@ async function markJobFailed(jobId: string, errorMessage: string) {
       })
       .where(eq(teamEngagementJobs.id, jobId));
   } catch (err) {
-    console.error("[Team Engage Webhook] Failed to mark job as failed:", err);
-  }
+}
 }
 
 /**
@@ -207,7 +196,6 @@ async function generateTeamComment(
       return data.comment || "";
     }
   } catch (error) {
-    console.error("[Team Engage] AI comment generation failed:", error);
-  }
+}
   return "";
 }

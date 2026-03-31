@@ -45,8 +45,7 @@ export async function POST() {
       cron: "0 4 * * *",
     });
   } catch (error) {
-    console.error("Failed to create cleanup schedule:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to create schedule" },
       { status: 500 }
     );

@@ -47,8 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!BREVO_API_KEY) {
-      console.error("Brevo API key not configured");
-      return NextResponse.json(
+return NextResponse.json(
         { error: "Email service not configured" },
         { status: 500 }
       );
@@ -107,14 +106,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Brevo API error:", data);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to subscribe" },
       { status: 500 }
     );
   } catch (error) {
-    console.error("Email course signup error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to subscribe" },
       { status: 500 }
     );

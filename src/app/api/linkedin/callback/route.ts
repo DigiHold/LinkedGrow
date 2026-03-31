@@ -31,28 +31,23 @@ async function downloadAndStoreProfilePicture(
       const parsedUrl = new URL(imageUrl);
       const allowedHosts = ['media.licdn.com', 'media-exp1.licdn.com', 'media-exp2.licdn.com', 'platform-lookaside.fbsbx.com'];
       if (!allowedHosts.some(host => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`))) {
-        console.warn('Rejected non-LinkedIn profile picture URL:', parsedUrl.hostname);
-        return null;
+return null;
       }
       if (parsedUrl.protocol !== 'https:') {
-        console.warn('Rejected non-HTTPS profile picture URL');
-        return null;
+return null;
       }
     } catch {
-      console.warn('Invalid profile picture URL');
-      return null;
+return null;
     }
 
     if (!isR2Configured()) {
-      console.warn('R2 not configured, using original LinkedIn URL');
-      return imageUrl;
+return imageUrl;
     }
 
     // Download the image from LinkedIn
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      console.error('Failed to download LinkedIn profile picture:', response.status);
-      return null;
+return null;
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
@@ -68,8 +63,7 @@ async function downloadAndStoreProfilePicture(
 
     return result.url;
   } catch (error) {
-    console.error('Failed to store profile picture:', error);
-    return null;
+return null;
   }
 }
 
@@ -113,8 +107,7 @@ export async function GET(request: NextRequest) {
 
   // Check for OAuth errors
   if (error) {
-    console.error('LinkedIn OAuth error:', error, errorDescription);
-    if (isPopup) {
+if (isPopup) {
       return createPopupResponse(false, { error: errorDescription || error });
     }
     if (mode === 'login' || mode === 'register') {
@@ -130,8 +123,7 @@ export async function GET(request: NextRequest) {
   // Verify state to prevent CSRF attacks
   const storedState = request.cookies.get('linkedin_oauth_state')?.value;
   if (!state || state !== storedState) {
-    console.error('LinkedIn OAuth state mismatch');
-    if (isPopup) {
+if (isPopup) {
       return createPopupResponse(false, { error: 'Invalid state - please try again' });
     }
     if (mode === 'login' || mode === 'register') {
@@ -291,8 +283,7 @@ export async function GET(request: NextRequest) {
         // Subscribe to newsletter if opted in (non-blocking)
         if (subscribeNewsletterCookie) {
           subscribeToNewsletter({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch((err) => {
-            console.error('Failed to subscribe to newsletter:', err);
-          });
+});
         }
 
       } else {
@@ -562,8 +553,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error('LinkedIn OAuth callback error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Failed to connect LinkedIn';
+const errorMessage = err instanceof Error ? err.message : 'Failed to connect LinkedIn';
     if (isPopup) {
       return createPopupResponse(false, { error: errorMessage });
     }

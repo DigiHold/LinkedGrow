@@ -81,8 +81,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to cancel invite:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to cancel invite" },
       { status: 500 }
     );

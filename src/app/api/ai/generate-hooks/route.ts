@@ -436,8 +436,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ hooks });
   } catch (error) {
-    console.error("Hooks generation error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate hooks" },
       { status: 500 }
     );

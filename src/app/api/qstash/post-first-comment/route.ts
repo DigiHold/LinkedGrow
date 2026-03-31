@@ -11,16 +11,13 @@ const receiver = new Receiver({
 });
 
 export async function POST(request: NextRequest) {
-  console.log("[First Comment Webhook] Received request");
-
-  try {
+try {
     const body = await request.text();
 
     // Verify QStash signature
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
-      console.error("[First Comment Webhook] Missing upstash-signature header");
-      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
     const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qstash/post-first-comment`;
@@ -32,8 +29,7 @@ export async function POST(request: NextRequest) {
       try {
         isValid = await receiver.verify({ signature, body });
       } catch {
-        console.error("[First Comment Webhook] Signature verification failed");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
@@ -42,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { postId } = JSON.parse(body);
-    console.log("[First Comment Webhook] Processing postId:", postId);
-
-    if (!postId) {
+if (!postId) {
       return NextResponse.json({ error: "Post ID is required" }, { status: 400 });
     }
 
@@ -53,18 +47,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!post) {
-      console.error("[First Comment Webhook] Post not found:", postId);
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
     // Post must be published with a LinkedIn ID and have a first comment
     if (post.status !== "published" || !post.linkedinPostId || !post.firstComment) {
-      console.log("[First Comment Webhook] Skipped:", {
-        status: post.status,
-        hasLinkedinPostId: !!post.linkedinPostId,
-        hasFirstComment: !!post.firstComment,
-      });
-      return NextResponse.json({
+return NextResponse.json({
         success: true,
         message: "Skipped - post not eligible for first comment",
       });
@@ -74,8 +62,7 @@ export async function POST(request: NextRequest) {
     const result = await getLinkedInUser(post.userId);
 
     if (!result?.linkedInUser?.linkedinProfileId) {
-      console.error("[First Comment Webhook] LinkedIn not connected for user:", post.userId);
-      return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
+return NextResponse.json({ error: "LinkedIn not connected" }, { status: 400 });
     }
 
     const { linkedInUser } = result;
@@ -83,14 +70,12 @@ export async function POST(request: NextRequest) {
     // Auto-refresh tokens if expired
     const { token } = await ensureFreshTokens(linkedInUser.id);
     if (!token) {
-      console.error("[First Comment Webhook] LinkedIn token expired for user:", post.userId);
-      return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
+return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
     }
 
     // Check token expiry
     if (linkedInUser.linkedinTokenExpiry && new Date(linkedInUser.linkedinTokenExpiry) < new Date()) {
-      console.error("[First Comment Webhook] LinkedIn token expired for user:", post.userId);
-      return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
+return NextResponse.json({ error: "LinkedIn token expired" }, { status: 400 });
     }
 
     // Determine author (profile vs organization)
@@ -98,15 +83,7 @@ export async function POST(request: NextRequest) {
     const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: "person" | "organization" = isOrganization ? "organization" : "person";
 
-    console.log("[First Comment Webhook] Posting comment:", {
-      postId,
-      linkedinPostId: post.linkedinPostId,
-      authorId,
-      authorType,
-      commentLength: post.firstComment.length,
-    });
-
-    // Post the comment on LinkedIn
+// Post the comment on LinkedIn
     const commentResult = await createLinkedInComment(
       token,
       post.linkedinPostId!,
@@ -115,9 +92,7 @@ export async function POST(request: NextRequest) {
       authorType
     );
 
-    console.log("[First Comment Webhook] Comment posted successfully:", commentResult);
-
-    // Clear firstComment after successful posting
+// Clear firstComment after successful posting
     await db.update(posts)
       .set({ firstComment: null, updatedAt: new Date() })
       .where(eq(posts.id, postId));
@@ -130,8 +105,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("[First Comment Webhook] ERROR:", error instanceof Error ? error.message : error);
-    console.error("[First Comment Webhook] Stack:", error instanceof Error ? error.stack : "no stack");
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to post first comment" },
       { status: 500 }

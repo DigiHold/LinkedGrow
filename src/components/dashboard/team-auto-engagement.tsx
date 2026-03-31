@@ -73,8 +73,7 @@ export function TeamAutoEngagement({
         setSettings(data);
       }
     } catch (err) {
-      console.error("Failed to fetch engagement settings:", err);
-    }
+}
   }, []);
 
   const fetchJobs = useCallback(async () => {
@@ -86,8 +85,7 @@ export function TeamAutoEngagement({
         setJobs(data.jobs || []);
       }
     } catch (err) {
-      console.error("Failed to fetch engagement jobs:", err);
-    }
+}
   }, [isOwnerOrAdmin]);
 
   useEffect(() => {
@@ -109,8 +107,7 @@ export function TeamAutoEngagement({
         setSettings((prev) => (prev ? { ...prev, [field]: value } : prev));
       }
     } catch (err) {
-      console.error("Failed to update engagement setting:", err);
-    } finally {
+} finally {
       setIsUpdating(null);
     }
   };

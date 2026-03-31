@@ -56,8 +56,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error("Failed to fetch A/B tests:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch A/B tests" },
       { status: 500 }
     );
@@ -141,8 +140,7 @@ export async function POST(request: NextRequest) {
       message: "A/B test created successfully",
     });
   } catch (error) {
-    console.error("Failed to create A/B test:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to create A/B test" },
       { status: 500 }
     );

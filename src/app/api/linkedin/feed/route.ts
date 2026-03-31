@@ -106,8 +106,7 @@ export async function GET() {
     return NextResponse.json({ posts, total: posts.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Failed to fetch feed:", message, error);
-    return NextResponse.json({ error: `Failed to fetch feed: ${message}` }, { status: 500 });
+return NextResponse.json({ error: `Failed to fetch feed: ${message}` }, { status: 500 });
   }
 }
 
@@ -192,7 +191,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("Failed to perform feed action:", error);
-    return NextResponse.json({ error: "Failed to perform action" }, { status: 500 });
+return NextResponse.json({ error: "Failed to perform action" }, { status: 500 });
   }
 }

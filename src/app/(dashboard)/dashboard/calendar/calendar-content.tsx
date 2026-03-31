@@ -877,8 +877,7 @@ export function CalendarContent() {
       setShowAIPanel(false);
       setAIInstruction("");
     } catch (error) {
-      console.error("AI edit error:", error);
-      showError(error instanceof Error ? error.message : "Failed to edit post");
+showError(error instanceof Error ? error.message : "Failed to edit post");
     } finally {
       setIsProcessingAI(false);
     }

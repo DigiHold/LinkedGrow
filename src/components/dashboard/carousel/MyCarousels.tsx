@@ -84,8 +84,7 @@ export function MyCarousels({
         setCarousels(data.carousels || []);
       }
     } catch (error) {
-      console.error("Failed to fetch carousels:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   }, []);
@@ -112,8 +111,7 @@ export function MyCarousels({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error("Failed to load carousel:", error);
-    } finally {
+} finally {
       setLoadingId(null);
     }
   };
@@ -128,8 +126,7 @@ export function MyCarousels({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error("Failed to duplicate carousel:", error);
-    } finally {
+} finally {
       setLoadingId(null);
     }
   };
@@ -145,8 +142,7 @@ export function MyCarousels({
         setCarousels((prev) => prev.filter((c) => c.id !== deleteId));
       }
     } catch (error) {
-      console.error("Failed to delete carousel:", error);
-    } finally {
+} finally {
       setIsDeleting(false);
       setDeleteId(null);
     }

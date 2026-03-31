@@ -194,7 +194,6 @@ export async function GET(request: NextRequest) {
       hasMore,
     });
   } catch (error) {
-    console.error("Failed to fetch engagement feed:", error);
-    return NextResponse.json({ error: "Failed to load feed" }, { status: 500 });
+return NextResponse.json({ error: "Failed to load feed" }, { status: 500 });
   }
 }

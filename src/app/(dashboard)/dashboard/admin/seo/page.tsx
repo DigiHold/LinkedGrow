@@ -166,8 +166,7 @@ export default function AdminSeoPage() {
         setLastRefresh(new Date());
       }
     } catch (error) {
-      console.error("Failed to fetch SEO data:", error);
-    } finally {
+} finally {
       setLoading(false);
     }
   };
@@ -185,8 +184,7 @@ export default function AdminSeoPage() {
         setScError(json.error || "Failed to load");
       }
     } catch (error) {
-      console.error("Failed to fetch Search Console data:", error);
-      setScError("Failed to connect");
+setScError("Failed to connect");
     } finally {
       setScLoading(false);
     }
@@ -218,8 +216,7 @@ export default function AdminSeoPage() {
         );
       }
     } catch (error) {
-      console.error("Indexing failed:", error);
-    } finally {
+} finally {
       const cleared = new Set(indexingUrls);
       urls.forEach((u) => cleared.delete(u));
       setIndexingUrls(cleared);

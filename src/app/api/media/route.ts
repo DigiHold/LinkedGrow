@@ -55,8 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ media: userMedia });
   } catch (error) {
-    console.error("Get media error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch media" },
       { status: 500 }
     );
@@ -289,8 +288,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ media: newMedia });
     }
   } catch (error) {
-    console.error("Upload media error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to upload media" },
       { status: 500 }
     );

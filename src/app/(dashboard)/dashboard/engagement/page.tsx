@@ -313,8 +313,7 @@ function _EngagementPageFull() {
       const res = await fetch("/api/linkedin/engagement");
       if (res.ok) setEngagementData(await res.json());
     } catch (err) {
-      console.error("Failed to fetch engagement:", err);
-    }
+}
   }, []);
 
   const fetchLists = useCallback(async () => {
@@ -325,8 +324,7 @@ function _EngagementPageFull() {
         setLists(data.lists || []);
       }
     } catch (err) {
-      console.error("Failed to fetch lists:", err);
-    }
+}
   }, []);
 
   const [hasMorePosts, setHasMorePosts] = useState(true);

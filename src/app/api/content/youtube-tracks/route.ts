@@ -157,8 +157,7 @@ async function getTrackUrl(videoId: string): Promise<{ title: string; trackUrl: 
   }
 
   const debugStr = debug.join(" | ");
-  console.error(`YouTube failed [${videoId}]:`, debugStr);
-  throw new Error(debugStr);
+throw new Error(debugStr);
 }
 
 export async function POST(request: NextRequest) {
@@ -198,7 +197,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
   } catch (error) {
-    console.error("YouTube tracks error:", error);
-    return NextResponse.json({ error: "Failed to get YouTube video info" }, { status: 500 });
+return NextResponse.json({ error: "Failed to get YouTube video info" }, { status: 500 });
   }
 }

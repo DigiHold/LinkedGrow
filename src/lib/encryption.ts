@@ -75,7 +75,6 @@ export function decryptApiKey(encryptedKey: string | null | undefined): string |
     return decrypt(encryptedKey);
   } catch {
     // If decryption fails, the key might be corrupted or in old format
-    console.error("Failed to decrypt API key");
-    return null;
+return null;
   }
 }

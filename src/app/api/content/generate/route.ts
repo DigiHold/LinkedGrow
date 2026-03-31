@@ -460,8 +460,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ posts });
   } catch (error) {
-    console.error("Content generate error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate posts" },
       { status: 500 }
     );

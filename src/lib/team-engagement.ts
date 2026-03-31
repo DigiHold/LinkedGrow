@@ -31,8 +31,7 @@ export async function triggerTeamAutoEngagement(
     });
 
     if (!ownerMembership) {
-      console.log("[Team Engage] Owner has no team, skipping");
-      return;
+return;
     }
 
     // 2. Get all other team members (exclude owner)
@@ -43,8 +42,7 @@ export async function triggerTeamAutoEngagement(
     const nonOwnerMembers = members.filter((m) => m.role !== "owner");
 
     if (nonOwnerMembers.length === 0) {
-      console.log("[Team Engage] No non-owner team members, skipping");
-      return;
+return;
     }
 
     // 3. Fetch user data for each member to check LinkedIn connection
@@ -85,13 +83,11 @@ export async function triggerTeamAutoEngagement(
 
       // Check if member has their own LinkedIn connected and token is valid
       if (!memberUser.linkedinAccessToken || !memberUser.linkedinProfileId) {
-        console.log(`[Team Engage] Member ${member.userId} has no LinkedIn connected, skipping`);
-        continue;
+continue;
       }
 
       if (memberUser.linkedinTokenExpiry && memberUser.linkedinTokenExpiry < now) {
-        console.log(`[Team Engage] Member ${member.userId} LinkedIn token expired, skipping`);
-        continue;
+continue;
       }
 
       // Like: random delay 2-8 minutes, staggered per member
@@ -135,8 +131,7 @@ export async function triggerTeamAutoEngagement(
     }
 
     if (jobs.length === 0) {
-      console.log("[Team Engage] No eligible jobs to schedule");
-      return;
+return;
     }
 
     // 5. Insert job records into database
@@ -157,9 +152,7 @@ export async function triggerTeamAutoEngagement(
     // 6. Schedule via QStash
     await scheduleTeamEngagement(postId, linkedinPostId, jobs);
 
-    console.log(`[Team Engage] Scheduled ${jobs.length} jobs for post ${postId}`);
-  } catch (error) {
-    console.error("[Team Engage] Failed to trigger team auto-engagement:", error);
-    // Don't throw - team engagement failure should not block post publishing
+} catch (error) {
+// Don't throw - team engagement failure should not block post publishing
   }
 }

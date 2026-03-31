@@ -92,16 +92,12 @@ export async function GET(request: NextRequest) {
         to: user.email,
         name: user.name || "there",
         referralCode: affiliate.referralCode,
-      }).catch((err) =>
-        console.error("Failed to send affiliate approved email:", err)
-      );
+      }).catch(() => {});
     } else {
       sendAffiliateRejectedEmail({
         to: user.email,
         name: user.name || "there",
-      }).catch((err) =>
-        console.error("Failed to send affiliate rejected email:", err)
-      );
+      }).catch(() => {});
     }
   }
 

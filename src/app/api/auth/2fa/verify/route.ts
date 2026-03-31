@@ -67,8 +67,7 @@ export async function POST(request: NextRequest) {
       message: "Two-factor authentication enabled successfully",
     });
   } catch (error) {
-    console.error("2FA verify error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to verify 2FA" },
       { status: 500 }
     );

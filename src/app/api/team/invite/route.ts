@@ -174,8 +174,7 @@ export async function POST(request: NextRequest) {
         inviteToken: token,
       });
     } catch (emailError) {
-      console.error("Failed to send invite email:", emailError);
-      // Don't fail the request if email fails - invite is still created
+// Don't fail the request if email fails - invite is still created
     }
 
     return NextResponse.json({
@@ -190,8 +189,7 @@ export async function POST(request: NextRequest) {
       inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/team/invite?token=${token}`,
     });
   } catch (error) {
-    console.error("Failed to send invite:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to send invite" },
       { status: 500 }
     );

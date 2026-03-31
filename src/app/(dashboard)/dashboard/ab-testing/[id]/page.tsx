@@ -116,8 +116,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
         setTest((prev) => (prev ? { ...prev, ...updated } : null));
       }
     } catch (err) {
-      console.error("Failed to update status:", err);
-    } finally {
+} finally {
       setIsUpdating(false);
     }
   };
@@ -136,8 +135,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
 
       if (!response.ok) throw new Error("Failed to save stats");
     } catch (err) {
-      console.error("Failed to save stats:", err);
-    } finally {
+} finally {
       setIsUpdating(false);
     }
   };
@@ -164,8 +162,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
         setWinnerModal(null);
       }
     } catch (err) {
-      console.error("Failed to declare winner:", err);
-    } finally {
+} finally {
       setIsUpdating(false);
     }
   };

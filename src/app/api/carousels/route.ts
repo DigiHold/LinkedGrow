@@ -30,8 +30,7 @@ export async function GET() {
 
     return NextResponse.json({ carousels });
   } catch (error) {
-    console.error("Failed to fetch carousels:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch carousels" },
       { status: 500 }
     );
@@ -86,8 +85,7 @@ export async function POST(request: NextRequest) {
       message: "Carousel saved successfully",
     });
   } catch (error) {
-    console.error("Failed to save carousel:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to save carousel" },
       { status: 500 }
     );

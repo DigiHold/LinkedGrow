@@ -53,8 +53,7 @@ function CommentsContent() {
       const data = await res.json();
       if (data.comments) setComments(data.comments);
     } catch {
-      console.error("Failed to fetch comments");
-    } finally {
+} finally {
       setLoading(false);
     }
   }
@@ -75,8 +74,7 @@ function CommentsContent() {
         );
       }
     } catch {
-      console.error("Failed to update comment");
-    } finally {
+} finally {
       setActionLoading(null);
     }
   }
@@ -116,8 +114,7 @@ function CommentsContent() {
         setReplyingTo(null);
       }
     } catch {
-      console.error("Failed to reply");
-    } finally {
+} finally {
       setActionLoading(null);
     }
   }
@@ -135,8 +132,7 @@ function CommentsContent() {
         setComments((prev) => prev.filter((c) => c.id !== id && c.parentId !== id));
       }
     } catch {
-      console.error("Failed to delete comment");
-    } finally {
+} finally {
       setActionLoading(null);
     }
   }

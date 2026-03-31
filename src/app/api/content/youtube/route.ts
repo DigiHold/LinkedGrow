@@ -73,8 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!WORKER_URL || !WORKER_SECRET) {
-      console.error("YOUTUBE_WORKER_URL or YOUTUBE_WORKER_SECRET not configured");
-      return NextResponse.json(
+return NextResponse.json(
         { error: "YouTube extraction is not configured. Please contact support." },
         { status: 500 }
       );
@@ -107,8 +106,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.error("YouTube Worker error:", workerData);
-      return NextResponse.json(
+return NextResponse.json(
         { error: "Failed to extract captions from this video. Please try again." },
         { status: 500 }
       );
@@ -149,9 +147,7 @@ export async function POST(request: NextRequest) {
       warning,
     });
   } catch (error) {
-    console.error("YouTube extraction error:", error);
-
-    return NextResponse.json(
+return NextResponse.json(
       {
         error: error instanceof Error
           ? error.message

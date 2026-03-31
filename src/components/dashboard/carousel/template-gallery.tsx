@@ -77,8 +77,7 @@ export function TemplateGallery({
         setUserTemplates(data.templates || []);
       }
     } catch (error) {
-      console.error('Failed to fetch user templates:', error);
-    } finally {
+} finally {
       setIsLoadingUserTemplates(false);
     }
   };
@@ -95,8 +94,7 @@ export function TemplateGallery({
         setUserTemplates(prev => prev.filter(t => t.id !== id));
       }
     } catch (error) {
-      console.error('Failed to delete template:', error);
-    } finally {
+} finally {
       setDeletingTemplateId(null);
     }
   };

@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
       trimmedJson: trimmedData,
     });
   } catch (error) {
-    console.error("Reddit fetch error:", error);
-    const message = error instanceof Error ? error.message : "Failed to fetch Reddit data";
+const message = error instanceof Error ? error.message : "Failed to fetch Reddit data";
     const status = message.includes("not found") ? 404 : 502;
     return NextResponse.json({ error: message }, { status });
   }

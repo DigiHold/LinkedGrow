@@ -39,8 +39,7 @@ export async function GET(
 
     return NextResponse.json({ carousel });
   } catch (error) {
-    console.error("Failed to fetch carousel:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch carousel" },
       { status: 500 }
     );
@@ -120,8 +119,7 @@ export async function PUT(
 
     return NextResponse.json({ message: "Carousel updated successfully" });
   } catch (error) {
-    console.error("Failed to update carousel:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update carousel" },
       { status: 500 }
     );
@@ -174,8 +172,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Carousel deleted successfully" });
   } catch (error) {
-    console.error("Failed to delete carousel:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete carousel" },
       { status: 500 }
     );

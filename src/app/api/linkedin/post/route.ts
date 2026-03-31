@@ -177,8 +177,7 @@ export async function POST(request: NextRequest) {
           const likeDelay = Math.floor(Math.random() * 111) + 10; // 10-120 seconds
           await scheduleAutoLike(postId, likeDelay);
         } catch (error) {
-          console.error("[Auto-Like] Failed to schedule:", error);
-        }
+}
       }
 
       // Schedule first comment if present (random 1-5 min delay)
@@ -186,25 +185,12 @@ export async function POST(request: NextRequest) {
         where: eq(posts.id, postId),
       });
 
-      console.log("[First Comment] Post check:", {
-        postId,
-        hasFirstComment: !!updatedPost?.firstComment,
-        firstCommentLength: updatedPost?.firstComment?.length,
-        linkedinPostId: postResult.id,
-      });
-
-      if (updatedPost?.firstComment) {
+if (updatedPost?.firstComment) {
         try {
           const delaySeconds = Math.floor(Math.random() * 241) + 60;
           const messageId = await scheduleFirstComment(postId, delaySeconds);
-          console.log("[First Comment] Scheduled via QStash:", {
-            postId,
-            delaySeconds,
-            qstashMessageId: messageId,
-          });
-        } catch (error) {
-          console.error("[First Comment] Failed to schedule:", error);
-        }
+} catch (error) {
+}
       }
     }
 
@@ -213,8 +199,7 @@ export async function POST(request: NextRequest) {
       try {
         await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
       } catch (error) {
-        console.error("[Team Engage] Failed to schedule:", error);
-      }
+}
     }
 
     const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';
@@ -226,8 +211,7 @@ export async function POST(request: NextRequest) {
       postedTo: isOrganization ? 'organization' : 'profile',
     });
   } catch (error) {
-    console.error('LinkedIn post error:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to post to LinkedIn' },
       { status: 500 }
     );

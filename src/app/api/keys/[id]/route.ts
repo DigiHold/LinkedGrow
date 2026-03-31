@@ -44,7 +44,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "API key deleted successfully" });
   } catch (error) {
-    console.error("Failed to delete API key:", error);
-    return NextResponse.json({ error: "Failed to delete API key" }, { status: 500 });
+return NextResponse.json({ error: "Failed to delete API key" }, { status: 500 });
   }
 }

@@ -237,8 +237,7 @@ export default function CarouselPage() {
         });
       });
     } catch (e) {
-      console.warn('Failed to restore draft:', e);
-    }
+}
   }, [isCheckingApiKey]);
 
   // Flush save on page unload
@@ -516,8 +515,7 @@ export default function CarouselPage() {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       setSaveStatus('saved');
     } catch (e) {
-      console.warn('Failed to save draft to localStorage:', e);
-    }
+}
   }, [currentCarouselId, carouselName, carouselDescription]);
 
   const saveToDatabase = useCallback(async () => {
@@ -550,8 +548,7 @@ export default function CarouselPage() {
       });
       if (response.ok) setSaveStatus('saved');
     } catch (e) {
-      console.warn('Auto-save to DB failed:', e);
-      setSaveStatus('idle');
+setSaveStatus('idle');
     }
   }, [currentCarouselId, carouselName, carouselDescription, compressThumbnail]);
 
@@ -677,8 +674,7 @@ export default function CarouselPage() {
       pdf.save('carousel.pdf');
       showToast("PDF downloaded successfully!", "success");
     } catch (err) {
-      console.error("PDF export error:", err);
-      showToast("Failed to generate PDF");
+showToast("Failed to generate PDF");
     } finally {
       setIsExporting(false);
       setGenerationStep("");
@@ -724,8 +720,7 @@ export default function CarouselPage() {
 
       showToast("Images downloaded!", "success");
     } catch (err) {
-      console.error("Image export error:", err);
-      showToast("Failed to export images");
+showToast("Failed to export images");
     } finally {
       setIsExporting(false);
       setGenerationStep("");

@@ -106,8 +106,7 @@ async function logApiRequest(
       createdAt: new Date(),
     });
   } catch (error) {
-    console.error("Failed to log API request:", error);
-  }
+}
 }
 
 // API authentication result

@@ -88,8 +88,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, role });
   } catch (error) {
-    console.error("Failed to update member role:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update member role" },
       { status: 500 }
     );
@@ -190,8 +189,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to remove member:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to remove member" },
       { status: 500 }
     );

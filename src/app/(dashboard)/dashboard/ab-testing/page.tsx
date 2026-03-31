@@ -93,8 +93,7 @@ export default function ABTestingPage() {
         setTests(data.tests || []);
       }
     } catch (error) {
-      console.error("Failed to fetch A/B tests:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -110,8 +109,7 @@ export default function ABTestingPage() {
         setDeleteTest(null);
       }
     } catch (error) {
-      console.error("Failed to delete test:", error);
-    } finally {
+} finally {
       setDeletingId(null);
     }
   };
@@ -129,8 +127,7 @@ export default function ABTestingPage() {
         setTests(tests.map((t) => (t.id === id ? { ...t, ...updated } : t)));
       }
     } catch (error) {
-      console.error("Failed to update test status:", error);
-    }
+}
   };
 
   return (

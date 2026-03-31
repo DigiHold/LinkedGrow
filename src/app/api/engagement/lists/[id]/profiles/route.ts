@@ -215,8 +215,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("Failed to add profile:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to add profile" },
       { status: 500 }
     );
@@ -267,8 +266,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to remove profile:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to remove profile" },
       { status: 500 }
     );

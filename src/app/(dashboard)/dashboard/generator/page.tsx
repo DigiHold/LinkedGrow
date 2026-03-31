@@ -361,8 +361,7 @@ export default function GeneratorPage() {
           setPostsUsedThisMonth(thisMonthPosts.length);
         }
       } catch (error) {
-        console.error("Failed to load generator data:", error);
-      } finally {
+} finally {
         setIsLoadingSettings(false);
       }
     };
@@ -421,8 +420,7 @@ export default function GeneratorPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to restore generator state:", error);
-      localStorage.removeItem(STORAGE_KEY);
+localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
@@ -453,8 +451,7 @@ export default function GeneratorPage() {
       setGeneratedIdeas(data.ideas || []);
       setStep(3);
     } catch (error) {
-      console.error("Failed to generate ideas:", error);
-      showToast(error instanceof Error ? error.message : "Failed to generate ideas");
+showToast(error instanceof Error ? error.message : "Failed to generate ideas");
     } finally {
       setIsGeneratingIdeas(false);
     }
@@ -486,8 +483,7 @@ export default function GeneratorPage() {
       setEditedPost("");
       setStep(4);
     } catch (error) {
-      console.error("Failed to generate post:", error);
-      showToast(error instanceof Error ? error.message : "Failed to generate post");
+showToast(error instanceof Error ? error.message : "Failed to generate post");
     } finally {
       setIsGeneratingPost(false);
     }
@@ -560,8 +556,7 @@ export default function GeneratorPage() {
         }
       }
     } catch (error) {
-      console.error("AI quick action error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to apply AI action");
+showToast(error instanceof Error ? error.message : "Failed to apply AI action");
     } finally {
       setIsApplyingAI(false);
     }
@@ -601,8 +596,7 @@ export default function GeneratorPage() {
       setShowAIPanel(false);
       setAIInstruction("");
     } catch (error) {
-      console.error("AI instruction error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to apply AI instruction");
+showToast(error instanceof Error ? error.message : "Failed to apply AI instruction");
     } finally {
       setIsApplyingAI(false);
     }
@@ -661,8 +655,7 @@ export default function GeneratorPage() {
       showToast("Draft saved successfully!", "success");
       setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
-      console.error("Save draft error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to save draft");
+showToast(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
     }
@@ -730,8 +723,7 @@ export default function GeneratorPage() {
       showToast("Post published to LinkedIn!", "success");
       setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
-      console.error("Publish error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to publish");
+showToast(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsPublishing(false);
     }
@@ -800,8 +792,7 @@ export default function GeneratorPage() {
       showToast(`Post scheduled for ${scheduledAt.toLocaleString()}`, "success");
       setTimeout(() => router.push("/dashboard/calendar"), 1500);
     } catch (error) {
-      console.error("Schedule error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to schedule post");
+showToast(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsSaving(false);
       setShowScheduler(false);

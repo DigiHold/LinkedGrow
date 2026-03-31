@@ -1215,8 +1215,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
 
     return NextResponse.json({ post });
   } catch (error) {
-    console.error("Post generation error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate post" },
       { status: 500 }
     );

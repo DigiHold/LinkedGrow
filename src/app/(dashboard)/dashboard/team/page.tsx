@@ -133,8 +133,7 @@ export default function TeamPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch team data:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -167,8 +166,7 @@ export default function TeamPage() {
         setShowCreateForm(false);
       }
     } catch (error) {
-      console.error("Failed to create team:", error);
-    } finally {
+} finally {
       setIsCreating(false);
     }
   };
@@ -240,8 +238,7 @@ export default function TeamPage() {
         setCancelInvite(null);
       }
     } catch (error) {
-      console.error("Failed to cancel invite:", error);
-    } finally {
+} finally {
       setIsCancelling(false);
     }
   };
@@ -264,8 +261,7 @@ export default function TeamPage() {
         setRemoveMember(null);
       }
     } catch (error) {
-      console.error("Failed to remove member:", error);
-    } finally {
+} finally {
       setIsRemoving(false);
     }
   };
@@ -291,8 +287,7 @@ export default function TeamPage() {
         ));
       }
     } catch (error) {
-      console.error("Failed to change role:", error);
-    }
+}
   };
 
   const isOwner = selectedTeam?.userRole === "owner";
@@ -327,8 +322,7 @@ export default function TeamPage() {
         setShowSettings(false);
       }
     } catch (error) {
-      console.error("Failed to update team:", error);
-    } finally {
+} finally {
       setIsUpdatingTeam(false);
     }
   };
@@ -350,8 +344,7 @@ export default function TeamPage() {
         setShowDeleteConfirm(false);
       }
     } catch (error) {
-      console.error("Failed to delete team:", error);
-    } finally {
+} finally {
       setIsDeletingTeam(false);
     }
   };

@@ -31,8 +31,7 @@ export async function PUT(request: NextRequest) {
       message: "Account updated successfully",
     });
   } catch (error) {
-    console.error("Failed to update account:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update account" },
       { status: 500 }
     );

@@ -112,8 +112,7 @@ export async function POST(request: NextRequest) {
       role: invite.role,
     });
   } catch (error) {
-    console.error("Failed to accept invite:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to accept invite" },
       { status: 500 }
     );

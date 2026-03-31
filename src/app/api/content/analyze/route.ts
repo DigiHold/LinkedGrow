@@ -397,8 +397,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ hooks });
   } catch (error) {
-    console.error("Content analyze error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to analyze content" },
       { status: 500 }
     );

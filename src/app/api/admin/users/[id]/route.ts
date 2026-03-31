@@ -40,8 +40,7 @@ export async function GET(
       updatedAt: user.updatedAt?.toISOString(),
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch user" },
       { status: 500 }
     );
@@ -134,8 +133,7 @@ export async function PUT(
       },
     });
   } catch (error) {
-    console.error("Error updating user:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update user" },
       { status: 500 }
     );
@@ -192,8 +190,7 @@ export async function DELETE(
       message: "User and all associated data have been deleted",
     });
   } catch (error) {
-    console.error("Error deleting user:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete user" },
       { status: 500 }
     );

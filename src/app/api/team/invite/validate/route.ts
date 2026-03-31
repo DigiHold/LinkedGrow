@@ -75,8 +75,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Failed to validate invite:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to validate invite" },
       { status: 500 }
     );

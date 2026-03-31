@@ -57,8 +57,8 @@ export function extractR2KeysFromCanvasJson(canvasJson: string): string[] {
         }
       }
     }
-  } catch (error) {
-    console.error("Failed to parse canvas JSON for image extraction:", error);
+  } catch {
+    // Skip malformed canvas JSON
   }
 
   return keys;
@@ -77,8 +77,8 @@ export function extractR2KeysFromSlidesJson(slidesJson: string): string[] {
         keys.push(...extractR2KeysFromCanvasJson(slide.canvasJSON));
       }
     }
-  } catch (error) {
-    console.error("Failed to parse slides JSON:", error);
+  } catch {
+    // Skip malformed slides JSON
   }
 
   return keys;
@@ -97,17 +97,13 @@ export async function cleanupR2Keys(keys: string[]): Promise<void> {
   await Promise.allSettled([
     // Delete R2 files
     ...uniqueKeys.map((key) =>
-      deleteFromR2(key).catch((err) =>
-        console.error(`Failed to delete R2 key ${key}:`, err)
-      )
+      deleteFromR2(key).catch(() => {})
     ),
     // Delete matching media records
     db
       .delete(media)
       .where(inArray(media.storageKey, uniqueKeys))
-      .catch((err) =>
-        console.error("Failed to delete media records:", err)
-      ),
+      .catch(() => {}),
   ]);
 }
 

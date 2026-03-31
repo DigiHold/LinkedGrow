@@ -171,16 +171,12 @@ export async function PUT(request: NextRequest) {
         to: user.email,
         name: user.name || "there",
         referralCode: affiliate.referralCode,
-      }).catch((err) =>
-        console.error("Failed to send affiliate approved email:", err)
-      );
+      }).catch(() => {});
     } else if (action === "reject") {
       sendAffiliateRejectedEmail({
         to: user.email,
         name: user.name || "there",
-      }).catch((err) =>
-        console.error("Failed to send affiliate rejected email:", err)
-      );
+      }).catch(() => {});
     }
   }
 

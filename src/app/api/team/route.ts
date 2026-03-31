@@ -129,8 +129,7 @@ export async function GET() {
 
     return NextResponse.json({ teams: teamsWithDetails });
   } catch (error) {
-    console.error("Failed to fetch teams:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch teams" },
       { status: 500 }
     );
@@ -225,8 +224,7 @@ export async function POST(request: NextRequest) {
       userRole: "owner",
     });
   } catch (error) {
-    console.error("Failed to create team:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to create team" },
       { status: 500 }
     );
@@ -314,8 +312,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Failed to update team:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update team" },
       { status: 500 }
     );
@@ -388,8 +385,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete team:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete team" },
       { status: 500 }
     );

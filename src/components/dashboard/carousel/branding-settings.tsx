@@ -79,8 +79,7 @@ export function BrandingSettings({
         });
       }
     } catch (error) {
-      console.error("Failed to load branding data:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };

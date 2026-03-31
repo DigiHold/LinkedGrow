@@ -118,8 +118,7 @@ export async function POST(request: NextRequest) {
         "Password has been reset successfully. You can now sign in with your new password.",
     });
   } catch (error) {
-    console.error("Reset password error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
@@ -180,8 +179,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ valid: true });
   } catch (error) {
-    console.error("Token validation error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { valid: false, error: "Something went wrong" },
       { status: 500 }
     );

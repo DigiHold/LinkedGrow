@@ -70,8 +70,7 @@ export async function POST(request: NextRequest) {
       message: "Two-factor authentication disabled",
     });
   } catch (error) {
-    console.error("2FA disable error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to disable 2FA" },
       { status: 500 }
     );

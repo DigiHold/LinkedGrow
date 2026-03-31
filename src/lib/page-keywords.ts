@@ -329,8 +329,7 @@ export async function analyzeKeywordCannibalization(): Promise<KeywordOverlap[]>
 
     return overlaps;
   } catch (error) {
-    console.error("Keyword cannibalization analysis failed:", error);
-    return [];
+return [];
   }
 }
 

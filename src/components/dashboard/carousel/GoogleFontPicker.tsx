@@ -138,8 +138,7 @@ async function fetchGoogleFonts(): Promise<GoogleFont[]> {
       return fonts;
     })
     .catch((error) => {
-      console.error("Failed to fetch Google Fonts:", error);
-      fontsCachePromise = null;
+fontsCachePromise = null;
       return [
         { family: "Inter", category: "sans-serif", variants: ["300", "regular", "500", "600", "700", "800", "900"] },
         { family: "Roboto", category: "sans-serif", variants: ["100", "300", "regular", "500", "700", "900"] },

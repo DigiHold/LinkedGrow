@@ -224,8 +224,7 @@ function SettingsContent() {
           }
         }
       } catch (error) {
-        console.error("Failed to fetch LinkedIn settings:", error);
-        // Fallback to cookie-based detection
+// Fallback to cookie-based detection
         const linkedInProfileName = document.cookie
           .split("; ")
           .find((row) => row.startsWith("linkedin_profile_name="))
@@ -315,8 +314,7 @@ function SettingsContent() {
           setAutoLikeAfterPublish(data.autoLikeAfterPublish !== false);
         }
       } catch (error) {
-        console.error("Failed to fetch voice settings:", error);
-      }
+}
     };
     fetchVoiceSettings();
   }, []);

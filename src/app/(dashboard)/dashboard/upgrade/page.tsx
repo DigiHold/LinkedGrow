@@ -128,8 +128,7 @@ export default function UpgradePage() {
         throw new Error(data.error || "Failed to create checkout");
       }
     } catch (error) {
-      console.error("Checkout error:", error);
-      showError("Something went wrong. Please try again.");
+showError("Something went wrong. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
@@ -152,8 +151,7 @@ export default function UpgradePage() {
         throw new Error(data.error || "Failed to open billing portal");
       }
     } catch (error) {
-      console.error("Portal error:", error);
-      showError("Something went wrong. Please try again.");
+showError("Something went wrong. Please try again.");
     } finally {
       setLoadingPlan(null);
     }

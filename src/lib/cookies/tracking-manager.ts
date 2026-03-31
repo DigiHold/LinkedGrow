@@ -168,8 +168,7 @@ export function injectGTM(gtmId: string): void {
   if (typeof window === 'undefined') return;
 
   if (!gtmId) {
-    console.warn('[GTM] No GTM ID provided, skipping injection');
-    return;
+return;
   }
 
   const scriptId = `gtm-${gtmId}`;

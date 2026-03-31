@@ -191,6 +191,5 @@ export async function fetchRedditContent(url: string): Promise<TrimmedRedditData
     errors.push(`ArcticShift: ${msg}`);
   }
 
-  console.error("All Reddit fetch methods failed:", errors.join(", "));
   throw new Error("Unable to fetch Reddit content. Please try again in a moment.");
 }

@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
-      console.error("QStash publish-blog: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
@@ -26,26 +25,16 @@ export async function POST(request: NextRequest) {
     let isValid = false;
     try {
       isValid = await receiver.verify({ signature, body, url: verifyUrl });
-    } catch (verifyError) {
+    } catch {
       // URL mismatch is the most common cause - retry without URL binding
-      console.warn("QStash publish-blog: URL-bound verify failed, retrying without URL:", {
-        verifyUrl,
-        error: verifyError instanceof Error ? verifyError.message : verifyError,
-      });
       try {
         isValid = await receiver.verify({ signature, body });
-      } catch (fallbackError) {
-        console.error("QStash publish-blog: signature verification failed completely:", {
-          verifyUrl,
-          error: fallbackError instanceof Error ? fallbackError.message : fallbackError,
-          bodyPreview: body.substring(0, 200),
-        });
+      } catch {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
     if (!isValid) {
-      console.error("QStash publish-blog: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -92,8 +81,6 @@ export async function POST(request: NextRequest) {
       `${BASE_URL}/blog/${slug}`,
     ]);
 
-    console.log(`Blog post published: ${slug}`, indexingResult);
-
     return NextResponse.json({
       success: true,
       slug,
@@ -101,7 +88,6 @@ export async function POST(request: NextRequest) {
       indexing: indexingResult,
     });
   } catch (error) {
-    console.error("QStash publish-blog error:", error);
     return NextResponse.json(
       {
         error:

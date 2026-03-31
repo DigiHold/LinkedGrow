@@ -207,8 +207,7 @@ function EditorContent() {
           setHasTextApiKey(data.hasApiKey || false);
         }
       } catch (error) {
-        console.error("Failed to fetch timezone:", error);
-      }
+}
     };
     fetchTimezone();
   }, []);
@@ -250,8 +249,7 @@ function EditorContent() {
             setCurrentPostId(null);
           }
         } catch (error) {
-          console.error("Failed to load post:", error);
-          // Clear the ID on error so we create a new post
+// Clear the ID on error so we create a new post
           setCurrentPostId(null);
         } finally {
           setIsLoading(false);
@@ -320,8 +318,7 @@ function EditorContent() {
       setShowAIPanel(false);
       setAIInstruction("");
     } catch (error) {
-      console.error("AI edit error:", error);
-      showError(error instanceof Error ? error.message : "Failed to edit post");
+showError(error instanceof Error ? error.message : "Failed to edit post");
     } finally {
       setIsProcessing(false);
     }
@@ -352,8 +349,7 @@ function EditorContent() {
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 2000);
     } catch (error) {
-      console.error("Save error:", error);
-      showError(error instanceof Error ? error.message : "Failed to save changes");
+showError(error instanceof Error ? error.message : "Failed to save changes");
     } finally {
       setIsSaving(false);
       setSavingAction(null);
@@ -409,8 +405,7 @@ function EditorContent() {
         router.push("/dashboard/posts");
       }, 1500);
     } catch (error) {
-      console.error("Save error:", error);
-      showError(error instanceof Error ? error.message : "Failed to save draft");
+showError(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
       setSavingAction(null);
@@ -475,8 +470,7 @@ function EditorContent() {
         router.push("/dashboard/posts");
       }, 1500);
     } catch (error) {
-      console.error("Publish error:", error);
-      showError(error instanceof Error ? error.message : "Failed to publish");
+showError(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsSaving(false);
       setSavingAction(null);
@@ -549,8 +543,7 @@ function EditorContent() {
         router.push("/dashboard/posts");
       }, 1500);
     } catch (error) {
-      console.error("Schedule error:", error);
-      showError(error instanceof Error ? error.message : "Failed to schedule post");
+showError(error instanceof Error ? error.message : "Failed to schedule post");
     } finally {
       setIsScheduling(false);
     }

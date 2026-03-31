@@ -347,8 +347,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ideas });
   } catch (error) {
-    console.error("Ideas generation error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate ideas" },
       { status: 500 }
     );

@@ -20,9 +20,8 @@ export async function register() {
         cron: "0 4 * * *",
         retries: 3,
       });
-      console.log("Created media cleanup schedule (daily 4am UTC)");
     }
-  } catch (error) {
-    console.error("Failed to setup QStash schedules:", error);
+  } catch {
+    // QStash schedule setup failed silently
   }
 }

@@ -351,8 +351,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ content: editedContent });
   } catch (error) {
-    console.error("Edit post error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to edit post" },
       { status: 500 }
     );

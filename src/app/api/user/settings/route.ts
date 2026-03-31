@@ -130,8 +130,7 @@ export async function GET() {
       onboardingCompleted: !!user.onboardingCompleted,
     });
   } catch (error) {
-    console.error("Failed to fetch settings:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch settings" },
       { status: 500 }
     );
@@ -351,8 +350,7 @@ export async function PUT(request: NextRequest) {
       message: "Settings updated successfully",
     });
   } catch (error) {
-    console.error("Failed to update settings:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }
     );
@@ -422,8 +420,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid field or provider" }, { status: 400 });
   } catch (error) {
-    console.error("Failed to delete setting:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete setting" },
       { status: 500 }
     );

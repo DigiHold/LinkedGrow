@@ -78,8 +78,7 @@ export async function POST(request: NextRequest) {
       organizationName,
     });
   } catch (error) {
-    console.error('Failed to save selection:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to save selection' },
       { status: 500 }
     );

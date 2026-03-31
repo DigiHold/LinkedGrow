@@ -15,8 +15,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Geo API error:", error);
-    // Default to EEA for privacy safety
+// Default to EEA for privacy safety
     return NextResponse.json(
       {
         isEEA: true,

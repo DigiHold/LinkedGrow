@@ -45,8 +45,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error("Failed to fetch API keys:", error);
-    return NextResponse.json({ error: "Failed to fetch API keys" }, { status: 500 });
+return NextResponse.json({ error: "Failed to fetch API keys" }, { status: 500 });
   }
 }
 
@@ -115,7 +114,6 @@ export async function POST(request: NextRequest) {
       message: "API key created successfully. Copy it now - you won't be able to see it again!",
     });
   } catch (error) {
-    console.error("Failed to create API key:", error);
-    return NextResponse.json({ error: "Failed to create API key" }, { status: 500 });
+return NextResponse.json({ error: "Failed to create API key" }, { status: 500 });
   }
 }

@@ -47,8 +47,7 @@ export async function POST() {
       ...result,
     });
   } catch (error) {
-    console.error("Post sync failed:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to sync posts" },
       { status: 500 }
     );

@@ -37,8 +37,7 @@ export async function cancelScheduledPost(messageId: string): Promise<void> {
     await qstash.messages.delete(messageId);
   } catch (error) {
     // Message might already be delivered or not exist
-    console.error("Failed to cancel scheduled post:", error);
-  }
+}
 }
 
 /**
@@ -142,8 +141,7 @@ export async function scheduleTeamEngagement(
         .set({ qstashMessageId: response.messageId })
         .where(eq(teamEngagementJobs.id, job.jobId));
     } catch (error) {
-      console.error(`[Team Engage QStash] Failed to schedule job ${job.jobId}:`, error);
-    }
+}
   }
 }
 

@@ -39,8 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ template });
   } catch (error) {
-    console.error("Failed to fetch template:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch template" },
       { status: 500 }
     );
@@ -96,8 +95,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to update template:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update template" },
       { status: 500 }
     );
@@ -144,8 +142,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete template:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete template" },
       { status: 500 }
     );

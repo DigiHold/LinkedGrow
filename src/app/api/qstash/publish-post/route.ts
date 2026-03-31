@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
     // Verify the request is from QStash
     const signature = request.headers.get("upstash-signature");
     if (!signature) {
-      console.error("QStash publish-post: missing upstash-signature header");
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
@@ -31,26 +30,16 @@ export async function POST(request: NextRequest) {
     let isValid = false;
     try {
       isValid = await receiver.verify({ signature, body, url: verifyUrl });
-    } catch (verifyError) {
+    } catch {
       // URL mismatch is the most common cause - retry without URL binding
-      console.warn("QStash publish-post: URL-bound verify failed, retrying without URL:", {
-        verifyUrl,
-        error: verifyError instanceof Error ? verifyError.message : verifyError,
-      });
       try {
         isValid = await receiver.verify({ signature, body });
-      } catch (fallbackError) {
-        console.error("QStash publish-post: signature verification failed completely:", {
-          verifyUrl,
-          error: fallbackError instanceof Error ? fallbackError.message : fallbackError,
-          bodyPreview: body.substring(0, 200),
-        });
+      } catch {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
     if (!isValid) {
-      console.error("QStash publish-post: signature returned invalid", { verifyUrl });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -202,8 +191,8 @@ export async function POST(request: NextRequest) {
       try {
         const likeDelay = Math.floor(Math.random() * 111) + 10; // 10-120 seconds
         await scheduleAutoLike(postId, likeDelay);
-      } catch (error) {
-        console.error("Failed to schedule auto-like:", error);
+      } catch {
+        // Auto-like scheduling failed silently
       }
     }
 
@@ -212,8 +201,8 @@ export async function POST(request: NextRequest) {
       try {
         const delaySeconds = Math.floor(Math.random() * 241) + 60;
         await scheduleFirstComment(postId, delaySeconds);
-      } catch (error) {
-        console.error("Failed to schedule first comment:", error);
+      } catch {
+        // First comment scheduling failed silently
       }
     }
 
@@ -221,8 +210,8 @@ export async function POST(request: NextRequest) {
     if (isOrganization) {
       try {
         await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
-      } catch (error) {
-        console.error("Failed to schedule team engagement:", error);
+      } catch {
+        // Team engagement scheduling failed silently
       }
     }
 
@@ -233,8 +222,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("QStash publish error:", error);
-
     // Mark post as failed using the postId we extracted earlier
     if (parsedPostId) {
       try {

@@ -91,8 +91,7 @@ export async function GET() {
 
     return NextResponse.json({ jobs: enrichedJobs });
   } catch (error) {
-    console.error("Failed to get engagement log:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to get engagement log" },
       { status: 500 }
     );

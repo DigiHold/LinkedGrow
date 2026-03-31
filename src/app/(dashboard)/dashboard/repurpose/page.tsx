@@ -32,6 +32,7 @@ import {
   Globe,
   Info,
   HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -367,6 +368,10 @@ function ContentRepurposingContent() {
   const [warning, setWarning] = useState<string | null>(null);
   const [contentData, setContentData] = useState<ContentData | null>(null);
 
+  // Manual YouTube transcript fallback
+  const [showManualTranscript, setShowManualTranscript] = useState(false);
+  const [manualTranscript, setManualTranscript] = useState("");
+
   // API key state
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true);
@@ -525,7 +530,26 @@ function ContentRepurposingContent() {
       if (detectedSource === "reddit") {
         extracted = await fetchRedditPost(url);
       } else if (detectedSource === "youtube") {
-        extracted = await fetchYoutubeContent(url);
+        // Use manual transcript if user pasted one
+        if (manualTranscript.trim()) {
+          const words = manualTranscript.trim().split(/\s+/);
+          extracted = {
+            source: "youtube",
+            title: "YouTube Video",
+            content: words.slice(0, 4000).join(" "),
+            wordCount: words.length,
+          };
+        } else {
+          try {
+            extracted = await fetchYoutubeContent(url);
+          } catch (ytError) {
+            // Auto-extraction failed - open manual transcript and show helpful error
+            setShowManualTranscript(true);
+            throw new Error(
+              "Could not auto-extract the transcript. Please paste it manually below (on YouTube: click \"...\" under the video, then \"Show transcript\", copy all text)."
+            );
+          }
+        }
       } else {
         // Both "blog" and "webpage" use the same extraction endpoint
         extracted = await fetchWebpageContent(url);
@@ -660,8 +684,7 @@ function ContentRepurposingContent() {
       showToast("Draft saved successfully!", "success");
       setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
-      console.error("Save draft error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to save draft");
+showToast(error instanceof Error ? error.message : "Failed to save draft");
     } finally {
       setIsSaving(false);
     }
@@ -732,8 +755,7 @@ function ContentRepurposingContent() {
       showToast("Post published to LinkedIn!", "success");
       setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
-      console.error("Publish error:", error);
-      showToast(error instanceof Error ? error.message : "Failed to publish");
+showToast(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsPublishing(false);
     }
@@ -1030,7 +1052,18 @@ function ContentRepurposingContent() {
       {error && (
         <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <div>
+            <span>{error}</span>
+            {detectedSource === "youtube" && !manualTranscript.trim() && error.toLowerCase().includes("transcript") && (
+              <button
+                type="button"
+                onClick={() => setShowManualTranscript(true)}
+                className="ml-1 underline hover:no-underline font-medium"
+              >
+                Paste it manually
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -1070,6 +1103,28 @@ function ContentRepurposingContent() {
                         </span>
                       );
                     })()}
+                  </div>
+                )}
+
+                {/* Manual YouTube transcript toggle */}
+                {detectedSource === "youtube" && url.trim() && (
+                  <div className="mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualTranscript(!showManualTranscript)}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showManualTranscript && "rotate-180")} />
+                      Paste transcript manually
+                    </button>
+                    {showManualTranscript && (
+                      <textarea
+                        value={manualTranscript}
+                        onChange={(e) => setManualTranscript(e.target.value)}
+                        placeholder={'On YouTube: click "..." under the video, then "Show transcript", copy all the text and paste it here'}
+                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-30 resize-y"
+                      />
+                    )}
                   </div>
                 )}
               </div>

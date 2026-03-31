@@ -88,8 +88,7 @@ export async function GET() {
       profileImage: user?.image,
     });
   } catch (error) {
-    console.error('Failed to get engagement stats:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to load engagement stats' },
       { status: 500 }
     );
@@ -170,8 +169,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Failed to track engagement action:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to track engagement action' },
       { status: 500 }
     );
@@ -249,8 +247,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Failed to update engagement objectives:', error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: 'Failed to update objectives' },
       { status: 500 }
     );

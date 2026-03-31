@@ -402,8 +402,7 @@ export default function AIAPISettingsPage() {
           }
         }
       } catch (error) {
-        console.error("Failed to load settings:", error);
-      }
+}
     };
     loadSettings();
   }, []);
@@ -496,8 +495,7 @@ export default function AIAPISettingsPage() {
         setTextApiMessage({ type: "error", text: "Failed to save API key" });
       }
     } catch (error) {
-      console.error("Failed to save API key:", error);
-      setTextApiMessage({ type: "error", text: "Failed to save API key" });
+setTextApiMessage({ type: "error", text: "Failed to save API key" });
     } finally {
       setIsSavingApiKey(false);
     }
@@ -524,8 +522,7 @@ export default function AIAPISettingsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to delete API key:", error);
-    } finally {
+} finally {
       setIsDeletingApiKey(false);
     }
   };
@@ -547,8 +544,7 @@ export default function AIAPISettingsPage() {
         setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === viewingProvider)?.name} is now your active AI provider!` });
       }
     } catch (error) {
-      console.error("Failed to set active provider:", error);
-    } finally {
+} finally {
       setIsSettingActive(false);
     }
   };
@@ -570,8 +566,7 @@ export default function AIAPISettingsPage() {
         setImageApiMessage({ type: "success", text: `${imageProviders.find(p => p.id === viewingImageProvider)?.name} is now your active image provider!` });
       }
     } catch (error) {
-      console.error("Failed to set active image provider:", error);
-    } finally {
+} finally {
       setIsSettingActiveImage(false);
     }
   };
@@ -599,8 +594,7 @@ export default function AIAPISettingsPage() {
         setTextApiMessage({ type: "error", text: "Failed to save model" });
       }
     } catch (error) {
-      console.error("Failed to save model:", error);
-      setTextApiMessage({ type: "error", text: "Failed to save model" });
+setTextApiMessage({ type: "error", text: "Failed to save model" });
     } finally {
       setIsSavingModel(false);
     }
@@ -649,8 +643,7 @@ export default function AIAPISettingsPage() {
         setImageApiMessage({ type: "error", text: "Failed to save image settings" });
       }
     } catch (error) {
-      console.error("Failed to save image settings:", error);
-      setImageApiMessage({ type: "error", text: "Failed to save image settings" });
+setImageApiMessage({ type: "error", text: "Failed to save image settings" });
     } finally {
       setIsSavingImageSettings(false);
     }
@@ -715,8 +708,7 @@ export default function AIAPISettingsPage() {
         setImageApiMessage({ type: "error", text: "Failed to save image API key" });
       }
     } catch (error) {
-      console.error("Failed to save image API key:", error);
-      setImageApiMessage({ type: "error", text: "Failed to save image API key" });
+setImageApiMessage({ type: "error", text: "Failed to save image API key" });
     } finally {
       setIsSavingImageApiKey(false);
     }
@@ -751,8 +743,7 @@ export default function AIAPISettingsPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to delete image API key:", error);
-    } finally {
+} finally {
       setIsDeletingImageApiKey(false);
     }
   };

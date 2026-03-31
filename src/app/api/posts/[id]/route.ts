@@ -111,8 +111,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error("Get post error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch post" },
       { status: 500 }
     );
@@ -275,8 +274,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         try {
           await deleteMultipleFromR2(oldKeys);
         } catch (e) {
-          console.error("Failed to delete media from R2:", e);
-        }
+}
         // Delete media records
         await db.delete(media).where(eq(media.postId, postId));
       }
@@ -325,8 +323,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           fileSize: uploadResult.size,
         };
       } catch (uploadError) {
-        console.error("Failed to upload image:", uploadError);
-        return NextResponse.json(
+return NextResponse.json(
           { error: "Failed to upload image" },
           { status: 500 }
         );
@@ -346,8 +343,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         try {
           await deleteMultipleFromR2(oldKeys);
         } catch (e) {
-          console.error("Failed to delete old media from R2:", e);
-        }
+}
         await db.delete(media).where(eq(media.postId, postId));
       }
 
@@ -400,8 +396,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error("Update post error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update post" },
       { status: 500 }
     );
@@ -451,8 +446,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       try {
         await cancelScheduledPost(existingPost.qstashMessageId);
       } catch (e) {
-        console.error("Failed to cancel QStash message:", e);
-        // Continue with deletion even if QStash cancel fails
+// Continue with deletion even if QStash cancel fails
       }
     }
 
@@ -468,8 +462,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       try {
         await deleteMultipleFromR2(storageKeys);
       } catch (e) {
-        console.error("Failed to delete media from R2:", e);
-        // Continue with database deletion even if R2 fails
+// Continue with database deletion even if R2 fails
       }
     }
 
@@ -481,8 +474,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete post error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete post" },
       { status: 500 }
     );

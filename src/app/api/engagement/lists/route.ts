@@ -41,8 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ lists: listsWithProfiles });
   } catch (error) {
-    console.error("Failed to get engagement lists:", error);
-    return NextResponse.json({ error: "Failed to load lists" }, { status: 500 });
+return NextResponse.json({ error: "Failed to load lists" }, { status: 500 });
   }
 }
 
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
       list: { id, userId: session.user.id, name: name.trim(), profiles: [] },
     });
   } catch (error) {
-    console.error("Failed to create engagement list:", error);
-    return NextResponse.json({ error: "Failed to create list" }, { status: 500 });
+return NextResponse.json({ error: "Failed to create list" }, { status: 500 });
   }
 }

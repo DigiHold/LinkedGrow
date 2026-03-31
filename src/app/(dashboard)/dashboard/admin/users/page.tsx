@@ -149,8 +149,7 @@ export default function AdminUsersPage() {
       setTotalPages(data.totalPages);
       setTotal(data.total);
     } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
+} finally {
       setLoading(false);
     }
   };

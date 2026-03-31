@@ -187,8 +187,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("API: Failed to fetch posts:", error);
-    return apiErrorResponse("Failed to fetch posts", 500);
+return apiErrorResponse("Failed to fetch posts", 500);
   }
 }
 
@@ -392,7 +391,6 @@ export async function POST(request: NextRequest) {
 
     return apiSuccessResponse(serializePost(newPost!, postMediaRecords), 201);
   } catch (error) {
-    console.error("API: Failed to create post:", error);
-    return apiErrorResponse("Failed to create post", 500);
+return apiErrorResponse("Failed to create post", 500);
   }
 }

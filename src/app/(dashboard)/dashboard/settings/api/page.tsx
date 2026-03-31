@@ -110,8 +110,7 @@ export default function ApiKeysPage() {
         setApiKeys(data.keys || []);
       }
     } catch (error) {
-      console.error("Failed to fetch API keys:", error);
-    } finally {
+} finally {
       setIsLoading(false);
     }
   };
@@ -139,8 +138,7 @@ export default function ApiKeysPage() {
         showError(error.error || "Failed to create API key");
       }
     } catch (error) {
-      console.error("Failed to create API key:", error);
-      showError("Failed to create API key");
+showError("Failed to create API key");
     } finally {
       setIsCreating(false);
     }
@@ -162,8 +160,7 @@ export default function ApiKeysPage() {
         showError("Failed to delete API key");
       }
     } catch (error) {
-      console.error("Failed to delete API key:", error);
-      showError("Failed to delete API key");
+showError("Failed to delete API key");
     } finally {
       setDeletingKeyId(null);
     }

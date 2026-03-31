@@ -44,10 +44,8 @@ export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailP
       return { success: true, messageId: data.messageId };
     }
 
-    console.error("Brevo API error:", data);
-    throw new Error(data.message || "Failed to send email");
+throw new Error(data.message || "Failed to send email");
   } catch (error) {
-    console.error("Failed to send email:", error);
-    throw error;
+throw error;
   }
 }

@@ -1876,8 +1876,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.setActiveObject(img);
           fabricRef.current.renderAll();
         } catch (error) {
-          console.error('Failed to load image:', error);
-          throw error; // Re-throw so caller can show error message
+throw error; // Re-throw so caller can show error message
         }
       },
 
@@ -1909,8 +1908,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.setActiveObject(svgGroup);
           fabricRef.current.renderAll();
         } catch (error) {
-          console.error('Failed to load SVG icon:', error);
-        }
+}
       },
 
       addFrame: (frameId: string, x?: number, y?: number) => {
@@ -1918,8 +1916,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
 
         const frameDef = getFrameById(frameId);
         if (!frameDef) {
-          console.error('Frame not found:', frameId);
-          return;
+return;
         }
 
         // Default frame size on canvas (300px wide, proportional height)
@@ -1983,8 +1980,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           fabricRef.current.setActiveObject(img);
           fabricRef.current.renderAll();
         } catch (error) {
-          console.error('Failed to fill frame with image:', error);
-        }
+}
       },
 
       clearFrameImage: (frameObject: FabricObject) => {
@@ -2385,15 +2381,13 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
               const urlMatch = errMsg.match(/Error loading (https?:\/\/\S+)/);
               if (urlMatch && parsed.objects) {
                 const failedUrl = urlMatch[1];
-                console.warn(`Image failed to load, removing from canvas: ${failedUrl}`);
-                parsed.objects = parsed.objects.filter((obj: Record<string, unknown>) => {
+parsed.objects = parsed.objects.filter((obj: Record<string, unknown>) => {
                   if (obj.type === 'image' && obj.src === failedUrl) return false;
                   return true;
                 });
               } else {
                 // Can't identify the failing image - give up
-                console.error('Failed to load canvas from JSON:', loadError);
-                break;
+break;
               }
             }
           }
@@ -2419,8 +2413,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           onCanvasChangeRef.current?.();
           return true;
         } catch (error) {
-          console.error('Failed to load canvas from JSON:', error);
-          return false;
+return false;
         }
       },
 
@@ -2806,8 +2799,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                 fabricRef.current!.setActiveObject(img);
                 fabricRef.current!.renderAll();
               } catch (error) {
-                console.error('Failed to fill frame:', error);
-              }
+}
             } else {
               // Normal image drop
               try {
@@ -2831,8 +2823,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
                 fabricRef.current!.setActiveObject(img);
                 fabricRef.current!.renderAll();
               } catch (error) {
-                console.error('Failed to load dropped image:', error);
-              }
+}
             }
           } else if (type === 'frame' && data.frameId) {
             // Handle frame drops from toolbar
@@ -2880,8 +2871,7 @@ export const CanvasWorkspace = forwardRef<CanvasWorkspaceRef, CanvasWorkspacePro
           }
         }
       } catch (error) {
-        console.error('Failed to handle drop:', error);
-      }
+}
     }, [zoom, onElementDrop]);
 
     // Prevent browser context menu on the container (Fabric handles context menu via its own event)

@@ -46,8 +46,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
       await deleteFromR2(mediaRecord.storageKey);
     } catch (e) {
-      console.error("Failed to delete from R2:", e);
-      // Continue with database deletion
+// Continue with database deletion
     }
 
     // Delete from database
@@ -55,8 +54,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete media error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete media" },
       { status: 500 }
     );
@@ -130,8 +128,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ media: updated });
   } catch (error) {
-    console.error("Update media error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update media" },
       { status: 500 }
     );

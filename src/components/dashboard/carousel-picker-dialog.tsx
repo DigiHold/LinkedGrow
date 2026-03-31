@@ -167,8 +167,7 @@ export function CarouselPickerDialog({
       onSelect(pdfFile);
       onOpenChange(false);
     } catch (error) {
-      console.error("Carousel render error:", error);
-      onError?.(error instanceof Error ? error.message : "Failed to generate PDF from carousel");
+onError?.(error instanceof Error ? error.message : "Failed to generate PDF from carousel");
     } finally {
       setRendering(null);
     }

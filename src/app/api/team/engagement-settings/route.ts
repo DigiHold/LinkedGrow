@@ -47,8 +47,7 @@ export async function GET() {
       role: membership.role,
     });
   } catch (error) {
-    console.error("Failed to get engagement settings:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to get settings" },
       { status: 500 }
     );
@@ -92,8 +91,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, ...updates });
   } catch (error) {
-    console.error("Failed to update engagement settings:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }
     );

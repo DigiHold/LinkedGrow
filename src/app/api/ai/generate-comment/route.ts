@@ -417,8 +417,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ comment });
   } catch (error) {
-    console.error("Generate comment error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate comment" },
       { status: 500 }
     );

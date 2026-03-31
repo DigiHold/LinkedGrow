@@ -41,8 +41,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to rename list:", error);
-    return NextResponse.json({ error: "Failed to rename list" }, { status: 500 });
+return NextResponse.json({ error: "Failed to rename list" }, { status: 500 });
   }
 }
 
@@ -75,7 +74,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete list:", error);
-    return NextResponse.json({ error: "Failed to delete list" }, { status: 500 });
+return NextResponse.json({ error: "Failed to delete list" }, { status: 500 });
   }
 }

@@ -195,8 +195,7 @@ export default function PostsPage() {
         setDeletePost(null);
       }
     } catch (err) {
-      console.error("Failed to delete post:", err);
-    } finally {
+} finally {
       setIsDeleting(false);
     }
   };
@@ -221,8 +220,7 @@ export default function PostsPage() {
         setScheduleTime("");
       }
     } catch (err) {
-      console.error("Failed to schedule post:", err);
-    } finally {
+} finally {
       setIsScheduling(false);
     }
   };
@@ -240,8 +238,7 @@ export default function PostsPage() {
       setSelectedPosts([]);
       setBulkDeleteModal(false);
     } catch (err) {
-      console.error("Failed to delete posts:", err);
-    } finally {
+} finally {
       setIsBulkDeleting(false);
     }
   };

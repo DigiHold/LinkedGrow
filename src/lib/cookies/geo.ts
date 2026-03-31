@@ -62,8 +62,7 @@ export async function isUserInEEA(): Promise<GeoResult> {
       countryName: COUNTRY_NAMES[countryCode] || countryCode,
     };
   } catch (error) {
-    console.error("Geo detection error:", error);
-    // Default to EEA for safety
+// Default to EEA for safety
     return {
       isEEA: true,
       countryCode: "",

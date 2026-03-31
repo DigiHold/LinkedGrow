@@ -152,8 +152,7 @@ async function extractWithReadability(
     }
     return null;
   } catch (err) {
-    console.error("JSDOM/Readability extraction failed:", err instanceof Error ? err.message : err);
-    return null;
+return null;
   }
 }
 
@@ -351,8 +350,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("Webpage extraction error:", message);
-    return NextResponse.json(
+return NextResponse.json(
       { error: `Content extraction failed: ${message}` },
       { status: 500 }
     );

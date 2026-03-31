@@ -138,8 +138,7 @@ export function ElementToolbar({
         const dataUrl = svgToDataUrl(svgText);
         await canvasRef.current?.addImage(dataUrl);
       } catch (error) {
-        console.error('Failed to load SVG:', error);
-        alert('Failed to load SVG file. Please try again.');
+alert('Failed to load SVG file. Please try again.');
       }
       e.target.value = '';
       return;
@@ -162,8 +161,7 @@ export function ElementToolbar({
       const url = await onImageUpload(file);
       await canvasRef.current?.addImage(url);
     } catch (error) {
-      console.error('Failed to upload image:', error);
-      alert('Failed to upload image. Please try again.');
+alert('Failed to upload image. Please try again.');
     }
     e.target.value = '';
   };
@@ -177,8 +175,7 @@ export function ElementToolbar({
       await canvasRef.current?.addImage(url);
       setAiPrompt("");
     } catch (error) {
-      console.error('Failed to generate image:', error);
-    } finally {
+} finally {
       setIsGenerating(false);
     }
   };
@@ -192,8 +189,7 @@ export function ElementToolbar({
           try {
             await canvasRef.current?.addImage(branding.logoUrl);
           } catch (error) {
-            console.error('Failed to add logo:', error);
-            alert('Failed to add logo. The image might not be accessible.');
+alert('Failed to add logo. The image might not be accessible.');
           }
         }
         break;
@@ -202,8 +198,7 @@ export function ElementToolbar({
           try {
             await canvasRef.current?.addImage(branding.avatarUrl);
           } catch (error) {
-            console.error('Failed to add avatar:', error);
-            alert('Failed to add avatar. LinkedIn profile images may have access restrictions. Try uploading a custom avatar instead.');
+alert('Failed to add avatar. LinkedIn profile images may have access restrictions. Try uploading a custom avatar instead.');
           }
         } else {
           alert('No avatar URL available. Please upload a custom avatar.');
@@ -337,8 +332,7 @@ export function ElementToolbar({
         // Add as true vector SVG (not rasterized image)
         await canvasRef.current.addSvgIcon(svgString);
       } catch (error) {
-        console.error('Failed to add icon:', error);
-      }
+}
     }
 
     // Cleanup
@@ -759,8 +753,7 @@ export function ElementToolbar({
                             await canvasRef.current?.addImage(url);
                           }
                         } catch (error) {
-                          console.error('Failed to upload logo:', error);
-                        }
+}
                         e.target.value = '';
                       }}
                     />
@@ -797,8 +790,7 @@ export function ElementToolbar({
                           await canvasRef.current?.addImage(url);
                         }
                       } catch (error) {
-                        console.error('Failed to upload avatar:', error);
-                      }
+}
                       e.target.value = '';
                     }}
                   />

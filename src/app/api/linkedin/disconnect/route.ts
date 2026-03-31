@@ -42,8 +42,7 @@ export async function POST() {
         try {
           await deleteFromR2(r2Key);
         } catch (error) {
-          console.error("Failed to delete profile picture from R2:", error);
-          // Continue even if delete fails
+// Continue even if delete fails
         }
       }
     }
@@ -77,8 +76,7 @@ export async function POST() {
 
     return response;
   } catch (error) {
-    console.error("Failed to disconnect LinkedIn:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to disconnect LinkedIn" },
       { status: 500 }
     );

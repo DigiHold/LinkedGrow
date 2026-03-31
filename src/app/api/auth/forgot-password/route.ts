@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
         resetToken: token, // Send plain token in email
       });
     } catch (emailError) {
-      console.error("Failed to send password reset email:", emailError);
-      // Don't expose email sending errors to the user
+// Don't expose email sending errors to the user
     }
 
     return NextResponse.json({
@@ -103,8 +102,7 @@ export async function POST(request: NextRequest) {
         "If an account exists with this email, you will receive a password reset link.",
     });
   } catch (error) {
-    console.error("Forgot password error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
     );

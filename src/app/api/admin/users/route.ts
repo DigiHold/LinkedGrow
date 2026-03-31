@@ -63,8 +63,7 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch users" },
       { status: 500 }
     );

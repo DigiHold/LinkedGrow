@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, postId, message: "Auto-liked" });
   } catch (error) {
-    console.error("[Auto-Like Webhook] ERROR:", error instanceof Error ? error.message : error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to auto-like" },
       { status: 500 }
     );

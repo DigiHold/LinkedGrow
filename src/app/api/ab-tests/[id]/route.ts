@@ -92,8 +92,7 @@ export async function GET(
       createdAt: test.createdAt?.toISOString(),
     });
   } catch (error) {
-    console.error("Failed to fetch A/B test:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to fetch A/B test" },
       { status: 500 }
     );
@@ -236,8 +235,7 @@ export async function PATCH(
       endedAt: updatedTest!.endedAt?.toISOString(),
     });
   } catch (error) {
-    console.error("Failed to update A/B test:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to update A/B test" },
       { status: 500 }
     );
@@ -291,8 +289,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete A/B test:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to delete A/B test" },
       { status: 500 }
     );

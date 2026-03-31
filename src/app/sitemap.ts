@@ -87,8 +87,7 @@ function findAllPages(dir: string, basePath: string = ""): string[] {
       }
     }
   } catch (error) {
-    console.error("Error reading directory:", dir, error);
-  }
+}
 
   return pages;
 }

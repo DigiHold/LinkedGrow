@@ -87,8 +87,7 @@ export async function POST(request: NextRequest) {
       endpoints: successful,
     });
   } catch (error) {
-    console.error("IndexNow submission error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to submit URLs" },
       { status: 500 }
     );

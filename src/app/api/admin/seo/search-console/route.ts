@@ -83,8 +83,7 @@ export async function GET() {
         })) || [],
     });
   } catch (error) {
-    console.error("Search Console API error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       {
         error:
           error instanceof Error

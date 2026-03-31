@@ -145,8 +145,7 @@ export async function POST(request: NextRequest) {
     // Subscribe to newsletter if opted in (non-blocking)
     if (subscribeNewsletter) {
       subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch((err) => {
-        console.error("Failed to subscribe to newsletter:", err);
-      });
+});
     }
 
     return NextResponse.json({
@@ -154,8 +153,7 @@ export async function POST(request: NextRequest) {
       message: "Account created successfully",
     });
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to create account" },
       { status: 500 }
     );

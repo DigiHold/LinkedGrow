@@ -49,8 +49,7 @@ export async function POST() {
       qrCode: qrCodeDataUrl,
     });
   } catch (error) {
-    console.error("2FA setup error:", error);
-    return NextResponse.json(
+return NextResponse.json(
       { error: "Failed to setup 2FA" },
       { status: 500 }
     );

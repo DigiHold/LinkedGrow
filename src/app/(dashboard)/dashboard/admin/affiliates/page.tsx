@@ -87,8 +87,7 @@ export default function AdminAffiliatesPage() {
       const data = await response.json();
       setAffiliates(data.affiliates || []);
     } catch (error) {
-      console.error("Error fetching affiliates:", error);
-      setFeedback({
+setFeedback({
         type: "error",
         message: "Failed to load affiliates",
       });

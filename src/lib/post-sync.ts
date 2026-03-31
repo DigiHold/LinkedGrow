@@ -66,9 +66,7 @@ export async function syncLinkedInPosts(userId: string): Promise<SyncResult> {
       start += pageSize;
     }
 
-    console.log(`[Post Sync] Fetched ${allPosts.length} posts from LinkedIn for ${authorUrn}`);
-
-    // Get existing posts to avoid duplicates
+// Get existing posts to avoid duplicates
     const existingPosts = await db
       .select({ linkedinPostId: posts.linkedinPostId })
       .from(posts)
@@ -133,8 +131,7 @@ export async function syncLinkedInPosts(userId: string): Promise<SyncResult> {
             );
             result.imagesDownloaded++;
           } catch (err) {
-            console.error(`[Post Sync] Failed to download image for ${post.id}:`, err);
-          }
+}
         }
 
         await db.insert(posts).values({
@@ -187,17 +184,14 @@ export async function syncLinkedInPosts(userId: string): Promise<SyncResult> {
           result.imagesDownloaded++;
         }
       } catch (err) {
-        console.error(`[Post Sync] Failed to update image for ${post.id}:`, err);
-      }
+}
     }
 
-    console.log(`[Post Sync] Complete:`, result);
-    return result;
+return result;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     result.errors.push(msg);
-    console.error("[Post Sync] Failed:", error);
-    return result;
+return result;
   }
 }
 
@@ -232,6 +226,5 @@ async function downloadImageToR2(
     postId,
   });
 
-  console.log(`[Post Sync] Image uploaded to R2:`, { postId, size: result.size, url: result.url });
-  return result.url;
+return result.url;
 }

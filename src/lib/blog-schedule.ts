@@ -127,6 +127,5 @@ export async function cancelScheduledBlogPost(
   try {
     await qstash.messages.delete(messageId);
   } catch (error) {
-    console.error("Failed to cancel scheduled blog post:", error);
-  }
+}
 }

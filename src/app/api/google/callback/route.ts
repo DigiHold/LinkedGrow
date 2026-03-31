@@ -201,8 +201,7 @@ export async function GET(request: NextRequest) {
       if (subscribeNewsletterCookie) {
         const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
         subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch((err) => {
-          console.error('Failed to subscribe to newsletter:', err);
-        });
+});
       }
 
     } else {
@@ -343,8 +342,7 @@ export async function GET(request: NextRequest) {
     return response;
 
   } catch (err) {
-    console.error('Google OAuth callback error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
+const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
     if (isPopup) {
       return createPopupResponse(false, { error: errorMessage });
     }

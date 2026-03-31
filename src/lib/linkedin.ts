@@ -126,15 +126,12 @@ export async function refreshLinkedInToken(
     });
 
     if (!response.ok) {
-      console.error(`[LinkedIn] Token refresh failed (${response.status}): ${await response.text()}`);
       return null;
     }
 
     const tokenData: LinkedInTokenResponse = await response.json();
-    console.log(`[LinkedIn] Token refreshed successfully`);
     return tokenData;
-  } catch (err) {
-    console.error(`[LinkedIn] Token refresh error:`, err);
+  } catch {
     return null;
   }
 }
@@ -281,8 +278,7 @@ export async function getLinkedInProfileWithHeadline(
     if (!response.ok) return null;
     const data = await response.json();
     return { headline: data.localizedHeadline || '', vanityName: data.vanityName || '', memberId: data.id || '' };
-  } catch (error) {
-    console.error('[LinkedIn Profile] Headline fetch error:', error);
+  } catch {
     return null;
   }
 }
@@ -304,7 +300,6 @@ export async function scrapeOwnProfilePostURNs(
     });
 
     if (!response.ok) {
-      console.warn('[Profile Scrape] Failed:', response.status);
       return [];
     }
 
@@ -344,10 +339,8 @@ export async function scrapeOwnProfilePostURNs(
       });
     }
 
-    console.log(`[Profile Scrape] Found ${results.length} own posts for ${vanityName}`);
     return results;
-  } catch (error) {
-    console.error('[Profile Scrape] Error:', error);
+  } catch {
     return [];
   }
 }
@@ -373,7 +366,6 @@ export async function getPostByUrn(
     });
 
     if (!response.ok) {
-      console.warn(`[Get Post] Failed for ${postUrn}:`, response.status);
       return null;
     }
 
@@ -402,8 +394,7 @@ export async function getPostByUrn(
       mediaType,
       publishedAt: data.publishedAt || data.createdAt || 0,
     };
-  } catch (error) {
-    console.error(`[Get Post] Error for ${postUrn}:`, error);
+  } catch {
     return null;
   }
 }
@@ -1095,8 +1086,7 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
     // Last fallback: organizationalEntityAcls
     // Last fallback: organizationalEntityAcls
     return await getOrganizationsAlternate(accessToken);
-  } catch (error) {
-    console.error('Failed to fetch administered organizations:', error);
+  } catch {
     return [];
   }
 }
@@ -1156,7 +1146,7 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
 
       organizations.push({ id: orgId, name, logoUrl });
     } catch {
-      console.error(`[LinkedIn Orgs] Failed to fetch details for org ${orgId}`);
+      // Skip organizations we can't fetch details for
     }
   }
 
@@ -1289,7 +1279,6 @@ export async function getMemberPostAnalytics(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`Failed to fetch member post analytics for ${postUrn}:`, response.status, errorText);
       return null;
     }
 
@@ -1309,8 +1298,7 @@ export async function getMemberPostAnalytics(
     }
 
     return null;
-  } catch (error) {
-    console.error('Failed to fetch member post analytics:', error);
+  } catch {
     return null;
   }
 }
@@ -1345,8 +1333,6 @@ export async function getMemberAggregatedAnalytics(
         try {
           const url = `${LINKEDIN_REST_API_BASE}/memberCreatorPostAnalytics?q=me&queryType=${metric}&aggregation=TOTAL${dateRangeParam}`;
 
-          console.log(`[Analytics] Fetching ${metric}: ${url}`);
-
           const response = await fetch(url, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -1356,16 +1342,10 @@ export async function getMemberAggregatedAnalytics(
           });
 
           if (!response.ok) {
-            const errorText = await response.text();
-            console.warn(`[Analytics] ${metric} FAILED ${response.status}: ${errorText.substring(0, 300)}`);
-            if (response.status === 429) {
-              console.warn(`[Analytics] Rate limited - returning partial data`);
-            }
             return;
           }
 
           const data = await response.json();
-          console.log(`[Analytics] ${metric} response: ${JSON.stringify(data).substring(0, 300)}`);
           let total = 0;
           if (data.elements && Array.isArray(data.elements)) {
             for (const el of data.elements) {
@@ -1373,9 +1353,8 @@ export async function getMemberAggregatedAnalytics(
             }
           }
           results[metric] = total;
-          console.log(`[Analytics] ${metric}: ${total}`);
-        } catch (err) {
-          console.warn(`[Analytics] ${metric} error:`, err);
+        } catch {
+          // Skip failed metric
         }
       })
     );
@@ -1388,8 +1367,7 @@ export async function getMemberAggregatedAnalytics(
       totalReshares: results['RESHARE'] || 0,
       postCount: 0, // Not available from aggregated endpoint
     };
-  } catch (error) {
-    console.error('Failed to fetch member aggregated analytics:', error);
+  } catch {
     return null;
   }
 }
@@ -1502,8 +1480,6 @@ export async function getMemberFollowerCount(
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('Failed to fetch member follower count:', response.status, errorText);
       return null;
     }
 
@@ -1515,8 +1491,7 @@ export async function getMemberFollowerCount(
     }
 
     return 0;
-  } catch (error) {
-    console.error('Failed to fetch member follower count:', error);
+  } catch {
     return null;
   }
 }
@@ -1600,8 +1575,7 @@ export async function getMemberFollowerStats(
       totalFollowers,
       followersByDateRange,
     };
-  } catch (error) {
-    console.error('Failed to fetch member follower stats:', error);
+  } catch {
     return null;
   }
 }
@@ -1659,7 +1633,6 @@ export async function getOrganizationShareStatistics(
     );
 
     if (!response.ok) {
-      console.warn('Failed to fetch organization share statistics:', response.status);
       return stats;
     }
 
@@ -1690,8 +1663,7 @@ export async function getOrganizationShareStatistics(
     }
 
     return stats;
-  } catch (error) {
-    console.error('Failed to fetch organization share statistics:', error);
+  } catch {
     return stats;
   }
 }
@@ -1753,8 +1725,7 @@ export async function getOrganizationFollowerCount(
     }
 
     return null;
-  } catch (error) {
-    console.error('Failed to fetch organization follower count:', error);
+  } catch {
     return null;
   }
 }
@@ -1787,8 +1758,7 @@ async function getOrganizationFollowerCountAlternate(
     return {
       followerCount: data.firstDegreeSize || 0,
     };
-  } catch (error) {
-    console.error('Failed to fetch follower count (alternate):', error);
+  } catch {
     return null;
   }
 }
@@ -1833,8 +1803,7 @@ export async function getOrganizationPageStatistics(
     }
 
     return null;
-  } catch (error) {
-    console.error('Failed to fetch page statistics:', error);
+  } catch {
     return null;
   }
 }
@@ -1935,8 +1904,7 @@ export async function getOrganizationFollowerDemographics(
     }
 
     return demographics;
-  } catch (error) {
-    console.error('Failed to fetch follower demographics:', error);
+  } catch {
     return null;
   }
 }
@@ -1970,9 +1938,8 @@ export async function getPostsByAuthor(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Posts Sync] Error:', { status: response.status, error });
-    throw new Error(`Failed to fetch posts by author (${response.status}): ${error}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch posts by author (${response.status}): ${errorText}`);
   }
 
   const data = await response.json();
@@ -2088,8 +2055,8 @@ export async function getImageDownloadUrls(
           result.set(urn, img.downloadUrl as string);
         }
       }
-    } catch (error) {
-      console.error('[LinkedIn Images] Batch fetch error:', error);
+    } catch {
+      // Skip batch on error
     }
   }
 
@@ -2256,9 +2223,8 @@ export async function reshareLinkedInPost(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Reshare] Error:', { status: response.status, error });
-    throw new Error(`Failed to reshare LinkedIn post (${response.status}): ${error}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to reshare LinkedIn post (${response.status}): ${errorText}`);
   }
 
   const result = await getPostIdFromRestResponse(response);
@@ -2292,9 +2258,8 @@ export async function getLinkedInFeed(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error('[LinkedIn Feed] Error:', { status: response.status, error });
-    throw new Error(`Failed to fetch LinkedIn feed (${response.status}): ${error}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch LinkedIn feed (${response.status}): ${errorText}`);
   }
 
   const data = await response.json();
@@ -2376,18 +2341,15 @@ export async function getLinkedInFeed(
   // Resolve in parallel: author profiles, image URLs, social counts
   // Each resolver handles its own errors so one failure doesn't break everything
   const [authorProfiles, imageDownloadUrls, socialCounts] = await Promise.all([
-    resolveAuthorProfiles(accessToken, Array.from(authorUrns)).catch((err) => {
-      console.error('[LinkedIn Feed] Failed to resolve author profiles:', err);
+    resolveAuthorProfiles(accessToken, Array.from(authorUrns)).catch(() => {
       return new Map<string, { name: string; headline: string; profilePicture: string }>();
     }),
     imageUrns.length > 0
-      ? getImageDownloadUrls(accessToken, imageUrns).catch((err) => {
-          console.error('[LinkedIn Feed] Failed to get image URLs:', err);
+      ? getImageDownloadUrls(accessToken, imageUrns).catch(() => {
           return new Map<string, string>();
         })
       : Promise.resolve(new Map<string, string>()),
-    resolveSocialCounts(accessToken, postUrns).catch((err) => {
-      console.error('[LinkedIn Feed] Failed to resolve social counts:', err);
+    resolveSocialCounts(accessToken, postUrns).catch(() => {
       return new Map<string, { likes: number; comments: number; shares: number }>();
     }),
   ]);
@@ -2504,8 +2466,8 @@ async function resolveAuthorProfiles(
           });
         }
       }
-    } catch (error) {
-      console.error(`[LinkedIn Feed] Failed to resolve profile ${urn}:`, error);
+    } catch {
+      // Skip profiles we can't resolve
     }
   }
 
@@ -2669,8 +2631,7 @@ async function getOrganizationsAlternate(accessToken: string): Promise<LinkedInO
     }
 
     return organizations;
-  } catch (error) {
-    console.error('Failed to fetch organizations (alternate):', error);
+  } catch {
     return [];
   }
 }
