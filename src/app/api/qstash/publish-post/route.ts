@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from "@/lib/linkedin";
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens, likeLinkedInPost } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { linkedInUser } = result;
+    const { user: postingUser, linkedInUser } = result;
 
     if (!linkedInUser?.linkedinProfileId) {
       // Mark post as failed
@@ -196,6 +196,15 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(posts.id, postId));
+
+    // Auto-like own post if enabled in user settings
+    if (postingUser.autoLikeAfterPublish !== false) {
+      try {
+        await likeLinkedInPost(token, postResult.id, authorId, authorType);
+      } catch (error) {
+        console.error("Failed to auto-like post:", error instanceof Error ? error.message : error);
+      }
+    }
 
     // Schedule first comment if present (random 1-5 min delay)
     if (post.firstComment) {

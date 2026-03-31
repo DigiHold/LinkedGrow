@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
   X,
   Clock,
   HelpCircle,
+  ThumbsUp,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -176,6 +178,9 @@ function SettingsContent() {
     hasOrganizations: boolean;
   } | null>(null);
 
+  // Publishing preferences
+  const [autoLikeAfterPublish, setAutoLikeAfterPublish] = useState(true);
+
   // LinkedIn selection modal
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [selectedType, setSelectedType] = useState<"profile" | "organization">("profile");
@@ -306,6 +311,8 @@ function SettingsContent() {
           });
           // Load timezone (default to "auto" if not set)
           setTimezone(data.timezone || "auto");
+          // Load publishing preferences
+          setAutoLikeAfterPublish(data.autoLikeAfterPublish !== false);
         }
       } catch (error) {
         console.error("Failed to fetch voice settings:", error);
@@ -900,6 +907,45 @@ function SettingsContent() {
           )}
         </>
       )}
+
+      {/* Publishing Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ThumbsUp className="w-5 h-5 text-cyan-600" />
+            Publishing
+          </CardTitle>
+          <CardDescription>
+            Automatic actions after your posts go live
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-like" className="text-sm font-medium">Auto-like after publish</Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically like your own post right after it's published
+              </p>
+            </div>
+            <Switch
+              id="auto-like"
+              checked={autoLikeAfterPublish}
+              onCheckedChange={async (checked) => {
+                setAutoLikeAfterPublish(checked);
+                try {
+                  await fetch("/api/user/settings", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ autoLikeAfterPublish: checked }),
+                  });
+                } catch {
+                  setAutoLikeAfterPublish(!checked);
+                }
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Account Settings */}
       <Card id="account">

@@ -100,6 +100,9 @@ export const users = sqliteTable("users", {
   // Timezone (for scheduling posts)
   timezone: text("timezone"), // IANA timezone (e.g., "America/Los_Angeles", "Europe/Paris")
 
+  // Publishing preferences
+  autoLikeAfterPublish: integer("auto_like_after_publish", { mode: "boolean" }).default(true),
+
   // Onboarding
   onboardingCompleted: integer("onboarding_completed", { mode: "boolean" }).default(false),
 });

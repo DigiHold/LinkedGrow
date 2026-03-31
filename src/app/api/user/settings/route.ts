@@ -124,6 +124,8 @@ export async function GET() {
       brandColors: user.brandColors ? (() => { try { return JSON.parse(user.brandColors); } catch { return []; } })() : [],
       // Timezone
       timezone: user.timezone,
+      // Publishing preferences
+      autoLikeAfterPublish: user.autoLikeAfterPublish !== false, // default true
       // Onboarding
       onboardingCompleted: !!user.onboardingCompleted,
     });
@@ -186,6 +188,7 @@ export async function PUT(request: NextRequest) {
       targetAudience,
       writingTone,
       timezone,
+      autoLikeAfterPublish,
     } = body;
 
     const updateData: Record<string, unknown> = {
@@ -324,6 +327,10 @@ export async function PUT(request: NextRequest) {
 
     if (timezone !== undefined) {
       updateData.timezone = timezone || null;
+    }
+
+    if (autoLikeAfterPublish !== undefined) {
+      updateData.autoLikeAfterPublish = !!autoLikeAfterPublish;
     }
 
     if (body.onboardingCompleted !== undefined) {
