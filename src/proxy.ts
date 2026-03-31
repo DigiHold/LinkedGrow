@@ -5,22 +5,6 @@ import { db } from "@/lib/db";
 import { affiliates } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
-// Sign-out handler - runs BEFORE auth() to prevent session token refresh
-// Uses redirect (not fetch) so the browser processes Set-Cookie headers reliably
-function handleSignOut(baseUrl: string) {
-  const response = NextResponse.redirect(new URL("/", baseUrl));
-  const secureCookieOpts = { path: "/", secure: true, httpOnly: true, sameSite: "lax" as const, maxAge: 0 };
-  const basicCookieOpts = { path: "/", maxAge: 0 };
-
-  response.cookies.set("__Secure-authjs.session-token", "", secureCookieOpts);
-  response.cookies.set("authjs.session-token", "", basicCookieOpts);
-  response.cookies.set("__Host-authjs.csrf-token", "", { path: "/", secure: true, maxAge: 0 });
-  response.cookies.set("authjs.csrf-token", "", basicCookieOpts);
-  response.cookies.set("__Secure-authjs.callback-url", "", { path: "/", secure: true, maxAge: 0 });
-  response.cookies.set("authjs.callback-url", "", basicCookieOpts);
-  return response;
-}
-
 // Routes that require authentication
 const protectedRoutes = [
   "/dashboard",
@@ -136,11 +120,9 @@ const authProxy = auth(async (req) => {
   return NextResponse.next();
 });
 
-// Main export: intercept signout before auth() can refresh the session
+// Main export: signout is handled by NextAuth's client-side signOut() which
+// clears both client session state and server cookies properly.
 export default function proxy(req: NextRequest) {
-  if (req.nextUrl.pathname === "/api/auth/signout") {
-    return handleSignOut(req.nextUrl.origin);
-  }
   return authProxy(req, {} as any);
 }
 
