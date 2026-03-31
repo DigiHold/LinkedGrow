@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts, media } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens, likeLinkedInPost } from "@/lib/linkedin";
+import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
-import { scheduleFirstComment } from "@/lib/qstash";
+import { scheduleFirstComment, scheduleAutoLike } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
 
 // Initialize QStash receiver for signature verification
@@ -197,12 +197,13 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(posts.id, postId));
 
-    // Auto-like own post if enabled in user settings
+    // Auto-like own post if enabled in user settings (random 10s-2min delay)
     if (postingUser.autoLikeAfterPublish !== false) {
       try {
-        await likeLinkedInPost(token, postResult.id, authorId, authorType);
+        const likeDelay = Math.floor(Math.random() * 111) + 10; // 10-120 seconds
+        await scheduleAutoLike(postId, likeDelay);
       } catch (error) {
-        console.error("Failed to auto-like post:", error instanceof Error ? error.message : error);
+        console.error("Failed to schedule auto-like:", error);
       }
     }
 
