@@ -16,10 +16,81 @@ function extractVideoId(url: string): string | null {
 const WORKER_URL = process.env.YOUTUBE_WORKER_URL;
 const WORKER_SECRET = process.env.YOUTUBE_WORKER_SECRET;
 
-const ANDROID_UA = "com.google.android.youtube/20.10.38 (Linux; U; Android 14)";
+// Extract English caption track URL from InnerTube player response
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function findCaptionTrack(data: any): string | null {
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks?.length) return null;
 
-// Try Cloudflare Worker first (different IPs from Vercel), fallback to direct InnerTube
-async function getTrackUrl(videoId: string): Promise<{ title: string; trackUrl: string; debug: string } | null> {
+  const track =
+    tracks.find((t: { vssId?: string }) => t.vssId === ".en" || t.vssId === "a.en") ||
+    tracks.find((t: { languageCode?: string }) => t.languageCode === "en") ||
+    tracks[0];
+
+  if (!track?.baseUrl) return null;
+  return track.baseUrl.replace(/&fmt=[^&]*/g, "") + "&fmt=srv1";
+}
+
+// Extract ytInitialPlayerResponse JSON from YouTube watch page HTML
+function extractPlayerResponse(html: string): Record<string, unknown> | null {
+  // Try both formats YouTube uses
+  const markers = ["var ytInitialPlayerResponse = ", "ytInitialPlayerResponse = "];
+  let start = -1;
+
+  for (const marker of markers) {
+    const idx = html.indexOf(marker);
+    if (idx !== -1) {
+      start = idx + marker.length;
+      break;
+    }
+  }
+
+  if (start === -1 || html[start] !== "{") return null;
+
+  // Count braces to find matching closing brace (handles nested JSON)
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < Math.min(start + 500_000, html.length); i++) {
+    const ch = html[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch === "\\" && inString) {
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(html.substring(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+interface TrackResult {
+  title: string;
+  trackUrl: string;
+  debug: string;
+}
+
+// 4-method fallback chain to get YouTube caption track URL
+async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
   // Method 1: Cloudflare Worker (distributed edge IPs)
   if (WORKER_URL && WORKER_SECRET) {
     try {
@@ -27,7 +98,7 @@ async function getTrackUrl(videoId: string): Promise<{ title: string; trackUrl: 
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Worker-Secret": WORKER_SECRET },
         body: JSON.stringify({ videoId }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(10_000),
       });
       if (resp.ok) {
         const data = await resp.json();
@@ -36,30 +107,55 @@ async function getTrackUrl(videoId: string): Promise<{ title: string; trackUrl: 
     } catch {}
   }
 
-  // Method 2: Direct InnerTube from Vercel
+  // Method 2: InnerTube ANDROID client (from Vercel)
   try {
     const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": ANDROID_UA },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
+      },
       body: JSON.stringify({
-        videoId, contentCheckOk: true, racyCheckOk: true,
+        videoId,
+        contentCheckOk: true,
+        racyCheckOk: true,
         context: { client: { clientName: "ANDROID", clientVersion: "20.10.38", hl: "en", gl: "US" } },
       }),
+      signal: AbortSignal.timeout(8_000),
     });
 
     if (resp.ok) {
       const data = await resp.json();
-      const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-      if (tracks?.length > 0) {
-        const track = tracks.find((t: { vssId?: string }) => t.vssId === ".en" || t.vssId === "a.en")
-          || tracks.find((t: { languageCode?: string }) => t.languageCode === "en")
-          || tracks[0];
-        if (track?.baseUrl) {
-          const trackUrl = track.baseUrl.replace(/&fmt=[^&]*/g, "") + "&fmt=srv1";
-          return { title: data?.videoDetails?.title || "", trackUrl, debug: `vercel: ${data?.playabilityStatus?.status}` };
+      const trackUrl = findCaptionTrack(data);
+      if (trackUrl) {
+        return { title: data?.videoDetails?.title || "", trackUrl, debug: `vercel-android: ${data?.playabilityStatus?.status}` };
+      }
+    }
+  } catch {}
+
+  // Method 3: Scrape YouTube watch page HTML (most resilient - YouTube always serves this)
+  try {
+    const resp = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Cookie: "CONSENT=PENDING+999",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (resp.ok) {
+      const html = await resp.text();
+      const playerResponse = extractPlayerResponse(html);
+      if (playerResponse) {
+        const trackUrl = findCaptionTrack(playerResponse);
+        if (trackUrl) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return { title: (playerResponse as any)?.videoDetails?.title || "", trackUrl, debug: "watch-page" };
         }
       }
-      return null;
     }
   } catch {}
 
@@ -94,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     if (!result) {
       return NextResponse.json({
-        error: "Could not get transcript for this video. YouTube may be temporarily limiting requests. Please try again in a moment.",
+        error: "Could not get transcript for this video. The video may not have captions available, or YouTube is blocking all extraction methods. Please try a different video.",
       }, { status: 400 });
     }
 
