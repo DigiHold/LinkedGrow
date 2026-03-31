@@ -107,31 +107,55 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
     } catch {}
   }
 
-  // Method 2: InnerTube ANDROID client (from Vercel)
-  try {
-    const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
-      },
-      body: JSON.stringify({
-        videoId,
-        contentCheckOk: true,
-        racyCheckOk: true,
-        context: { client: { clientName: "ANDROID", clientVersion: "20.10.38", hl: "en", gl: "US" } },
-      }),
-      signal: AbortSignal.timeout(8_000),
-    });
+  // Method 2: Try multiple InnerTube clients (from Vercel)
+  // YouTube blocks some clients from cloud IPs but not others
+  const clients = [
+    {
+      name: "ANDROID",
+      version: "20.10.38",
+      ua: "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
+      extra: {},
+    },
+    {
+      name: "IOS",
+      version: "20.10.4",
+      ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X)",
+      extra: { deviceMake: "Apple", deviceModel: "iPhone16,2", osName: "iPhone", osVersion: "18.3.2" },
+    },
+    {
+      name: "ANDROID_VR",
+      version: "1.65.10",
+      ua: "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+      extra: { deviceMake: "Oculus", deviceModel: "Quest 3", androidSdkVersion: 32, osName: "Android", osVersion: "12L" },
+    },
+  ];
 
-    if (resp.ok) {
-      const data = await resp.json();
-      const trackUrl = findCaptionTrack(data);
-      if (trackUrl) {
-        return { title: data?.videoDetails?.title || "", trackUrl, debug: `vercel-android: ${data?.playabilityStatus?.status}` };
+  for (const client of clients) {
+    try {
+      const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": client.ua,
+        },
+        body: JSON.stringify({
+          videoId,
+          contentCheckOk: true,
+          racyCheckOk: true,
+          context: { client: { clientName: client.name, clientVersion: client.version, hl: "en", gl: "US", ...client.extra } },
+        }),
+        signal: AbortSignal.timeout(8_000),
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        const trackUrl = findCaptionTrack(data);
+        if (trackUrl) {
+          return { title: data?.videoDetails?.title || "", trackUrl, debug: `vercel-${client.name.toLowerCase()}` };
+        }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
   // Method 3: Scrape YouTube watch page HTML (most resilient - YouTube always serves this)
   try {
