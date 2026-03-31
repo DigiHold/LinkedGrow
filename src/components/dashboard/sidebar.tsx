@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/logo";
 import {
   Sparkles,
   PenLine,
@@ -239,9 +240,7 @@ export function Sidebar() {
               </svg>
             </div>
             {(!isCollapsed || isMobileOpen) && (
-              <span className="text-xl font-bold font-display flex gap-[0.07rem] text-slate-900 dark:text-white">
-                Linked<span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Grow</span>
-              </span>
+              <Logo />
             )}
           </Link>
 
