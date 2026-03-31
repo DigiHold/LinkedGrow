@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForToken, getLinkedInProfile, getLinkedInProfileWithHeadline, getAdministeredOrganizations, type LinkedInAppType } from '@/lib/linkedin';
+import { exchangeCodeForToken, getLinkedInProfile, getLinkedInProfileWithHeadline, getAdministeredOrganizations } from '@/lib/linkedin';
 import { auth } from '@/lib/auth';
 import { db, users, accounts } from '@/lib/db';
 import { affiliates, affiliateReferrals } from '@/lib/db/schema';
@@ -159,88 +159,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const appType = (request.cookies.get('linkedin_app_type')?.value || 'poster') as LinkedInAppType;
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/linkedin/callback`;
 
     // Exchange code for access token
-    const tokenData = await exchangeCodeForToken(appType, code, redirectUri);
+    const tokenData = await exchangeCodeForToken(code, redirectUri);
 
-    // Log what scopes were actually granted by LinkedIn
-
-    // For community app connect flow, skip OpenID profile fetch (no openid scope)
-    // But DO fetch headline via r_basicprofile REST API
-    if (appType === 'community' && mode === 'connect') {
-      const session = await auth();
-      if (session?.user?.id) {
-        // Fetch headline + vanity name via r_basicprofile
-        const profileData = await getLinkedInProfileWithHeadline(tokenData.access_token);
-
-        // Fetch administered organizations (community app has rw_organization_admin scope)
-        const organizations = await getAdministeredOrganizations(tokenData.access_token);
-        const hasOrganizations = organizations.length > 0;
-
-        // Download and store company logos on R2 (same as profile pictures)
-        for (const org of organizations) {
-          if (org.logoUrl) {
-            const storedLogoUrl = await downloadAndStoreProfilePicture(org.logoUrl, `org-${org.id}`);
-            if (storedLogoUrl) {
-              org.logoUrl = storedLogoUrl;
-            }
-          }
-        }
-
-        await db
-          .update(users)
-          .set({
-            linkedinCommunityAccessToken: tokenData.access_token,
-            linkedinCommunityRefreshToken: tokenData.refresh_token || null,
-            linkedinCommunityTokenExpiry: tokenData.expires_in
-              ? new Date(Date.now() + tokenData.expires_in * 1000)
-              : null,
-            linkedinHeadline: profileData?.headline || null,
-            linkedinVanityName: profileData?.vanityName || null,
-            linkedinMemberId: profileData?.memberId || null,
-            // Store organizations for page selection
-            linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
-            linkedinPostingTarget: hasOrganizations ? null : 'profile',
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, session.user.id));
-
-        // If user has organizations, show selection modal
-        if (hasOrganizations && isPopup) {
-          const response = createPopupResponse(true, { name: 'Community App', showSelection: true });
-          response.cookies.delete('linkedin_oauth_state');
-          response.cookies.delete('linkedin_app_type');
-          response.cookies.delete('linkedin_oauth_mode');
-          response.cookies.delete('linkedin_popup');
-          return response;
-        }
-      }
-
-      if (isPopup) {
-        const response = createPopupResponse(true, { name: 'Community App' });
-        response.cookies.delete('linkedin_oauth_state');
-        response.cookies.delete('linkedin_app_type');
-        response.cookies.delete('linkedin_oauth_mode');
-        response.cookies.delete('linkedin_popup');
-        return response;
-      }
-
-      const response = NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?community=connected`
-      );
-      response.cookies.delete('linkedin_oauth_state');
-      response.cookies.delete('linkedin_app_type');
-      response.cookies.delete('linkedin_oauth_mode');
-      return response;
-    }
-
-    // Get user profile (requires openid scope - poster app only)
+    // Get user profile using OpenID Connect
     const profile = await getLinkedInProfile(tokenData.access_token);
     const fullName = `${profile.localizedFirstName} ${profile.localizedLastName}`;
     const linkedInPictureUrl = profile.profilePicture?.displayImage || null;
     const linkedInEmail = profile.email;
+
+    // Also fetch headline and vanity name via REST API (r_basicprofile scope)
+    const profileData = await getLinkedInProfileWithHeadline(tokenData.access_token);
 
     // Handle social login flow (login or register mode)
     if (mode === 'login' || mode === 'register') {
@@ -305,7 +236,7 @@ export async function GET(request: NextRequest) {
           plan: 'free',
           twoFactorEnabled: false,
           referredBy: validAffiliate?.referralCode || null,
-          // Auto-connect LinkedIn for posting
+          // Auto-connect LinkedIn
           linkedinAccessToken: tokenData.access_token,
           linkedinRefreshToken: tokenData.refresh_token || null,
           linkedinTokenExpiry: tokenData.expires_in
@@ -313,6 +244,9 @@ export async function GET(request: NextRequest) {
             : null,
           linkedinProfileId: profile.id,
           linkedinProfileName: fullName,
+          linkedinHeadline: profileData?.headline || null,
+          linkedinVanityName: profileData?.vanityName || null,
+          linkedinMemberId: profileData?.memberId || null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -404,8 +338,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Also update the user's LinkedIn posting tokens (auto-connect)
-        // Update profile picture if user doesn't have one stored
+        // Update the user's LinkedIn tokens and profile data
         let storedPictureUrl: string | null = null;
         if (linkedInPictureUrl && !user.image) {
           storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, user.id);
@@ -421,6 +354,9 @@ export async function GET(request: NextRequest) {
               : null,
             linkedinProfileId: profile.id,
             linkedinProfileName: fullName,
+            linkedinHeadline: profileData?.headline || null,
+            linkedinVanityName: profileData?.vanityName || null,
+            linkedinMemberId: profileData?.memberId || null,
             name: user.name || fullName,
             updatedAt: new Date(),
           })
@@ -432,7 +368,6 @@ export async function GET(request: NextRequest) {
       }
 
       // Create session token using NextAuth JWT
-      // Salt is the cookie name used by NextAuth
       const cookieName = process.env.NODE_ENV === 'production'
         ? '__Secure-authjs.session-token'
         : 'authjs.session-token';
@@ -485,7 +420,6 @@ export async function GET(request: NextRequest) {
 
         // Clear OAuth cookies
         response.cookies.delete('linkedin_oauth_state');
-        response.cookies.delete('linkedin_app_type');
         response.cookies.delete('linkedin_oauth_mode');
         response.cookies.delete('linkedin_popup');
         response.cookies.delete('linkedin_newsletter');
@@ -509,7 +443,6 @@ export async function GET(request: NextRequest) {
 
       // Clear OAuth cookies
       response.cookies.delete('linkedin_oauth_state');
-      response.cookies.delete('linkedin_app_type');
       response.cookies.delete('linkedin_oauth_mode');
       response.cookies.delete('linkedin_popup');
       response.cookies.delete('linkedin_newsletter');
@@ -524,55 +457,65 @@ export async function GET(request: NextRequest) {
 
     // Store tokens and profile data in database if user is logged in
     if (session?.user?.id) {
-      if (appType === 'community') {
-        // Community app - only store community tokens (for engagement features)
-        await db
-          .update(users)
-          .set({
-            linkedinCommunityAccessToken: tokenData.access_token,
-            linkedinCommunityRefreshToken: tokenData.refresh_token || null,
-            linkedinCommunityTokenExpiry: tokenData.expires_in
-              ? new Date(Date.now() + tokenData.expires_in * 1000)
-              : null,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, session.user.id));
-      } else {
-        // Poster app - store main tokens and profile data
-        // Download and store profile picture in R2
-        let storedPictureUrl: string | null = null;
-        if (linkedInPictureUrl) {
-          storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
+      // Download and store profile picture in R2
+      let storedPictureUrl: string | null = null;
+      if (linkedInPictureUrl) {
+        storedPictureUrl = await downloadAndStoreProfilePicture(linkedInPictureUrl, session.user.id);
+      }
+
+      // Fetch administered organizations
+      const organizations = await getAdministeredOrganizations(tokenData.access_token);
+      const hasOrganizations = organizations.length > 0;
+
+      await db
+        .update(users)
+        .set({
+          linkedinAccessToken: tokenData.access_token,
+          linkedinRefreshToken: tokenData.refresh_token || null,
+          linkedinTokenExpiry: tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : null,
+          linkedinProfileId: profile.id,
+          linkedinProfileName: fullName,
+          linkedinHeadline: profileData?.headline || null,
+          linkedinVanityName: profileData?.vanityName || null,
+          linkedinMemberId: profileData?.memberId || null,
+          // Store our own copy of the profile picture (from R2)
+          image: storedPictureUrl,
+          // Update name if not already set
+          name: fullName,
+          // Store organizations for selection
+          linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
+          // Default to profile if no orgs, otherwise keep previous selection or null for selection page
+          linkedinPostingTarget: hasOrganizations ? null : 'profile',
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, session.user.id));
+
+      // If user has organizations, signal the parent to show selection modal
+      if (hasOrganizations) {
+        if (isPopup) {
+          const response = createPopupResponse(true, { name: fullName, showSelection: true });
+          response.cookies.delete('linkedin_oauth_state');
+          response.cookies.delete('linkedin_oauth_mode');
+          response.cookies.delete('linkedin_popup');
+          return response;
         }
 
-        await db
-          .update(users)
-          .set({
-            linkedinAccessToken: tokenData.access_token,
-            linkedinRefreshToken: tokenData.refresh_token || null,
-            linkedinTokenExpiry: tokenData.expires_in
-              ? new Date(Date.now() + tokenData.expires_in * 1000)
-              : null,
-            linkedinProfileId: profile.id,
-            linkedinProfileName: fullName,
-            // Store our own copy of the profile picture (from R2)
-            image: storedPictureUrl,
-            // Update name if not already set
-            name: fullName,
-            // Default posting target to profile (org selection happens after community app connect)
-            linkedinPostingTarget: 'profile',
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, session.user.id));
+        // Non-popup mode - redirect to settings with showSelection param
+        const response = NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?linkedin=connected&name=${encodeURIComponent(fullName)}&showSelection=true`
+        );
+        response.cookies.delete('linkedin_oauth_state');
+        response.cookies.delete('linkedin_oauth_mode');
+        return response;
       }
     }
 
     // Handle popup mode (no organizations case)
     if (isPopup) {
       const response = createPopupResponse(true, { name: fullName });
-      // Set cookies on the popup response too
       response.cookies.delete('linkedin_oauth_state');
-      response.cookies.delete('linkedin_app_type');
       response.cookies.delete('linkedin_oauth_mode');
       response.cookies.delete('linkedin_popup');
       response.cookies.set('linkedin_connected', 'true', {
@@ -598,7 +541,6 @@ export async function GET(request: NextRequest) {
 
     // Clear OAuth cookies
     response.cookies.delete('linkedin_oauth_state');
-    response.cookies.delete('linkedin_app_type');
     response.cookies.delete('linkedin_oauth_mode');
 
     // Store connection status temporarily (in production, use database)

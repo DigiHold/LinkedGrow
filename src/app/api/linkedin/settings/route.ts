@@ -30,11 +30,8 @@ export async function GET() {
       }
     }
 
-    const communityConnected = !!linkedInUser.linkedinCommunityAccessToken;
-
     return NextResponse.json({
       connected: isConnected,
-      communityConnected,
       profileId: linkedInUser.linkedinProfileId,
       profileName: linkedInUser.linkedinProfileName,
       profileImage: linkedInUser.image,

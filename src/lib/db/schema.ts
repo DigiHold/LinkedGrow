@@ -24,7 +24,7 @@ export const users = sqliteTable("users", {
   couponCode: text("coupon_code"), // Stored coupon code (e.g., "WELCOME10" for 10% off 3 months)
   referredBy: text("referred_by"), // Affiliate referral code that referred this user
 
-  // LinkedIn connection (Posting App)
+  // LinkedIn connection
   linkedinAccessToken: text("linkedin_access_token"),
   linkedinRefreshToken: text("linkedin_refresh_token"),
   linkedinTokenExpiry: integer("linkedin_token_expiry", { mode: "timestamp" }),
@@ -39,11 +39,6 @@ export const users = sqliteTable("users", {
   linkedinSelectedOrgId: text("linkedin_selected_org_id"), // Organization URN ID if posting to company page
   linkedinSelectedOrgName: text("linkedin_selected_org_name"), // Organization name for display
   linkedinOrganizations: text("linkedin_organizations"), // JSON array of administered organizations [{id, name, logoUrl}]
-
-  // LinkedIn Community App (Engagement features)
-  linkedinCommunityAccessToken: text("linkedin_community_access_token"),
-  linkedinCommunityRefreshToken: text("linkedin_community_refresh_token"),
-  linkedinCommunityTokenExpiry: integer("linkedin_community_token_expiry", { mode: "timestamp" }),
 
   // AI API keys (encrypted) - per-provider storage
   aiProvider: text("ai_provider"), // Currently selected provider

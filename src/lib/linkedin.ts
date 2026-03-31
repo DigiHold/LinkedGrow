@@ -1,9 +1,11 @@
 /**
  * LinkedIn OAuth and API Integration
  *
- * Uses two LinkedIn apps:
- * - Poster App: For publishing posts to LinkedIn
- * - Community App: For engagement features
+ * Single LinkedIn app with all products:
+ * - Sign In with LinkedIn using OpenID Connect
+ * - Share on LinkedIn
+ * - Community Management API
+ * - Advertising API (pending approval)
  *
  * Token auto-refresh:
  * - Access tokens expire every 2 months
@@ -14,22 +16,14 @@
 import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
-// LinkedIn OAuth scopes
-// Poster app: Sign-in + Share on LinkedIn
-const POSTER_SCOPES = ['openid', 'profile', 'email', 'w_member_social'];
-
-// Community app: Community Management API for engagement features
-// Development Tier: Only w_member_social is available
-// Standard Tier (after approval): Full Community Management API access
-//
-// IMPORTANT: When LinkedIn approves your Community Management API access:
-// 1. Uncomment the scopes below based on your approval
-// 2. The headline will automatically be fetched via REST API /rest/me endpoint
-// Community app scopes - ALL scopes from the Community Management API product
-// NOTE: openid/profile/email are NOT on this app (those are on the Poster App via OpenID Connect product)
-const COMMUNITY_SCOPES = [
+// LinkedIn OAuth scopes - all products in a single app
+const LINKEDIN_SCOPES = [
+  // Sign In with LinkedIn using OpenID Connect
+  'openid', 'profile', 'email',
+  // Share on LinkedIn
+  'w_member_social',
+  // Community Management API
   'r_basicprofile',               // Basic profile (name, photo, headline, public URL)
-  'w_member_social',              // Create/modify/delete posts, comments, reactions as member
   'w_member_social_feed',         // Create/modify/delete comments and reactions on posts on member behalf
   'r_member_postAnalytics',       // Retrieve member post analytics/reporting
   'r_member_profileAnalytics',    // Retrieve profile analytics (viewers, followers, search appearances)
@@ -77,23 +71,14 @@ export interface LinkedInOrganization {
   logoUrl?: string;
 }
 
-export type LinkedInAppType = 'poster' | 'community';
-
 /**
- * Get LinkedIn OAuth configuration based on app type
+ * Get LinkedIn OAuth configuration
  */
-function getLinkedInConfig(appType: LinkedInAppType) {
-  if (appType === 'poster') {
-    return {
-      clientId: process.env.LINKEDIN_CLIENT_ID!,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-      scopes: POSTER_SCOPES,
-    };
-  }
+function getLinkedInConfig() {
   return {
-    clientId: process.env.LINKEDIN_COMMUNITY_CLIENT_ID!,
-    clientSecret: process.env.LINKEDIN_COMMUNITY_CLIENT_SECRET!,
-    scopes: COMMUNITY_SCOPES,
+    clientId: process.env.LINKEDIN_CLIENT_ID!,
+    clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
+    scopes: LINKEDIN_SCOPES,
   };
 }
 
@@ -101,11 +86,10 @@ function getLinkedInConfig(appType: LinkedInAppType) {
  * Generate LinkedIn OAuth authorization URL
  */
 export function getLinkedInAuthUrl(
-  appType: LinkedInAppType,
   redirectUri: string,
   state: string
 ): string {
-  const config = getLinkedInConfig(appType);
+  const config = getLinkedInConfig();
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -123,10 +107,9 @@ export function getLinkedInAuthUrl(
  * Returns new token data, or null if refresh failed (user must reconnect).
  */
 export async function refreshLinkedInToken(
-  appType: LinkedInAppType,
   refreshToken: string,
 ): Promise<LinkedInTokenResponse | null> {
-  const config = getLinkedInConfig(appType);
+  const config = getLinkedInConfig();
 
   try {
     const response = await fetch(LINKEDIN_TOKEN_URL, {
@@ -148,7 +131,7 @@ export async function refreshLinkedInToken(
     }
 
     const tokenData: LinkedInTokenResponse = await response.json();
-    console.log(`[LinkedIn] Token refreshed successfully for ${appType} app`);
+    console.log(`[LinkedIn] Token refreshed successfully`);
     return tokenData;
   } catch (err) {
     console.error(`[LinkedIn] Token refresh error:`, err);
@@ -176,28 +159,26 @@ export function isTokenExpired(tokenExpiry: Date | string | number | null): bool
 }
 
 /**
- * Ensure LinkedIn tokens are fresh for a user. Auto-refreshes if expired.
- * Updates the DB with new tokens and returns the fresh access tokens.
+ * Ensure LinkedIn token is fresh for a user. Auto-refreshes if expired.
+ * Updates the DB with new tokens and returns the fresh access token.
  *
  * Call this at the start of any API route that uses LinkedIn tokens.
  */
 export async function ensureFreshTokens(userId: string): Promise<{
-  posterToken: string | null;
-  communityToken: string | null;
+  token: string | null;
   refreshed: boolean;
 }> {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (!user) return { posterToken: null, communityToken: null, refreshed: false };
+  if (!user) return { token: null, refreshed: false };
 
-  let posterToken = user.linkedinAccessToken;
-  let communityToken = user.linkedinCommunityAccessToken;
+  let token = user.linkedinAccessToken;
   let refreshed = false;
 
-  // Check and refresh poster app token
-  if (posterToken && isTokenExpired(user.linkedinTokenExpiry) && user.linkedinRefreshToken) {
-    const newTokens = await refreshLinkedInToken('poster', user.linkedinRefreshToken);
+  // Check and refresh token
+  if (token && isTokenExpired(user.linkedinTokenExpiry) && user.linkedinRefreshToken) {
+    const newTokens = await refreshLinkedInToken(user.linkedinRefreshToken);
     if (newTokens) {
-      posterToken = newTokens.access_token;
+      token = newTokens.access_token;
       await db.update(users).set({
         linkedinAccessToken: newTokens.access_token,
         linkedinRefreshToken: newTokens.refresh_token || user.linkedinRefreshToken,
@@ -205,39 +186,21 @@ export async function ensureFreshTokens(userId: string): Promise<{
       }).where(eq(users.id, userId));
       refreshed = true;
     } else {
-      // Refresh failed - token is dead, user must reconnect
-      posterToken = null;
+      token = null;
     }
   }
 
-  // Check and refresh community app token
-  if (communityToken && isTokenExpired(user.linkedinCommunityTokenExpiry) && user.linkedinCommunityRefreshToken) {
-    const newTokens = await refreshLinkedInToken('community', user.linkedinCommunityRefreshToken);
-    if (newTokens) {
-      communityToken = newTokens.access_token;
-      await db.update(users).set({
-        linkedinCommunityAccessToken: newTokens.access_token,
-        linkedinCommunityRefreshToken: newTokens.refresh_token || user.linkedinCommunityRefreshToken,
-        linkedinCommunityTokenExpiry: new Date(Date.now() + newTokens.expires_in * 1000),
-      }).where(eq(users.id, userId));
-      refreshed = true;
-    } else {
-      communityToken = null;
-    }
-  }
-
-  return { posterToken, communityToken, refreshed };
+  return { token, refreshed };
 }
 
 /**
  * Exchange authorization code for access token
  */
 export async function exchangeCodeForToken(
-  appType: LinkedInAppType,
   code: string,
   redirectUri: string
 ): Promise<LinkedInTokenResponse> {
-  const config = getLinkedInConfig(appType);
+  const config = getLinkedInConfig();
 
   const response = await fetch(LINKEDIN_TOKEN_URL, {
     method: 'POST',
@@ -269,7 +232,6 @@ export async function exchangeCodeForToken(
  * - Scopes: openid, profile, email
  *
  * Available fields: sub (id), name, given_name, family_name, picture, email
- * Note: Headline requires Community Management API (r_member_social) - not available via OpenID Connect
  */
 export async function getLinkedInProfile(accessToken: string): Promise<LinkedInProfile> {
   const response = await fetch(`${LINKEDIN_API_BASE}/userinfo`, {
@@ -521,7 +483,7 @@ export async function createLinkedInPost(
 /**
  * Post a comment on a LinkedIn post
  * Uses the REST API socialActions endpoint
- * Requires w_member_social scope (already available via Poster App)
+ * Requires w_member_social scope
  */
 /**
  * Post a comment on a LinkedIn post

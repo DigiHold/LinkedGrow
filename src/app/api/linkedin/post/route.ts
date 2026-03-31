@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-refresh tokens if expired
-    const { posterToken, communityToken } = await ensureFreshTokens(linkedInUser.id);
-    if (!posterToken) {
+    const { token } = await ensureFreshTokens(linkedInUser.id);
+    if (!token) {
       return NextResponse.json(
         { error: 'LinkedIn token has expired and could not be refreshed. Please reconnect your account in Settings.' },
         { status: 401 }
@@ -111,9 +111,6 @@ export async function POST(request: NextRequest) {
     const isOrganization = linkedInUser.linkedinPostingTarget === 'organization' && linkedInUser.linkedinSelectedOrgId;
     const authorId = isOrganization ? linkedInUser.linkedinSelectedOrgId! : linkedInUser.linkedinProfileId;
     const authorType: 'person' | 'organization' = isOrganization ? 'organization' : 'person';
-
-    // Use community token for org posts (has w_organization_social), poster token for personal
-    const token = isOrganization && communityToken ? communityToken : posterToken;
 
     let postResult;
 

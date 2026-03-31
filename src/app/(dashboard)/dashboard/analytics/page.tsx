@@ -25,7 +25,6 @@ import { AnalyticsEmptyState } from "@/components/dashboard/analytics/empty-stat
 import { FollowerChart } from "@/components/dashboard/analytics/follower-chart";
 import { BestTimeCard } from "@/components/dashboard/analytics/best-time-card";
 import { PostPerformanceTable } from "@/components/dashboard/analytics/post-performance-table";
-import { CommunityConnectBanner } from "@/components/dashboard/engagement/community-connect-banner";
 
 interface AnalyticsData {
   summary: {
@@ -66,7 +65,6 @@ interface AnalyticsData {
     canFetchPageViews: boolean;
     isOrganization: boolean;
     hasLinkedInConnected: boolean;
-    hasCommunityConnected: boolean;
     postingTarget: "profile" | "organization" | null;
   };
   advanced?: {
@@ -271,11 +269,6 @@ export default function AnalyticsPage() {
         {/* No LinkedIn Connected */}
         {data && !data.capabilities.hasLinkedInConnected && !isLoading && (
           <AnalyticsEmptyState type="no-linkedin" />
-        )}
-
-        {/* Community App Connect Banner - needed for per-post analytics */}
-        {data && data.capabilities.hasLinkedInConnected && !data.capabilities.hasCommunityConnected && !isLoading && (
-          <CommunityConnectBanner isConnected={false} />
         )}
 
         {/* Analytics Content */}

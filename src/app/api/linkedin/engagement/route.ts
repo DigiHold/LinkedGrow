@@ -68,7 +68,7 @@ export async function GET() {
       where: eq(users.id, userId),
       columns: {
         linkedinProfileName: true,
-        linkedinCommunityAccessToken: true,
+        linkedinAccessToken: true,
         image: true,
       },
     });
@@ -83,7 +83,7 @@ export async function GET() {
         likes: todayLikes,
         comments: todayComments,
       },
-      communityConnected: !!user?.linkedinCommunityAccessToken,
+      linkedInConnected: !!user?.linkedinAccessToken,
       profileName: user?.linkedinProfileName,
       profileImage: user?.image,
     });

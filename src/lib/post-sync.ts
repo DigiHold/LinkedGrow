@@ -50,8 +50,7 @@ export async function syncLinkedInPosts(userId: string): Promise<SyncResult> {
     ? `urn:li:organization:${user.linkedinSelectedOrgId}`
     : `urn:li:person:${user.linkedinProfileId}`;
 
-  // Use community token if available (has r_member_social / r_organization_social), fallback to poster token
-  const accessToken = user.linkedinCommunityAccessToken || user.linkedinAccessToken;
+  const accessToken = user.linkedinAccessToken;
 
   try {
     // Fetch all posts (paginated)

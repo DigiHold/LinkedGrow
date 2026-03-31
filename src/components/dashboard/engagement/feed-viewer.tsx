@@ -134,8 +134,8 @@ export function FeedViewer({ isConnected, onLogAction }: FeedViewerProps) {
             LinkedIn Feed
           </h3>
           <p className="text-muted-foreground text-sm">
-            Connect your Community App above to view and interact with your
-            LinkedIn feed.
+            Connect your LinkedIn account to view and interact with your
+            feed.
           </p>
         </CardContent>
       </Card>
