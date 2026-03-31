@@ -16,7 +16,6 @@ function extractVideoId(url: string): string | null {
 const WORKER_URL = process.env.YOUTUBE_WORKER_URL;
 const WORKER_SECRET = process.env.YOUTUBE_WORKER_SECRET;
 
-// Extract English caption track URL from InnerTube player response
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findCaptionTrack(data: any): string | null {
   const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
@@ -31,51 +30,33 @@ function findCaptionTrack(data: any): string | null {
   return track.baseUrl.replace(/&fmt=[^&]*/g, "") + "&fmt=srv1";
 }
 
-// Extract ytInitialPlayerResponse JSON from YouTube watch page HTML
 function extractPlayerResponse(html: string): Record<string, unknown> | null {
-  // Try both formats YouTube uses
   const markers = ["var ytInitialPlayerResponse = ", "ytInitialPlayerResponse = "];
   let start = -1;
 
   for (const marker of markers) {
     const idx = html.indexOf(marker);
-    if (idx !== -1) {
-      start = idx + marker.length;
-      break;
-    }
+    if (idx !== -1) { start = idx + marker.length; break; }
   }
 
   if (start === -1 || html[start] !== "{") return null;
 
-  // Count braces to find matching closing brace (handles nested JSON)
   let depth = 0;
   let inString = false;
   let escaped = false;
 
   for (let i = start; i < Math.min(start + 500_000, html.length); i++) {
     const ch = html[i];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (ch === "\\" && inString) {
-      escaped = true;
-      continue;
-    }
-    if (ch === '"') {
-      inString = !inString;
-      continue;
-    }
+    if (escaped) { escaped = false; continue; }
+    if (ch === "\\" && inString) { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
     if (inString) continue;
     if (ch === "{") depth++;
     if (ch === "}") {
       depth--;
       if (depth === 0) {
-        try {
-          return JSON.parse(html.substring(start, i + 1));
-        } catch {
-          return null;
-        }
+        try { return JSON.parse(html.substring(start, i + 1)); }
+        catch { return null; }
       }
     }
   }
@@ -83,14 +64,11 @@ function extractPlayerResponse(html: string): Record<string, unknown> | null {
   return null;
 }
 
-interface TrackResult {
-  title: string;
-  trackUrl: string;
-  debug: string;
-}
+// Fallback chain to get YouTube caption track URL
+// Returns { title, trackUrl, debug } on success, throws with debug info on failure
+async function getTrackUrl(videoId: string): Promise<{ title: string; trackUrl: string; debug: string }> {
+  const debug: string[] = [];
 
-// 4-method fallback chain to get YouTube caption track URL
-async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
   // Method 1: Cloudflare Worker (distributed edge IPs)
   if (WORKER_URL && WORKER_SECRET) {
     try {
@@ -103,48 +81,32 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
       if (resp.ok) {
         const data = await resp.json();
         if (data.trackUrl) return { title: data.title, trackUrl: data.trackUrl, debug: `worker: ${data.debug}` };
+        debug.push(`worker: OK but no trackUrl (${data.debug || "?"})`);
+      } else {
+        const data = await resp.json().catch(() => null);
+        debug.push(`worker: HTTP ${resp.status} (${data?.debug || "?"})`);
       }
-    } catch {}
+    } catch (e) {
+      debug.push(`worker: ${e instanceof Error ? e.message : "error"}`);
+    }
+  } else {
+    debug.push("worker: not configured");
   }
 
   // Method 2: Try multiple InnerTube clients (from Vercel)
-  // YouTube blocks some clients from cloud IPs but not others
-  const debug: string[] = [];
-  if (!WORKER_URL) debug.push("worker: not configured");
-
   const clients = [
-    {
-      name: "ANDROID",
-      version: "20.10.38",
-      ua: "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
-      extra: {},
-    },
-    {
-      name: "IOS",
-      version: "20.10.4",
-      ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X)",
-      extra: { deviceMake: "Apple", deviceModel: "iPhone16,2", osName: "iPhone", osVersion: "18.3.2" },
-    },
-    {
-      name: "ANDROID_VR",
-      version: "1.65.10",
-      ua: "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
-      extra: { deviceMake: "Oculus", deviceModel: "Quest 3", androidSdkVersion: 32, osName: "Android", osVersion: "12L" },
-    },
+    { name: "ANDROID", version: "20.10.38", ua: "com.google.android.youtube/20.10.38 (Linux; U; Android 14)", extra: {} },
+    { name: "IOS", version: "20.10.4", ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X)", extra: { deviceMake: "Apple", deviceModel: "iPhone16,2", osName: "iPhone", osVersion: "18.3.2" } },
+    { name: "ANDROID_VR", version: "1.65.10", ua: "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip", extra: { deviceMake: "Oculus", deviceModel: "Quest 3", androidSdkVersion: 32, osName: "Android", osVersion: "12L" } },
   ];
 
   for (const client of clients) {
     try {
       const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": client.ua,
-        },
+        headers: { "Content-Type": "application/json", "User-Agent": client.ua },
         body: JSON.stringify({
-          videoId,
-          contentCheckOk: true,
-          racyCheckOk: true,
+          videoId, contentCheckOk: true, racyCheckOk: true,
           context: { client: { clientName: client.name, clientVersion: client.version, hl: "en", gl: "US", ...client.extra } },
         }),
         signal: AbortSignal.timeout(8_000),
@@ -154,10 +116,8 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
         const data = await resp.json();
         const status = data?.playabilityStatus?.status || "?";
         const trackUrl = findCaptionTrack(data);
-        if (trackUrl) {
-          return { title: data?.videoDetails?.title || "", trackUrl, debug: [...debug, `${client.name}: OK`].join(" | ") };
-        }
-        debug.push(`${client.name}: ${status}, no tracks`);
+        if (trackUrl) return { title: data?.videoDetails?.title || "", trackUrl, debug: [...debug, `${client.name}: OK`].join(" | ") };
+        debug.push(`${client.name}: ${status}, 0 tracks`);
       } else {
         debug.push(`${client.name}: HTTP ${resp.status}`);
       }
@@ -166,12 +126,11 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
     }
   }
 
-  // Method 3: Scrape YouTube watch page HTML (most resilient - YouTube always serves this)
+  // Method 3: Scrape YouTube watch page HTML
   try {
     const resp = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         Cookie: "CONSENT=PENDING+999",
@@ -184,24 +143,22 @@ async function getTrackUrl(videoId: string): Promise<TrackResult | null> {
       const playerResponse = extractPlayerResponse(html);
       if (playerResponse) {
         const trackUrl = findCaptionTrack(playerResponse);
-        if (trackUrl) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return { title: (playerResponse as any)?.videoDetails?.title || "", trackUrl, debug: [...debug, "watch-page: OK"].join(" | ") };
-        }
-        debug.push("watch-page: no tracks in playerResponse");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (trackUrl) return { title: (playerResponse as any)?.videoDetails?.title || "", trackUrl, debug: [...debug, "watch: OK"].join(" | ") };
+        debug.push("watch: no tracks");
       } else {
-        debug.push(`watch-page: no playerResponse (HTML ${html.length} bytes)`);
+        debug.push(`watch: no playerResponse (${html.length}b)`);
       }
     } else {
-      debug.push(`watch-page: HTTP ${resp.status}`);
+      debug.push(`watch: HTTP ${resp.status}`);
     }
   } catch (e) {
-    debug.push(`watch-page: ${e instanceof Error ? e.message : "error"}`);
+    debug.push(`watch: ${e instanceof Error ? e.message : "error"}`);
   }
 
-  console.error(`YouTube all methods failed for ${videoId}:`, debug.join(" | "));
-
-  return null;
+  const debugStr = debug.join(" | ");
+  console.error(`YouTube failed [${videoId}]:`, debugStr);
+  throw new Error(debugStr);
 }
 
 export async function POST(request: NextRequest) {
@@ -228,23 +185,18 @@ export async function POST(request: NextRequest) {
     const videoId = extractVideoId(url);
     if (!videoId) return NextResponse.json({ error: "Please enter a valid YouTube URL" }, { status: 400 });
 
-    const result = await getTrackUrl(videoId);
-
-    if (!result) {
+    try {
+      const result = await getTrackUrl(videoId);
+      return NextResponse.json({ videoId, title: result.title, trackUrl: result.trackUrl, lang: "en" });
+    } catch (e) {
+      const debugStr = e instanceof Error ? e.message : "unknown";
       const isAdmin = session.user.isAdmin;
       return NextResponse.json({
         error: isAdmin
-          ? `YouTube extraction failed. Debug: ${result === null ? "all methods returned null" : "unknown"}. Check server logs.`
-          : "Could not get transcript for this video. Retrying...",
+          ? `YouTube failed: ${debugStr}`
+          : "Could not get transcript for this video. Please try again.",
       }, { status: 400 });
     }
-
-    return NextResponse.json({
-      videoId,
-      title: result.title,
-      trackUrl: result.trackUrl,
-      lang: "en",
-    });
   } catch (error) {
     console.error("YouTube tracks error:", error);
     return NextResponse.json({ error: "Failed to get YouTube video info" }, { status: 500 });
