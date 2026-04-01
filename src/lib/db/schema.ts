@@ -467,6 +467,67 @@ export const teamEngagementJobs = sqliteTable("team_engagement_jobs", {
 });
 
 // ============================================
+// CROSS PROMOTION
+// ============================================
+
+export const crossPromotionGroups = sqliteTable("cross_promotion_groups", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+export const crossPromotionMembers = sqliteTable("cross_promotion_members", {
+  id: text("id").primaryKey(),
+  groupId: text("group_id")
+    .notNull()
+    .references(() => crossPromotionGroups.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  status: text("status", { enum: ["invited", "accepted", "declined"] }).default("invited"),
+  inviteToken: text("invite_token").unique(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+  acceptedAt: integer("accepted_at", { mode: "timestamp" }),
+});
+
+export const crossPromotionPosts = sqliteTable("cross_promotion_posts", {
+  id: text("id").primaryKey(),
+  groupId: text("group_id")
+    .notNull()
+    .references(() => crossPromotionGroups.id, { onDelete: "cascade" }),
+  postId: text("post_id")
+    .references(() => posts.id, { onDelete: "cascade" }),
+  linkedinPostId: text("linkedin_post_id").notNull(),
+  publishedByUserId: text("published_by_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  postContent: text("post_content").notNull(), // Snapshot of content for review page
+  notifiedAt: integer("notified_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+});
+
+export const crossPromotionActions = sqliteTable("cross_promotion_actions", {
+  id: text("id").primaryKey(),
+  crossPromotionPostId: text("cross_promotion_post_id")
+    .notNull()
+    .references(() => crossPromotionPosts.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  actionType: text("action_type", { enum: ["like", "comment", "repost"] }).notNull(),
+  status: text("status", { enum: ["pending", "approved", "scheduled", "completed", "failed", "skipped"] }).default("pending"),
+  commentText: text("comment_text"),
+  qstashMessageId: text("qstash_message_id"),
+  delaySeconds: integer("delay_seconds"),
+  approvedAt: integer("approved_at", { mode: "timestamp" }),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  errorMessage: text("error_message"),
+});
+
+// ============================================
 // ABANDONED CART RECOVERY
 // ============================================
 

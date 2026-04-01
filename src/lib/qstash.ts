@@ -145,4 +145,23 @@ export async function scheduleTeamEngagement(
   }
 }
 
+/**
+ * Schedule a cross-promotion action (like, comment, repost) to execute after a delay
+ * @param actionId - The cross_promotion_actions row ID
+ * @param delaySeconds - Delay before executing
+ * @returns The QStash message ID
+ */
+export async function scheduleCrossPromotionAction(
+  actionId: string,
+  delaySeconds: number
+): Promise<string> {
+  const response = await qstash.publishJSON({
+    url: `${APP_URL}/api/qstash/cross-promote`,
+    body: { actionId },
+    delay: delaySeconds,
+    retries: 3,
+  });
+  return response.messageId;
+}
+
 export { qstash };

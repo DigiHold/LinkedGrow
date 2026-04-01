@@ -26,6 +26,14 @@ export {
   subscriptionWelcomeEmailTemplate,
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
+export {
+  crossPromotionInviteEmailTemplate,
+  crossPromotionInviteEmailText,
+} from "./templates/cross-promotion-invite-email";
+export {
+  crossPromotionNotifyEmailTemplate,
+  crossPromotionNotifyEmailText,
+} from "./templates/cross-promotion-notify-email";
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
@@ -53,6 +61,14 @@ import {
   subscriptionWelcomeEmailTemplate,
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
+import {
+  crossPromotionInviteEmailTemplate,
+  crossPromotionInviteEmailText,
+} from "./templates/cross-promotion-invite-email";
+import {
+  crossPromotionNotifyEmailTemplate,
+  crossPromotionNotifyEmailText,
+} from "./templates/cross-promotion-notify-email";
 
 interface SendPasswordResetEmailParams {
   to: string;
@@ -166,5 +182,53 @@ export async function sendSubscriptionWelcomeEmail({
     subject: `Welcome to LinkedGrow ${displayPlan}!`,
     html: subscriptionWelcomeEmailTemplate({ name, planName }),
     text: subscriptionWelcomeEmailText({ name, planName }),
+  });
+}
+
+interface SendCrossPromotionInviteEmailParams {
+  to: string;
+  inviterName: string;
+  groupName: string;
+  inviteToken: string;
+}
+
+export async function sendCrossPromotionInviteEmail({
+  to,
+  inviterName,
+  groupName,
+  inviteToken,
+}: SendCrossPromotionInviteEmailParams) {
+  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cross-promotion/invite?token=${inviteToken}`;
+
+  return sendEmail({
+    to,
+    subject: `${inviterName} invited you to a Cross Promotion group on LinkedGrow`,
+    html: crossPromotionInviteEmailTemplate({ inviterName, groupName, inviteUrl }),
+    text: crossPromotionInviteEmailText({ inviterName, groupName, inviteUrl }),
+  });
+}
+
+interface SendCrossPromotionNotifyEmailParams {
+  to: string;
+  publisherName: string;
+  groupName: string;
+  postPreview: string;
+  crossPromotionPostId: string;
+}
+
+export async function sendCrossPromotionNotifyEmail({
+  to,
+  publisherName,
+  groupName,
+  postPreview,
+  crossPromotionPostId,
+}: SendCrossPromotionNotifyEmailParams) {
+  const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/cross-promotion/review/${crossPromotionPostId}`;
+
+  return sendEmail({
+    to,
+    subject: `${publisherName} just published a new post`,
+    html: crossPromotionNotifyEmailTemplate({ publisherName, groupName, postPreview, reviewUrl }),
+    text: crossPromotionNotifyEmailText({ publisherName, groupName, postPreview, reviewUrl }),
   });
 }

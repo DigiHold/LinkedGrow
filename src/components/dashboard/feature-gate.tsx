@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Loader2,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import {
   PlanId,
@@ -47,6 +48,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
+  crossPromotion: Share2,
   abTesting: GitBranch,
   teamCollaboration: UsersRound,
   advancedAnalytics: TrendingUp,

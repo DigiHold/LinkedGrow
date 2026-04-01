@@ -6,6 +6,7 @@ import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWith
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment, scheduleAutoLike } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
+import { triggerCrossPromotion } from "@/lib/cross-promotion";
 
 // Initialize QStash receiver for signature verification
 const receiver = new Receiver({
@@ -213,6 +214,13 @@ export async function POST(request: NextRequest) {
       } catch {
         // Team engagement scheduling failed silently
       }
+    }
+
+    // Trigger cross-promotion notifications
+    try {
+      await triggerCrossPromotion(postId, postResult.id, post.content, post.userId);
+    } catch (error) {
+      console.error("Failed to trigger cross-promotion:", error);
     }
 
     return NextResponse.json({

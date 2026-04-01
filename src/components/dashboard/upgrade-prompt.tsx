@@ -22,6 +22,7 @@ import {
   UsersRound,
   TrendingUp,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
+  crossPromotion: Share2,
   abTesting: GitBranch,
   apiAccess: Code,
   prioritySupport: Headphones,

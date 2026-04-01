@@ -36,6 +36,7 @@ import {
   ShoppingCart,
   Repeat,
   BookOpen,
+  Share2,
 } from "lucide-react";
 
 import { useState, useEffect, useRef } from "react";
@@ -101,6 +102,12 @@ const navigation = [
     href: "/dashboard/analytics",
     icon: BarChart3,
     description: "Track performance",
+  },
+  {
+    name: "Cross Promotion",
+    href: "/dashboard/cross-promotion",
+    icon: Share2,
+    description: "Boost each other's posts",
   },
 ];
 

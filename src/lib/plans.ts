@@ -13,6 +13,7 @@ export interface PlanFeatures {
   firstComment: boolean;
   engagement: boolean;
   algorithmOptimizer: boolean;
+  crossPromotion: boolean;
   // Business-only features
   abTesting: boolean;
   teamCollaboration: boolean;
@@ -62,6 +63,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         firstComment: false,
         engagement: false,
         algorithmOptimizer: false,
+        crossPromotion: false,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -93,6 +95,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         firstComment: false,
         engagement: false,
         algorithmOptimizer: false,
+        crossPromotion: false,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -125,6 +128,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         firstComment: true,
         engagement: true,
         algorithmOptimizer: true,
+        crossPromotion: true,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -156,6 +160,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         firstComment: true,
         engagement: true,
         algorithmOptimizer: true,
+        crossPromotion: true,
         abTesting: true,
         teamCollaboration: true,
         advancedAnalytics: true,
@@ -227,6 +232,11 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     name: "Algorithm Optimizer",
     description: "AI-powered tips to maximize reach",
     icon: "zap",
+  },
+  crossPromotion: {
+    name: "Cross Promotion",
+    description: "Invite people to like, comment, and repost your LinkedIn posts",
+    icon: "share-2",
   },
   abTesting: {
     name: "A/B Testing",

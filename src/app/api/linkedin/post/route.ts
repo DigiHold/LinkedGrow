@@ -5,6 +5,7 @@ import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
 import { scheduleFirstComment, scheduleAutoLike } from '@/lib/qstash';
 import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
+import { triggerCrossPromotion } from '@/lib/cross-promotion';
 import { eq } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
@@ -200,6 +201,20 @@ if (updatedPost?.firstComment) {
         await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
       } catch (error) {
 }
+    }
+
+    // Trigger cross-promotion notifications for all groups the user belongs to
+    if (postId) {
+      try {
+        const updatedPostForCP = await db.query.posts.findFirst({
+          where: eq(posts.id, postId),
+        });
+        if (updatedPostForCP?.content) {
+          await triggerCrossPromotion(postId, postResult.id, updatedPostForCP.content, session.user.id);
+        }
+      } catch (error) {
+        console.error("[Cross Promotion] Failed to trigger:", error);
+      }
     }
 
     const targetName = isOrganization ? linkedInUser.linkedinSelectedOrgName : 'your profile';

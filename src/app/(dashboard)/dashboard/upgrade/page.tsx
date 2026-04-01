@@ -25,6 +25,7 @@ import {
   ArrowDown,
   X,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   firstComment: MessageSquare,
   engagement: Users,
   algorithmOptimizer: Zap,
+  crossPromotion: Share2,
   abTesting: GitBranch,
   apiAccess: Code,
   prioritySupport: Headphones,
