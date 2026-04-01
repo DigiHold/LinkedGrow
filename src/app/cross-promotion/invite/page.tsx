@@ -3,7 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Share2, Loader2, CheckCircle, XCircle, LogIn, UserPlus } from "lucide-react";
+import { Share2, Loader2, CheckCircle, XCircle, LogIn, UserPlus, Crown } from "lucide-react";
+import { canAccessFeature } from "@/lib/plans";
+import type { PlanId } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -149,7 +151,35 @@ function InviteContent() {
     );
   }
 
-  // Logged in - show accept button
+  // Logged in - check plan
+  const userPlan = (session?.user?.plan || "free") as PlanId;
+  const hasAccess = canAccessFeature(userPlan, "crossPromotion");
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-linear-to-r from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-6">
+            <Crown className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-xl font-bold mb-2">Pro Plan Required</h1>
+          <p className="text-muted-foreground mb-6">
+            <strong>{invite?.inviterName}</strong> invited you to join <strong>{invite?.groupName}</strong>,
+            but Cross Promotion requires a Pro plan or higher.
+            Upgrade to start boosting each other's LinkedIn posts.
+          </p>
+          <Link href="/dashboard/upgrade" className="block">
+            <Button className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to Pro
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged in + Pro plan - show accept button
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-8 text-center">
