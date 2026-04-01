@@ -147,6 +147,50 @@ export async function GET(
   }
 }
 
+// PUT /api/cross-promotion/groups/[id] - Update group name (owner only)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { name } = body;
+
+    if (!name || typeof name !== "string" || name.trim().length === 0 || name.trim().length > 50) {
+      return NextResponse.json({ error: "Name must be 1-50 characters" }, { status: 400 });
+    }
+
+    const [group] = await db
+      .select()
+      .from(crossPromotionGroups)
+      .where(eq(crossPromotionGroups.id, id))
+      .limit(1);
+
+    if (!group) {
+      return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    }
+
+    if (group.ownerId !== session.user.id) {
+      return NextResponse.json({ error: "Only the group owner can edit this group" }, { status: 403 });
+    }
+
+    await db
+      .update(crossPromotionGroups)
+      .set({ name: name.trim() })
+      .where(eq(crossPromotionGroups.id, id));
+
+    return NextResponse.json({ message: "Group updated" });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update group" }, { status: 500 });
+  }
+}
+
 // DELETE /api/cross-promotion/groups/[id] - Delete a group (owner only)
 export async function DELETE(
   request: NextRequest,

@@ -27,6 +27,7 @@ import {
   Clock,
   UserPlus,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,12 @@ export default function CrossPromotionPage() {
   const [inviteGroupId, setInviteGroupId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+
+  // Rename group
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
 
   // Group detail
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
@@ -167,6 +174,30 @@ export default function CrossPromotionPage() {
       }
     } catch {
       setMessage({ type: "error", text: "Failed to delete group" });
+    }
+  };
+
+  const handleRenameGroup = async () => {
+    if (!renameGroupId || !renameValue.trim()) return;
+    setIsRenaming(true);
+    try {
+      const res = await fetch(`/api/cross-promotion/groups/${renameGroupId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      });
+      if (res.ok) {
+        setShowRenameDialog(false);
+        setMessage({ type: "success", text: "Group renamed" });
+        fetchGroups();
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error || "Failed to rename" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Failed to rename group" });
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -323,6 +354,17 @@ export default function CrossPromotionPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => {
+                              setRenameGroupId(group.id);
+                              setRenameValue(group.name);
+                              setShowRenameDialog(true);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => handleDeleteGroup(group.id)}
                           >
@@ -434,6 +476,35 @@ export default function CrossPromotionPage() {
               >
                 {isInviting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
                 Send Invitation
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rename Dialog */}
+        <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rename Group</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="rename-group">Group Name</Label>
+                <Input
+                  id="rename-group"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  maxLength={50}
+                  onKeyDown={(e) => e.key === "Enter" && handleRenameGroup()}
+                />
+              </div>
+              <Button
+                onClick={handleRenameGroup}
+                disabled={isRenaming || !renameValue.trim()}
+                className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              >
+                {isRenaming ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pencil className="w-4 h-4 mr-2" />}
+                Save
               </Button>
             </div>
           </DialogContent>
