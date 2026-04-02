@@ -2194,9 +2194,8 @@ export async function reshareLinkedInPost(
 ): Promise<{ id: string }> {
   const authorUrn = `urn:li:person:${actorId}`;
 
-  const postData = {
+  const postData: Record<string, unknown> = {
     author: authorUrn,
-    commentary: commentary,
     visibility: 'PUBLIC',
     distribution: {
       feedDistribution: 'MAIN_FEED',
@@ -2209,6 +2208,12 @@ export async function reshareLinkedInPost(
     lifecycleState: 'PUBLISHED',
     isReshareDisabledByAuthor: false,
   };
+
+  // Only include commentary if provided - omitting it creates a simple repost
+  // Including it (even empty) creates "Repost with your thoughts"
+  if (commentary) {
+    postData.commentary = commentary;
+  }
 
 
   const response = await fetch(`${LINKEDIN_REST_API_BASE}/posts`, {
