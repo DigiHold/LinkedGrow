@@ -36,7 +36,8 @@ interface GroupMember {
   id: string;
   email: string;
   status: "invited" | "accepted" | "declined";
-  userName?: string;
+  name?: string;
+  isOwner?: boolean;
   acceptedAt?: string;
 }
 
@@ -83,7 +84,8 @@ export default function CrossPromotionPage() {
   const [isRenaming, setIsRenaming] = useState(false);
 
   // Group detail
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState<GroupMember[]>([]);
   const [isLoadingGroup, setIsLoadingGroup] = useState(false);
 
   const fetchGroups = async () => {
@@ -146,8 +148,10 @@ export default function CrossPromotionPage() {
         setInviteEmail("");
         setInviteGroupId(null);
         setMessage({ type: "success", text: "Invitation sent!" });
-        if (selectedGroup?.id === inviteGroupId) {
+        if (selectedGroupId === inviteGroupId) {
           loadGroupDetails(inviteGroupId);
+          setSelectedGroupId(null); // force re-open
+          setTimeout(() => loadGroupDetails(inviteGroupId), 100);
         }
         fetchGroups();
       } else {
@@ -168,7 +172,7 @@ export default function CrossPromotionPage() {
         method: "DELETE",
       });
       if (res.ok) {
-        setSelectedGroup(null);
+        setSelectedGroupId(null);
         setMessage({ type: "success", text: "Group deleted" });
         fetchGroups();
       }
@@ -201,13 +205,34 @@ export default function CrossPromotionPage() {
     }
   };
 
+  const handleRemoveMember = async (memberId: string, groupId: string) => {
+    try {
+      const res = await fetch(`/api/cross-promotion/members/${memberId}`, { method: "DELETE" });
+      if (res.ok) {
+        setMessage({ type: "success", text: "Member removed" });
+        loadGroupDetails(groupId);
+        fetchGroups();
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error || "Failed to remove" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Failed to remove member" });
+    }
+  };
+
   const loadGroupDetails = async (groupId: string) => {
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(null);
+      return;
+    }
+    setSelectedGroupId(groupId);
     setIsLoadingGroup(true);
     try {
       const res = await fetch(`/api/cross-promotion/groups/${groupId}`);
       if (res.ok) {
         const data = await res.json();
-        setSelectedGroup(data.group);
+        setSelectedGroupMembers(data.members || []);
       }
     } catch {
       // ignore
@@ -376,7 +401,7 @@ export default function CrossPromotionPage() {
                   </div>
 
                   {/* Expanded group details */}
-                  {selectedGroup?.id === group.id && (
+                  {selectedGroupId === group.id && (
                     <div className="mt-4 pt-4 border-t border-border">
                       {isLoadingGroup ? (
                         <div className="flex items-center justify-center py-4">
@@ -385,24 +410,40 @@ export default function CrossPromotionPage() {
                       ) : (
                         <div className="space-y-2">
                           <h4 className="text-sm font-medium text-muted-foreground">Members</h4>
-                          {selectedGroup.members?.map((member) => (
+                          {selectedGroupMembers.map((member) => (
                             <div key={member.id} className="flex items-center justify-between py-2">
                               <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-muted-foreground" />
                                 <span className="text-sm">
-                                  {member.userName || member.email}
+                                  {member.name || member.email}
                                 </span>
+                                {member.isOwner && (
+                                  <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                                    <Crown className="w-3 h-3" /> Owner
+                                  </span>
+                                )}
                               </div>
-                              <span className={cn(
-                                "text-xs px-2 py-0.5 rounded-full",
-                                member.status === "accepted"
-                                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                  : member.status === "invited"
-                                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                              )}>
-                                {member.status}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "text-xs px-2 py-0.5 rounded-full",
+                                  member.status === "accepted"
+                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                    : member.status === "invited"
+                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                )}>
+                                  {member.status}
+                                </span>
+                                {group.ownerId === session?.user?.id && !member.isOwner && (
+                                  <button
+                                    onClick={() => handleRemoveMember(member.id, group.id)}
+                                    className="text-red-400 hover:text-red-600 transition-colors"
+                                    title={member.status === "invited" ? "Cancel invitation" : "Remove member"}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
