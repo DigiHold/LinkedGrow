@@ -34,6 +34,7 @@ interface ReviewAction {
 interface ReviewData {
   post: {
     id: string;
+    linkedinPostId: string;
     postContent: string;
     publisherName: string;
     groupName?: string;
@@ -221,10 +222,23 @@ export default function CrossPromotionReviewPage({
         {/* Post Content */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="w-4 h-4 text-muted-foreground" />
-              {data.post.publisherName}'s Post
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="w-4 h-4 text-muted-foreground" />
+                {data.post.publisherName}'s Post
+              </CardTitle>
+              {data.post.linkedinPostId && (
+                <a
+                  href={`https://www.linkedin.com/feed/update/${data.post.linkedinPostId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 inline-flex items-center gap-1"
+                >
+                  <Linkedin className="w-3.5 h-3.5" />
+                  View on LinkedIn
+                </a>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
