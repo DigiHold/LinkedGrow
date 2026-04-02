@@ -18,6 +18,8 @@ import {
   ArrowLeft,
   Sparkles,
   User,
+  Linkedin,
+  Key,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,8 @@ interface ReviewData {
     createdAt: string;
   };
   actions: ReviewAction[];
+  linkedinConnected: boolean;
+  hasAiKey: boolean;
 }
 
 export default function CrossPromotionReviewPage({
@@ -229,6 +233,43 @@ export default function CrossPromotionReviewPage({
           </CardContent>
         </Card>
 
+        {/* Warnings */}
+        {!data.linkedinConnected && (
+          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
+            <Linkedin className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">LinkedIn not connected</p>
+              <p className="text-xs text-red-600 dark:text-red-400/80 mt-1">
+                You need to connect your LinkedIn account before you can like, comment, or repost.
+              </p>
+              <Link
+                href="/dashboard/settings"
+                className="text-xs font-medium text-red-700 dark:text-red-300 underline mt-2 inline-block"
+              >
+                Go to Settings
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!data.hasAiKey && (
+          <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+            <Key className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">No AI API key configured</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400/80 mt-1">
+                Add an AI API key to auto-generate comments. You can still write comments manually.
+              </p>
+              <Link
+                href="/dashboard/settings/ai-api"
+                className="text-xs font-medium text-amber-700 dark:text-amber-300 underline mt-2 inline-block"
+              >
+                Configure AI Key
+              </Link>
+            </div>
+          </div>
+        )}
+
         {approved ? (
           /* Success state */
           <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
@@ -333,7 +374,7 @@ export default function CrossPromotionReviewPage({
             {/* Approve */}
             <Button
               onClick={handleApprove}
-              disabled={isApproving || (!doLike && !doComment && !doRepost) || (doComment && !commentText.trim())}
+              disabled={isApproving || !data.linkedinConnected || (!doLike && !doComment && !doRepost) || (doComment && !commentText.trim())}
               className="w-full h-12 text-base bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isApproving ? (

@@ -95,6 +95,33 @@ export async function GET(
       .where(eq(crossPromotionGroups.id, post.groupId))
       .limit(1);
 
+    // Check current user's LinkedIn + AI key status
+    const [currentUser] = await db
+      .select({
+        linkedinAccessToken: users.linkedinAccessToken,
+        linkedinProfileId: users.linkedinProfileId,
+        aiProvider: users.aiProvider,
+        openaiApiKey: users.openaiApiKey,
+        anthropicApiKey: users.anthropicApiKey,
+        googleApiKey: users.googleApiKey,
+        grokApiKey: users.grokApiKey,
+        perplexityApiKey: users.perplexityApiKey,
+        kimiApiKey: users.kimiApiKey,
+      })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    const linkedinConnected = !!(currentUser?.linkedinAccessToken && currentUser?.linkedinProfileId);
+    const hasAiKey = !!(
+      currentUser?.openaiApiKey ||
+      currentUser?.anthropicApiKey ||
+      currentUser?.googleApiKey ||
+      currentUser?.grokApiKey ||
+      currentUser?.perplexityApiKey ||
+      currentUser?.kimiApiKey
+    );
+
     return NextResponse.json({
       post: {
         id: post.id,
@@ -110,6 +137,8 @@ export async function GET(
         status: a.status,
         commentText: a.commentText || null,
       })),
+      linkedinConnected,
+      hasAiKey,
     });
   } catch (error) {
     return NextResponse.json(
