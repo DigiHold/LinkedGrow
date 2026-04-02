@@ -28,6 +28,10 @@ import {
   UserPlus,
   ExternalLink,
   Pencil,
+  ThumbsUp,
+  MessageSquare,
+  Repeat,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -58,11 +62,23 @@ interface RecentPost {
   pendingActions: number;
 }
 
+interface ActivityItem {
+  id: string;
+  actionType: "like" | "comment" | "repost";
+  status: string;
+  completedAt?: string;
+  approvedAt?: string;
+  publisherName: string;
+  postPreview: string;
+  groupName: string;
+}
+
 export default function CrossPromotionPage() {
   const { data: session } = useSession();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -95,6 +111,7 @@ export default function CrossPromotionPage() {
         const data = await res.json();
         setGroups(data.groups || []);
         setRecentPosts(data.recentPosts || []);
+        setActivity(data.activity || []);
       }
     } catch {
       // ignore
@@ -347,7 +364,7 @@ export default function CrossPromotionPage() {
                       className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
                       onClick={() => loadGroupDetails(group.id)}
                     >
-                      <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
                         <Users className="w-5 h-5 text-cyan-600" />
                       </div>
                       <div className="min-w-0">
@@ -454,6 +471,66 @@ export default function CrossPromotionPage() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Activity History */}
+        {activity.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <History className="w-5 h-5 text-cyan-600" />
+                Recent Activity
+              </CardTitle>
+              <CardDescription>Your cross-promotion engagement history</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {activity.map((item) => {
+                  const actionIcon = item.actionType === "like"
+                    ? <ThumbsUp className="w-3.5 h-3.5" />
+                    : item.actionType === "comment"
+                    ? <MessageSquare className="w-3.5 h-3.5" />
+                    : <Repeat className="w-3.5 h-3.5" />;
+
+                  const actionColor = item.actionType === "like"
+                    ? "text-blue-600 bg-blue-100 dark:bg-blue-900/30"
+                    : item.actionType === "comment"
+                    ? "text-green-600 bg-green-100 dark:bg-green-900/30"
+                    : "text-violet-600 bg-violet-100 dark:bg-violet-900/30";
+
+                  const statusColor = item.status === "completed"
+                    ? "text-green-600"
+                    : item.status === "failed"
+                    ? "text-red-500"
+                    : item.status === "scheduled"
+                    ? "text-amber-600"
+                    : "text-muted-foreground";
+
+                  return (
+                    <div key={item.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                      <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", actionColor)}>
+                        {actionIcon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">
+                          <span className="capitalize font-medium">{item.actionType}</span>
+                          {" on "}
+                          <span className="font-medium">{item.publisherName}</span>'s post
+                          {item.groupName && (
+                            <span className="text-muted-foreground"> in {item.groupName}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{item.postPreview}</p>
+                      </div>
+                      <span className={cn("text-xs font-medium shrink-0", statusColor)}>
+                        {item.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Create Group Dialog */}

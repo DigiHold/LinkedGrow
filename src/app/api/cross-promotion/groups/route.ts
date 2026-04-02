@@ -6,8 +6,10 @@ import {
   users,
   crossPromotionGroups,
   crossPromotionMembers,
+  crossPromotionPosts,
+  crossPromotionActions,
 } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc, ne } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 
@@ -86,7 +88,102 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({ groups });
+    // Get posts pending review (user has pending actions)
+    const pendingActions = await db
+      .select({
+        crossPromotionPostId: crossPromotionActions.crossPromotionPostId,
+      })
+      .from(crossPromotionActions)
+      .where(
+        and(
+          eq(crossPromotionActions.userId, session.user.id),
+          eq(crossPromotionActions.status, "pending")
+        )
+      );
+
+    const pendingPostIds = [...new Set(pendingActions.map((a) => a.crossPromotionPostId))];
+    const recentPosts = [];
+
+    for (const cpPostId of pendingPostIds) {
+      const [cpPost] = await db
+        .select()
+        .from(crossPromotionPosts)
+        .where(eq(crossPromotionPosts.id, cpPostId))
+        .limit(1);
+      if (!cpPost) continue;
+
+      const [publisher] = await db
+        .select({ name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, cpPost.publishedByUserId))
+        .limit(1);
+
+      const actionCount = pendingActions.filter((a) => a.crossPromotionPostId === cpPostId).length;
+
+      recentPosts.push({
+        id: cpPost.id,
+        publisherName: publisher?.name || publisher?.email || "Someone",
+        postPreview: cpPost.postContent?.substring(0, 120) || "",
+        createdAt: cpPost.createdAt,
+        pendingActions: actionCount,
+      });
+    }
+
+    // Get recent activity (last 20 completed/scheduled/failed actions)
+    const recentActivity = await db
+      .select({
+        id: crossPromotionActions.id,
+        actionType: crossPromotionActions.actionType,
+        status: crossPromotionActions.status,
+        completedAt: crossPromotionActions.completedAt,
+        approvedAt: crossPromotionActions.approvedAt,
+        crossPromotionPostId: crossPromotionActions.crossPromotionPostId,
+      })
+      .from(crossPromotionActions)
+      .where(
+        and(
+          eq(crossPromotionActions.userId, session.user.id),
+          ne(crossPromotionActions.status, "pending")
+        )
+      )
+      .orderBy(desc(crossPromotionActions.completedAt))
+      .limit(20);
+
+    // Enrich activity with post info
+    const activity = [];
+    for (const action of recentActivity) {
+      const [cpPost] = await db
+        .select({
+          postContent: crossPromotionPosts.postContent,
+          publishedByUserId: crossPromotionPosts.publishedByUserId,
+          groupId: crossPromotionPosts.groupId,
+        })
+        .from(crossPromotionPosts)
+        .where(eq(crossPromotionPosts.id, action.crossPromotionPostId))
+        .limit(1);
+      if (!cpPost) continue;
+
+      const [publisher] = await db
+        .select({ name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, cpPost.publishedByUserId))
+        .limit(1);
+
+      const groupName = groups.find((g) => g.id === cpPost.groupId)?.name || "";
+
+      activity.push({
+        id: action.id,
+        actionType: action.actionType,
+        status: action.status,
+        completedAt: action.completedAt,
+        approvedAt: action.approvedAt,
+        publisherName: publisher?.name || publisher?.email || "Someone",
+        postPreview: cpPost.postContent?.substring(0, 80) || "",
+        groupName,
+      });
+    }
+
+    return NextResponse.json({ groups, recentPosts, activity });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch groups" },
