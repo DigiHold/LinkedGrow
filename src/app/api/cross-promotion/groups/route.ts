@@ -173,6 +173,7 @@ export async function GET() {
 
       activity.push({
         id: action.id,
+        crossPromotionPostId: action.crossPromotionPostId,
         actionType: action.actionType,
         status: action.status,
         completedAt: action.completedAt,

@@ -64,6 +64,7 @@ interface RecentPost {
 
 interface ActivityItem {
   id: string;
+  crossPromotionPostId: string;
   actionType: "like" | "comment" | "repost";
   status: string;
   completedAt?: string;
@@ -473,65 +474,81 @@ export default function CrossPromotionPage() {
           </div>
         )}
 
-        {/* Activity History */}
-        {activity.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <History className="w-5 h-5 text-cyan-600" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>Your cross-promotion engagement history</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {activity.map((item) => {
-                  const actionIcon = item.actionType === "like"
-                    ? <ThumbsUp className="w-3.5 h-3.5" />
-                    : item.actionType === "comment"
-                    ? <MessageSquare className="w-3.5 h-3.5" />
-                    : <Repeat className="w-3.5 h-3.5" />;
+        {/* Activity */}
+        {activity.length > 0 && (() => {
+          // Group actions by post
+          const postGroups: Record<string, ActivityItem[]> = {};
+          for (const item of activity) {
+            if (!postGroups[item.crossPromotionPostId]) {
+              postGroups[item.crossPromotionPostId] = [];
+            }
+            postGroups[item.crossPromotionPostId].push(item);
+          }
 
-                  const actionColor = item.actionType === "like"
-                    ? "text-blue-600 bg-blue-100 dark:bg-blue-900/30"
-                    : item.actionType === "comment"
-                    ? "text-green-600 bg-green-100 dark:bg-green-900/30"
-                    : "text-violet-600 bg-violet-100 dark:bg-violet-900/30";
-
-                  const statusColor = item.status === "completed"
-                    ? "text-green-600"
-                    : item.status === "failed"
-                    ? "text-red-500"
-                    : item.status === "scheduled"
-                    ? "text-amber-600"
-                    : "text-muted-foreground";
-
+          return (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="w-5 h-5 text-cyan-600" />
+                  Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(postGroups).map(([postId, actions]) => {
+                  const first = actions[0];
                   return (
-                    <div key={item.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                      <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", actionColor)}>
-                        {actionIcon}
-                      </div>
-                      <div className="flex-1 min-w-0">
+                    <div key={postId} className="rounded-lg border border-border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
                         <p className="text-sm">
-                          <span className="capitalize font-medium">{item.actionType}</span>
-                          {" on "}
-                          <span className="font-medium">{item.publisherName}</span>'s post
-                          {item.groupName && (
-                            <span className="text-muted-foreground"> in {item.groupName}</span>
+                          <span className="font-medium">{first.publisherName}</span>'s post
+                          {first.groupName && (
+                            <span className="text-muted-foreground"> in {first.groupName}</span>
                           )}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">{item.postPreview}</p>
                       </div>
-                      <span className={cn("text-xs font-medium shrink-0", statusColor)}>
-                        {item.status}
-                      </span>
+                      <p className="text-xs text-muted-foreground truncate">{first.postPreview}</p>
+                      <div className="flex items-center gap-2 pt-1">
+                        {actions.map((action) => {
+                          const icon = action.actionType === "like"
+                            ? <ThumbsUp className="w-3 h-3" />
+                            : action.actionType === "comment"
+                            ? <MessageSquare className="w-3 h-3" />
+                            : <Repeat className="w-3 h-3" />;
+
+                          const color = action.status === "completed"
+                            ? action.actionType === "like"
+                              ? "text-blue-600 bg-blue-100 dark:bg-blue-900/30"
+                              : action.actionType === "comment"
+                              ? "text-green-600 bg-green-100 dark:bg-green-900/30"
+                              : "text-violet-600 bg-violet-100 dark:bg-violet-900/30"
+                            : action.status === "failed"
+                            ? "text-red-500 bg-red-100 dark:bg-red-900/30"
+                            : action.status === "skipped"
+                            ? "text-muted-foreground bg-muted"
+                            : "text-amber-600 bg-amber-100 dark:bg-amber-900/30";
+
+                          return (
+                            <div
+                              key={action.id}
+                              className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium", color)}
+                              title={`${action.actionType}: ${action.status}`}
+                            >
+                              {icon}
+                              <span className="capitalize">{action.actionType}</span>
+                              {action.status === "failed" && (
+                                <AlertCircle className="w-3 h-3" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Create Group Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
