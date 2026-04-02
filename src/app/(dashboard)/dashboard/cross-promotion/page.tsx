@@ -32,6 +32,8 @@ import {
   MessageSquare,
   Repeat,
   History,
+  Linkedin,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -71,6 +73,7 @@ interface ActivityItem {
   approvedAt?: string;
   publisherName: string;
   postPreview: string;
+  linkedinPostId?: string;
   groupName: string;
 }
 
@@ -220,6 +223,23 @@ export default function CrossPromotionPage() {
       setMessage({ type: "error", text: "Failed to rename group" });
     } finally {
       setIsRenaming(false);
+    }
+  };
+
+  const handleLeaveGroup = async (groupId: string) => {
+    if (!confirm("Leave this group? You won't receive cross-promotion notifications anymore.")) return;
+    try {
+      const res = await fetch(`/api/cross-promotion/groups/${groupId}/leave`, { method: "POST" });
+      if (res.ok) {
+        setMessage({ type: "success", text: "You left the group" });
+        setSelectedGroupId(null);
+        fetchGroups();
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error || "Failed to leave group" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Failed to leave group" });
     }
   };
 
@@ -381,7 +401,7 @@ export default function CrossPromotionPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {group.ownerId === session?.user?.id && (
+                      {group.ownerId === session?.user?.id ? (
                         <>
                           <Button
                             variant="outline"
@@ -414,6 +434,16 @@ export default function CrossPromotionPage() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => handleLeaveGroup(group.id)}
+                        >
+                          <LogOut className="w-4 h-4 mr-1" />
+                          Leave
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -505,6 +535,17 @@ export default function CrossPromotionPage() {
                             <span className="text-muted-foreground"> in {first.groupName}</span>
                           )}
                         </p>
+                        {first.linkedinPostId && (
+                          <a
+                            href={`https://www.linkedin.com/feed/update/${first.linkedinPostId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 inline-flex items-center gap-1 shrink-0"
+                          >
+                            <Linkedin className="w-3 h-3" />
+                            View
+                          </a>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{first.postPreview}</p>
                       <div className="flex items-center gap-2 pt-1">

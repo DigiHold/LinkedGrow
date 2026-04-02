@@ -157,6 +157,7 @@ export async function GET() {
           postContent: crossPromotionPosts.postContent,
           publishedByUserId: crossPromotionPosts.publishedByUserId,
           groupId: crossPromotionPosts.groupId,
+          linkedinPostId: crossPromotionPosts.linkedinPostId,
         })
         .from(crossPromotionPosts)
         .where(eq(crossPromotionPosts.id, action.crossPromotionPostId))
@@ -180,6 +181,7 @@ export async function GET() {
         approvedAt: action.approvedAt,
         publisherName: publisher?.name || publisher?.email || "Someone",
         postPreview: cpPost.postContent?.substring(0, 80) || "",
+        linkedinPostId: cpPost.linkedinPostId,
         groupName,
       });
     }
