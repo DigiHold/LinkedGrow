@@ -30,11 +30,13 @@ interface ReviewAction {
 }
 
 interface ReviewData {
-  id: string;
-  postContent: string;
-  publisherName: string;
-  groupName: string;
-  createdAt: string;
+  post: {
+    id: string;
+    postContent: string;
+    publisherName: string;
+    groupName?: string;
+    createdAt: string;
+  };
   actions: ReviewAction[];
 }
 
@@ -67,12 +69,27 @@ export default function CrossPromotionReviewPage({
           const result = await res.json();
           setData(result);
 
-          // Pre-fill comment from AI if available
+          // Pre-fill comment from AI if available, or auto-generate
           const commentAction = result.actions?.find(
             (a: ReviewAction) => a.actionType === "comment"
           );
           if (commentAction?.commentText) {
             setCommentText(commentAction.commentText);
+          } else if (result.post?.postContent) {
+            // Auto-generate AI comment on load
+            try {
+              const aiRes = await fetch("/api/ai/generate-comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ postContent: result.post.postContent, isEngagement: true }),
+              });
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                if (aiData.comment) setCommentText(aiData.comment);
+              }
+            } catch {
+              // AI comment is optional
+            }
           }
 
           // Check if already approved
@@ -96,13 +113,13 @@ export default function CrossPromotionReviewPage({
   }, [id]);
 
   const handleGenerateComment = async () => {
-    if (!data?.postContent) return;
+    if (!data?.post?.postContent) return;
     setIsGeneratingComment(true);
     try {
       const res = await fetch("/api/ai/generate-comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postContent: data.postContent, isEngagement: true }),
+        body: JSON.stringify({ postContent: data.post.postContent, isEngagement: true }),
       });
       if (res.ok) {
         const result = await res.json();
@@ -192,8 +209,8 @@ export default function CrossPromotionReviewPage({
             Review Post
           </h1>
           <p className="text-muted-foreground mt-2">
-            <span className="font-medium text-foreground">{data.publisherName}</span> from{" "}
-            <span className="font-medium text-foreground">{data.groupName}</span> published a post
+            <span className="font-medium text-foreground">{data.post.publisherName}</span> from{" "}
+            <span className="font-medium text-foreground">{data.post.groupName}</span> published a post
           </p>
         </div>
 
@@ -202,12 +219,12 @@ export default function CrossPromotionReviewPage({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <User className="w-4 h-4 text-muted-foreground" />
-              {data.publisherName}'s Post
+              {data.post.publisherName}'s Post
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
-              {data.postContent}
+              {data.post.postContent}
             </div>
           </CardContent>
         </Card>

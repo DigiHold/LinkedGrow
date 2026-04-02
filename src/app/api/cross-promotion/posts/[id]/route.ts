@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   users,
+  crossPromotionGroups,
   crossPromotionPosts,
   crossPromotionActions,
   crossPromotionMembers,
@@ -81,41 +82,18 @@ export async function GET(
       );
     }
 
-    // Get publisher name
+    // Get publisher name and group name
     const [publisher] = await db
       .select({ name: users.name, email: users.email })
       .from(users)
       .where(eq(users.id, post.publishedByUserId))
       .limit(1);
 
-    // Check if any comment action needs AI-generated text
-    const commentAction = actions.find(
-      (a) => a.actionType === "comment" && a.status === "pending" && !a.commentText
-    );
-
-    let aiComment: string | null = null;
-    if (commentAction) {
-      try {
-        // Generate an AI comment internally
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
-        const response = await fetch(`${baseUrl}/api/ai/generate-comment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            postContent: post.postContent,
-            userId: session.user.id,
-            isEngagement: true,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          aiComment = data.comment || null;
-        }
-      } catch {
-        // AI comment generation is best-effort
-      }
-    }
+    const [group] = await db
+      .select({ name: crossPromotionGroups.name })
+      .from(crossPromotionGroups)
+      .where(eq(crossPromotionGroups.id, post.groupId))
+      .limit(1);
 
     return NextResponse.json({
       post: {
@@ -123,13 +101,14 @@ export async function GET(
         linkedinPostId: post.linkedinPostId,
         postContent: post.postContent,
         publisherName: publisher?.name || publisher?.email || "Unknown",
+        groupName: group?.name || "",
         createdAt: post.createdAt,
       },
       actions: actions.map((a) => ({
         id: a.id,
         actionType: a.actionType,
         status: a.status,
-        commentText: a.commentText || (a.actionType === "comment" ? aiComment : null),
+        commentText: a.commentText || null,
       })),
     });
   } catch (error) {
