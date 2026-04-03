@@ -41,6 +41,7 @@ import { Logo } from "@/components/ui/logo";
 import { YouTubePlayer } from "@/components/youtube-player";
 import { redirectToLtdCheckout } from "@/lib/checkout";
 import { BreadcrumbJsonLd, FAQJsonLd, SoftwareApplicationJsonLd } from "@/components/seo/json-ld";
+import { FloatingAIIcons } from "@/components/marketing/hero";
 
 // ============================================
 // TYPES
@@ -179,7 +180,7 @@ function StickyHeader({
     >
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="h-6 w-auto" />
+          <Logo size="md" />
           <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-xs font-semibold text-amber-700 dark:text-amber-400">
             <Clock className="w-3 h-3" />
             {counter} licenses remaining
@@ -215,62 +216,8 @@ function HeroSection({
 }) {
   return (
     <section className="relative z-10 pt-20 md:pt-32 pb-16 md:pb-24 px-4 overflow-hidden">
-      {/* Floating AI Brand Icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {/* OpenAI */}
-        <motion.div
-          animate={{ y: [0, 18, 0], x: [0, -8, 0] }}
-          transition={{ duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 0.5 }}
-          className="absolute top-28 right-[10%] w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#10A37F] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
-        >
-          <svg className="w-7 h-7 md:w-8 md:h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>
-        </motion.div>
-
-        {/* Claude / Anthropic */}
-        <motion.div
-          animate={{ y: [0, -15, 0], rotate: [0, -3, 0] }}
-          transition={{ duration: 11, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 1 }}
-          className="absolute top-[40%] left-[5%] w-12 h-12 md:w-14 md:h-14 rounded-xl bg-[#e96f4c] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
-        >
-          <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 24 24" fill="white"><path d="M4.709 15.955l4.397-2.463.074-.214-.074-.119-.214 0-.735-.045-2.507-.068-2.18-.091-2.112-.113-.532-.113L.355 11.11.406 10.78l.532-.3.641.056 1.414.097 2.124.146 1.54.091 2.283.237h.362l.051-.146-.148-.091-.097-.091-2.197-1.577L4.109 7.708l-1.241-.905-.674-.454-.339-.43-.148-1.068.609-.674.822.056.21.056.833.641 1.777 1.374 2.322 1.706.339.283.136-.097.017-.068-.153-.254-1.245-2.28-1.347-2.321-.6-1.263-.153-.576a1.13 1.13 0 0 1 0-.679l.694-.944.382-.124.935.124.391.339.576 1.318.935 2.074 1.449 2.823.425.836.226.775.085.237h.147v-.136l.119-1.586.221-1.951.214-2.513.074-.708.35-.843.694-.458.549.259.449.45-.062.413-.265 1.726-.523 2.703-.34 1.811.198 0 .226-.226.917-1.215 1.54-1.924.679-.757.793-.843.509-.401.962 0 .726 1.051-.316 1.085-1.102 1.26-.822 1.062-1.181 1.584-.747 1.267.068.101.175-.017 2.839-.566 1.44-.266 1.717-.294.775.362.085.368-.23.752-1.836.452-2.152.43-3.21.826-.039.034.045.056 1.449.143.629 0 1.51 0 2.817.21.736.487.441.593.085.461-.112.574-1.13.197-1.54-.362L16.05 13.379l-1.228-.293h-.177v.101l1.023 1.002 1.836 1.695 2.339 2.175.119.537-.302.423-.316-.045-2.051-1.546-.793-.696-1.795-1.51-.113 0-.005.158.417.614 2.187 3.277.113.952-.158.328-.573.197-.624-.113L13.45 18.85l-1.32-2.017-1.085-2.45-.13.074-.609 6.468-.296.346-.628.259-.532-.424-.3-.653.3-1.379.351-1.795.31-1.429.232-1.772.158-.588-.011-.034-.13.017-.532.534-2.029 2.609-1.605 1.866-.391.153-.666-.345.063-.679.378-.6 1.668-1.91.372-.361z"/></svg>
-        </motion.div>
-
-        {/* Google Gemini */}
-        <motion.div
-          animate={{ y: [0, 22, 0], x: [0, 12, 0] }}
-          transition={{ duration: 9, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 1.5 }}
-          className="absolute bottom-36 left-[12%] w-11 h-11 md:w-13 md:h-13 rounded-full bg-linear-to-br from-[#4285F4] via-[#9B72CB] to-[#D96570] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
-        >
-          <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 65 65" fill="white"><path d="M32.447 0c.68 0 1.273.465 1.439 1.125a38.904 38.904 0 001.999 5.905c2.152 5 5.105 9.376 8.854 13.125 3.751 3.75 8.126 6.703 13.125 8.855a38.98 38.98 0 005.906 1.999c.66.166 1.124.758 1.124 1.438 0 .68-.464 1.273-1.125 1.439a38.902 38.902 0 00-5.905 1.999c-5 2.152-9.375 5.105-13.125 8.854-3.749 3.751-6.702 8.126-8.854 13.125a38.973 38.973 0 00-2 5.906 1.485 1.485 0 01-1.438 1.124c-.68 0-1.272-.464-1.438-1.125a38.913 38.913 0 00-2-5.905c-2.151-5-5.103-9.375-8.854-13.125-3.75-3.749-8.125-6.702-13.125-8.854a38.973 38.973 0 00-5.905-2A1.485 1.485 0 010 32.448c0-.68.465-1.272 1.125-1.438a38.903 38.903 0 005.905-2c5-2.151 9.376-5.104 13.125-8.854 3.75-3.749 6.703-8.125 8.855-13.125a38.972 38.972 0 001.999-5.905A1.485 1.485 0 0132.447 0z"/></svg>
-        </motion.div>
-
-        {/* Grok / xAI */}
-        <motion.div
-          animate={{ y: [0, -18, 0], rotate: [0, 8, 0] }}
-          transition={{ duration: 13, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 2 }}
-          className="absolute top-1/3 right-[6%] w-11 h-11 md:w-13 md:h-13 rounded-xl bg-black flex items-center justify-center shadow-lg border border-slate-600 opacity-10"
-        >
-          <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 512 492" fill="white"><path fillRule="evenodd" clipRule="evenodd" d="M197.76 315.52l170.197-125.803c8.342-6.186 20.267-3.776 24.256 5.803 20.907 50.539 11.563 111.253-30.08 152.939-41.621 41.685-99.562 50.816-152.512 29.994l-57.834 26.816c82.965 56.768 183.701 42.731 246.656-20.33 49.941-50.006 65.408-118.166 50.944-179.627l.128.149c-20.971-90.282 5.162-126.378 58.666-200.17 1.28-1.75 2.56-3.499 3.819-5.291l-70.421 70.507v-.214l-243.883 245.27m-35.072 30.528c-59.563-56.96-49.28-145.088 1.515-195.926 37.568-37.61 99.136-52.97 152.874-30.4l57.707-26.666a166.554 166.554 0 00-39.019-21.334 191.467 191.467 0 00-208.042 41.942c-54.038 54.101-71.04 137.301-41.856 208.298 21.802 53.056-13.931 90.582-49.92 128.47C23.104 463.915 10.304 477.333 0 491.541l162.56-145.386"/></svg>
-        </motion.div>
-
-        {/* Perplexity */}
-        <motion.div
-          animate={{ y: [0, 16, 0], x: [0, -10, 0] }}
-          transition={{ duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 2.5 }}
-          className="absolute bottom-28 right-[15%] w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#20808D] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
-        >
-          <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="white"><path d="M19.785 0v7.272H22.5V17.62h-2.935V24l-7.037-6.194v6.145h-1.091v-6.152L4.392 24v-6.465H1.5V7.188h2.884V0l7.053 6.494V.19h1.09v6.49L19.786 0zm-7.257 9.044v7.319l5.946 5.234V14.44l-5.946-5.397zm-1.099-.08l-5.946 5.398v7.235l5.946-5.234V8.965zm8.136 7.58h1.844V8.349H13.46l6.105 5.54v2.655zm-8.982-8.28H2.59v8.195h1.8v-2.576l6.192-5.62zM5.475 2.476v4.71h5.115l-5.115-4.71zm13.219 0l-5.115 4.71h5.115v-4.71z" fillRule="nonzero"/></svg>
-        </motion.div>
-
-        {/* LinkedIn */}
-        <motion.div
-          animate={{ y: [0, 14, 0], rotate: [0, -6, 0] }}
-          transition={{ duration: 11, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut", delay: 3.5 }}
-          className="absolute bottom-[45%] left-[3%] w-9 h-9 md:w-11 md:h-11 rounded-lg bg-[#0A66C2] flex items-center justify-center shadow-lg opacity-5 md:opacity-20"
-        >
-          <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="white"><path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z"/></svg>
-        </motion.div>
-      </div>
+      {/* Floating AI Brand Icons - same as homepage */}
+      <FloatingAIIcons />
 
       <div className="max-w-4xl mx-auto text-center">
         {/* Badge */}
@@ -291,9 +238,9 @@ function HeroSection({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-6 leading-tight"
         >
-          Get LinkedGrow Business.{" "}
+          AI LinkedIn Content Tool.{" "}
           <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
-            Forever.
+            Pay Once, Use Forever.
           </span>
         </motion.h1>
 
@@ -302,9 +249,10 @@ function HeroSection({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed"
         >
-          Pay once and get the full LinkedGrow Business plan forever - every feature, every update, priority support included
+          Generate, schedule, and publish LinkedIn posts using your own AI key for a fraction of the price.
+          Get every feature unlocked with a single one-time payment instead of paying $79/month.
         </motion.p>
 
         {/* Price */}
@@ -714,10 +662,10 @@ function PricingTiers({
           transition={{ duration: 0.5 }}
           className="text-center mb-6"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700">
-            <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-400">
-              Only {status.counter} lifetime licenses exist
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm sm:text-base font-semibold text-amber-700 dark:text-amber-400">
+              {status.counter} lifetime licenses remaining
             </span>
           </div>
         </motion.div>
@@ -780,7 +728,7 @@ function PricingTiers({
                 {isLocked && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <div className="px-4 py-1.5 rounded-full bg-slate-300 dark:bg-slate-600 text-slate-600 dark:text-slate-300 text-sm font-semibold shadow-lg whitespace-nowrap">
-                      Unlocks later
+                      Higher price - buy early
                     </div>
                   </div>
                 )}
@@ -832,7 +780,7 @@ function PricingTiers({
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
                         <span className="font-semibold text-slate-400">{display.displayTotal}/{display.displayTotal} spots</span>
-                        <span className="text-slate-400">Unlocks next</span>
+                        <span className="text-slate-400">Buy early to save</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                         <div className="h-full rounded-full bg-slate-200 dark:bg-slate-600" style={{ width: "0%" }} />
@@ -1076,7 +1024,7 @@ function FinalCta({
             {counter} licenses remaining
           </div>
 
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6">
             Don&apos;t miss this deal
           </h2>
           <p className="text-lg md:text-xl text-white/80 mb-2">
