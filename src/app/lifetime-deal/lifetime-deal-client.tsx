@@ -269,10 +269,10 @@ function HeroSection({
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-2xl text-slate-400 line-through">$948/year</span>
-            <span className="text-5xl sm:text-6xl font-black text-slate-900 dark:text-white">${currentPrice}</span>
-            <span className="text-lg text-slate-500">one-time</span>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <span className="text-2xl sm:text-3xl text-slate-400 line-through">$948/year</span>
+            <span className="text-6xl sm:text-7xl md:text-8xl font-black text-slate-900 dark:text-white">${currentPrice}</span>
+            <span className="text-xl sm:text-2xl font-semibold text-slate-500">one-time</span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             + your own AI API key ($2-4/month) - we don&apos;t mark up AI costs
