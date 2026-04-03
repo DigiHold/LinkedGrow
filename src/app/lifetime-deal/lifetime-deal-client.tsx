@@ -99,44 +99,44 @@ const FEATURES = [
 
 const FAQ_ITEMS = [
   {
-    question: "What does \"lifetime\" mean?",
-    answer: "You get access to LinkedGrow and every feature update we ship, forever. No expiration. No recurring charges. One payment, permanent access.",
+    question: "What exactly do I get with the lifetime deal?",
+    answer: "You get the full LinkedGrow Business plan with every feature we offer today and every feature we build in the future. That includes unlimited AI post generation, scheduling, carousel creator, A/B testing, analytics, cross promotion, team collaboration, API access, and priority support. You pay once and it's yours forever - no monthly or yearly charges.",
   },
   {
-    question: "What is BYOK (Bring Your Own Key)?",
-    answer: "BYOK means you connect your own AI API key from providers like OpenAI, Anthropic, or Google. You pay them directly for AI usage - typically $2-4/month. We don't mark up AI costs.",
+    question: "What is BYOK and how does it work?",
+    answer: "BYOK stands for Bring Your Own Key. Instead of paying us a monthly fee that includes AI usage (like Taplio or AuthoredUp do), you connect your own API key from OpenAI, Anthropic, Google, or any other supported provider. You pay the AI provider directly for what you use, which typically costs $2-4 per month. We built LinkedGrow this way because there's no reason to charge you $49/month when the actual AI costs $3.",
   },
   {
-    question: "What AI providers are supported?",
-    answer: "OpenAI (GPT-5, GPT-4), Anthropic (Claude), Google (Gemini), Grok (xAI), Perplexity, and Kimi (Moonshot AI) for text generation. Google, OpenAI, and Replicate for image generation. We add new providers regularly.",
+    question: "Which AI providers can I use?",
+    answer: "For text generation, we support OpenAI (GPT-5, GPT-4), Anthropic (Claude), Google (Gemini), Grok from xAI, Perplexity, and Kimi from Moonshot AI. For image generation, we support Google, OpenAI, and Replicate. We regularly add new providers as they become available, and as a lifetime member you get access to all of them at no extra cost.",
   },
   {
-    question: "How much does the AI API cost?",
-    answer: "Most users spend $2-4/month on AI API costs. Light users under $2. Heavy users up to $8. You have full control and can set spending limits directly with your AI provider.",
+    question: "How much will I spend on AI API costs?",
+    answer: "Most people spend between $2 and $4 per month depending on how often they post. If you're a light user posting a few times a week, you'll probably spend less than $2. Heavy users who generate content daily might spend up to $8. You have full control over your spending and can set limits directly with your AI provider.",
   },
   {
-    question: "What if I'm not satisfied?",
-    answer: "Full refund within 14 days. No questions asked. Just email contact@linkedgrow.ai.",
+    question: "What if I want a refund?",
+    answer: "You have 14 days to try LinkedGrow risk-free. If it's not for you for any reason, just email contact@linkedgrow.ai and we'll refund you in full, no questions asked.",
   },
   {
-    question: "Will the price increase?",
-    answer: "Yes. The early bird price is $99. After 100 sales, it goes to $149. Then $199. The price only goes up, never down.",
+    question: "Will the price go up?",
+    answer: "Yes, the price increases as spots fill up. The first 100 buyers get in at $99, then it moves to $149, and the final tier is $199. Once a tier sells out, that price is gone for good.",
   },
   {
-    question: "Will you offer this deal again?",
-    answer: "No. This is a one-time offer. When the licenses are sold, LinkedGrow goes subscription-only at $79/month.",
+    question: "Is this a one-time offer?",
+    answer: "Yes. When the 500 lifetime licenses are sold, we're closing this deal permanently and LinkedGrow moves to subscription-only pricing at $79 per month. We won't run another lifetime deal after this.",
   },
   {
     question: "Do I need a LinkedIn account?",
-    answer: "Yes. You connect your LinkedIn account to publish posts directly from LinkedGrow.",
+    answer: "Yes, you'll need to connect your LinkedIn account so LinkedGrow can publish posts on your behalf. The connection takes about 30 seconds through LinkedIn's official OAuth flow.",
   },
   {
-    question: "What if LinkedGrow shuts down?",
-    answer: "LinkedGrow is built by Nicolas Lecocq, who created OceanWP (used by millions of WordPress sites). The BYOK model means our per-user costs are near zero - the business is inherently sustainable.",
+    question: "How do I know LinkedGrow will be around long term?",
+    answer: "LinkedGrow is built by Nicolas Lecocq, who created OceanWP - a WordPress theme used by millions of websites. He's been building web products for over 15 years. The BYOK model also means our per-user costs are close to zero (we don't pay for your AI usage), which makes the business inherently sustainable even with lifetime deals.",
   },
   {
-    question: "Can I upgrade later if I don't buy the LTD?",
-    answer: "You can subscribe to any plan anytime. But the subscription is $79/month for Business. The lifetime price is only available during this launch.",
+    question: "What happens if I don't buy the lifetime deal?",
+    answer: "You can always subscribe to any LinkedGrow plan at the regular monthly price. The Business plan is $79 per month or $664 per year. The lifetime deal at $99-199 is obviously a much better value, but it's only available while licenses last.",
   },
 ];
 
@@ -704,12 +704,6 @@ function PricingTiers({
     return { left: config.ownTotal, displayTotal: config.displayTotal, ownTotal: config.ownTotal };
   };
 
-  // For locked tiers, show their starting spot number
-  const lockedStartSpot: Record<string, number> = {
-    "regular": 101,
-    "final-call": 251,
-  };
-
   return (
     <section ref={ref} id="pricing" className="relative z-10 py-16 md:py-24 px-4">
       <div className="max-w-5xl mx-auto">
@@ -837,7 +831,7 @@ function PricingTiers({
                   {isLocked && (
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-slate-400">{lockedStartSpot[tier.id]}/{display.displayTotal} spots</span>
+                        <span className="font-semibold text-slate-400">{display.displayTotal}/{display.displayTotal} spots</span>
                         <span className="text-slate-400">Unlocks next</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
@@ -899,74 +893,89 @@ function TestimonialsSection() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   const testimonials = [
-    {
-      quote: "I was paying $49/month for Taplio. LinkedGrow does the same thing for $3/month in API costs. The lifetime deal was a no-brainer.",
-      name: "Early Adopter",
-      role: "Founder",
-      avatar: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person1.avif",
-    },
-    {
-      quote: "The BYOK model is genius. I use my own Anthropic key and the content quality is better than any other LinkedIn tool I've tried.",
-      name: "Early Adopter",
-      role: "Content Creator",
-      avatar: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person3.avif",
-    },
-    {
-      quote: "Voice training is the killer feature. My AI-generated posts sound exactly like me. Clients can't tell the difference.",
-      name: "Early Adopter",
-      role: "Marketing Consultant",
-      avatar: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person5.avif",
-    },
+    { quote: "The voice training nailed my style from just 5 sample posts. Clients think I write every post myself. The BYOK model means I pay $3/month for unlimited generations.", author: "Laura W.", role: "Freelance Writer", metric: "+1,200%" },
+    { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings" },
+    { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%" },
+    { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%" },
+    { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%" },
+    { quote: "The Reddit importer is a goldmine. I find trending topics, turn them into LinkedIn posts in seconds, and never run out of content ideas.", author: "Daniel F.", role: "Growth Marketer", metric: "+180%" },
+    { quote: "Saved 15 hours per week on content creation. ROI is incredible.", author: "Lisa T.", role: "Agency Owner", metric: "15h saved" },
+    { quote: "Best investment for my LinkedIn growth. Paid for itself in the first week.", author: "Tom R.", role: "B2B Sales", metric: "5x ROI" },
+  ];
+
+  const rowColors = [
+    { bg: "from-cyan-500 to-blue-600", text: "text-cyan-600 dark:text-cyan-400" },
+    { bg: "from-violet-500 to-purple-600", text: "text-violet-600 dark:text-violet-400" },
+    { bg: "from-emerald-500 to-teal-600", text: "text-emerald-600 dark:text-emerald-400" },
   ];
 
   return (
-    <section ref={ref} className="relative z-10 py-16 md:py-24 px-4">
-      <div className="max-w-5xl mx-auto">
+    <section ref={ref} className="relative z-10 py-16 md:py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-sm font-medium text-amber-700 dark:text-amber-400 mb-6">
+            <Star className="w-4 h-4 fill-current" />
+            <span>Loved by Creators</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-            What early adopters are{" "}
+            Real results from{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
-              saying
+              real creators
             </span>
           </h2>
         </motion.div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
-              className="p-6 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
-            >
-              <div className="flex items-center gap-1 mb-4">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <p className="text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <Image
-                  src={t.avatar}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white text-sm">{t.name}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+      </div>
+
+      {/* Scrolling testimonials carousel - 3 rows */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={isInView ? { opacity: 1 } : {}}
+        transition={{ delay: 0.3 }}
+        className="relative overflow-hidden py-4"
+      >
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-linear-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-linear-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
+
+        {[0, 1, 2].map((rowIndex) => (
+          <motion.div
+            key={rowIndex}
+            animate={{ x: rowIndex % 2 === 0 ? [0, -2000] : [-2000, 0] }}
+            transition={{ duration: 50 + rowIndex * 10, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            className="flex gap-4 mb-4"
+          >
+            {[...testimonials, ...testimonials, ...testimonials].map((t, i) => (
+              <div
+                key={i}
+                className="shrink-0 w-70 sm:w-[320px] md:w-95 bg-white dark:bg-slate-800/80 rounded-2xl p-4 md:p-5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm"
+              >
+                <div className="flex items-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-linear-to-br ${rowColors[rowIndex].bg} flex items-center justify-center text-white text-sm font-bold`}>
+                      {t.author.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900 dark:text-white">{t.author}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+                    </div>
+                  </div>
+                  <p className={`text-lg font-bold ${rowColors[rowIndex].text}`}>{t.metric}</p>
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </motion.div>
+        ))}
+      </motion.div>
     </section>
   );
 }
