@@ -45,6 +45,7 @@ interface UserData {
   name: string | null;
   email: string;
   plan: string;
+  isLifetimeDeal: boolean;
   isAdmin: boolean;
   createdAt: string;
   linkedinProfileName: string | null;
@@ -380,7 +381,7 @@ export default function AdminUsersPage() {
                             planColors[user.plan] || planColors.free
                           }`}
                         >
-                          {user.plan}
+                          {user.plan}{user.isLifetimeDeal ? " LTD" : ""}
                         </span>
                       </div>
                     </td>

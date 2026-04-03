@@ -19,6 +19,7 @@ export const users = sqliteTable("users", {
 
   // Subscription fields
   plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
+  isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   couponCode: text("coupon_code"), // Stored coupon code (e.g., "WELCOME10" for 10% off 3 months)

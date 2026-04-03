@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         name: users.name,
         email: users.email,
         plan: users.plan,
+        isLifetimeDeal: users.isLifetimeDeal,
         isAdmin: users.isAdmin,
         createdAt: users.createdAt,
         linkedinProfileName: users.linkedinProfileName,

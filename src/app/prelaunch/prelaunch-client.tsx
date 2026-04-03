@@ -1966,7 +1966,7 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8, 1], [1, 1, 0.3]);
   const heroScale = useTransform(scrollYProgress, [0, 0.8, 1], [1, 1, 0.98]);
 
-  const LAUNCH_DATE = new Date("2026-04-05T00:00:00Z");
+  const LAUNCH_DATE = new Date("2026-04-13T00:00:00Z");
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {

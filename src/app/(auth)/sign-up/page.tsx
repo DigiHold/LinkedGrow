@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
-import { redirectToCheckout } from "@/lib/checkout";
+import { redirectToCheckout, redirectToLtdCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
 
 type SocialProvider = "linkedin" | "google" | null;
@@ -88,9 +88,15 @@ function SignUpContent() {
         window.removeEventListener('message', handleMessage);
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
+        const userEmail = session?.user?.email;
+        // If user came from LTD page, redirect to LTD checkout
+        const ltd = searchParams.get("ltd");
+        if (ltd && userEmail) {
+          const redirected = await redirectToLtdCheckout(ltd, userEmail);
+          if (redirected) return;
+        }
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
-        const userEmail = session?.user?.email;
         if (plan && userEmail) {
           const interval = (searchParams.get("interval") as "month" | "year") || "year";
           const coupon = searchParams.get("coupon") || undefined;
@@ -163,12 +169,14 @@ function SignUpContent() {
       const plan = searchParams.get("plan");
       const interval = searchParams.get("interval");
       const coupon = searchParams.get("coupon");
+      const ltd = searchParams.get("ltd");
 
       const signInParams = new URLSearchParams({ registered: "true" });
       if (callbackUrl !== "/dashboard") signInParams.set("callbackUrl", callbackUrl);
       if (plan) signInParams.set("plan", plan);
       if (interval) signInParams.set("interval", interval);
       if (coupon) signInParams.set("coupon", coupon);
+      if (ltd) signInParams.set("ltd", ltd);
 
       router.push(`/sign-in?${signInParams.toString()}`);
     } catch {
