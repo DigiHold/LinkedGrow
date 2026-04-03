@@ -89,7 +89,7 @@ const FEATURES = [
   { icon: BarChart3, name: "Analytics Dashboard", description: "Track engagement, impressions, and growth" },
   { icon: Zap, name: "Engagement Tools", description: "Like, comment, and interact from your dashboard" },
   { icon: TrendingUp, name: "Algorithm Optimizer", description: "AI-powered suggestions to boost reach" },
-  { icon: Share2, name: "Cross Promotion", description: "Promote your content across LinkedIn groups and networks" },
+  { icon: Share2, name: "Cross Promotion", description: "Join groups of LinkedGrow users who like and comment on each other's posts to boost reach" },
   { icon: FlaskConical, name: "A/B Testing", description: "Test different post versions to find what works" },
   { icon: Users, name: "Team Collaboration", description: "Invite team members with role-based access" },
   { icon: Megaphone, name: "Advanced Analytics", description: "Deep engagement trends, best times, export reports" },
