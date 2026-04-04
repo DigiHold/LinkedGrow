@@ -33,7 +33,7 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { like, comment, repost, commentText } = body;
+    const { like, comment, repost, commentText, repostText } = body;
 
     // Validate body types
     if (typeof like !== "boolean" || typeof comment !== "boolean" || typeof repost !== "boolean") {
@@ -144,6 +144,9 @@ export async function POST(
             delaySeconds,
             ...(action.actionType === "comment" && commentText
               ? { commentText }
+              : {}),
+            ...(action.actionType === "repost" && repostText
+              ? { commentText: repostText }
               : {}),
           })
           .where(eq(crossPromotionActions.id, action.id));

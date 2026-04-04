@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
         await reshareLinkedInPost(
           token,
           user.linkedinProfileId,
-          cpPost.linkedinPostId
+          cpPost.linkedinPostId,
+          action.commentText || ''
         );
         break;
     }

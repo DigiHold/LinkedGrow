@@ -61,7 +61,9 @@ export default function CrossPromotionReviewPage({
   const [doComment, setDoComment] = useState(true);
   const [doRepost, setDoRepost] = useState(true);
   const [commentText, setCommentText] = useState("");
+  const [repostText, setRepostText] = useState("");
   const [isGeneratingComment, setIsGeneratingComment] = useState(false);
+  const [isGeneratingRepost, setIsGeneratingRepost] = useState(false);
 
   const [isApproving, setIsApproving] = useState(false);
   const [approved, setApproved] = useState(false);
@@ -94,6 +96,23 @@ export default function CrossPromotionReviewPage({
               }
             } catch {
               // AI comment is optional
+            }
+          }
+
+          // Auto-generate repost text
+          if (result.post?.postContent) {
+            try {
+              const aiRes = await fetch("/api/ai/generate-comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ postContent: result.post.postContent, isEngagement: true }),
+              });
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                if (aiData.comment) setRepostText(aiData.comment);
+              }
+            } catch {
+              // optional
             }
           }
 
@@ -137,6 +156,26 @@ export default function CrossPromotionReviewPage({
     }
   };
 
+  const handleGenerateRepost = async () => {
+    if (!data?.post?.postContent) return;
+    setIsGeneratingRepost(true);
+    try {
+      const res = await fetch("/api/ai/generate-comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postContent: data.post.postContent, isEngagement: true }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setRepostText(result.comment || "");
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsGeneratingRepost(false);
+    }
+  };
+
   const handleApprove = async () => {
     setIsApproving(true);
     try {
@@ -148,6 +187,7 @@ export default function CrossPromotionReviewPage({
           comment: doComment,
           repost: doRepost,
           commentText: doComment ? commentText : undefined,
+          repostText: doRepost ? repostText : undefined,
         }),
       });
       if (res.ok) {
@@ -370,17 +410,49 @@ export default function CrossPromotionReviewPage({
                 </div>
 
                 {/* Repost */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                      <Repeat className="w-4 h-4 text-violet-600" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <Repeat className="w-4 h-4 text-violet-600" />
+                      </div>
+                      <div>
+                        <Label htmlFor="action-repost" className="text-sm font-medium">Repost with your thoughts</Label>
+                        <p className="text-xs text-muted-foreground">Share the post on your profile with a note</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="action-repost" className="text-sm font-medium">Repost</Label>
-                      <p className="text-xs text-muted-foreground">Share the post on your profile</p>
-                    </div>
+                    <Switch id="action-repost" checked={doRepost} onCheckedChange={setDoRepost} />
                   </div>
-                  <Switch id="action-repost" checked={doRepost} onCheckedChange={setDoRepost} />
+
+                  {doRepost && (
+                    <div className="ml-11 space-y-2">
+                      <Textarea
+                        value={repostText}
+                        onChange={(e) => setRepostText(e.target.value)}
+                        placeholder="Add your thoughts about this post..."
+                        rows={2}
+                        maxLength={1250}
+                      />
+                      <div className="flex items-center justify-between">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateRepost}
+                          disabled={isGeneratingRepost}
+                        >
+                          {isGeneratingRepost ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                          )}
+                          Generate with AI
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                          {repostText.length}/1250
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -388,7 +460,7 @@ export default function CrossPromotionReviewPage({
             {/* Approve */}
             <Button
               onClick={handleApprove}
-              disabled={isApproving || !data.linkedinConnected || (!doLike && !doComment && !doRepost) || (doComment && !commentText.trim())}
+              disabled={isApproving || !data.linkedinConnected || (!doLike && !doComment && !doRepost) || (doComment && !commentText.trim()) || (doRepost && !repostText.trim())}
               className="w-full h-12 text-base bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isApproving ? (
