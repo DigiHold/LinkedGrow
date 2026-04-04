@@ -332,36 +332,41 @@ return NextResponse.json(
 
     // Link new R2 media if provided (image already uploaded directly to R2)
     if (processedMediaInfo?.storageUrl && processedMediaInfo?.storageKey) {
-      // Delete old media from R2 if exists
       const existingMedia = await db
         .select()
         .from(media)
         .where(eq(media.postId, postId));
 
-      if (existingMedia.length > 0) {
-        const oldKeys = existingMedia.map((m) => m.storageKey);
-        try {
-          await deleteMultipleFromR2(oldKeys);
-        } catch (e) {
-}
-        await db.delete(media).where(eq(media.postId, postId));
-      }
+      // Check if this is the same media already attached (skip delete + re-create)
+      const isSameMedia = existingMedia.length === 1 && existingMedia[0].storageKey === processedMediaInfo.storageKey;
 
-      // Create new media record
-      const ext = processedMediaInfo.mimeType?.split("/")[1] || "png";
-      const mediaId = nanoid();
-      await db.insert(media).values({
-        id: mediaId,
-        userId: user.id,
-        postId,
-        storageKey: processedMediaInfo.storageKey,
-        storageUrl: processedMediaInfo.storageUrl,
-        fileName: `post-image-${postId}.${ext}`,
-        mimeType: processedMediaInfo.mimeType || "image/png",
-        fileSize: processedMediaInfo.fileSize || 0,
-        status: "ready",
-        createdAt: new Date(),
-      });
+      if (!isSameMedia) {
+        // Delete old media from R2 if exists (only when actually replacing)
+        if (existingMedia.length > 0) {
+          const oldKeys = existingMedia.map((m) => m.storageKey);
+          try {
+            await deleteMultipleFromR2(oldKeys);
+          } catch (e) {
+}
+          await db.delete(media).where(eq(media.postId, postId));
+        }
+
+        // Create new media record
+        const ext = processedMediaInfo.mimeType?.split("/")[1] || "png";
+        const mediaId = nanoid();
+        await db.insert(media).values({
+          id: mediaId,
+          userId: user.id,
+          postId,
+          storageKey: processedMediaInfo.storageKey,
+          storageUrl: processedMediaInfo.storageUrl,
+          fileName: `post-image-${postId}.${ext}`,
+          mimeType: processedMediaInfo.mimeType || "image/png",
+          fileSize: processedMediaInfo.fileSize || 0,
+          status: "ready",
+          createdAt: new Date(),
+        });
+      }
 
       if (processedMediaInfo.mimeType === "application/pdf") {
         updateData.postType = "document";

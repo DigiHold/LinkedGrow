@@ -178,6 +178,7 @@ function EditorContent() {
     storageKey?: string;
   } | null>(null);
   const [originalHadMedia, setOriginalHadMedia] = useState(false);
+  const [originalMediaKey, setOriginalMediaKey] = useState<string | null>(null);
   const [userTimezone, setUserTimezone] = useState<string | null>(null);
   const [hasImageApiKey, setHasImageApiKey] = useState(false);
   const [hasTextApiKey, setHasTextApiKey] = useState(false);
@@ -243,6 +244,7 @@ function EditorContent() {
                 storageKey: existingMedia.storageKey,
               });
               setOriginalHadMedia(true);
+              setOriginalMediaKey(existingMedia.storageKey);
             }
           } else {
             // Post not found or error - clear the ID so we create a new post
@@ -330,7 +332,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
     setIsSaving(true);
     setSavingAction("changes");
     try {
-      const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+      const hasNewMedia = attachedImage?.storageUrl && attachedImage?.storageKey && attachedImage.storageKey !== originalMediaKey;
       const mediaInfo = hasNewMedia ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
