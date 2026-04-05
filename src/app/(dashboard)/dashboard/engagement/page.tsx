@@ -232,8 +232,8 @@ export default function EngagementPage() {
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Coming Soon</span>
           </div>
-          <p className="text-xs text-muted-foreground max-w-sm">
-            We are finalizing the LinkedIn Community Management API integration. This feature will be available shortly.
+          <p className="text-sm text-muted-foreground max-w-sm">
+            We are putting the finishing touches on the Engagement Tools. This feature will be available very shortly - stay tuned!
           </p>
         </div>
       </div>
