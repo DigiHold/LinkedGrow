@@ -27,6 +27,7 @@ import {
   Clock,
   UserPlus,
   ExternalLink,
+  HelpCircle,
   Pencil,
   ThumbsUp,
   MessageSquare,
@@ -295,13 +296,19 @@ export default function CrossPromotionPage() {
               Invite people to like, comment, and repost your LinkedIn posts
             </p>
           </div>
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Group
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/docs/business-features/cross-promotion" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Group
+            </Button>
+          </div>
         </div>
 
         {/* Status message */}
