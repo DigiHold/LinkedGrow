@@ -431,17 +431,19 @@ async function generateWithOpenAI(apiKey: string, prompt: string, settings: Imag
  * Cost: $0.015 + $0.015 per megapixel
  */
 async function generateWithReplicate(apiKey: string, prompt: string, settings: ImageSettings): Promise<string> {
-  // Map model names to Replicate model versions
-  // Note: FLUX Kontext Pro is for image editing, not text-to-image generation
+  // Map model IDs to Replicate model owner/name
   const modelMap: Record<string, string> = {
     "flux-2-pro": "black-forest-labs/flux-2-pro",
     "flux-2-flex": "black-forest-labs/flux-2-flex",
     "flux-2-dev": "black-forest-labs/flux-2-dev",
+    "flux-1.1-pro-ultra": "black-forest-labs/flux-1.1-pro-ultra",
+    "flux-1.1-pro": "black-forest-labs/flux-1.1-pro",
+    "flux-schnell": "black-forest-labs/flux-schnell",
   };
 
   const modelName = modelMap[settings.model] || "black-forest-labs/flux-2-pro";
+  const isFlux2 = settings.model.startsWith("flux-2");
 
-  // FLUX 2 models use aspect_ratio (e.g., "16:9", "1:1") and resolution in megapixels
   // Map pixel resolution to aspect ratio if not provided
   const resolutionToAspectRatio: Record<string, string> = {
     "1024x1024": "1:1",
@@ -451,33 +453,33 @@ async function generateWithReplicate(apiKey: string, prompt: string, settings: I
   };
   const aspectRatio = settings.aspectRatio || resolutionToAspectRatio[settings.resolution] || "16:9";
 
-  // Map pixel resolution to megapixels for FLUX 2 API
-  // FLUX 2 supports: 0.5 MP, 1 MP, 2 MP, 4 MP
-  const resolutionToMegapixels: Record<string, string> = {
-    "1024x1024": "1 MP",    // ~1 megapixel
-    "1536x1024": "2 MP",    // ~1.5 megapixels, round up to 2 MP for better quality
-    "1024x1536": "2 MP",    // ~1.5 megapixels, round up to 2 MP for better quality
-    "2048x2048": "4 MP",    // ~4 megapixels
+  // Build input based on model family
+  const input: Record<string, unknown> = {
+    prompt: prompt,
+    aspect_ratio: aspectRatio,
+    output_format: "webp",
+    output_quality: 90,
   };
-  const megapixelResolution = resolutionToMegapixels[settings.resolution] || "1 MP";
 
-  // Create prediction with FLUX 2 parameters
-  const response = await fetch("https://api.replicate.com/v1/predictions", {
+  // FLUX 2 models support resolution in megapixels
+  if (isFlux2) {
+    const resolutionToMegapixels: Record<string, string> = {
+      "1024x1024": "1 MP",
+      "1536x1024": "2 MP",
+      "1024x1536": "2 MP",
+      "2048x2048": "4 MP",
+    };
+    input.resolution = resolutionToMegapixels[settings.resolution] || "1 MP";
+  }
+
+  // Use the model-based predictions endpoint (no version hash needed)
+  const response = await fetch(`https://api.replicate.com/v1/models/${modelName}/predictions`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: modelName,
-      input: {
-        prompt: prompt,
-        aspect_ratio: aspectRatio,
-        resolution: megapixelResolution,
-        output_format: "webp",
-        output_quality: 90,
-      },
-    }),
+    body: JSON.stringify({ input }),
   });
 
   if (!response.ok) {
