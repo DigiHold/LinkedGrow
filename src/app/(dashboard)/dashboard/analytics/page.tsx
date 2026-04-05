@@ -72,6 +72,8 @@ interface AnalyticsData {
       bestDay: string;
       bestHour: string;
       insight: string;
+      source: "industry" | "hybrid" | "personal";
+      postCount: number;
     };
   };
 }
@@ -316,6 +318,8 @@ export default function AnalyticsPage() {
               bestDay={data.advanced?.bestPostingTimes?.bestDay}
               bestHour={data.advanced?.bestPostingTimes?.bestHour}
               insight={data.advanced?.bestPostingTimes?.insight}
+              source={data.advanced?.bestPostingTimes?.source}
+              postCount={data.advanced?.bestPostingTimes?.postCount}
             />
 
             {/* Post Performance Table */}

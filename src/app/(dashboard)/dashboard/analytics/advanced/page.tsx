@@ -60,6 +60,8 @@ interface AdvancedAnalyticsData {
       bestDay: string;
       bestHour: string;
       insight: string;
+      source: "industry" | "hybrid" | "personal";
+      postCount: number;
     };
     postingTimeHeatmap?: Array<{ day: number; hour: number; avgEngagement: number; postCount: number }>;
     pageViews?: number;

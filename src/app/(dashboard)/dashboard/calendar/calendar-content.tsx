@@ -13,14 +13,10 @@ import {
   Loader2,
   CalendarDays,
   X,
-  Eye,
-  Heart,
-  MessageCircle,
   MessageSquare,
   ExternalLink,
   RefreshCw,
   MoreVertical,
-  TrendingUp,
   Image as ImageIcon,
   Calendar,
   Search,
@@ -1348,7 +1344,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
       )}
 
       {/* Multi-purpose Drawer */}
-      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen} modal={false} handleOnly={true}>
+      <Drawer.Root direction="right" open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-150" onClick={() => setDrawerOpen(false)} />
           <Drawer.Content
@@ -1496,45 +1492,6 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                         </p>
                       </div>
                     </div>
-                    {selectedPost.status === "published" && (
-                      <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
-                        <div className="flex justify-between gap-2 mb-3 pb-2.5 border-b border-border">
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-violet-500" />
-                            <span className="text-sm font-semibold">Performances</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-1.5 bg-green-50 dark:bg-green-900/30 rounded-md">
-                                <Eye className="w-4 h-4 text-green-600" />
-                              </div>
-                              <span className="text-sm text-muted-foreground">Impressions</span>
-                            </div>
-                            <span className="text-sm font-semibold">-</span>
-                          </div>
-                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md">
-                                <Heart className="w-4 h-4 text-red-500" />
-                              </div>
-                              <span className="text-sm text-muted-foreground">Likes</span>
-                            </div>
-                            <span className="text-sm font-semibold">-</span>
-                          </div>
-                          <div className="flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-800 -mx-2 px-2 py-1.5 rounded-md transition-colors">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md">
-                                <MessageCircle className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <span className="text-sm text-muted-foreground">Comments</span>
-                            </div>
-                            <span className="text-sm font-semibold">-</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                     {selectedPost.linkedinPostUrl && (
                       <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         View on LinkedIn <ExternalLink className="w-4 h-4" />
