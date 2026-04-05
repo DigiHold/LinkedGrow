@@ -1,7 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, users, teams, apiLogs } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  users,
+  sessions,
+  accounts,
+  posts,
+  media,
+  ideas,
+  passwordResetTokens,
+  abTests,
+  teams,
+  teamMembers,
+  teamInvites,
+  apiKeys,
+  apiLogs,
+  postAnalytics,
+  engagementActions,
+  engagementObjectives,
+  engagementLists,
+  engagementListProfiles,
+  teamEngagementJobs,
+  crossPromotionGroups,
+  crossPromotionMembers,
+  crossPromotionPosts,
+  crossPromotionActions,
+  abandonedCheckouts,
+  cookieConsents,
+  dataRemovalRequests,
+  userTemplates,
+  savedCarousels,
+  affiliates,
+  affiliateReferrals,
+  affiliateCommissions,
+  affiliatePayouts,
+} from "@/lib/db";
+import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 // GET /api/admin/users/[id] - Get single user details
@@ -170,19 +204,222 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Delete related data that doesn't have cascade delete
-    // Most tables have onDelete: "cascade" so they'll be deleted automatically
-    // But we need to handle tables that reference users indirectly
+    // Explicitly delete ALL related data in correct order
+    // (don't rely on CASCADE - tables were created via turso db shell)
 
-    // Delete teams owned by user (team members and invites will cascade)
+    // 1. Get IDs needed for nested deletions
+    const userPosts = await db
+      .select({ id: posts.id })
+      .from(posts)
+      .where(eq(posts.userId, id));
+    const postIds = userPosts.map((p) => p.id);
+
+    const userTeams = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(eq(teams.ownerId, id));
+    const teamIds = userTeams.map((t) => t.id);
+
+    const userApiKeys = await db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(eq(apiKeys.userId, id));
+    const apiKeyIds = userApiKeys.map((k) => k.id);
+
+    const userEngagementLists = await db
+      .select({ id: engagementLists.id })
+      .from(engagementLists)
+      .where(eq(engagementLists.userId, id));
+    const engagementListIds = userEngagementLists.map((l) => l.id);
+
+    const userCrossGroups = await db
+      .select({ id: crossPromotionGroups.id })
+      .from(crossPromotionGroups)
+      .where(eq(crossPromotionGroups.ownerId, id));
+    const crossGroupIds = userCrossGroups.map((g) => g.id);
+
+    const userAffiliates = await db
+      .select({ id: affiliates.id })
+      .from(affiliates)
+      .where(eq(affiliates.userId, id));
+    const affiliateIds = userAffiliates.map((a) => a.id);
+
+    const userAffiliateReferrals = affiliateIds.length
+      ? await db
+          .select({ id: affiliateReferrals.id })
+          .from(affiliateReferrals)
+          .where(inArray(affiliateReferrals.affiliateId, affiliateIds))
+      : [];
+    const affiliateReferralIds = userAffiliateReferrals.map((r) => r.id);
+
+    const userTeamMembers = await db
+      .select({ id: teamMembers.id })
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, id));
+    const teamMemberIds = userTeamMembers.map((m) => m.id);
+
+    // 2. Delete deepest child tables first
+    // Cross promotion actions (references crossPromotionPosts)
+    await db
+      .delete(crossPromotionActions)
+      .where(eq(crossPromotionActions.userId, id));
+
+    // Cross promotion posts (references crossPromotionGroups + posts)
+    if (crossGroupIds.length) {
+      await db
+        .delete(crossPromotionPosts)
+        .where(inArray(crossPromotionPosts.groupId, crossGroupIds));
+    }
+    if (postIds.length) {
+      await db
+        .delete(crossPromotionPosts)
+        .where(inArray(crossPromotionPosts.postId, postIds));
+    }
+    await db
+      .delete(crossPromotionPosts)
+      .where(eq(crossPromotionPosts.publishedByUserId, id));
+
+    // Cross promotion members
+    if (crossGroupIds.length) {
+      await db
+        .delete(crossPromotionMembers)
+        .where(inArray(crossPromotionMembers.groupId, crossGroupIds));
+    }
+    await db
+      .delete(crossPromotionMembers)
+      .where(eq(crossPromotionMembers.userId, id));
+
+    // Cross promotion groups
+    await db
+      .delete(crossPromotionGroups)
+      .where(eq(crossPromotionGroups.ownerId, id));
+
+    // Team engagement jobs
+    await db
+      .delete(teamEngagementJobs)
+      .where(eq(teamEngagementJobs.userId, id));
+    if (teamMemberIds.length) {
+      await db
+        .delete(teamEngagementJobs)
+        .where(inArray(teamEngagementJobs.teamMemberId, teamMemberIds));
+    }
+
+    // Affiliate commissions (references affiliateReferrals)
+    if (affiliateReferralIds.length) {
+      await db
+        .delete(affiliateCommissions)
+        .where(
+          inArray(affiliateCommissions.referralId, affiliateReferralIds)
+        );
+    }
+
+    // Affiliate payouts (references affiliates)
+    if (affiliateIds.length) {
+      await db
+        .delete(affiliatePayouts)
+        .where(inArray(affiliatePayouts.affiliateId, affiliateIds));
+    }
+
+    // Affiliate referrals (references affiliates + users)
+    if (affiliateIds.length) {
+      await db
+        .delete(affiliateReferrals)
+        .where(inArray(affiliateReferrals.affiliateId, affiliateIds));
+    }
+    await db
+      .delete(affiliateReferrals)
+      .where(eq(affiliateReferrals.referredUserId, id));
+
+    // Affiliates
+    await db.delete(affiliates).where(eq(affiliates.userId, id));
+
+    // API logs (references apiKeys)
+    await db.delete(apiLogs).where(eq(apiLogs.userId, id));
+    if (apiKeyIds.length) {
+      await db
+        .delete(apiLogs)
+        .where(inArray(apiLogs.apiKeyId, apiKeyIds));
+    }
+
+    // API keys
+    await db.delete(apiKeys).where(eq(apiKeys.userId, id));
+
+    // Post analytics (references posts)
+    if (postIds.length) {
+      await db
+        .delete(postAnalytics)
+        .where(inArray(postAnalytics.postId, postIds));
+    }
+
+    // Engagement list profiles (references engagementLists)
+    if (engagementListIds.length) {
+      await db
+        .delete(engagementListProfiles)
+        .where(
+          inArray(engagementListProfiles.listId, engagementListIds)
+        );
+    }
+
+    // Engagement lists
+    await db
+      .delete(engagementLists)
+      .where(eq(engagementLists.userId, id));
+
+    // Team invites (references teams)
+    if (teamIds.length) {
+      await db
+        .delete(teamInvites)
+        .where(inArray(teamInvites.teamId, teamIds));
+    }
+
+    // Team members (from teams owned by user + user's own memberships)
+    if (teamIds.length) {
+      await db
+        .delete(teamMembers)
+        .where(inArray(teamMembers.teamId, teamIds));
+    }
+    await db.delete(teamMembers).where(eq(teamMembers.userId, id));
+
+    // Teams
     await db.delete(teams).where(eq(teams.ownerId, id));
 
-    // Delete API logs (has set null on cascade, so clean up manually)
-    await db.delete(apiLogs).where(eq(apiLogs.userId, id));
+    // 3. Direct user reference tables
+    await db.delete(posts).where(eq(posts.userId, id));
+    await db.delete(media).where(eq(media.userId, id));
+    await db.delete(ideas).where(eq(ideas.userId, id));
+    await db.delete(sessions).where(eq(sessions.userId, id));
+    await db.delete(accounts).where(eq(accounts.userId, id));
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.userId, id));
+    await db.delete(abTests).where(eq(abTests.userId, id));
+    await db
+      .delete(engagementActions)
+      .where(eq(engagementActions.userId, id));
+    await db
+      .delete(engagementObjectives)
+      .where(eq(engagementObjectives.userId, id));
+    await db.delete(userTemplates).where(eq(userTemplates.userId, id));
+    await db.delete(savedCarousels).where(eq(savedCarousels.userId, id));
+    await db
+      .delete(abandonedCheckouts)
+      .where(eq(abandonedCheckouts.userId, id));
 
-    // Delete the user (this cascades to: sessions, accounts, posts, media, ideas,
-    // abTests, teamMembers, apiKeys, engagementActions, engagementObjectives,
-    // passwordResetTokens, cookieConsents)
+    // 4. Set null tables
+    await db
+      .update(cookieConsents)
+      .set({ userId: null })
+      .where(eq(cookieConsents.userId, id));
+    await db
+      .update(dataRemovalRequests)
+      .set({ userId: null })
+      .where(eq(dataRemovalRequests.userId, id));
+    await db
+      .update(dataRemovalRequests)
+      .set({ processedBy: null })
+      .where(eq(dataRemovalRequests.processedBy, id));
+
+    // 5. Delete the user
     await db.delete(users).where(eq(users.id, id));
 
     return NextResponse.json({
@@ -190,8 +427,14 @@ export async function DELETE(
       message: "User and all associated data have been deleted",
     });
   } catch (error) {
-return NextResponse.json(
-      { error: "Failed to delete user" },
+    console.error("Failed to delete user:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? `Failed to delete user: ${error.message}`
+            : "Failed to delete user",
+      },
       { status: 500 }
     );
   }
