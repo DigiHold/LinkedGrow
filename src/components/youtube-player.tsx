@@ -94,6 +94,7 @@ export function YouTubePlayer({
         rel: 0,
         iv_load_policy: 3,
         fs: 1,
+        modestbranding: 1,
         playsinline: isMobile ? 0 : 1,
         origin: window.location.origin,
         enablejsapi: 1,
@@ -196,7 +197,7 @@ export function YouTubePlayer({
       ) : (
         <>
           {/* Player container */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
 
           {/* Fullscreen button */}
           {!showCTA && (
