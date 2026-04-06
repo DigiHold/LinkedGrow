@@ -5,6 +5,10 @@ category: "content-creation"
 order: 1
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/LaFbdueDLBg" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What is the Post Generator?
 
 The Post Generator is LinkedGrow's core content creation tool. It uses your configured AI provider to generate LinkedIn posts based on your preferences, business context, and writing style. It walks you through a 4-step wizard to go from idea to finished post.

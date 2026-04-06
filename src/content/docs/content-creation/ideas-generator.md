@@ -5,6 +5,10 @@ category: "content-creation"
 order: 4
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/53lsvhAIXq0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What is the Ideas Generator?
 
 The Ideas Generator helps you overcome content block by providing AI-powered post ideas tailored to your niche. Instead of staring at a blank screen wondering what to write about, you can browse a list of curated ideas and turn any of them into a full post with one click.

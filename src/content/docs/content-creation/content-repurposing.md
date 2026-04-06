@@ -5,6 +5,10 @@ category: "content-creation"
 order: 5
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/YQIP3Fvk1VU" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What is content repurposing?
 
 Content repurposing lets you transform existing content from other platforms into LinkedIn posts. Instead of creating everything from scratch, you can take a blog article, YouTube video, Reddit thread, or any web page and have the AI extract key insights and format them for LinkedIn.

@@ -5,6 +5,10 @@ category: "byok"
 order: 3
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/D5Fl6ACfsis" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 Anthropic provides Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, and Claude Sonnet 4 models. Claude models are known for their natural, conversational writing style, making them excellent for LinkedIn content.

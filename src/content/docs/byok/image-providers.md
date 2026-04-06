@@ -5,6 +5,10 @@ category: "byok"
 order: 7
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/MAZB_3ci8RA" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 LinkedGrow supports AI image generation from three providers. Image generation requires the Pro plan or above. You can set up one or more image providers and switch between them based on your needs.

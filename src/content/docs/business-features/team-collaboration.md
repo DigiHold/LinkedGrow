@@ -5,6 +5,10 @@ category: "business-features"
 order: 2
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/-5PXrUUERJI" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 LinkedGrow's team collaboration features let you work together with colleagues on LinkedIn content. You can invite team members, assign roles with different permission levels, and manage content as a team - all from a shared workspace.

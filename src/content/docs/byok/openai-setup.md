@@ -5,6 +5,10 @@ category: "byok"
 order: 2
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/tdw3icQGIv0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 OpenAI provides GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, and o3-mini models. These are versatile models that work well for LinkedIn content generation, with options ranging from ultra-affordable to premium quality.

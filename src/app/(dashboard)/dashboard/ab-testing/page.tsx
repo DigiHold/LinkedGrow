@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { cn } from "@/lib/utils";
+import { VideoModal } from "@/components/dashboard/video-modal";
 
 interface AbTest {
   id: string;
@@ -147,6 +148,7 @@ export default function ABTestingPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <VideoModal videoId="al7K5HK8hxc" />
             <Link href="/docs/business-features/ab-testing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?

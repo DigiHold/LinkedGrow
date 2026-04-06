@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import Link from "next/link";
 
 const popularTopics = [
@@ -149,10 +150,13 @@ export default function HooksPage() {
                 Generate scroll-stopping hooks that capture attention in the first 2 lines
               </p>
             </div>
-            <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Help?
-            </Link>
+            <div className="flex items-center gap-3">
+              <VideoModal videoId="ylHZIxbFCOA" />
+              <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+                <HelpCircle className="w-3.5 h-3.5" />
+                Help?
+              </Link>
+            </div>
           </div>
 
           {/* API Key Required Card */}
@@ -221,10 +225,13 @@ export default function HooksPage() {
               Generate scroll-stopping hooks that capture attention in the first 2 lines
             </p>
           </div>
-          <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <VideoModal videoId="ylHZIxbFCOA" />
+            <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
         {/* Topic Selection */}

@@ -5,6 +5,10 @@ category: "content-creation"
 order: 2
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/9pWn4OdcCNQ" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 The Post Editor is where you refine, polish, and publish your LinkedIn posts. Whether you start from an AI-generated draft or write from scratch, the editor gives you full control over your content.

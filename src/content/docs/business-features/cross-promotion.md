@@ -5,6 +5,10 @@ category: "business-features"
 order: 4
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/Li5Ol2Zer1c" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 Cross promotion is a system that helps you and other LinkedIn creators boost each other's posts. You create a group, invite other LinkedGrow users, and whenever anyone in the group publishes a LinkedIn post, all other members get notified via email. They can then like, comment, and repost - giving every post in the group an immediate engagement boost.

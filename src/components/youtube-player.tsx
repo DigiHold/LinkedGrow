@@ -36,7 +36,7 @@ interface YTPlayer {
 interface YouTubePlayerProps {
   videoId: string;
   thumbnailUrl: string;
-  duration: string;
+  duration?: string;
   ctaText?: string;
   ctaAction?: () => void;
   ctaHref?: string;
@@ -187,9 +187,11 @@ export function YouTubePlayer({
           </div>
 
           {/* Duration badge */}
-          <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-            {duration}
-          </div>
+          {duration && (
+            <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
+              {duration}
+            </div>
+          )}
         </button>
       ) : (
         <>

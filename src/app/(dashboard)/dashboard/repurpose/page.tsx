@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import { FirstComment } from "@/components/dashboard/first-comment";
 import {
   ArrowRight,
@@ -930,10 +931,13 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               Turn any URL into a LinkedIn post
             </p>
           </div>
-          <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <VideoModal videoId="YQIP3Fvk1VU" />
+            <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
         <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
@@ -1003,10 +1007,13 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             Turn any URL into a LinkedIn post
           </p>
         </div>
-        <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-          <HelpCircle className="w-3.5 h-3.5" />
-          Help?
-        </Link>
+        <div className="flex items-center gap-3">
+          <VideoModal videoId="YQIP3Fvk1VU" />
+          <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
+        </div>
       </div>
 
       {/* Progress Steps */}

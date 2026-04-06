@@ -22,6 +22,7 @@ import { EngagementTrendChart } from "@/components/dashboard/analytics/engagemen
 import { PostingHeatmap } from "@/components/dashboard/analytics/posting-heatmap";
 import { DemographicsCharts } from "@/components/dashboard/analytics/demographics-charts";
 import { ExportReport } from "@/components/dashboard/analytics/export-report";
+import { VideoModal } from "@/components/dashboard/video-modal";
 
 interface AdvancedAnalyticsData {
   summary: {
@@ -160,6 +161,7 @@ export default function AdvancedAnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <VideoModal videoId="ytS6de-s704" />
             <DateRangeSelector value={days} onChange={setDays} />
             <Button
               variant="outline"

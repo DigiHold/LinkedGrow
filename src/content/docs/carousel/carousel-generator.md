@@ -5,6 +5,10 @@ category: "carousel"
 order: 1
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/LwxqG4Y5Z6g" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What are LinkedIn carousels?
 
 LinkedIn carousels are multi-slide posts that users swipe through. They consistently outperform text-only posts in terms of reach and engagement because they encourage users to spend more time on your content - increasing dwell time, which the algorithm rewards.

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import {
   FileText,
   Search,
@@ -309,10 +310,13 @@ export default function PostsPage() {
               Manage all your LinkedIn content in one place
             </p>
           </div>
-          <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <VideoModal videoId="8jGzpoWUSC4" />
+            <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
         {/* Empty State */}
@@ -362,6 +366,7 @@ export default function PostsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <VideoModal videoId="8jGzpoWUSC4" />
           <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?

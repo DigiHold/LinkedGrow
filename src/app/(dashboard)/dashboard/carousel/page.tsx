@@ -47,6 +47,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import Link from "next/link";
 
 // Import new carousel components
@@ -1126,10 +1127,13 @@ showToast("Failed to export images");
                 Create engaging multi-slide carousels for LinkedIn
               </p>
             </div>
-            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Help?
-            </Link>
+            <div className="flex items-center gap-3">
+              <VideoModal videoId="LwxqG4Y5Z6g" />
+              <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+                <HelpCircle className="w-3.5 h-3.5" />
+                Help?
+              </Link>
+            </div>
           </div>
 
           <div className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-8">
@@ -1234,6 +1238,10 @@ showToast("Failed to export images");
                 <ZoomIn className="w-4 h-4" />
               </Button>
             </div>
+
+            <div className="h-6 w-px bg-border" />
+
+            <VideoModal videoId="LwxqG4Y5Z6g" />
 
             <div className="h-6 w-px bg-border" />
 

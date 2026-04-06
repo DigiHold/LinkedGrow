@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { ImageIcon, Sparkles, Crown, ExternalLink, HelpCircle } from "lucide-react";
 import Link from "next/link";
+import { VideoModal } from "@/components/dashboard/video-modal";
 
 // SVG icons for AI providers
 const OpenAIIcon = () => (
@@ -88,6 +89,20 @@ const providerHelpUrls: Record<string, string> = {
   grok: "/docs/byok/grok-setup",
   perplexity: "/docs/byok/perplexity-setup",
   kimi: "/docs/byok/kimi-setup",
+};
+
+const providerVideoIds: Record<string, string> = {
+  openai: "tdw3icQGIv0",
+  anthropic: "D5Fl6ACfsis",
+  google: "srqZeIOCQ-w",
+  grok: "Tgw-b13tKEI",
+  kimi: "jcEwghFuLeM",
+};
+
+const imageProviderVideoIds: Record<string, string> = {
+  google: "MAZB_3ci8RA",
+  openai: "sM0hUjVR4gg",
+  replicate: "sNTjyC0NjhE",
 };
 
 const aiProviders = [
@@ -886,6 +901,9 @@ setImageApiMessage({ type: "error", text: "Failed to save image API key" });
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {providerVideoIds[viewingProvider] && (
+                      <VideoModal videoId={providerVideoIds[viewingProvider]} triggerClassName="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
+                    )}
                     {providerHelpUrls[viewingProvider] && (
                       <Link href={providerHelpUrls[viewingProvider]} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
                         <HelpCircle className="w-3 h-3" />
@@ -1175,6 +1193,9 @@ setImageApiMessage({ type: "error", text: "Failed to save image API key" });
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {imageProviderVideoIds[viewingImageProvider] && (
+                      <VideoModal videoId={imageProviderVideoIds[viewingImageProvider]} triggerClassName="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
+                    )}
                     {viewingImageProvider === activeImageProvider && viewingImageProviderHasKey && (
                       <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 rounded-full font-medium">
                         <Check className="w-3 h-3" />

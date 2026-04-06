@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import {
   Dialog,
   DialogContent,
@@ -297,6 +298,7 @@ export default function CrossPromotionPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <VideoModal videoId="Li5Ol2Zer1c" />
             <Link href="/docs/business-features/cross-promotion" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?

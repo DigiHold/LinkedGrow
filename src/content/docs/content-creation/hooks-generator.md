@@ -5,6 +5,10 @@ category: "content-creation"
 order: 3
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/ylHZIxbFCOA" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What are hooks?
 
 A hook is the opening line of your LinkedIn post - the text that appears before the "see more" button. On LinkedIn, users see only the first 2-3 lines of a post in their feed. A strong hook determines whether someone stops scrolling and reads your full post.

@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import Link from "next/link";
 
 const popularThemes = [
@@ -193,10 +194,13 @@ export default function IdeasPage() {
               Get AI-powered content ideas for your niche
             </p>
           </div>
-          <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <VideoModal videoId="53lsvhAIXq0" />
+            <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
         {/* API Key Required Card */}
@@ -263,10 +267,13 @@ export default function IdeasPage() {
             Get AI-powered content ideas for your niche
           </p>
         </div>
-        <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-          <HelpCircle className="w-3.5 h-3.5" />
-          Help?
-        </Link>
+        <div className="flex items-center gap-3">
+          <VideoModal videoId="53lsvhAIXq0" />
+          <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
+        </div>
       </div>
 
       {/* Theme Selection */}

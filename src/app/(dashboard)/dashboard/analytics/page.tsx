@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DateRangeSelector } from "@/components/dashboard/analytics/date-range-selector";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import { StatCard } from "@/components/dashboard/analytics/stat-card";
 import { AnalyticsEmptyState } from "@/components/dashboard/analytics/empty-state";
 import { FollowerChart } from "@/components/dashboard/analytics/follower-chart";
@@ -208,6 +209,7 @@ export default function AnalyticsPage() {
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </Button>
+            <VideoModal videoId="u3glQrlzhHs" />
             <Link
               href="/docs/getting-started/understanding-dashboard"
               target="_blank"

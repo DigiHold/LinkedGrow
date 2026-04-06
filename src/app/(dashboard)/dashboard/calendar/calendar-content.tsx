@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import {
   ChevronLeft,
   ChevronRight,
@@ -1069,6 +1070,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
             <p className="text-muted-foreground mt-1">Plan and visualize your content schedule</p>
           </div>
           <div className="flex items-center gap-3">
+            <VideoModal videoId="6Vr6eYA-gI4" />
             <Link href="/docs/scheduling/content-calendar" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?

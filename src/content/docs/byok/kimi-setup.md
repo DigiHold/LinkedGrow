@@ -5,6 +5,10 @@ category: "byok"
 order: 6
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/jcEwghFuLeM" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Overview
 
 Moonshot AI provides the Kimi model family - Kimi K2.5 and Kimi K2. Kimi models are known for strong reasoning, long context support (up to 262K tokens), and competitive pricing that makes them an excellent choice for LinkedIn content generation.

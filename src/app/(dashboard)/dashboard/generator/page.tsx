@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { VideoModal } from "@/components/dashboard/video-modal";
 import { PlanId, PLANS, isWithinLimit, canAccessFeature } from "@/lib/plans";
 import { Progress } from "@/components/ui/progress";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
@@ -867,10 +868,13 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               Create viral LinkedIn posts with AI in seconds
             </p>
           </div>
-          <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Help?
-          </Link>
+          <div className="flex items-center gap-3">
+            <VideoModal videoId="LaFbdueDLBg" />
+            <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <HelpCircle className="w-3.5 h-3.5" />
+              Help?
+            </Link>
+          </div>
         </div>
 
         {/* API Key Required Card */}
@@ -950,10 +954,13 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
             Create viral LinkedIn posts with AI in seconds
           </p>
         </div>
-        <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-          <HelpCircle className="w-3.5 h-3.5" />
-          Help?
-        </Link>
+        <div className="flex items-center gap-3">
+          <VideoModal videoId="LaFbdueDLBg" />
+          <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Help?
+          </Link>
+        </div>
       </div>
 
       {/* Usage Limit Banner */}
