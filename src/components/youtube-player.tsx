@@ -4,35 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, ArrowRight, Maximize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-declare global {
-  interface Window {
-    YT: {
-      Player: new (
-        elementId: string | HTMLElement,
-        options: {
-          videoId: string;
-          playerVars?: Record<string, number | string>;
-          events?: {
-            onReady?: (event: { target: YTPlayer }) => void;
-            onStateChange?: (event: { data: number; target: YTPlayer }) => void;
-          };
-        }
-      ) => YTPlayer;
-      PlayerState: {
-        ENDED: number;
-        PLAYING: number;
-      };
-    };
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
-interface YTPlayer {
-  playVideo: () => void;
-  destroy: () => void;
-  getIframe: () => HTMLIFrameElement;
-}
-
 interface YouTubePlayerProps {
   videoId: string;
   thumbnailUrl: string;
@@ -52,79 +23,84 @@ export function YouTubePlayer({
 }: YouTubePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
-  const [apiReady, setApiReady] = useState(false);
-  const playerRef = useRef<YTPlayer | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Load YouTube IFrame API
+  // Listen for YouTube postMessage events to detect video end
   useEffect(() => {
-    if (window.YT && window.YT.Player) {
-      setApiReady(true);
-      return;
-    }
+    if (!isPlaying) return;
 
-    const existingScript = document.getElementById("youtube-iframe-api");
-    if (existingScript) {
-      window.onYouTubeIframeAPIReady = () => setApiReady(true);
-      return;
-    }
+    const handleMessage = (event: MessageEvent) => {
+      // YouTube sends messages from its embed origin
+      if (
+        event.origin !== "https://www.youtube.com" &&
+        event.origin !== "https://www.youtube-nocookie.com"
+      ) {
+        return;
+      }
 
-    const script = document.createElement("script");
-    script.id = "youtube-iframe-api";
-    script.src = "https://www.youtube.com/iframe_api";
-    script.async = true;
+      try {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-    window.onYouTubeIframeAPIReady = () => setApiReady(true);
-
-    document.body.appendChild(script);
-  }, []);
-
-  // Initialize player when API is ready and user clicks play
-  const initializePlayer = useCallback(() => {
-    if (!apiReady || !containerRef.current || playerRef.current) return;
-
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    playerRef.current = new window.YT.Player(containerRef.current, {
-      videoId,
-      playerVars: {
-        autoplay: 1,
-        mute: 1,
-        controls: 0,
-        rel: 0,
-        iv_load_policy: 3,
-        disablekb: 1,
-        cc_load_policy: 0,
-        playsinline: isMobile ? 0 : 1,
-        origin: window.location.origin,
-        enablejsapi: 1,
-      },
-      events: {
-        onReady: (event) => {
-          event.target.playVideo();
-
-          // Request fullscreen on mobile
-          if (isMobile) {
-            const iframe = event.target.getIframe();
-            if (iframe.requestFullscreen) {
-              iframe.requestFullscreen().catch(() => {});
-            }
-          }
-        },
-        onStateChange: (event) => {
-          if (event.data === window.YT.PlayerState.ENDED) {
+        // YouTube sends playerState changes via postMessage when enablejsapi=1
+        // State 0 = ended, State 1 = playing
+        if (data.event === "onStateChange") {
+          if (data.info === 0) {
             setShowCTA(true);
-          } else if (event.data === window.YT.PlayerState.PLAYING) {
+          } else if (data.info === 1) {
             setShowCTA(false);
           }
-        },
-      },
-    });
-  }, [apiReady, videoId]);
+        }
+      } catch {
+        // Ignore non-JSON messages
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [isPlaying]);
+
+  // When the iframe loads, tell YouTube to send us state change events
+  const handleIframeLoad = useCallback(() => {
+    if (!iframeRef.current) return;
+
+    // Send the "listening" command so YouTube sends us postMessage events
+    iframeRef.current.contentWindow?.postMessage(
+      JSON.stringify({
+        event: "listening",
+        id: 1,
+        channel: "widget",
+      }),
+      "https://www.youtube.com"
+    );
+
+    // Also subscribe to events via the command API
+    iframeRef.current.contentWindow?.postMessage(
+      JSON.stringify({
+        event: "command",
+        func: "addEventListener",
+        args: ["onStateChange"],
+        id: 1,
+        channel: "widget",
+      }),
+      "https://www.youtube.com"
+    );
+  }, []);
 
   const handlePlayClick = () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // On mobile, open YouTube directly for best experience
+      window.open(
+        `https://www.youtube.com/watch?v=${videoId}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+
     setIsPlaying(true);
-    setTimeout(initializePlayer, 100);
   };
 
   const handleCTAClick = () => {
@@ -140,28 +116,24 @@ export function YouTubePlayer({
 
   const handleReplay = () => {
     setShowCTA(false);
-    if (playerRef.current) {
-      playerRef.current.playVideo();
+    // Reload the iframe by re-setting the src to restart the video
+    if (iframeRef.current) {
+      const src = iframeRef.current.src;
+      iframeRef.current.src = "";
+      iframeRef.current.src = src;
     }
   };
 
   const handleFullscreen = () => {
-    if (playerRef.current) {
-      const iframe = playerRef.current.getIframe();
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen();
+    if (iframeRef.current) {
+      if (iframeRef.current.requestFullscreen) {
+        iframeRef.current.requestFullscreen();
       }
     }
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.destroy();
-      }
-    };
-  }, []);
+  // Build iframe src with all params
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&cc_load_policy=0&playsinline=1&enablejsapi=1&origin=${typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : ""}`;
 
   return (
     <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
@@ -195,8 +167,16 @@ export function YouTubePlayer({
         </button>
       ) : (
         <>
-          {/* Player container */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0 [&>iframe]:scale-[1.08] [&>iframe]:origin-center" />
+          {/* Plain iframe embed - no YT.Player API, no black bars */}
+          <iframe
+            ref={iframeRef}
+            className="absolute inset-0 w-full h-full border-0"
+            src={iframeSrc}
+            title="Demo video"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            onLoad={handleIframeLoad}
+          />
 
           {/* Fullscreen button */}
           {!showCTA && (
