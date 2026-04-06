@@ -36,11 +36,11 @@ export function VideoModal({ videoId, triggerClassName }: VideoModalProps) {
               <X className="h-6 w-6" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
-            <div className="aspect-video w-full rounded-xl overflow-hidden">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
               {open && (
                 <iframe
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&color=white`}
-                  className="w-full h-full"
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=0&iv_load_policy=3&fs=0&disablekb=1&cc_load_policy=0&color=white&playsinline=1`}
+                  className="absolute inset-0 w-full h-full border-0"
                   allow="autoplay; encrypted-media; fullscreen"
                   allowFullScreen
                 />

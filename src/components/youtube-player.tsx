@@ -93,12 +93,13 @@ export function YouTubePlayer({
         controls: 0,
         rel: 0,
         iv_load_policy: 3,
-        fs: 1,
-        modestbranding: 1,
+        fs: 0,
+        disablekb: 1,
+        cc_load_policy: 0,
+        color: "white",
         playsinline: isMobile ? 0 : 1,
         origin: window.location.origin,
         enablejsapi: 1,
-        disablekb: 1,
       },
       events: {
         onReady: (event) => {
@@ -197,7 +198,7 @@ export function YouTubePlayer({
       ) : (
         <>
           {/* Player container */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
+          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
 
           {/* Fullscreen button */}
           {!showCTA && (
