@@ -90,7 +90,7 @@ export function YouTubePlayer({
       playerVars: {
         autoplay: 1,
         mute: 1,
-        controls: 1,
+        controls: 0,
         rel: 0,
         iv_load_policy: 3,
         disablekb: 1,
@@ -196,7 +196,7 @@ export function YouTubePlayer({
       ) : (
         <>
           {/* Player container */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
+          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0 [&>iframe]:scale-[1.08] [&>iframe]:origin-center" />
 
           {/* Fullscreen button */}
           {!showCTA && (
