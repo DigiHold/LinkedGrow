@@ -198,7 +198,7 @@ export function YouTubePlayer({
       ) : (
         <>
           {/* Player container */}
-          <div ref={containerRef} className="absolute top-1/2 left-1/2 w-[106%] h-[106%] -translate-x-1/2 -translate-y-1/2 [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
+          <div ref={containerRef} className="absolute top-1/2 left-1/2 w-[112%] h-[112%] -translate-x-1/2 -translate-y-1/2 [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
 
           {/* Fullscreen button */}
           {!showCTA && (
