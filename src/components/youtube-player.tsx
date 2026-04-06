@@ -198,7 +198,7 @@ export function YouTubePlayer({
       ) : (
         <>
           {/* Player container */}
-          <div ref={containerRef} className="absolute inset-0 w-full h-full [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
+          <div ref={containerRef} className="absolute -inset-px w-[calc(100%+2px)] h-[calc(100%+2px)] [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0" />
 
           {/* Fullscreen button */}
           {!showCTA && (
@@ -215,10 +215,10 @@ export function YouTubePlayer({
           {showCTA && (
             <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 p-6">
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 text-center">
-                Ready to transform your LinkedIn content?
+                Ready to grow on LinkedIn?
               </h3>
               <p className="text-slate-300 mb-6 text-center max-w-md">
-                Join the waitlist and get 30% off when we launch
+                Start creating content that gets results
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button

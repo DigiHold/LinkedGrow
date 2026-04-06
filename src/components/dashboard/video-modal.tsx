@@ -39,8 +39,8 @@ export function VideoModal({ videoId, triggerClassName }: VideoModalProps) {
             <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
               {open && (
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=0&iv_load_policy=3&fs=0&disablekb=1&cc_load_policy=0&color=white&playsinline=1`}
-                  className="absolute inset-0 w-full h-full border-0"
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=1&iv_load_policy=3&disablekb=1&cc_load_policy=0&playsinline=1`}
+                  className="absolute -inset-px w-[calc(100%+2px)] h-[calc(100%+2px)] border-0"
                   allow="autoplay; encrypted-media; fullscreen"
                   allowFullScreen
                 />
