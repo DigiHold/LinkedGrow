@@ -5,6 +5,10 @@ category: "byok"
 order: 1
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/tdw3icQGIv0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Bring Your Own Key explained
 
 BYOK stands for Bring Your Own Key. It is LinkedGrow's approach to AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.

@@ -5,6 +5,10 @@ category: "scheduling"
 order: 1
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/3T7xYfv9GfU" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## Why schedule posts?
 
 Scheduling lets you create content in batches and have it published automatically at the best times for your audience. This means you can:

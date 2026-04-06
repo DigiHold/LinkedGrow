@@ -5,6 +5,10 @@ category: "settings"
 order: 2
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/a9ZAl_zAaVs" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What is voice training?
 
 Voice training teaches the AI to write in your personal style. Instead of generic AI-sounding content, the posts generated for you will match your tone, vocabulary, and formatting preferences.

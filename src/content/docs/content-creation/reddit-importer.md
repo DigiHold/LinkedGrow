@@ -5,6 +5,10 @@ category: "content-creation"
 order: 6
 ---
 
+<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-bottom:24px;border-radius:12px">
+<iframe src="https://www.youtube.com/embed/fUkrQJr4BYU" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+</div>
+
 ## What is Reddit to LinkedIn?
 
 Reddit is full of authentic discussions, industry insights, and trending topics that make excellent LinkedIn content. The Reddit to LinkedIn feature lets you import any Reddit thread and transform it into a LinkedIn-appropriate post. It uses the same repurposing tool with a Reddit URL.
