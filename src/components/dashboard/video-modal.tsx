@@ -40,7 +40,7 @@ export function VideoModal({ videoId, triggerClassName }: VideoModalProps) {
               {open && (
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=1&iv_load_policy=3&disablekb=1&cc_load_policy=0&playsinline=1`}
-                  className="absolute -inset-px w-[calc(100%+2px)] h-[calc(100%+2px)] border-0"
+                  className="absolute top-1/2 left-1/2 w-[106%] h-[106%] -translate-x-1/2 -translate-y-1/2 border-0"
                   allow="autoplay; encrypted-media; fullscreen"
                   allowFullScreen
                 />
