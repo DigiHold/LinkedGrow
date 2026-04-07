@@ -133,7 +133,7 @@ export function YouTubePlayer({
   };
 
   // Build iframe src with all params
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&cc_load_policy=0&playsinline=1&enablejsapi=1&origin=${typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : ""}`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&iv_load_policy=3&disablekb=1&cc_load_policy=0&playsinline=1&enablejsapi=1&origin=${typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : ""}`;
 
   return (
     <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
