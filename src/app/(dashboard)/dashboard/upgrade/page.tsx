@@ -77,6 +77,7 @@ const planHighlights: Record<PlanId, string[]> = {
     "Engagement tools",
     "Hooks generator",
     "Algorithm optimizer",
+    "Cross promotion",
   ],
   business: [
     "Everything in Pro",
