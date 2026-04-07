@@ -133,7 +133,7 @@ export function YouTubePlayer({
   };
 
   // Build iframe src with all params
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&playsinline=1`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&rel=0&playsinline=1&playlist=${videoId}`;
 
   return (
     <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
