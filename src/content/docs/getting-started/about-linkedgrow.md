@@ -13,7 +13,7 @@ LinkedGrow was founded by Nicolas Lecocq, a full-stack developer with 15+ years 
 
 **Nicolas Lecocq** - Founder and Developer. He handles all development, from the React frontend to the AI integrations, performance optimization, and infrastructure. Nicolas is based in Paris, France.
 
-**Maria Lecocq** - Operations and Community. Maria manages operations, gathers user feedback, and ensures every LinkedGrow user feels heard. She shapes the product roadmap based on real creator needs and is the voice of the community.
+**Maria Lecocq** - PhD, Operations and Community. Maria manages operations, gathers user feedback, and ensures every LinkedGrow user feels heard. She shapes the product roadmap based on real creator needs and is the voice of the community.
 
 ## Our Story
 
