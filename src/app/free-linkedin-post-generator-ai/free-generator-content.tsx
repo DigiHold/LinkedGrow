@@ -55,8 +55,8 @@ export function FreePostGeneratorContent() {
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={["Free forever plan", "No credit card", "All AI models included"]}
         video={{
-          videoId: "u31qwQUeGuM",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail.avif",
+          videoId: "5cE1BRvxfiQ",
+          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
           duration: "0:10",
           ctaText: "See Pricing",
           ctaHref: "/pricing",

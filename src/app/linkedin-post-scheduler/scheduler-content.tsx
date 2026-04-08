@@ -55,8 +55,8 @@ export function PostSchedulerContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["From $19/month", "No credit card to try", "Cancel anytime"]}
         video={{
-          videoId: "u31qwQUeGuM",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail.avif",
+          videoId: "5cE1BRvxfiQ",
+          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
           duration: "0:10",
           ctaText: "See Pricing",
           ctaHref: "/pricing",

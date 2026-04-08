@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 interface YouTubePlayerProps {
   videoId: string;
   thumbnailUrl: string;
-  duration?: string;
   ctaText?: string;
   ctaAction?: () => void;
   ctaHref?: string;
@@ -16,7 +15,6 @@ interface YouTubePlayerProps {
 export function YouTubePlayer({
   videoId,
   thumbnailUrl,
-  duration,
   ctaText = "Get Started",
   ctaAction,
   ctaHref,
@@ -158,12 +156,6 @@ export function YouTubePlayer({
             </div>
           </div>
 
-          {/* Duration badge */}
-          {duration && (
-            <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-              {duration}
-            </div>
-          )}
         </button>
       ) : (
         <>
