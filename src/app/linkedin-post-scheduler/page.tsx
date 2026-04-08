@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Post Scheduler",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Post Scheduler | LinkedGrow",
     description:
       "Schedule and auto-publish LinkedIn posts. Visual calendar, optimal timing, company pages.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-post-scheduler",

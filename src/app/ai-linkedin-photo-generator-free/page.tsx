@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - AI LinkedIn Photo Generator Free",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "AI LinkedIn Photo Generator Free | LinkedGrow",
     description:
       "Generate professional photos for LinkedIn posts with AI. 10+ models, unique visuals in seconds, no design skills needed.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/ai-linkedin-photo-generator-free",

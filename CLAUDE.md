@@ -119,7 +119,7 @@ SSH authentication is automatic.
 A default Open Graph image is set in `src/app/layout.tsx` and applies to **all pages** automatically:
 
 ```
-https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp
+https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp
 ```
 
 - Blog articles override this with their own featured image via `openGraph.images` in the article's metadata
@@ -135,7 +135,7 @@ openGraph: {
   // ...title, description, url, siteName, type
   images: [
     {
-      url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp",
+      url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
       width: 1200,
       height: 630,
       alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
@@ -144,7 +144,7 @@ openGraph: {
 },
 twitter: {
   // ...card, title, description
-  images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og-default.webp"],
+  images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
 },
 ```
 
