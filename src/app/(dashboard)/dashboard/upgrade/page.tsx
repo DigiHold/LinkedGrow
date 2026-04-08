@@ -94,6 +94,8 @@ export default function UpgradePage() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan || "free") as PlanId;
   const userEmail = session?.user?.email || "";
+  const userBillingInterval = session?.user?.billingInterval || null;
+  const isLtd = session?.user?.isLifetimeDeal || false;
 
   const [isYearly, setIsYearly] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -160,11 +162,26 @@ showError("Something went wrong. Please try again.");
     }
   };
 
+  const isCurrentBillingMatch = userBillingInterval
+    ? (isYearly ? userBillingInterval === "year" : userBillingInterval === "month")
+    : true; // Free users have no billing interval, always match
+
   const getPlanAction = (planId: PlanId) => {
     const planIndex = FULL_PLAN_HIERARCHY.indexOf(planId);
 
-    if (planId === userPlan) {
+    // LTD users own Business forever - mark Business as current on both tabs
+    if (isLtd && planId === "business") {
+      return { type: "current", label: "Lifetime Deal" };
+    }
+    // LTD users can't downgrade
+    if (isLtd) {
+      return { type: "current", label: "Included" };
+    }
+
+    if (planId === userPlan && isCurrentBillingMatch) {
       return { type: "current", label: "Current Plan" };
+    } else if (planId === userPlan && !isCurrentBillingMatch) {
+      return { type: "switch", label: isYearly ? "Switch to Yearly" : "Switch to Monthly" };
     } else if (planIndex > currentPlanIndex) {
       return { type: "upgrade", label: `Upgrade to ${PLANS[planId].name}` };
     } else {
@@ -200,7 +217,11 @@ showError("Something went wrong. Please try again.");
             {PLANS[userPlan].name}
           </span>
           <span className="text-sm text-slate-500">
-            (${PLANS[userPlan].price}/mo)
+            {isLtd
+              ? "(Lifetime Deal)"
+              : userBillingInterval === "year"
+              ? `($${PLANS[userPlan].yearlyPrice}/yr)`
+              : `($${PLANS[userPlan].price}/mo)`}
           </span>
         </div>
       </div>
@@ -246,7 +267,7 @@ showError("Something went wrong. Please try again.");
         {PLAN_ORDER.map((planId) => {
           const plan = PLANS[planId];
           const action = getPlanAction(planId);
-          const isCurrent = planId === userPlan;
+          const isCurrent = isLtd ? planId === "business" : (planId === userPlan && isCurrentBillingMatch);
           const isPopular = plan.popular;
 
           return (
@@ -340,6 +361,25 @@ showError("Something went wrong. Please try again.");
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Current Plan
+                  </Button>
+                ) : action.type === "switch" ? (
+                  // Same plan, different billing period: Stripe Portal
+                  <Button
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
+                    onClick={handleManageSubscription}
+                    disabled={loadingPlan === "manage"}
+                  >
+                    {loadingPlan === "manage" ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        {action.label}
+                      </>
+                    )}
                   </Button>
                 ) : action.type === "upgrade" && userPlan === "free" ? (
                   // Free → Paid: Stripe Checkout (creates new subscription)

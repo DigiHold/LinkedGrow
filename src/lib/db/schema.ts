@@ -22,6 +22,7 @@ export const users = sqliteTable("users", {
   isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  billingInterval: text("billing_interval", { enum: ["month", "year"] }),
   couponCode: text("coupon_code"), // Stored coupon code (e.g., "WELCOME10" for 10% off 3 months)
   referredBy: text("referred_by"), // Affiliate referral code that referred this user
 

@@ -132,6 +132,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.name = dbUser.name;
           token.image = dbUser.image;
           token.plan = dbUser.plan;
+          token.billingInterval = dbUser.billingInterval;
+          token.isLifetimeDeal = dbUser.isLifetimeDeal;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isAdmin = dbUser.isAdmin;
 
@@ -179,6 +181,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = token.name as string | null;
         session.user.image = token.image as string | null;
         session.user.plan = token.plan as string;
+        session.user.billingInterval = token.billingInterval as string | null;
+        session.user.isLifetimeDeal = token.isLifetimeDeal as boolean;
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
         session.user.isAdmin = token.isAdmin as boolean;
         session.user.isTeamMember = token.isTeamMember as boolean;
@@ -200,6 +204,8 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       plan?: string;
+      billingInterval?: string | null;
+      isLifetimeDeal?: boolean;
       twoFactorEnabled?: boolean;
       isAdmin?: boolean;
       isTeamMember?: boolean;
