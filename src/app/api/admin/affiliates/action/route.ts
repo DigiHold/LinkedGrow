@@ -87,17 +87,21 @@ export async function GET(request: NextRequest) {
 
   // Send notification email to the affiliate
   if (user?.email) {
-    if (action === "approve") {
-      sendAffiliateApprovedEmail({
-        to: user.email,
-        name: user.name || "there",
-        referralCode: affiliate.referralCode,
-      }).catch(() => {});
-    } else {
-      sendAffiliateRejectedEmail({
-        to: user.email,
-        name: user.name || "there",
-      }).catch(() => {});
+    try {
+      if (action === "approve") {
+        await sendAffiliateApprovedEmail({
+          to: user.email,
+          name: user.name || "there",
+          referralCode: affiliate.referralCode,
+        });
+      } else {
+        await sendAffiliateRejectedEmail({
+          to: user.email,
+          name: user.name || "there",
+        });
+      }
+    } catch (err) {
+      console.error("[Affiliate] Failed to send notification email:", err);
     }
   }
 

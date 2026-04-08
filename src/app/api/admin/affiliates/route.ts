@@ -166,17 +166,21 @@ export async function PUT(request: NextRequest) {
 
   // Send email notification
   if (user?.email) {
-    if (action === "approve") {
-      sendAffiliateApprovedEmail({
-        to: user.email,
-        name: user.name || "there",
-        referralCode: affiliate.referralCode,
-      }).catch(() => {});
-    } else if (action === "reject") {
-      sendAffiliateRejectedEmail({
-        to: user.email,
-        name: user.name || "there",
-      }).catch(() => {});
+    try {
+      if (action === "approve") {
+        await sendAffiliateApprovedEmail({
+          to: user.email,
+          name: user.name || "there",
+          referralCode: affiliate.referralCode,
+        });
+      } else if (action === "reject") {
+        await sendAffiliateRejectedEmail({
+          to: user.email,
+          name: user.name || "there",
+        });
+      }
+    } catch (err) {
+      console.error("[Affiliate] Failed to send notification email:", err);
     }
   }
 
