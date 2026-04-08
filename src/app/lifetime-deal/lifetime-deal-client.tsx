@@ -632,14 +632,13 @@ function PricingTiers({
   const tierOrder = ["early-bird", "regular", "final-call"];
   const currentTierIndex = tierOrder.indexOf(status.currentTier);
 
-  // Each tier's own spot count and cumulative display total
-  // Early Bird: spots 1-100 (100 spots), display as XX/100
-  // Regular: spots 101-250 (150 spots), display as XX/250
-  // Final Call: spots 251-500 (250 spots), display as XX/500
-  const tierConfig: Record<string, { ownTotal: number; displayTotal: number }> = {
-    "early-bird": { ownTotal: 100, displayTotal: 100 },
-    "regular": { ownTotal: 150, displayTotal: 250 },
-    "final-call": { ownTotal: 250, displayTotal: 500 },
+  // Each tier's own spot count
+  // Early Bird: 100 spots, Regular: 150 spots, Final Call: 250 spots
+  // Total: 500 displayed licenses (2,500 real at 5:1 ratio)
+  const tierConfig: Record<string, { ownTotal: number }> = {
+    "early-bird": { ownTotal: 100 },
+    "regular": { ownTotal: 150 },
+    "final-call": { ownTotal: 250 },
   };
 
   const getTierDisplay = (tierId: string) => {
@@ -648,14 +647,14 @@ function PricingTiers({
 
     if (tierIndex < currentTierIndex) {
       // Past tier - fully sold out
-      return { left: 0, displayTotal: config.displayTotal, ownTotal: config.ownTotal };
+      return { left: 0, total: config.ownTotal };
     }
     if (tierIndex === currentTierIndex) {
       // Active tier - tierSpotsLeft from API is remaining within this tier
-      return { left: Math.min(config.ownTotal, status.tierSpotsLeft), displayTotal: config.displayTotal, ownTotal: config.ownTotal };
+      return { left: Math.min(config.ownTotal, status.tierSpotsLeft), total: config.ownTotal };
     }
-    // Future tier - show cumulative start/end
-    return { left: config.ownTotal, displayTotal: config.displayTotal, ownTotal: config.ownTotal };
+    // Future tier - full capacity
+    return { left: config.ownTotal, total: config.ownTotal };
   };
 
   return (
@@ -759,14 +758,14 @@ function PricingTiers({
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
                         <span className="font-semibold text-amber-700 dark:text-amber-400">
-                          Only {display.left}/{display.displayTotal} spots left
+                          Only {display.left}/{display.total} spots left
                         </span>
-                        <span className="text-slate-400">{Math.round(((display.ownTotal - display.left) / display.ownTotal) * 100)}% claimed</span>
+                        <span className="text-slate-400">{Math.round(((display.total - display.left) / display.total) * 100)}% claimed</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-linear-to-r from-amber-400 to-red-500 transition-all duration-500"
-                          style={{ width: `${((display.ownTotal - display.left) / display.ownTotal) * 100}%` }}
+                          style={{ width: `${((display.total - display.left) / display.total) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -774,7 +773,7 @@ function PricingTiers({
                   {isSoldOut && (
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-slate-400">0/{display.displayTotal} spots left</span>
+                        <span className="font-semibold text-slate-400">0/{display.total} spots left</span>
                         <span className="text-slate-400">100% claimed</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
@@ -785,7 +784,7 @@ function PricingTiers({
                   {isLocked && (
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-slate-400">{display.displayTotal}/{display.displayTotal} spots</span>
+                        <span className="font-semibold text-slate-400">{display.total}/{display.total} spots</span>
                         <span className="text-slate-400">Buy early to save</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
