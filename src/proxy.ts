@@ -8,7 +8,6 @@ import { eq, and, sql } from "drizzle-orm";
 // Routes that require authentication
 const protectedRoutes = [
   "/dashboard",
-  "/onboarding",
 ];
 
 // Routes that are only for non-authenticated users

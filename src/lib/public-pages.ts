@@ -12,7 +12,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
 const EXCLUDED_PATHS = [
   "/dashboard",
   "/api",
-  "/onboarding",
   "/checkout",
   "/maintenance",
   "/reset-password",

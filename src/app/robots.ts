@@ -6,7 +6,6 @@ export default function robots(): MetadataRoute.Robots {
   const disallowPaths = [
     "/dashboard/",
     "/api/",
-    "/onboarding/",
     "/checkout/",
     "/maintenance/",
   ];

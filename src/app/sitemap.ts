@@ -10,7 +10,6 @@ const BASE_URL = "https://linkedgrow.ai";
 const EXCLUDED_PATHS = [
   "/dashboard",
   "/api",
-  "/onboarding",
   "/checkout",
   "/maintenance",
   "/reset-password", // Has dynamic token
