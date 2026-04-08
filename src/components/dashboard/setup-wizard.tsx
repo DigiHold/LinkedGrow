@@ -41,6 +41,7 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VideoModal } from "@/components/dashboard/video-modal";
 
 // ─── Provider SVG Icons ─────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ const aiProviders = [
     placeholder: "sk-...",
     apiKeyUrl: "https://platform.openai.com/api-keys",
     docsUrl: "/docs/byok/openai-setup",
+    videoId: "tdw3icQGIv0",
     keyField: "openaiApiKey",
     modelField: "openaiModel",
     models: [
@@ -116,6 +118,7 @@ const aiProviders = [
     placeholder: "sk-ant-...",
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
     docsUrl: "/docs/byok/anthropic-setup",
+    videoId: "D5Fl6ACfsis",
     keyField: "anthropicApiKey",
     modelField: "anthropicModel",
     models: [
@@ -132,6 +135,7 @@ const aiProviders = [
     placeholder: "AIza...",
     apiKeyUrl: "https://aistudio.google.com/apikey",
     docsUrl: "/docs/byok/google-ai-setup",
+    videoId: "srqZeIOCQ-w",
     keyField: "googleApiKey",
     modelField: "googleModel",
     models: [
@@ -148,6 +152,7 @@ const aiProviders = [
     placeholder: "xai-...",
     apiKeyUrl: "https://console.x.ai/team/default/api-keys",
     docsUrl: "/docs/byok/grok-setup",
+    videoId: "Tgw-b13tKEI",
     keyField: "grokApiKey",
     modelField: "grokModel",
     models: [
@@ -180,6 +185,7 @@ const aiProviders = [
     placeholder: "sk-...",
     apiKeyUrl: "https://platform.moonshot.ai/console/api-keys",
     docsUrl: "/docs/byok/kimi-setup",
+    videoId: "jcEwghFuLeM",
     keyField: "kimiApiKey",
     modelField: "kimiModel",
     models: [
@@ -791,6 +797,15 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                           >
                             Get your API key <ExternalLink className="w-3 h-3" />
                           </a>
+                          {currentProvider.videoId && (
+                            <>
+                              <div className="w-px h-3 bg-slate-300 dark:bg-slate-600" />
+                              <VideoModal
+                                videoId={currentProvider.videoId}
+                                triggerClassName="text-xs text-cyan-600 dark:text-cyan-400 hover:underline inline-flex items-center gap-1 transition-colors"
+                              />
+                            </>
+                          )}
                           <div className="w-px h-3 bg-slate-300 dark:bg-slate-600" />
                           <Link
                             href={currentProvider.docsUrl}
