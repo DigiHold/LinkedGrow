@@ -142,11 +142,15 @@ export async function POST(request: NextRequest) {
         .where(eq(affiliates.id, validAffiliate.id));
     }
 
-    // Subscribe to newsletter if opted in (non-blocking)
-    if (subscribeNewsletter) {
-      subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch((err) => {
-});
-    }
+    // Add to Welcome list (#9) for every new user so they receive the welcome
+    // email via Brevo automation. Also add to Blog list (#11) if they opted in
+    // via the "Get growth tips, new features, and exclusive offers" checkbox.
+    subscribeToNewsletter({
+      email,
+      name: name || undefined,
+      source: "email_signup",
+      subscribeToBlog: Boolean(subscribeNewsletter),
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

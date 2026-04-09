@@ -197,12 +197,16 @@ export async function GET(request: NextRequest) {
         where: eq(users.id, userId),
       });
 
-      // Subscribe to newsletter if opted in (non-blocking)
-      if (subscribeNewsletterCookie) {
-        const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
-        subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch((err) => {
-});
-      }
+      // Add to Welcome list (#9) for every new user so they receive the
+      // welcome email via Brevo automation. Also add to Blog list (#11) if
+      // they opted in via the newsletter checkbox on the sign-up page.
+      const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
+      subscribeToNewsletter({
+        email: googleUser.email,
+        name: fullName,
+        source: 'google_signup',
+        subscribeToBlog: subscribeNewsletterCookie,
+      }).catch(() => {});
 
     } else {
       // Login flow
