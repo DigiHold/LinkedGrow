@@ -127,61 +127,45 @@ export async function POST(request: NextRequest) {
       .where(eq(media.postId, postId));
 
     let postResult;
-    let mediaFallback = false;
     const firstDocument = postMedia.find(m => m.mimeType === "application/pdf");
     const firstVideo = postMedia.find(m => m.mimeType?.startsWith("video/"));
     const firstImage = postMedia.find(m => m.mimeType?.startsWith("image/"));
 
+    // Media upload errors must propagate to the outer catch so the post is
+    // marked as failed - silently falling back to text-only would publish a
+    // half-broken post that doesn't match what the user scheduled.
     if (firstDocument?.storageUrl) {
-      try {
-        postResult = await createLinkedInPostWithDocument(
-          token,
-          authorId,
-          post.content,
-          firstDocument.storageUrl,
-          firstDocument.altText || "Carousel",
-          "PUBLIC",
-          authorType
-        );
-      } catch (mediaError) {
-        console.error("Document upload failed, falling back to text-only:", mediaError);
-        mediaFallback = true;
-      }
+      postResult = await createLinkedInPostWithDocument(
+        token,
+        authorId,
+        post.content,
+        firstDocument.storageUrl,
+        firstDocument.altText || "Carousel",
+        "PUBLIC",
+        authorType
+      );
     } else if (firstVideo?.storageUrl) {
-      try {
-        postResult = await createLinkedInPostWithVideo(
-          token,
-          authorId,
-          post.content,
-          firstVideo.storageUrl,
-          firstVideo.mimeType,
-          firstVideo.altText || undefined,
-          "PUBLIC",
-          authorType
-        );
-      } catch (mediaError) {
-        console.error("Video upload failed, falling back to text-only:", mediaError);
-        mediaFallback = true;
-      }
+      postResult = await createLinkedInPostWithVideo(
+        token,
+        authorId,
+        post.content,
+        firstVideo.storageUrl,
+        firstVideo.mimeType,
+        firstVideo.altText || undefined,
+        "PUBLIC",
+        authorType
+      );
     } else if (firstImage?.storageUrl) {
-      try {
-        postResult = await createLinkedInPostWithImage(
-          token,
-          authorId,
-          post.content,
-          firstImage.storageUrl,
-          firstImage.altText || undefined,
-          "PUBLIC",
-          authorType
-        );
-      } catch (mediaError) {
-        console.error("Image upload failed, falling back to text-only:", mediaError);
-        mediaFallback = true;
-      }
-    }
-
-    // Fallback to text-only if media upload failed, or if no media attached
-    if (!postResult) {
+      postResult = await createLinkedInPostWithImage(
+        token,
+        authorId,
+        post.content,
+        firstImage.storageUrl,
+        firstImage.altText || undefined,
+        "PUBLIC",
+        authorType
+      );
+    } else {
       postResult = await createLinkedInPost(
         token,
         authorId,
@@ -197,7 +181,7 @@ export async function POST(request: NextRequest) {
         status: "published",
         publishedAt: new Date(),
         linkedinPostId: postResult.id,
-        errorMessage: mediaFallback ? "Published without media - image/video file was unavailable" : null,
+        errorMessage: null,
         updatedAt: new Date(),
       })
       .where(eq(posts.id, postId));

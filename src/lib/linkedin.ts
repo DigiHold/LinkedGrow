@@ -779,15 +779,18 @@ async function uploadVideoToLinkedIn(
 /**
  * Poll the LinkedIn Videos API until the video status is AVAILABLE.
  * After finalizeUpload the video enters PROCESSING and cannot yet be referenced
- * in a post. Polling typically completes within a few seconds.
+ * in a post. LinkedIn silently strips a still-PROCESSING video from a post
+ * instead of rejecting it, so we MUST wait for AVAILABLE before creating the
+ * post or the user ends up with a text-only post on their feed.
  */
 async function waitForVideoAvailable(
   accessToken: string,
   videoUrn: string,
-  maxAttempts: number = 30,
+  maxAttempts: number = 90,
   intervalMs: number = 2000
 ): Promise<void> {
   const encodedUrn = encodeURIComponent(videoUrn);
+  let lastStatus: string | undefined;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const response = await fetch(`${LINKEDIN_REST_API_BASE}/videos/${encodedUrn}`, {
@@ -795,25 +798,30 @@ async function waitForVideoAvailable(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'LinkedIn-Version': LINKEDIN_API_VERSION,
+        'X-Restli-Protocol-Version': '2.0.0',
       },
     });
 
     if (response.ok) {
       const data = await response.json();
-      const status = data.status;
-      if (status === 'AVAILABLE') {
+      lastStatus = data.status;
+      if (lastStatus === 'AVAILABLE') {
         return;
       }
-      if (status === 'PROCESSING_FAILED' || status === 'DELETED') {
-        throw new Error(`LinkedIn video processing failed with status: ${status}`);
+      if (lastStatus === 'PROCESSING_FAILED' || lastStatus === 'DELETED') {
+        const reason = data.processingFailureReason ? ` (${data.processingFailureReason})` : '';
+        throw new Error(`LinkedIn video processing failed with status: ${lastStatus}${reason}`);
       }
     }
 
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
 
-  // Don't hard-fail: LinkedIn often accepts the post even while still PROCESSING.
-  // The post API call below will surface any real error.
+  // Hard-fail rather than create a post that LinkedIn will silently strip
+  // the video from.
+  throw new Error(
+    `LinkedIn video did not finish processing in time (last status: ${lastStatus || 'unknown'}). Please try again in a moment.`
+  );
 }
 
 /**

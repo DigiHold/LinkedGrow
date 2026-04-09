@@ -106,6 +106,9 @@ export function CalendarContent() {
   const [newPostContent, setNewPostContent] = useState("");
   const [newPostFirstComment, setNewPostFirstComment] = useState("");
   const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string; preview?: string; storageUrl?: string; storageKey?: string } | null>(null);
+  // Track the draft post ID after the first /api/posts call so a failed publish
+  // followed by a retry doesn't create a duplicate draft.
+  const [pendingDraftPostId, setPendingDraftPostId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiInstruction, setAIInstruction] = useState("");
@@ -448,6 +451,9 @@ export function CalendarContent() {
     setDropdownOpen(false);
     if (view === "create-post") {
       setNewPostContent("");
+      setAttachedImage(null);
+      setNewPostFirstComment("");
+      setPendingDraftPostId(null);
       setTimeout(() => postEditorRef.current?.focus(), 100);
     }
     if (view === "schedule-post") {
@@ -689,45 +695,64 @@ export function CalendarContent() {
       }
 
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
+      const isPdf = attachedImage?.mimeType === "application/pdf";
 
-      // Build media info (images are already on R2)
-      const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo;
+      // Videos are NOT stored in the DB - they're too big and would bloat
+      // storage. Instead the R2 URL is passed directly to the publish endpoint
+      // and the file is deleted from R2 right after LinkedIn ingests it.
+      // For images and PDFs we still create a media row so they're persistent.
+      const hasMedia = !!(attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo);
       const mediaInfo = hasMedia ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
         mimeType: attachedImage.mimeType,
       } : undefined;
 
-      // Create post record
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: newPostContent,
-          status: publish ? "draft" : "scheduled",
-          scheduledAt: publish ? undefined : scheduledAtISO,
-          postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
-          mediaInfo,
-          firstComment: newPostFirstComment || null,
-        }),
-      });
+      const postType = isVideo ? "video" : isPdf ? "carousel" : (attachedImage ? "image" : "text");
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        throw new Error(err?.error || "Failed to create post");
+      // Reuse the draft from a prior failed attempt so retrying publish doesn't
+      // create a duplicate draft row.
+      let postIdToPublish = pendingDraftPostId;
+
+      if (!postIdToPublish) {
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: newPostContent,
+            status: publish ? "draft" : "scheduled",
+            scheduledAt: publish ? undefined : scheduledAtISO,
+            postType,
+            mediaInfo,
+            firstComment: newPostFirstComment || null,
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => null);
+          throw new Error(err?.error || "Failed to create post");
+        }
+
+        const { post } = await response.json();
+        postIdToPublish = post.id;
+        // Persist immediately so a publish failure below leaves us with the
+        // same draft to retry against, not a fresh one.
+        setPendingDraftPostId(postIdToPublish);
       }
 
       // If publishing immediately, call the LinkedIn API
       if (publish) {
-        const { post } = await response.json();
-
-        // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
         const publishResponse = await fetch("/api/linkedin/post", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            postId: post.id,
+            postId: postIdToPublish,
             text: newPostContent,
+            // For videos, pass the R2 URL directly so the route doesn't have
+            // to look it up from the media table (we don't store one).
+            videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+            videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+            videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
           }),
         });
 
@@ -741,8 +766,9 @@ export function CalendarContent() {
       setDrawerOpen(false);
       setNewPostContent("");
       setAttachedImage(null);
-    } catch {
-      // Silent fail
+      setPendingDraftPostId(null);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Failed to publish post");
     } finally {
       setIsSaving(false);
     }
@@ -844,6 +870,9 @@ export function CalendarContent() {
     setIdeaModalOpen(false);
     setSelectedIdeaForModal(null);
     setNewPostContent(newIdeaText);
+    setAttachedImage(null);
+    setNewPostFirstComment("");
+    setPendingDraftPostId(null);
     setDrawerView("create-post");
     setDrawerOpen(true);
     setTimeout(() => postEditorRef.current?.focus(), 100);
@@ -1737,10 +1766,10 @@ Tips for viral posts:
                     </Card>
 
                     <div className="space-y-3">
-                      {/* Video notice - videos cannot be stored, must be published immediately */}
+                      {/* Videos must be published immediately - they're not stored for scheduled delivery */}
                       {isVideoMedia(attachedImage) && (
                         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
-                          Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately.
+                          Video posts must be published immediately - they cannot be scheduled or saved as a draft.
                         </div>
                       )}
                       <Button variant="outline" className="w-full" onClick={() => handleCreatePost(false)} disabled={!newPostContent.trim() || isSaving || isVideoMedia(attachedImage)}>
@@ -1751,12 +1780,10 @@ Tips for viral posts:
                         <Calendar className="w-4 h-4 mr-2" />
                         {isSaving ? "Scheduling..." : "Schedule Post"}
                       </Button>
-                      {isVideoMedia(attachedImage) && (
-                        <Button variant="linkedin" className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
-                          <Send className="w-4 h-4 mr-2" />
-                          {isSaving ? "Publishing..." : "Publish Now"}
-                        </Button>
-                      )}
+                      <Button variant="linkedin" className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
+                        <Send className="w-4 h-4 mr-2" />
+                        {isSaving ? "Publishing..." : "Publish Now"}
+                      </Button>
                     </div>
                   </div>
                 </div>

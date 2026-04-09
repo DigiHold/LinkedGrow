@@ -6,6 +6,7 @@ import { db, posts, media } from '@/lib/db';
 import { scheduleFirstComment, scheduleAutoLike } from '@/lib/qstash';
 import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
 import { triggerCrossPromotion } from '@/lib/cross-promotion';
+import { deleteFromR2 } from '@/lib/storage/r2';
 import { eq } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
@@ -25,8 +26,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { text, postId, imageTitle, visibility = 'PUBLIC' } = body;
     let { imageUrl } = body;
-    let videoUrl: string | undefined;
-    let videoMimeType: string | undefined;
+    // Videos are passed inline by the client because they aren't stored in
+    // the media table - they live in R2 only as a transient pipe and get
+    // deleted right after a successful LinkedIn upload.
+    let videoUrl: string | undefined = body.videoUrl;
+    let videoMimeType: string | undefined = body.videoMimeType;
+    const videoStorageKey: string | undefined = body.videoStorageKey;
     let documentUrl: string | undefined;
     let documentTitle: string | undefined;
 
@@ -43,23 +48,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Look up media from the media table (all media is stored on R2)
-      if (!imageUrl) {
+      // Look up image/document media from the media table (videos are never
+      // stored there - they're passed inline in the request body above).
+      if (!imageUrl && !videoUrl) {
         const postMedia = await db
           .select()
           .from(media)
           .where(eq(media.postId, postId));
 
         const firstDocument = postMedia.find(m => m.mimeType === 'application/pdf');
-        const firstVideo = postMedia.find(m => m.mimeType?.startsWith('video/'));
         const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
 
         if (firstDocument?.storageUrl) {
           documentUrl = firstDocument.storageUrl;
           documentTitle = firstDocument.altText || imageTitle || 'Carousel';
-        } else if (firstVideo?.storageUrl) {
-          videoUrl = firstVideo.storageUrl;
-          videoMimeType = firstVideo.mimeType;
         } else if (firstImage?.storageUrl) {
           imageUrl = firstImage.storageUrl;
         }
@@ -158,6 +160,17 @@ export async function POST(request: NextRequest) {
         visibility,
         authorType
       );
+    }
+
+    // Video succeeded - delete the transient R2 file. Videos are not stored
+    // anywhere on our side once LinkedIn has ingested them. Best-effort: a
+    // failed delete is logged but doesn't fail the publish.
+    if (videoUrl && videoStorageKey) {
+      try {
+        await deleteFromR2(videoStorageKey);
+      } catch (cleanupError) {
+        console.error('[Video R2 Cleanup] Failed to delete video after publish:', cleanupError);
+      }
     }
 
     // Update post status to published in the database

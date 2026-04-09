@@ -673,13 +673,17 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
 
-      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      // Videos are NOT stored in the DB media table - they live in R2 only
+      // as a transient pipe and get deleted right after LinkedIn ingests them.
+      // We mark the post with postType=video for the badge and pass the R2 URL
+      // inline to /api/linkedin/post below.
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo;
       const mediaInfo = hasR2Media ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
         mimeType: attachedImage.mimeType,
       } : undefined;
-      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
+      const mediaData = (!hasR2Media && !isVideo && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -705,13 +709,17 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
 
       const { post } = await saveResponse.json();
 
-      // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
+      // Publish to LinkedIn. Images/PDFs are looked up from the media table
+      // by postId; videos are passed inline because they aren't stored.
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId: post.id,
           text: currentPost,
+          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
         }),
       });
 

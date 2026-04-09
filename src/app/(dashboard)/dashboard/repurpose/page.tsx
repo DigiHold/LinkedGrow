@@ -702,13 +702,14 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
     setIsPublishing(true);
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
-      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey;
+      // Videos are not stored in the DB media table - passed inline below.
+      const hasR2Media = attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo;
       const mediaInfo = hasR2Media ? {
         storageUrl: attachedImage.storageUrl,
         storageKey: attachedImage.storageKey,
         mimeType: attachedImage.mimeType,
       } : undefined;
-      const mediaData = (!hasR2Media && attachedImage?.base64) ? {
+      const mediaData = (!hasR2Media && !isVideo && attachedImage?.base64) ? {
         base64: attachedImage.base64,
         mimeType: attachedImage.mimeType,
       } : undefined;
@@ -744,6 +745,9 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
         body: JSON.stringify({
           postId: post.id,
           text: currentPost,
+          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
         }),
       });
 

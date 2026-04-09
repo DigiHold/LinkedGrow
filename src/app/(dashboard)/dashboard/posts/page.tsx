@@ -23,6 +23,9 @@ import {
   X,
   HelpCircle,
   MessageSquare,
+  Video,
+  Image as ImageIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
@@ -505,10 +508,23 @@ export default function PostsPage() {
                       {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                     </span>
 
-                    {/* Post Type */}
-                    {post.postType !== "text" && (
-                      <span className="text-muted-foreground text-xs capitalize">
-                        {post.postType}
+                    {/* Post Type Badge */}
+                    {post.postType === "video" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                        <Video className="w-3 h-3" />
+                        Video
+                      </span>
+                    )}
+                    {post.postType === "image" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
+                        <ImageIcon className="w-3 h-3" />
+                        Image
+                      </span>
+                    )}
+                    {post.postType === "carousel" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <LayoutGrid className="w-3 h-3" />
+                        Carousel
                       </span>
                     )}
 

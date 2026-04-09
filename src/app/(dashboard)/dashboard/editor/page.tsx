@@ -421,11 +421,15 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
     setSavingAction("publish");
     try {
       const isVideo = attachedImage?.mimeType?.startsWith("video/");
+      const isPdf = attachedImage?.mimeType === "application/pdf";
       let postId = currentPostId;
 
-      // Create post record if not already saved
+      // Create post record if not already saved.
+      // Videos are NOT stored in the DB media table (too big) - we mark the
+      // post with postType=video for the badge and pass the R2 URL directly
+      // to the publish endpoint below.
       if (!postId) {
-        const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey;
+        const hasMedia = attachedImage?.storageUrl && attachedImage?.storageKey && !isVideo;
         const mediaInfo = hasMedia ? {
           storageUrl: attachedImage.storageUrl,
           storageKey: attachedImage.storageKey,
@@ -438,7 +442,7 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
           body: JSON.stringify({
             content,
             status: "draft",
-            postType: isVideo ? "video" : (attachedImage ? "image" : "text"),
+            postType: isVideo ? "video" : isPdf ? "carousel" : (attachedImage ? "image" : "text"),
             mediaInfo,
             firstComment: firstComment || null,
           }),
@@ -449,15 +453,22 @@ showError(error instanceof Error ? error.message : "Failed to save draft");
         }
         const data = await response.json();
         postId = data.post.id;
+        // Persist the new draft id to state so a publish failure followed by
+        // a retry reuses the same draft instead of creating a duplicate.
+        setCurrentPostId(postId);
       }
 
-      // Publish to LinkedIn (API looks up media from DB - images and videos from R2)
+      // Publish to LinkedIn. Images/PDFs are looked up from the media table
+      // by postId; videos are passed inline because they aren't stored.
       const publishResponse = await fetch("/api/linkedin/post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId,
           text: content,
+          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
         }),
       });
 
