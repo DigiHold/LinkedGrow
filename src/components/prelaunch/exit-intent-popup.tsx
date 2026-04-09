@@ -6,7 +6,7 @@ import { X, Gift, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExitIntentPopupProps {
-  onSubmit: (email: string, formLoadTime: number, honeypot: string, firstName: string) => Promise<void>;
+  onSubmit: (email: string, honeypot: string, firstName: string) => Promise<void>;
 }
 
 export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
@@ -18,7 +18,6 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [formLoadTime, setFormLoadTime] = useState(0);
 
   useEffect(() => {
     // Check if already shown in this session
@@ -33,7 +32,6 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
       if (e.clientY <= 0 && !hasShown) {
         setIsVisible(true);
         setHasShown(true);
-        setFormLoadTime(Date.now()); // Record when popup is shown for bot protection
         sessionStorage.setItem("exitIntentShown", "true");
       }
     };
@@ -57,7 +55,7 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
     setError("");
 
     try {
-      await onSubmit(email, formLoadTime, honeypot, firstName);
+      await onSubmit(email, honeypot, firstName);
       setIsSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
@@ -143,16 +141,19 @@ export function ExitIntentPopup({ onSubmit }: ExitIntentPopupProps) {
                 ) : (
                   <>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Honeypot field - hidden from humans, bots will fill it */}
+                      {/* Honeypot field - hidden from humans AND password managers */}
                       <input
                         type="text"
-                        name="website"
+                        name="lg_form_token"
                         value={honeypot}
                         onChange={(e) => setHoneypot(e.target.value)}
                         className="absolute -left-[9999px] opacity-0 h-0 w-0"
                         tabIndex={-1}
                         autoComplete="off"
                         aria-hidden="true"
+                        data-1p-ignore="true"
+                        data-lpignore="true"
+                        data-form-type="other"
                       />
                       <div>
                         <input

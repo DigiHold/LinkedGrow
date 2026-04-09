@@ -3,31 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_EMAIL_COURSE_LIST_ID = 14;
-const MIN_SUBMIT_TIME_MS = 1000;
 
 // POST /api/email-course - Add contact to Brevo email course list
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, name, _hp, _ts } = body;
+    const { email, name, _hp } = body;
 
     // Honeypot check - if filled, it's a bot
     if (_hp) {
+      console.warn("[EmailCourse] Honeypot triggered for email:", email);
       return NextResponse.json({
         success: true,
         message: "You're in! Check your inbox.",
       });
-    }
-
-    // Time-based check - if submitted too fast, it's a bot
-    if (_ts) {
-      const submitTime = Date.now() - parseInt(_ts, 10);
-      if (submitTime < MIN_SUBMIT_TIME_MS) {
-        return NextResponse.json({
-          success: true,
-          message: "You're in! Check your inbox.",
-        });
-      }
     }
 
     // Validate email

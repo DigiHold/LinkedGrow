@@ -354,16 +354,19 @@ function HeroSection({ firstName, setFirstName, email, setEmail, honeypot, setHo
         >
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="relative">
-              {/* Honeypot field - hidden from humans, bots will fill it */}
+              {/* Honeypot field - hidden from humans AND password managers */}
               <input
                 type="text"
-                name="website"
+                name="lg_form_token"
                 value={honeypot}
                 onChange={(e) => setHoneypot(e.target.value)}
                 className="absolute -left-[9999px] opacity-0 h-0 w-0"
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"
+                data-1p-ignore="true"
+                data-lpignore="true"
+                data-form-type="other"
               />
               <motion.div
                 className="absolute -inset-1 bg-linear-to-r from-cyan-500 via-blue-500 to-violet-500 rounded-2xl opacity-20 blur-lg"
@@ -1808,16 +1811,19 @@ function CTAForm({ firstName, setFirstName, email, setEmail, honeypot, setHoneyp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Honeypot field - hidden from humans, bots will fill it */}
+      {/* Honeypot field - hidden from humans AND password managers */}
       <input
         type="text"
-        name="website"
+        name="lg_form_token"
         value={honeypot}
         onChange={(e) => setHoneypot(e.target.value)}
         className="absolute -left-[9999px] opacity-0 h-0 w-0"
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
+        data-1p-ignore="true"
+        data-lpignore="true"
+        data-form-type="other"
       />
       <div className="relative">
         {isDark && <div className="absolute -inset-1 bg-linear-to-r from-cyan-500 to-violet-500 rounded-2xl blur opacity-30" />}
@@ -1886,16 +1892,19 @@ function CTASection(props: CTAProps) {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="max-w-3xl mx-auto">
           {!props.isSuccess ? (
             <form onSubmit={props.handleSubmit} className="space-y-3 relative">
-              {/* Honeypot field - hidden from humans, bots will fill it */}
+              {/* Honeypot field - hidden from humans AND password managers */}
               <input
                 type="text"
-                name="website"
+                name="lg_form_token"
                 value={props.honeypot}
                 onChange={(e) => props.setHoneypot(e.target.value)}
                 className="absolute -left-[9999px] opacity-0 h-0 w-0"
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"
+                data-1p-ignore="true"
+                data-lpignore="true"
+                data-form-type="other"
               />
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
@@ -1953,7 +1962,6 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [formLoadTime] = useState(() => Date.now()); // For bot protection
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -1989,13 +1997,14 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot) return;
     setIsLoading(true);
     setError("");
     try {
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name: firstName, _hp: honeypot, _ts: formLoadTime.toString() }),
+        body: JSON.stringify({ email, name: firstName, _hp: honeypot }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to subscribe");
@@ -2007,11 +2016,12 @@ export default function PreLaunchPage({ translations }: { translations: Prelaunc
     }
   };
 
-  const handleExitIntentSubmit = async (exitEmail: string, exitFormLoadTime: number, exitHoneypot: string, exitFirstName: string) => {
+  const handleExitIntentSubmit = async (exitEmail: string, exitHoneypot: string, exitFirstName: string) => {
+    if (exitHoneypot) return;
     const response = await fetch("/api/waitlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: exitEmail, name: exitFirstName, _hp: exitHoneypot, _ts: exitFormLoadTime.toString() }),
+      body: JSON.stringify({ email: exitEmail, name: exitFirstName, _hp: exitHoneypot }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to subscribe");

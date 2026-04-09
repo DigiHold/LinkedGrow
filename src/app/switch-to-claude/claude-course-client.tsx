@@ -55,14 +55,15 @@ interface ClaudeCourseClientProps {
 function SignupForm({ location }: { location: string }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [formLoadTime] = useState(() => Date.now());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (honeypot) return;
 
     if (!name.trim()) {
       setError("Please enter your first name");
@@ -82,8 +83,7 @@ function SignupForm({ location }: { location: string }) {
         body: JSON.stringify({
           email: email.trim(),
           name: name.trim(),
-          _hp: "",
-          _ts: formLoadTime.toString(),
+          _hp: honeypot,
         }),
       });
 
@@ -124,14 +124,19 @@ function SignupForm({ location }: { location: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto space-y-3">
-      {/* Honeypot */}
+      {/* Honeypot - hidden from humans AND password managers */}
       <input
         type="text"
-        name="website"
+        name="lg_form_token"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
         className="absolute -left-[9999px] opacity-0 h-0 w-0"
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
+        data-1p-ignore="true"
+        data-lpignore="true"
+        data-form-type="other"
       />
 
       <div>
