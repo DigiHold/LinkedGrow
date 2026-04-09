@@ -685,15 +685,21 @@ export async function createLinkedInPostWithImage(
   return getPostIdFromRestResponse(response);
 }
 
+interface VideoUploadInstruction {
+  uploadUrl: string;
+  firstByte: number;
+  lastByte: number;
+}
+
 /**
  * Register a video upload with LinkedIn
- * Returns the upload URL and asset URN
+ * Returns the upload instructions (one per part), upload token and asset URN
  */
 async function registerVideoUpload(
   accessToken: string,
   ownerUrn: string,
   fileSizeBytes: number
-): Promise<{ uploadUrl: string; video: string }> {
+): Promise<{ uploadInstructions: VideoUploadInstruction[]; uploadToken: string; video: string }> {
   const response = await fetch(`${LINKEDIN_REST_API_BASE}/videos?action=initializeUpload`, {
     method: 'POST',
     headers: {
@@ -717,32 +723,97 @@ async function registerVideoUpload(
   }
 
   const data = await response.json();
-  const uploadUrl = data.value.uploadInstructions[0].uploadUrl;
-  const video = data.value.video;
+  const uploadInstructions: VideoUploadInstruction[] = data.value.uploadInstructions || [];
+  const uploadToken: string = data.value.uploadToken || '';
+  const video: string = data.value.video;
 
-  return { uploadUrl, video };
+  if (uploadInstructions.length === 0) {
+    throw new Error('LinkedIn returned no upload instructions for video');
+  }
+
+  return { uploadInstructions, uploadToken, video };
 }
 
 /**
- * Upload video binary data to LinkedIn
+ * Upload video binary data to LinkedIn in parts.
+ * LinkedIn splits videos larger than ~4MB into multiple parts; each part must be
+ * uploaded to its own pre-signed URL and the returned ETag header collected
+ * for the finalizeUpload call.
  */
 async function uploadVideoToLinkedIn(
-  uploadUrl: string,
+  uploadInstructions: VideoUploadInstruction[],
   videoBlob: Blob
-): Promise<void> {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      'LinkedIn-Version': LINKEDIN_API_VERSION,
-    },
-    body: videoBlob,
-  });
+): Promise<string[]> {
+  const uploadedPartIds: string[] = [];
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to upload video to LinkedIn: ${error}`);
+  for (const instruction of uploadInstructions) {
+    // lastByte is inclusive in LinkedIn's API; Blob.slice end is exclusive
+    const partBlob = videoBlob.slice(instruction.firstByte, instruction.lastByte + 1);
+
+    const response = await fetch(instruction.uploadUrl, {
+      method: 'PUT',
+      // Pre-signed CDN URL: do NOT add LinkedIn-Version or Authorization headers,
+      // they will break the signature.
+      headers: {
+        'Content-Type': 'application/octet-stream',
+      },
+      body: partBlob,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to upload video part to LinkedIn: ${error}`);
+    }
+
+    const etag = response.headers.get('etag') || response.headers.get('ETag');
+    if (!etag) {
+      throw new Error('LinkedIn upload response missing ETag header');
+    }
+
+    uploadedPartIds.push(etag);
   }
+
+  return uploadedPartIds;
+}
+
+/**
+ * Poll the LinkedIn Videos API until the video status is AVAILABLE.
+ * After finalizeUpload the video enters PROCESSING and cannot yet be referenced
+ * in a post. Polling typically completes within a few seconds.
+ */
+async function waitForVideoAvailable(
+  accessToken: string,
+  videoUrn: string,
+  maxAttempts: number = 30,
+  intervalMs: number = 2000
+): Promise<void> {
+  const encodedUrn = encodeURIComponent(videoUrn);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const response = await fetch(`${LINKEDIN_REST_API_BASE}/videos/${encodedUrn}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const status = data.status;
+      if (status === 'AVAILABLE') {
+        return;
+      }
+      if (status === 'PROCESSING_FAILED' || status === 'DELETED') {
+        throw new Error(`LinkedIn video processing failed with status: ${status}`);
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  // Don't hard-fail: LinkedIn often accepts the post even while still PROCESSING.
+  // The post API call below will surface any real error.
 }
 
 /**
@@ -786,17 +857,17 @@ export async function createLinkedInPostWithVideo(
   const { blob: videoBlob } = await fetchVideoAsBlob(videoUrl);
 
   // Step 2: Register the video upload with LinkedIn Videos API
-  const { uploadUrl, video: videoUrn } = await registerVideoUpload(
+  const { uploadInstructions, uploadToken, video: videoUrn } = await registerVideoUpload(
     accessToken,
     authorUrn,
     videoBlob.size
   );
 
-  // Step 3: Upload the video binary to LinkedIn
-  await uploadVideoToLinkedIn(uploadUrl, videoBlob);
+  // Step 3: Upload the video binary to LinkedIn (one PUT per part)
+  const uploadedPartIds = await uploadVideoToLinkedIn(uploadInstructions, videoBlob);
 
-  // Step 4: Finalize the video upload
-  await fetch(`${LINKEDIN_REST_API_BASE}/videos?action=finalizeUpload`, {
+  // Step 4: Finalize the video upload (must include uploadToken + part ETags)
+  const finalizeResponse = await fetch(`${LINKEDIN_REST_API_BASE}/videos?action=finalizeUpload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -806,11 +877,20 @@ export async function createLinkedInPostWithVideo(
     body: JSON.stringify({
       finalizeUploadRequest: {
         video: videoUrn,
-        uploadToken: '',
-        uploadedPartIds: [],
+        uploadToken: uploadToken,
+        uploadedPartIds: uploadedPartIds,
       },
     }),
   });
+
+  if (!finalizeResponse.ok) {
+    const error = await finalizeResponse.text();
+    throw new Error(`Failed to finalize LinkedIn video upload: ${error}`);
+  }
+
+  // Step 4b: Wait until LinkedIn finishes processing the video.
+  // Posts referencing a video that is still PROCESSING are rejected.
+  await waitForVideoAvailable(accessToken, videoUrn);
 
   // Step 5: Create the post using the REST Posts API with the video
   const postData = {
