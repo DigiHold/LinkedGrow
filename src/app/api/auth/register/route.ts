@@ -5,7 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
-import { subscribeToNewsletter } from "@/lib/newsletter";
+import { signUp, subscribeToNewsletter } from "@/lib/newsletter";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 
@@ -142,15 +142,13 @@ export async function POST(request: NextRequest) {
         .where(eq(affiliates.id, validAffiliate.id));
     }
 
-    // Add to Welcome list (#9) for every new user so they receive the welcome
-    // email via Brevo automation. Also add to Blog list (#11) if they opted in
-    // via the "Get growth tips, new features, and exclusive offers" checkbox.
-    subscribeToNewsletter({
-      email,
-      name: name || undefined,
-      source: "email_signup",
-      subscribeToBlog: Boolean(subscribeNewsletter),
-    }).catch(() => {});
+    // Add every new user to the Welcome list (#9) so Brevo automation sends
+    // the welcome email. Also add to the Blog list (#11) if they opted in via
+    // the "Get growth tips, new features, and exclusive offers" checkbox.
+    signUp({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
+    if (subscribeNewsletter) {
+      subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

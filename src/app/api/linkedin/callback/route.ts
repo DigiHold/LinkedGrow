@@ -8,7 +8,7 @@ import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 
-import { subscribeToNewsletter } from '@/lib/newsletter';
+import { signUp, subscribeToNewsletter } from '@/lib/newsletter';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -280,15 +280,13 @@ if (isPopup) {
           where: eq(users.id, userId),
         });
 
-        // Add to Welcome list (#9) for every new user so they receive the
-        // welcome email via Brevo automation. Also add to Blog list (#11) if
-        // they opted in via the newsletter checkbox on the sign-up page.
-        subscribeToNewsletter({
-          email: linkedInEmail,
-          name: fullName,
-          source: 'linkedin_signup',
-          subscribeToBlog: subscribeNewsletterCookie,
-        }).catch(() => {});
+        // Add every new user to the Welcome list (#9) so Brevo automation
+        // sends the welcome email. Also add to the Blog list (#11) if they
+        // opted in via the newsletter checkbox on the sign-up page.
+        signUp({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch(() => {});
+        if (subscribeNewsletterCookie) {
+          subscribeToNewsletter({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch(() => {});
+        }
 
       } else {
         // Login flow

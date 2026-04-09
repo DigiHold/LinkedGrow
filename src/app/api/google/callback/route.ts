@@ -6,7 +6,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 
-import { subscribeToNewsletter } from '@/lib/newsletter';
+import { signUp, subscribeToNewsletter } from '@/lib/newsletter';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -197,16 +197,14 @@ export async function GET(request: NextRequest) {
         where: eq(users.id, userId),
       });
 
-      // Add to Welcome list (#9) for every new user so they receive the
-      // welcome email via Brevo automation. Also add to Blog list (#11) if
-      // they opted in via the newsletter checkbox on the sign-up page.
+      // Add every new user to the Welcome list (#9) so Brevo automation
+      // sends the welcome email. Also add to the Blog list (#11) if they
+      // opted in via the newsletter checkbox on the sign-up page.
       const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
-      subscribeToNewsletter({
-        email: googleUser.email,
-        name: fullName,
-        source: 'google_signup',
-        subscribeToBlog: subscribeNewsletterCookie,
-      }).catch(() => {});
+      signUp({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
+      if (subscribeNewsletterCookie) {
+        subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
+      }
 
     } else {
       // Login flow
