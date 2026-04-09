@@ -369,7 +369,7 @@ return NextResponse.json(
       }
 
       if (processedMediaInfo.mimeType === "application/pdf") {
-        updateData.postType = "document";
+        updateData.postType = "carousel";
       } else if (processedMediaInfo.mimeType?.startsWith("video/")) {
         updateData.postType = "video";
       } else {

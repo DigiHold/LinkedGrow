@@ -385,11 +385,13 @@ return NextResponse.json(
       }
     }
 
-    // Determine post type based on media
+    // Determine post type based on media. PDFs are LinkedIn carousels.
+    // The schema enum is text/image/carousel/video - "document" is NOT a
+    // valid value and will silently break the My Posts badge.
     let actualPostType = postType;
     if (processedMediaInfo?.storageUrl) {
       if (processedMediaInfo.mimeType === "application/pdf") {
-        actualPostType = "document";
+        actualPostType = "carousel";
       } else if (processedMediaInfo.mimeType?.startsWith("video/")) {
         actualPostType = "video";
       } else {

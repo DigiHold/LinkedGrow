@@ -67,7 +67,7 @@ interface Post {
   id: string;
   content: string;
   status: "draft" | "scheduled" | "published" | "failed";
-  postType: "text" | "image" | "carousel" | "video" | "document";
+  postType: "text" | "image" | "carousel" | "video";
   scheduledAt: string | null;
   publishedAt: string | null;
   linkedinPostUrl: string | null;
