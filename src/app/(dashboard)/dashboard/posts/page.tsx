@@ -877,7 +877,16 @@ export default function PostsPage() {
                 <div className="whitespace-pre-wrap text-sm leading-relaxed">
                   {previewPost.content}
                 </div>
-                {previewPost.media && previewPost.media.length > 0 && (
+                {/* Video posts: show a placeholder card (the file is gone from
+                    R2 after publish, and was never displayed as a real player). */}
+                {previewPost.postType === "video" ? (
+                  <div className="mt-4 flex items-center justify-center h-48 rounded-lg bg-linear-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10 border border-purple-200 dark:border-purple-800">
+                    <div className="flex flex-col items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <Video className="w-10 h-10" />
+                      <span className="text-sm font-medium">Video post</span>
+                    </div>
+                  </div>
+                ) : previewPost.media && previewPost.media.length > 0 && (
                   <div className="mt-4 grid gap-2">
                     {previewPost.media.map((media) => (
                       media.mimeType === 'application/pdf' ? (
@@ -885,6 +894,16 @@ export default function PostsPage() {
                           key={media.id}
                           url={media.storageUrl}
                         />
+                      ) : media.mimeType?.startsWith('video/') ? (
+                        <div
+                          key={media.id}
+                          className="flex items-center justify-center h-48 rounded-lg bg-linear-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10 border border-purple-200 dark:border-purple-800"
+                        >
+                          <div className="flex flex-col items-center gap-2 text-purple-700 dark:text-purple-300">
+                            <Video className="w-10 h-10" />
+                            <span className="text-sm font-medium">Video post</span>
+                          </div>
+                        </div>
                       ) : (
                         <img
                           key={media.id}

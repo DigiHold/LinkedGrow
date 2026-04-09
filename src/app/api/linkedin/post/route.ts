@@ -7,7 +7,7 @@ import { scheduleFirstComment, scheduleAutoLike } from '@/lib/qstash';
 import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
 import { triggerCrossPromotion } from '@/lib/cross-promotion';
 import { deleteFromR2 } from '@/lib/storage/r2';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
 export const maxDuration = 300;
@@ -26,12 +26,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { text, postId, imageTitle, visibility = 'PUBLIC' } = body;
     let { imageUrl } = body;
-    // Videos are passed inline by the client because they aren't stored in
-    // the media table - they live in R2 only as a transient pipe and get
-    // deleted right after a successful LinkedIn upload.
+    // Videos are passed inline by the client when possible. We also fall
+    // back to the media table for legacy drafts that were created before
+    // videos stopped being stored there - so the route works regardless of
+    // whether the user's browser is running new or cached frontend code.
     let videoUrl: string | undefined = body.videoUrl;
     let videoMimeType: string | undefined = body.videoMimeType;
-    const videoStorageKey: string | undefined = body.videoStorageKey;
+    let videoStorageKey: string | undefined = body.videoStorageKey;
+    // Video media rows in the DB that need cleanup after a successful publish
+    // (legacy rows from before videos stopped being stored).
+    const legacyVideoMediaIds: string[] = [];
+    const legacyVideoStorageKeys: string[] = [];
     let documentUrl: string | undefined;
     let documentTitle: string | undefined;
 
@@ -48,14 +53,32 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Look up image/document media from the media table (videos are never
-      // stored there - they're passed inline in the request body above).
-      if (!imageUrl && !videoUrl) {
-        const postMedia = await db
-          .select()
-          .from(media)
-          .where(eq(media.postId, postId));
+      const postMedia = await db
+        .select()
+        .from(media)
+        .where(eq(media.postId, postId));
 
+      // Track every video row attached to this post so we can wipe both
+      // the R2 file and the DB row after publish.
+      for (const m of postMedia) {
+        if (m.mimeType?.startsWith('video/')) {
+          legacyVideoMediaIds.push(m.id);
+          if (m.storageKey) legacyVideoStorageKeys.push(m.storageKey);
+        }
+      }
+
+      // If the client didn't pass video info inline (e.g. cached old
+      // frontend), pull it from the first legacy video media row.
+      if (!videoUrl && !imageUrl) {
+        const firstVideo = postMedia.find(m => m.mimeType?.startsWith('video/'));
+        if (firstVideo?.storageUrl) {
+          videoUrl = firstVideo.storageUrl;
+          videoMimeType = firstVideo.mimeType;
+          if (!videoStorageKey) videoStorageKey = firstVideo.storageKey;
+        }
+      }
+
+      if (!imageUrl && !videoUrl) {
         const firstDocument = postMedia.find(m => m.mimeType === 'application/pdf');
         const firstImage = postMedia.find(m => m.mimeType?.startsWith('image/'));
 
@@ -162,14 +185,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Video succeeded - delete the transient R2 file. Videos are not stored
-    // anywhere on our side once LinkedIn has ingested them. Best-effort: a
-    // failed delete is logged but doesn't fail the publish.
-    if (videoUrl && videoStorageKey) {
-      try {
-        await deleteFromR2(videoStorageKey);
-      } catch (cleanupError) {
-        console.error('[Video R2 Cleanup] Failed to delete video after publish:', cleanupError);
+    // Video succeeded - delete the transient R2 file(s) AND any DB media rows
+    // pointing at them. Videos are not stored anywhere on our side once
+    // LinkedIn has ingested them. Best-effort: failed deletes are logged but
+    // don't fail the publish.
+    if (videoUrl) {
+      // Collect every storage key we know about - inline from the request and
+      // any legacy DB rows attached to this post.
+      const keysToDelete = new Set<string>(legacyVideoStorageKeys);
+      if (videoStorageKey) keysToDelete.add(videoStorageKey);
+
+      for (const key of keysToDelete) {
+        try {
+          await deleteFromR2(key);
+        } catch (cleanupError) {
+          console.error('[Video R2 Cleanup] Failed to delete video after publish:', cleanupError);
+        }
+      }
+
+      // Delete any legacy video media rows so the My Posts preview stops
+      // pointing at the (now-deleted) R2 file.
+      if (legacyVideoMediaIds.length > 0) {
+        try {
+          await db.delete(media).where(inArray(media.id, legacyVideoMediaIds));
+        } catch (cleanupError) {
+          console.error('[Video Media Cleanup] Failed to delete legacy video media rows:', cleanupError);
+        }
       }
     }
 
