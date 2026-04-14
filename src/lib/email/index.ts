@@ -27,6 +27,10 @@ export {
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
 export {
+  ltdWelcomeEmailTemplate,
+  ltdWelcomeEmailText,
+} from "./templates/ltd-welcome-email";
+export {
   crossPromotionInviteEmailTemplate,
   crossPromotionInviteEmailText,
 } from "./templates/cross-promotion-invite-email";
@@ -61,6 +65,10 @@ import {
   subscriptionWelcomeEmailTemplate,
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
+import {
+  ltdWelcomeEmailTemplate,
+  ltdWelcomeEmailText,
+} from "./templates/ltd-welcome-email";
 import {
   crossPromotionInviteEmailTemplate,
   crossPromotionInviteEmailText,
@@ -182,6 +190,21 @@ export async function sendSubscriptionWelcomeEmail({
     subject: `Welcome to LinkedGrow ${displayPlan}!`,
     html: subscriptionWelcomeEmailTemplate({ name, planName }),
     text: subscriptionWelcomeEmailText({ name, planName }),
+  });
+}
+
+export async function sendLtdWelcomeEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name?: string;
+}) {
+  return sendEmail({
+    to,
+    subject: "You're in for life - Welcome to LinkedGrow Business",
+    html: ltdWelcomeEmailTemplate({ name }),
+    text: ltdWelcomeEmailText({ name }),
   });
 }
 
