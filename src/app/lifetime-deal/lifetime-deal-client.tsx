@@ -847,7 +847,7 @@ function TestimonialsSection() {
 
   const testimonials = [
     { quote: "The voice training nailed my style from just 5 sample posts. Clients think I write every post myself. The BYOK model means I pay $3/month for unlimited generations.", author: "Laura W.", role: "Freelance Writer", metric: "+1,200%" },
-    { quote: "Spending $4/month on API calls instead of $99 on other tools. Game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings" },
+    { quote: "Spending $4/month on API calls instead of $99 on other tools. It's a game changer.", author: "Marcus C.", role: "Startup Founder", metric: "96% savings" },
     { quote: "The carousel generator alone is worth it. Professional slides in minutes.", author: "Elena R.", role: "Content Creator", metric: "+340%" },
     { quote: "Finally an AI that writes in MY voice. My audience can't tell the difference.", author: "James L.", role: "Tech CEO", metric: "+520%" },
     { quote: "Went from posting weekly to daily. Engagement through the roof.", author: "Priya S.", role: "SaaS Founder", metric: "+890%" },
