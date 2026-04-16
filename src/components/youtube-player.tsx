@@ -19,7 +19,7 @@ export function YouTubePlayer({
   ctaText = "Get Started",
   ctaAction,
   ctaHref,
-  autoPlay = false,
+  autoPlay = true,
 }: YouTubePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
