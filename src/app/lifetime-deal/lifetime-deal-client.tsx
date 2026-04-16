@@ -368,6 +368,7 @@ function HeroSection({
                 thumbnailUrl="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif"
                 ctaText="Get Lifetime Access"
                 ctaHref="#pricing"
+                autoPlay
               />
             </div>
           </div>

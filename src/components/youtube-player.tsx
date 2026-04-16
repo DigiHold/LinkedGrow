@@ -10,6 +10,7 @@ interface YouTubePlayerProps {
   ctaText?: string;
   ctaAction?: () => void;
   ctaHref?: string;
+  autoPlay?: boolean;
 }
 
 export function YouTubePlayer({
@@ -18,10 +19,32 @@ export function YouTubePlayer({
   ctaText = "Get Started",
   ctaAction,
   ctaHref,
+  autoPlay = false,
 }: YouTubePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!autoPlay || isPlaying || !containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setIsPlaying(true);
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [autoPlay, isPlaying]);
 
   // Listen for YouTube postMessage events to detect video end
   useEffect(() => {
@@ -134,7 +157,10 @@ export function YouTubePlayer({
   const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&rel=0&playsinline=1&playlist=${videoId}`;
 
   return (
-    <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
+    <div
+      ref={containerRef}
+      className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl"
+    >
       {!isPlaying ? (
         <button
           onClick={handlePlayClick}
