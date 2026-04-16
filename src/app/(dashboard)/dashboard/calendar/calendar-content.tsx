@@ -48,6 +48,7 @@ import { FirstComment } from "@/components/dashboard/first-comment";
 import { ImageGeneratorModal } from "@/components/dashboard/image-generator-modal";
 import { canAccessFeature, PlanId } from "@/lib/plans";
 import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
+import { AutoplayVideo } from "@/components/autoplay-video";
 import { localToUTC, utcToLocal, formatInTimezone, resolveTimezone } from "@/lib/timezone";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -1475,14 +1476,10 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                                     url={selectedPost.media[0].storageUrl}
                                   />
                                 ) : selectedPost.media[0].mimeType.startsWith("video/") ? (
-                                  <video
+                                  <AutoplayVideo
                                     src={selectedPost.media[0].storageUrl}
                                     className="w-full rounded-lg border border-border"
                                     controls
-                                    autoPlay
-                                    muted
-                                    playsInline
-                                    loop
                                   />
                                 ) : (
                                   <img

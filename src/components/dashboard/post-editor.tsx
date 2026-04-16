@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { CarouselPickerDialog } from "./carousel-picker-dialog";
+import { AutoplayVideo } from "@/components/autoplay-video";
 import { cn } from "@/lib/utils";
 
 const LINKEDIN_MAX_CHARS = 3000;
@@ -768,14 +769,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                   </div>
                 </div>
               ) : isVideoMedia(attachedImage) ? (
-                <video
+                <AutoplayVideo
                   src={attachedImage!.preview}
                   className="max-h-32 rounded-lg border border-border"
                   controls
-                  autoPlay
-                  muted
-                  playsInline
-                  loop
                 />
               ) : (
                 <img
