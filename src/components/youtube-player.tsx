@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Play, ArrowRight, Maximize } from "lucide-react";
+import { Play, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface YouTubePlayerProps {
@@ -145,14 +145,6 @@ export function YouTubePlayer({
     }
   };
 
-  const handleFullscreen = () => {
-    if (iframeRef.current) {
-      if (iframeRef.current.requestFullscreen) {
-        iframeRef.current.requestFullscreen();
-      }
-    }
-  };
-
   // Build iframe src with all params
   const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&rel=0&playsinline=1&playlist=${videoId}`;
 
@@ -195,17 +187,6 @@ export function YouTubePlayer({
             allowFullScreen
             onLoad={handleIframeLoad}
           />
-
-          {/* Fullscreen button */}
-          {!showCTA && (
-            <button
-              onClick={handleFullscreen}
-              className="absolute bottom-4 right-4 z-10 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white transition-colors"
-              aria-label="Enter fullscreen"
-            >
-              <Maximize className="w-5 h-5" />
-            </button>
-          )}
 
           {/* CTA Overlay */}
           {showCTA && (
