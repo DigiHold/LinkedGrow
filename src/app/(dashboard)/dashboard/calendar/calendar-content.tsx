@@ -1479,6 +1479,10 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                                     src={selectedPost.media[0].storageUrl}
                                     className="w-full rounded-lg border border-border"
                                     controls
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    loop
                                   />
                                 ) : (
                                   <img

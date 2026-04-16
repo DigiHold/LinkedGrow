@@ -772,7 +772,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                   src={attachedImage!.preview}
                   className="max-h-32 rounded-lg border border-border"
                   controls
+                  autoPlay
                   muted
+                  playsInline
+                  loop
                 />
               ) : (
                 <img
