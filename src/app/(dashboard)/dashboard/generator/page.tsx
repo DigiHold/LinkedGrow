@@ -289,6 +289,11 @@ export default function GeneratorPage() {
   const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
   const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
 
+  // Overlay only fires when the user actively tries to start a new cycle after
+  // hitting the monthly limit. Reaching the counter (even at 3/3) does not show
+  // the overlay on its own - users need to be able to see posts they just made.
+  const [showLimitOverlay, setShowLimitOverlay] = useState(false);
+
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -440,6 +445,7 @@ localStorage.removeItem(STORAGE_KEY);
       if (!response.ok) {
         if (response.status === 403 && data.limitReached) {
           setPostsUsedThisMonth(postsLimit === -1 ? 0 : postsLimit);
+          setShowLimitOverlay(true);
           return;
         }
         throw new Error(data.error || "Failed to generate ideas");
@@ -477,14 +483,12 @@ showToast(error instanceof Error ? error.message : "Failed to generate ideas");
       if (!response.ok) {
         if (response.status === 403 && data.limitReached) {
           setPostsUsedThisMonth(postsLimit === -1 ? 0 : postsLimit);
+          setShowLimitOverlay(true);
           return;
         }
         throw new Error(data.error || "Failed to generate post");
       }
 
-      if (typeof data.remaining === "number" && data.remaining !== -1 && postsLimit !== -1) {
-        setPostsUsedThisMonth(postsLimit - data.remaining);
-      }
       setGeneratedPost(data.post || "");
       setEditedPost("");
       setStep(4);
@@ -952,7 +956,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       {/* Limit Reached Overlay */}
-      {isLimitReached && <LimitReachedOverlay />}
+      {showLimitOverlay && <LimitReachedOverlay />}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
