@@ -636,7 +636,7 @@ function PricingTiers({
 
   // Each tier's own spot count
   // Early Bird: 100 spots, Regular: 150 spots, Final Call: 250 spots
-  // Total: 500 displayed licenses (2,500 real at 5:1 ratio)
+  // Total: 500 licenses
   const tierConfig: Record<string, { ownTotal: number }> = {
     "early-bird": { ownTotal: 100 },
     "regular": { ownTotal: 150 },

@@ -13,30 +13,27 @@ export async function GET() {
       .from(users)
       .where(eq(users.isLifetimeDeal, true));
 
-    const realSales = result[0]?.count || 0;
+    const sales = result[0]?.count || 0;
 
-    // Every 5 real sales = 1 displayed sale
-    const displayedSales = Math.floor(realSales / 5);
+    // Overall counter: 500 total licenses (1 sale = 1 license)
+    const counter = Math.max(0, 500 - sales);
 
-    // Overall counter: 500 total displayed licenses
-    const counter = Math.max(0, 500 - displayedSales);
-
-    // Tier transitions based on displayed count:
-    // Early Bird: displayed 0-99 (real 0-499) -> 100 displayed spots
-    // Regular: displayed 100-249 (real 500-1249) -> 150 displayed spots
-    // Final Call: displayed 250-499 (real 1250-2499) -> 250 displayed spots
+    // Tier transitions:
+    // Early Bird: 0-99 -> 100 spots
+    // Regular: 100-249 -> 150 spots
+    // Final Call: 250-499 -> 250 spots
     let currentTier: "early-bird" | "regular" | "final-call";
     let tierSpotsLeft: number;
 
-    if (displayedSales < 100) {
+    if (sales < 100) {
       currentTier = "early-bird";
-      tierSpotsLeft = 100 - displayedSales;
-    } else if (displayedSales < 250) {
+      tierSpotsLeft = 100 - sales;
+    } else if (sales < 250) {
       currentTier = "regular";
-      tierSpotsLeft = 250 - displayedSales;
+      tierSpotsLeft = 250 - sales;
     } else {
       currentTier = "final-call";
-      tierSpotsLeft = Math.max(0, 500 - displayedSales);
+      tierSpotsLeft = Math.max(0, 500 - sales);
     }
 
     return NextResponse.json({
