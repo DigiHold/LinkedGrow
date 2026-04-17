@@ -97,7 +97,6 @@ export const users = sqliteTable("users", {
   // Custom branding (Business plan)
   brandLogoUrl: text("brand_logo_url"),
   brandColors: text("brand_colors"), // JSON array of hex strings e.g. '["#ff0000","#0891b2"]'
-  brandFontFamily: text("brand_font_family"),
 
   // Timezone (for scheduling posts)
   timezone: text("timezone"), // IANA timezone (e.g., "America/Los_Angeles", "Europe/Paris")
