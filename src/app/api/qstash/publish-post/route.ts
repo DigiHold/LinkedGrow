@@ -8,6 +8,8 @@ import { scheduleFirstComment, scheduleAutoLike } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
 import { triggerCrossPromotion } from "@/lib/cross-promotion";
 
+export const maxDuration = 300;
+
 // Initialize QStash receiver for signature verification
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
