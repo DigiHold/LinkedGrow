@@ -18,7 +18,8 @@
  * Or call it from the browser while logged in as admin.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users, posts } from "@/lib/db/schema";
@@ -33,10 +34,36 @@ import {
 } from "@/lib/newsletter";
 import { PLANS } from "@/lib/plans";
 
-export async function POST() {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const receiver = new Receiver({
+  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
+  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
+});
+
+export async function POST(request: NextRequest) {
+  // Accept either a signed QStash request (for remote one-shot trigger)
+  // or an admin session (for manual browser/curl invocation).
+  let authorized = false;
+
+  try {
+    const body = await request.text();
+    const signature = request.headers.get("upstash-signature") || "";
+    if (signature) {
+      const isValid = await receiver.verify({
+        body,
+        signature,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/api/admin/backfill-free-users`,
+      });
+      if (isValid) authorized = true;
+    }
+  } catch {
+    // Fall through to admin session check
+  }
+
+  if (!authorized) {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const stats = {
