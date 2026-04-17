@@ -77,9 +77,6 @@ export async function POST(request: NextRequest) {
   };
 
   const now = new Date();
-  const fiveDaysAgo = new Date(now);
-  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -158,12 +155,14 @@ export async function POST(request: NextRequest) {
         await setBrevoAttributes(user.email, attributes);
         stats.attributes_synced++;
 
-        const signupOlderThan5Days = user.createdAt && user.createdAt <= fiveDaysAgo;
         const signupOlderThan7Days = user.createdAt && user.createdAt <= sevenDaysAgo;
         const signupOlderThan30Days = user.createdAt && user.createdAt <= thirtyDaysAgo;
 
-        // Active Drip (#26): signed up 5+ days ago
-        if (signupOlderThan5Days) {
+        // Active Drip (#26): every free user gets the main conversion drip,
+        // regardless of how recently they signed up. Daily cron applies the
+        // 5-day delay for new signups going forward; the backfill pushes
+        // every existing free user in immediately.
+        {
           const added = await addToFreeDripList(user.email, attributes);
           if (added) stats.added_to_drip++;
         }
