@@ -669,6 +669,65 @@ LinkedGrow uses TWO separate LinkedIn apps:
 
 This separation is required because Community Management API has stricter approval requirements.
 
+## Brevo Free-User Conversion Funnel
+
+LinkedGrow runs a 4-automation email funnel to convert free users into paid subscribers. The automations are built in Brevo and driven by backend hooks + a daily cron. All of this is already live.
+
+### The 4 Brevo lists + automations
+
+| List | Name | Purpose | Emails | Trigger |
+|---|---|---|---|---|
+| **#26** | Free Users - Active Drip | Main 7-email conversion sequence over 31 days | 7 | Welcome automation ends -> adds contact here; plus every free user via backfill |
+| **#27** | Free Users - Stuck Setup | 3-email nudge for users who didn't connect LinkedIn or add an AI key | 3 | Daily cron: signup 7+ days ago AND setup incomplete |
+| **#28** | Free Users - Limit Hit | 3-email sequence when user hits the 3-post monthly cap | 3 | Real-time: `/api/posts` adds to list on 4th-post 403 |
+| **#29** | Free Users - Dormant | 3-email re-engagement for users who stopped posting | 3 | Daily cron: `LAST_POST_DATE` older than 30 days AND setup complete |
+
+All automations exit when: `PLAN != free` (daily check) OR contact added to any paid list (#16/#17/#18/#23). Instant exit on upgrade, because `syncBrevoOnSubscription` adds the user to the paid list.
+
+### Custom Brevo contact attributes (synced in real-time)
+
+`SIGNUP_DATE` (Date), `LINKEDIN_CONNECTED` (Boolean), `AI_KEY_ADDED` (Boolean), `POSTS_CREATED` (Number), `POSTS_PUBLISHED` (Number), `LAST_POST_DATE` (Date), `LIMIT_HIT_DATE` (Date).
+
+### Backend pieces
+
+- **Real-time hooks** in [src/lib/newsletter.ts](src/lib/newsletter.ts) - called from register / OAuth callbacks / settings save / posts create / linkedin publish / qstash publish
+- **Daily cron** at [src/app/api/cron/sync-free-users/route.ts](src/app/api/cron/sync-free-users/route.ts) - scheduled in QStash (`scd_6iWac4U6wcct2V6sZr1dJ2r9EG6u`), runs `0 9 * * *` UTC
+- **Middleware whitelist** - the admin backfill endpoint is added to the public-prefix list in [src/proxy.ts](src/proxy.ts) because its own auth is handled inside (QStash signature OR admin session)
+
+### Admin backfill endpoint
+
+[src/app/api/admin/backfill-free-users/route.ts](src/app/api/admin/backfill-free-users/route.ts) is a one-shot admin tool that syncs every existing free user into the correct Brevo lists. Use it when:
+
+1. You add a new Brevo list and want all existing free users in it
+2. You change attribute logic in `newsletter.ts` and need to resync everyone
+3. You reset the Brevo lists for testing and need to rebuild them
+4. Something drifts between the DB and Brevo and you want to re-sync
+
+**Safety guarantees:**
+- Only touches users where `plan = 'free'` (paid users are never modified)
+- Only ADDS to free-user lists and updates attributes - never removes from anything
+- Idempotent: re-running just re-computes state, no duplicates
+- Two independent auth paths: QStash signature OR admin session
+- No user input accepted - body is ignored
+
+**How to run (pick one):**
+
+Option A - browser console while logged in as admin:
+```js
+fetch('/api/admin/backfill-free-users', { method: 'POST' }).then(r => r.json()).then(console.log)
+```
+
+Option B - via QStash (uses `QSTASH_TOKEN` from env):
+```bash
+curl -X POST "https://qstash-us-east-1.upstash.io/v2/publish/https://linkedgrow.ai/api/admin/backfill-free-users" \
+  -H "Authorization: Bearer $QSTASH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Upstash-Retries: 2" \
+  -d '{}'
+```
+
+Response is a JSON summary: `total_free_users`, `attributes_synced`, `added_to_drip`, `added_to_stuck`, `added_to_limit_hit`, `added_to_dormant`, `errors`.
+
 ## Feature Implementation Status
 
 ### Implemented
