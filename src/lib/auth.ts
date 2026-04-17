@@ -136,6 +136,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.isLifetimeDeal = dbUser.isLifetimeDeal;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isAdmin = dbUser.isAdmin;
+          token.hasPassword = !!dbUser.password;
 
           // Check if user is a team member (not owner)
           const membership = await db.query.teamMembers.findFirst({
@@ -185,6 +186,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.isLifetimeDeal = token.isLifetimeDeal as boolean;
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
         session.user.isAdmin = token.isAdmin as boolean;
+        session.user.hasPassword = token.hasPassword as boolean;
         session.user.isTeamMember = token.isTeamMember as boolean;
         session.user.teamId = token.teamId as string | null;
         session.user.teamRole = token.teamRole as string | null;
@@ -208,6 +210,7 @@ declare module "next-auth" {
       isLifetimeDeal?: boolean;
       twoFactorEnabled?: boolean;
       isAdmin?: boolean;
+      hasPassword?: boolean;
       isTeamMember?: boolean;
       teamId?: string | null;
       teamRole?: string | null; // "admin" | "member"

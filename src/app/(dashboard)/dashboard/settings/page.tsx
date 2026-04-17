@@ -201,8 +201,10 @@ function SettingsContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const hasPassword = session?.user?.hasPassword !== false;
+
   const handleExportData = async () => {
-    if (!exportPassword) {
+    if (hasPassword && !exportPassword) {
       setExportMessage({ type: "error", text: "Password is required." });
       return;
     }
@@ -212,7 +214,7 @@ function SettingsContent() {
       const res = await fetch("/api/user/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: exportPassword }),
+        body: JSON.stringify({ password: exportPassword || undefined }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -246,7 +248,7 @@ function SettingsContent() {
       setDeleteMessage({ type: "error", text: "Please type DELETE to confirm." });
       return;
     }
-    if (!deletePassword) {
+    if (hasPassword && !deletePassword) {
       setDeleteMessage({ type: "error", text: "Password is required." });
       return;
     }
@@ -256,7 +258,7 @@ function SettingsContent() {
       const res = await fetch("/api/user/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: deletePassword, confirm: deleteConfirm }),
+        body: JSON.stringify({ password: deletePassword || undefined, confirm: deleteConfirm }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1945,21 +1947,25 @@ function SettingsContent() {
           <DialogHeader>
             <DialogTitle>Export your data</DialogTitle>
             <DialogDescription>
-              Enter your password to download a JSON file containing all personal data we store about you. API keys, OAuth tokens, the password hash, and 2FA secrets are redacted.
+              {hasPassword
+                ? "Enter your password to download a JSON file containing all personal data we store about you. API keys, OAuth tokens, the password hash, and 2FA secrets are redacted."
+                : "Download a JSON file containing all personal data we store about you. API keys, OAuth tokens, and 2FA secrets are redacted."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="export-password">Password</Label>
-              <Input
-                id="export-password"
-                type="password"
-                value={exportPassword}
-                onChange={(e) => setExportPassword(e.target.value)}
-                placeholder="Your current password"
-                autoComplete="current-password"
-              />
-            </div>
+            {hasPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="export-password">Password</Label>
+                <Input
+                  id="export-password"
+                  type="password"
+                  value={exportPassword}
+                  onChange={(e) => setExportPassword(e.target.value)}
+                  placeholder="Your current password"
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
             {exportMessage && (
               <div
                 className={cn(
@@ -1977,7 +1983,7 @@ function SettingsContent() {
               <Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={isExporting}>
                 Cancel
               </Button>
-              <Button onClick={handleExportData} disabled={isExporting || !exportPassword}>
+              <Button onClick={handleExportData} disabled={isExporting || (hasPassword && !exportPassword)}>
                 {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                 Download JSON
               </Button>
@@ -2006,17 +2012,19 @@ function SettingsContent() {
                 autoComplete="off"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="delete-password">Password</Label>
-              <Input
-                id="delete-password"
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder="Your current password"
-                autoComplete="current-password"
-              />
-            </div>
+            {hasPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="delete-password">Password</Label>
+                <Input
+                  id="delete-password"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Your current password"
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
             {deleteMessage && (
               <div
                 className={cn(
@@ -2037,7 +2045,7 @@ function SettingsContent() {
               <Button
                 variant="destructive"
                 onClick={handleDeleteAccount}
-                disabled={isDeleting || deleteConfirm !== "DELETE" || !deletePassword}
+                disabled={isDeleting || deleteConfirm !== "DELETE" || (hasPassword && !deletePassword)}
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
                 Delete my account permanently

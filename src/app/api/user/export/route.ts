@@ -64,22 +64,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { password } = await request.json();
-    if (!password || typeof password !== "string") {
-      return NextResponse.json({ error: "Password is required" }, { status: 400 });
-    }
+    const reqBody = await request.json();
+    const { password } = reqBody;
 
     const user = await db.query.users.findFirst({ where: eq(users.id, session.user.id) });
-    if (!user || !user.password) {
-      return NextResponse.json(
-        { error: "Password confirmation is not available for this account" },
-        { status: 400 }
-      );
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return NextResponse.json({ error: "Incorrect password" }, { status: 400 });
+    // If user has a password (credentials auth), verify it.
+    // If no password (OAuth-only), allow without - they already proved identity via provider.
+    if (user.password) {
+      if (!password || typeof password !== "string") {
+        return NextResponse.json({ error: "Password is required" }, { status: 400 });
+      }
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) {
+        return NextResponse.json({ error: "Incorrect password" }, { status: 400 });
+      }
     }
 
     const userId = user.id;
