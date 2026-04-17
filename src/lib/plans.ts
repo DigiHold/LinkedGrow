@@ -2,6 +2,7 @@ export type PlanId = "free" | "starter" | "pro" | "business";
 
 export interface PlanFeatures {
   postGeneration: boolean;
+  ideas: boolean;
   imageGeneration: boolean;
   carouselGenerator: boolean;
   hooksGenerator: boolean;
@@ -52,6 +53,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       imagesPerMonth: 0,
       features: {
         postGeneration: true,
+        ideas: false,
         imageGeneration: false,
         carouselGenerator: false,
         hooksGenerator: false,
@@ -84,6 +86,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       imagesPerMonth: 0,
       features: {
         postGeneration: true,
+        ideas: true,
         imageGeneration: false,
         carouselGenerator: false,
         hooksGenerator: false,
@@ -117,6 +120,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       imagesPerMonth: -1, // Unlimited with BYOK
       features: {
         postGeneration: true,
+        ideas: true,
         imageGeneration: true,
         carouselGenerator: false, // Business only
         hooksGenerator: true,
@@ -149,6 +153,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       imagesPerMonth: -1,
       features: {
         postGeneration: true,
+        ideas: true,
         imageGeneration: true,
         carouselGenerator: true, // Business exclusive
         hooksGenerator: true,
@@ -177,6 +182,11 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     name: "Post Generation",
     description: "Generate unlimited LinkedIn posts with AI",
     icon: "sparkles",
+  },
+  ideas: {
+    name: "Ideas Generator",
+    description: "Generate fresh content ideas tailored to your niche",
+    icon: "lightbulb",
   },
   imageGeneration: {
     name: "AI Image Generation",

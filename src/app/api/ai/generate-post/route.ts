@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
+import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
+import type { PlanId } from "@/lib/plans";
 
 export const maxDuration = 120;
 
@@ -75,7 +78,8 @@ async function generatePost(
   neverMention?: string,
   businessDescription?: string,
   targetAudience?: string,
-  writingTone?: string
+  writingTone?: string,
+  contentLanguage?: string
 ): Promise<string> {
   // Build voice instructions from sample posts
   let voiceInstructions = "";
@@ -198,7 +202,7 @@ The rest of the post starts here..."
    - No fluff, no generic advice
    - Be specific and actionable
    - Professional but conversational tone
-   - Focus on genuine value${voiceInstructions}${avoidInstructions}
+   - Focus on genuine value${voiceInstructions}${avoidInstructions}${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the post text. No quotes, no explanations.`;
 
@@ -389,7 +393,8 @@ async function generateIdeas(
   provider: string,
   model: string,
   businessDescription?: string,
-  targetAudience?: string
+  targetAudience?: string,
+  contentLanguage?: string
 ): Promise<string[]> {
   let contextInstructions = "";
   if (businessDescription) {
@@ -422,7 +427,7 @@ Requirements:
 - Ideas should be different angles on the topic
 - Make them suitable for LinkedIn's professional audience
 - Each idea should be 1-2 sentences max
-- NEVER use em dashes (—) or en dashes (–). Use regular hyphens or commas instead.
+- NEVER use em dashes (—) or en dashes (–). Use regular hyphens or commas instead.${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY a JSON array of 5 strings. Example:
 ["Idea 1 here", "Idea 2 here", "Idea 3 here", "Idea 4 here", "Idea 5 here"]`;
@@ -624,7 +629,8 @@ async function editPost(
   instruction: string,
   apiKey: string,
   provider: string,
-  model: string
+  model: string,
+  contentLanguage?: string
 ): Promise<string> {
   // Get current year for accurate data
   const currentYear = new Date().getFullYear();
@@ -661,7 +667,7 @@ Instruction: "${instruction}"
 
 5. STRUCTURE:
    - End with a CTA like "📌 Save this" or "♻️ Repost if helpful"
-   - Keep whitespace for skimmability
+   - Keep whitespace for skimmability${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the edited post. No quotes, no explanations.`;
 
@@ -861,6 +867,27 @@ export async function POST(request: NextRequest) {
     const body: GeneratePostRequest & { action?: string } = await request.json();
     const { action = "generate", idea, postType, postCategory, topic, content, instruction } = body;
 
+    // Free plan: enforce monthly generation limit on generate + ideas actions.
+    // Edit and carousel-prompts do not count (edit refines, carousel is Business-only).
+    const countableAction = action === "generate" || action === "ideas";
+    const userPlan = (session.user.plan || "free") as PlanId;
+    let limitCheck: Awaited<ReturnType<typeof checkGenerationLimit>> | null = null;
+    if (countableAction) {
+      limitCheck = await checkGenerationLimit(session.user.id, userPlan);
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: "You've used all 3 free generations this month. Upgrade to Starter for unlimited posts.",
+            limitReached: true,
+            used: limitCheck.used,
+            limit: limitCheck.limit,
+            remaining: 0,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Get user and AI settings (uses team owner's settings if user is a team member)
     const result = await getAISettingsUser(session.user.id);
 
@@ -927,9 +954,15 @@ export async function POST(request: NextRequest) {
         provider,
         model,
         user.businessDescription || undefined,
-        user.targetAudience || undefined
+        user.targetAudience || undefined,
+        user.contentLanguage || undefined
       );
-      return NextResponse.json({ ideas });
+      // Count this generation against the monthly limit.
+      await incrementGenerationUsage(session.user.id);
+      const remaining = limitCheck && limitCheck.limit !== -1
+        ? Math.max(0, limitCheck.limit - (limitCheck.used + 1))
+        : -1;
+      return NextResponse.json({ ideas, remaining });
     }
 
     if (action === "carousel-prompts") {
@@ -977,7 +1010,7 @@ Your image prompts must be 60-100 words each and include ALL of these elements:
 - Generic stock photo descriptions
 - Em dashes (use commas or " - " instead)
 - Text-heavy image prompts - the AI will generate visuals, text overlays come separately
-- Cliche business imagery (handshakes, globes, generic office scenes)
+- Cliche business imagery (handshakes, globes, generic office scenes)${buildLanguageInstruction(user.contentLanguage)}
 
 Return ONLY a valid JSON array. Each object has "title", "content", and "imagePrompt" strings.
 
@@ -1191,7 +1224,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       if (!content || !instruction) {
         return NextResponse.json({ error: "Content and instruction are required for editing" }, { status: 400 });
       }
-      const editedContent = await editPost(content, instruction, apiKey, provider, model);
+      const editedContent = await editPost(content, instruction, apiKey, provider, model, user.contentLanguage || undefined);
       return NextResponse.json({ content: editedContent });
     }
 
@@ -1210,10 +1243,16 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       user.neverMention || undefined,
       user.businessDescription || undefined,
       user.targetAudience || undefined,
-      user.writingTone || undefined
+      user.writingTone || undefined,
+      user.contentLanguage || undefined
     );
 
-    return NextResponse.json({ post });
+    // Count this generation against the monthly limit.
+    await incrementGenerationUsage(session.user.id);
+    const remaining = limitCheck && limitCheck.limit !== -1
+      ? Math.max(0, limitCheck.limit - (limitCheck.used + 1))
+      : -1;
+    return NextResponse.json({ post, remaining });
   } catch (error) {
 return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate post" },

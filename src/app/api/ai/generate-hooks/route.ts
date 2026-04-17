@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
 
@@ -39,7 +40,8 @@ async function generateHooks(
   businessDescription?: string,
   targetAudience?: string,
   writingTone?: string,
-  neverMention?: string
+  neverMention?: string,
+  contentLanguage?: string
 ): Promise<HookPair[]> {
   // Build voice instructions from sample posts
   let voiceInstructions = "";
@@ -133,7 +135,7 @@ GOOD: "Your strategy worked in 2020. The market changed."
 Return ONLY a valid JSON array with ${count} objects. Each object has "firstLine" and "secondLine" strings.
 
 Example format:
-[{"firstLine": "I rejected a $300k job offer.", "secondLine": "My wife thought I was crazy. She was right to worry."}]`;
+[{"firstLine": "I rejected a $300k job offer.", "secondLine": "My wife thought I was crazy. She was right to worry."}]${buildLanguageInstruction(contentLanguage)}`;
 
   let response;
   let hooks: HookPair[] = [];
@@ -431,7 +433,8 @@ export async function POST(request: NextRequest) {
       user.businessDescription || undefined,
       user.targetAudience || undefined,
       user.writingTone || undefined,
-      user.neverMention || undefined
+      user.neverMention || undefined,
+      user.contentLanguage || undefined
     );
 
     return NextResponse.json({ hooks });

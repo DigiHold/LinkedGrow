@@ -35,6 +35,7 @@ import {
   Share2,
   Megaphone,
   Repeat,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -79,6 +80,7 @@ const TIERS = [
 
 const FEATURES = [
   { icon: Sparkles, name: "Unlimited AI Post Generation", description: "Generate as many posts as you want with your own AI key" },
+  { icon: Lightbulb, name: "Ideas Generator", description: "AI-generated post ideas tailored to your niche and audience" },
   { icon: TrendingUp, name: "Advanced Post Editor", description: "Rich text editor with formatting and LinkedIn preview" },
   { icon: Calendar, name: "Content Calendar + Scheduling", description: "Plan and schedule posts with visual calendar" },
   { icon: ImageIcon, name: "AI Image Generation", description: "Create stunning images for your posts with AI" },

@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
 
@@ -45,7 +46,8 @@ function buildPrompt(
   neverMention?: string,
   businessDescription?: string,
   targetAudience?: string,
-  writingTone?: string
+  writingTone?: string,
+  contentLanguage?: string
 ): string {
   // Build voice instructions
   let voiceInstructions = "";
@@ -163,7 +165,7 @@ ${sourceContext}${businessContext}
    - Be specific and actionable
    - Professional but conversational tone
    - Focus on genuine value
-   - Make it feel like a personal story/experience${voiceInstructions}${avoidInstructions}
+   - Make it feel like a personal story/experience${voiceInstructions}${avoidInstructions}${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY a JSON array of ${count} complete post strings (no explanations):
 ["Post 1 full text...", "Post 2 full text...", "Post 3 full text..."]`;
@@ -453,7 +455,8 @@ export async function POST(request: NextRequest) {
       aiSettingsUser.neverMention || undefined,
       aiSettingsUser.businessDescription || undefined,
       aiSettingsUser.targetAudience || undefined,
-      aiSettingsUser.writingTone || undefined
+      aiSettingsUser.writingTone || undefined,
+      aiSettingsUser.contentLanguage || undefined
     );
 
     const posts = await generatePosts(prompt, apiKey, provider, model);

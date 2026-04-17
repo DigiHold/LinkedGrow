@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
+import { canAccessFeature, type PlanId } from "@/lib/plans";
 
 export const maxDuration = 120;
 
@@ -21,7 +23,8 @@ async function generateIdeas(
   model: string,
   businessDescription?: string,
   targetAudience?: string,
-  writingTone?: string
+  writingTone?: string,
+  contentLanguage?: string
 ): Promise<Idea[]> {
   let contextInstructions = "";
   if (businessDescription) {
@@ -67,7 +70,7 @@ Return ONLY a JSON array:
     "category": "Career",
     "engagement": "Very High"
   }
-]`;
+]${buildLanguageInstruction(contentLanguage)}`;
 
   let response;
   let ideas: Idea[] = [];
@@ -279,6 +282,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Standalone Ideas feature is gated to Starter+ plans.
+    const userPlan = (session.user.plan || "free") as PlanId;
+    if (!canAccessFeature(userPlan, "ideas")) {
+      return NextResponse.json(
+        { error: "The Ideas generator is available on Starter and higher plans. Upgrade to unlock it.", upgradeRequired: true },
+        { status: 403 }
+      );
+    }
+
     const { theme, count = 10 } = await request.json();
 
     if (!theme) {
@@ -342,7 +354,8 @@ export async function POST(request: NextRequest) {
       model,
       aiSettingsUser.businessDescription || undefined,
       aiSettingsUser.targetAudience || undefined,
-      aiSettingsUser.writingTone || undefined
+      aiSettingsUser.writingTone || undefined,
+      aiSettingsUser.contentLanguage || undefined
     );
 
     return NextResponse.json({ ideas });

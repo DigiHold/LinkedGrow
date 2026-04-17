@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
 
@@ -38,7 +39,8 @@ async function editPost(
   instruction: string,
   apiKey: string,
   provider: string,
-  model: string
+  model: string,
+  contentLanguage?: string
 ): Promise<string> {
   // Map common quick actions to detailed instructions (handle all variations)
   const instructionMap: Record<string, string> = {
@@ -84,7 +86,7 @@ Requirements:
 - Maintain LinkedIn best practices (short paragraphs, line breaks for readability)
 - NO emojis unless the instruction specifically asks for them
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
-- Return ONLY the edited post text, nothing else - no explanations, no quotes around it
+- Return ONLY the edited post text, nothing else - no explanations, no quotes around it${buildLanguageInstruction(contentLanguage)}
 
 Return the edited post:`;
 
@@ -347,7 +349,7 @@ export async function POST(request: NextRequest) {
                          provider === "kimi" ? "kimi-k2" : "o4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
-    const editedContent = await editPost(content, instruction, apiKey, provider, model);
+    const editedContent = await editPost(content, instruction, apiKey, provider, model, aiSettingsUser.contentLanguage || undefined);
 
     return NextResponse.json({ content: editedContent });
   } catch (error) {

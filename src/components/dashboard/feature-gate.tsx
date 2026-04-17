@@ -22,6 +22,7 @@ import {
   Loader2,
   MessageSquare,
   Share2,
+  Lightbulb,
 } from "lucide-react";
 import {
   PlanId,
@@ -37,6 +38,7 @@ import { UpgradeButton } from "./upgrade-button";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
+  ideas: Lightbulb,
   imageGeneration: ImageIcon,
   carouselGenerator: Layers,
   hooksGenerator: Anchor,

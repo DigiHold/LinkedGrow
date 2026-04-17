@@ -346,20 +346,13 @@ export default function GeneratorPage() {
           if (settings.timezone) {
             setUserTimezone(settings.timezone);
           }
+          // Usage is tracked per-generation (not per-post in DB).
+          setPostsUsedThisMonth(settings.generationsUsed || 0);
         }
 
+        // postsRes is still fetched for other post-related state (if needed).
         if (postsRes.ok) {
-          const postsData = await postsRes.json();
-          const posts = postsData.posts || [];
-
-          // Count posts created this month
-          const now = new Date();
-          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          const thisMonthPosts = posts.filter((post: { createdAt: string }) => {
-            const createdAt = new Date(post.createdAt);
-            return createdAt >= startOfMonth;
-          });
-          setPostsUsedThisMonth(thisMonthPosts.length);
+          await postsRes.json();
         }
       } catch (error) {
 } finally {
@@ -443,12 +436,18 @@ localStorage.removeItem(STORAGE_KEY);
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate ideas");
+        if (response.status === 403 && data.limitReached) {
+          setPostsUsedThisMonth(postsLimit === -1 ? 0 : postsLimit);
+          return;
+        }
+        throw new Error(data.error || "Failed to generate ideas");
       }
 
-      const data = await response.json();
+      if (typeof data.remaining === "number" && data.remaining !== -1 && postsLimit !== -1) {
+        setPostsUsedThisMonth(postsLimit - data.remaining);
+      }
       setGeneratedIdeas(data.ideas || []);
       setStep(3);
     } catch (error) {
@@ -474,12 +473,18 @@ showToast(error instanceof Error ? error.message : "Failed to generate ideas");
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate post");
+        if (response.status === 403 && data.limitReached) {
+          setPostsUsedThisMonth(postsLimit === -1 ? 0 : postsLimit);
+          return;
+        }
+        throw new Error(data.error || "Failed to generate post");
       }
 
-      const data = await response.json();
+      if (typeof data.remaining === "number" && data.remaining !== -1 && postsLimit !== -1) {
+        setPostsUsedThisMonth(postsLimit - data.remaining);
+      }
       setGeneratedPost(data.post || "");
       setEditedPost("");
       setStep(4);
@@ -1454,44 +1459,48 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowScheduler(!showScheduler)}
-                  disabled={isVideoMedia(attachedImage)}
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule for Later
-                </Button>
-                {showScheduler && (
-                  <div className="p-3 rounded-lg bg-accent/50 space-y-2">
-                    <Input
-                      type="date"
-                      className="w-full"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
-                    />
-                    <Input
-                      type="time"
-                      className="w-full"
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                    />
+                {canAccessFeature(userPlan, "scheduling") && (
+                  <>
                     <Button
-                      size="sm"
+                      variant="outline"
                       className="w-full"
-                      onClick={handleSchedulePost}
-                      disabled={isSaving || !scheduleDate || !scheduleTime}
+                      onClick={() => setShowScheduler(!showScheduler)}
+                      disabled={isVideoMedia(attachedImage)}
                     >
-                      {isSaving ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Calendar className="w-4 h-4 mr-2" />
-                      )}
-                      {isSaving ? "Scheduling..." : "Schedule Post"}
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Schedule for Later
                     </Button>
-                  </div>
+                    {showScheduler && (
+                      <div className="p-3 rounded-lg bg-accent/50 space-y-2">
+                        <Input
+                          type="date"
+                          className="w-full"
+                          value={scheduleDate}
+                          onChange={(e) => setScheduleDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
+                        />
+                        <Input
+                          type="time"
+                          className="w-full"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                        />
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={handleSchedulePost}
+                          disabled={isSaving || !scheduleDate || !scheduleTime}
+                        >
+                          {isSaving ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Calendar className="w-4 h-4 mr-2" />
+                          )}
+                          {isSaving ? "Scheduling..." : "Schedule Post"}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
                 <Button
                   variant="outline"

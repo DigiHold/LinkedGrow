@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { CONTENT_LANGUAGES } from "@/lib/content-languages";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
 const timezones = [
@@ -155,6 +156,7 @@ function SettingsContent() {
     samplePosts: [] as string[],
     neverMention: "",
     writingTone: "",
+    contentLanguage: "en",
   });
 
   // Timezone settings
@@ -385,6 +387,7 @@ function SettingsContent() {
             samplePosts: data.samplePosts || [],
             neverMention: data.neverMention || "",
             writingTone: data.writingTone || "",
+            contentLanguage: data.contentLanguage || "en",
           });
           // Load business profile fields
           setBusinessProfile({
@@ -648,6 +651,7 @@ function SettingsContent() {
           samplePosts: postsToSave,
           neverMention: voiceSettings.neverMention,
           writingTone: voiceSettings.writingTone,
+          contentLanguage: voiceSettings.contentLanguage,
         }),
       });
 
@@ -1717,6 +1721,36 @@ function SettingsContent() {
                   setVoiceSettings((prev) => ({ ...prev, writingTone: val }));
                 }}
               />
+            </div>
+
+            {/* Content Language */}
+            <div className="space-y-2">
+              <Label>Content Language</Label>
+              <p className="text-sm text-muted-foreground">
+                Language for all generated content (posts, ideas, hooks, comments). Overrides the language of your sample posts and business context.
+              </p>
+              <Select
+                value={voiceSettings.contentLanguage}
+                onValueChange={(val) => {
+                  setVoiceSettings((prev) => ({ ...prev, contentLanguage: val }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-75">
+                  {CONTENT_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                      {lang.nativeName !== lang.name && (
+                        <span className="text-muted-foreground ml-2">
+                          {lang.nativeName}
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Never Mention */}

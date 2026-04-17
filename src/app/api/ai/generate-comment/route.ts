@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
 
@@ -43,7 +44,8 @@ async function generateComment(
   writingTone?: string | null,
   isEngagement?: boolean,
   samplePosts?: string | null,
-  neverMention?: string | null
+  neverMention?: string | null,
+  contentLanguage?: string | null
 ): Promise<string> {
   let businessContext = "";
   if (businessDescription || targetAudience || writingTone || samplePosts || neverMention) {
@@ -99,7 +101,7 @@ NEVER use these words or patterns:
 - 1-3 SHORT sentences. Under 250 characters.
 - No hashtags. No em dashes. No links.
 - Sound like a real person typing on their phone, not a marketing AI.
-- Reference something SPECIFIC from the post (a word, phrase, or idea).
+- Reference something SPECIFIC from the post (a word, phrase, or idea).${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the comment text.` :
 
@@ -148,7 +150,7 @@ The first comment is a strategic self-reply posted by the author 1-5 minutes aft
 
 === GOAL ===
 
-Get readers to reply. More replies = LinkedIn algorithm pushes the post to more people.
+Get readers to reply. More replies = LinkedIn algorithm pushes the post to more people.${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the comment text. No quotes, no explanations, no labels.`;
 
@@ -412,7 +414,8 @@ export async function POST(request: NextRequest) {
       aiSettingsUser.writingTone,
       isEngagement === true,
       aiSettingsUser.samplePosts,
-      aiSettingsUser.neverMention
+      aiSettingsUser.neverMention,
+      aiSettingsUser.contentLanguage
     );
 
     return NextResponse.json({ comment });

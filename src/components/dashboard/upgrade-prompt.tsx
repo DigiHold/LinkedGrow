@@ -43,6 +43,7 @@ interface UpgradePromptProps {
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
+  ideas: Lightbulb,
   imageGeneration: ImageIcon,
   carouselGenerator: Layers,
   hooksGenerator: Anchor,

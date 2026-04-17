@@ -101,6 +101,13 @@ export const users = sqliteTable("users", {
   // Timezone (for scheduling posts)
   timezone: text("timezone"), // IANA timezone (e.g., "America/Los_Angeles", "Europe/Paris")
 
+  // Content generation language (overrides any language in samples/context)
+  contentLanguage: text("content_language").default("en"),
+
+  // Free plan usage counter (resets monthly via generations_period YYYY-MM)
+  generationsUsed: integer("generations_used").default(0),
+  generationsPeriod: text("generations_period"),
+
   // Publishing preferences
   autoLikeAfterPublish: integer("auto_like_after_publish", { mode: "boolean" }).default(true),
 

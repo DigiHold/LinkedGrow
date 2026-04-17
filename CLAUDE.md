@@ -237,13 +237,14 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 
 ### Feature Matrix (Accurate from plans.ts)
 
-| Feature             | Free | Starter | Pro | Business |
-| ------------------- | ---- | ------- | --- | -------- |
-| Post Generation     | ✓    | ✓       | ✓   | ✓        |
-| Advanced Editor     | -    | ✓       | ✓   | ✓        |
-| Content Calendar    | -    | ✓       | ✓   | ✓        |
-| Post Scheduling     | -    | ✓ (10)  | ✓   | ✓        |
-| Reddit Ideas        | -    | ✓       | ✓   | ✓        |
+| Feature             | Free  | Starter | Pro | Business |
+| ------------------- | ----- | ------- | --- | -------- |
+| Post Generation     | 3/mo  | ✓       | ✓   | ✓        |
+| Ideas Generator     | -     | ✓       | ✓   | ✓        |
+| Advanced Editor     | -     | ✓       | ✓   | ✓        |
+| Content Calendar    | -     | ✓       | ✓   | ✓        |
+| Post Scheduling     | -     | ✓ (10)  | ✓   | ✓        |
+| Reddit Ideas        | -     | ✓       | ✓   | ✓        |
 | AI Image Generation | -    | -       | ✓   | ✓        |
 | Hooks Generator     | -    | -       | ✓   | ✓        |
 | Analytics Dashboard | -    | -       | ✓   | ✓        |
@@ -549,7 +550,7 @@ src/
 ### Text Generation Models (6 providers, 26 models)
 
 -   **OpenAI**: GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, o3-mini
--   **Anthropic**: Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
+-   **Anthropic**: Claude Opus 4.7, Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Sonnet 4
 -   **Google**: Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite
 -   **Grok (xAI)**: Grok 4, Grok 4.1 Fast, Grok Code Fast, Grok 3
 -   **Perplexity**: Sonar Deep Research, Sonar Reasoning Pro, Sonar Reasoning, Sonar Pro, Sonar

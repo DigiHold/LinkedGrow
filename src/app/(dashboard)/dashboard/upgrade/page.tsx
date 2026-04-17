@@ -36,6 +36,7 @@ const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   postGeneration: Sparkles,
+  ideas: Lightbulb,
   imageGeneration: ImageIcon,
   carouselGenerator: Layers,
   hooksGenerator: Anchor,
@@ -64,6 +65,7 @@ const planHighlights: Record<PlanId, string[]> = {
   ],
   starter: [
     "Unlimited posts",
+    "Ideas generator",
     "Advanced editor",
     "10 scheduled posts",
     "Content calendar",

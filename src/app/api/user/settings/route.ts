@@ -125,6 +125,11 @@ export async function GET() {
       brandColors: user.brandColors ? (() => { try { return JSON.parse(user.brandColors); } catch { return []; } })() : [],
       // Timezone
       timezone: user.timezone,
+      contentLanguage: aiUser.contentLanguage || "en",
+      // Monthly generation usage (resets each calendar month)
+      generationsUsed: (user.generationsPeriod === new Date().toISOString().slice(0, 7))
+        ? (user.generationsUsed || 0)
+        : 0,
       // Publishing preferences
       autoLikeAfterPublish: user.autoLikeAfterPublish !== false, // default true
       // Onboarding
@@ -187,6 +192,7 @@ export async function PUT(request: NextRequest) {
       businessContext,
       targetAudience,
       writingTone,
+      contentLanguage,
       timezone,
       autoLikeAfterPublish,
     } = body;
@@ -323,6 +329,10 @@ export async function PUT(request: NextRequest) {
 
     if (writingTone !== undefined) {
       updateData.writingTone = writingTone || null;
+    }
+
+    if (contentLanguage !== undefined) {
+      updateData.contentLanguage = contentLanguage || "en";
     }
 
     if (timezone !== undefined) {
