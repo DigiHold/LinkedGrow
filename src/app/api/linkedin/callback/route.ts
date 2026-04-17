@@ -8,7 +8,7 @@ import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 
-import { signUp, subscribeToNewsletter } from '@/lib/newsletter';
+import { signUp, subscribeToNewsletter, brevoDate, setBrevoAttributes, removeFromStuckSetupList } from '@/lib/newsletter';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -283,7 +283,19 @@ if (isPopup) {
         // Add every new user to the Welcome list (#9) so Brevo automation
         // sends the welcome email. Also add to the Blog list (#11) if they
         // opted in via the newsletter checkbox on the sign-up page.
-        signUp({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch(() => {});
+        // LinkedIn OAuth signups count as LINKEDIN_CONNECTED=true immediately.
+        signUp({
+          email: linkedInEmail,
+          name: fullName,
+          source: 'linkedin_signup',
+          attributes: {
+            SIGNUP_DATE: brevoDate(new Date()),
+            LINKEDIN_CONNECTED: true,
+            AI_KEY_ADDED: false,
+            POSTS_CREATED: 0,
+            POSTS_PUBLISHED: 0,
+          },
+        }).catch(() => {});
         if (subscribeNewsletterCookie) {
           subscribeToNewsletter({ email: linkedInEmail, name: fullName, source: 'linkedin_signup' }).catch(() => {});
         }
@@ -484,6 +496,30 @@ if (isPopup) {
           updatedAt: new Date(),
         })
         .where(eq(users.id, session.user.id));
+
+      // Sync Brevo: mark LinkedIn as connected. Look up email from the
+      // user row we just updated so we can push the attribute.
+      const connectedUser = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+      });
+      if (connectedUser?.email) {
+        const hasAiKey = !!(
+          connectedUser.openaiApiKey ||
+          connectedUser.anthropicApiKey ||
+          connectedUser.googleApiKey ||
+          connectedUser.grokApiKey ||
+          connectedUser.perplexityApiKey ||
+          connectedUser.kimiApiKey
+        );
+        setBrevoAttributes(connectedUser.email, {
+          LINKEDIN_CONNECTED: true,
+          AI_KEY_ADDED: hasAiKey,
+        }).catch(() => {});
+        // If setup is now complete, remove from Stuck Setup list.
+        if (hasAiKey) {
+          removeFromStuckSetupList(connectedUser.email).catch(() => {});
+        }
+      }
 
       // If user has organizations, signal the parent to show selection modal
       if (hasOrganizations) {

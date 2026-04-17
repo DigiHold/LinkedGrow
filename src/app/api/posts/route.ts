@@ -7,6 +7,7 @@ import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { schedulePost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
+import { addToLimitHitList, setBrevoAttributes, brevoDate } from "@/lib/newsletter";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
 
@@ -262,6 +263,15 @@ export async function POST(request: NextRequest) {
         );
 
       if (postCount.count >= postsPerMonthLimit) {
+        // Trigger Brevo Limit Hit automation (#28). Fire-and-forget so
+        // the 403 response isn't delayed. Brevo automation waits 10
+        // minutes before sending the first email.
+        if (user.email) {
+          addToLimitHitList(user.email, {
+            LIMIT_HIT_DATE: brevoDate(new Date()),
+            POSTS_CREATED: postCount.count,
+          }).catch(() => {});
+        }
         return NextResponse.json(
           {
             error: `You've reached your monthly limit of ${postsPerMonthLimit} posts. Upgrade to Starter for unlimited posts.`,
@@ -412,6 +422,25 @@ return NextResponse.json(
       createdAt: now,
       updatedAt: now,
     });
+
+    // Sync total post count to Brevo so POSTS_CREATED attribute stays
+    // accurate. Fire-and-forget. We query the total count rather than
+    // incrementing because Brevo has no atomic increment operation.
+    if (user.email) {
+      (async () => {
+        try {
+          const [totalCount] = await db
+            .select({ count: count() })
+            .from(posts)
+            .where(eq(posts.userId, user.id));
+          await setBrevoAttributes(user.email, {
+            POSTS_CREATED: totalCount?.count ?? 0,
+          });
+        } catch {
+          // Silent fail
+        }
+      })();
+    }
 
     // Link already-uploaded R2 media to this post
     let uploadedMedia: typeof media.$inferSelect | null = null;

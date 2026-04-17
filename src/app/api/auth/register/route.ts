@@ -5,7 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
-import { signUp, subscribeToNewsletter } from "@/lib/newsletter";
+import { signUp, subscribeToNewsletter, brevoDate } from "@/lib/newsletter";
 import { rateLimit, AUTH_RATE_LIMITS, getClientIP } from "@/lib/rate-limit";
 
 
@@ -145,7 +145,20 @@ export async function POST(request: NextRequest) {
     // Add every new user to the Welcome list (#9) so Brevo automation sends
     // the welcome email. Also add to the Blog list (#11) if they opted in via
     // the "Get growth tips, new features, and exclusive offers" checkbox.
-    signUp({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
+    // Seed free-user conversion attributes so the daily cron and real-time
+    // hooks have a known starting state for every contact.
+    signUp({
+      email,
+      name: name || undefined,
+      source: "email_signup",
+      attributes: {
+        SIGNUP_DATE: brevoDate(new Date()),
+        LINKEDIN_CONNECTED: false,
+        AI_KEY_ADDED: false,
+        POSTS_CREATED: 0,
+        POSTS_PUBLISHED: 0,
+      },
+    }).catch(() => {});
     if (subscribeNewsletter) {
       subscribeToNewsletter({ email, name: name || undefined, source: "email_signup" }).catch(() => {});
     }

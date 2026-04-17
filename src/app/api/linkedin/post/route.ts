@@ -3,11 +3,12 @@ import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWith
 import { auth } from '@/lib/auth';
 import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
+import { setBrevoAttributes, removeFromDormantList, brevoDate } from '@/lib/newsletter';
 import { scheduleFirstComment, scheduleAutoLike } from '@/lib/qstash';
 import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
 import { triggerCrossPromotion } from '@/lib/cross-promotion';
 import { deleteFromR2 } from '@/lib/storage/r2';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, count, and } from 'drizzle-orm';
 
 // Extend timeout for video uploads (Pro plan allows up to 300s)
 export const maxDuration = 300;
@@ -216,15 +217,39 @@ export async function POST(request: NextRequest) {
 
     // Update post status to published in the database
     if (postId) {
+      const publishedAt = new Date();
       await db.update(posts)
         .set({
           status: 'published',
-          publishedAt: new Date(),
+          publishedAt,
           linkedinPostId: postResult.id,
           errorMessage: null,
-          updatedAt: new Date(),
+          updatedAt: publishedAt,
         })
         .where(eq(posts.id, postId));
+
+      // Sync LAST_POST_DATE + POSTS_PUBLISHED to Brevo. Also remove the
+      // user from the Dormant list if they were in it. Fire-and-forget
+      // so the response isn't delayed.
+      if (postingUser.email) {
+        (async () => {
+          try {
+            const [publishedCount] = await db
+              .select({ count: count() })
+              .from(posts)
+              .where(
+                and(eq(posts.userId, postingUser.id), eq(posts.status, 'published'))
+              );
+            await setBrevoAttributes(postingUser.email!, {
+              LAST_POST_DATE: brevoDate(publishedAt),
+              POSTS_PUBLISHED: publishedCount?.count ?? 0,
+            });
+            await removeFromDormantList(postingUser.email!);
+          } catch {
+            // Silent fail
+          }
+        })();
+      }
 
       // Auto-like own post if enabled in user settings (random 10s-2min delay)
       if (postingUser.autoLikeAfterPublish !== false) {

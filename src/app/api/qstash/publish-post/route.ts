@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { db, posts, media } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment, scheduleAutoLike } from "@/lib/qstash";
 import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
 import { triggerCrossPromotion } from "@/lib/cross-promotion";
+import { setBrevoAttributes, removeFromDormantList, brevoDate } from "@/lib/newsletter";
 
 export const maxDuration = 300;
 
@@ -178,15 +179,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Update post as published
+    const publishedAt = new Date();
     await db.update(posts)
       .set({
         status: "published",
-        publishedAt: new Date(),
+        publishedAt,
         linkedinPostId: postResult.id,
         errorMessage: null,
-        updatedAt: new Date(),
+        updatedAt: publishedAt,
       })
       .where(eq(posts.id, postId));
+
+    // Sync LAST_POST_DATE + POSTS_PUBLISHED to Brevo and exit Dormant
+    // list. Fire-and-forget so QStash processing isn't blocked.
+    if (postingUser.email) {
+      (async () => {
+        try {
+          const [publishedCount] = await db
+            .select({ count: count() })
+            .from(posts)
+            .where(
+              and(eq(posts.userId, postingUser.id), eq(posts.status, "published"))
+            );
+          await setBrevoAttributes(postingUser.email!, {
+            LAST_POST_DATE: brevoDate(publishedAt),
+            POSTS_PUBLISHED: publishedCount?.count ?? 0,
+          });
+          await removeFromDormantList(postingUser.email!);
+        } catch {
+          // Silent fail
+        }
+      })();
+    }
 
     // Auto-like own post if enabled in user settings (random 10s-2min delay)
     if (postingUser.autoLikeAfterPublish !== false) {

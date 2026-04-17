@@ -6,7 +6,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
 
-import { signUp, subscribeToNewsletter } from '@/lib/newsletter';
+import { signUp, subscribeToNewsletter, brevoDate } from '@/lib/newsletter';
 
 
 function sanitizeCallbackUrl(url: string | undefined | null): string | undefined {
@@ -200,8 +200,21 @@ export async function GET(request: NextRequest) {
       // Add every new user to the Welcome list (#9) so Brevo automation
       // sends the welcome email. Also add to the Blog list (#11) if they
       // opted in via the newsletter checkbox on the sign-up page.
+      // Seed free-user conversion attributes so the daily cron has a
+      // known starting state.
       const fullName = googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim();
-      signUp({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
+      signUp({
+        email: googleUser.email,
+        name: fullName,
+        source: 'google_signup',
+        attributes: {
+          SIGNUP_DATE: brevoDate(new Date()),
+          LINKEDIN_CONNECTED: false,
+          AI_KEY_ADDED: false,
+          POSTS_CREATED: 0,
+          POSTS_PUBLISHED: 0,
+        },
+      }).catch(() => {});
       if (subscribeNewsletterCookie) {
         subscribeToNewsletter({ email: googleUser.email, name: fullName, source: 'google_signup' }).catch(() => {});
       }
