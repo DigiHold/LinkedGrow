@@ -110,6 +110,7 @@ const authProxy = auth(async (req) => {
       "/api/affiliate/apply", "/api/beta", "/api/free-tools/",
       "/api/admin/affiliates/action",
       "/api/admin/backfill-free-users",
+      "/api/ltd/",
     ];
     const isPublic = publicApiPrefixes.some((p) => nextUrl.pathname.startsWith(p));
     if (!isPublic) {

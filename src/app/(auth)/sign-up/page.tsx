@@ -402,8 +402,11 @@ function SignUpContent() {
               <span className="text-slate-600 dark:text-slate-400">Already have an account? </span>
               <Link href={(() => {
                 const plan = searchParams.get("plan");
-                if (!plan) return "/sign-in";
-                const p = new URLSearchParams({ plan });
+                const ltd = searchParams.get("ltd");
+                if (!plan && !ltd) return "/sign-in";
+                const p = new URLSearchParams();
+                if (plan) p.set("plan", plan);
+                if (ltd) p.set("ltd", ltd);
                 const interval = searchParams.get("interval");
                 const coupon = searchParams.get("coupon");
                 if (interval) p.set("interval", interval);
