@@ -867,9 +867,11 @@ export async function POST(request: NextRequest) {
     const body: GeneratePostRequest & { action?: string } = await request.json();
     const { action = "generate", idea, postType, postCategory, topic, content, instruction } = body;
 
-    // Free plan: enforce monthly generation limit on generate + ideas actions.
-    // Edit and carousel-prompts do not count (edit refines, carousel is Business-only).
-    const countableAction = action === "generate" || action === "ideas";
+    // Free plan: one count per "post cycle" - the click on "Generate 5 ideas"
+    // (action === "ideas"). The follow-up post generation from a chosen idea
+    // (action === "generate") and refinements (action === "edit") do NOT count;
+    // they're part of the same cycle. Carousel is Business-only so irrelevant.
+    const countableAction = action === "ideas";
     const userPlan = (session.user.plan || "free") as PlanId;
     let limitCheck: Awaited<ReturnType<typeof checkGenerationLimit>> | null = null;
     if (countableAction) {
@@ -1247,12 +1249,9 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
       user.contentLanguage || undefined
     );
 
-    // Count this generation against the monthly limit.
-    await incrementGenerationUsage(session.user.id);
-    const remaining = limitCheck && limitCheck.limit !== -1
-      ? Math.max(0, limitCheck.limit - (limitCheck.used + 1))
-      : -1;
-    return NextResponse.json({ post, remaining });
+    // "generate" does not increment the counter - it's part of the same cycle
+    // as the preceding "ideas" click which already counted.
+    return NextResponse.json({ post });
   } catch (error) {
 return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate post" },
