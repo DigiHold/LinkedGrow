@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ import {
   Clock,
   HelpCircle,
   ThumbsUp,
+  Download,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -186,6 +189,89 @@ function SettingsContent() {
   const [selectedType, setSelectedType] = useState<"profile" | "organization">("profile");
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [isSavingSelection, setIsSavingSelection] = useState(false);
+
+  // Danger zone - export + delete
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportPassword, setExportPassword] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleExportData = async () => {
+    if (!exportPassword) {
+      setExportMessage({ type: "error", text: "Password is required." });
+      return;
+    }
+    setIsExporting(true);
+    setExportMessage(null);
+    try {
+      const res = await fetch("/api/user/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: exportPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to export data");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const match = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/);
+      a.download = match?.[1] || `linkedgrow-export-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setExportMessage({ type: "success", text: "Your data has been downloaded." });
+      setExportPassword("");
+      setTimeout(() => setShowExportDialog(false), 1200);
+    } catch (err) {
+      setExportMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to export data",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") {
+      setDeleteMessage({ type: "error", text: "Please type DELETE to confirm." });
+      return;
+    }
+    if (!deletePassword) {
+      setDeleteMessage({ type: "error", text: "Password is required." });
+      return;
+    }
+    setIsDeleting(true);
+    setDeleteMessage(null);
+    try {
+      const res = await fetch("/api/user/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword, confirm: deleteConfirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete account");
+      }
+      setDeleteMessage({ type: "success", text: "Account deleted. Signing you out..." });
+      await signOut({ callbackUrl: "/?deleted=1" });
+    } catch (err) {
+      setDeleteMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to delete account",
+      });
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -1799,6 +1885,167 @@ function SettingsContent() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border-red-200 dark:border-red-900/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <AlertTriangle className="w-5 h-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>
+            Export a copy of your data or permanently delete your account. These actions require your password.
+          </CardDescription>
+        </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-slate-100">Export your data</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Download a JSON file with everything we store about you (GDPR Article 20).
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setExportMessage(null);
+                  setExportPassword("");
+                  setShowExportDialog(true);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export data
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10">
+              <div>
+                <p className="font-medium text-red-700 dark:text-red-400">Delete your account</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Permanently erase your profile, posts, scheduled jobs, files, and every associated record. This cannot be undone.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setDeleteMessage(null);
+                  setDeletePassword("");
+                  setDeleteConfirm("");
+                  setShowDeleteDialog(true);
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete account
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export your data</DialogTitle>
+            <DialogDescription>
+              Enter your password to download a JSON file containing all personal data we store about you. API keys, OAuth tokens, the password hash, and 2FA secrets are redacted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="export-password">Password</Label>
+              <Input
+                id="export-password"
+                type="password"
+                value={exportPassword}
+                onChange={(e) => setExportPassword(e.target.value)}
+                placeholder="Your current password"
+                autoComplete="current-password"
+              />
+            </div>
+            {exportMessage && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 p-3 rounded-lg text-sm",
+                  exportMessage.type === "success"
+                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                    : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                )}
+              >
+                {exportMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {exportMessage.text}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={isExporting}>
+                Cancel
+              </Button>
+              <Button onClick={handleExportData} disabled={isExporting || !exportPassword}>
+                {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                Download JSON
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => !isDeleting && setShowDeleteDialog(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 dark:text-red-400">Delete your account</DialogTitle>
+            <DialogDescription>
+              This action is irreversible. Your profile, posts, media, scheduled jobs, teams you own, API keys, and every other record linked to you will be permanently erased. Any active subscription will be cancelled.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
+              <Input
+                id="delete-confirm"
+                type="text"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delete-password">Password</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Your current password"
+                autoComplete="current-password"
+              />
+            </div>
+            {deleteMessage && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 p-3 rounded-lg text-sm",
+                  deleteMessage.type === "success"
+                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                    : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                )}
+              >
+                {deleteMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {deleteMessage.text}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || deleteConfirm !== "DELETE" || !deletePassword}
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                Delete my account permanently
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

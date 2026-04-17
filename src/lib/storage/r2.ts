@@ -1,7 +1,7 @@
 // Cloudflare R2 Storage Integration
 // Free 10GB storage, no egress fees - perfect for SaaS media storage
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // R2 uses S3-compatible API
@@ -166,6 +166,44 @@ export async function getPresignedDownloadUrl(
   });
 
   return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+/**
+ * Delete all objects under a given prefix.
+ * Used for account deletion to purge everything under `users/{userId}/`.
+ */
+export async function deleteR2ByPrefix(prefix: string): Promise<number> {
+  if (!prefix || prefix.length < 3) {
+    throw new Error("Refusing to delete R2 objects with empty/short prefix");
+  }
+
+  let continuationToken: string | undefined;
+  let deletedCount = 0;
+
+  do {
+    const list = await r2Client.send(
+      new ListObjectsV2Command({
+        Bucket: R2_BUCKET_NAME,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+
+    const keys = (list.Contents ?? []).map((o) => o.Key!).filter(Boolean);
+    if (keys.length > 0) {
+      await r2Client.send(
+        new DeleteObjectsCommand({
+          Bucket: R2_BUCKET_NAME,
+          Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+        })
+      );
+      deletedCount += keys.length;
+    }
+
+    continuationToken = list.IsTruncated ? list.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return deletedCount;
 }
 
 /**
