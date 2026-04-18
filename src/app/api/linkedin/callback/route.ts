@@ -289,6 +289,8 @@ if (isPopup) {
           name: fullName,
           source: 'linkedin_signup',
           attributes: {
+            PLAN: "free",
+            IS_PAID: false,
             SIGNUP_DATE: brevoDate(new Date()),
             LINKEDIN_CONNECTED: true,
             AI_KEY_ADDED: false,

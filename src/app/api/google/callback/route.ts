@@ -208,6 +208,8 @@ export async function GET(request: NextRequest) {
         name: fullName,
         source: 'google_signup',
         attributes: {
+          PLAN: "free",
+          IS_PAID: false,
           SIGNUP_DATE: brevoDate(new Date()),
           LINKEDIN_CONNECTED: false,
           AI_KEY_ADDED: false,

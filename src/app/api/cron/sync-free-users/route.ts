@@ -118,6 +118,8 @@ async function runSync(): Promise<{
         user.kimiApiKey
       );
       const added = await addToFreeDripList(user.email, {
+        PLAN: "free",
+        IS_PAID: false,
         LINKEDIN_CONNECTED: !!user.linkedinAccessToken,
         AI_KEY_ADDED: hasAiKey,
       });
@@ -166,6 +168,8 @@ async function runSync(): Promise<{
 
       if (!setupComplete) {
         const added = await addToStuckSetupList(user.email, {
+          PLAN: "free",
+          IS_PAID: false,
           LINKEDIN_CONNECTED: hasLinkedIn,
           AI_KEY_ADDED: hasAiKey,
         });
@@ -230,6 +234,8 @@ async function runSync(): Promise<{
       if (!lastPost || !lastPost.publishedAt) {
         // Never published. Count as dormant if they've been around > 30d.
         const added = await addToDormantList(user.email, {
+          PLAN: "free",
+          IS_PAID: false,
           LAST_POST_DATE: null,
         });
         if (added) stats.dormant_added++;
@@ -238,6 +244,8 @@ async function runSync(): Promise<{
 
       if (lastPost.publishedAt < thirtyDaysAgo) {
         const added = await addToDormantList(user.email, {
+          PLAN: "free",
+          IS_PAID: false,
           LAST_POST_DATE: brevoDate(lastPost.publishedAt),
         });
         if (added) stats.dormant_added++;

@@ -152,6 +152,8 @@ export async function POST(request: NextRequest) {
       name: name || undefined,
       source: "email_signup",
       attributes: {
+        PLAN: "free",
+        IS_PAID: false,
         SIGNUP_DATE: brevoDate(new Date()),
         LINKEDIN_CONNECTED: false,
         AI_KEY_ADDED: false,

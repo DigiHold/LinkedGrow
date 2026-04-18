@@ -143,6 +143,8 @@ export async function POST(request: NextRequest) {
           .limit(1);
 
         const attributes: Record<string, unknown> = {
+          PLAN: "free",
+          IS_PAID: false,
           SIGNUP_DATE: user.createdAt ? brevoDate(user.createdAt) : null,
           LINKEDIN_CONNECTED: hasLinkedIn,
           AI_KEY_ADDED: hasAiKey,
