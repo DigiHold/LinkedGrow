@@ -81,6 +81,9 @@ next-env.d.ts
 # Blog image generation scripts (contain API keys)
 scripts/generate-blog-images.js
 
+# Generated redemption code CSVs (contain valuable codes - send manually to marketplaces)
+redemption-codes-out/
+
 # Misc
 *.bak
 *.tmp

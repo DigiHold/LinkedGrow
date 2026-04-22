@@ -12,6 +12,7 @@ const EXCLUDED_PATHS = [
   "/api",
   "/checkout",
   "/maintenance",
+  "/redeem", // Marketplace-private redemption pages
   "/reset-password", // Has dynamic token
   "/team/invite", // Private team invite page
   "/sign-in", // Auth pages waste crawl budget

@@ -20,6 +20,7 @@ export const users = sqliteTable("users", {
   // Subscription fields
   plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
   isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
+  ltdSource: text("ltd_source", { enum: ["stripe", "dealify", "dealmirror"] }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   billingInterval: text("billing_interval", { enum: ["month", "year"] }),
@@ -783,6 +784,25 @@ export const docsFeedback = sqliteTable("docs_feedback", {
 
 export type DocsFeedback = typeof docsFeedback.$inferSelect;
 export type NewDocsFeedback = typeof docsFeedback.$inferInsert;
+
+// ============================================
+// REDEMPTION CODES (marketplace LTDs)
+// ============================================
+
+export const redemptionCodes = sqliteTable("redemption_codes", {
+  code: text("code").primaryKey(),
+  batch: text("batch").notNull(),
+  source: text("source", { enum: ["dealify", "dealmirror"] }).notNull(),
+  plan: text("plan", { enum: ["business"] }).notNull().default("business"),
+  status: text("status", { enum: ["unused", "redeemed", "revoked"] }).notNull().default("unused"),
+  redeemedBy: text("redeemed_by").references(() => users.id, { onDelete: "set null" }),
+  redeemedAt: integer("redeemed_at", { mode: "timestamp" }),
+  revokedAt: integer("revoked_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export type RedemptionCode = typeof redemptionCodes.$inferSelect;
+export type NewRedemptionCode = typeof redemptionCodes.$inferInsert;
 export type Affiliate = typeof affiliates.$inferSelect;
 export type NewAffiliate = typeof affiliates.$inferInsert;
 export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;

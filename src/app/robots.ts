@@ -8,6 +8,7 @@ export default function robots(): MetadataRoute.Robots {
     "/api/",
     "/checkout/",
     "/maintenance/",
+    "/redeem/",
   ];
 
   return {

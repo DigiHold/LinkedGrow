@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 // Prevent any caching - always fresh data
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // Counter only reflects direct sales via Stripe. Marketplace LTDs
+    // (dealify / dealmirror) are tracked separately and do not draw down
+    // the 500-license counter on /lifetime-deal.
     const result = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(users)
-      .where(eq(users.isLifetimeDeal, true));
+      .where(and(eq(users.isLifetimeDeal, true), eq(users.ltdSource, "stripe")));
 
     const sales = result[0]?.count || 0;
 
