@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   if (typeof code !== "string" || code.length === 0 || code.length > 64) {
     return NextResponse.json({ error: "Code is required" }, { status: 400 });
   }
-  if (source !== "dealify" && source !== "dealmirror") {
+  if (source !== "dealify" && source !== "dealmirror" && source !== "dealfuel") {
     return NextResponse.json({ error: "Invalid source" }, { status: 400 });
   }
 

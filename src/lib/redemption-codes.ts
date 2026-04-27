@@ -4,11 +4,12 @@ import { redemptionCodes, users } from "./db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { addToLtdList, removeFromLtdList } from "./newsletter";
 
-export type RedemptionSource = "dealify" | "dealmirror";
+export type RedemptionSource = "dealify" | "dealmirror" | "dealfuel";
 
 export const SOURCE_PREFIX: Record<RedemptionSource, string> = {
   dealify: "DLFY",
   dealmirror: "DLMR",
+  dealfuel: "DLFL",
 };
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";

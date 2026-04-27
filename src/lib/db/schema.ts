@@ -20,7 +20,7 @@ export const users = sqliteTable("users", {
   // Subscription fields
   plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
   isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
-  ltdSource: text("ltd_source", { enum: ["stripe", "dealify", "dealmirror"] }),
+  ltdSource: text("ltd_source", { enum: ["stripe", "dealify", "dealmirror", "dealfuel"] }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   billingInterval: text("billing_interval", { enum: ["month", "year"] }),
@@ -792,7 +792,7 @@ export type NewDocsFeedback = typeof docsFeedback.$inferInsert;
 export const redemptionCodes = sqliteTable("redemption_codes", {
   code: text("code").primaryKey(),
   batch: text("batch").notNull(),
-  source: text("source", { enum: ["dealify", "dealmirror"] }).notNull(),
+  source: text("source", { enum: ["dealify", "dealmirror", "dealfuel"] }).notNull(),
   plan: text("plan", { enum: ["business"] }).notNull().default("business"),
   status: text("status", { enum: ["unused", "redeemed", "revoked"] }).notNull().default("unused"),
   redeemedBy: text("redeemed_by").references(() => users.id, { onDelete: "set null" }),

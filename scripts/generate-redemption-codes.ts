@@ -3,6 +3,7 @@
 // Usage:
 //   npx tsx scripts/generate-redemption-codes.ts --source dealify --count 2000 --batch dealify-2026-04
 //   npx tsx scripts/generate-redemption-codes.ts --source dealmirror --count 2000 --batch dealmirror-2026-04
+//   npx tsx scripts/generate-redemption-codes.ts --source dealfuel --count 2000 --batch dealfuel-2026-04
 //
 // Requires TURSO_DATABASE_URL + TURSO_AUTH_TOKEN in .env.local.
 
@@ -38,8 +39,8 @@ async function main() {
   const count = args.count ? parseInt(args.count, 10) : 0;
   const batch = args.batch;
 
-  if (!source || (source !== "dealify" && source !== "dealmirror")) {
-    console.error("--source must be 'dealify' or 'dealmirror'");
+  if (!source || (source !== "dealify" && source !== "dealmirror" && source !== "dealfuel")) {
+    console.error("--source must be 'dealify', 'dealmirror' or 'dealfuel'");
     process.exit(1);
   }
   if (!count || count < 1 || count > 100000) {
