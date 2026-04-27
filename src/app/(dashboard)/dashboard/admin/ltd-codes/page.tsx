@@ -19,7 +19,7 @@ export default function AdminLtdCodesPage() {
   const [stats, setStats] = useState<Stats>({});
   const [loading, setLoading] = useState(true);
 
-  const [genSource, setGenSource] = useState<"dealify" | "dealmirror">("dealify");
+  const [genSource, setGenSource] = useState<"dealify" | "dealmirror" | "dealfuel">("dealify");
   const [genCount, setGenCount] = useState("500");
   const [genBatch, setGenBatch] = useState("");
   const [genBusy, setGenBusy] = useState(false);
@@ -110,14 +110,14 @@ export default function AdminLtdCodesPage() {
     }
   }
 
-  const sources: Array<"dealify" | "dealmirror"> = ["dealify", "dealmirror"];
+  const sources: Array<"dealify" | "dealmirror" | "dealfuel"> = ["dealify", "dealmirror", "dealfuel"];
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-5xl">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Marketplace LTD Codes</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Generate codes to send to Dealify / DealMirror, and revoke codes on refund.
+          Generate codes to send to Dealify / DealMirror / DealFuel, and revoke codes on refund.
         </p>
       </div>
 
@@ -185,13 +185,14 @@ export default function AdminLtdCodesPage() {
         <form onSubmit={handleGenerate} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <Label className="mb-2 block">Marketplace</Label>
-            <Select value={genSource} onValueChange={(v) => setGenSource(v as "dealify" | "dealmirror")}>
+            <Select value={genSource} onValueChange={(v) => setGenSource(v as "dealify" | "dealmirror" | "dealfuel")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="dealify">Dealify</SelectItem>
                 <SelectItem value="dealmirror">DealMirror</SelectItem>
+                <SelectItem value="dealfuel">DealFuel</SelectItem>
               </SelectContent>
             </Select>
           </div>

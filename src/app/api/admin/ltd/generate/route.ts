@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     batch?: unknown;
   };
 
-  if (source !== "dealify" && source !== "dealmirror") {
+  if (source !== "dealify" && source !== "dealmirror" && source !== "dealfuel") {
     return NextResponse.json({ error: "Invalid source" }, { status: 400 });
   }
   if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 10000) {
