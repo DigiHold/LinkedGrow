@@ -90,8 +90,12 @@ function pad(s, n) {
 
 function classifyRow(row) {
   const { clicks, impressions, position } = row;
-  if (position <= 5 && impressions >= 20 && clicks === 0) return "ai-overview-steal";
-  if (position >= 8 && position <= 25 && impressions >= 30) return "close-to-rank";
+  // Skip /docs/* - documentation pages aren't conversion targets
+  const page = row.keys[0] || "";
+  if (page.includes("/docs/")) return "docs";
+
+  if (position <= 5 && impressions >= 10 && clicks === 0) return "ai-overview-steal";
+  if (position >= 6 && position <= 25 && impressions >= 10) return "close-to-rank";
   if (position >= 50 && impressions < 5) return "zombie";
   return "other";
 }
@@ -137,6 +141,7 @@ function classifyRow(row) {
     "ai-overview-steal": [],
     "close-to-rank": [],
     zombie: [],
+    docs: [],
   };
 
   for (const row of rows) {
@@ -156,10 +161,11 @@ function classifyRow(row) {
   const totalImps = (byPage.rows || []).reduce((s, r) => s + r.impressions, 0);
   const indexedPages = new Set((byPage.rows || []).map((r) => r.keys[0])).size;
 
-  // Top pages
-  const topPages = (byPage.rows || []).sort(
-    (a, b) => b.impressions - a.impressions
-  ).slice(0, 20);
+  // Top pages (excluding /docs/* — docs aren't conversion targets)
+  const topPages = (byPage.rows || [])
+    .filter((r) => !r.keys[0].includes("/docs/"))
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 20);
 
   // Top queries
   const topQueries = (byQuery.rows || []).sort(
@@ -246,18 +252,19 @@ function classifyRow(row) {
   // Quick action plan
   lines.push("## Recommended Actions This Week");
   lines.push("");
+  let actionNum = 1;
   if (buckets["ai-overview-steal"].length > 0) {
     lines.push(
-      `1. Fix the top 3 AI-Overview-Steal pages first. These are positioned to rank but losing the click to Google's answer card.`
+      `${actionNum++}. Fix the top 3 AI-Overview-Steal pages first. These are positioned to rank but losing the click to Google's answer card.`
     );
   }
   if (buckets["close-to-rank"].length > 0) {
     lines.push(
-      `2. Pick the 5 highest-impression Close-to-Rank pages. Add 3 internal links from the homepage and from your highest-traffic blog post to each. Rewrite titles to CTR pattern.`
+      `${actionNum++}. Pick the 5 highest-impression Close-to-Rank pages. Add 3 internal links from the homepage and from your highest-traffic blog post to each. Rewrite titles to CTR pattern if not done already.`
     );
   }
   lines.push(
-    `3. Compare this week's impressions and clicks to last week's report. If impressions are up but clicks are flat, AI Overviews are growing and AEO matters more than rankings.`
+    `${actionNum++}. Compare this week's impressions and clicks to last week's report. If impressions are up but clicks are flat, AI Overviews are growing and AEO matters more than rankings.`
   );
   lines.push("");
 
