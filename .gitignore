@@ -1,3 +1,7 @@
+# GSC weekly reports + OAuth artifacts (never commit)
+scripts/gsc/reports/
+scripts/gsc/token.json
+
 # Dependencies
 node_modules/
 /.pnp
