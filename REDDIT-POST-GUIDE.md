@@ -52,6 +52,7 @@ for e in root.findall('atom:entry', ns):
 ```
 
 This will print all recent post titles with dates. From the results, extract and write down:
+
 1. **Every post title** from the last 7 days
 2. **Every topic/subject** covered (e.g., "Manus AI agent", "ChatGPT vs Claude", "AI costs")
 
@@ -65,10 +66,10 @@ This prevents duplicate posts when Nicolas runs "write reddit" multiple times in
 
 Check if today is a specific weekly thread day:
 
-| Day | Recurring Format | Flair |
-|-----|-----------------|-------|
+| Day       | Recurring Format                                           | Flair         |
+| --------- | ---------------------------------------------------------- | ------------- |
 | Wednesday | "Show What You Built This Week" OR free vs paid comparison | Weekly Thread |
-| Sunday | "WTF is Going On? Sunday" (weekly AI news + ask anything) | Weekly Thread |
+| Sunday    | "WTF is Going On? Sunday" (weekly AI news + ask anything)  | Weekly Thread |
 
 If today is Wednesday or Sunday AND the weekly thread hasn't been posted yet, write that format. Every other day, pick a standalone post: trending topic, tool review/recommendation, or practical advice. Use the best angle from your subreddit scan and research (Step 2).
 
@@ -98,11 +99,34 @@ WebSearch: "[specific trending topic] details [current year]"
 
 ```
 WebFetch: https://www.techbrew.com/
+WebFetch: https://www.therundown.ai/
+WebFetch: https://www.superhuman.ai/
+WebFetch: https://tldr.tech/ai
+WebFetch: https://www.theneurondaily.com/
+WebFetch: https://aibreakfast.beehiiv.com/
+WebFetch: https://www.notabot.ai/
+WebFetch: https://stratechery.com/
+WebFetch: https://www.platformer.news/
+WebFetch: https://www.bigtechnology.com/
+WebFetch: https://every.to/
+WebFetch: https://www.axios.com/newsletters/axios-ai-plus
+WebFetch: https://jack-clark.net/
+WebFetch: https://www.deeplearning.ai/the-batch/
+WebFetch: https://www.oneusefulthing.org/
+WebFetch: https://www.turingpost.com/
+WebFetch: https://www.interconnects.ai/
+WebFetch: https://www.gwern.net/
+WebFetch: https://www.technologyreview.com/
+WebFetch: https://www.theverge.com/ai-artificial-intelligence
+WebFetch: https://techcrunch.com/category/artificial-intelligence/
+WebFetch: https://www.wired.com/tag/artificial-intelligence/
+WebFetch: https://arstechnica.com/ai/
 ```
 
 Use WebFetch to scrape 1-2 articles for concrete data, numbers, and angles.
 
 ### What makes a good r/WTFisAI topic:
+
 - Something that happened in the last 48 hours (freshness wins on Reddit)
 - A topic people are actively discussing in other AI subreddits
 - A comparison or review that doesn't exist yet in clear, simple language
@@ -157,13 +181,13 @@ Present them numbered 1-5, ordered by how trending/fresh they are. Then STOP and
 
 Assign flairs from this table:
 
-| Flair | When to use | Target length |
-|-------|-------------|---------------|
-| Money & Business | Making money with AI, costs, side hustles, pricing, freelancing | 400-700 words |
-| Tools & Reviews | Honest comparisons, reviews, recommendations, hidden gems | 500-800 words |
-| News & Discussion | AI trends, debates, industry shifts, opinion pieces | 300-600 words |
-| Question | Beginner-friendly questions that spark conversation | 200-400 words |
-| Weekly Thread | Recurring formats (see Step 1 table) | 200-500 words |
+| Flair             | When to use                                                     | Target length |
+| ----------------- | --------------------------------------------------------------- | ------------- |
+| Money & Business  | Making money with AI, costs, side hustles, pricing, freelancing | 400-700 words |
+| Tools & Reviews   | Honest comparisons, reviews, recommendations, hidden gems       | 500-800 words |
+| News & Discussion | AI trends, debates, industry shifts, opinion pieces             | 300-600 words |
+| Question          | Beginner-friendly questions that spark conversation             | 200-400 words |
+| Weekly Thread     | Recurring formats (see Step 1 table)                            | 200-500 words |
 
 Pick the flair that best matches the angle, not the topic. Same news story could be "News & Discussion" (what happened) or "Money & Business" (how it affects your wallet) or "Question" (what does this mean for us?).
 
@@ -180,6 +204,7 @@ Nicolas Lecocq. French dev, lives in Switzerland. 15+ years coding. Built OceanW
 **WHO YOU ARE WRITING FOR:** A complete beginner who knows nothing about AI. Imagine your mom, your aunt, a friend who has barely used ChatGPT once. NOT engineers, NOT researchers, NOT AI Twitter people. If a regular human wouldn't understand a sentence on first read, rewrite it. The whole post must be readable by someone who has never heard of any AI model, benchmark, lab, or technical concept.
 
 **Expertise areas:**
+
 - AI Agents and Tools (uses multi-agent framework for marketing)
 - SaaS Building (built OceanWP, now LinkedGrow with BYOK model)
 - AI-Powered Lead Gen (uses AI agents for outreach, email, prospecting)
@@ -196,11 +221,11 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 #### Punctuation and formatting (violation = immediate rejection)
 
 0. **Commas and periods go OUTSIDE quotation marks. ALWAYS.** No American convention. Logical/British style only.
-   - Wrong: "cognitive surrender,"
-   - Correct: "cognitive surrender",
-   - Wrong: "looks great."
-   - Correct: "looks great".
-   - This applies to EVERY quoted string in the post. No exceptions.
+    - Wrong: "cognitive surrender,"
+    - Correct: "cognitive surrender",
+    - Wrong: "looks great."
+    - Correct: "looks great".
+    - This applies to EVERY quoted string in the post. No exceptions.
 
 #### Absolute rules (violation = rewrite from scratch)
 
@@ -234,11 +259,11 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 20. **Casual transitions.** Use "so basically", "and get this", "the crazy part is". Not "furthermore" or "additionally".
 21. **Personal anecdotes should feel off-the-cuff.** Not carefully crafted paragraphs.
 22. **The post should feel like it took 5 minutes to write** (even if it didn't). Shorter paragraphs, conversational rhythm.
-22b. **Never start multiple posts the same way.** Vary your openings. Never default to "So a [noun]..." as a crutch. Each post should open differently.
-22c. **Don't stack numbers like an analyst.** Default to ZERO numbers. Hard cap at 3 across the entire post, and only if each number is genuinely the story. If a paragraph reads like a data report ("69 vulnerabilities, zero CSRF, zero headers, one rate limiter"), cut all the stats and tell the story in plain words. Stats are a crutch, not a feature. A great post often has zero percentages and zero benchmarks.
-22d. **Avoid short choppy sentence chains.** Don't stack 3+ short sentences in a row. Mix them with longer ones. A paragraph of "X happened. Y happened. Z happened." reads robotic.
+    22b. **Never start multiple posts the same way.** Vary your openings. Never default to "So a [noun]..." as a crutch. Each post should open differently.
+    22c. **Don't stack numbers like an analyst.** Default to ZERO numbers. Hard cap at 3 across the entire post, and only if each number is genuinely the story. If a paragraph reads like a data report ("69 vulnerabilities, zero CSRF, zero headers, one rate limiter"), cut all the stats and tell the story in plain words. Stats are a crutch, not a feature. A great post often has zero percentages and zero benchmarks.
+    22d. **Avoid short choppy sentence chains.** Don't stack 3+ short sentences in a row. Mix them with longer ones. A paragraph of "X happened. Y happened. Z happened." reads robotic.
 23. **Never cite sources, study names, universities, or links in the post body.** Weave data into the story naturally. If someone asks for a source in comments, Nicolas will provide it. The post itself should read like a person sharing what they learned, not an essay.
-23b. **Stay objective. Never take a mean or hostile side, especially against AI companies (Anthropic, OpenAI, Google, Meta, xAI, etc.).** Nicolas builds his product ON TOP of these companies' models. Painting them as shady, creepy, greedy, or untrustworthy makes Nicolas look petty and biased to the entire r/WTFisAI audience (and to their own users who love those tools). You CAN and SHOULD share Nicolas's personal thoughts, reactions, and genuine opinions, that's what makes the post feel human. What you CANNOT do is turn those opinions into attacks, snark, sarcasm, or loaded framing against a company. Examples of what's banned: calling a release "a weird flex", saying a company is "hiding something scarier", comparing them to villains/shady car dealers, implying bad intent, using words like "unsettling", "creepy", "shady", "greedy", "sketchy", "suspicious" to describe their behavior. What's fine: sharing what's genuinely useful or useless about the product, pointing out real tradeoffs, saying "I'm not sure how I feel about X", reporting what the company said in their own words without spin. Rule of thumb: if the company's own team read the post, would they feel fairly represented? If no, rewrite. Report the news, share the personal reaction, skip the hostility.
+    23b. **Stay objective. Never take a mean or hostile side, especially against AI companies (Anthropic, OpenAI, Google, Meta, xAI, etc.).** Nicolas builds his product ON TOP of these companies' models. Painting them as shady, creepy, greedy, or untrustworthy makes Nicolas look petty and biased to the entire r/WTFisAI audience (and to their own users who love those tools). You CAN and SHOULD share Nicolas's personal thoughts, reactions, and genuine opinions, that's what makes the post feel human. What you CANNOT do is turn those opinions into attacks, snark, sarcasm, or loaded framing against a company. Examples of what's banned: calling a release "a weird flex", saying a company is "hiding something scarier", comparing them to villains/shady car dealers, implying bad intent, using words like "unsettling", "creepy", "shady", "greedy", "sketchy", "suspicious" to describe their behavior. What's fine: sharing what's genuinely useful or useless about the product, pointing out real tradeoffs, saying "I'm not sure how I feel about X", reporting what the company said in their own words without spin. Rule of thumb: if the company's own team read the post, would they feel fairly represented? If no, rewrite. Report the news, share the personal reaction, skip the hostility.
 
 #### AI structural patterns to avoid
 
@@ -260,6 +285,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 ### Post structure by flair
 
 **Money & Business:**
+
 ```
 [Hook: one sentence stating the specific insight or surprising number]
 
@@ -273,6 +299,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 ```
 
 **Tools & Reviews:**
+
 ```
 [Hook: "I've been using [tool] for [time] and here's the honest verdict"]
 
@@ -286,6 +313,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 ```
 
 **News & Discussion:**
+
 ```
 [The news in one clear sentence with the source]
 
@@ -297,6 +325,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 ```
 
 **Question:**
+
 ```
 [The question, stated simply]
 
@@ -308,6 +337,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 ```
 
 **Weekly Thread (varies by format, see Step 1 table):**
+
 - "Show What You Built This Week" (Wednesday): Invitation for community to share projects, OR free vs paid comparison
 - "WTF is Going On? Sunday" (Sunday): Weekly AI news roundup + open Q&A, 5-7 news items in plain language, end with "What did I miss?"
 
