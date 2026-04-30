@@ -43,6 +43,8 @@ import { YouTubePlayer } from "@/components/youtube-player";
 import { redirectToLtdCheckout } from "@/lib/checkout";
 import { BreadcrumbJsonLd, FAQJsonLd, SoftwareApplicationJsonLd } from "@/components/seo/json-ld";
 import { FloatingAIIcons } from "@/components/marketing/hero";
+import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { GoogleReviewBadge, TrustpilotReviewBadge, G2ReviewBadge, SocialLinks } from "@/components/marketing/footer";
 
 // ============================================
 // TYPES
@@ -135,7 +137,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "How do I know LinkedGrow will be around long term?",
-    answer: "LinkedGrow is built by Nicolas Lecocq, who created OceanWP - a WordPress theme used by millions of websites. He's been building web products for over 15 years. The BYOK model also means our per-user costs are close to zero (we don't pay for your AI usage), which makes the business inherently sustainable even with lifetime deals.",
+    answer: "LinkedGrow is built by Nicolas Lecocq, who created OceanWP - a WordPress theme used by 500,000+ websites. He's been building web products for over 15 years. The BYOK model also means our per-user costs are close to zero (we don't pay for your AI usage), which makes the business inherently sustainable even with lifetime deals.",
   },
   {
     question: "What happens if I don't buy the lifetime deal?",
@@ -155,10 +157,12 @@ const COMPETITORS = [
 
 function StickyHeader({
   counter,
+  currentPrice,
   onCta,
   loading,
 }: {
   counter: number;
+  currentPrice: number;
   onCta: () => void;
   loading: boolean;
 }) {
@@ -201,7 +205,7 @@ function StickyHeader({
           className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/25"
         >
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-          Get Lifetime Access
+          Lock in ${currentPrice} forever
         </Button>
       </div>
     </motion.div>
@@ -260,8 +264,8 @@ function HeroSection({
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed"
         >
-          Generate, schedule, and publish LinkedIn posts using your own AI key for a fraction of the price.
-          Get every feature unlocked with a single one-time payment instead of paying $79/month.
+          Pay ${currentPrice} once for the full Business plan. Keep every feature forever.
+          Run AI on your own key for $3/mo instead of $79/mo subscriptions that cap at 100 generations.
         </motion.p>
 
         {/* Price */}
@@ -277,7 +281,7 @@ function HeroSection({
             <span className="text-xl sm:text-2xl font-semibold text-slate-500">one-time</span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            + your own AI API key ($2-4/month) - we don&apos;t mark up AI costs
+            + your own AI API key ($3/mo). Save $1,557 over 3 years vs Taplio.
           </p>
         </motion.div>
 
@@ -299,7 +303,7 @@ function HeroSection({
             ) : (
               <ArrowRight className="w-5 h-5 mr-2" />
             )}
-            Get Lifetime Access - ${currentPrice}
+            Lock in ${currentPrice} forever
           </Button>
 
           {/* Trust elements */}
@@ -690,7 +694,7 @@ function PricingTiers({
             </span>
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
-            All tiers include the exact same Business plan. The only difference is when you buy.
+            All tiers include the exact same Business plan. When all 500 sell, LTD closes for good and pricing returns to $79/month.
           </p>
         </motion.div>
 
@@ -735,7 +739,7 @@ function PricingTiers({
                 {isLocked && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <div className="px-4 py-1.5 rounded-full bg-slate-300 dark:bg-slate-600 text-slate-600 dark:text-slate-300 text-sm font-semibold shadow-lg whitespace-nowrap">
-                      Higher price - buy early
+                      {tier.id === "final-call" ? "Last tier before LTD closes" : "Higher price - buy early"}
                     </div>
                   </div>
                 )}
@@ -787,7 +791,7 @@ function PricingTiers({
                     <div className="mb-5">
                       <div className="flex items-center justify-between text-sm mb-1.5">
                         <span className="font-semibold text-slate-400">{display.total}/{display.total} spots</span>
-                        <span className="text-slate-400">Buy early to save</span>
+                        <span className="text-slate-400">{tier.id === "final-call" ? "When 500 sell out, LTD ends" : "Buy early to save"}</span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                         <div className="h-full rounded-full bg-slate-200 dark:bg-slate-600" style={{ width: "0%" }} />
@@ -825,7 +829,7 @@ function PricingTiers({
                     ) : (
                       <>
                         <ArrowRight className="w-4 h-4 mr-2" />
-                        Get Lifetime Access - ${tier.price}
+                        Lock in ${tier.price} forever
                       </>
                     )}
                   </Button>
@@ -1059,7 +1063,7 @@ function FinalCta({
             ) : (
               <ArrowRight className="w-5 h-5 mr-2" />
             )}
-            Get Lifetime Access - ${currentPrice}
+            Lock in ${currentPrice} forever
           </Button>
         </motion.div>
 
@@ -1093,24 +1097,127 @@ function FinalCta({
 
 function LtdFooter() {
   return (
-    <footer className="relative z-10 py-8 px-4 border-t border-slate-200 dark:border-slate-800">
-      <div className="max-w-4xl mx-auto text-center text-sm text-slate-500 dark:text-slate-400">
-        <p className="mb-2">
-          LinkedGrow - AI-Powered LinkedIn Growth Platform
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-            Privacy Policy
-          </Link>
-          <Link href="/terms" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-            Terms of Service
-          </Link>
-          <a href="mailto:contact@linkedgrow.ai" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-            contact@linkedgrow.ai
-          </a>
+    <footer className="relative z-10 py-12 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Col 1: Brand */}
+          <div>
+            <Link href="/" className="flex items-center gap-2 mb-4">
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 379 230" className="shrink-0 w-5 h-5 text-white" fill="currentColor">
+                  <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
+                </svg>
+              </div>
+              <Logo size="md" />
+            </Link>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              AI-Powered LinkedIn Growth Platform
+            </p>
+            <a href="mailto:contact@linkedgrow.ai" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+              contact@linkedgrow.ai
+            </a>
+          </div>
+
+          {/* Col 2: Reviews */}
+          <div>
+            <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Leave Us a Review</h4>
+            <div className="flex flex-col gap-3">
+              <GoogleReviewBadge />
+              <TrustpilotReviewBadge />
+              <G2ReviewBadge />
+            </div>
+          </div>
+
+          {/* Col 3: Quick Links */}
+          <div>
+            <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Quick Links</h4>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <Link href="/blog" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  Browse the Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/features/ai-post-generator" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  All Features
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 4: Socials */}
+          <div>
+            <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Follow Us</h4>
+            <SocialLinks />
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
+          <p>© 2026 LinkedGrow. All rights reserved.</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+// ============================================
+// LTD STICKY MOBILE CTA
+// ============================================
+
+function LtdStickyMobileCTA({
+  currentPrice,
+  onCta,
+  loading,
+}: {
+  currentPrice: number;
+  onCta: () => void;
+  loading: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setVisible(window.scrollY > 600);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-bottom">
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-4 py-3">
+        <button
+          onClick={onCta}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              Lock in ${currentPrice} forever
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1174,7 +1281,7 @@ export default function LifetimeDealClient() {
       </div>
 
       {/* Sticky Header (appears on scroll) */}
-      <StickyHeader counter={status.counter} onCta={handleCtaClick} loading={loading === status.currentTier} />
+      <StickyHeader counter={status.counter} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
 
       {/* Structured Data */}
       <BreadcrumbJsonLd
@@ -1206,6 +1313,9 @@ export default function LifetimeDealClient() {
       <FaqSection />
       <FinalCta counter={status.counter} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
       <LtdFooter />
+
+      <LtdStickyMobileCTA currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
+      <MarketingExitIntentPopup />
     </main>
   );
 }

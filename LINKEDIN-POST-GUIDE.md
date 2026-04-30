@@ -536,3 +536,51 @@ Post ID: [id from API response]
 LinkedGrow: https://linkedgrow.ai/dashboard/editor?edit=[post_id]
 [For carousel: "Add your carousel slides in the LinkedGrow editor"]
 ```
+
+---
+
+## Step 9: Generate X (Twitter) Version
+
+After every LinkedIn post is saved as draft, generate ONE X version that the user can copy-paste.
+
+### Hard rules
+
+- 280 chars MAX (count strictly, including spaces and emojis)
+- ONE core idea, ONE hook
+- No hashtags (dead for organic growth on X)
+- No "Comment KEYWORD" CTA (X DMs are restricted, doesn't work)
+- No em dashes, no AI slop, same Anti-AI Slop rules from Step 4
+- Same Nicolas voice: direct, contractions, self-deprecating, sound like a real person
+- No links in body unless Blog Promo (X doesn't penalize links the way LinkedIn does, but inline links eat chars)
+
+### Format mapping
+
+| LinkedIn Format | X Version Strategy |
+|---|---|
+| Authority (Mon) | Hook + biggest specific data point + one-line takeaway. Numbers > narrative. |
+| Carousel (Tue) | Hook from cover slide + the single sharpest insight. No "save this". |
+| Lead Magnet (Wed) | Hook + value tease + "Reply with [KEYWORD], I'll send the playbook". X DMs work via reply-then-DM only. |
+| Hot Take (Thu) | The full opinion punch + one supporting line. X is home turf for hot takes, deliver it complete. |
+| Blog Promo (Fri) | Hook + 1-line tease + blog URL. URL counts toward 280 chars (~23 chars for short URL). |
+
+### Output format
+
+Show the X version below the LinkedIn draft success message:
+
+```
+🐦 X version (280 chars max, copy-paste ready):
+
+[X POST TEXT]
+
+Char count: [N]/280
+```
+
+### Self-check before showing
+
+1. Char count strict (≤280)
+2. No em dashes
+3. No banned words (delve, leverage, robust, etc. — full list in Step 4)
+4. No hashtags
+5. No "Comment X" CTA
+6. Sounds like Nicolas, not a marketer
+7. Bar Test: would you say this out loud at a bar?
