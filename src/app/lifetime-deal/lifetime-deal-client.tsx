@@ -1040,7 +1040,7 @@ function FinalCta({
           </h2>
           <p className="text-lg md:text-xl text-white/80 mb-2">
             <span className="line-through text-white/40">$948/year</span>{" "}
-            <span className="text-white font-bold text-2xl md:text-3xl">${currentPrice} once</span>
+            <span className="text-white font-bold text-3xl sm:text-4xl md:text-6xl">${currentPrice} once</span>
           </p>
           <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto">
             The full Business plan, yours forever, with every feature and every future update included
@@ -1099,7 +1099,7 @@ function LtdFooter() {
   return (
     <footer className="relative z-10 py-12 px-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {/* Col 1: Brand */}
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
@@ -1108,10 +1108,10 @@ function LtdFooter() {
                   <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
                 </svg>
               </div>
-              <Logo size="md" />
+              <Logo />
             </Link>
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              AI-Powered LinkedIn Growth Platform
+              The AI-powered LinkedIn growth platform built for creators, founders, and teams. Generate posts with 26 AI models, create images, schedule content, and track performance - all with your own API key for unlimited generations at cost.
             </p>
             <a href="mailto:contact@linkedgrow.ai" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
               contact@linkedgrow.ai
@@ -1128,45 +1128,76 @@ function LtdFooter() {
             </div>
           </div>
 
-          {/* Col 3: Quick Links */}
-          <div>
-            <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Quick Links</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="/blog" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  Browse the Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/features/ai-post-generator" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  All Features
-                </Link>
-              </li>
-            </ul>
+          {/* Col 3: Quick Links + Compare */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Quick Links</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/blog" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    Browse the Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/features/ai-post-generator" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    All Features
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Compare</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/compare/taplio-alternative" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    vs Taplio
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/compare/supergrow-alternative" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    vs Supergrow
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/compare/kleo-alternative" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    vs Kleo
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          {/* Col 4: Socials */}
-          <div>
-            <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Follow Us</h4>
-            <SocialLinks />
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
-          <p>© 2026 LinkedGrow. All rights reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-              Terms of Service
-            </Link>
+          {/* Col 4: Follow Us + Copyright/Legal */}
+          <div className="flex flex-col gap-8">
+            <div>
+              <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Follow Us</h4>
+              <SocialLinks />
+            </div>
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-slate-500 dark:text-slate-400">© 2026 LinkedGrow. All rights reserved.</p>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/privacy" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/cookies" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    Cookies
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1200,7 +1231,7 @@ function LtdStickyMobileCTA({
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
       <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-4 py-3">
         <button
           onClick={onCta}
