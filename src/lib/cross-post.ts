@@ -14,7 +14,7 @@ import TurndownService from "turndown";
 import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getBlogPost, getAuthor, type BlogPost } from "@/lib/blog";
+import { getBlogPost, type BlogPost } from "@/lib/blog";
 
 const APP_URL = "https://linkedgrow.ai";
 const HASHNODE_API = "https://gql.hashnode.com";
@@ -98,35 +98,11 @@ async function extractArticleMarkdown(slug: string): Promise<string> {
   return turndown.turndown(innerHtml).trim();
 }
 
-function buildAuthorBio(post: BlogPost): string {
-  const author = getAuthor(post.authorId);
-  if (!author) return "";
-  const socials = [
-    author.linkedin && `[LinkedIn](${author.linkedin})`,
-    author.facebook && `[Facebook](${author.facebook})`,
-    author.youtube && `[YouTube](${author.youtube})`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return [
-    "",
-    "---",
-    "",
-    `**Written by [${author.name}](${author.linkedin})** — ${author.title}`,
-    "",
-    `<img src="${author.avatar}" alt="${author.name}" width="80" height="80" />`,
-    "",
-    author.bio.replace("LinkedGrow", "[LinkedGrow](https://linkedgrow.ai)"),
-    "",
-    socials,
-    "",
-    `*This article was originally published on [linkedgrow.ai](${APP_URL}/blog/${post.slug}).*`,
-  ].join("\n");
-}
-
-function buildPostMarkdown(post: BlogPost, body: string): string {
-  return `${body}\n${buildAuthorBio(post)}\n`;
+function buildPostMarkdown(_post: BlogPost, body: string): string {
+  // No author bio appended. Canonical URL set via API field is enough for SEO
+  // attribution and reduces self-promo signature in the body — important for
+  // staying under platform spam filters when cross-posting many articles.
+  return body;
 }
 
 /**

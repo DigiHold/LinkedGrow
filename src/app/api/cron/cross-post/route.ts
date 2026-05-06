@@ -11,7 +11,7 @@ import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
-import { and, eq, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
 import { crossPostArticle, isDevtoActive } from "@/lib/cross-post";
 
 export const maxDuration = 300;
@@ -23,6 +23,13 @@ const receiver = new Receiver({
 });
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// Cap how many articles get cross-posted per cron run. With ~38 existing
+// articles, an unthrottled rollout would dump all of them on day 1 of
+// activation — that burst pattern is itself a spam signal even from a
+// trusted account. 2/day turns the backlog into a ~19-day drip and falls
+// to no-op once we're caught up to the natural publishing rate.
+const MAX_CROSS_POSTS_PER_RUN = 2;
 
 async function runCrossPost(): Promise<{
   candidates: number;
@@ -39,6 +46,7 @@ async function runCrossPost(): Promise<{
     ? or(isNull(blogPosts.hashnodeUrl), isNull(blogPosts.devtoUrl))!
     : isNull(blogPosts.hashnodeUrl);
 
+  // Newest first so recent articles ship before old backlog.
   const candidates = await db
     .select()
     .from(blogPosts)
@@ -48,7 +56,9 @@ async function runCrossPost(): Promise<{
         lte(blogPosts.publishedAt, cutoff),
         missingPlatform
       )
-    );
+    )
+    .orderBy(desc(blogPosts.publishedAt))
+    .limit(MAX_CROSS_POSTS_PER_RUN);
 
   const succeeded: string[] = [];
   const failed: Array<{ slug: string; error: string }> = [];
