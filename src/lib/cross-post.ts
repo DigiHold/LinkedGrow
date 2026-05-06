@@ -233,9 +233,12 @@ async function postToHashnode(
   markdown: string
 ): Promise<{ ok: boolean; url?: string; id?: string; error?: string }> {
   const token = process.env.HASHNODE_API_KEY;
-  const host = process.env.HASHNODE_PUBLICATION_HOST;
+  const rawHost = process.env.HASHNODE_PUBLICATION_HOST;
   if (!token) return { ok: false, error: "HASHNODE_API_KEY not set" };
-  if (!host) return { ok: false, error: "HASHNODE_PUBLICATION_HOST not set" };
+  if (!rawHost) return { ok: false, error: "HASHNODE_PUBLICATION_HOST not set" };
+
+  // Accept "https://x.hashnode.dev/", "x.hashnode.dev", etc. — Hashnode wants just the host.
+  const host = rawHost.replace(/^https?:\/\//, "").replace(/\/+$/, "").trim();
 
   let publicationId: string;
   try {
