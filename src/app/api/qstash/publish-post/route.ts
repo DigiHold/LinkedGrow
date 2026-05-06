@@ -64,7 +64,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Check if post is still scheduled (not already published or cancelled)
+    // Retry catch-up: if a prior invocation published the post but timed out
+    // before triggerCrossPromotion ran, run it now. triggerCrossPromotion is
+    // per-group idempotent so repeat calls can't double-email.
+    if (post.status === "published" && post.linkedinPostId) {
+      try {
+        await triggerCrossPromotion(postId, post.linkedinPostId, post.content, post.userId);
+      } catch (error) {
+        console.error("Failed to trigger cross-promotion on retry:", error);
+      }
+      return NextResponse.json({
+        success: true,
+        message: "Post already published, ran cross-promotion catch-up",
+      });
+    }
+
+    // Don't re-publish failed/cancelled/draft posts
     if (post.status !== "scheduled") {
       return NextResponse.json({
         success: true,

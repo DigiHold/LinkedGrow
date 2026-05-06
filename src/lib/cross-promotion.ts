@@ -48,6 +48,16 @@ export async function triggerCrossPromotion(
 
     // 3. For each group
     for (const membership of memberships) {
+      // Idempotency: if CP already ran for this (post, group), skip. Lets QStash
+      // retries finish CP catch-up without re-emailing members.
+      const existing = await db.query.crossPromotionPosts.findFirst({
+        where: and(
+          eq(crossPromotionPosts.postId, postId),
+          eq(crossPromotionPosts.groupId, membership.groupId)
+        ),
+      });
+      if (existing) continue;
+
       // Get group info
       const group = await db.query.crossPromotionGroups.findFirst({
         where: eq(crossPromotionGroups.id, membership.groupId),
