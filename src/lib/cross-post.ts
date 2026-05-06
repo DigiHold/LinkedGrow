@@ -9,7 +9,7 @@
  * links/images, then convert to markdown for the platform APIs.
  */
 
-import { JSDOM } from "jsdom";
+import * as cheerio from "cheerio";
 import TurndownService from "turndown";
 import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
@@ -41,40 +41,40 @@ async function extractArticleMarkdown(slug: string): Promise<string> {
     throw new Error(`Fetch ${url} returned ${res.status}`);
   }
   const html = await res.text();
-  const dom = new JSDOM(html);
-  const doc = dom.window.document;
-  const body = doc.querySelector("[data-blog-content]");
-  if (!body) {
+  const $ = cheerio.load(html);
+  const $body = $("[data-blog-content]").first();
+  if ($body.length === 0) {
     throw new Error(`No [data-blog-content] block found in ${url}`);
   }
 
   // Rewrite relative links to absolute
-  body.querySelectorAll("a[href]").forEach((a) => {
-    const href = a.getAttribute("href") || "";
+  $body.find("a[href]").each((_, el) => {
+    const href = $(el).attr("href") || "";
     if (href.startsWith("/")) {
-      a.setAttribute("href", `${APP_URL}${href}`);
+      $(el).attr("href", `${APP_URL}${href}`);
     }
   });
 
   // Resolve Next.js Image srcs to direct URLs
-  body.querySelectorAll("img").forEach((img) => {
-    const src = img.getAttribute("src") || "";
+  $body.find("img").each((_, el) => {
+    const $img = $(el);
+    const src = $img.attr("src") || "";
     if (src.startsWith("/_next/image")) {
       try {
         const abs = new URL(src, APP_URL);
         const real = abs.searchParams.get("url");
-        if (real) img.setAttribute("src", decodeURIComponent(real));
+        if (real) $img.attr("src", decodeURIComponent(real));
       } catch {
         // ignore
       }
     } else if (src.startsWith("/")) {
-      img.setAttribute("src", `${APP_URL}${src}`);
+      $img.attr("src", `${APP_URL}${src}`);
     }
-    // Strip srcset (turndown ignores it but be safe)
-    img.removeAttribute("srcset");
-    img.removeAttribute("loading");
-    img.removeAttribute("decoding");
-    img.removeAttribute("data-nimg");
+    // Strip srcset / Next.js attrs (turndown ignores them but be safe)
+    $img.removeAttr("srcset");
+    $img.removeAttr("loading");
+    $img.removeAttr("decoding");
+    $img.removeAttr("data-nimg");
   });
 
   const turndown = new TurndownService({
@@ -82,10 +82,10 @@ async function extractArticleMarkdown(slug: string): Promise<string> {
     codeBlockStyle: "fenced",
     bulletListMarker: "-",
   });
-  // Keep raw HTML for elements turndown can't represent (e.g. tables already work)
   turndown.keep(["sup", "sub"]);
 
-  return turndown.turndown(body.innerHTML).trim();
+  const innerHtml = $body.html() || "";
+  return turndown.turndown(innerHtml).trim();
 }
 
 function buildAuthorBio(post: BlogPost): string {

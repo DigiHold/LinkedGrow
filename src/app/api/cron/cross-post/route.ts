@@ -14,6 +14,9 @@ import { blogPosts } from "@/lib/db/schema";
 import { and, eq, isNull, lte } from "drizzle-orm";
 import { crossPostArticle } from "@/lib/cross-post";
 
+export const maxDuration = 300;
+export const runtime = "nodejs";
+
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
   nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
