@@ -57,11 +57,21 @@ async function extractArticleMarkdown(slug: string): Promise<string> {
     throw new Error(`No [data-blog-content] block found in ${url}`);
   }
 
-  // Rewrite relative links to absolute
+  // Strip internal LinkedGrow links from the body (keep their text content).
+  // External links are kept as-is. Reduces self-promo link density on the
+  // cross-post; reader can still click the canonical_url at the article header
+  // to reach the full original with all internal links intact.
   $body.find("a[href]").each((_, el) => {
-    const href = $(el).attr("href") || "";
-    if (href.startsWith("/")) {
-      $(el).attr("href", `${APP_URL}${href}`);
+    const $a = $(el);
+    const href = $a.attr("href") || "";
+    const isInternal =
+      href.startsWith("/") ||
+      href.startsWith(APP_URL) ||
+      href.startsWith("https://linkedgrow.ai") ||
+      href.startsWith("http://linkedgrow.ai");
+    if (isInternal) {
+      // Replace the <a> with just its text content
+      $a.replaceWith($a.text());
     }
   });
 
