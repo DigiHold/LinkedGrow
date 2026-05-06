@@ -27,9 +27,9 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 // Cap how many articles get cross-posted per cron run. With ~38 existing
 // articles, an unthrottled rollout would dump all of them on day 1 of
 // activation — that burst pattern is itself a spam signal even from a
-// trusted account. 2/day turns the backlog into a ~19-day drip and falls
+// trusted account. 1/day turns the backlog into a ~38-day drip and falls
 // to no-op once we're caught up to the natural publishing rate.
-const MAX_CROSS_POSTS_PER_RUN = 2;
+const MAX_CROSS_POSTS_PER_RUN = 1;
 
 async function runCrossPost(): Promise<{
   candidates: number;
