@@ -11,8 +11,8 @@ import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
-import { and, eq, isNull, lte } from "drizzle-orm";
-import { crossPostArticle } from "@/lib/cross-post";
+import { and, eq, isNull, lte, or } from "drizzle-orm";
+import { crossPostArticle, isDevtoActive } from "@/lib/cross-post";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -31,6 +31,14 @@ async function runCrossPost(): Promise<{
 }> {
   const cutoff = new Date(Date.now() - ONE_DAY_MS);
 
+  // During dev.to warmup we only require hashnodeUrl. After warmup we re-check
+  // articles that are missing either platform URL, so hashnode-only posts get
+  // backfilled to dev.to once it activates.
+  const devtoActive = isDevtoActive();
+  const missingPlatform = devtoActive
+    ? or(isNull(blogPosts.hashnodeUrl), isNull(blogPosts.devtoUrl))!
+    : isNull(blogPosts.hashnodeUrl);
+
   const candidates = await db
     .select()
     .from(blogPosts)
@@ -38,21 +46,27 @@ async function runCrossPost(): Promise<{
       and(
         eq(blogPosts.status, "published"),
         lte(blogPosts.publishedAt, cutoff),
-        isNull(blogPosts.crossPostedAt)
+        missingPlatform
       )
     );
 
   const succeeded: string[] = [];
   const failed: Array<{ slug: string; error: string }> = [];
 
+  // While dev.to is in warmup, skip it from the auto-cron — only post to Hashnode.
+  // After 2026-05-13 the cron will pick up both platforms.
+  const onlyTarget = devtoActive ? undefined : "hashnode" as const;
+
   for (const row of candidates) {
     try {
-      const result = await crossPostArticle(row.slug);
-      if (result.devto.ok && result.hashnode.ok) {
+      const result = await crossPostArticle(row.slug, { only: onlyTarget });
+      const hashOk = result.hashnode.ok;
+      const devOk = devtoActive ? result.devto.ok : true; // ignored during warmup
+      if (hashOk && devOk) {
         succeeded.push(row.slug);
       } else {
         const errs = [
-          !result.devto.ok && `devto: ${result.devto.error}`,
+          devtoActive && !result.devto.ok && `devto: ${result.devto.error}`,
           !result.hashnode.ok && `hashnode: ${result.hashnode.error}`,
         ]
           .filter(Boolean)

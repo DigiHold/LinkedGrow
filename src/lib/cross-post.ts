@@ -19,6 +19,16 @@ import { getBlogPost, getAuthor, type BlogPost } from "@/lib/blog";
 const APP_URL = "https://linkedgrow.ai";
 const HASHNODE_API = "https://gql.hashnode.com";
 
+// dev.to is disabled until the new account finishes its 7-day warmup.
+// One short technical post lands per day from src/content/devto-warmup/.
+// On 2026-05-13 the account has 7 published posts and the spam filter
+// stops treating it as new — that's when LinkedGrow cross-posts can start.
+export const DEVTO_ACTIVATION_AT = new Date("2026-05-13T00:00:00Z");
+
+export function isDevtoActive(now: Date = new Date()): boolean {
+  return now.getTime() >= DEVTO_ACTIVATION_AT.getTime();
+}
+
 export type CrossPostTarget = "devto" | "hashnode";
 
 export interface CrossPostResult {
@@ -164,6 +174,12 @@ async function postToDevto(
   post: BlogPost,
   markdown: string
 ): Promise<{ ok: boolean; url?: string; id?: string; error?: string }> {
+  if (!isDevtoActive()) {
+    return {
+      ok: false,
+      error: `dev.to disabled until ${DEVTO_ACTIVATION_AT.toISOString().slice(0, 10)} (account warmup in progress)`,
+    };
+  }
   const apiKey = process.env.DEVTO_API_KEY;
   if (!apiKey) return { ok: false, error: "DEVTO_API_KEY not set" };
 
