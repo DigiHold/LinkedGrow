@@ -43,6 +43,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@stripe/stripe-js": "^8.6.1",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/turndown": "^5.0.6",
     "@upstash/qstash": "^2.8.4",
     "ai": "^6.0.105",
     "bcryptjs": "^3.0.3",
@@ -83,6 +84,7 @@
     "sharp": "^0.34.5",
     "stripe": "^20.2.0",
     "tailwind-merge": "^3.4.0",
+    "turndown": "^7.2.4",
     "unified": "^11.0.5",
     "vaul": "^1.1.2"
   },
