@@ -228,18 +228,34 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 
 ## Pricing Plans (from src/lib/plans.ts)
 
-| Plan         | Price  | Posts/Month | Scheduled | Images    |
-| ------------ | ------ | ----------- | --------- | --------- |
-| **Free**     | $0     | 3           | 0         | 0         |
-| **Starter**  | $19/mo | Unlimited   | 10        | 0         |
-| **Pro**      | $39/mo | Unlimited   | Unlimited | Unlimited |
-| **Business** | $79/mo | Unlimited   | Unlimited | Unlimited |
+**There is no real "Free" plan.** Every new account gets a 7-day Pro trial. After 7 days, the account flips to `plan='free'` with `hasUsedTrial=true` - that's the paywall state, every feature is gated, and middleware redirects them to `/dashboard/upgrade`. The "Free" row below describes the post-trial paywall state, not a usable plan.
+
+| Plan                  | Price  | Posts/Month | Scheduled | Images    |
+| --------------------- | ------ | ----------- | --------- | --------- |
+| **Trial (7 days)**    | $0     | Unlimited (Pro features) | Unlimited | Unlimited |
+| **Trial Expired**     | $0     | 0           | 0         | 0         |
+| **Starter**           | $19/mo | Unlimited   | 10        | 0         |
+| **Pro**               | $39/mo | Unlimited   | Unlimited | Unlimited |
+| **Business**          | $79/mo | Unlimited   | Unlimited | Unlimited |
+
+### Trial lifecycle (the critical model)
+
+1. **Signup** (register / google / linkedin) - creates user with `plan='pro'`, `trialStartedAt=now`, `trialEndedAt=now+7d`, `hasUsedTrial=false`.
+2. **Day 2** - daily `sync-free-users` cron adds the user to Brevo list #27 (Stuck Setup) if LinkedIn or AI key is missing. Removes them once setup completes.
+3. **Day 7** - daily `expire-trials` cron flips `plan='free'`, `hasUsedTrial=true`. Middleware paywall kicks in.
+4. **Day 7 + 30** - daily `sync-free-users` cron adds them to list #29 (Dormant) for re-engagement.
+5. **Day 55** - daily `inactive-accounts` cron adds them to list #28 (Inactive Warning) if they never connected LinkedIn (signal they're dead). Brevo sends "deletion in 5 days" email.
+6. **Day 60** - daily `inactive-accounts` cron deletes the account via `deleteUserData()`. Paranoid re-check before delete (no LinkedIn profile, plan='free', no Stripe, no LTD, not admin). Real users who actually used the product are never deleted; only signups that never connected.
+
+### Anti-abuse: LinkedIn profile fingerprint
+
+[src/app/api/linkedin/callback/route.ts](src/app/api/linkedin/callback/route.ts) checks `users.linkedinProfileId` against the new user's LI profile ID. The **first** account to ever use a given LinkedIn ID is never flagged. **Subsequent** accounts (signup or mid-trial connect) get `hasUsedTrial=true` and `plan='free'` immediately - paywalled on first dashboard hit. Stops the "burn email A, then email B + same LinkedIn = another 7 days" cheat.
 
 ### Feature Matrix (Accurate from plans.ts)
 
-| Feature             | Free  | Starter | Pro | Business |
+| Feature             | Free (post-trial) | Starter | Pro | Business |
 | ------------------- | ----- | ------- | --- | -------- |
-| Post Generation     | 3/mo  | ✓       | ✓   | ✓        |
+| Post Generation     | 0     | ✓       | ✓   | ✓        |
 | Ideas Generator     | -     | ✓       | ✓   | ✓        |
 | Advanced Editor     | -     | ✓       | ✓   | ✓        |
 | Content Calendar    | -     | ✓       | ✓   | ✓        |
@@ -656,64 +672,54 @@ LinkedGrow requires the following LinkedIn Developer products:
 
 LinkedGrow only requires the Sign In and Share on LinkedIn products. No Community Management API scopes are used because no automated like/comment/reshare actions are performed on any user's behalf - Network Notifications and Team Notifications are email-only notifiers that link out to LinkedIn for users to engage manually.
 
-## Brevo Free-User Conversion Funnel
+## Brevo Trial Conversion Funnel
 
-LinkedGrow runs a 4-automation email funnel to convert free users into paid subscribers. The automations are built in Brevo and driven by backend hooks + a daily cron. All of this is already live.
+LinkedGrow runs 4 Brevo automations to convert trial users into paid subscribers and clean up dead accounts. Automations are driven by backend hooks + three daily crons.
 
 ### The 4 Brevo lists + automations
 
-| List | Name | Purpose | Emails | Trigger |
-|---|---|---|---|---|
-| **#26** | Free Users - Active Drip | Main 7-email conversion sequence over 31 days | 7 | Welcome automation ends -> adds contact here; plus every free user via backfill |
-| **#27** | Free Users - Stuck Setup | 3-email nudge for users who didn't connect LinkedIn or add an AI key | 3 | Daily cron: signup 7+ days ago AND setup incomplete |
-| **#28** | Free Users - Limit Hit | 3-email sequence when user hits the 3-post monthly cap | 3 | Real-time: `/api/posts` adds to list on 4th-post 403 |
-| **#29** | Free Users - Dormant | 3-email re-engagement for users who stopped posting | 3 | Daily cron: `LAST_POST_DATE` older than 30 days AND setup complete |
+| List | Name | Purpose | Trigger |
+|---|---|---|---|
+| **#27** | Trial Stuck Setup | Nudge trial users who didn't connect LinkedIn or add an AI key | Daily `sync-free-users` cron - Day 2 of trial AND setup incomplete |
+| **#28** | Inactive Account Warning | "Account will be deleted in 5 days" warning before Day 60 deletion | Daily `inactive-accounts` cron - Day 55, never connected LinkedIn |
+| **#29** | Trial Expired Dormant | Re-engagement for trial users who never upgraded | Daily `sync-free-users` cron - `trialEndedAt` older than 30 days |
+| (Welcome #9) | Welcome Onboarding | Day 0 / Day 3 / Day 6 trial nurture | Real-time on signup via `signUp()` |
 
-All automations exit when: `PLAN != free` (daily check) OR contact added to any paid list (#16/#17/#18/#23). Instant exit on upgrade, because `syncBrevoOnSubscription` adds the user to the paid list.
+List #26 (Free Drip) was removed - the Welcome automation handles the full Day 0-6 trial nurture.
 
-### Custom Brevo contact attributes (synced in real-time)
+All automations exit when contact is added to a paid list (#16/#17/#18/#23) via `syncBrevoOnSubscription`.
 
-`SIGNUP_DATE` (Date), `LINKEDIN_CONNECTED` (Boolean), `AI_KEY_ADDED` (Boolean), `POSTS_CREATED` (Number), `POSTS_PUBLISHED` (Number), `LAST_POST_DATE` (Date), `LIMIT_HIT_DATE` (Date).
+### Custom Brevo contact attributes
+
+`SIGNUP_DATE` (Date), `TRIAL_STARTED_DATE` (Date), `TRIAL_ENDS_DATE` (Date), `LINKEDIN_CONNECTED` (Boolean), `AI_KEY_ADDED` (Boolean), `POSTS_CREATED` (Number), `POSTS_PUBLISHED` (Number), `LAST_POST_DATE` (Date).
 
 ### Backend pieces
 
-- **Real-time hooks** in [src/lib/newsletter.ts](src/lib/newsletter.ts) - called from register / OAuth callbacks / settings save / posts create / linkedin publish / qstash publish
-- **Daily cron** at [src/app/api/cron/sync-free-users/route.ts](src/app/api/cron/sync-free-users/route.ts) - scheduled in QStash (`scd_6iWac4U6wcct2V6sZr1dJ2r9EG6u`), runs `0 9 * * *` UTC
-- **Middleware whitelist** - the admin backfill endpoint is added to the public-prefix list in [src/proxy.ts](src/proxy.ts) because its own auth is handled inside (QStash signature OR admin session)
+- **Real-time hooks** in [src/lib/newsletter.ts](src/lib/newsletter.ts) - called from register / OAuth callbacks / settings save / linkedin publish / qstash publish
+- **Daily cron 1** - [src/app/api/cron/sync-free-users/route.ts](src/app/api/cron/sync-free-users/route.ts) - Stuck Setup + Dormant funnels
+- **Daily cron 2** - [src/app/api/cron/expire-trials/route.ts](src/app/api/cron/expire-trials/route.ts) - flips Day 7 expired trials to `plan='free'`, `hasUsedTrial=true`
+- **Daily cron 3** - [src/app/api/cron/inactive-accounts/route.ts](src/app/api/cron/inactive-accounts/route.ts) - Day 55 warning + Day 60 `deleteUserData()` for accounts that never connected LinkedIn
 
 ### Admin backfill endpoint
 
-[src/app/api/admin/backfill-free-users/route.ts](src/app/api/admin/backfill-free-users/route.ts) is a one-shot admin tool that syncs every existing free user into the correct Brevo lists. Use it when:
+[src/app/api/admin/backfill-free-users/route.ts](src/app/api/admin/backfill-free-users/route.ts) syncs Brevo attributes for trial + post-trial users. Use it when:
 
-1. You add a new Brevo list and want all existing free users in it
-2. You change attribute logic in `newsletter.ts` and need to resync everyone
-3. You reset the Brevo lists for testing and need to rebuild them
-4. Something drifts between the DB and Brevo and you want to re-sync
+1. You changed attribute logic in `newsletter.ts` and need to resync.
+2. You reset Brevo lists for testing.
+3. After running a Turso SQL migration that altered trial fields in bulk.
 
 **Safety guarantees:**
-- Only touches users where `plan = 'free'` (paid users are never modified)
-- Only ADDS to free-user lists and updates attributes - never removes from anything
-- Idempotent: re-running just re-computes state, no duplicates
-- Two independent auth paths: QStash signature OR admin session
-- No user input accepted - body is ignored
+- Skips paying customers (`stripeSubscriptionId IS NOT NULL`) and LTD customers
+- Only updates attributes - never adds to or removes from lists
+- Idempotent: re-running just re-computes state
+- Two auth paths: QStash signature OR admin session
+- Body is ignored - no user input accepted
 
-**How to run (pick one):**
+**How to run:**
 
-Option A - browser console while logged in as admin:
 ```js
 fetch('/api/admin/backfill-free-users', { method: 'POST' }).then(r => r.json()).then(console.log)
 ```
-
-Option B - via QStash (uses `QSTASH_TOKEN` from env):
-```bash
-curl -X POST "https://qstash-us-east-1.upstash.io/v2/publish/https://linkedgrow.ai/api/admin/backfill-free-users" \
-  -H "Authorization: Bearer $QSTASH_TOKEN" \
-  -H "Content-Type: application/json" \
-  -H "Upstash-Retries: 2" \
-  -d '{}'
-```
-
-Response is a JSON summary: `total_free_users`, `attributes_synced`, `added_to_drip`, `added_to_stuck`, `added_to_limit_hit`, `added_to_dormant`, `errors`.
 
 ## Feature Implementation Status
 

@@ -16,6 +16,14 @@ const authRoutes = [
   "/sign-up",
 ];
 
+// Post-trial paywall allowlist: paths a trial-expired free user can still
+// reach. Everything else under /dashboard redirects to /dashboard/upgrade.
+const PAYWALL_ALLOWED_PREFIXES = [
+  "/dashboard/upgrade",
+  "/dashboard/settings",
+  "/dashboard/affiliate",
+];
+
 // Wrapper: intercept signout BEFORE auth() touches the request
 const authProxy = auth(async (req) => {
   const { nextUrl } = req;
@@ -96,6 +104,27 @@ const authProxy = auth(async (req) => {
     const signInUrl = new URL("/sign-in", nextUrl);
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
+  }
+
+  // Trial-expired paywall: users on the free plan who have already used
+  // their trial and have no Stripe sub get bounced to /dashboard/upgrade
+  // for every dashboard page except billing/settings/upgrade itself.
+  if (isProtectedRoute && isLoggedIn) {
+    const user = req.auth?.user;
+    const isPaywalled =
+      user?.plan === "free" &&
+      user?.hasUsedTrial === true &&
+      !user?.stripeSubscriptionId &&
+      !user?.isLifetimeDeal;
+
+    if (isPaywalled) {
+      const isAllowed = PAYWALL_ALLOWED_PREFIXES.some((p) =>
+        nextUrl.pathname === p || nextUrl.pathname.startsWith(`${p}/`)
+      );
+      if (!isAllowed) {
+        return NextResponse.redirect(new URL("/dashboard/upgrade", nextUrl));
+      }
+    }
   }
 
   // Protect non-public API routes

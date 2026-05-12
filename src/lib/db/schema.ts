@@ -20,6 +20,10 @@ export const users = sqliteTable("users", {
   // Subscription fields
   plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
   isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
+  // 7-day Pro trial lifecycle
+  trialStartedAt: integer("trial_started_at", { mode: "timestamp" }),
+  trialEndedAt: integer("trial_ended_at", { mode: "timestamp" }),
+  hasUsedTrial: integer("has_used_trial", { mode: "boolean" }).default(false),
   ltdSource: text("ltd_source", { enum: ["stripe", "dealify", "dealmirror", "dealfuel"] }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

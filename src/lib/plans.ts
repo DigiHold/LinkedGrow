@@ -43,16 +43,16 @@ export interface PlanInfo {
 export const PLANS: Record<PlanId, PlanInfo> = {
   free: {
     id: "free",
-    name: "Free",
-    description: "Try LinkedGrow with basic features",
+    name: "Trial Expired",
+    description: "Your 7-day Pro trial ended - upgrade to keep posting",
     price: 0,
     yearlyPrice: 0,
     limits: {
-      postsPerMonth: 3,
+      postsPerMonth: 0,
       scheduledPosts: 0,
       imagesPerMonth: 0,
       features: {
-        postGeneration: true,
+        postGeneration: false,
         ideas: false,
         imageGeneration: false,
         carouselGenerator: false,

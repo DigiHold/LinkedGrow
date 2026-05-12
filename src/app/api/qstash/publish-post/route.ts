@@ -105,6 +105,24 @@ export async function POST(request: NextRequest) {
 
     const { user: postingUser, linkedInUser } = result;
 
+    // Trial paywall: refuse to publish if the owner's trial expired and
+    // they didn't upgrade. LTD and paid users are never blocked here.
+    if (
+      postingUser.plan === "free" &&
+      postingUser.hasUsedTrial &&
+      !postingUser.stripeSubscriptionId &&
+      !postingUser.isLifetimeDeal
+    ) {
+      await db.update(posts)
+        .set({
+          status: "failed",
+          errorMessage: "Trial expired - upgrade to resume publishing",
+          updatedAt: new Date(),
+        })
+        .where(eq(posts.id, postId));
+      return NextResponse.json({ error: "Trial expired" }, { status: 402 });
+    }
+
     if (!linkedInUser?.linkedinProfileId) {
       // Mark post as failed
       await db.update(posts)

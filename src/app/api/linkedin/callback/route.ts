@@ -3,7 +3,7 @@ import { exchangeCodeForToken, getLinkedInProfile, getLinkedInProfileWithHeadlin
 import { auth } from '@/lib/auth';
 import { db, users, accounts } from '@/lib/db';
 import { affiliates, affiliateReferrals } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, ne, sql } from 'drizzle-orm';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { randomUUID } from 'crypto';
 import { encode } from 'next-auth/jwt';
@@ -219,13 +219,30 @@ if (isPopup) {
           }
         }
 
+        // Anti-abuse fingerprint: if this LinkedIn profile ID was already
+        // used by another account, skip the trial entirely (paywall them on
+        // first visit). The first account ever to use this LI ID is never
+        // flagged. Subsequent accounts get blocked.
+        const existingLinkedInUser = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.linkedinProfileId, profile.id))
+          .limit(1);
+
+        const trialAbuseDetected = existingLinkedInUser.length > 0;
+        const trialStart = new Date();
+        const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
         await db.insert(users).values({
           id: userId,
           email: linkedInEmail,
           name: fullName,
           image: storedPictureUrl,
           emailVerified: new Date(), // LinkedIn emails are verified
-          plan: 'free',
+          plan: trialAbuseDetected ? 'free' : 'pro',
+          trialStartedAt: trialAbuseDetected ? null : trialStart,
+          trialEndedAt: trialAbuseDetected ? trialStart : trialEnd,
+          hasUsedTrial: trialAbuseDetected,
           twoFactorEnabled: false,
           referredBy: validAffiliate?.referralCode || null,
           // Auto-connect LinkedIn
@@ -289,9 +306,10 @@ if (isPopup) {
           name: fullName,
           source: 'linkedin_signup',
           attributes: {
-            PLAN: "free",
+            PLAN: trialAbuseDetected ? "free" : "pro",
             IS_PAID: false,
             SIGNUP_DATE: brevoDate(new Date()),
+            TRIAL_ENDS_DATE: trialAbuseDetected ? null : brevoDate(trialEnd),
             LINKEDIN_CONNECTED: true,
             AI_KEY_ADDED: false,
             POSTS_CREATED: 0,
@@ -464,6 +482,28 @@ if (isPopup) {
 
     // Store tokens and profile data in database if user is logged in
     if (session?.user?.id) {
+      // Load current user to check if they're on trial and to gate abuse check
+      const currentUser = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+      });
+
+      // Anti-abuse fingerprint: if this LinkedIn ID was already used by a
+      // different account AND the current user is still on the trial (no
+      // Stripe sub, no LTD), revoke their trial. Paid users are never
+      // downgraded by this check.
+      let trialAbuseDetected = false;
+      if (currentUser && !currentUser.stripeSubscriptionId && !currentUser.isLifetimeDeal && !currentUser.hasUsedTrial) {
+        const conflictingUser = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(and(
+            eq(users.linkedinProfileId, profile.id),
+            ne(users.id, session.user.id)
+          ))
+          .limit(1);
+        trialAbuseDetected = conflictingUser.length > 0;
+      }
+
       // Download and store profile picture in R2
       let storedPictureUrl: string | null = null;
       if (linkedInPictureUrl) {
@@ -495,6 +535,12 @@ if (isPopup) {
           linkedinOrganizations: hasOrganizations ? JSON.stringify(organizations) : null,
           // Default to profile if no orgs, otherwise keep previous selection or null for selection page
           linkedinPostingTarget: hasOrganizations ? null : 'profile',
+          // Revoke trial if abuse detected
+          ...(trialAbuseDetected ? {
+            plan: 'free' as const,
+            trialEndedAt: new Date(),
+            hasUsedTrial: true,
+          } : {}),
           updatedAt: new Date(),
         })
         .where(eq(users.id, session.user.id));

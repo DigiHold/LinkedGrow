@@ -137,6 +137,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isAdmin = dbUser.isAdmin;
           token.hasPassword = !!dbUser.password;
+          token.hasUsedTrial = dbUser.hasUsedTrial ?? false;
+          token.trialEndedAt = dbUser.trialEndedAt
+            ? new Date(dbUser.trialEndedAt as Date).getTime()
+            : null;
+          token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
 
           // Check if user is a team member (not owner)
           const membership = await db.query.teamMembers.findFirst({
@@ -191,6 +196,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.teamId = token.teamId as string | null;
         session.user.teamRole = token.teamRole as string | null;
         session.user.teamOwnerId = token.teamOwnerId as string | null;
+        session.user.hasUsedTrial = token.hasUsedTrial as boolean;
+        session.user.trialEndedAt = token.trialEndedAt as number | null;
+        session.user.stripeSubscriptionId = token.stripeSubscriptionId as string | null;
       }
       return session;
     },
@@ -215,6 +223,9 @@ declare module "next-auth" {
       teamId?: string | null;
       teamRole?: string | null; // "admin" | "member"
       teamOwnerId?: string | null;
+      hasUsedTrial?: boolean;
+      trialEndedAt?: number | null;
+      stripeSubscriptionId?: string | null;
     };
   }
 

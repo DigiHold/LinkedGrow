@@ -109,14 +109,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user
+    // Create user with 7-day Pro trial
     const userId = randomUUID();
+    const trialStart = new Date();
+    const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     await db.insert(users).values({
       id: userId,
       name: name,
       email: email,
       password: hashedPassword,
-      plan: "free",
+      plan: "pro",
+      trialStartedAt: trialStart,
+      trialEndedAt: trialEnd,
+      hasUsedTrial: false,
       twoFactorEnabled: false,
       referredBy: validAffiliate?.referralCode || null,
       createdAt: new Date(),
@@ -152,9 +157,10 @@ export async function POST(request: NextRequest) {
       name: name || undefined,
       source: "email_signup",
       attributes: {
-        PLAN: "free",
+        PLAN: "pro",
         IS_PAID: false,
         SIGNUP_DATE: brevoDate(new Date()),
+        TRIAL_ENDS_DATE: brevoDate(trialEnd),
         LINKEDIN_CONNECTED: false,
         AI_KEY_ADDED: false,
         POSTS_CREATED: 0,

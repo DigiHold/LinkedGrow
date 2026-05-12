@@ -128,8 +128,10 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Create new user (don't store Google profile picture - only LinkedIn pictures are stored)
+      // Create new user with 7-day Pro trial (don't store Google profile picture - only LinkedIn pictures are stored)
       const userId = randomUUID();
+      const trialStart = new Date();
+      const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       // Check for affiliate referral cookie
       const refCode = request.cookies.get('lg_ref')?.value;
@@ -152,7 +154,10 @@ export async function GET(request: NextRequest) {
         name: googleUser.name || `${googleUser.given_name} ${googleUser.family_name}`.trim(),
         image: null,
         emailVerified: googleUser.verified_email ? new Date() : null,
-        plan: 'free',
+        plan: 'pro',
+        trialStartedAt: trialStart,
+        trialEndedAt: trialEnd,
+        hasUsedTrial: false,
         twoFactorEnabled: false,
         referredBy: validAffiliate?.referralCode || null,
         createdAt: new Date(),
@@ -208,9 +213,10 @@ export async function GET(request: NextRequest) {
         name: fullName,
         source: 'google_signup',
         attributes: {
-          PLAN: "free",
+          PLAN: "pro",
           IS_PAID: false,
           SIGNUP_DATE: brevoDate(new Date()),
+          TRIAL_ENDS_DATE: brevoDate(trialEnd),
           LINKEDIN_CONNECTED: false,
           AI_KEY_ADDED: false,
           POSTS_CREATED: 0,
