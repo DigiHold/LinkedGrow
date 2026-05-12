@@ -240,12 +240,10 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 
 ### Trial lifecycle (the critical model)
 
-1. **Signup** (register / google / linkedin) - creates user with `plan='pro'`, `trialStartedAt=now`, `trialEndedAt=now+7d`, `hasUsedTrial=false`.
-2. **Day 2** - daily `sync-free-users` cron adds the user to Brevo list #27 (Stuck Setup) if LinkedIn or AI key is missing. Removes them once setup completes.
-3. **Day 7** - daily `expire-trials` cron flips `plan='free'`, `hasUsedTrial=true`. Middleware paywall kicks in.
-4. **Day 7 + 30** - daily `sync-free-users` cron adds them to list #29 (Dormant) for re-engagement.
-5. **Day 55** - daily `inactive-accounts` cron adds them to list #28 (Inactive Warning) if they never connected LinkedIn (signal they're dead). Brevo sends "deletion in 5 days" email.
-6. **Day 60** - daily `inactive-accounts` cron deletes the account via `deleteUserData()`. Paranoid re-check before delete (no LinkedIn profile, plan='free', no Stripe, no LTD, not admin). Real users who actually used the product are never deleted; only signups that never connected.
+1. **Signup** (register / google / linkedin) - creates user with `plan='pro'`, `trialStartedAt=now`, `trialEndedAt=now+7d`, `hasUsedTrial=false`. Brevo Welcome automation (#9) handles the in-trial nurture sequence.
+2. **Day 7** - daily `expire-trials` cron flips `plan='free'`, `hasUsedTrial=true`. Middleware paywall kicks in.
+3. **Day 55** - daily `inactive-accounts` cron adds them to Brevo list #28 (Inactive Warning) if they never connected LinkedIn (signal they're dead). Brevo sends "deletion in 5 days" email.
+4. **Day 60** - daily `inactive-accounts` cron deletes the account via `deleteUserData()`. Paranoid re-check before delete (no LinkedIn profile, plan='free', no Stripe, no LTD, not admin). Real users who actually used the product are never deleted; only signups that never connected. `deleteUserData` does NOT touch Brevo, so the contact persists in Brevo after the DB row is gone.
 
 ### Anti-abuse: LinkedIn profile fingerprint
 
@@ -674,20 +672,19 @@ LinkedGrow only requires the Sign In and Share on LinkedIn products. No Communit
 
 ## Brevo Trial Conversion Funnel
 
-LinkedGrow runs 4 Brevo automations to convert trial users into paid subscribers and clean up dead accounts. Automations are driven by backend hooks + three daily crons.
+LinkedGrow uses Brevo automations to nurture trial users and clean up dead accounts. The Welcome automation (#9) handles the full in-trial nurture sequence (Days 0-6). After Day 7, there is no sync cron - all future users go through the trial period, and Brevo automations key off the Welcome list + paid-list transitions.
 
-### The 4 Brevo lists + automations
+### Brevo lists in active use
 
 | List | Name | Purpose | Trigger |
 |---|---|---|---|
-| **#27** | Trial Stuck Setup | Nudge trial users who didn't connect LinkedIn or add an AI key | Daily `sync-free-users` cron - Day 2 of trial AND setup incomplete |
+| **#9** | Welcome Onboarding | Day 0 / Day 3 / Day 6 trial nurture | Real-time on signup via `signUp()` |
 | **#28** | Inactive Account Warning | "Account will be deleted in 5 days" warning before Day 60 deletion | Daily `inactive-accounts` cron - Day 55, never connected LinkedIn |
-| **#29** | Trial Expired Dormant | Re-engagement for trial users who never upgraded | Daily `sync-free-users` cron - `trialEndedAt` older than 30 days |
-| (Welcome #9) | Welcome Onboarding | Day 0 / Day 3 / Day 6 trial nurture | Real-time on signup via `signUp()` |
+| **#16/17/18/23** | Paid plan lists (Starter/Pro/Business/LTD) | Move user to the correct paid list on upgrade | Stripe webhook via `syncBrevoOnSubscription` |
 
-List #26 (Free Drip) was removed - the Welcome automation handles the full Day 0-6 trial nurture.
+Lists #26 (Free Drip), #27 (Stuck Setup), and #29 (Dormant) are no longer populated by code. Their remove helpers (`removeFromStuckSetupList`, `removeFromDormantList`) are still wired into real-time hooks as a safety net so manually-added entries get cleaned up.
 
-All automations exit when contact is added to a paid list (#16/#17/#18/#23) via `syncBrevoOnSubscription`.
+All automations exit when the contact is added to a paid list via `syncBrevoOnSubscription`.
 
 ### Custom Brevo contact attributes
 
@@ -696,9 +693,8 @@ All automations exit when contact is added to a paid list (#16/#17/#18/#23) via 
 ### Backend pieces
 
 - **Real-time hooks** in [src/lib/newsletter.ts](src/lib/newsletter.ts) - called from register / OAuth callbacks / settings save / linkedin publish / qstash publish
-- **Daily cron 1** - [src/app/api/cron/sync-free-users/route.ts](src/app/api/cron/sync-free-users/route.ts) - Stuck Setup + Dormant funnels
-- **Daily cron 2** - [src/app/api/cron/expire-trials/route.ts](src/app/api/cron/expire-trials/route.ts) - flips Day 7 expired trials to `plan='free'`, `hasUsedTrial=true`
-- **Daily cron 3** - [src/app/api/cron/inactive-accounts/route.ts](src/app/api/cron/inactive-accounts/route.ts) - Day 55 warning + Day 60 `deleteUserData()` for accounts that never connected LinkedIn
+- **Daily cron 1** - [src/app/api/cron/expire-trials/route.ts](src/app/api/cron/expire-trials/route.ts) - flips Day 7 expired trials to `plan='free'`, `hasUsedTrial=true`
+- **Daily cron 2** - [src/app/api/cron/inactive-accounts/route.ts](src/app/api/cron/inactive-accounts/route.ts) - Day 55 warning + Day 60 `deleteUserData()` for accounts that never connected LinkedIn. `deleteUserData` does NOT remove the Brevo contact - it stays so you keep the marketing list intact.
 
 ### Admin backfill endpoint
 
