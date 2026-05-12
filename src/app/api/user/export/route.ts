@@ -19,13 +19,9 @@ import {
   postAnalytics,
   engagementActions,
   engagementObjectives,
-  engagementLists,
-  engagementListProfiles,
-  teamEngagementJobs,
-  crossPromotionGroups,
-  crossPromotionMembers,
-  crossPromotionPosts,
-  crossPromotionActions,
+  networkNotificationGroups,
+  networkNotificationMembers,
+  networkNotificationPosts,
   abandonedCheckouts,
   cookieConsents,
   dataRemovalRequests,
@@ -119,11 +115,8 @@ export async function POST(request: NextRequest) {
       userApiLogs,
       userEngagementActions,
       userEngagementObjectives,
-      userEngagementLists,
-      userTeamJobs,
-      userCrossActions,
-      ownedCrossGroups,
-      userCrossMemberships,
+      ownedNotificationGroups,
+      userNotificationMemberships,
       userAbandonedCheckouts,
       userCookieConsents,
       userRemovalRequests,
@@ -145,11 +138,8 @@ export async function POST(request: NextRequest) {
       db.select().from(apiLogs).where(eq(apiLogs.userId, userId)),
       db.select().from(engagementActions).where(eq(engagementActions.userId, userId)),
       db.select().from(engagementObjectives).where(eq(engagementObjectives.userId, userId)),
-      db.select().from(engagementLists).where(eq(engagementLists.userId, userId)),
-      db.select().from(teamEngagementJobs).where(eq(teamEngagementJobs.userId, userId)),
-      db.select().from(crossPromotionActions).where(eq(crossPromotionActions.userId, userId)),
-      db.select().from(crossPromotionGroups).where(eq(crossPromotionGroups.ownerId, userId)),
-      db.select().from(crossPromotionMembers).where(eq(crossPromotionMembers.userId, userId)),
+      db.select().from(networkNotificationGroups).where(eq(networkNotificationGroups.ownerId, userId)),
+      db.select().from(networkNotificationMembers).where(eq(networkNotificationMembers.userId, userId)),
       db.select().from(abandonedCheckouts).where(eq(abandonedCheckouts.userId, userId)),
       db.select().from(cookieConsents).where(eq(cookieConsents.userId, userId)),
       db.select().from(dataRemovalRequests).where(eq(dataRemovalRequests.userId, userId)),
@@ -169,22 +159,20 @@ export async function POST(request: NextRequest) {
 
     // Drill one level deeper for rows we own but whose children aren't keyed by userId.
     const teamIds = ownedTeams.map((t) => t.id);
-    const engagementListIds = userEngagementLists.map((l) => l.id);
     const apiKeyIds = userApiKeys.map((k) => k.id);
     const affiliateIds = userAffiliateRow.map((a) => a.id);
 
     const postIds = userPosts.map((p) => p.id);
-    const crossGroupIds = ownedCrossGroups.map((g) => g.id);
+    const notificationGroupIds = ownedNotificationGroups.map((g) => g.id);
 
     const [
       ownedTeamMembers,
       ownedTeamInvites,
-      listProfiles,
       postAnalyticsRows,
       affiliateCommissionRows,
       affiliatePayoutRows,
-      ownedCrossGroupPosts,
-      ownedCrossGroupMembers,
+      ownedNotificationGroupPosts,
+      ownedNotificationGroupMembers,
       userAffiliateRefsAsAffiliate,
     ] = await Promise.all([
       teamIds.length
@@ -192,12 +180,6 @@ export async function POST(request: NextRequest) {
         : Promise.resolve([]),
       teamIds.length
         ? db.select().from(teamInvites).where(inArray(teamInvites.teamId, teamIds))
-        : Promise.resolve([]),
-      engagementListIds.length
-        ? db
-            .select()
-            .from(engagementListProfiles)
-            .where(inArray(engagementListProfiles.listId, engagementListIds))
         : Promise.resolve([]),
       postIds.length
         ? db.select().from(postAnalytics).where(inArray(postAnalytics.postId, postIds))
@@ -214,17 +196,17 @@ export async function POST(request: NextRequest) {
             .from(affiliatePayouts)
             .where(inArray(affiliatePayouts.affiliateId, affiliateIds))
         : Promise.resolve([]),
-      crossGroupIds.length
+      notificationGroupIds.length
         ? db
             .select()
-            .from(crossPromotionPosts)
-            .where(inArray(crossPromotionPosts.groupId, crossGroupIds))
+            .from(networkNotificationPosts)
+            .where(inArray(networkNotificationPosts.groupId, notificationGroupIds))
         : Promise.resolve([]),
-      crossGroupIds.length
+      notificationGroupIds.length
         ? db
             .select()
-            .from(crossPromotionMembers)
-            .where(inArray(crossPromotionMembers.groupId, crossGroupIds))
+            .from(networkNotificationMembers)
+            .where(inArray(networkNotificationMembers.groupId, notificationGroupIds))
         : Promise.resolve([]),
       affiliateIds.length
         ? db
@@ -271,16 +253,12 @@ export async function POST(request: NextRequest) {
       engagement: {
         actions: userEngagementActions,
         objectives: userEngagementObjectives,
-        lists: userEngagementLists,
-        listProfiles,
-        teamJobs: userTeamJobs,
       },
-      crossPromotion: {
-        ownedGroups: ownedCrossGroups,
-        memberships: userCrossMemberships,
-        actions: userCrossActions,
-        postsInOwnedGroups: ownedCrossGroupPosts,
-        membersInOwnedGroups: ownedCrossGroupMembers,
+      networkNotifications: {
+        ownedGroups: ownedNotificationGroups,
+        memberships: userNotificationMemberships,
+        postsInOwnedGroups: ownedNotificationGroupPosts,
+        membersInOwnedGroups: ownedNotificationGroupMembers,
       },
       billing: {
         abandonedCheckouts: userAbandonedCheckouts,

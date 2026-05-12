@@ -100,6 +100,9 @@ redemption-codes-out/
 # Local migrations (if using local dev db)
 migrations/
 
+# BOS — local strategic advisor framework (personal data, never commit)
+/BOS/
+
 # Package manager locks (keep package-lock.json, ignore others if not using)
 # yarn.lock
 # pnpm-lock.yaml

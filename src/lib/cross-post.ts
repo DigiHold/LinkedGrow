@@ -19,14 +19,21 @@ import { getBlogPost, type BlogPost } from "@/lib/blog";
 const APP_URL = "https://linkedgrow.ai";
 const HASHNODE_API = "https://gql.hashnode.com";
 
-// dev.to is disabled until the new account finishes its 7-day warmup.
-// One short technical post lands per day from src/content/devto-warmup/.
-// On 2026-05-13 the account has 7 published posts and the spam filter
-// stops treating it as new — that's when LinkedGrow cross-posts can start.
+// Both platforms have automod that flags "fresh account + first post is
+// long-form SEO/marketing" as spam. We had it happen on dev.to (account
+// banned) and Hashnode (article flagged). Mitigation is the same on both:
+// 7 days of short technical posts from src/content/cross-post-warmup/ to
+// build account/publication history, then start cross-posting LinkedGrow
+// articles. Both warmups run in parallel and reactivate the same day.
 export const DEVTO_ACTIVATION_AT = new Date("2026-05-13T00:00:00Z");
+export const HASHNODE_ACTIVATION_AT = new Date("2026-05-13T00:00:00Z");
 
 export function isDevtoActive(now: Date = new Date()): boolean {
   return now.getTime() >= DEVTO_ACTIVATION_AT.getTime();
+}
+
+export function isHashnodeActive(now: Date = new Date()): boolean {
+  return now.getTime() >= HASHNODE_ACTIVATION_AT.getTime();
 }
 
 export type CrossPostTarget = "devto" | "hashnode";
@@ -234,6 +241,12 @@ async function postToHashnode(
   post: BlogPost,
   markdown: string
 ): Promise<{ ok: boolean; url?: string; id?: string; error?: string }> {
+  if (!isHashnodeActive()) {
+    return {
+      ok: false,
+      error: `Hashnode disabled until ${HASHNODE_ACTIVATION_AT.toISOString().slice(0, 10)} (publication warmup in progress)`,
+    };
+  }
   const token = process.env.HASHNODE_API_KEY;
   const rawHost = process.env.HASHNODE_PUBLICATION_HOST;
   if (!token) return { ok: false, error: "HASHNODE_API_KEY not set" };

@@ -31,13 +31,13 @@ export {
   ltdWelcomeEmailText,
 } from "./templates/ltd-welcome-email";
 export {
-  crossPromotionInviteEmailTemplate,
-  crossPromotionInviteEmailText,
-} from "./templates/cross-promotion-invite-email";
+  networkNotificationInviteEmailTemplate,
+  networkNotificationInviteEmailText,
+} from "./templates/network-notification-invite-email";
 export {
-  crossPromotionNotifyEmailTemplate,
-  crossPromotionNotifyEmailText,
-} from "./templates/cross-promotion-notify-email";
+  networkNotificationNotifyEmailTemplate,
+  networkNotificationNotifyEmailText,
+} from "./templates/network-notification-notify-email";
 
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
@@ -70,13 +70,13 @@ import {
   ltdWelcomeEmailText,
 } from "./templates/ltd-welcome-email";
 import {
-  crossPromotionInviteEmailTemplate,
-  crossPromotionInviteEmailText,
-} from "./templates/cross-promotion-invite-email";
+  networkNotificationInviteEmailTemplate,
+  networkNotificationInviteEmailText,
+} from "./templates/network-notification-invite-email";
 import {
-  crossPromotionNotifyEmailTemplate,
-  crossPromotionNotifyEmailText,
-} from "./templates/cross-promotion-notify-email";
+  networkNotificationNotifyEmailTemplate,
+  networkNotificationNotifyEmailText,
+} from "./templates/network-notification-notify-email";
 
 interface SendPasswordResetEmailParams {
   to: string;
@@ -208,50 +208,48 @@ export async function sendLtdWelcomeEmail({
   });
 }
 
-interface SendCrossPromotionInviteEmailParams {
+interface SendNetworkNotificationInviteEmailParams {
   to: string;
   inviterName: string;
   groupName: string;
   inviteToken: string;
 }
 
-export async function sendCrossPromotionInviteEmail({
+export async function sendNetworkNotificationInviteEmail({
   to,
   inviterName,
   groupName,
   inviteToken,
-}: SendCrossPromotionInviteEmailParams) {
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cross-promotion/invite?token=${inviteToken}`;
+}: SendNetworkNotificationInviteEmailParams) {
+  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/network-notifications/invite?token=${inviteToken}`;
 
   return sendEmail({
     to,
-    subject: `${inviterName} invited you to a Cross Promotion group on LinkedGrow`,
-    html: crossPromotionInviteEmailTemplate({ inviterName, groupName, inviteUrl }),
-    text: crossPromotionInviteEmailText({ inviterName, groupName, inviteUrl }),
+    subject: `${inviterName} invited you to a Network Notifications group on LinkedGrow`,
+    html: networkNotificationInviteEmailTemplate({ inviterName, groupName, inviteUrl }),
+    text: networkNotificationInviteEmailText({ inviterName, groupName, inviteUrl }),
   });
 }
 
-interface SendCrossPromotionNotifyEmailParams {
+interface SendNetworkNotificationNotifyEmailParams {
   to: string;
   publisherName: string;
   groupName: string;
   postPreview: string;
-  crossPromotionPostId: string;
+  linkedinUrl: string;
 }
 
-export async function sendCrossPromotionNotifyEmail({
+export async function sendNetworkNotificationNotifyEmail({
   to,
   publisherName,
   groupName,
   postPreview,
-  crossPromotionPostId,
-}: SendCrossPromotionNotifyEmailParams) {
-  const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/cross-promotion/review/${crossPromotionPostId}`;
-
+  linkedinUrl,
+}: SendNetworkNotificationNotifyEmailParams) {
   return sendEmail({
     to,
     subject: `${publisherName} just published a new post`,
-    html: crossPromotionNotifyEmailTemplate({ publisherName, groupName, postPreview, reviewUrl }),
-    text: crossPromotionNotifyEmailText({ publisherName, groupName, postPreview, reviewUrl }),
+    html: networkNotificationNotifyEmailTemplate({ publisherName, groupName, postPreview, linkedinUrl }),
+    text: networkNotificationNotifyEmailText({ publisherName, groupName, postPreview, linkedinUrl }),
   });
 }

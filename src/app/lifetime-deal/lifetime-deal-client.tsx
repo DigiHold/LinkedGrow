@@ -32,7 +32,7 @@ import {
   Star,
   Gift,
   MessageSquare,
-  Share2,
+  Bell,
   Megaphone,
   Repeat,
   Lightbulb,
@@ -91,9 +91,9 @@ const FEATURES = [
   { icon: Repeat, name: "Content Repurposing", description: "Turn one idea into multiple formats and angles" },
   { icon: MessageSquare, name: "First Comment Scheduling", description: "Auto-post a first comment when your post goes live" },
   { icon: BarChart3, name: "Analytics Dashboard", description: "Track engagement, impressions, and growth" },
-  { icon: Zap, name: "Engagement Tools", description: "Like, comment, and interact from your dashboard" },
   { icon: TrendingUp, name: "Algorithm Optimizer", description: "AI-powered suggestions to boost reach" },
-  { icon: Share2, name: "Cross Promotion", description: "Join groups of LinkedGrow users who like and comment on each other's posts to boost reach" },
+  { icon: Bell, name: "Network Notifications", description: "Get notified by email when people in your circle publish on LinkedIn" },
+  { icon: Megaphone, name: "Team Notifications", description: "Notify your team by email when your company page publishes" },
   { icon: FlaskConical, name: "A/B Testing", description: "Test different post versions to find what works" },
   { icon: Users, name: "Team Collaboration", description: "Invite team members with role-based access" },
   { icon: Megaphone, name: "Advanced Analytics", description: "Deep engagement trends, best times, export reports" },
@@ -105,7 +105,7 @@ const FEATURES = [
 const FAQ_ITEMS = [
   {
     question: "What exactly do I get with the lifetime deal?",
-    answer: "You get the full LinkedGrow Business plan with every feature we offer today and every feature we build in the future. That includes unlimited AI post generation, scheduling, carousel creator, A/B testing, analytics, cross promotion, team collaboration, API access, and priority support. You pay once and it's yours forever - no monthly or yearly charges.",
+    answer: "You get the full LinkedGrow Business plan with every feature we offer today and every feature we build in the future. That includes unlimited AI post generation, scheduling, carousel creator, A/B testing, analytics, network notifications, team collaboration, API access, and priority support. You pay once and it's yours forever - no monthly or yearly charges.",
   },
   {
     question: "What is BYOK and how does it work?",

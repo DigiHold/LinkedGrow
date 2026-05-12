@@ -24,7 +24,6 @@ import {
   GitBranch,
   UsersRound,
   TrendingUp,
-  Palette,
   Code,
   Crown,
   Shield,
@@ -36,7 +35,7 @@ import {
   ShoppingCart,
   Repeat,
   BookOpen,
-  Share2,
+  Bell,
   Gift,
 } from "lucide-react";
 
@@ -93,22 +92,16 @@ const navigation = [
     description: "Schedule content",
   },
   {
-    name: "Engagement",
-    href: "/dashboard/engagement",
-    icon: Users,
-    description: "Grow your network",
-  },
-  {
     name: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
     description: "Track performance",
   },
   {
-    name: "Cross Promotion",
-    href: "/dashboard/cross-promotion",
-    icon: Share2,
-    description: "Boost each other's posts",
+    name: "Network Notifications",
+    href: "/dashboard/network-notifications",
+    icon: Bell,
+    description: "Get notified of new posts",
   },
 ];
 

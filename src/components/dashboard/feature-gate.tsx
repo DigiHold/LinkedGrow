@@ -9,7 +9,6 @@ import {
   Layers,
   Calendar,
   BarChart3,
-  Users,
   UsersRound,
   GitBranch,
   Code,
@@ -21,7 +20,7 @@ import {
   TrendingUp,
   Loader2,
   MessageSquare,
-  Share2,
+  Bell,
   Lightbulb,
 } from "lucide-react";
 import {
@@ -48,9 +47,9 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   analytics: BarChart3,
   contentRepurposing: Sparkles,
   firstComment: MessageSquare,
-  engagement: Users,
   algorithmOptimizer: Zap,
-  crossPromotion: Share2,
+  networkNotifications: Bell,
+  teamNotifications: UsersRound,
   abTesting: GitBranch,
   teamCollaboration: UsersRound,
   advancedAnalytics: TrendingUp,

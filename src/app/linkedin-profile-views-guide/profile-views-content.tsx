@@ -172,7 +172,7 @@ export function ProfileViewsContent() {
             icon: MessageCircle,
             title: "Comment Strategy for Network Growth",
             description:
-              "Posting is not the only way to get profile views. Every comment you leave on someone else's post shows your name and headline to their entire audience. Strategic commenting on popular posts in your niche can drive just as many profile views as your own content. LinkedGrow's engagement tools help you stay active in the conversations that matter.",
+              "Posting is not the only way to get profile views. Every comment you leave on someone else's post shows your name and headline to their entire audience. Strategic commenting on popular posts in your niche can drive just as many profile views as your own content. LinkedGrow's network notifications help you stay active in the conversations that matter.",
             highlights: ["Feed viewing in dashboard", "Quick engagement workflow", "Targeted commenting"],
             badge: "Pro",
             color: "from-teal-500 to-cyan-600",

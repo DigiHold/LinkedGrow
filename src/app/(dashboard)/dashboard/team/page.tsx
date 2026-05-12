@@ -26,7 +26,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { cn } from "@/lib/utils";
-import { TeamAutoEngagement } from "@/components/dashboard/team-auto-engagement";
 
 interface TeamMember {
   id: string;
@@ -72,7 +71,7 @@ export default function TeamPage() {
   const isTeamMember = session?.user?.isTeamMember === true;
   const teamRole = session?.user?.teamRole;
 
-  // "member" role sees only auto-engagement settings, not team management
+  // "member" role lands here as a passthrough - team management is admin/owner only
   if (isTeamMember && teamRole === "member") {
     return (
       <FeatureGate feature="teamCollaboration">
@@ -85,10 +84,9 @@ export default function TeamPage() {
               Team
             </h1>
             <p className="text-muted-foreground mt-1">
-              Configure your auto-engagement settings for company posts
+              You are part of this team. Team management is handled by your team admin or owner.
             </p>
           </div>
-          <TeamAutoEngagement isOwnerOrAdmin={false} />
         </div>
       </FeatureGate>
     );
@@ -991,18 +989,6 @@ export default function TeamPage() {
           </>
         )}
 
-        {/* Auto-Engagement Section */}
-        {!isLoading && teams.length > 0 && (
-          <TeamAutoEngagement
-            isOwnerOrAdmin={!isTeamMember || teamRole === "admin"}
-            teamMembers={selectedTeam?.members.map((m) => ({
-              userId: m.userId,
-              name: m.name,
-              email: m.email,
-              role: m.role,
-            }))}
-          />
-        )}
       </div>
     </FeatureGate>
   );

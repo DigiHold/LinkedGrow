@@ -12,7 +12,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { blogPosts } from "@/lib/db/schema";
 import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
-import { crossPostArticle, isDevtoActive } from "@/lib/cross-post";
+import { crossPostArticle, isDevtoActive, isHashnodeActive, type CrossPostTarget } from "@/lib/cross-post";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -38,13 +38,28 @@ async function runCrossPost(): Promise<{
 }> {
   const cutoff = new Date(Date.now() - ONE_DAY_MS);
 
-  // During dev.to warmup we only require hashnodeUrl. After warmup we re-check
-  // articles that are missing either platform URL, so hashnode-only posts get
-  // backfilled to dev.to once it activates.
   const devtoActive = isDevtoActive();
-  const missingPlatform = devtoActive
-    ? or(isNull(blogPosts.hashnodeUrl), isNull(blogPosts.devtoUrl))!
-    : isNull(blogPosts.hashnodeUrl);
+  const hashnodeActive = isHashnodeActive();
+
+  // Both in warmup → cron is a no-op.
+  if (!devtoActive && !hashnodeActive) {
+    return { candidates: 0, succeeded: [], failed: [] };
+  }
+
+  // Look for articles missing AT LEAST ONE active-platform URL. Once a
+  // platform activates, articles already posted to the other platform get
+  // picked up here for backfill.
+  const missingChecks = [];
+  if (devtoActive) missingChecks.push(isNull(blogPosts.devtoUrl));
+  if (hashnodeActive) missingChecks.push(isNull(blogPosts.hashnodeUrl));
+  const missingPlatform =
+    missingChecks.length === 1 ? missingChecks[0] : or(...missingChecks)!;
+
+  // Pick which platform(s) the orchestrator should target this run.
+  let onlyTarget: CrossPostTarget | undefined;
+  if (devtoActive && !hashnodeActive) onlyTarget = "devto";
+  else if (!devtoActive && hashnodeActive) onlyTarget = "hashnode";
+  // else both active → no `only` filter
 
   // Newest first so recent articles ship before old backlog.
   const candidates = await db
@@ -63,21 +78,17 @@ async function runCrossPost(): Promise<{
   const succeeded: string[] = [];
   const failed: Array<{ slug: string; error: string }> = [];
 
-  // While dev.to is in warmup, skip it from the auto-cron — only post to Hashnode.
-  // After 2026-05-13 the cron will pick up both platforms.
-  const onlyTarget = devtoActive ? undefined : "hashnode" as const;
-
   for (const row of candidates) {
     try {
       const result = await crossPostArticle(row.slug, { only: onlyTarget });
-      const hashOk = result.hashnode.ok;
-      const devOk = devtoActive ? result.devto.ok : true; // ignored during warmup
+      const devOk = devtoActive ? result.devto.ok : true;
+      const hashOk = hashnodeActive ? result.hashnode.ok : true;
       if (hashOk && devOk) {
         succeeded.push(row.slug);
       } else {
         const errs = [
           devtoActive && !result.devto.ok && `devto: ${result.devto.error}`,
-          !result.hashnode.ok && `hashnode: ${result.hashnode.error}`,
+          hashnodeActive && !result.hashnode.ok && `hashnode: ${result.hashnode.error}`,
         ]
           .filter(Boolean)
           .join("; ");

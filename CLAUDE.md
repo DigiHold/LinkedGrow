@@ -248,11 +248,12 @@ Cache headers are configured in `next.config.ts` via the `headers()` function. V
 | AI Image Generation | -    | -       | ✓   | ✓        |
 | Hooks Generator     | -    | -       | ✓   | ✓        |
 | Analytics Dashboard | -    | -       | ✓   | ✓        |
-| Engagement Tools    | -    | -       | ✓   | ✓        |
 | Algorithm Optimizer | -    | -       | ✓   | ✓        |
+| Network Notifications | -  | -       | ✓   | ✓        |
 | Carousel Generator  | -    | -       | -   | ✓        |
 | A/B Testing         | -    | -       | -   | ✓        |
 | Team Collaboration  | -    | -       | -   | ✓        |
+| Team Notifications  | -    | -       | -   | ✓        |
 | Advanced Analytics  | -    | -       | -   | ✓        |
 | API Access          | -    | -       | -   | ✓        |
 | Priority Support    | -    | -       | -   | ✓        |
@@ -387,11 +388,9 @@ STRIPE_STARTER_PRICE_ID=price_xxxxx
 STRIPE_PRO_PRICE_ID=price_xxxxx
 STRIPE_BUSINESS_PRICE_ID=price_xxxxx
 
-# LinkedIn (2 apps)
+# LinkedIn (Sign In + Share on LinkedIn)
 LINKEDIN_CLIENT_ID=xxxxx
 LINKEDIN_CLIENT_SECRET=xxxxx
-LINKEDIN_COMMUNITY_CLIENT_ID=xxxxx
-LINKEDIN_COMMUNITY_CLIENT_SECRET=xxxxx
 LINKEDIN_REDIRECT_URI=https://linkedgrow.ai/api/linkedin/callback
 
 # Cloudflare R2
@@ -429,10 +428,10 @@ src/
 │   │       ├── calendar/
 │   │       ├── carousel/
 │   │       ├── editor/
-│   │       ├── engagement/
 │   │       ├── generator/
 │   │       ├── hooks/
 │   │       ├── ideas/
+│   │       ├── network-notifications/ # Pro+
 │   │       ├── posts/
 │   │       ├── reddit/
 │   │       ├── settings/
@@ -601,8 +600,8 @@ src/
 -   **OAuth Connection** - Connect LinkedIn account securely
 -   **Post Publishing** - Publish posts directly to LinkedIn (personal profiles)
 -   **Company Page Publishing** - Post to company pages user manages
--   **Feed Viewing** - View LinkedIn feed within dashboard (Pro+)
--   **Engagement Tools** - Like, comment, and interact with posts from dashboard (Pro+)
+-   **Network Notifications** - Email notifier (Pro+) - link out to LinkedIn, no API engagement on user's behalf
+-   **Team Notifications** - Email notifier when company page publishes (Business) - link out to LinkedIn, no API engagement on user's behalf
 -   **Profile Picture Sync** - Store user's LinkedIn profile picture in R2
 
 ### Scheduling & Calendar
@@ -653,21 +652,9 @@ LinkedGrow requires the following LinkedIn Developer products:
 -   **Usage:** Create posts on user's personal profile and company pages they manage
 -   **Critical for:** Core posting functionality
 
-### 3. Community Management API
-
--   **Purpose:** Engagement features (feed viewing, liking, commenting)
--   **Scopes:** `r_organization_social`, `w_organization_social`
--   **Usage:** View feed, like posts, comment on posts from dashboard
--   **Required for:** Pro/Business engagement tools
-
 ### LinkedIn App Configuration
 
-LinkedGrow uses TWO separate LinkedIn apps:
-
-1. **Poster App** (`LINKEDIN_CLIENT_ID`) - Sign In + Share on LinkedIn
-2. **Community App** (`LINKEDIN_COMMUNITY_CLIENT_ID`) - Community Management API
-
-This separation is required because Community Management API has stricter approval requirements.
+LinkedGrow only requires the Sign In and Share on LinkedIn products. No Community Management API scopes are used because no automated like/comment/reshare actions are performed on any user's behalf - Network Notifications and Team Notifications are email-only notifiers that link out to LinkedIn for users to engage manually.
 
 ## Brevo Free-User Conversion Funnel
 
@@ -813,14 +800,31 @@ Article content here...
 5. **Keep articles accurate**: The chatbot will use this content to answer users. Outdated or wrong information means wrong chatbot answers. When features change, update the relevant docs articles.
 6. **Do NOT write docs for unimplemented features**: Analytics, Advanced Analytics, and Engagement features are not done yet (waiting for LinkedIn API). Do not create docs articles for these until they are implemented.
 
+## BOS Framework (local, gitignored)
+
+The project includes a local BOS (Business Operating System) framework at `./BOS/`. It contains:
+
+- `BOS/CLAUDE.md` — framework instructions (strategic advisor mode, Yomi Denzel-inspired)
+- `BOS/Core/` — vivant business state (Profile, Goal, Business, Diagnosis, Actions, Journal)
+- `BOS/Knowledge/` — pattern recognition + tactical workflows (Common_Problems, Yomi_Business_Principles, LinkedIn_Algorithm_Playbook, LinkedIn_Workflow, LinkedIn_Post_Ideas_Bank, Nicolas_Verified_Stories)
+- `BOS/Output/` — generated artifacts
+
+**The entire `BOS/` folder is gitignored** (contains personal/strategic data not for production).
+
 ## Writing Commands
 
-| Command | Guide | What it does |
-|---------|-------|-------------|
-| "write linkedin" | `LINKEDIN-POST-GUIDE.md` | Write a LinkedIn post for today's format (Authority/Carousel/Lead Magnet/Hot Take/Blog Promo), generate image, schedule via API |
+| Command | Workflow | What it does |
+|---------|----------|-------------|
+| "write linkedin" / "BOS, write linkedin" | `BOS/Knowledge/LinkedIn_Workflow.md` (loads full BOS context) | Write a LinkedIn post for today's archetype (Tue rotation: Authority/Hot Take/Story/Frame-shift, Wed: Carousel, Thu: Lead Magnet), generate image via Banana Pro, save as draft on LinkedGrow API, plus auto-generate X (280 chars) and Facebook (250-500 chars) versions for cross-posting. Schedule at 8am LA / 11am ET / 17h CEST (Friday hot take: 12pm LA / 21h CEST). |
+| "write newsletter" / "BOS, write newsletter" | `BOS/Knowledge/LinkedIn_Newsletter_Skill.md` | Write a 500-800 word LinkedIn newsletter issue (weekly **Monday** 8am LA / 11am ET / 17h CEST — keeps Tue/Wed/Thu feed posts uncannibalized). Subject line + body + topic-specific cover image (16:9 generated via Banana Pro) + announcement feed post hook. Reads `BOS/Core/Newsletter_Issues.md` for dedup. Appends new row after publish. |
+| "LinkedIn comment" + paste post | `BOS/Knowledge/LinkedIn_Comment_Skill.md` | Generate ONE value-add comment 30-55 words for daily comment fishing on bell-notif ICP creators. Strict no-AI-slop pre-flight: no flattery openers, no quoting the post back, no em dashes, no "Not X. It's Y." patterns. Output ready to copy-paste. |
+| "X comment" + paste post | `BOS/Knowledge/X_Comment_Skill.md` | Generate ONE value-add reply 15-35 words for X (Twitter). Shorter and punchier than LinkedIn. Same anti-AI-slop pre-flight. Target creators 5K-50K solo SaaS / AI / indie hackers. Quote-tweet bonus 1-2x/week on viral niche posts. |
+| "BOS" / "BOS:" / "act as BOS" / "Yomi mode" | `BOS/CLAUDE.md` (full advisor mode) | Strategic business advisor: reads all `Core/` files, diagnoses bottleneck, prescribes highest-leverage move with Yomi-style direct voice |
 | "write reddit" | `REDDIT-POST-GUIDE.md` | Research trending AI topics, write a r/WTFisAI post with flair, title, and content ready to paste |
 
-When the user says any of these commands, read the corresponding guide and follow it step by step.
+When the user says any of these commands, read the corresponding workflow file and follow it step by step.
+
+**Default behavior for `write linkedin`**: ALWAYS routes through BOS now. Reads `BOS/Core/` + relevant `BOS/Knowledge/` files, applies algo playbook rules + verified stories (if Story day), generates the post + X version + Facebook version, saves as draft on LinkedGrow API.
 
 ## Founders
 

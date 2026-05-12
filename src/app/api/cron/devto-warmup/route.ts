@@ -1,7 +1,7 @@
 /**
  * Daily warmup cron for the dev.to account.
  *
- * Reads short technical articles from src/content/devto-warmup/, sorted by
+ * Reads short technical articles from src/content/cross-post-warmup/, sorted by
  * the `day` field in frontmatter. Each cron run:
  *   1. Lists already-published articles via dev.to API
  *   2. Finds the first warmup article whose title isn't already on dev.to
@@ -66,7 +66,7 @@ function parseFrontmatter(raw: string): WarmupArticle | null {
 }
 
 async function loadWarmupArticles(): Promise<WarmupArticle[]> {
-  const dir = path.join(process.cwd(), "src/content/devto-warmup");
+  const dir = path.join(process.cwd(), "src/content/cross-post-warmup");
   const files = (await fs.readdir(dir))
     .filter((f) => f.endsWith(".md"))
     .sort();

@@ -63,7 +63,7 @@ const freeGenFAQs = [
   {
     question: "How much does the paid plan cost after free?",
     answer:
-      "Starter is $19 per month with unlimited post generations, scheduling for up to 10 posts, and a content calendar. Pro is $39 per month adding image generation, analytics, and engagement tools. Business is $79 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
+      "Starter is $19 per month with unlimited post generations, scheduling for up to 10 posts, and a content calendar. Pro is $39 per month adding image generation, analytics, and network notifications. Business is $79 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
   },
   {
     question: "What is BYOK and why does it matter for a free generator?",

@@ -400,17 +400,6 @@ const CONFIGS = [
       "A/B testing LinkedIn posts in 2026 means publishing variants of the same post (different hooks, lengths, CTAs) at staggered times and comparing engagement metrics. LinkedGrow's A/B testing feature manages variants, schedules them, tracks performance, and surfaces winners — turning gut-feel posting into data-driven content strategy. Available on the Business plan.",
   },
   {
-    dir: "features/cross-promotion",
-    title:
-      "LinkedIn Cross-Promotion Tool in 2026: Boost Posts With Group Engagement",
-    metaDesc:
-      "LinkedIn cross-promotion tool to boost posts with group engagement in 2026. Get other creators to engage with your content in the first hour to maximize algorithm reach.",
-    qaQuestion:
-      "How does LinkedIn cross-promotion work in 2026?",
-    qaAnswer:
-      "LinkedIn cross-promotion in 2026 means coordinating with other creators to engage with each other's posts in the critical first 60-90 minutes — when LinkedIn's algorithm decides reach. LinkedGrow's cross-promotion tool matches you with relevant creators in your niche and coordinates engagement, lifting first-hour comment velocity 3-5x for higher distribution.",
-  },
-  {
     dir: "features/youtube-to-linkedin",
     title:
       "YouTube to LinkedIn Repurposing in 2026: Turn Videos Into Posts (AI)",

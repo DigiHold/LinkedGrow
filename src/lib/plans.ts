@@ -12,9 +12,9 @@ export interface PlanFeatures {
   analytics: boolean;
   contentRepurposing: boolean;
   firstComment: boolean;
-  engagement: boolean;
   algorithmOptimizer: boolean;
-  crossPromotion: boolean;
+  networkNotifications: boolean;
+  teamNotifications: boolean;
   // Business-only features
   abTesting: boolean;
   teamCollaboration: boolean;
@@ -63,9 +63,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         analytics: false,
         contentRepurposing: false,
         firstComment: false,
-        engagement: false,
         algorithmOptimizer: false,
-        crossPromotion: false,
+        networkNotifications: false,
+        teamNotifications: false,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -96,9 +96,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         analytics: false,
         contentRepurposing: true,
         firstComment: false,
-        engagement: false,
         algorithmOptimizer: false,
-        crossPromotion: false,
+        networkNotifications: false,
+        teamNotifications: false,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -130,9 +130,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         analytics: true,
         contentRepurposing: true,
         firstComment: true,
-        engagement: true,
         algorithmOptimizer: true,
-        crossPromotion: true,
+        networkNotifications: true,
+        teamNotifications: false,
         abTesting: false,
         teamCollaboration: false,
                 advancedAnalytics: false,
@@ -163,9 +163,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         analytics: true,
         contentRepurposing: true,
         firstComment: true,
-        engagement: true,
         algorithmOptimizer: true,
-        crossPromotion: true,
+        networkNotifications: true,
+        teamNotifications: true,
         abTesting: true,
         teamCollaboration: true,
         advancedAnalytics: true,
@@ -233,20 +233,20 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
     description: "Auto-post a comment after publication to boost engagement",
     icon: "message-square",
   },
-  engagement: {
-    name: "Engagement Tools",
-    description: "Like and comment on LinkedIn posts to grow your network",
-    icon: "users",
-  },
   algorithmOptimizer: {
     name: "Algorithm Optimizer",
     description: "AI-powered tips to maximize reach",
     icon: "zap",
   },
-  crossPromotion: {
-    name: "Cross Promotion",
-    description: "Invite people to like, comment, and repost your LinkedIn posts",
-    icon: "share-2",
+  networkNotifications: {
+    name: "Network Notifications",
+    description: "Get notified by email when people in your circle publish on LinkedIn",
+    icon: "bell",
+  },
+  teamNotifications: {
+    name: "Team Notifications",
+    description: "Notify your team by email when the company page publishes",
+    icon: "users-round",
   },
   abTesting: {
     name: "A/B Testing",

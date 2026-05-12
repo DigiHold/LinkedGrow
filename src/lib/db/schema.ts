@@ -315,10 +315,7 @@ export const teamMembers = sqliteTable("team_members", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   role: text("role", { enum: ["owner", "admin", "member"] }).default("member"),
-  // Auto-engagement opt-in settings
-  autoEngageLike: integer("auto_engage_like", { mode: "boolean" }).default(true),
-  autoEngageComment: integer("auto_engage_comment", { mode: "boolean" }).default(true),
-  autoEngageShare: integer("auto_engage_share", { mode: "boolean" }).default(false),
+  notifyOnCompanyPost: integer("notify_on_company_post", { mode: "boolean" }).default(true),
   invitedAt: integer("invited_at", { mode: "timestamp" }).default(new Date()),
   acceptedAt: integer("accepted_at", { mode: "timestamp" }),
 });
@@ -411,75 +408,10 @@ export const engagementObjectives = sqliteTable("engagement_objectives", {
 });
 
 // ============================================
-// ENGAGEMENT LISTS (for following LinkedIn profiles)
+// NETWORK NOTIFICATIONS
 // ============================================
 
-// User-created engagement lists (e.g., "Marketing", "AI")
-export const engagementLists = sqliteTable("engagement_lists", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
-});
-
-// LinkedIn profiles added to engagement lists
-export const engagementListProfiles = sqliteTable("engagement_list_profiles", {
-  id: text("id").primaryKey(),
-  listId: text("list_id")
-    .notNull()
-    .references(() => engagementLists.id, { onDelete: "cascade" }),
-  vanityName: text("vanity_name").notNull(),
-  displayName: text("display_name"),
-  headline: text("headline"),
-  profilePictureUrl: text("profile_picture_url"),
-  addedAt: integer("added_at", { mode: "timestamp" }).default(new Date()),
-});
-
-// Shared cache of scraped LinkedIn profile posts (across all users)
-export const linkedinProfilePostsCache = sqliteTable("linkedin_profile_posts_cache", {
-  vanityName: text("vanity_name").primaryKey(),
-  displayName: text("display_name"),
-  headline: text("headline"),
-  profilePictureUrl: text("profile_picture_url"),
-  followerCount: integer("follower_count").default(0),
-  postsJson: text("posts_json").notNull(), // JSON array of scraped posts
-  lastFetchedAt: integer("last_fetched_at", { mode: "timestamp" }).notNull(),
-  status: text("status").default("success"), // success, authwall, error
-});
-
-// ============================================
-// TEAM AUTO-ENGAGEMENT
-// ============================================
-
-// Track individual auto-engagement jobs per team member per post
-export const teamEngagementJobs = sqliteTable("team_engagement_jobs", {
-  id: text("id").primaryKey(),
-  postId: text("post_id")
-    .notNull()
-    .references(() => posts.id, { onDelete: "cascade" }),
-  teamMemberId: text("team_member_id")
-    .notNull()
-    .references(() => teamMembers.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  actionType: text("action_type", { enum: ["like", "comment", "share"] }).notNull(),
-  status: text("status", { enum: ["pending", "completed", "failed", "skipped"] }).default("pending"),
-  qstashMessageId: text("qstash_message_id"),
-  commentText: text("comment_text"), // AI-generated comment (only for comment actions)
-  errorMessage: text("error_message"),
-  delaySeconds: integer("delay_seconds"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-});
-
-// ============================================
-// CROSS PROMOTION
-// ============================================
-
-export const crossPromotionGroups = sqliteTable("cross_promotion_groups", {
+export const networkNotificationGroups = sqliteTable("network_notification_groups", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   ownerId: text("owner_id")
@@ -488,11 +420,11 @@ export const crossPromotionGroups = sqliteTable("cross_promotion_groups", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
-export const crossPromotionMembers = sqliteTable("cross_promotion_members", {
+export const networkNotificationMembers = sqliteTable("network_notification_members", {
   id: text("id").primaryKey(),
   groupId: text("group_id")
     .notNull()
-    .references(() => crossPromotionGroups.id, { onDelete: "cascade" }),
+    .references(() => networkNotificationGroups.id, { onDelete: "cascade" }),
   userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" }),
   email: text("email").notNull(),
@@ -502,38 +434,20 @@ export const crossPromotionMembers = sqliteTable("cross_promotion_members", {
   acceptedAt: integer("accepted_at", { mode: "timestamp" }),
 });
 
-export const crossPromotionPosts = sqliteTable("cross_promotion_posts", {
+export const networkNotificationPosts = sqliteTable("network_notification_posts", {
   id: text("id").primaryKey(),
   groupId: text("group_id")
     .notNull()
-    .references(() => crossPromotionGroups.id, { onDelete: "cascade" }),
+    .references(() => networkNotificationGroups.id, { onDelete: "cascade" }),
   postId: text("post_id")
     .references(() => posts.id, { onDelete: "cascade" }),
   linkedinPostId: text("linkedin_post_id").notNull(),
   publishedByUserId: text("published_by_user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  postContent: text("post_content").notNull(), // Snapshot of content for review page
+  postContent: text("post_content").notNull(),
   notifiedAt: integer("notified_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
-});
-
-export const crossPromotionActions = sqliteTable("cross_promotion_actions", {
-  id: text("id").primaryKey(),
-  crossPromotionPostId: text("cross_promotion_post_id")
-    .notNull()
-    .references(() => crossPromotionPosts.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  actionType: text("action_type", { enum: ["like", "comment", "repost"] }).notNull(),
-  status: text("status", { enum: ["pending", "approved", "scheduled", "completed", "failed", "skipped"] }).default("pending"),
-  commentText: text("comment_text"),
-  qstashMessageId: text("qstash_message_id"),
-  delaySeconds: integer("delay_seconds"),
-  approvedAt: integer("approved_at", { mode: "timestamp" }),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-  errorMessage: text("error_message"),
 });
 
 // ============================================

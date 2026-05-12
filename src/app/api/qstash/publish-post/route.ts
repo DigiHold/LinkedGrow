@@ -5,8 +5,7 @@ import { eq, and, count } from "drizzle-orm";
 import { createLinkedInPost, createLinkedInPostWithImage, createLinkedInPostWithVideo, createLinkedInPostWithDocument, ensureFreshTokens } from "@/lib/linkedin";
 import { getLinkedInUser } from "@/lib/team-utils";
 import { scheduleFirstComment, scheduleAutoLike } from "@/lib/qstash";
-import { triggerTeamAutoEngagement } from "@/lib/team-engagement";
-import { triggerCrossPromotion } from "@/lib/cross-promotion";
+import { triggerTeamNotifications, triggerNetworkNotifications } from "@/lib/network-notifications";
 import { setBrevoAttributes, removeFromDormantList, brevoDate } from "@/lib/newsletter";
 
 export const maxDuration = 300;
@@ -65,17 +64,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Retry catch-up: if a prior invocation published the post but timed out
-    // before triggerCrossPromotion ran, run it now. triggerCrossPromotion is
+    // before triggerNetworkNotifications ran, run it now. triggerNetworkNotifications is
     // per-group idempotent so repeat calls can't double-email.
     if (post.status === "published" && post.linkedinPostId) {
       try {
-        await triggerCrossPromotion(postId, post.linkedinPostId, post.content, post.userId);
+        await triggerNetworkNotifications(postId, post.linkedinPostId, post.content, post.userId);
       } catch (error) {
-        console.error("Failed to trigger cross-promotion on retry:", error);
+        console.error("Failed to trigger network-notifications on retry:", error);
       }
       return NextResponse.json({
         success: true,
-        message: "Post already published, ran cross-promotion catch-up",
+        message: "Post already published, ran network-notifications catch-up",
       });
     }
 
@@ -250,17 +249,17 @@ export async function POST(request: NextRequest) {
     // Schedule team auto-engagement for company page posts
     if (isOrganization) {
       try {
-        await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
+        await triggerTeamNotifications(postId, postResult.id, linkedInUser.id, post.content);
       } catch {
         // Team engagement scheduling failed silently
       }
     }
 
-    // Trigger cross-promotion notifications
+    // Trigger network-notifications notifications
     try {
-      await triggerCrossPromotion(postId, postResult.id, post.content, post.userId);
+      await triggerNetworkNotifications(postId, postResult.id, post.content, post.userId);
     } catch (error) {
-      console.error("Failed to trigger cross-promotion:", error);
+      console.error("Failed to trigger network-notifications:", error);
     }
 
     return NextResponse.json({

@@ -63,7 +63,7 @@ const postGenFreeFAQs = [
   {
     question: "How much does it cost after the free plan?",
     answer:
-      "The Starter plan is $19 per month with unlimited post generation, scheduling for up to 10 posts, and a content calendar. The Pro plan is $39 per month adding image generation, analytics, and engagement tools. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, most users spend $2 to $4 per month on AI API costs for regular posting.",
+      "The Starter plan is $19 per month with unlimited post generation, scheduling for up to 10 posts, and a content calendar. The Pro plan is $39 per month adding image generation, analytics, and network notifications. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, most users spend $2 to $4 per month on AI API costs for regular posting.",
   },
   {
     question: "What makes this better than ChatGPT for LinkedIn posts?",

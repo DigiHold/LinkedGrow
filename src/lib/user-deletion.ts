@@ -17,13 +17,9 @@ import {
   postAnalytics,
   engagementActions,
   engagementObjectives,
-  engagementLists,
-  engagementListProfiles,
-  teamEngagementJobs,
-  crossPromotionGroups,
-  crossPromotionMembers,
-  crossPromotionPosts,
-  crossPromotionActions,
+  networkNotificationGroups,
+  networkNotificationMembers,
+  networkNotificationPosts,
   abandonedCheckouts,
   cookieConsents,
   dataRemovalRequests,
@@ -81,21 +77,6 @@ export async function deleteUserData(userId: string): Promise<void> {
       if (p.qstashMessageId) await cancelScheduledPost(p.qstashMessageId);
     }
 
-    const teamJobs = await db
-      .select({ qstashMessageId: teamEngagementJobs.qstashMessageId })
-      .from(teamEngagementJobs)
-      .where(eq(teamEngagementJobs.userId, userId));
-    for (const j of teamJobs) {
-      if (j.qstashMessageId) await cancelScheduledPost(j.qstashMessageId);
-    }
-
-    const crossActions = await db
-      .select({ qstashMessageId: crossPromotionActions.qstashMessageId })
-      .from(crossPromotionActions)
-      .where(eq(crossPromotionActions.userId, userId));
-    for (const a of crossActions) {
-      if (a.qstashMessageId) await cancelScheduledPost(a.qstashMessageId);
-    }
   } catch {}
 
   // R2 object cleanup - all user uploads live under users/{userId}/
@@ -118,17 +99,11 @@ export async function deleteUserData(userId: string): Promise<void> {
     .where(eq(apiKeys.userId, userId));
   const apiKeyIds = userApiKeys.map((k) => k.id);
 
-  const userEngagementLists = await db
-    .select({ id: engagementLists.id })
-    .from(engagementLists)
-    .where(eq(engagementLists.userId, userId));
-  const engagementListIds = userEngagementLists.map((l) => l.id);
-
-  const userCrossGroups = await db
-    .select({ id: crossPromotionGroups.id })
-    .from(crossPromotionGroups)
-    .where(eq(crossPromotionGroups.ownerId, userId));
-  const crossGroupIds = userCrossGroups.map((g) => g.id);
+  const userNotificationGroups = await db
+    .select({ id: networkNotificationGroups.id })
+    .from(networkNotificationGroups)
+    .where(eq(networkNotificationGroups.ownerId, userId));
+  const notificationGroupIds = userNotificationGroups.map((g) => g.id);
 
   const userAffiliates = await db
     .select({ id: affiliates.id })
@@ -144,40 +119,25 @@ export async function deleteUserData(userId: string): Promise<void> {
     : [];
   const affiliateReferralIds = userAffiliateReferrals.map((r) => r.id);
 
-  const userTeamMembers = await db
-    .select({ id: teamMembers.id })
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, userId));
-  const teamMemberIds = userTeamMembers.map((m) => m.id);
-
-  // Cross-promotion: deepest children first
-  await db.delete(crossPromotionActions).where(eq(crossPromotionActions.userId, userId));
-  if (crossGroupIds.length) {
+  // Network notifications: deepest children first
+  if (notificationGroupIds.length) {
     await db
-      .delete(crossPromotionPosts)
-      .where(inArray(crossPromotionPosts.groupId, crossGroupIds));
+      .delete(networkNotificationPosts)
+      .where(inArray(networkNotificationPosts.groupId, notificationGroupIds));
   }
   if (postIds.length) {
-    await db.delete(crossPromotionPosts).where(inArray(crossPromotionPosts.postId, postIds));
+    await db.delete(networkNotificationPosts).where(inArray(networkNotificationPosts.postId, postIds));
   }
   await db
-    .delete(crossPromotionPosts)
-    .where(eq(crossPromotionPosts.publishedByUserId, userId));
-  if (crossGroupIds.length) {
+    .delete(networkNotificationPosts)
+    .where(eq(networkNotificationPosts.publishedByUserId, userId));
+  if (notificationGroupIds.length) {
     await db
-      .delete(crossPromotionMembers)
-      .where(inArray(crossPromotionMembers.groupId, crossGroupIds));
+      .delete(networkNotificationMembers)
+      .where(inArray(networkNotificationMembers.groupId, notificationGroupIds));
   }
-  await db.delete(crossPromotionMembers).where(eq(crossPromotionMembers.userId, userId));
-  await db.delete(crossPromotionGroups).where(eq(crossPromotionGroups.ownerId, userId));
-
-  // Team engagement jobs (both as the user, and as a job against their own team_member rows)
-  await db.delete(teamEngagementJobs).where(eq(teamEngagementJobs.userId, userId));
-  if (teamMemberIds.length) {
-    await db
-      .delete(teamEngagementJobs)
-      .where(inArray(teamEngagementJobs.teamMemberId, teamMemberIds));
-  }
+  await db.delete(networkNotificationMembers).where(eq(networkNotificationMembers.userId, userId));
+  await db.delete(networkNotificationGroups).where(eq(networkNotificationGroups.ownerId, userId));
 
   // Affiliate chain
   if (affiliateReferralIds.length) {
@@ -209,14 +169,6 @@ export async function deleteUserData(userId: string): Promise<void> {
   if (postIds.length) {
     await db.delete(postAnalytics).where(inArray(postAnalytics.postId, postIds));
   }
-
-  // Engagement lists + their profiles
-  if (engagementListIds.length) {
-    await db
-      .delete(engagementListProfiles)
-      .where(inArray(engagementListProfiles.listId, engagementListIds));
-  }
-  await db.delete(engagementLists).where(eq(engagementLists.userId, userId));
 
   // Teams owned by user: delete invites + memberships then teams. Own memberships too.
   if (teamIds.length) {

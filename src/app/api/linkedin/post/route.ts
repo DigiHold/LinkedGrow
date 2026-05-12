@@ -5,8 +5,7 @@ import { getLinkedInUser } from '@/lib/team-utils';
 import { db, posts, media } from '@/lib/db';
 import { setBrevoAttributes, removeFromDormantList, brevoDate } from '@/lib/newsletter';
 import { scheduleFirstComment, scheduleAutoLike } from '@/lib/qstash';
-import { triggerTeamAutoEngagement } from '@/lib/team-engagement';
-import { triggerCrossPromotion } from '@/lib/cross-promotion';
+import { triggerTeamNotifications, triggerNetworkNotifications } from '@/lib/network-notifications';
 import { deleteFromR2 } from '@/lib/storage/r2';
 import { eq, inArray, count, and } from 'drizzle-orm';
 
@@ -274,25 +273,31 @@ if (updatedPost?.firstComment) {
       }
     }
 
-    // Schedule team auto-engagement for company page posts
+    // Notify team members by email when a company page post is published
     if (isOrganization && postId) {
       try {
-        await triggerTeamAutoEngagement(postId, postResult.id, linkedInUser.id);
+        const teamPost = await db.query.posts.findFirst({
+          where: eq(posts.id, postId),
+        });
+        if (teamPost?.content) {
+          await triggerTeamNotifications(postId, postResult.id, linkedInUser.id, teamPost.content);
+        }
       } catch (error) {
-}
+        console.error("[Team Notifications] Failed to trigger:", error);
+      }
     }
 
-    // Trigger cross-promotion notifications for all groups the user belongs to
+    // Trigger network-notifications notifications for all groups the user belongs to
     if (postId) {
       try {
         const updatedPostForCP = await db.query.posts.findFirst({
           where: eq(posts.id, postId),
         });
         if (updatedPostForCP?.content) {
-          await triggerCrossPromotion(postId, postResult.id, updatedPostForCP.content, session.user.id);
+          await triggerNetworkNotifications(postId, postResult.id, updatedPostForCP.content, session.user.id);
         }
       } catch (error) {
-        console.error("[Cross Promotion] Failed to trigger:", error);
+        console.error("[Network Notifications] Failed to trigger:", error);
       }
     }
 

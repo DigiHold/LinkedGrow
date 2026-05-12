@@ -11,7 +11,6 @@ import {
   Clock,
   BarChart3,
   Lightbulb,
-  Users,
   Zap,
   GitBranch,
   Code,
@@ -22,7 +21,7 @@ import {
   UsersRound,
   TrendingUp,
   MessageSquare,
-  Share2,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,9 +52,9 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
   analytics: BarChart3,
   contentRepurposing: Lightbulb,
   firstComment: MessageSquare,
-  engagement: Users,
   algorithmOptimizer: Zap,
-  crossPromotion: Share2,
+  networkNotifications: Bell,
+  teamNotifications: UsersRound,
   abTesting: GitBranch,
   apiAccess: Code,
   prioritySupport: Headphones,

@@ -166,7 +166,7 @@ export function BestPostGeneratorContent() {
             icon: Shield,
             title: "All-in-One Platform",
             description:
-              "Post generation, image creation, carousel building, scheduling, analytics, engagement tools, and a content calendar. Everything in one platform instead of juggling multiple tools. One subscription, one dashboard.",
+              "Post generation, image creation, carousel building, scheduling, analytics, network notifications, and a content calendar. Everything in one platform instead of juggling multiple tools. One subscription, one dashboard.",
             highlights: ["6+ tools", "One platform", "One price"],
             badge: "Complete",
             color: "from-teal-500 to-cyan-600",
