@@ -55,7 +55,7 @@ export function CompanyPageOptimizationContent() {
         ]}
         primaryCta={{ text: "Try LinkedGrow free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free plan available", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
       />
 
       <LandingPainPoints
@@ -348,7 +348,7 @@ export function CompanyPageOptimizationContent() {
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Free plan available",
+          "7-day Pro trial included",
           "No credit card required",
           "24+ AI models",
           "Cancel anytime",

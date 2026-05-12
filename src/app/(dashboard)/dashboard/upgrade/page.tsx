@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLANS, type PlanId, type PlanFeatures, FEATURE_INFO } from "@/lib/plans";
 
-// Only show paid plans - Free plan is shown via "Current plan" badge
+// Only show paid plans - 7-day Pro trial is shown via "Current plan" badge
 const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
@@ -59,9 +59,8 @@ const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
 // Features to display for each plan (curated list)
 const planHighlights: Record<PlanId, string[]> = {
   free: [
-    "3 posts per month",
-    "Basic post editor",
-    "Bring your own AI key",
+    "Read-only access",
+    "Pick a plan to keep posting",
   ],
   starter: [
     "Unlimited posts",

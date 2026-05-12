@@ -306,7 +306,7 @@ export function PostSchedulerContent() {
           {
             question: "How many posts can I schedule?",
             answer:
-              "Starter: 10 posts. Pro and Business: unlimited. Free plan does not include scheduling but you can publish directly.",
+              "Starter: 10 posts. Pro and Business: unlimited. 7-day Pro trial does not include scheduling but you can publish directly.",
           },
           {
             question: "Does it include a content calendar?",

@@ -44,9 +44,9 @@ export function PostGeneratorFreeContent() {
           gradient: "with AI",
         }}
         descriptionBold="Create professional LinkedIn posts without spending a dollar."
-        description="LinkedGrow's free plan gives you 3 AI post generations per month with access to 26+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
+        description="LinkedGrow's 7-day Pro trial gives you 3 AI post generations per month with access to 26+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
         valuePropBadges={[
-          { icon: Gift, text: "Free plan available" },
+          { icon: Gift, text: "7-day Pro trial included" },
           { icon: Brain, text: "26+ AI models" },
           { icon: Mic, text: "Voice training" },
         ]}
@@ -114,7 +114,7 @@ export function PostGeneratorFreeContent() {
           text: "Professional LinkedIn posts in seconds,",
           gradient: "starting free",
         }}
-        description="LinkedGrow's AI post generator is designed specifically for LinkedIn. Voice training, multiple post types, and 26+ AI models - with a free plan to get you started."
+        description="LinkedGrow's AI post generator is designed specifically for LinkedIn. Voice training, multiple post types, and 26+ AI models - with a 7-day Pro trial to get you started."
         features={[
           {
             icon: Brain,
@@ -129,7 +129,7 @@ export function PostGeneratorFreeContent() {
             icon: Mic,
             title: "Voice Training Included",
             description:
-              "Paste 3 to 5 of your best LinkedIn posts and the AI learns your writing patterns, vocabulary, and tone. Every generated post matches your unique voice. Available even on the free plan so you can experience it before upgrading.",
+              "Paste 3 to 5 of your best LinkedIn posts and the AI learns your writing patterns, vocabulary, and tone. Every generated post matches your unique voice. Available even on the 7-day Pro trial so you can experience it before upgrading.",
             highlights: ["Paste sample posts", "AI learns your style", "Authentic output"],
             badge: "Free",
             color: "from-emerald-500 to-green-600",
@@ -227,7 +227,7 @@ export function PostGeneratorFreeContent() {
             { text: "30 to 100 post generations per month with hard limits" },
             { text: "One AI model with no option to choose alternatives" },
             { text: "No voice training - every post sounds generic and AI-written" },
-            { text: "No free plan - must pay to even try the product" },
+            { text: "No 7-day Pro trial - must pay to even try the product" },
             { text: "Premium overage fees when you exceed the monthly cap" },
           ],
         }}
@@ -235,7 +235,7 @@ export function PostGeneratorFreeContent() {
           price: "Free - $19/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "Free plan with 3 generations per month to start" },
+            { text: "7-day Pro trial with 3 generations per month to start" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "26+ AI models from OpenAI, Anthropic, Google, xAI, and more" },
             { text: "Voice training matches your writing style on all plans" },
@@ -261,13 +261,13 @@ export function PostGeneratorFreeContent() {
         testimonials={[
           {
             quote:
-              "I started with the free plan to test it out. Within a week I upgraded to Starter because the voice training was so good - my AI posts genuinely sound like me. I am posting 4x per week now and my network has grown 30% in two months.",
+              "I started with the 7-day Pro trial to test it out. Within a week I upgraded to Starter because the voice training was so good - my AI posts genuinely sound like me. I am posting 4x per week now and my network has grown 30% in two months.",
             author: "Lisa C.",
             role: "Product Manager, 12K Followers",
           },
           {
             quote:
-              "The free plan was enough to convince me this is different from every other AI tool I have tried. The voice training actually works. I upgraded and now my total cost is $19 plus about $3 in AI fees. I was paying $79 for a competitor that gave me worse output.",
+              "The 7-day Pro trial was enough to convince me this is different from every other AI tool I have tried. The voice training actually works. I upgraded and now my total cost is $19 plus about $3 in AI fees. I was paying $79 for a competitor that gave me worse output.",
             author: "Ryan H.",
             role: "Startup Founder, 8K Followers",
           },
@@ -290,7 +290,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "Is the AI LinkedIn post generator really free?",
             answer:
-              "Yes. The free plan includes 3 AI post generations per month with no credit card required. For unlimited generation, paid plans start at $19 per month with BYOK AI costs of $2 to $4 per month.",
+              "Yes. The 7-day Pro trial includes 3 AI post generations per month with no credit card required. For unlimited generation, paid plans start at $19 per month with BYOK AI costs of $2 to $4 per month.",
           },
           {
             question: "What AI models are available?",
@@ -336,11 +336,11 @@ export function PostGeneratorFreeContent() {
           line1: "Ready to create LinkedIn posts",
           gradient: "in seconds instead of hours?",
         }}
-        description="Sign up free, generate your first 3 posts with AI, and experience the difference voice training makes. No credit card needed, no commitment."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. No credit card needed, no commitment."
+        primaryCta={{ text: "Start 7-day Pro trial - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
-          "3 free generations",
+          "7-day Pro trial",
           "No credit card",
           "Voice training included",
           "Upgrade anytime",

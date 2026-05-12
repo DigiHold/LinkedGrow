@@ -56,12 +56,12 @@ Open the post and click **Save as Draft** to remove it from the schedule. The po
 
 | Plan | Scheduled posts |
 |---|---|
-| Free | 0 (scheduling not available) |
+| 7-day Pro trial | Unlimited (full Pro access) |
 | Starter | Up to 10 scheduled posts at a time |
 | Pro | Unlimited |
 | Business | Unlimited |
 
-Free plan users can still create posts and publish them immediately, but scheduling is available starting from the Starter plan.
+During your 7-day Pro trial you get unlimited scheduling (it is part of Pro). After the trial ends, pick Starter (10 scheduled posts) or Pro/Business (unlimited) to keep scheduling.
 
 ## How scheduling works behind the scenes
 

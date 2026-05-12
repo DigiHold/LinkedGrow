@@ -53,7 +53,7 @@ export function ContentCreationAiContent() {
         ]}
         primaryCta={{ text: "Start creating with AI", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free plan available", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -330,7 +330,7 @@ export function ContentCreationAiContent() {
           {
             question: "How many posts can I generate?",
             answer:
-              "Unlimited on all paid plans. Free plan includes 3 generations per month. No caps, no credit limits, no token restrictions.",
+              "Unlimited on all paid plans. 7-day Pro trial includes 3 generations per month. No caps, no credit limits, no token restrictions.",
           },
           {
             question: "Does LinkedGrow also schedule and publish?",
@@ -359,7 +359,7 @@ export function ContentCreationAiContent() {
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Free plan available",
+          "7-day Pro trial included",
           "26+ AI models",
           "Cancel anytime",
           "Voice training included",

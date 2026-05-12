@@ -57,4 +57,4 @@ Avoid hooks that are:
 
 ## Plan availability
 
-The Hooks Generator is available on Pro and Business plans. Free and Starter plan users can upgrade to access this feature.
+The Hooks Generator is available on Pro and Business plans, plus during your 7-day Pro trial. Starter plan users can upgrade to access this feature.

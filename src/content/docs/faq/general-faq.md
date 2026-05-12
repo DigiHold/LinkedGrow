@@ -23,7 +23,7 @@ You can monitor your AI spending directly through your AI provider's dashboard (
 
 ## Can I cancel my subscription anytime?
 
-Yes. LinkedGrow has no long-term contracts or commitments. You can cancel your subscription at any time from your billing settings. When you cancel, your paid plan stays active until the end of your current billing period, then your account reverts to the Free plan. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for full details.
+Yes. LinkedGrow has no long-term contracts or commitments. You can cancel your subscription at any time from your billing settings. When you cancel, your paid plan stays active until the end of your current billing period, then your account reverts to the 7-day Pro trial. See [Refunds and Cancellation](/docs/billing/refunds-and-cancellation) for full details.
 
 ## Do I need LinkedIn Premium to use LinkedGrow?
 

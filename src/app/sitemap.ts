@@ -23,7 +23,6 @@ const EXCLUDED_PATHS = [
 // Priority configuration for different page types
 const PRIORITY_CONFIG: Record<string, { priority: number; changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never" }> = {
   "/": { priority: 1.0, changeFrequency: "weekly" },
-  "/prelaunch": { priority: 0.9, changeFrequency: "weekly" },
   "/about": { priority: 0.8, changeFrequency: "monthly" },
   "/privacy": { priority: 0.3, changeFrequency: "yearly" },
   "/cookies": { priority: 0.3, changeFrequency: "yearly" },

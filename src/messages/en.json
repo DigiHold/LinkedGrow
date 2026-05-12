@@ -96,11 +96,6 @@
     "discount": "-30%",
     "founder": "Early Access Discount",
     "perMonth": "/month",
-    "free": {
-      "name": "Free",
-      "description": "Try it out",
-      "features": ["3 posts/month", "Basic editor", "BYOK support"]
-    },
     "starter": {
       "name": "Starter",
       "description": "For regular creators",
@@ -134,7 +129,7 @@
     },
     "q4": {
       "question": "Can I try before committing?",
-      "answer": "Absolutely! Our Free plan includes 3 posts per month with full BYOK support. No credit card required to start."
+      "answer": "Yes. Every new account gets a 7-day Pro trial with full access to every Pro feature - AI image generation, hooks generator, unlimited scheduling, content repurposing, analytics. No credit card required."
     },
     "q5": {
       "question": "What's the 30% early access discount?",
@@ -287,7 +282,7 @@
       "minRead": "{count} min read",
       "ctaTitle": "Ready to grow on LinkedIn?",
       "ctaDescription": "Create viral posts, schedule content, and build your audience with AI-powered tools. Bring your own API key and pay 96% less.",
-      "startFree": "Start Free",
+      "startFree": "Start 7-Day Pro Trial",
       "seePricing": "See Pricing"
     },
     "author": {

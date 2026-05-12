@@ -5,11 +5,11 @@ import { PostGeneratorFreeContent } from "./post-generator-content";
 export const metadata: Metadata = {
   title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
   description:
-    "Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan available - no credit card needed.",
+    "Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. 7-day Pro trial included - no credit card needed.",
   openGraph: {
     title: "AI LinkedIn Post Generator Free - Create Viral Posts in Seconds | LinkedGrow",
     description:
-      "Generate LinkedIn posts for free with AI. 26+ models, voice training, and scheduling. Free plan available.",
+      "Generate LinkedIn posts for free with AI. 26+ models, voice training, and scheduling. 7-day Pro trial included.",
     url: "https://linkedgrow.ai/ai-linkedin-post-generator-free",
     siteName: "LinkedGrow",
     type: "website",
@@ -38,7 +38,7 @@ const postGenFreeFAQs = [
   {
     question: "Is the AI LinkedIn post generator really free?",
     answer:
-      "Yes. LinkedGrow offers a free plan that includes 3 AI post generations per month with no credit card required. For unlimited generation, paid plans start at $19 per month. With the BYOK model, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup.",
+      "Yes. LinkedGrow offers a 7-day Pro trial that includes 3 AI post generations per month with no credit card required. For unlimited generation, paid plans start at $19 per month. With the BYOK model, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup.",
   },
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
@@ -61,7 +61,7 @@ const postGenFreeFAQs = [
       "Yes. After generating a post, you can publish it immediately to LinkedIn or schedule it for a specific date and time. The Starter plan includes 10 scheduled posts, and Pro and Business plans offer unlimited scheduling with a visual content calendar.",
   },
   {
-    question: "How much does it cost after the free plan?",
+    question: "How much does it cost after the 7-day Pro trial?",
     answer:
       "The Starter plan is $19 per month with unlimited post generation, scheduling for up to 10 posts, and a content calendar. The Pro plan is $39 per month adding image generation, analytics, and network notifications. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, most users spend $2 to $4 per month on AI API costs for regular posting.",
   },
@@ -93,7 +93,7 @@ export default function AiLinkedinPostGeneratorFreePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/ai-linkedin-post-generator-free"
-        description="Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. Free plan with no credit card required."
+        description="Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. 7-day Pro trial with no credit card required."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <PostGeneratorFreeContent />

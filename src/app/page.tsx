@@ -14,10 +14,6 @@ import { ConversionElements } from "@/components/marketing/conversion-elements";
 import { AnimatedBackground } from "@/components/marketing/animated-background";
 import { StickyMobileCTA } from "@/components/marketing/sticky-mobile-cta";
 
-// Note: In prelaunch mode, middleware redirects non-logged-in users to /prelaunch
-// Logged-in users and admins can still access this full landing page
-// About section removed - now has dedicated /about page
-
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">

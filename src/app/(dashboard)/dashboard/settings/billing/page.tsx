@@ -181,7 +181,7 @@ function BillingContent() {
             </div>
             <h2 className="text-xl font-semibold mb-2">No Active Subscription</h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              You are currently on the Free plan. Upgrade to unlock billing management, invoices, and premium features.
+              You are currently on the 7-day Pro trial. Upgrade to unlock billing management, invoices, and premium features.
             </p>
             <Button
               onClick={() => router.push("/dashboard/upgrade")}

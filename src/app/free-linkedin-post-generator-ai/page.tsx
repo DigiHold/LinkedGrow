@@ -5,7 +5,7 @@ import { FreePostGeneratorContent } from "./free-generator-content";
 export const metadata: Metadata = {
   title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
   description:
-    "Try a free AI-powered LinkedIn post generator. 26+ models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your style. Free plan with 3 generations per month, no credit card.",
+    "Try a free AI-powered LinkedIn post generator. 26+ models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your style. 7-day Pro trial with 3 generations per month, no credit card.",
   openGraph: {
     title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
     description:
@@ -38,20 +38,20 @@ const freeGenFAQs = [
   {
     question: "Is this LinkedIn post generator AI really free?",
     answer:
-      "Yes. LinkedGrow offers a free plan with 3 AI post generations per month. You get access to all 26+ AI models and voice training with no credit card required. For unlimited generations, paid plans start at $19 per month.",
+      "Yes. LinkedGrow offers a 7-day Pro trial with 3 AI post generations per month. You get access to all 26+ AI models and voice training with no credit card required. For unlimited generations, paid plans start at $19 per month.",
   },
   {
     question: "Do I need to sign up to use the free AI post generator?",
     answer:
-      "You need to create a free account to access the post generator, which takes about 30 seconds. This is because the generator uses your voice training data and connected API key to produce personalized results. No credit card is required for the free plan.",
+      "You need to create a free account to access the post generator, which takes about 30 seconds. This is because the generator uses your voice training data and connected API key to produce personalized results. No credit card is required for the 7-day Pro trial.",
   },
   {
-    question: "What AI models can I use on the free plan?",
+    question: "What AI models can I use on the 7-day Pro trial?",
     answer:
-      "The free plan gives you access to all 26+ supported models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
+      "The 7-day Pro trial gives you access to all 26+ supported models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
   },
   {
-    question: "How does voice training work on the free plan?",
+    question: "How does voice training work on the 7-day Pro trial?",
     answer:
       "Voice training is available on all plans including free. Paste 3 to 5 of your best LinkedIn posts and the AI analyzes your writing style, vocabulary, and tone. Every post it generates after that will match your voice. This is the most important feature for making AI content sound authentic.",
   },
@@ -68,12 +68,12 @@ const freeGenFAQs = [
   {
     question: "What is BYOK and why does it matter for a free generator?",
     answer:
-      "BYOK means Bring Your Own Key. You get an API key from providers like OpenAI or Anthropic and connect it to LinkedGrow. You pay the provider directly at their rates with zero markup. This is why LinkedGrow can offer a free plan and still provide access to premium AI models.",
+      "BYOK means Bring Your Own Key. You get an API key from providers like OpenAI or Anthropic and connect it to LinkedGrow. You pay the provider directly at their rates with zero markup. This is why LinkedGrow can offer a 7-day Pro trial and still provide access to premium AI models.",
   },
   {
-    question: "Can I schedule posts on the free plan?",
+    question: "Can I schedule posts on the 7-day Pro trial?",
     answer:
-      "Scheduling is available on paid plans starting at Starter ($19 per month). On the free plan, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Upgrade to Starter for scheduling up to 10 posts.",
+      "Scheduling is available on paid plans starting at Starter ($19 per month). On the 7-day Pro trial, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Upgrade to Starter for scheduling up to 10 posts.",
   },
 ];
 

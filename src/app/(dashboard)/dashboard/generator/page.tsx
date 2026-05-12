@@ -150,12 +150,12 @@ function LimitReachedOverlay() {
         <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-xl">
           <Lock className="w-10 h-10 text-white" />
         </div>
-        <h2 className="text-2xl font-bold mb-3">Monthly Limit Reached</h2>
+        <h2 className="text-2xl font-bold mb-3">Trial Expired</h2>
         <p className="text-muted-foreground mb-2">
-          You&apos;ve used all <span className="font-semibold">3 free posts</span> for this month.
+          Your <span className="font-semibold">7-day Pro trial</span> has ended.
         </p>
         <p className="text-sm text-muted-foreground mb-6">
-          Upgrade to Starter or higher for <span className="font-semibold text-foreground">unlimited posts</span> with your own AI API key.
+          Pick Starter or higher to keep generating posts with <span className="font-semibold text-foreground">your own AI API key</span>.
         </p>
 
         <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 mb-6 text-left">

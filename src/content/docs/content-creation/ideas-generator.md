@@ -57,4 +57,4 @@ This approach gives you a full week of content in under an hour.
 
 ## Plan availability
 
-The Ideas Generator is available on all plans. Post generation from ideas uses your configured AI provider and counts toward any generation limits on the Free plan.
+The Ideas Generator is available on all plans. Post generation from ideas uses your configured AI provider and counts toward any generation limits on the 7-day Pro trial.

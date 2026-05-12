@@ -109,7 +109,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create user with 7-day Pro trial
+    // Create user with 7-day Pro trial. Every new signup gets the trial -
+    // they can upgrade to a paid plan at any time during the trial from
+    // /dashboard/upgrade or the post-checkout flow.
     const userId = randomUUID();
     const trialStart = new Date();
     const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);

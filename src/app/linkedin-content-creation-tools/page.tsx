@@ -61,9 +61,9 @@ const toolsFAQs = [
       "For text generation, LinkedGrow supports the latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ models in total. For image generation, it supports the latest models from OpenAI, Google, and Replicate - 10+ models in total. You choose which models to use and can switch between them at any time.",
   },
   {
-    question: "Is there a free plan available?",
+    question: "Is there a 7-day Pro trial included?",
     answer:
-      "Yes. LinkedGrow offers a free plan that includes 3 AI post generations per month. Paid plans start at $19 per month for Starter with unlimited generations, scheduling, and a content calendar. The Pro plan at $39 per month adds image generation, analytics, and network notifications. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support.",
+      "Yes. LinkedGrow offers a 7-day Pro trial that includes 3 AI post generations per month. Paid plans start at $19 per month for Starter with unlimited generations, scheduling, and a content calendar. The Pro plan at $39 per month adds image generation, analytics, and network notifications. The Business plan at $79 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support.",
   },
   {
     question: "How does the BYOK model work with content creation tools?",

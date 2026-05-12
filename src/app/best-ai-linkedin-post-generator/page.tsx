@@ -56,9 +56,9 @@ const bestGenFAQs = [
       "Very accurate. You paste 3 to 5 of your best LinkedIn posts and the AI analyzes your sentence structure, vocabulary, tone, and formatting patterns. Users consistently report that their audience cannot distinguish between manually written and AI-generated posts after voice training is configured.",
   },
   {
-    question: "Is there a free trial or free plan?",
+    question: "Is there a free trial?",
     answer:
-      "Yes. The free plan includes 3 AI post generations per month with voice training and access to all AI models. No credit card required. Paid plans start at $19 per month for unlimited generations.",
+      "Yes. The 7-day Pro trial includes 3 AI post generations per month with voice training and access to all AI models. No credit card required. Paid plans start at $19 per month for unlimited generations.",
   },
   {
     question: "What AI models are available for post generation?",

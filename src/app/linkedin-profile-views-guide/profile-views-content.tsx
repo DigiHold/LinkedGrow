@@ -59,7 +59,7 @@ export function ProfileViewsContent() {
         ]}
         primaryCta={{ text: "Start growing your visibility", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free plan available", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -356,7 +356,7 @@ export function ProfileViewsContent() {
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Free plan available",
+          "7-day Pro trial included",
           "No credit card required",
           "24+ AI models",
           "Cancel anytime",

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { redirectToCheckout, redirectToLtdCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
 
@@ -223,6 +223,10 @@ function SignUpContent() {
             <p className="text-slate-600 dark:text-slate-400">
               Start growing your LinkedIn presence today
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs font-medium text-cyan-700 dark:text-cyan-300">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Includes 7-day Pro trial - no credit card</span>
+            </div>
           </div>
 
           {/* Form Content */}

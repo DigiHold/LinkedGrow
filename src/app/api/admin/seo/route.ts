@@ -199,7 +199,7 @@ function scanBrokenInternalLinks(): { source: string; href: string; type: "page"
             const sourcePage = basePath || "/";
 
             // Match href="/path" and href={"/path"} patterns (internal links only)
-            const hrefRegex = /href=(?:{?"|\{")(\/?(?:blog|features|for|use-cases|industries|free-tools|pricing|about|sign-up|sign-in|affiliate|prelaunch)[^"'}]*)/g;
+            const hrefRegex = /href=(?:{?"|\{")(\/?(?:blog|features|for|use-cases|industries|free-tools|pricing|about|sign-up|sign-in|affiliate)[^"'}]*)/g;
             let match;
             while ((match = hrefRegex.exec(content)) !== null) {
               let href = match[1];

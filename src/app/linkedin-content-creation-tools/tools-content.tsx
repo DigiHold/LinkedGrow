@@ -53,7 +53,7 @@ export function ContentCreationToolsContent() {
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free plan available", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -323,9 +323,9 @@ export function ContentCreationToolsContent() {
               "For text: the latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ models in total. For images: the latest models from OpenAI, Google, and Replicate - 10+ models in total. Switch between models anytime.",
           },
           {
-            question: "Is there a free plan available?",
+            question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The free plan includes 3 AI post generations per month with no credit card required. Paid plans start at $19 per month for unlimited generations.",
+              "Yes. The 7-day Pro trial includes 3 AI post generations per month with no credit card required. Paid plans start at $19 per month for unlimited generations.",
           },
           {
             question: "How does the BYOK model work?",
@@ -359,7 +359,7 @@ export function ContentCreationToolsContent() {
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Free plan available",
+          "7-day Pro trial included",
           "6 tools in one",
           "Cancel anytime",
           "BYOK - unlimited generations",

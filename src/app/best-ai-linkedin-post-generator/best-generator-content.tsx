@@ -53,7 +53,7 @@ export function BestPostGeneratorContent() {
         ]}
         primaryCta={{ text: "Try the best generator", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free plan available", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -318,7 +318,7 @@ export function BestPostGeneratorContent() {
               "Very. Paste 3 to 5 of your best posts and the AI learns your style, vocabulary, and tone. Users report their audience cannot distinguish AI-generated from manually written posts.",
           },
           {
-            question: "Is there a free plan?",
+            question: "Is there a free trial?",
             answer:
               "Yes. 3 generations per month with voice training and all AI models. No credit card. Paid plans start at $19 per month for unlimited.",
           },
@@ -330,7 +330,7 @@ export function BestPostGeneratorContent() {
           {
             question: "How much does it cost?",
             answer:
-              "Free plan available. Starter $19 per month, Pro $39 per month, Business $79 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
+              "7-day Pro trial included. Starter $19 per month, Pro $39 per month, Business $79 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
           },
           {
             question: "Can I publish directly to LinkedIn?",
@@ -359,7 +359,7 @@ export function BestPostGeneratorContent() {
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Free plan available",
+          "7-day Pro trial included",
           "26+ AI models",
           "Voice training",
           "Cancel anytime",
