@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLANS, type PlanId, type PlanFeatures, FEATURE_INFO } from "@/lib/plans";
+import { LtdPlanCard } from "@/components/marketing/ltd-plan-card";
 
 // Only show paid plans - 7-day Pro trial is shown via "Current plan" badge
 const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
@@ -264,7 +265,7 @@ showError("Something went wrong. Please try again.");
       </div>
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-3 gap-4 lg:gap-6 mb-10 max-w-4xl mx-auto">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10 max-w-7xl mx-auto">
         {PLAN_ORDER.map((planId) => {
           const plan = PLANS[planId];
           const action = getPlanAction(planId);
@@ -455,6 +456,9 @@ showError("Something went wrong. Please try again.");
             </div>
           );
         })}
+
+        {/* Lifetime Deal card - 4th slot, dynamically priced by tier. Hidden for LTD owners. */}
+        {!isLtd && <LtdPlanCard variant="dashboard" animate={false} />}
       </div>
 
       {/* Manage Subscription Link */}
