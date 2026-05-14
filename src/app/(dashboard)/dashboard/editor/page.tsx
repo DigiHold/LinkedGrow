@@ -268,7 +268,8 @@ function EditorContent() {
 
   // Load post for duplication: copy content/firstComment/media but never bind
   // to the original post id, so saving creates a fresh draft instead of
-  // overwriting the post we're cloning from.
+  // overwriting the post we're cloning from. The media file is copied to a
+  // brand-new R2 key so deleting the source post never breaks the duplicate.
   useEffect(() => {
     if (duplicatePostId && !editPostId) {
       const loadDuplicate = async () => {
@@ -280,14 +281,44 @@ function EditorContent() {
             setContent(data.post.content || "");
             setFirstComment(data.post.firstComment || "");
             if (data.post.media && data.post.media.length > 0) {
-              const existingMedia = data.post.media[0];
-              setAttachedImage({
-                base64: "",
-                mimeType: existingMedia.mimeType,
-                preview: existingMedia.storageUrl,
-                storageUrl: existingMedia.storageUrl,
-                storageKey: existingMedia.storageKey,
-              });
+              // Copy the source R2 object to a fresh key so the duplicate
+              // owns its own file. Fall back to referencing the original
+              // only if the copy fails - better a shared file than no image.
+              try {
+                const copyRes = await fetch(`/api/posts/${duplicatePostId}/duplicate-media`, {
+                  method: "POST",
+                });
+                if (copyRes.ok) {
+                  const copyData = await copyRes.json();
+                  if (copyData.media) {
+                    setAttachedImage({
+                      base64: "",
+                      mimeType: copyData.media.mimeType,
+                      preview: copyData.media.storageUrl,
+                      storageUrl: copyData.media.storageUrl,
+                      storageKey: copyData.media.storageKey,
+                    });
+                  }
+                } else {
+                  const existingMedia = data.post.media[0];
+                  setAttachedImage({
+                    base64: "",
+                    mimeType: existingMedia.mimeType,
+                    preview: existingMedia.storageUrl,
+                    storageUrl: existingMedia.storageUrl,
+                    storageKey: existingMedia.storageKey,
+                  });
+                }
+              } catch {
+                const existingMedia = data.post.media[0];
+                setAttachedImage({
+                  base64: "",
+                  mimeType: existingMedia.mimeType,
+                  preview: existingMedia.storageUrl,
+                  storageUrl: existingMedia.storageUrl,
+                  storageKey: existingMedia.storageKey,
+                });
+              }
             }
           }
         } catch {

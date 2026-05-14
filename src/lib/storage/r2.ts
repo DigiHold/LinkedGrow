@@ -1,7 +1,7 @@
 // Cloudflare R2 Storage Integration
 // Free 10GB storage, no egress fees - perfect for SaaS media storage
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, CopyObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // R2 uses S3-compatible API
@@ -166,6 +166,33 @@ export async function getPresignedDownloadUrl(
   });
 
   return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+/**
+ * Copy an existing R2 object to a new key. Used when duplicating a post so
+ * the duplicate owns its own media file - otherwise deleting the original
+ * would also delete the duplicate's image/PDF/video.
+ *
+ * Returns the new key + public URL. Caller is responsible for deciding the
+ * destination key (typically derived from the duplicating user's id).
+ */
+export async function copyR2Object(
+  sourceKey: string,
+  destinationKey: string
+): Promise<{ key: string; url: string }> {
+  await r2Client.send(
+    new CopyObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: destinationKey,
+      // CopySource must be `${bucket}/${key}` URL-encoded
+      CopySource: `/${R2_BUCKET_NAME}/${encodeURIComponent(sourceKey).replace(/%2F/g, "/")}`,
+    })
+  );
+
+  return {
+    key: destinationKey,
+    url: getPublicUrl(destinationKey),
+  };
 }
 
 /**
