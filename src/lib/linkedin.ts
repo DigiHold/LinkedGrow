@@ -45,6 +45,24 @@ const LINKEDIN_REST_API_BASE = 'https://api.linkedin.com/rest';
 // LinkedIn API version for REST API (YYYYMM format)
 const LINKEDIN_API_VERSION = '202603';
 
+/**
+ * Escape user text for LinkedIn's "LittleText" format (used by the Posts and
+ * Comments REST APIs in the `commentary` and `message.text` fields).
+ *
+ * LinkedIn parses these characters as markup syntax. If they appear unescaped,
+ * the API silently truncates the body at the first offending character — which
+ * is why a 1500-char post can publish as "Hi everyone, today (" with the rest
+ * dropped on the floor. The fix is to backslash-escape every reserved char.
+ *
+ * Backslash MUST be escaped first or it double-escapes the rest.
+ *
+ * Spec: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api#text-formatting
+ */
+export function escapeLinkedInText(text: string): string {
+  if (!text) return text;
+  return text.replace(/[\\|{}@\[\]()<>#*_~]/g, '\\$&');
+}
+
 interface LinkedInTokenResponse {
   access_token: string;
   expires_in: number;
@@ -441,7 +459,7 @@ export async function createLinkedInPost(
 
   const postData = {
     author: authorUrn,
-    commentary: text,
+    commentary: escapeLinkedInText(text),
     visibility: visibility,
     distribution: {
       feedDistribution: 'MAIN_FEED',
@@ -495,7 +513,7 @@ export async function createLinkedInComment(
     : `urn:li:person:${authorId}`;
   const encodedUrn = encodeURIComponent(postUrn);
   const tokens = Array.isArray(accessTokens) ? accessTokens : [accessTokens];
-  const body = { actor: actorUrn, object: postUrn, message: { text: commentText } };
+  const body = { actor: actorUrn, object: postUrn, message: { text: escapeLinkedInText(commentText) } };
 
   let lastError = '';
   for (const token of tokens) {
@@ -649,7 +667,7 @@ export async function createLinkedInPostWithImage(
   // Step 4: Create the post using the REST Posts API with the image
   const postData = {
     author: authorUrn,
-    commentary: text,
+    commentary: escapeLinkedInText(text),
     visibility: visibility,
     distribution: {
       feedDistribution: 'MAIN_FEED',
@@ -903,7 +921,7 @@ export async function createLinkedInPostWithVideo(
   // Step 5: Create the post using the REST Posts API with the video
   const postData = {
     author: authorUrn,
-    commentary: text,
+    commentary: escapeLinkedInText(text),
     visibility: visibility,
     distribution: {
       feedDistribution: 'MAIN_FEED',
@@ -1043,7 +1061,7 @@ export async function createLinkedInPostWithDocument(
   // Step 4: Create the post using the REST Posts API with the document
   const postData = {
     author: authorUrn,
-    commentary: text,
+    commentary: escapeLinkedInText(text),
     visibility: visibility,
     distribution: {
       feedDistribution: 'MAIN_FEED',
@@ -2284,7 +2302,7 @@ export async function reshareLinkedInPost(
 
   const postData = {
     author: authorUrn,
-    commentary: commentary || '',
+    commentary: escapeLinkedInText(commentary || ''),
     visibility: 'PUBLIC',
     distribution: {
       feedDistribution: 'MAIN_FEED',
