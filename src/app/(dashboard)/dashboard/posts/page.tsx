@@ -26,6 +26,7 @@ import {
   Video,
   Image as ImageIcon,
   LayoutGrid,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
@@ -565,11 +566,20 @@ export default function PostsPage() {
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Link href={`/dashboard/editor?edit=${post.id}`}>
-                    <Button variant="ghost" size="icon-sm" title="Edit">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  {post.status !== "published" && (
+                    <Link href={`/dashboard/editor?edit=${post.id}`}>
+                      <Button variant="ghost" size="icon-sm" title="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  )}
+                  {(post.status === "published" || post.status === "failed") && (
+                    <Link href={`/dashboard/editor?duplicate=${post.id}`}>
+                      <Button variant="ghost" size="icon-sm" title="Reuse this post">
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  )}
                   {post.status === "draft" && (
                     <Button
                       variant="ghost"
@@ -955,12 +965,21 @@ export default function PostsPage() {
               <Button variant="outline" onClick={() => setPreviewPost(null)}>
                 Close
               </Button>
-              <Link href={`/dashboard/editor?edit=${previewPost.id}`}>
-                <Button>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit Post
-                </Button>
-              </Link>
+              {previewPost.status === "published" || previewPost.status === "failed" ? (
+                <Link href={`/dashboard/editor?duplicate=${previewPost.id}`}>
+                  <Button>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reuse Post
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/dashboard/editor?edit=${previewPost.id}`}>
+                  <Button>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Post
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

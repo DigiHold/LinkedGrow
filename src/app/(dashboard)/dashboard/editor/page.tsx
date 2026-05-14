@@ -148,6 +148,7 @@ function EditorContent() {
   const userPlan = (session?.user?.plan as PlanId) || "free";
   const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
   const editPostId = searchParams.get("edit");
+  const duplicatePostId = searchParams.get("duplicate");
   const initialContent = searchParams.get("content");
 
   const [content, setContent] = useState("");
@@ -155,8 +156,8 @@ function EditorContent() {
   const [aiInstruction, setAIInstruction] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
-  // Start loading if we're editing an existing post (prevents race condition)
-  const [isLoading, setIsLoading] = useState(!!editPostId);
+  // Start loading if we're editing or duplicating an existing post (prevents race condition)
+  const [isLoading, setIsLoading] = useState(!!editPostId || !!duplicatePostId);
   const [currentPostId, setCurrentPostId] = useState<string | null>(editPostId);
   const [currentPostStatus, setCurrentPostStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -259,11 +260,45 @@ function EditorContent() {
         }
       };
       loadPost();
-    } else {
-      // No edit ID - we're creating a new post, ensure loading is false
+    } else if (!duplicatePostId) {
+      // No edit/duplicate ID - we're creating a new post, ensure loading is false
       setIsLoading(false);
     }
-  }, [editPostId]);
+  }, [editPostId, duplicatePostId]);
+
+  // Load post for duplication: copy content/firstComment/media but never bind
+  // to the original post id, so saving creates a fresh draft instead of
+  // overwriting the post we're cloning from.
+  useEffect(() => {
+    if (duplicatePostId && !editPostId) {
+      const loadDuplicate = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/posts/${duplicatePostId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setContent(data.post.content || "");
+            setFirstComment(data.post.firstComment || "");
+            if (data.post.media && data.post.media.length > 0) {
+              const existingMedia = data.post.media[0];
+              setAttachedImage({
+                base64: "",
+                mimeType: existingMedia.mimeType,
+                preview: existingMedia.storageUrl,
+                storageUrl: existingMedia.storageUrl,
+                storageKey: existingMedia.storageKey,
+              });
+            }
+          }
+        } catch {
+          // Fall through to empty editor
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadDuplicate();
+    }
+  }, [duplicatePostId, editPostId]);
 
   // Update algorithm score when content changes
   useEffect(() => {

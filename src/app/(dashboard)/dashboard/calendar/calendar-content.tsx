@@ -1543,7 +1543,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                       </Button>
                     )}
                     <div className="flex flex-col mt-3 gap-3 justify-center items-center">
-                      <Link href={`/dashboard/generator?duplicate=${selectedPost.id}`} className="w-full">
+                      <Link href={`/dashboard/editor?duplicate=${selectedPost.id}`} className="w-full">
                         <Button variant="default" className="w-full">
                           <RefreshCw className="w-4 h-4 mr-2" /> Reuse this post
                         </Button>
