@@ -94,7 +94,7 @@ function InlineSupportForm({
         </div>
         <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Ticket sent!</p>
         <p className="text-xs text-emerald-600 dark:text-emerald-500">
-          {ticketUrl ? "We'll reply by email and you can track it in your support page." : <>We&apos;ll reply to <strong>{email}</strong> as soon as possible.</>}
+          {ticketUrl ? "We'll reply on your ticket page and email you when we answer." : <>We&apos;ll reply to <strong>{email}</strong> as soon as possible.</>}
         </p>
         {ticketUrl && (
           <a

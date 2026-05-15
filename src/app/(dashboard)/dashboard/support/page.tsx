@@ -108,7 +108,7 @@ export default function SupportPage() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Direct support is a paid feature</h1>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Upgrade to any paid plan to open a support ticket and get a personal reply by email from the LinkedGrow team.
+              Upgrade to any paid plan to open a support ticket and get a personal reply from the LinkedGrow team. Conversations happen on the ticket page, with email notifications when we answer.
             </p>
             <Link href="/dashboard/upgrade">
               <Button>
@@ -132,7 +132,7 @@ export default function SupportPage() {
             </div>
             Support
           </h1>
-          <p className="text-muted-foreground mt-1">Open a ticket and we&apos;ll reply by email.</p>
+          <p className="text-muted-foreground mt-1">Open a ticket - we&apos;ll reply right here. You&apos;ll get an email notification when we answer.</p>
         </div>
         {!showCreate && (
           <Button onClick={() => setShowCreate(true)}>
@@ -209,7 +209,7 @@ export default function SupportPage() {
           <CardContent className="py-12 text-center">
             <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-semibold mb-2">No tickets yet</h3>
-            <p className="text-muted-foreground text-sm mb-4">Open your first ticket and we&apos;ll get back to you by email.</p>
+            <p className="text-muted-foreground text-sm mb-4">Open your first ticket - we&apos;ll reply right here and email you when we do.</p>
             <Button onClick={() => setShowCreate(true)}>
               <Plus className="w-4 h-4 mr-2" /> New ticket
             </Button>
