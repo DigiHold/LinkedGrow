@@ -426,6 +426,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Reconcile totals against per-post sums. The aggregated endpoint
+    // (getMemberAggregatedAnalytics) lags behind per-post stats by hours/days,
+    // so it can return 0 reactions while a post in the table already shows 2.
+    // Take the max so the headline numbers are always >= anything visible
+    // below them, which is what users expect.
+    let summedImpressions = 0, summedReactions = 0, summedComments = 0, summedShares = 0;
+    for (const stats of postAnalyticsMap.values()) {
+      summedImpressions += stats.impressions;
+      summedReactions += stats.reactions;
+      summedComments += stats.comments;
+      summedShares += stats.reshares;
+    }
+    if (summedImpressions > totalImpressions) totalImpressions = summedImpressions;
+    if (summedReactions > totalReactions) totalReactions = summedReactions;
+    if (summedComments > totalComments) totalComments = summedComments;
+    if (summedShares > totalShares) totalShares = summedShares;
+
     // Top 15 posts by impressions (with analytics first)
     const withAnalytics = allPosts.filter(p => p.analytics).sort((a, b) => (b.analytics?.impressions || 0) - (a.analytics?.impressions || 0));
     const withoutAnalytics = allPosts.filter(p => !p.analytics);
