@@ -10,28 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LifeBuoy, Plus, Loader2, MessageCircle, Lock, ArrowRight, AlertCircle } from "lucide-react";
 
+import { statusColor, STATUS_LABELS as STATUS_LABEL, type TicketStatus } from "@/lib/support-status";
+
 interface Ticket {
   id: string;
   subject: string;
   category: string;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  status: TicketStatus;
   preview: string;
   hasUnreadForUser: boolean;
+  resolvedAt?: number | string | null;
   updatedAt: number;
 }
-
-const STATUS_COLORS: Record<Ticket["status"], string> = {
-  open: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  resolved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  closed: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-};
-const STATUS_LABEL: Record<Ticket["status"], string> = {
-  open: "Open",
-  in_progress: "In progress",
-  resolved: "Resolved",
-  closed: "Closed",
-};
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "billing", label: "Billing" },
   { value: "bug", label: "Bug report" },
@@ -238,7 +228,7 @@ export default function SupportPage() {
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{t.preview}</p>
                     </div>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${STATUS_COLORS[t.status]}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${statusColor(t)}`}>
                       {STATUS_LABEL[t.status]}
                     </span>
                   </div>

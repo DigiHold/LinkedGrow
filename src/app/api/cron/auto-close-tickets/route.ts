@@ -53,6 +53,7 @@ async function runAutoCloseTickets() {
       senderId: null,
       isAdmin: true,
       isSystem: true,
+      kind: "auto_close",
       body: AUTO_CLOSE_MESSAGE,
       createdAt: now,
     });

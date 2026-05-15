@@ -7,16 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LifeBuoy, Loader2, Search, MessageCircle, RefreshCw } from "lucide-react";
 
+import { statusColor, type TicketStatus } from "@/lib/support-status";
+
 interface Ticket {
   id: string;
   subject: string;
   category: string;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  status: TicketStatus;
   priority: string;
   source: "dashboard" | "chatbot";
   hasUnreadForAdmin: boolean;
   createdAt: number;
   updatedAt: number;
+  resolvedAt?: number | string | null;
   userId: string;
   userEmail: string | null;
   userName: string | null;
@@ -30,12 +33,6 @@ const TABS = [
   { value: "closed", label: "Closed" },
 ] as const;
 
-const STATUS_COLORS: Record<Ticket["status"], string> = {
-  open: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  resolved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  closed: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-};
 
 function timeAgo(ts: number | string): string {
   // API returns timestamps as ISO strings (NextResponse.json serializes Date),
@@ -170,7 +167,7 @@ export default function AdminSupportPage() {
                         {t.hasUnreadForAdmin && (
                           <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" title="New activity" />
                         )}
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[t.status]}`}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor(t)}`}>
                           {t.status.replace("_", " ")}
                         </span>
                         {t.source === "chatbot" && (

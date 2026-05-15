@@ -786,8 +786,16 @@ export const supportMessages = sqliteTable("support_messages", {
   }),
   isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
   // System messages are admin-side templated messages (auto-close, review
-  // request) - rendered with a different style on the frontend.
+  // request, thank-you) - rendered with a different style on the frontend.
   isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false),
+  // Drives the frontend renderer:
+  //   text             -> plain prose (default for both user + admin replies)
+  //   review_request   -> renders the 3 brand logo cards inline
+  //   thank_you        -> renders a thank-you panel with "Open another" CTA
+  //   auto_close       -> renders the 14-day auto-close notice
+  kind: text("kind", { enum: ["text", "review_request", "thank_you", "auto_close"] })
+    .notNull()
+    .default("text"),
   body: text("body").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });

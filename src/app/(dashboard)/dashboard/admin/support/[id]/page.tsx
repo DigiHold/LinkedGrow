@@ -6,7 +6,9 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, Send, AlertCircle, CheckCircle, Star, X, MessageCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Send, AlertCircle, CheckCircle, Star, X } from "lucide-react";
+import { RichSystemMessage } from "@/components/dashboard/support/rich-system-message";
+import { statusColor, STATUS_LABELS as STATUS_LABEL, type TicketStatus } from "@/lib/support-status";
 
 function MessageAvatar({ name, email, image, isAdmin }: { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean }) {
   if (image) {
@@ -36,30 +38,26 @@ interface Ticket {
   id: string;
   subject: string;
   category: string;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  status: TicketStatus;
   priority: string;
   source: string;
   userId: string;
   reviewRequestSentAt?: number | null;
+  resolvedAt?: number | string | null;
+  closedAt?: number | string | null;
   createdAt: number;
 }
 interface Message {
   id: string;
   isAdmin: boolean;
   isSystem: boolean;
+  kind?: "text" | "review_request" | "thank_you" | "auto_close";
   body: string;
   createdAt: number;
   senderName?: string | null;
   senderEmail?: string | null;
   senderImage?: string | null;
 }
-
-const STATUS_COLORS: Record<Ticket["status"], string> = {
-  open: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  resolved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  closed: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-};
 
 function formatDate(ts: number) {
   return new Date(ts).toLocaleString("en-US", {
@@ -175,8 +173,9 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
           <div>
             <h1 className="text-2xl font-bold mb-2">{ticket.subject}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[ticket.status]}`}>
-                {ticket.status.replace("_", " ")}
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor(ticket)}`}>
+                {STATUS_LABEL[ticket.status]}
+                {ticket.status === "closed" && !ticket.resolvedAt ? " (no reply)" : ""}
               </span>
               <span>·</span>
               <span>{ticket.category}</span>
@@ -202,19 +201,18 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
             key={m.id}
             className={
               m.isSystem
-                ? "rounded-xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-sm text-amber-800 dark:text-amber-300"
+                ? m.kind === "review_request"
+                  ? "rounded-xl border border-amber-200 dark:border-amber-900 bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-5"
+                  : m.kind === "thank_you"
+                    ? "rounded-xl border border-cyan-200 dark:border-cyan-900 bg-linear-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30 p-5"
+                    : "rounded-xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-sm text-amber-800 dark:text-amber-300"
                 : m.isAdmin
                   ? "rounded-xl border border-cyan-200 dark:border-cyan-900 bg-cyan-50/50 dark:bg-cyan-950/20 p-4"
                   : "rounded-xl border border-border bg-white dark:bg-gray-900 p-4"
             }
           >
             {m.isSystem ? (
-              <>
-                <div className="flex items-center gap-2 mb-1.5 font-medium">
-                  <MessageCircle className="w-4 h-4" /> System
-                </div>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
-              </>
+              <RichSystemMessage kind={m.kind} body={m.body} />
             ) : (
               <div className="flex gap-3">
                 <MessageAvatar

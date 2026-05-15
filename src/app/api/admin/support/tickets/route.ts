@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
       hasUnreadForAdmin: supportTickets.hasUnreadForAdmin,
       createdAt: supportTickets.createdAt,
       updatedAt: supportTickets.updatedAt,
+      resolvedAt: supportTickets.resolvedAt,
+      closedAt: supportTickets.closedAt,
       lastUserReplyAt: supportTickets.lastUserReplyAt,
       lastAdminReplyAt: supportTickets.lastAdminReplyAt,
       userId: supportTickets.userId,
