@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { isPaidUser } from "@/lib/is-paid-user";
 import { Logo } from "@/components/ui/logo";
 import {
   Sparkles,
@@ -509,11 +510,10 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
-                  // Paid users get the proper ticket system; everyone else
-                  // (trial/free) keeps the chatbot since support tickets
-                  // are paid-only.
-                  const u = session?.user as { stripeSubscriptionId?: string | null; isLifetimeDeal?: boolean } | undefined;
-                  if (u?.stripeSubscriptionId || u?.isLifetimeDeal) {
+                  // Paid users (Stripe sub, LTD, or manually-granted paid
+                  // plans like internal/comp accounts) get the proper ticket
+                  // system; trial / free users keep the chatbot.
+                  if (isPaidUser(session?.user)) {
                     router.push("/dashboard/support");
                   } else {
                     window.dispatchEvent(new Event("open-chat-widget"));

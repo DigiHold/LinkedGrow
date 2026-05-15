@@ -254,12 +254,29 @@ export default function ChatWidget() {
       .then((res) => res.json())
       .then((data) => {
         if (data?.user) {
-          const u = data.user as { name?: string; email?: string; stripeSubscriptionId?: string | null; isLifetimeDeal?: boolean };
-          setSessionUser({
-            name: u.name,
-            email: u.email,
-            isPaid: !!(u.stripeSubscriptionId || u.isLifetimeDeal),
-          });
+          const u = data.user as {
+            name?: string;
+            email?: string;
+            plan?: string;
+            stripeSubscriptionId?: string | null;
+            isLifetimeDeal?: boolean;
+            trialEndedAt?: number | null;
+          };
+          // Same rule as src/lib/is-paid-user.ts - duplicated here because
+          // the chat widget runs on every page (incl. marketing) and we
+          // want a tiny inline check, not a heavier lib import in the
+          // marketing bundle.
+          const inActiveTrial =
+            u.plan === "pro" &&
+            !u.stripeSubscriptionId &&
+            !u.isLifetimeDeal &&
+            !!u.trialEndedAt &&
+            u.trialEndedAt > Date.now();
+          const isPaid =
+            !!u.stripeSubscriptionId ||
+            !!u.isLifetimeDeal ||
+            (!!u.plan && u.plan !== "free" && !inActiveTrial);
+          setSessionUser({ name: u.name, email: u.email, isPaid });
         }
       })
       .catch(() => {});
