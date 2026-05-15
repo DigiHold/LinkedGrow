@@ -27,6 +27,16 @@ interface PostPerformanceTableProps {
 
 type SortKey = "impressions" | "reactions" | "comments" | "reshares" | "engagement";
 
+// Adaptive precision so a real 0.04% rate doesn't display as "0.0%". Posts with
+// 50k+ views typically land in the 0.01–0.1% range and would otherwise round
+// to zero with toFixed(1) and look broken.
+function formatEngagementRate(rate: number): string {
+  if (rate === 0) return "0%";
+  if (rate >= 1) return `${rate.toFixed(1)}%`;
+  if (rate >= 0.1) return `${rate.toFixed(2)}%`;
+  return `${rate.toFixed(3)}%`;
+}
+
 export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
   const [sortBy, setSortBy] = useState<SortKey>("impressions");
 
@@ -175,7 +185,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
                     <div>
                       <span className="text-muted-foreground">Rate </span>
                       <span className={`font-semibold tabular-nums ${post.engagementRate > 3 ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
-                        {post.engagementRate.toFixed(1)}%
+                        {formatEngagementRate(post.engagementRate)}
                       </span>
                     </div>
                   </div>
