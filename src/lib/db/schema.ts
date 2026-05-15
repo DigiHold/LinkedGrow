@@ -727,6 +727,75 @@ export const redemptionCodes = sqliteTable("redemption_codes", {
 
 export type RedemptionCode = typeof redemptionCodes.$inferSelect;
 export type NewRedemptionCode = typeof redemptionCodes.$inferInsert;
+
+// ============================================
+// SUPPORT TICKETS
+// ============================================
+
+export const supportTickets = sqliteTable("support_tickets", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  category: text("category", {
+    enum: ["billing", "bug", "feature_request", "account", "other"],
+  })
+    .notNull()
+    .default("other"),
+  status: text("status", {
+    enum: ["open", "in_progress", "resolved", "closed"],
+  })
+    .notNull()
+    .default("open"),
+  priority: text("priority", { enum: ["low", "normal", "high"] })
+    .notNull()
+    .default("normal"),
+  // Tracks the source so chatbot-originated tickets can be distinguished from
+  // dashboard-originated ones in the admin view.
+  source: text("source", { enum: ["dashboard", "chatbot"] })
+    .notNull()
+    .default("dashboard"),
+  // Set when the admin sends a review-request after resolving. Used to hide
+  // the "Send review request" button on subsequent admin views (one ask per
+  // ticket - we don't want to spam happy customers).
+  reviewRequestSentAt: integer("review_request_sent_at", { mode: "timestamp" }),
+  // Activity tracking - drives the 14-day auto-close cron and unread badges.
+  lastUserReplyAt: integer("last_user_reply_at", { mode: "timestamp" }),
+  lastAdminReplyAt: integer("last_admin_reply_at", { mode: "timestamp" }),
+  hasUnreadForUser: integer("has_unread_for_user", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  hasUnreadForAdmin: integer("has_unread_for_admin", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  closedAt: integer("closed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const supportMessages = sqliteTable("support_messages", {
+  id: text("id").primaryKey(),
+  ticketId: text("ticket_id")
+    .notNull()
+    .references(() => supportTickets.id, { onDelete: "cascade" }),
+  // senderId can be null for system messages (e.g. the auto-close template).
+  senderId: text("sender_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+  // System messages are admin-side templated messages (auto-close, review
+  // request) - rendered with a different style on the frontend.
+  isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false),
+  body: text("body").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type NewSupportTicket = typeof supportTickets.$inferInsert;
+export type SupportMessage = typeof supportMessages.$inferSelect;
+export type NewSupportMessage = typeof supportMessages.$inferInsert;
 export type Affiliate = typeof affiliates.$inferSelect;
 export type NewAffiliate = typeof affiliates.$inferInsert;
 export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;
