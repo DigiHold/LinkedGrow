@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, Send, CheckCircle, AlertCircle, MessageCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Send, CheckCircle, AlertCircle, MessageCircle, X } from "lucide-react";
 
 function MessageAvatar({ name, email, image, isAdmin }: { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean }) {
   if (image) {
@@ -83,6 +83,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -130,11 +131,13 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
   };
 
   const handleResolve = async () => {
-    if (!confirm("Mark this ticket as resolved?")) return;
     setResolving(true);
     try {
       const res = await fetch(`/api/support/tickets/${id}/resolve`, { method: "POST" });
-      if (res.ok) fetchTicket();
+      if (res.ok) {
+        setShowResolveModal(false);
+        fetchTicket();
+      }
     } finally {
       setResolving(false);
     }
@@ -185,8 +188,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
           {ticket.status !== "resolved" && ticket.status !== "closed" && (
-            <Button variant="outline" size="sm" onClick={handleResolve} disabled={resolving}>
-              {resolving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            <Button variant="outline" size="sm" onClick={() => setShowResolveModal(true)} disabled={resolving}>
               <CheckCircle className="w-4 h-4 mr-2" /> Mark resolved
             </Button>
           )}
@@ -305,6 +307,45 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             </form>
           </CardContent>
         </Card>
+      )}
+
+      {showResolveModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => setShowResolveModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-center">Mark this ticket as resolved?</h2>
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              We&apos;ll close the conversation. You can always reopen it later by replying.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowResolveModal(false)}
+                disabled={resolving}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={handleResolve}
+                disabled={resolving}
+              >
+                {resolving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Yes, mark resolved
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
