@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Suspense } from "react";
 import { MessageSquare, Check, Trash2, X, ExternalLink, Mail, User, Reply, Send } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface AdminComment {
   id: string;
@@ -28,6 +29,7 @@ function CommentsContent() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
@@ -120,7 +122,6 @@ function CommentsContent() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to permanently delete this comment?")) return;
     setActionLoading(id);
     try {
       const res = await fetch("/api/blog/comments/admin", {
@@ -132,8 +133,9 @@ function CommentsContent() {
         setComments((prev) => prev.filter((c) => c.id !== id && c.parentId !== id));
       }
     } catch {
-} finally {
+    } finally {
       setActionLoading(null);
+      setPendingDeleteId(null);
     }
   }
 
@@ -354,7 +356,7 @@ function CommentsContent() {
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(comment.id)}
+                    onClick={() => setPendingDeleteId(comment.id)}
                     disabled={actionLoading === comment.id}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
                   >
@@ -405,6 +407,17 @@ function CommentsContent() {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        open={!!pendingDeleteId}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={() => { if (pendingDeleteId) handleDelete(pendingDeleteId); }}
+        title="Delete this comment?"
+        description="This permanently removes the comment and any replies. This cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+        loading={actionLoading === pendingDeleteId}
+      />
     </div>
   );
 }

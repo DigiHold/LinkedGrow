@@ -141,6 +141,7 @@ export default function AdminSeoPage() {
   const [scLoading, setScLoading] = useState(false);
   const [scError, setScError] = useState<string | null>(null);
   const [showAllOverlaps, setShowAllOverlaps] = useState(false);
+  const [indexResultToast, setIndexResultToast] = useState<string | null>(null);
   const [showAllCanonicals, setShowAllCanonicals] = useState(false);
   const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
   const [showPublicPages, setShowPublicPages] = useState(false);
@@ -211,9 +212,10 @@ setScError("Failed to connect");
       });
       const json = await res.json();
       if (json.success) {
-        alert(
-          `Indexing requested!\n\nIndexNow: ${json.result.indexnow.success ? `${json.result.indexnow.endpoints}/3 endpoints` : "skipped"}\nGoogle: ${json.result.google.success ? "submitted" : json.result.google.error || "skipped"}`
-        );
+        const indexnow = json.result.indexnow.success ? `${json.result.indexnow.endpoints}/3 endpoints` : "skipped";
+        const google = json.result.google.success ? "submitted" : json.result.google.error || "skipped";
+        setIndexResultToast(`Indexing requested - IndexNow: ${indexnow}, Google: ${google}`);
+        setTimeout(() => setIndexResultToast(null), 6000);
       }
     } catch (error) {
 } finally {
@@ -1198,6 +1200,15 @@ setScError("Failed to connect");
           </div>
         )}
       </div>
+
+      {indexResultToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300 max-w-md">
+          <div className="bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <span className="text-sm font-medium">{indexResultToast}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import {
   Dialog,
@@ -82,6 +83,11 @@ export default function NetworkNotificationsPage() {
   const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
+
+  const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState<string | null>(null);
+  const [pendingLeaveGroupId, setPendingLeaveGroupId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupMembers, setSelectedGroupMembers] = useState<GroupMember[]>([]);
@@ -165,7 +171,7 @@ export default function NetworkNotificationsPage() {
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm("Delete this group? All members will be removed.")) return;
+    setIsDeleting(true);
     try {
       const res = await fetch(`/api/network-notifications/groups/${groupId}`, {
         method: "DELETE",
@@ -177,6 +183,9 @@ export default function NetworkNotificationsPage() {
       }
     } catch {
       setMessage({ type: "error", text: "Failed to delete group" });
+    } finally {
+      setIsDeleting(false);
+      setPendingDeleteGroupId(null);
     }
   };
 
@@ -205,7 +214,7 @@ export default function NetworkNotificationsPage() {
   };
 
   const handleLeaveGroup = async (groupId: string) => {
-    if (!confirm("Leave this group? You won't receive notifications anymore.")) return;
+    setIsLeaving(true);
     try {
       const res = await fetch(`/api/network-notifications/groups/${groupId}/leave`, { method: "POST" });
       if (res.ok) {
@@ -218,6 +227,9 @@ export default function NetworkNotificationsPage() {
       }
     } catch {
       setMessage({ type: "error", text: "Failed to leave group" });
+    } finally {
+      setIsLeaving(false);
+      setPendingLeaveGroupId(null);
     }
   };
 
@@ -374,7 +386,7 @@ export default function NetworkNotificationsPage() {
                             variant="ghost"
                             size="sm"
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            onClick={() => handleDeleteGroup(group.id)}
+                            onClick={() => setPendingDeleteGroupId(group.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -384,7 +396,7 @@ export default function NetworkNotificationsPage() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          onClick={() => handleLeaveGroup(group.id)}
+                          onClick={() => setPendingLeaveGroupId(group.id)}
                         >
                           <LogOut className="w-4 h-4 mr-1" />
                           Leave
@@ -576,6 +588,28 @@ export default function NetworkNotificationsPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <ConfirmModal
+          open={!!pendingDeleteGroupId}
+          onClose={() => setPendingDeleteGroupId(null)}
+          onConfirm={() => { if (pendingDeleteGroupId) handleDeleteGroup(pendingDeleteGroupId); }}
+          title="Delete this group?"
+          description="All members will be removed and you'll stop receiving notifications for it. This cannot be undone."
+          confirmText="Delete group"
+          variant="destructive"
+          loading={isDeleting}
+        />
+
+        <ConfirmModal
+          open={!!pendingLeaveGroupId}
+          onClose={() => setPendingLeaveGroupId(null)}
+          onConfirm={() => { if (pendingLeaveGroupId) handleLeaveGroup(pendingLeaveGroupId); }}
+          title="Leave this group?"
+          description="You'll stop receiving notifications from this group. The group itself stays for everyone else."
+          confirmText="Leave group"
+          variant="destructive"
+          loading={isLeaving}
+        />
       </div>
     </FeatureGate>
   );
