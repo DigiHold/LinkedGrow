@@ -259,7 +259,10 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
+          // h-dvh (dynamic viewport height) instead of h-screen so iOS Safari's
+          // URL bar doesn't push the user button below the visible viewport.
+          // h-screen = 100vh, which on iOS includes the area behind the chrome.
+          "fixed lg:sticky top-0 left-0 z-40 h-dvh flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
           isCollapsed ? "lg:w-20" : "lg:w-64",
           isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
         )}
@@ -416,7 +419,9 @@ export function Sidebar() {
         </nav>
 
         {/* User Section with Custom Menu */}
-        <div className="p-3 border-t border-border relative" ref={userMenuRef}>
+        {/* Safe-area padding ensures the user button sits above the iPhone home
+            indicator on iOS Safari & Chrome (both use WebKit). */}
+        <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border relative" ref={userMenuRef}>
           {/* Menu popup - appears above the button */}
           {isUserMenuOpen && (
             <div className={cn(
