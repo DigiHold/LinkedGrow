@@ -172,11 +172,16 @@ export default function SupportPage() {
                 <Textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Walk us through what you're seeing. Include steps to reproduce, screenshots if you can paste them, and what you expected to happen."
+                  placeholder="Walk us through what you're seeing. Include steps to reproduce and what you expected to happen."
                   rows={8}
                   maxLength={10000}
                   required
                 />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Need to share a screenshot? Upload it for free on{" "}
+                  <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
+                  and paste the link in your message.
+                </p>
               </div>
               {error && (
                 <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">

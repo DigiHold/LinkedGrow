@@ -208,6 +208,11 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
                 rows={4}
                 maxLength={10000}
               />
+              <p className="text-xs text-muted-foreground">
+                Need to share a screenshot? Upload it for free on{" "}
+                <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
+                and paste the link.
+              </p>
               {error && (
                 <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -237,6 +242,11 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
                 rows={4}
                 maxLength={10000}
               />
+              <p className="text-xs text-muted-foreground">
+                Need to share a screenshot? Upload it for free on{" "}
+                <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
+                and paste the link.
+              </p>
               {error && (
                 <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
