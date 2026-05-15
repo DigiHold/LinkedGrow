@@ -2,10 +2,35 @@
 
 import { useEffect, useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Send, CheckCircle, AlertCircle, MessageCircle } from "lucide-react";
+
+function MessageAvatar({ name, email, image, isAdmin }: { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean }) {
+  if (image) {
+    return (
+      <Image
+        src={image}
+        alt={name || email || "User"}
+        width={36}
+        height={36}
+        className="w-9 h-9 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  const initials = (name || email || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "?";
+  return (
+    <div
+      className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-semibold ${
+        isAdmin ? "bg-linear-to-br from-cyan-500 to-blue-600" : "bg-linear-to-br from-slate-400 to-slate-500"
+      }`}
+    >
+      {initials}
+    </div>
+  );
+}
 
 interface Ticket {
   id: string;
@@ -181,18 +206,36 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
             }
           >
             {m.isSystem ? (
-              <div className="flex items-center gap-2 mb-1.5 font-medium">
-                <MessageCircle className="w-4 h-4" /> System
-              </div>
+              <>
+                <div className="flex items-center gap-2 mb-1.5 font-medium">
+                  <MessageCircle className="w-4 h-4" /> System
+                </div>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
+              </>
             ) : (
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-medium text-sm">
-                  {m.isAdmin ? "LinkedGrow Team" : (m.senderName || m.senderEmail || "You")}
-                </span>
-                <span className="text-xs text-muted-foreground">{formatDate(m.createdAt)}</span>
+              <div className="flex gap-3">
+                <MessageAvatar
+                  name={m.senderName}
+                  email={m.senderEmail}
+                  image={m.senderImage}
+                  isAdmin={m.isAdmin}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="font-medium text-sm">
+                      {m.senderName || m.senderEmail || (m.isAdmin ? "Support" : "You")}
+                    </span>
+                    {m.isAdmin && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-600 text-white tracking-wide">
+                        SUPPORT
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">{formatDate(m.createdAt)}</span>
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
+                </div>
               </div>
             )}
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
           </div>
         ))}
       </div>

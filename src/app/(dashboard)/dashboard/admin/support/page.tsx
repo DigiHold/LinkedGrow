@@ -37,8 +37,12 @@ const STATUS_COLORS: Record<Ticket["status"], string> = {
   closed: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
 };
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
+function timeAgo(ts: number | string): string {
+  // API returns timestamps as ISO strings (NextResponse.json serializes Date),
+  // so coerce via new Date() instead of subtracting directly - otherwise we
+  // got "NaNd ago" because a number minus a string is NaN.
+  const ms = new Date(ts).getTime();
+  const diff = Date.now() - ms;
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
