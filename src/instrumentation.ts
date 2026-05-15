@@ -10,14 +10,23 @@ export async function register() {
     const APP_URL =
       process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
     const CLEANUP_URL = `${APP_URL}/api/cron/cleanup-media`;
+    const AUTO_CLOSE_URL = `${APP_URL}/api/cron/auto-close-tickets`;
 
     const schedules = await qstash.schedules.list();
-    const exists = schedules.find((s) => s.destination === CLEANUP_URL);
-
-    if (!exists) {
+    if (!schedules.find((s) => s.destination === CLEANUP_URL)) {
       await qstash.schedules.create({
         destination: CLEANUP_URL,
         cron: "0 4 * * *",
+        retries: 3,
+      });
+    }
+    // Auto-close in_progress support tickets that have been waiting on the
+    // user for 14+ days. Runs daily at 05:00 UTC, 1h after cleanup-media to
+    // spread load.
+    if (!schedules.find((s) => s.destination === AUTO_CLOSE_URL)) {
+      await qstash.schedules.create({
+        destination: AUTO_CLOSE_URL,
+        cron: "0 5 * * *",
         retries: 3,
       });
     }
