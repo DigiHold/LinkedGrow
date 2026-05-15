@@ -26,15 +26,18 @@ function InlineSupportForm({
   messages,
   defaultName,
   defaultEmail,
+  isPaidUser,
 }: {
   messages: Array<{ role: string; parts?: Array<{ type: string; text?: string }> }>;
   defaultName?: string;
   defaultEmail?: string;
+  isPaidUser?: boolean;
 }) {
   const [name, setName] = useState(defaultName || "");
   const [email, setEmail] = useState(defaultEmail || "");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [ticketUrl, setTicketUrl] = useState<string | null>(null);
 
   const buildConversationSummary = (): string => {
     if (messages.length === 0) return "";
@@ -70,6 +73,8 @@ function InlineSupportForm({
       });
 
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.ticketUrl) setTicketUrl(data.ticketUrl);
         setStatus("success");
       } else {
         setStatus("error");
@@ -89,8 +94,16 @@ function InlineSupportForm({
         </div>
         <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Ticket sent!</p>
         <p className="text-xs text-emerald-600 dark:text-emerald-500">
-          We&apos;ll reply to <strong>{email}</strong> as soon as possible.
+          {ticketUrl ? "We'll reply by email and you can track it in your support page." : <>We&apos;ll reply to <strong>{email}</strong> as soon as possible.</>}
         </p>
+        {ticketUrl && (
+          <a
+            href={ticketUrl}
+            className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+          >
+            View ticket
+          </a>
+        )}
       </div>
     );
   }
@@ -98,7 +111,9 @@ function InlineSupportForm({
   return (
     <div className="my-1 flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-900">
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Fill in the fields below to create a support ticket.
+        {isPaidUser
+          ? "This message will create a support ticket on your dashboard. We'll reply by email."
+          : "Fill in the fields below to create a support ticket."}
       </p>
       <div>
         <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Name</label>
@@ -191,7 +206,7 @@ export default function ChatWidget() {
   const pathname = usePathname();
 
   const { messages, sendMessage, status, setMessages } = useChat();
-  const [sessionUser, setSessionUser] = useState<{ name?: string; email?: string } | null>(null);
+  const [sessionUser, setSessionUser] = useState<{ name?: string; email?: string; isPaid?: boolean } | null>(null);
   const restoredRef = useRef(false);
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -239,7 +254,12 @@ export default function ChatWidget() {
       .then((res) => res.json())
       .then((data) => {
         if (data?.user) {
-          setSessionUser({ name: data.user.name, email: data.user.email });
+          const u = data.user as { name?: string; email?: string; stripeSubscriptionId?: string | null; isLifetimeDeal?: boolean };
+          setSessionUser({
+            name: u.name,
+            email: u.email,
+            isPaid: !!(u.stripeSubscriptionId || u.isLifetimeDeal),
+          });
         }
       })
       .catch(() => {});
@@ -563,6 +583,7 @@ export default function ChatWidget() {
                               messages={messages}
                               defaultName={sessionUser?.name || undefined}
                               defaultEmail={sessionUser?.email || undefined}
+                              isPaidUser={sessionUser?.isPaid}
                             />
                           );
                         }
