@@ -239,14 +239,17 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Sidebar Toggle */}
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-0 z-50 w-7.5 h-7.5 rounded-r-xl bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
-        aria-label="Open menu"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+      {/* Mobile Sidebar Toggle - hidden while sidebar is open so it doesn't
+          float over the sidebar content */}
+      {!isMobileOpen && (
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="lg:hidden fixed top-4 left-0 z-50 w-7.5 h-7.5 rounded-r-xl bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
+          aria-label="Open menu"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
