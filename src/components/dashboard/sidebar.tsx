@@ -508,7 +508,15 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
-                  window.dispatchEvent(new Event("open-chat-widget"));
+                  // Paid users get the proper ticket system; everyone else
+                  // (trial/free) keeps the chatbot since support tickets
+                  // are paid-only.
+                  const u = session?.user as { stripeSubscriptionId?: string | null; isLifetimeDeal?: boolean } | undefined;
+                  if (u?.stripeSubscriptionId || u?.isLifetimeDeal) {
+                    router.push("/dashboard/support");
+                  } else {
+                    window.dispatchEvent(new Event("open-chat-widget"));
+                  }
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
               >
