@@ -118,13 +118,13 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const handleClose = async (sendReview: boolean) => {
+  const handleClose = async (template: "review" | "thankyou" | "silent") => {
     setClosing(true);
     try {
       const res = await fetch(`/api/admin/support/tickets/${id}/close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sendReview }),
+        body: JSON.stringify({ template }),
       });
       if (res.ok) {
         setShowCloseModal(false);
@@ -156,7 +156,11 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
   }
 
   const isClosed = ticket.status === "closed";
-  const canSendReview = ticket.status === "resolved" && !ticket.reviewRequestSentAt;
+  // After a user marks resolved, admin can still close with one of two
+  // auto-templates. Review-only is hidden after sending once (one ask per
+  // ticket). Thank-you stays available so admin always has a no-write close.
+  const isResolvedNotClosed = ticket.status === "resolved";
+  const canSendReview = isResolvedNotClosed && !ticket.reviewRequestSentAt;
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
@@ -256,12 +260,34 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
                   <span>{error}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center">
-                {canSendReview && (
-                  <Button type="button" variant="outline" size="sm" onClick={() => handleClose(true)} disabled={closing}>
-                    <Star className="w-4 h-4 mr-2" /> Send review request
-                  </Button>
-                )}
+              <div className="flex justify-between items-center gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  {isResolvedNotClosed && (
+                    <>
+                      {canSendReview && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleClose("review")}
+                          disabled={closing}
+                          className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                        >
+                          <Star className="w-4 h-4 mr-2" /> Send review request
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleClose("thankyou")}
+                        disabled={closing}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" /> Send thank-you & close
+                      </Button>
+                    </>
+                  )}
+                </div>
                 <Button type="submit" disabled={sending || !reply.trim()} className="ml-auto">
                   {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                   Send reply
@@ -281,33 +307,33 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
       )}
 
       {showCloseModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
-            <button onClick={() => setShowCloseModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+            <button onClick={() => setShowCloseModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground" disabled={closing}>
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold mb-2">How was the resolution?</h2>
-            <p className="text-sm text-muted-foreground mb-6">Choose how to close this ticket. Only send a review request if the customer is happy.</p>
+            <h2 className="text-xl font-bold mb-2">Close this ticket</h2>
+            <p className="text-sm text-muted-foreground mb-6">Pick a closing template - we&apos;ll insert a system message in the thread and email the user. Need to write something custom? Cancel and use the reply box instead.</p>
             <div className="space-y-3">
               <button
-                onClick={() => handleClose(true)}
+                onClick={() => handleClose("review")}
                 disabled={closing}
                 className="w-full text-left rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-4 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300 mb-1">
-                  <Star className="w-5 h-5 fill-current" /> Happy customer - send review request
+                  <Star className="w-5 h-5 fill-current" /> Send review request
                 </div>
-                <p className="text-sm text-emerald-700 dark:text-emerald-400">Closes the ticket and emails the user with Google/Trustpilot/G2 review links.</p>
+                <p className="text-sm text-emerald-700 dark:text-emerald-400">Closes the ticket and emails the user the Google / Trustpilot / G2 review cards.</p>
               </button>
               <button
-                onClick={() => handleClose(false)}
+                onClick={() => handleClose("thankyou")}
                 disabled={closing}
                 className="w-full text-left rounded-xl border border-border p-4 hover:bg-accent transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center gap-2 font-semibold mb-1">
-                  <CheckCircle className="w-5 h-5" /> Closing without review
+                  <CheckCircle className="w-5 h-5 text-cyan-600" /> Send thank-you &amp; close
                 </div>
-                <p className="text-sm text-muted-foreground">Closes the ticket and emails the user a neutral closing message - no review ask.</p>
+                <p className="text-sm text-muted-foreground">Friendly thank-you email + invites them to open another ticket anytime.</p>
               </button>
             </div>
             {closing && (
