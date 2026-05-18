@@ -48,4 +48,4 @@ jobs:
         with:
           name: db-backup-${{ github.run_id }}
           path: ${{ env.BACKUP_FILE }}
-          retention-days: 90
+          retention-days: 14
