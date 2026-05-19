@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { PostSchedulerContent } from "./scheduler-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Post Scheduler - Schedule and Auto-Publish Posts | LinkedGrow",
+  title: "LinkedIn Post Scheduler: AI-Powered, Auto-Publish to Profile & Company Pages",
   description:
-    "Schedule LinkedIn posts to publish automatically at the perfect time. Visual content calendar, optimal time suggestions, direct publishing to profiles and company pages. From $19/month.",
+    "The LinkedIn post scheduler from LinkedGrow. Auto-publish to profiles and company pages, visual content calendar, optimal time suggestions. $13/mo billed yearly.",
   openGraph: {
-    title: "LinkedIn Post Scheduler - Schedule and Auto-Publish Posts | LinkedGrow",
+    title: "LinkedIn Post Scheduler: AI-Powered, Auto-Publish to Profile & Company Pages",
     description:
-      "Schedule LinkedIn posts to auto-publish at the perfect time. Visual calendar, optimal timing, profiles and company pages.",
+      "The LinkedIn post scheduler from LinkedGrow. Auto-publish to profiles and company pages. $13/mo billed yearly.",
     url: "https://linkedgrow.ai/linkedin-post-scheduler",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Post Scheduler | LinkedGrow",
+    title: "LinkedIn Post Scheduler: AI-Powered Auto-Publishing",
     description:
-      "Schedule and auto-publish LinkedIn posts. Visual calendar, optimal timing, company pages.",
+      "The LinkedIn post scheduler from LinkedGrow. Auto-publish to profiles & company pages. $13/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

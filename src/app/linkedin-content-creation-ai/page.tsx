@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { ContentCreationAiContent } from "./ai-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
+  title: "LinkedIn Content Creation AI: BYOK with 26 Models + Voice Training",
   description:
-    "Use AI to create LinkedIn content 10x faster. Generate posts with ChatGPT, Claude, Gemini. Create photos with the latest AI image models. Build carousels, schedule posts, and track analytics.",
+    "LinkedGrow's AI for LinkedIn content: 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing, plus dedicated voice training that captures your sentence rhythm.",
   openGraph: {
-    title: "LinkedIn Content Creation AI - Generate Posts, Photos & Carousels | LinkedGrow",
+    title: "LinkedIn Content Creation AI: BYOK with 26 Models + Voice Training",
     description:
-      "Use AI to create LinkedIn content 10x faster. Posts, photos, carousels, scheduling, and analytics in one AI-powered platform.",
+      "AI for LinkedIn content: 26 models via BYOK, dedicated voice training, AI image generation. Your sentence rhythm, your vocabulary.",
     url: "https://linkedgrow.ai/linkedin-content-creation-ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Content Creation AI | LinkedGrow",
+    title: "LinkedIn Content Creation AI: BYOK + Voice Training",
     description:
-      "AI-powered LinkedIn content creation. Generate posts, photos, and carousels 10x faster.",
+      "AI for LinkedIn content: 26 models via BYOK + dedicated voice training.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { BestPostGeneratorContent } from "./best-generator-content";
 
 export const metadata: Metadata = {
-  title: "Best AI LinkedIn Post Generator 2026 - 26+ Models Compared | LinkedGrow",
+  title: "Best LinkedIn Post Generator 2026: 26+ AI Models with BYOK",
   description:
-    "The best AI LinkedIn post generator with 26+ models: ChatGPT, Claude, Gemini, Grok. Voice training, unlimited generations, BYOK pricing from $19/month. Used by 179+ founders.",
+    "The best LinkedIn post generator in 2026 if AI model choice matters. 26+ models via BYOK (GPT, Claude, Gemini, Grok, Perplexity, Kimi), voice training, $13/mo billed yearly.",
   openGraph: {
-    title: "Best AI LinkedIn Post Generator 2026 - 26+ Models Compared | LinkedGrow",
+    title: "Best LinkedIn Post Generator 2026: 26+ AI Models with BYOK",
     description:
-      "26+ AI models, voice training, unlimited generations. The best AI post generator for LinkedIn in 2026.",
+      "The best LinkedIn post generator in 2026 if AI model choice matters. 26+ models via BYOK, voice training, $13/mo billed yearly.",
     url: "https://linkedgrow.ai/best-ai-linkedin-post-generator",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best AI LinkedIn Post Generator 2026 | LinkedGrow",
+    title: "Best LinkedIn Post Generator 2026: 26+ AI Models",
     description:
-      "26+ AI models, voice training, BYOK pricing. The best LinkedIn post generator compared.",
+      "Best LinkedIn post generator 2026: 26+ AI models via BYOK + voice training. $13/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

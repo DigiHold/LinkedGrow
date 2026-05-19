@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { FreePostGeneratorContent } from "./free-generator-content";
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
+  title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
   description:
-    "Try a free AI-powered LinkedIn post generator. 26+ models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your style. 7-day Pro trial with 3 generations per month, no credit card.",
+    "Free AI LinkedIn post writer with 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing. Voice training matches your style. 7-day Pro trial, no credit card.",
   openGraph: {
-    title: "Free LinkedIn Post Generator AI - No Signup Required to Try | LinkedGrow",
+    title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
     description:
-      "Free AI LinkedIn post generator. 26+ models, voice training. No credit card needed.",
+      "Free AI LinkedIn post writer with 26 models via BYOK. Voice training, 7-day Pro trial, no credit card.",
     url: "https://linkedgrow.ai/free-linkedin-post-generator-ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn Post Generator AI | LinkedGrow",
+    title: "Free AI LinkedIn Post Writer: BYOK + 26 Models",
     description:
-      "Generate LinkedIn posts for free with AI. 26+ models, voice training, no credit card.",
+      "Free AI LinkedIn post writer: 26 models via BYOK + voice training.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
