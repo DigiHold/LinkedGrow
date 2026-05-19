@@ -15,21 +15,18 @@ import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-pop
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import {
   Sparkles,
-  Zap,
   CircleDollarSign,
-  Clock,
-  Target,
   Key,
   AlertTriangle,
   Users,
-  Wand2,
   Brain,
   Mic,
-  Image,
-  Calendar,
-  MessageCircle,
-  PenTool,
   Bot,
+  Lock,
+  Layers,
+  Type,
+  GitCompare,
+  Settings,
 } from "lucide-react";
 
 export function ContentCreationAiContent() {
@@ -39,21 +36,21 @@ export function ContentCreationAiContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: Brain, text: "AI-Powered Content Creation" }}
+        badge={{ icon: Brain, text: "26 Models, One Voice" }}
         headline={{
-          line1: "Create LinkedIn content 10x faster",
-          gradient: "with AI",
+          line1: "LinkedIn content creation AI",
+          gradient: "with 26 models + voice training",
         }}
-        descriptionBold="LinkedIn rewards consistency. AI makes it possible."
-        description="LinkedGrow uses 26+ AI models to generate posts, photos, and carousels that match your unique writing voice. ChatGPT, Claude, Gemini, Kimi, and more - all accessible through one dashboard. Publish 3 to 5 posts per week without spending hours writing."
+        descriptionBold="The AI engine behind LinkedGrow: 26 text models, voice training, BYOK pricing."
+        description="Most LinkedIn AI tools lock you into one model with one writing style. LinkedGrow connects you to 26 frontier models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi, then trains a voice fingerprint from your own posts so every model writes in your cadence - not the generic default."
         valuePropBadges={[
-          { icon: Bot, text: "26+ AI models" },
-          { icon: Mic, text: "Voice training" },
-          { icon: Zap, text: "Posts in 2 minutes" },
+          { icon: Bot, text: "6 AI providers" },
+          { icon: Mic, text: "Voice fingerprint" },
+          { icon: Key, text: "BYOK, zero markup" },
         ]}
-        primaryCta={{ text: "Start creating with AI", href: "/sign-up" }}
+        primaryCta={{ text: "Try the AI free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial", "No credit card", "All 26 models on trial"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -64,209 +61,200 @@ export function ContentCreationAiContent() {
       />
 
       <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "The Content Creation Problem" }}
+        badge={{ icon: AlertTriangle, text: "The Single-Model AI Problem" }}
         badgeColor="red"
         headline={{
-          text: "Writing LinkedIn content manually is",
-          gradient: "unsustainable.",
+          text: "One AI model cannot write",
+          gradient: "every kind of post well.",
         }}
-        descriptionBold="Only 3% of LinkedIn's 1 billion users post weekly."
-        description="The reason is simple - creating quality LinkedIn content takes too long. Writing a single post can take 30 to 60 minutes when you factor in ideation, drafting, editing, and finding a visual. Multiply that by 3 to 5 posts per week and content creation becomes a full-time job."
+        descriptionBold="The model that nails your story posts is rarely the one that nails your data posts."
+        description="Most LinkedIn AI tools pick one model and hide it from you. That works until your content needs vary. A narrative anecdote, a benchmark teardown, and a hot-take react each have a model that does them better. Locking you into one is a tooling decision, not a quality decision."
         problems={[
           {
-            icon: Clock,
-            stat: "45 min",
-            title: "Average time to write one LinkedIn post",
+            icon: Lock,
+            stat: "1",
+            title: "Hidden AI model on most tools",
             description:
-              "Between coming up with an idea, writing the draft, editing for tone and length, and finding a matching visual, most creators spend 30 to 60 minutes per post. That is 3 to 5 hours per week just for LinkedIn content.",
+              "You do not know if the tool is using GPT, Claude, or something cheaper. You cannot switch models when one style stops working for you. You are stuck with whatever the vendor negotiated cheapest token rates for.",
             color: "from-red-500 to-rose-600",
           },
           {
-            icon: Target,
-            stat: "97%",
-            title: "Of LinkedIn users never post weekly",
+            icon: Mic,
+            stat: "0",
+            title: "Voice fingerprinting on capped tools",
             description:
-              "The LinkedIn algorithm massively rewards consistent posting. But the time investment required means the vast majority of professionals never build a posting habit. They know they should post more but the effort is too high.",
+              "Generic LinkedIn AI tools use a templated system prompt and feed your topic into it. There is no voice analysis pass. The output reads the same whether you are a CEO, a developer, or a recruiter. Your audience spots it in two seconds.",
             color: "from-orange-500 to-amber-600",
           },
           {
-            icon: MessageCircle,
-            stat: "Generic",
-            title: "AI tools that do not match your voice",
+            icon: CircleDollarSign,
+            stat: "3-10x",
+            title: "Token markup over provider rates",
             description:
-              "Most AI writing tools produce generic LinkedIn content that sounds robotic and formulaic. Your audience can spot AI-generated text immediately when it does not match your established writing style and professional voice.",
+              "Most capped tools charge $49 to $199 per month and resell tokens at 3 to 10 times what providers actually charge. You pay for the markup, the cap, and the lack of model choice all in one bill.",
             color: "from-red-500 to-orange-600",
           },
           {
-            icon: CircleDollarSign,
-            stat: "$49-199",
-            title: "Monthly cost of typical AI LinkedIn tools",
+            icon: Type,
+            stat: "Generic",
+            title: "Sentence cadence shared by all users",
             description:
-              "Most LinkedIn AI tools charge $49 to $199 per month and still limit your generations to 30 to 100 posts. When you need more, you pay premium overage fees. The economics do not work for most professionals.",
+              "If a tool has no voice training pass, every user gets the model's default sentence rhythm. That cadence is the single biggest signal that separates AI from human posts. Your audience has read that exact rhythm on a hundred other accounts.",
             color: "from-rose-500 to-red-600",
           },
         ]}
-        bottomQuote="I know I should post on LinkedIn more, but I spend an hour per post and it still does not sound quite right..."
+        bottomQuote="My old LinkedIn AI tool wrote every post like the same writer was behind it, and that writer was clearly not me..."
       />
 
       <LandingFeatures
-        badge={{ icon: Brain, text: "AI Content Features" }}
+        badge={{ icon: Brain, text: "What Makes the AI Engine Different" }}
         headline={{
-          text: "AI that creates content",
-          gradient: "that sounds like you",
+          text: "Five pieces working together",
+          gradient: "to write LinkedIn posts in your voice",
         }}
-        description="LinkedGrow is not just another AI writer. It is a complete AI content creation system designed specifically for LinkedIn with voice training, multi-model support, and an integrated publishing workflow."
+        description="LinkedGrow is not a single-model wrapper. It is a model-routing layer plus a voice-fingerprint layer, both running on your own API key. Here is what each layer does."
         features={[
           {
-            icon: Sparkles,
-            title: "26+ AI Text Models",
+            icon: Bot,
+            title: "26 text models from 6 providers",
             description:
-              "Choose from the latest models by OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Each model has different strengths for different content types. Switch between models anytime.",
-            highlights: ["6 AI providers", "26+ models", "Switch anytime"],
+              "GPT 5.2, GPT 5, Claude Opus 4.7, Claude Sonnet 4.6, Gemini 3 Pro, Gemini 3 Flash, Grok 4.1, Perplexity Sonar Reasoning Pro, Kimi K2.5, and 17 more. Always latest versions. Switch per draft - no contract lock-in to any provider.",
+            highlights: ["OpenAI + Anthropic + Google", "Grok + Perplexity + Kimi", "Always latest versions"],
             badge: "BYOK",
             color: "from-cyan-500 to-blue-600",
           },
           {
             icon: Mic,
-            title: "Voice Training",
+            title: "Voice fingerprint from 5 sample posts",
             description:
-              "Paste 3 to 5 of your best LinkedIn posts and the AI analyzes your writing patterns, vocabulary, sentence structure, and tone. Every generated post matches your unique voice so your audience cannot tell the difference.",
-            highlights: ["Style analysis", "Tone matching", "Vocabulary learning"],
-            badge: "Your voice",
+              "Paste up to 5 of your strongest LinkedIn posts. The AI extracts your sentence length distribution, opener patterns, vocabulary preferences, and paragraph density. Every subsequent draft starts from that fingerprint instead of from the model default.",
+            highlights: ["Style analysis pass", "Cadence matching", "Reused on every draft"],
+            badge: "Core",
             color: "from-emerald-500 to-green-600",
           },
           {
-            icon: Image,
-            title: "AI Photo Generation",
+            icon: GitCompare,
+            title: "Per-draft model switching",
             description:
-              "Generate custom photos for every post with the latest AI image models from OpenAI, Google, and Replicate. Describe the visual you want, generate it in the editor, and attach to your post in one click. No stock photos needed.",
-            highlights: ["10+ image models", "In-editor creation", "$0.02-0.08 per photo"],
-            badge: "Pro",
-            color: "from-amber-500 to-yellow-600",
-          },
-          {
-            icon: Wand2,
-            title: "Hook Generator",
-            description:
-              "The first line of your LinkedIn post determines whether people read the rest. The AI hook generator creates multiple scroll-stopping opening lines based on your topic so you can pick the one that will drive the most engagement.",
-            highlights: ["Multiple variations", "Proven patterns", "Topic-based"],
-            badge: "Pro",
+              "Draft a story-style post with Claude Opus 4.7. Switch to Gemini 3 Pro for the benchmark teardown. Use GPT 5.2 for the analytical post next week. Every generation lets you pick the model that fits the content type without leaving the editor.",
+            highlights: ["Same editor", "Same voice fingerprint", "Different model per draft"],
+            badge: "Routing",
             color: "from-violet-500 to-purple-600",
           },
           {
-            icon: Calendar,
-            title: "Schedule and Auto-Publish",
+            icon: Settings,
+            title: "Audience and tone calibration",
             description:
-              "Schedule AI-generated posts to publish at the optimal time for your audience. The content calendar shows your week at a glance. LinkedGrow publishes directly to your LinkedIn profile or company page without manual intervention.",
-            highlights: ["Optimal timing", "Visual calendar", "Auto-publish"],
-            badge: "Starter+",
+              "Set who reads you - founders, recruiters, marketers, engineers - and the AI adjusts jargon, reference density, and register accordingly. Override per post if you are publishing to a different audience that week.",
+            highlights: ["Audience profile", "Tone presets", "Per-post override"],
+            badge: "Setting",
+            color: "from-amber-500 to-yellow-600",
+          },
+          {
+            icon: Layers,
+            title: "Image AI with 10 models",
+            description:
+              "Nano Banana Pro (Gemini 3 Pro Image), Nano Banana, Imagen 4 Ultra, GPT Image 1.5, FLUX 1.1 Pro Ultra, FLUX 2 Pro, and more. Generate post visuals from a prompt in the same editor. Pro plan and above. Typical cost $0.02 to $0.08 per image.",
+            highlights: ["Google + OpenAI + Replicate", "$0.02-0.08 typical", "Pro+ plan"],
+            badge: "Pro",
             color: "from-pink-500 to-rose-500",
           },
           {
-            icon: PenTool,
-            title: "4-Step Post Wizard",
+            icon: Key,
+            title: "BYOK with zero markup",
             description:
-              "The guided wizard walks you through topic selection, tone setting, AI generation, and final editing. Select a post type (storytelling, how-to, thought leadership, or more), set parameters, and get a polished LinkedIn post in under 2 minutes.",
-            highlights: ["Guided workflow", "Multiple post types", "Under 2 minutes"],
-            badge: "Guided",
+              "You connect your API keys from the providers you want to use. LinkedGrow never proxies tokens or marks up pricing. You pay the providers their list rates directly. Most users spend $2 to $4 per month even with daily writing.",
+            highlights: ["Zero markup", "$2 to $4 typical", "Keys stored encrypted"],
+            badge: "Pricing",
             color: "from-teal-500 to-cyan-600",
           },
         ]}
-        ctaText="Start Creating AI Content"
+        ctaText="Test the AI free"
         ctaHref="/sign-up"
       />
 
       <LandingHowItWorks
         headline={{
-          text: "From blank page to published post in",
-          gradient: "2 minutes",
+          text: "How the AI engine writes a post in",
+          gradient: "your voice",
         }}
-        description="The AI handles the heavy lifting so you can focus on your message."
+        description="Three layers run before any draft is produced. Voice fingerprint, model routing, and audience calibration."
         steps={[
           {
             number: "01",
-            title: "Enter your topic or idea",
+            title: "Voice fingerprint pass",
             description:
-              "Tell the AI what you want to write about. Enter a topic, a key insight, a Reddit post to repurpose, or just a rough idea. Select the post type and tone. The 4-step wizard makes this quick and structured.",
-            icon: PenTool,
+              "Paste 3 to 5 of your strongest LinkedIn posts once. The AI runs a style analysis - sentence length distribution, opener cadence, vocabulary preferences, paragraph density. The fingerprint lives on your account and is fed into every subsequent draft.",
+            icon: Mic,
             color: "from-cyan-500 to-blue-500",
-            time: "20 sec",
+            time: "Once",
           },
           {
             number: "02",
-            title: "AI generates your post",
+            title: "Pick the model that fits",
             description:
-              "The AI creates a complete LinkedIn post matching your trained writing voice. Review, edit, or regenerate with a different model. Each model brings a different style and perspective to the same topic.",
-            icon: Brain,
+              "For each post, pick the model that suits the content type. Narrative and story posts tend to favor Claude Opus 4.7. Analytical or data posts favor GPT 5.2 or Gemini 3 Pro. Research-style takes lean on Perplexity Sonar Reasoning Pro. You decide per draft.",
+            icon: GitCompare,
             color: "from-violet-500 to-purple-500",
-            time: "30 sec",
+            time: "Per draft",
           },
           {
             number: "03",
-            title: "Add visuals and polish",
+            title: "Brief, generate, refine",
             description:
-              "Generate a matching AI photo or build a carousel directly in the editor. Add hooks, hashtags, and final formatting touches. Everything happens in one place with no copy-pasting between tools.",
-            icon: Image,
+              "Enter your topic, set tone and audience overrides if needed, and the AI combines your fingerprint with the selected model to produce a draft. Refine sections in the editor, regenerate paragraphs, or swap the hook. Publish or schedule when ready.",
+            icon: Brain,
             color: "from-emerald-500 to-green-500",
-            time: "30 sec",
-          },
-          {
-            number: "04",
-            title: "Schedule or publish",
-            description:
-              "Publish immediately to LinkedIn or schedule for the optimal posting time. The content calendar shows your full week so you can maintain a consistent posting schedule without overlap.",
-            icon: Zap,
-            color: "from-amber-500 to-yellow-500",
-            time: "10 sec",
+            time: "2 to 5 min",
           },
         ]}
-        totalTime="Under 2 minutes total"
+        totalTime="Under 5 minutes per post"
       />
 
       <LandingBYOK
-        badge={{ icon: Key, text: "Smart Economics" }}
+        badge={{ icon: Key, text: "BYOK Economics Explained" }}
         headline={{
-          text: "Why pay $99 per month for",
-          gradient: "capped AI generations?",
+          text: "Why bringing your own AI key",
+          gradient: "beats capped resellers",
         }}
-        description="Most LinkedIn AI tools charge premium prices and still limit how much content you can create. LinkedGrow's BYOK model gives you unlimited generations at a fraction of the cost."
+        description="Most LinkedIn AI tools resell tokens at 3 to 10 times what providers charge, then cap your monthly usage on top. BYOK flips the model - you pay providers directly and LinkedGrow charges only for the platform."
         competitor={{
-          name: "Typical LinkedIn AI Tools",
-          price: "$49-199/month",
+          name: "Capped Token-Reseller AI Tools",
+          price: "$49 to $199/month",
           issues: [
-            { text: "30 to 100 post generations per month with hard caps" },
-            { text: "One AI model with no choice - you get whatever they provide" },
-            { text: "No voice training - generic output that sounds like everyone else" },
-            { text: "Extra fees for image generation, scheduling, or analytics" },
-            { text: "Premium overage charges when you hit the monthly limit" },
+            { text: "Single hidden AI model with no per-draft choice" },
+            { text: "30 to 100 post generation cap per month" },
+            { text: "3x to 10x markup on token costs baked into the subscription" },
+            { text: "No voice fingerprint - templated prompt only" },
+            { text: "Overage fees when you exceed the monthly cap" },
           ],
         }}
         linkedgrow={{
-          price: "$19-79/month",
-          apiCost: "$2-4/month",
+          price: "$19/month (or $13/mo billed yearly)",
+          apiCost: "$2 to $4/month BYOK",
           benefits: [
-            { text: "Unlimited post generations with zero caps on any paid plan" },
-            { text: "26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, Kimi, and more" },
-            { text: "Voice training that matches your exact writing style and tone" },
-            { text: "AI costs average $2 to $4 per month at provider rates - zero markup" },
-            { text: "Photos, scheduling, analytics, and hooks all included" },
+            { text: "26 frontier models switchable per draft" },
+            { text: "Unlimited drafts on every paid plan" },
+            { text: "Zero markup on tokens - you pay providers directly at list rates" },
+            { text: "Voice fingerprint runs on every draft you generate" },
+            { text: "Cancel anytime - keys stay yours" },
           ],
         }}
-        savingsText="Unlimited AI content at 80% less than typical tools"
+        savingsText="Most users spend $2 to $4 per month on BYOK costs even when writing daily"
       />
 
       <LandingTestimonials
-        badge={{ icon: Users, text: "Creator Results" }}
+        badge={{ icon: Users, text: "Creators Who Switched Models" }}
         headline={{
-          text: "AI-powered creators are posting",
-          gradient: "3x more consistently",
+          text: "What changes when the AI",
+          gradient: "actually fits your voice",
         }}
-        description="LinkedIn professionals are using AI to break through the content creation bottleneck and maintain consistent posting schedules that drive real business results."
+        description="LinkedGrow users describe the difference voice fingerprinting plus per-draft model choice makes once they start using it."
         stats={[
-          { value: "26+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "< 2 min", label: "Average time per post", color: "text-emerald-600 dark:text-emerald-400" },
-          { value: "$2-4", label: "Monthly AI costs (BYOK)", color: "text-violet-600 dark:text-violet-400" },
-          { value: "3-5x", label: "More posts per week", color: "text-amber-600 dark:text-amber-400" },
+          { value: "26", label: "Text models accessible", color: "text-cyan-600 dark:text-cyan-400" },
+          { value: "6", label: "AI providers supported", color: "text-emerald-600 dark:text-emerald-400" },
+          { value: "$2-4", label: "Typical monthly AI spend", color: "text-violet-600 dark:text-violet-400" },
+          { value: "0%", label: "LinkedGrow markup on tokens", color: "text-amber-600 dark:text-amber-400" },
         ]}
         testimonials={[
           {
@@ -292,50 +280,55 @@ export function ContentCreationAiContent() {
 
       <LandingFAQ
         headline={{
-          text: "AI Content Creation",
+          text: "LinkedIn AI Engine",
           gradient: "FAQ",
         }}
-        description="Everything you need to know about using AI for LinkedIn content creation"
+        description="Common questions about the AI engine, model choice, voice training, and BYOK"
         faqs={[
           {
-            question: "What AI models does LinkedGrow use for content creation?",
+            question: "What AI models does LinkedGrow use for LinkedIn content creation?",
             answer:
-              "LinkedGrow supports 26+ text models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi (Moonshot AI) - always the latest versions. For images: 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
+              "LinkedGrow supports 26+ AI text models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi (Moonshot AI) - always the latest versions available. For image generation it supports 10+ models from OpenAI, Google, and Replicate. You choose which model to use for each generation.",
           },
           {
-            question: "How does AI content creation work for LinkedIn?",
+            question: "Why does model choice matter for LinkedIn content?",
             answer:
-              "Describe what you want to write about, select a post type and AI model, and get a complete LinkedIn post in seconds. Voice training ensures it matches your writing style. Edit, add a photo, and publish or schedule directly.",
+              "Different models have different writing strengths. Claude Opus 4.7 tends to handle narrative and story posts better. GPT 5.2 is strong on analytical and data-driven takes. Gemini 3 Pro is good for research-style content. Perplexity Sonar Reasoning Pro is the pick when you want sourced reasoning. Locking into one model means accepting its weakness on the post types it does not nail.",
           },
           {
-            question: "Will AI-generated content sound like me?",
+            question: "How does voice training capture my sentence rhythm?",
             answer:
-              "Yes. Voice training analyzes your past posts to learn your style, vocabulary, and tone. Every AI post matches your voice so your audience cannot tell the difference.",
+              "When you paste 3 to 5 sample posts, the AI runs a style analysis pass. It extracts your sentence length distribution, opener patterns, vocabulary preferences, paragraph density, and rhetorical habits. That fingerprint is stored on your account and fed into every draft prompt - independently of the model you select.",
           },
           {
-            question: "How much does AI content creation cost?",
+            question: "Will AI-generated LinkedIn content sound like me?",
             answer:
-              "Plans start at $19 per month. AI costs average $2 to $4 per month with BYOK - you pay providers directly with zero markup. That is 60 to 80 percent less than tools charging $49 to $199 per month.",
+              "Yes, if you train your voice. Voice training analyzes your past LinkedIn posts to learn your writing style, vocabulary, and tone. Every AI-generated post matches your voice so your audience cannot tell the difference between your manually written posts and AI-assisted ones.",
           },
           {
-            question: "Can AI create images and carousels too?",
+            question: "What is BYOK and why does it lower my cost so much?",
             answer:
-              "Yes. Pro includes AI image generation with 10+ models. Business adds carousel creation. Generate photos from text descriptions and attach directly to posts.",
+              "BYOK means Bring Your Own Key. You connect your own API key from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi. LinkedGrow does not proxy tokens or mark up pricing. You pay the AI provider their list rates directly. Most users spend $2 to $4 per month even with daily writing - compared to $49 to $199 with capped resellers.",
           },
           {
-            question: "Is AI content allowed on LinkedIn?",
+            question: "How much does the AI engine cost in total?",
             answer:
-              "Yes. LinkedIn allows AI-assisted content. The key is providing genuine value and reflecting your expertise. Voice training ensures authenticity.",
+              "LinkedGrow plans start at $19/mo for Starter with unlimited post generation. AI provider costs average $2 to $4/month with BYOK. That is 60 to 80 percent less than typical LinkedIn tools that charge $49 to $199/month with generation caps.",
           },
           {
-            question: "How many posts can I generate?",
+            question: "Can the AI engine also generate images and carousels?",
             answer:
-              "Unlimited on the 7-day Pro trial AND on all paid plans. No caps, no credit limits, no token restrictions. BYOK means you pay the AI provider directly at cost - usually a few cents per post.",
+              "Yes. The Pro plan includes AI image generation with 10+ models from Google, OpenAI, and Replicate. The Business plan adds carousel creation. Generate visuals from text in the same editor and attach to your scheduled posts.",
           },
           {
-            question: "Does LinkedGrow also schedule and publish?",
+            question: "Is AI content creation allowed on LinkedIn?",
             answer:
-              "Yes. Schedule posts to publish at optimal times directly from the editor. Visual content calendar, auto-publish to LinkedIn profiles and company pages.",
+              "Yes. LinkedIn allows AI-assisted content creation. The key is that your content should provide genuine value and reflect your professional expertise. Voice training ensures your AI-generated posts maintain your authentic voice.",
+          },
+          {
+            question: "How many LinkedIn posts can I generate with AI?",
+            answer:
+              "Unlimited on the 7-day Pro trial and on all paid plans. No caps, no credit limits, no token restrictions. With BYOK you generate as much as you want and pay the AI provider a few cents per post.",
           },
         ]}
       />
@@ -350,19 +343,19 @@ export function ContentCreationAiContent() {
       />
 
       <LandingCTA
-        badge="Start Creating AI-Powered LinkedIn Content"
+        badge="Test 26 AI Models on Your LinkedIn Content"
         headline={{
-          line1: "Ready to create LinkedIn content",
-          gradient: "10x faster with AI?",
+          line1: "Ready to pick the AI model",
+          gradient: "that fits your voice?",
         }}
-        description="Stop spending hours writing posts manually. Let AI handle the heavy lifting while you focus on your message and your business."
+        description="Train your voice fingerprint, switch between 26 frontier models per draft, and pay providers directly with zero markup. 7-day Pro trial, no credit card."
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "7-day Pro trial included",
-          "26+ AI models",
-          "Cancel anytime",
+          "7-day Pro trial",
+          "26 AI models",
           "Voice training included",
+          "BYOK, zero markup",
         ]}
       />
 

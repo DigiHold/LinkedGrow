@@ -16,20 +16,20 @@ import { LandingRelatedContent } from "@/components/landing/landing-related-cont
 import {
   Sparkles,
   Zap,
-  CircleDollarSign,
   Eye,
   Clock,
-  Palette,
   Target,
   Key,
   AlertTriangle,
   Users,
   Wand2,
   Layers,
-  FileText,
+  Type,
   MousePointerClick,
   PenTool,
-  Download,
+  ListChecks,
+  Bot,
+  ArrowRight,
 } from "lucide-react";
 
 export function CarouselGeneratorContent() {
@@ -39,21 +39,21 @@ export function CarouselGeneratorContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: Layers, text: "AI Carousel Generator" }}
+        badge={{ icon: Bot, text: "AI Builds the Carousel for You" }}
         headline={{
-          line1: "Create AI-powered LinkedIn carousels",
-          gradient: "that get 2x more clicks",
+          line1: "LinkedIn carousel maker",
+          gradient: "where AI writes every slide",
         }}
-        descriptionBold="Carousels are the highest-engagement format on LinkedIn."
-        description="LinkedGrow's AI carousel generator builds multi-slide carousels from your topics in minutes. AI generates the content for each slide, you customize with your brand colors and logo, then publish directly to LinkedIn. Swipeable carousels keep readers engaged longer than any other format."
+        descriptionBold="Paste a topic. The AI structures it, writes every slide, and hands you the finished draft."
+        description="Most carousel tools give you a blank canvas and call it a day. The AI carousel maker does the work before you ever touch the editor. It picks the slide count for your topic, drafts a hook for slide 1, writes the middle slides, and lands a call-to-action on the last. You review the draft, tweak what you want, and export to LinkedIn."
         valuePropBadges={[
+          { icon: Wand2, text: "AI writes every slide" },
+          { icon: ListChecks, text: "AI picks slide count" },
           { icon: MousePointerClick, text: "2x more clicks" },
-          { icon: Sparkles, text: "AI content assist" },
-          { icon: Palette, text: "Brand customization" },
         ]}
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Business plan feature", "AI content generation", "Cancel anytime"]}
+        trustIndicators={["Business plan feature", "AI writes every slide", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -64,208 +64,199 @@ export function CarouselGeneratorContent() {
       />
 
       <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "The Carousel Problem" }}
+        badge={{ icon: AlertTriangle, text: "Why Carousel Editors Stall You" }}
         badgeColor="red"
         headline={{
-          text: "Building LinkedIn carousels manually is",
-          gradient: "painfully time-consuming.",
+          text: "Most carousel tools hand you",
+          gradient: "a blank canvas and a deadline.",
         }}
-        descriptionBold="A 10-slide carousel can take 2+ hours to create from scratch."
-        description="Between planning the content structure, writing copy for each slide, designing in Canva or PowerPoint, maintaining brand consistency, and exporting to PDF - carousel creation is the most time-intensive content format on LinkedIn. Most creators give up before publishing their first one."
+        descriptionBold="The hard part of a LinkedIn carousel is not the design. It is the structure."
+        description="You can pick a template in two seconds. But deciding how to break your idea into 10 slides, what each slide should say, where the hook goes, where the CTA lands - that is where most carousels die before they get published. AI assist is supposed to solve this. Most tools only assist with one slide at a time."
         problems={[
           {
-            icon: Clock,
-            stat: "2+ hrs",
-            title: "To create one carousel manually",
+            icon: Type,
+            stat: "Blank",
+            title: "Editor with no AI structuring",
             description:
-              "Planning content for 8 to 12 slides, writing compelling copy for each one, designing visuals, and maintaining consistent branding across every slide takes most creators 2 to 4 hours. That is a full afternoon for a single post.",
+              "Standard carousel editors open to an empty canvas. You decide how many slides, what each slide says, what order they go in. The AI - if any - just writes one slide when asked. The structural decisions are still all yours.",
             color: "from-red-500 to-rose-600",
+          },
+          {
+            icon: ListChecks,
+            stat: "Manual",
+            title: "Slide count guessing for every topic",
+            description:
+              "8 slides or 12? Where does the hook go and where does the CTA land? Most editors leave that up to you. If you guess wrong, the carousel drops off mid-swipe and the algorithm punishes the post.",
+            color: "from-orange-500 to-amber-600",
+          },
+          {
+            icon: Clock,
+            stat: "2-3 hrs",
+            title: "From idea to draft in standard editors",
+            description:
+              "Even with templates and AI image assist, manually writing copy for 10 slides and arranging them in the right order takes most creators 2 to 3 hours per carousel. That is why most LinkedIn creators publish one carousel a month at best.",
+            color: "from-red-500 to-orange-600",
           },
           {
             icon: Eye,
             stat: "2x",
-            title: "More clicks than standard posts",
+            title: "More clicks left on the table without carousels",
             description:
-              "LinkedIn carousels receive approximately 2x more clicks than standard image posts. The swipeable format creates curiosity and encourages users to consume every slide. But the creation effort prevents most creators from publishing them regularly.",
-            color: "from-orange-500 to-amber-600",
-          },
-          {
-            icon: Palette,
-            stat: "$15-30",
-            title: "Canva Pro subscription for basic design",
-            description:
-              "Creating professional carousels requires a design tool like Canva Pro ($15 per month) or Adobe Creative Cloud ($55 per month). Even then, you need design skills to make carousels that look professional and on-brand.",
-            color: "from-red-500 to-orange-600",
-          },
-          {
-            icon: Target,
-            stat: "Inconsistent",
-            title: "Branding across slides without a system",
-            description:
-              "Maintaining consistent colors, fonts, and layout across 10+ slides is difficult without a template system. Most manually-created carousels have subtle inconsistencies that undermine the professional appearance.",
+              "LinkedIn carousels get roughly 2x the clicks of single-image posts. But the creation effort is the bottleneck. The format wins. The friction loses. Most creators give up on carousels because building one feels disproportionate to building a regular post.",
             color: "from-rose-500 to-red-600",
           },
         ]}
-        bottomQuote="I know carousels get better engagement but I cannot justify spending 3 hours creating one..."
+        bottomQuote="I want to publish carousels weekly, but every time I open the editor I spend an hour staring at a blank slide 1..."
       />
 
       <LandingFeatures
-        badge={{ icon: Layers, text: "AI Carousel Features" }}
+        badge={{ icon: Bot, text: "What the AI Maker Does Before You Edit" }}
         headline={{
-          text: "Build branded LinkedIn carousels",
-          gradient: "in minutes, not hours",
+          text: "AI carousel automation",
+          gradient: "before the editor opens",
         }}
-        description="The AI carousel generator handles content creation and design so you can publish high-performing carousels consistently without the manual effort."
+        description="The maker runs a structuring pass on your topic before you see the first slide. By the time the editor loads, the whole carousel is drafted - hook on slide 1, payload through the middle, CTA on the last."
         features={[
           {
-            icon: Wand2,
-            title: "AI Content Generation",
+            icon: ListChecks,
+            title: "AI structures your topic into slides",
             description:
-              "Enter your topic and the AI generates structured content for each slide - headlines, body text, statistics, and call-to-action copy. Review and edit each slide individually or regenerate specific slides that need improvement.",
-            highlights: ["Per-slide generation", "Structured content", "Edit individually"],
-            badge: "AI-powered",
+              "Paste a topic, paste a Reddit post, paste a thread - the AI breaks it into slides automatically. It picks the slide count (8 to 12 typical), decides what each slide carries, and lays out the arc. You start with a finished structure, not a blank canvas.",
+            highlights: ["8 to 12 slide range", "Auto slide count", "Arc detection"],
+            badge: "Automation",
             color: "from-cyan-500 to-blue-600",
           },
           {
-            icon: Palette,
-            title: "Brand Customization",
+            icon: Wand2,
+            title: "Every slide written by AI",
             description:
-              "Upload your logo, set your brand colors (primary and secondary), choose fonts, and customize the layout. Your brand settings are saved so every carousel you create maintains a consistent, professional visual identity automatically.",
-            highlights: ["Logo upload", "Brand colors", "Font selection"],
-            badge: "On-brand",
-            color: "from-emerald-500 to-green-600",
-          },
-          {
-            icon: Layers,
-            title: "Multi-Slide Builder",
-            description:
-              "Visual builder with drag-and-drop slide ordering. Add, remove, and reorder slides. Preview how each slide will look on LinkedIn before publishing. See the full carousel flow at a glance in the slide overview panel.",
-            highlights: ["Drag and drop", "Preview mode", "Slide overview"],
-            badge: "Visual",
-            color: "from-amber-500 to-yellow-600",
-          },
-          {
-            icon: FileText,
-            title: "Optimized Slide Count",
-            description:
-              "The AI suggests the optimal number of slides based on your topic complexity. Research shows 8 to 12 slides perform best on LinkedIn - enough to build momentum without causing drop-off. The AI structures content accordingly.",
-            highlights: ["8-12 slides optimal", "AI-suggested", "Data-backed"],
-            badge: "Optimized",
+              "Hook on slide 1 designed to stop the scroll. Body slides break your topic into single-idea units. Final slide carries the call-to-action. You can regenerate any slide individually or rewrite all of them in one pass.",
+            highlights: ["Hook slide 1", "Single-idea body", "CTA slide last"],
+            badge: "AI copy",
             color: "from-violet-500 to-purple-600",
           },
           {
-            icon: Download,
-            title: "PDF Export for LinkedIn",
+            icon: ArrowRight,
+            title: "Reddit-to-carousel converter",
             description:
-              "Export your finished carousel as a PDF document optimized for LinkedIn's carousel format. Each slide becomes a page with correct dimensions and file size. Upload to LinkedIn as a document post for the swipeable carousel experience.",
-            highlights: ["LinkedIn-ready PDF", "Correct dimensions", "One-click export"],
-            badge: "Export",
-            color: "from-pink-500 to-rose-500",
+              "Paste a viral Reddit thread URL. The AI extracts the key beats, structures them into a swipeable carousel, and writes the slides. Same trick works for blog posts, articles, or any URL with extractable text.",
+            highlights: ["URL input supported", "Auto beat extraction", "One-click conversion"],
+            badge: "Workflow",
+            color: "from-emerald-500 to-green-600",
           },
           {
             icon: Sparkles,
-            title: "Templates and Layouts",
+            title: "AI picks the model that writes best",
             description:
-              "Start from pre-designed carousel templates or build from scratch. Templates include proven structures for educational content, how-to guides, listicles, and storytelling formats. Customize any template with your brand elements.",
-            highlights: ["Pre-designed templates", "Multiple layouts", "Fully customizable"],
-            badge: "Templates",
+              "Carousels lean narrative. The maker defaults to models that handle pacing well - Claude Opus 4.7, Gemini 3 Pro - but you can switch to any of the 26 supported models if you want a different voice across slides.",
+            highlights: ["Narrative-tuned default", "26 models switchable", "Per-slide override"],
+            badge: "Model choice",
+            color: "from-amber-500 to-yellow-600",
+          },
+          {
+            icon: Layers,
+            title: "Visual editor opens with your draft loaded",
+            description:
+              "When the AI is done structuring and writing, the visual editor opens with the carousel already populated. Your brand colors, logo, and fonts apply automatically. Refine, regenerate, or just export.",
+            highlights: ["Auto-populated draft", "Brand auto-applied", "Refine optional"],
+            badge: "Handoff",
+            color: "from-pink-500 to-rose-500",
+          },
+          {
+            icon: Key,
+            title: "BYOK keeps AI generation affordable",
+            description:
+              "The structuring pass plus 10 slide drafts costs cents on BYOK pricing. Most users spend $2 to $4 per month on AI even when they publish carousels weekly. LinkedGrow takes zero markup.",
+            highlights: ["Zero markup", "$2 to $4 typical", "Pay providers directly"],
+            badge: "Pricing",
             color: "from-teal-500 to-cyan-600",
           },
         ]}
-        ctaText="Start Creating Carousels"
+        ctaText="Try the AI maker free"
         ctaHref="/sign-up"
       />
 
       <LandingHowItWorks
         headline={{
-          text: "From topic to published carousel in",
-          gradient: "under 10 minutes",
+          text: "Topic in. Carousel out.",
+          gradient: "Under 10 minutes.",
         }}
-        description="What used to take hours now takes minutes with AI-powered carousel creation."
+        description="The AI handles structure and copy. You handle taste."
         steps={[
           {
             number: "01",
-            title: "Enter your topic",
+            title: "Paste a topic or a URL",
             description:
-              "Provide your topic or key points for the carousel. The AI analyzes the content and suggests an optimal slide structure with the right number of slides for your topic complexity.",
+              "Drop in a topic, a key insight, a Reddit thread URL, or a blog post link. The AI analyzes the source, decides the optimal slide count for the topic complexity, and plans the arc - hook, payload, CTA.",
             icon: PenTool,
             color: "from-cyan-500 to-blue-500",
-            time: "1 min",
+            time: "30 sec",
           },
           {
             number: "02",
-            title: "AI generates slide content",
+            title: "AI writes every slide",
             description:
-              "The AI creates compelling content for each slide including headlines, body text, and a strong call-to-action on the final slide. Review each slide and edit or regenerate any that need adjusting.",
-            icon: Wand2,
+              "The maker drafts each slide in sequence. Hook slide pulls the swipe. Body slides break your idea into single thoughts. CTA slide closes. By the time you open the editor, the whole carousel is written.",
+            icon: Bot,
             color: "from-violet-500 to-purple-500",
-            time: "2 min",
+            time: "1 to 2 min",
           },
           {
             number: "03",
-            title: "Customize with your brand",
+            title: "Tweak and export",
             description:
-              "Apply your brand colors, logo, and fonts. Rearrange slides with drag-and-drop. Preview how the carousel will look on LinkedIn. Fine-tune individual slides until the whole flow feels right.",
-            icon: Palette,
-            color: "from-emerald-500 to-green-500",
-            time: "5 min",
-          },
-          {
-            number: "04",
-            title: "Export and publish",
-            description:
-              "Export as a LinkedIn-ready PDF. Publish directly to your profile or company page, or schedule for the optimal posting time. Your branded AI carousel is ready to drive 2x more clicks.",
+              "Open the editor with the draft loaded and your branding applied. Regenerate any slide that does not land, edit wording inline, swap the hook if you have a stronger one. Export as PDF and publish or schedule to LinkedIn.",
             icon: Zap,
-            color: "from-amber-500 to-yellow-500",
-            time: "1 min",
+            color: "from-emerald-500 to-green-500",
+            time: "5 to 8 min",
           },
         ]}
-        totalTime="Under 10 minutes total"
+        totalTime="Under 10 minutes per carousel"
       />
 
       <LandingBYOK
-        badge={{ icon: Key, text: "Smart Economics" }}
+        badge={{ icon: Key, text: "Why an AI Maker Beats a Manual Editor" }}
         headline={{
-          text: "Why pay for a separate carousel tool",
-          gradient: "when everything is included?",
+          text: "Manual editors give you the canvas.",
+          gradient: "The AI maker gives you the draft.",
         }}
-        description="Standalone carousel tools charge $20 to $40 per month on top of your other LinkedIn tools. LinkedGrow includes carousel creation alongside post generation, images, scheduling, and analytics in one subscription."
+        description="Standalone carousel editors stop at the editor. You still write every slide. LinkedGrow's AI maker drafts the entire carousel from your topic before you ever open the canvas - structure, copy, and CTA all written."
         competitor={{
-          name: "Separate Carousel + Content Tools",
-          price: "$60-130/month total",
+          name: "Standalone Carousel Editors",
+          price: "$20 to $40/month",
           issues: [
-            { text: "Carousel tool ($20-40) separate from content generator ($49-199)" },
-            { text: "No AI content generation - you write every slide manually" },
-            { text: "Basic templates with limited brand customization" },
-            { text: "Export to LinkedIn requires manual upload and formatting" },
-            { text: "No integration with your post generation or scheduling workflow" },
+            { text: "Empty canvas - you write every slide manually" },
+            { text: "No structural AI - you decide slide count and arc" },
+            { text: "AI assist limited to one slide at a time when present" },
+            { text: "No URL or thread-to-carousel conversion" },
+            { text: "No integrated scheduling - manual upload to LinkedIn" },
           ],
         }}
         linkedgrow={{
-          price: "$79/month",
-          apiCost: "$2-4/month",
+          price: "$79/month (Business)",
+          apiCost: "$2 to $4/month BYOK",
           benefits: [
-            { text: "AI carousel generator with full content assist and brand customization" },
-            { text: "Plus AI post generator, image creator, scheduling, analytics, A/B testing" },
-            { text: "AI costs average $2 to $4 per month with BYOK - zero markup" },
-            { text: "Everything in one platform with shared brand settings and workflow" },
-            { text: "Team collaboration and API access included on Business plan" },
+            { text: "AI drafts the entire carousel before you open the editor" },
+            { text: "Topic, Reddit URL, blog post - all valid inputs" },
+            { text: "26 AI models to switch between for different writing styles" },
+            { text: "Brand colors and logo auto-applied on every slide" },
+            { text: "Schedule and publish to LinkedIn from the same dashboard" },
           ],
         }}
-        savingsText="One platform replaces your entire LinkedIn tool stack"
+        savingsText="Most carousels go from topic to published in under 10 minutes"
       />
 
       <LandingTestimonials
-        badge={{ icon: Users, text: "Carousel Results" }}
+        badge={{ icon: Users, text: "Carousels That Actually Get Built" }}
         headline={{
-          text: "AI carousels are driving",
-          gradient: "record engagement",
+          text: "The carousels you stopped publishing,",
+          gradient: "back in your weekly mix",
         }}
-        description="LinkedIn creators are using AI-generated carousels to achieve engagement rates they never hit with standard posts."
+        description="LinkedIn creators describe what changes when the AI does the structural work and writes the slides for them."
         stats={[
           { value: "2x", label: "More clicks than standard posts", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "< 10 min", label: "To create a full carousel", color: "text-emerald-600 dark:text-emerald-400" },
-          { value: "3x", label: "Higher dwell time on content", color: "text-violet-600 dark:text-violet-400" },
+          { value: "< 10 min", label: "From topic to published", color: "text-emerald-600 dark:text-emerald-400" },
+          { value: "26", label: "AI models switchable", color: "text-violet-600 dark:text-violet-400" },
           { value: "10-12", label: "Optimal slides per carousel", color: "text-amber-600 dark:text-amber-400" },
         ]}
         testimonials={[
@@ -292,50 +283,60 @@ export function CarouselGeneratorContent() {
 
       <LandingFAQ
         headline={{
-          text: "AI Carousel Generator",
+          text: "AI Carousel Maker",
           gradient: "FAQ",
         }}
-        description="Everything about creating AI-powered LinkedIn carousels"
+        description="Common questions about AI-driven carousel generation"
         faqs={[
           {
-            question: "How does the AI carousel generator work?",
+            question: "How is the AI carousel maker different from a regular carousel editor?",
             answer:
-              "Enter your topic, AI generates content for each slide (headlines, body, CTA). Customize with your brand, export as PDF, publish to LinkedIn. Under 10 minutes total.",
+              "A regular editor gives you a canvas and waits for you to write the slides. The AI maker drafts the entire carousel first - it picks the slide count, writes the hook, writes the body slides, and lands the CTA. You only see the editor after the draft is built. If you prefer manual control, our visual carousel editor page is the right starting point.",
           },
           {
-            question: "Do carousels actually get more engagement?",
+            question: "What can I paste as a starting input?",
             answer:
-              "Yes. LinkedIn carousels get approximately 2x more clicks than standard image posts and significantly higher dwell time. The swipeable format drives curiosity and engagement.",
+              "A topic, a key insight, a Reddit thread URL, a blog post link, or a rough outline. The AI extracts what is useful and structures it into slides. URL-based conversion works for any page with extractable text content.",
           },
           {
-            question: "Can I customize with my brand?",
+            question: "Do LinkedIn carousels actually get more engagement?",
             answer:
-              "Yes. Upload logo, set brand colors, choose fonts, customize layouts. Settings are saved so every carousel maintains consistent branding automatically.",
+              "Yes. LinkedIn carousels (document posts) receive approximately 2x more clicks than standard image posts and significantly higher dwell time. The swipeable format encourages users to spend more time with your content, which signals high quality to the algorithm and increases your reach.",
           },
           {
-            question: "How many slides should a carousel have?",
+            question: "How does the AI decide the slide count?",
             answer:
-              "8 to 12 slides is optimal. Fewer than 6 underperform, more than 15 see higher drop-off. The AI suggests the right count based on your topic.",
+              "The AI analyzes the complexity and breadth of your topic. Simple topics get 8 slides. Wider topics get 10 to 12. The 8-to-12 range is what generally performs best on LinkedIn carousels - fewer than 6 underperforms and over 15 drops off mid-swipe. You can override the AI count manually.",
           },
           {
-            question: "Which plan includes carousels?",
+            question: "Can I customize the carousel design with my brand?",
             answer:
-              "Business plan at $79 per month. Includes carousel generator plus A/B testing, team collaboration, advanced analytics, API access, and priority support.",
+              "Yes. Upload your logo, set your brand colors (primary and secondary), choose fonts, and customize the layout of each slide. Your brand settings are saved to your profile so every carousel you create maintains a consistent visual identity automatically.",
           },
           {
-            question: "Can I schedule carousels?",
+            question: "What AI features does the carousel builder include?",
             answer:
-              "Yes. Create your carousel, schedule it through the content calendar, and LinkedGrow publishes it at the specified time. Unlimited scheduling on Business plan.",
+              "The AI structures your topic into slides, writes a hook for slide 1, drafts each body slide, and writes a call-to-action on the final slide. It also picks the optimal slide count, suggests model choice, and applies your brand automatically. You provide the topic and the AI does the rest.",
           },
           {
-            question: "What format are exported carousels?",
+            question: "How many slides should a LinkedIn carousel have?",
             answer:
-              "PDF format, which is what LinkedIn uses for carousel posts. Each slide becomes a page optimized for LinkedIn's dimensions and file size limits.",
+              "The optimal length is 8 to 12 slides. Research shows that carousels with fewer than 6 slides underperform because there is not enough content to build momentum, while carousels over 15 slides see higher drop-off rates. The AI suggests an optimal slide count based on your topic complexity.",
           },
           {
-            question: "Do I need design skills?",
+            question: "Which plan includes the AI carousel maker?",
             answer:
-              "No. The AI generates content, templates provide the structure, and brand settings handle the visual consistency. Just enter your topic and customize.",
+              "The carousel maker is available on the Business plan at $79 per month. This plan also includes A/B testing, team collaboration, advanced analytics, API access, and priority support. The Pro plan at $39 per month includes post generation and image generation but not carousel creation.",
+          },
+          {
+            question: "Can I schedule carousels to publish to LinkedIn?",
+            answer:
+              "Yes. After the AI generates your carousel, you can publish it directly to your LinkedIn profile or company page, or schedule it for a specific date and time using the content calendar. The Business plan includes unlimited scheduling.",
+          },
+          {
+            question: "What format are the exported carousels?",
+            answer:
+              "Carousels are exported as PDF documents, which is the format LinkedIn uses for carousel posts. Each slide becomes a page in the PDF. The export is optimized for LinkedIn's recommended dimensions and file size limits.",
           },
         ]}
       />
@@ -343,25 +344,25 @@ export function CarouselGeneratorContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "Carousel Generator", href: "/features/carousel-generator" },
+          { title: "Visual Carousel Editor", href: "/features/carousel-generator" },
           { title: "LinkedIn Carousel Guide", href: "/blog/linkedin-carousel-guide" },
           { title: "LinkedIn Image Sizes", href: "/free-tools/linkedin-image-sizes" },
         ]}
       />
 
       <LandingCTA
-        badge="Start Creating AI LinkedIn Carousels"
+        badge="Start Building Carousels with AI"
         headline={{
-          line1: "Ready to create carousels that get",
-          gradient: "2x more clicks?",
+          line1: "Ready to skip the blank canvas and",
+          gradient: "let AI draft the carousel?",
         }}
-        description="Stop spending hours building carousels manually. Let AI generate the content while you focus on your message and brand. Publish professional carousels in under 10 minutes."
+        description="Paste your topic, watch the AI structure it into slides, and tweak the draft until you are happy. Most carousels are published in under 10 minutes."
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Business plan feature",
-          "AI content generation",
-          "Brand customization",
+          "AI writes every slide",
+          "26 AI models",
           "Cancel anytime",
         ]}
       />

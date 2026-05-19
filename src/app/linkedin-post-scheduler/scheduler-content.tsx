@@ -39,17 +39,17 @@ export function PostSchedulerContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: CalendarCheck, text: "LinkedIn Post Scheduler" }}
+        badge={{ icon: CalendarCheck, text: "The LinkedIn Scheduler Tool" }}
         headline={{
-          line1: "Schedule LinkedIn posts to publish",
-          gradient: "at the perfect time",
+          line1: "LinkedIn post scheduler with AI,",
+          gradient: "profile + company page publishing",
         }}
-        descriptionBold="Post when your audience is most active - even when you are not online."
-        description="LinkedGrow's scheduler lets you write, generate, and schedule LinkedIn posts in advance. Visual content calendar, optimal time suggestions, auto-publish to personal profiles and company pages. Batch your content creation and let the scheduler handle the rest."
+        descriptionBold="The tool itself: an AI-integrated scheduler dashboard with visual calendar, profile + company page targeting, and auto-publish."
+        description="LinkedGrow's post scheduler is a product, not a how-to. The dashboard combines AI post generation, visual content calendar, profile and company page targeting, and reliable auto-publish into one tool. Looking for the step-by-step workflow on scheduling LinkedIn posts in advance? See our scheduling guide."
         valuePropBadges={[
-          { icon: Calendar, text: "Visual calendar" },
-          { icon: Timer, text: "Optimal timing" },
-          { icon: Building2, text: "Profiles & pages" },
+          { icon: Calendar, text: "Visual calendar UI" },
+          { icon: Building2, text: "Profile + company pages" },
+          { icon: Sparkles, text: "AI-integrated" },
         ]}
         primaryCta={{ text: "Start scheduling posts", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
@@ -64,49 +64,49 @@ export function PostSchedulerContent() {
       />
 
       <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "The Consistency Problem" }}
+        badge={{ icon: AlertTriangle, text: "What Most Schedulers Are Missing" }}
         badgeColor="red"
         headline={{
-          text: "Posting to LinkedIn manually is",
-          gradient: "inconsistent and stressful.",
+          text: "Most LinkedIn schedulers are",
+          gradient: "stripped-down tools.",
         }}
-        descriptionBold="The LinkedIn algorithm rewards consistency above almost everything else."
-        description="But manually posting requires you to be online at the right time, every day, multiple times per week. Miss a day and your reach drops. Get busy with client work and your posting habit breaks. Without a scheduler, consistency is nearly impossible to maintain."
+        descriptionBold="A scheduler that only schedules is a feature, not a product."
+        description="Buffer, Hootsuite, and the generic social media schedulers were built for cross-platform reach. They schedule. That is the entire product. They have no AI post generation, no native company page targeting workflow, and no integrated content calendar that connects to a LinkedIn-specific editor. The result is a tool you have to glue to four other tools to actually use."
         problems={[
           {
-            icon: Clock,
-            stat: "8-10 AM",
-            title: "Peak posting window you keep missing",
+            icon: Sparkles,
+            stat: "0",
+            title: "AI integration in standalone schedulers",
             description:
-              "The best time to post on LinkedIn is typically Tuesday through Thursday between 8 and 10 AM in your audience's timezone. But you are in meetings, commuting, or focused on deep work during those hours. Manual posting means you miss the optimal window regularly.",
+              "Standalone schedulers expect you to bring a finished post. They have no built-in AI generation, no voice training, and no model choice. You write the post elsewhere, paste it into the scheduler, and lose the connection between drafting and publishing.",
             color: "from-red-500 to-rose-600",
           },
           {
-            icon: Target,
-            stat: "3-5x",
-            title: "Per week for consistent growth",
+            icon: Building2,
+            stat: "Manual",
+            title: "Company page targeting in most tools",
             description:
-              "LinkedIn rewards creators who post 3 to 5 times per week with dramatically higher reach and follower growth. But maintaining that frequency manually means remembering to post every single weekday at the right time with no breaks or days off.",
+              "Posting to a company page versus a personal profile is a different workflow in most schedulers - if it is supported at all. LinkedGrow's scheduler treats both as first-class destinations from the same dashboard, with a single dropdown to switch.",
             color: "from-orange-500 to-amber-600",
           },
           {
-            icon: Bell,
-            stat: "Broken",
-            title: "Posting habits from busy weeks",
+            icon: Calendar,
+            stat: "Generic",
+            title: "Calendar UI built for every platform at once",
             description:
-              "One busy week of client work, travel, or a product launch breaks your posting momentum. Getting back into the habit takes weeks. A scheduler lets you batch content during slow periods and stay consistent during busy ones.",
+              "Cross-platform schedulers ship a calendar designed for Instagram, X, Facebook, and LinkedIn together. It works for none of them well. LinkedGrow's calendar UI shows LinkedIn-specific draft, scheduled, and published statuses with color coding.",
             color: "from-red-500 to-orange-600",
           },
           {
-            icon: Globe2,
-            stat: "Different",
-            title: "Timezones for your global audience",
+            icon: Timer,
+            stat: "15-min",
+            title: "Approximate windows on most scheduling APIs",
             description:
-              "If your audience spans multiple timezones, manually posting at the right time for each region is impossible. A scheduler lets you target specific times in specific timezones so your content reaches the right people at the right moment.",
+              "Most scheduling tools batch their publishing into 15-minute windows for cost. LinkedGrow uses QStash to fire posts at the exact minute you scheduled. The difference matters when your audience checks LinkedIn at 8:07 AM and your post lands at 8:15.",
             color: "from-rose-500 to-red-600",
           },
         ]}
-        bottomQuote="I know posting consistently will grow my LinkedIn presence but I just cannot be online at 8 AM every morning..."
+        bottomQuote="My old scheduler was just a queue. I want a tool that knows it is scheduling LinkedIn posts, not generic social posts..."
       />
 
       <LandingFeatures
@@ -334,7 +334,7 @@ export function PostSchedulerContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "Post Scheduling", href: "/features/post-scheduling" },
+          { title: "How to Schedule LinkedIn Posts in Advance (step-by-step)", href: "/features/post-scheduling" },
           { title: "Content Calendar", href: "/features/content-calendar" },
           { title: "Best Time to Post on LinkedIn", href: "/blog/best-time-to-post-linkedin" },
         ]}

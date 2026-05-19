@@ -91,9 +91,9 @@ export default function FreeLinkedinPostGeneratorAiPage() {
       />
       <FAQJsonLd questions={freeGenFAQs} />
       <SoftwareApplicationJsonLd
-        name="LinkedGrow Free AI LinkedIn Post Generator"
+        name="LinkedGrow Free AI LinkedIn Post Writer"
         url="https://linkedgrow.ai/free-linkedin-post-generator-ai"
-        description="Free AI-powered LinkedIn post generator with 26+ models, voice training, and BYOK pricing. 3 free generations per month, no credit card required."
+        description="Free AI LinkedIn post writer with 26+ models and voice training that matches your writing style. 7-day Pro trial with full Pro access, no credit card required."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <FreePostGeneratorContent />
