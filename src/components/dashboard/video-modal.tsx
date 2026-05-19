@@ -21,9 +21,9 @@ export function VideoModal({ videoId, triggerClassName }: VideoModalProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={triggerClassName || "text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"}
+        className={triggerClassName || "text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0"}
       >
-        <Video className="w-3.5 h-3.5" />
+        <Video className="w-3.5 h-3.5 shrink-0" />
         Watch Video
       </button>
 

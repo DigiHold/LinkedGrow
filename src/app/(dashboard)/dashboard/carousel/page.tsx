@@ -41,6 +41,8 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  PanelBottomClose,
+  PanelBottomOpen,
   Save,
   FolderOpen,
   Copy,
@@ -109,8 +111,53 @@ export default function CarouselPage() {
     website: false,
   });
   // Responsive sidebar state
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(() => {
+    if (typeof window !== "undefined") return window.innerWidth >= 1080;
+    return true;
+  });
+  const [showRightSidebar, setShowRightSidebar] = useState(() => {
+    if (typeof window !== "undefined") return window.innerWidth >= 1080;
+    return true;
+  });
+  const [showSlideManager, setShowSlideManager] = useState(() => {
+    if (typeof window !== "undefined") return window.innerWidth >= 1080;
+    return true;
+  });
+
+  // On small screens (<1080px), opening one panel closes the others to avoid overlay overlap.
+  const toggleLeftSidebar = useCallback(() => {
+    const isSmallScreen = typeof window !== "undefined" && window.innerWidth < 1080;
+    setShowLeftSidebar((prev) => {
+      const next = !prev;
+      if (next && isSmallScreen) {
+        setShowRightSidebar(false);
+        setShowSlideManager(false);
+      }
+      return next;
+    });
+  }, []);
+  const toggleRightSidebar = useCallback(() => {
+    const isSmallScreen = typeof window !== "undefined" && window.innerWidth < 1080;
+    setShowRightSidebar((prev) => {
+      const next = !prev;
+      if (next && isSmallScreen) {
+        setShowLeftSidebar(false);
+        setShowSlideManager(false);
+      }
+      return next;
+    });
+  }, []);
+  const toggleSlideManager = useCallback(() => {
+    const isSmallScreen = typeof window !== "undefined" && window.innerWidth < 1080;
+    setShowSlideManager((prev) => {
+      const next = !prev;
+      if (next && isSmallScreen) {
+        setShowLeftSidebar(false);
+        setShowRightSidebar(false);
+      }
+      return next;
+    });
+  }, []);
 
   // Save Template state
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
@@ -1161,18 +1208,10 @@ showToast("Failed to export images");
   return (
     <FeatureGate feature="carouselGenerator">
       <div className="h-screen flex flex-col overflow-hidden">
-        {/* Top Toolbar */}
-        <div className="h-14 border-b border-border bg-background flex items-center justify-between px-4">
+        {/* Top Toolbar - horizontally scrollable on small screens */}
+        <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto">
+          <div className="h-full flex items-center justify-between gap-4 px-4 min-w-max">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 shrink-0 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-                <Layers className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="font-semibold">Carousel Editor</h1>
-            </div>
-
-            <div className="h-6 w-px bg-border" />
-
             {/* Undo/Redo */}
             <div className="flex items-center gap-1">
               <Button
@@ -1245,8 +1284,8 @@ showToast("Failed to export images");
 
             <div className="h-6 w-px bg-border" />
 
-            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-              <HelpCircle className="w-3.5 h-3.5" />
+            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0">
+              <HelpCircle className="w-3.5 h-3.5 shrink-0" />
               Help?
             </Link>
           </div>
@@ -1447,6 +1486,7 @@ showToast("Failed to export images");
               Export As PDF
             </Button>
           </div>
+          </div>
         </div>
 
         {/* Main Editor Area */}
@@ -1457,9 +1497,9 @@ showToast("Failed to export images");
             size="icon"
             className={cn(
               "absolute left-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
-              showLeftSidebar && "md:hidden"
+              showLeftSidebar && "min-[1080px]:hidden"
             )}
-            onClick={() => setShowLeftSidebar(!showLeftSidebar)}
+            onClick={toggleLeftSidebar}
           >
             {showLeftSidebar ? (
               <PanelLeftClose className="w-4 h-4" />
@@ -1472,8 +1512,8 @@ showToast("Failed to export images");
           <div className={cn(
             "transition-all duration-300 ease-in-out",
             showLeftSidebar ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
-            "hidden md:block",
-            showLeftSidebar && "block! absolute md:relative z-10 h-full bg-background shadow-lg md:shadow-none"
+            "hidden min-[1080px]:block",
+            showLeftSidebar && "block! absolute min-[1080px]:relative z-10 h-full bg-background shadow-lg min-[1080px]:shadow-none"
           )}>
             {leftPanelView === 'layers' ? (
               <LayersPanel
@@ -1498,7 +1538,14 @@ showToast("Failed to export images");
               onSelectionChange={setSelectedElement}
               onCanvasChange={handleCanvasChange}
               onElementMoving={() => setElementUpdateTrigger(prev => prev + 1)}
-              onShowLayers={() => { setLeftPanelView('layers'); setShowLeftSidebar(true); }}
+              onShowLayers={() => {
+                setLeftPanelView('layers');
+                setShowLeftSidebar(true);
+                if (typeof window !== "undefined" && window.innerWidth < 1080) {
+                  setShowRightSidebar(false);
+                  setShowSlideManager(false);
+                }
+              }}
               className="m-auto"
             />
           </div>
@@ -1509,9 +1556,9 @@ showToast("Failed to export images");
             size="icon"
             className={cn(
               "absolute right-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
-              showRightSidebar && "md:hidden"
+              showRightSidebar && "min-[1080px]:hidden"
             )}
-            onClick={() => setShowRightSidebar(!showRightSidebar)}
+            onClick={toggleRightSidebar}
           >
             {showRightSidebar ? (
               <PanelRightClose className="w-4 h-4" />
@@ -1524,8 +1571,8 @@ showToast("Failed to export images");
           <div className={cn(
             "transition-all duration-300 ease-in-out",
             showRightSidebar ? "w-72 opacity-100" : "w-0 opacity-0 overflow-hidden",
-            "hidden md:block",
-            showRightSidebar && "block! absolute md:relative right-0 z-10 h-full bg-background shadow-lg md:shadow-none"
+            "hidden min-[1080px]:block",
+            showRightSidebar && "block! absolute min-[1080px]:relative right-0 z-10 h-full bg-background shadow-lg min-[1080px]:shadow-none"
           )}>
             <ElementProperties
               selectedElement={selectedElement}
@@ -1543,18 +1590,41 @@ showToast("Failed to export images");
               }}
             />
           </div>
+
+          {/* Slide Manager Toggle Button (visible on small screens or when slides panel hidden) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute bottom-2 left-1/2 -translate-x-1/2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
+              showSlideManager && "min-[1080px]:hidden"
+            )}
+            onClick={toggleSlideManager}
+            title={showSlideManager ? "Hide slides" : "Show slides"}
+          >
+            {showSlideManager ? (
+              <PanelBottomClose className="w-4 h-4" />
+            ) : (
+              <PanelBottomOpen className="w-4 h-4" />
+            )}
+          </Button>
         </div>
 
         {/* Bottom - Slide Manager */}
-        <SlideManager
-          slides={slides}
-          currentSlideIndex={currentSlideIndex}
-          onSlideSelect={handleSlideSelect}
-          onSlideAdd={handleSlideAdd}
-          onSlideDuplicate={handleSlideDuplicate}
-          onSlideDelete={handleSlideDelete}
-          onSlidesReorder={handleSlidesReorder}
-        />
+        <div className={cn(
+          "hidden min-[1080px]:block",
+          showSlideManager && "block! fixed bottom-0 left-0 right-0 z-30 shadow-lg min-[1080px]:relative min-[1080px]:bottom-auto min-[1080px]:shadow-none min-[1080px]:z-auto"
+        )}>
+          <SlideManager
+            slides={slides}
+            currentSlideIndex={currentSlideIndex}
+            onSlideSelect={handleSlideSelect}
+            onSlideAdd={handleSlideAdd}
+            onSlideDuplicate={handleSlideDuplicate}
+            onSlideDelete={handleSlideDelete}
+            onSlidesReorder={handleSlidesReorder}
+          />
+        </div>
 
         {/* Template Gallery Modal */}
         <TemplateGallery
