@@ -124,6 +124,27 @@ export default function CarouselPage() {
     return true;
   });
 
+  // Auto-close panels when viewport crosses below 1080px, auto-open when crossing above.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let wasSmall = window.innerWidth < 1080;
+    const onResize = () => {
+      const isSmall = window.innerWidth < 1080;
+      if (isSmall && !wasSmall) {
+        setShowLeftSidebar(false);
+        setShowRightSidebar(false);
+        setShowSlideManager(false);
+      } else if (!isSmall && wasSmall) {
+        setShowLeftSidebar(true);
+        setShowRightSidebar(true);
+        setShowSlideManager(true);
+      }
+      wasSmall = isSmall;
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   // On small screens (<1080px), opening one panel closes the others to avoid overlay overlap.
   const toggleLeftSidebar = useCallback(() => {
     const isSmallScreen = typeof window !== "undefined" && window.innerWidth < 1080;
@@ -1208,8 +1229,8 @@ showToast("Failed to export images");
   return (
     <FeatureGate feature="carouselGenerator">
       <div className="h-screen flex flex-col overflow-hidden">
-        {/* Top Toolbar - horizontally scrollable on small screens */}
-        <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto">
+        {/* Top Toolbar - horizontally scrollable on small screens, full height always */}
+        <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <div className="h-full flex items-center justify-between gap-4 px-4 min-w-max">
           <div className="flex items-center gap-4">
             {/* Undo/Redo */}
@@ -1591,24 +1612,25 @@ showToast("Failed to export images");
             />
           </div>
 
-          {/* Slide Manager Toggle Button (visible on small screens or when slides panel hidden) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "absolute bottom-2 left-1/2 -translate-x-1/2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
-              showSlideManager && "min-[1080px]:hidden"
-            )}
-            onClick={toggleSlideManager}
-            title={showSlideManager ? "Hide slides" : "Show slides"}
-          >
-            {showSlideManager ? (
-              <PanelBottomClose className="w-4 h-4" />
-            ) : (
-              <PanelBottomOpen className="w-4 h-4" />
-            )}
-          </Button>
         </div>
+
+        {/* Slide Manager Toggle Button - fixed so it sits above the slide overlay on small screens */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "fixed left-1/2 -translate-x-1/2 z-40 h-8 w-8 bg-background/95 backdrop-blur-sm shadow-md min-[1080px]:hidden",
+            showSlideManager ? "bottom-42" : "bottom-3"
+          )}
+          onClick={toggleSlideManager}
+          title={showSlideManager ? "Hide slides" : "Show slides"}
+        >
+          {showSlideManager ? (
+            <PanelBottomClose className="w-4 h-4" />
+          ) : (
+            <PanelBottomOpen className="w-4 h-4" />
+          )}
+        </Button>
 
         {/* Bottom - Slide Manager */}
         <div className={cn(
