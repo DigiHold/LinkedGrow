@@ -19,8 +19,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq, and, lte, isNull, isNotNull } from "drizzle-orm";
+import { users, affiliates } from "@/lib/db/schema";
+import { eq, and, lte, isNull, isNotNull, notExists } from "drizzle-orm";
 import { addToInactiveWarningList, brevoDate } from "@/lib/newsletter";
 import { deleteUserData } from "@/lib/user-deletion";
 
@@ -48,7 +48,9 @@ async function runInactiveAccounts(): Promise<{
 
   // ---------- Phase A: Day 55 warning ----------
   // Pick accounts created between 60 and 55 days ago that never connected
-  // LinkedIn, didn't pay, no LTD, not admin. They get the warning email.
+  // LinkedIn, didn't pay, no LTD, not admin, not an affiliate. They get the
+  // warning email. Affiliates are excluded entirely - they're partners, not
+  // trial signups, and may never intend to use the product themselves.
   const warnCandidates = await db
     .select({
       id: users.id,
@@ -64,7 +66,10 @@ async function runInactiveAccounts(): Promise<{
         isNull(users.stripeSubscriptionId),
         eq(users.isLifetimeDeal, false),
         eq(users.isAdmin, false),
-        isNotNull(users.email)
+        isNotNull(users.email),
+        notExists(
+          db.select().from(affiliates).where(eq(affiliates.userId, users.id))
+        )
       )
     );
 
@@ -97,7 +102,10 @@ async function runInactiveAccounts(): Promise<{
         eq(users.plan, "free"),
         isNull(users.stripeSubscriptionId),
         eq(users.isLifetimeDeal, false),
-        eq(users.isAdmin, false)
+        eq(users.isAdmin, false),
+        notExists(
+          db.select().from(affiliates).where(eq(affiliates.userId, users.id))
+        )
       )
     );
 
@@ -134,6 +142,16 @@ async function runInactiveAccounts(): Promise<{
         continue;
       }
       if (!fresh.createdAt || fresh.createdAt > sixtyDaysAgo) {
+        stats.delete_skipped++;
+        continue;
+      }
+
+      // Race-safety: if an affiliate record was created between the initial
+      // query and now, skip the delete. Affiliates are partners, never auto-deleted.
+      const affiliateRecord = await db.query.affiliates.findFirst({
+        where: eq(affiliates.userId, candidate.id),
+      });
+      if (affiliateRecord) {
         stats.delete_skipped++;
         continue;
       }
