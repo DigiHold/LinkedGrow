@@ -4,6 +4,16 @@
 >
 > LinkedGrow is pre-launch with ZERO users. Never add backward compatibility code, legacy field mappings, migration shims, or "for old users" logic. If something needs to change, change it directly. Delete unused code completely - no commented code, no "deprecated" markers, no fallbacks.
 
+> **CRITICAL: LINKEDGROW HAS NO FREE PLAN**
+>
+> LinkedGrow is **NOT free** and does **NOT have a free plan**. Every signup gets a **7-day Pro trial** (full Pro features, no credit card required). After 7 days the account flips to `plan='free'` — that is the **paywall state**, not a usable plan. Every feature is gated and middleware redirects to `/dashboard/upgrade`.
+>
+> In ALL marketing copy, comparison pages, landing pages, CTAs, emails, and external content:
+> - ✅ Say: "7-day Pro trial", "free for 7 days", "Try free for 7 days", "no credit card required", "Start your free trial"
+> - ❌ NEVER say: "free plan", "permanent free plan", "starts free" (implies forever), "Yes" in a free-plan column of a comparison table
+>
+> In comparison tables, LinkedGrow's "Free Plan" cell must be `"7-day trial"` with the trial state (⚠ icon), NOT `"Yes (permanent)"` with the positive check. The 3 post cycles/mo allowance on `plan='free'` is residual access for the paywall state, not a marketable free tier.
+
 > **CRITICAL: SECURITY-FIRST DEVELOPMENT**
 >
 > Every piece of code you write MUST be evaluated for security vulnerabilities BEFORE committing. This is non-negotiable. For EVERY new route, page, or feature, run through this checklist:

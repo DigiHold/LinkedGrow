@@ -68,7 +68,7 @@ const bestGenFAQs = [
   {
     question: "How much does the best AI LinkedIn post generator cost?",
     answer:
-      "LinkedGrow starts free with 3 generations per month. Starter is $19 per month with unlimited generations. Pro is $39 per month adding image generation and analytics. Business is $79 per month with carousels, A/B testing, team collaboration, and API access. BYOK AI costs are $2 to $4 per month on average with zero markup from LinkedGrow.",
+      "LinkedGrow includes a 7-day Pro trial with full Pro access, no credit card required. Starter is $19 per month with unlimited generations. Pro is $39 per month adding image generation and analytics. Business is $79 per month with carousels, A/B testing, team collaboration, and API access. BYOK AI costs are $2 to $4 per month on average with zero markup from LinkedGrow.",
   },
   {
     question: "Can I publish directly to LinkedIn from the generator?",

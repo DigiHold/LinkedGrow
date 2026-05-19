@@ -219,7 +219,7 @@ export function PostGeneratorFreeContent() {
           text: "Why pay $99 per month for",
           gradient: "limited AI generations?",
         }}
-        description="Most AI LinkedIn tools charge premium prices and cap how many posts you can generate. LinkedGrow starts free and keeps costs dramatically lower with the BYOK model."
+        description="Most AI LinkedIn tools charge premium prices and cap how many posts you can generate. LinkedGrow includes a 7-day Pro trial and keeps costs dramatically lower with the BYOK model."
         competitor={{
           name: "Typical AI LinkedIn Tools",
           price: "$49-199/month",
