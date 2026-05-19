@@ -4,6 +4,7 @@ import { SocialProof } from "@/components/marketing/social-proof";
 import { ProblemSolution } from "@/components/marketing/problem-solution";
 import { BYOKSection } from "@/components/marketing/byok-section";
 import { Features } from "@/components/marketing/features";
+import { FreeToolsHighlight } from "@/components/marketing/free-tools-highlight";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
@@ -28,6 +29,7 @@ export default function HomePage() {
       <ProblemSolution />
       <BYOKSection />
       <Features />
+      <FreeToolsHighlight />
       <HowItWorks />
       <Pricing />
       <FAQ />
