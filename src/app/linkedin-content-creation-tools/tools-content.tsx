@@ -325,7 +325,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The 7-day Pro trial includes 3 AI post generations per month with no credit card required. Paid plans start at $19 per month for unlimited generations.",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. No credit card required to start. After the trial, paid plans start at $13/mo (billed yearly).",
           },
           {
             question: "How does the BYOK model work?",

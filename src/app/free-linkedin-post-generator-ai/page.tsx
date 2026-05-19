@@ -38,7 +38,7 @@ const freeGenFAQs = [
   {
     question: "Is this LinkedIn post generator AI really free?",
     answer:
-      "Yes. LinkedGrow offers a 7-day Pro trial with 3 AI post generations per month. You get access to all 26+ AI models and voice training with no credit card required. For unlimited generations, paid plans start at $19 per month.",
+      "Yes. LinkedGrow's 7-day Pro trial gives you full Pro access - unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. No credit card required to start. After the trial, paid plans start at $13/mo (billed yearly) for unlimited generation.",
   },
   {
     question: "Do I need to sign up to use the free AI post generator?",
@@ -48,7 +48,7 @@ const freeGenFAQs = [
   {
     question: "What AI models can I use on the 7-day Pro trial?",
     answer:
-      "The 7-day Pro trial gives you access to all 26+ supported models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. You connect your own API key from any provider. The 3 generations per month limit applies to all models.",
+      "The 7-day Pro trial gives you access to all 26 supported models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. You connect your own API key from any provider (BYOK), and you can switch between models on every generation.",
   },
   {
     question: "How does voice training work on the 7-day Pro trial?",
@@ -56,9 +56,9 @@ const freeGenFAQs = [
       "Voice training is available on all plans including free. Paste 3 to 5 of your best LinkedIn posts and the AI analyzes your writing style, vocabulary, and tone. Every post it generates after that will match your voice. This is the most important feature for making AI content sound authentic.",
   },
   {
-    question: "What happens after I use my 3 free generations?",
+    question: "What happens after the 7-day trial ends?",
     answer:
-      "Your generations reset at the start of each month. If you want unlimited generations immediately, you can upgrade to the Starter plan at $19 per month. Your voice training data and all settings carry over when you upgrade.",
+      "After the 7-day Pro trial, you'll need a paid plan to continue. Starter is $13/mo (billed yearly) for unlimited generation. Your voice training data and all settings carry over automatically when you upgrade.",
   },
   {
     question: "How much does the paid plan cost after free?",

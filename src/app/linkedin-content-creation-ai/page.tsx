@@ -68,7 +68,7 @@ const aiContentFAQs = [
   {
     question: "How many LinkedIn posts can I generate with AI?",
     answer:
-      "Unlimited on all paid plans. The 7-day Pro trial includes 3 AI generations per month. Paid plans have no caps, no credit limits, and no token restrictions. With BYOK, you generate as much as you want and pay the AI provider a few cents per post.",
+      "Unlimited on the 7-day Pro trial AND on all paid plans. No caps, no credit limits, no token restrictions. With BYOK, you generate as much as you want and pay the AI provider a few cents per post.",
   },
   {
     question: "Does LinkedGrow also schedule and publish AI content?",

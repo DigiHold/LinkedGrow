@@ -45,9 +45,9 @@ export function FreePostGeneratorContent() {
           gradient: "powered by AI",
         }}
         descriptionBold="Generate your first LinkedIn posts without paying anything."
-        description="LinkedGrow's 7-day Pro trial gives you 3 AI-powered post generations per month. Access all 26+ AI models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
+        description="LinkedGrow's 7-day Pro trial gives you full Pro access with unlimited AI post generation. Access all 26 AI models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi. Voice training matches your writing style from day one. No credit card needed, no hidden costs, no surprises."
         valuePropBadges={[
-          { icon: Gift, text: "3 free generations" },
+          { icon: Gift, text: "Full Pro access" },
           { icon: CreditCard, text: "No card required" },
           { icon: Mic, text: "Voice training free" },
         ]}
@@ -115,7 +115,7 @@ export function FreePostGeneratorContent() {
           text: "A 7-day Pro trial that actually",
           gradient: "delivers quality",
         }}
-        description="LinkedGrow's 7-day Pro trial is not a crippled trial. You get access to the same AI models, voice training, and post wizard that paid users have - just with 3 generations per month."
+        description="LinkedGrow's 7-day Pro trial is not a crippled trial. You get the same AI models, voice training, and post wizard that paid Pro users have - with unlimited generation for the entire trial period."
         features={[
           {
             icon: Brain,
@@ -256,19 +256,19 @@ export function FreePostGeneratorContent() {
         stats={[
           { value: "Free", label: "No credit card needed", color: "text-cyan-600 dark:text-cyan-400" },
           { value: "26+", label: "AI models on Pro trial", color: "text-emerald-600 dark:text-emerald-400" },
-          { value: "3", label: "Generations per month", color: "text-violet-600 dark:text-violet-400" },
+          { value: "26", label: "AI models on trial", color: "text-violet-600 dark:text-violet-400" },
           { value: "$0", label: "Total cost to start", color: "text-amber-600 dark:text-amber-400" },
         ]}
         testimonials={[
           {
             quote:
-              "I tried 3 free LinkedIn generators before LinkedGrow. The others used outdated AI and had no voice training. LinkedGrow's 7-day Pro trial gave me the latest models, voice matching, and 3 posts that actually sounded like me. Upgraded to Starter the same week.",
+              "I tried several free LinkedIn generators before LinkedGrow. The others used outdated AI and had no voice training. LinkedGrow's 7-day Pro trial gave me the latest models, voice matching, and posts that actually sounded like me. Upgraded to Starter the same week.",
             author: "Nina R.",
             role: "Freelance Consultant, 4K Followers",
           },
           {
             quote:
-              "The 7-day Pro trial was enough to prove the concept. I generated 3 posts, trained my voice, and published them to LinkedIn. The engagement was noticeably better than my manually written posts. Now I use the Starter plan and post 4 times per week.",
+              "The 7-day Pro trial was enough to prove the concept. I generated a week of posts, trained my voice, and published them to LinkedIn. The engagement was noticeably better than my manually written posts. Now I use the Starter plan and post 4 times per week.",
             author: "Marcus W.",
             role: "Product Manager, 9K Followers",
           },
@@ -291,7 +291,7 @@ export function FreePostGeneratorContent() {
           {
             question: "Is this really free with no hidden costs?",
             answer:
-              "Yes. The 7-day Pro trial includes 3 generations per month, all AI models, and voice training. No credit card required. No trial period. No surprise charges. 7-day Pro trial.",
+              "Yes. The 7-day Pro trial gives you full Pro access - unlimited generation, all 26 AI models, voice training, scheduling. No credit card required, no surprise charges.",
           },
           {
             question: "Do I need to sign up?",
@@ -309,9 +309,9 @@ export function FreePostGeneratorContent() {
               "Yes. Paste your sample posts and the AI learns your style. This is included on the 7-day Pro trial - no competitor offers this for free.",
           },
           {
-            question: "What happens after 3 generations?",
+            question: "What happens after the 7-day trial ends?",
             answer:
-              "Wait for the monthly reset or upgrade to Starter at $19 per month for unlimited generations. Voice training and settings carry over.",
+              "Upgrade to Starter at $13/mo (billed yearly) for unlimited generation. Voice training and settings carry over automatically.",
           },
           {
             question: "How much is the paid plan?",
@@ -350,9 +350,9 @@ export function FreePostGeneratorContent() {
         primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
-          "3 free generations",
+          "7-day Pro trial",
           "No credit card",
-          "All AI models",
+          "All 26 AI models",
           "Voice training included",
         ]}
       />

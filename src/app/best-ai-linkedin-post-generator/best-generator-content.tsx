@@ -39,13 +39,13 @@ export function BestPostGeneratorContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: Award, text: "Best AI Post Generator 2026" }}
+        badge={{ icon: Award, text: "Best LinkedIn Post Generator 2026" }}
         headline={{
-          line1: "The best AI LinkedIn post generator",
-          gradient: "with 26+ models",
+          line1: "Best LinkedIn Post Generator:",
+          gradient: "What to Look For + Why LinkedGrow Wins",
         }}
-        descriptionBold="Not all AI LinkedIn tools are created equal."
-        description="LinkedGrow gives you access to 26+ AI models - ChatGPT, Claude, Gemini, Grok, and more. Voice training matches your writing style. Unlimited generations with BYOK pricing. No caps, no generic output, no compromises."
+        descriptionBold="The best LinkedIn post generator comes down to three things: AI model choice, voice training, and transparent pricing."
+        description="Most LinkedIn AI tools lock you into a single model, cap your generations, and bury the real cost in opaque pricing. LinkedGrow approaches it differently with 26+ AI models via BYOK, voice training on every plan, and total cost transparency. Here is what to evaluate and why this approach wins."
         valuePropBadges={[
           { icon: Award, text: "26+ AI models" },
           { icon: Mic, text: "Voice training" },

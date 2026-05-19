@@ -38,21 +38,21 @@ export function PostGeneratorFreeContent() {
       <Header />
 
       <LandingHero
-        badge={{ icon: Gift, text: "Free AI Post Generator" }}
+        badge={{ icon: Gift, text: "Free LinkedIn Post Generator" }}
         headline={{
-          line1: "Generate LinkedIn posts for free",
-          gradient: "with AI",
+          line1: "Free LinkedIn Post Generator:",
+          gradient: "7-Day Pro Trial With Full Access",
         }}
-        descriptionBold="Create professional LinkedIn posts without spending a dollar."
-        description="LinkedGrow's 7-day Pro trial gives you 3 AI post generations per month with access to 26+ models including ChatGPT, Claude, and Gemini. Voice training matches your writing style so every post sounds authentically you. No credit card needed to start."
+        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. No credit card required to start."
+        description="The 7-day Pro trial includes unlimited AI generation across 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK, plus voice training, AI image generation, scheduling, and analytics. Test the full product before paying anything."
         valuePropBadges={[
-          { icon: Gift, text: "7-day Pro trial included" },
-          { icon: Brain, text: "26+ AI models" },
+          { icon: Gift, text: "7-day Pro trial" },
+          { icon: Brain, text: "26 AI models" },
           { icon: Mic, text: "Voice training" },
         ]}
-        primaryCta={{ text: "Start generating free", href: "/sign-up" }}
+        primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["3 free generations/month", "No credit card required", "Upgrade anytime"]}
+        trustIndicators={["No credit card required", "Full Pro access", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -235,7 +235,7 @@ export function PostGeneratorFreeContent() {
           price: "Free - $19/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "7-day Pro trial with 3 generations per month to start" },
+            { text: "7-day Pro trial with full Pro access - no card required" },
             { text: "Unlimited generations on all paid plans - no caps ever" },
             { text: "26+ AI models from OpenAI, Anthropic, Google, xAI, and more" },
             { text: "Voice training matches your writing style on all plans" },
@@ -290,7 +290,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "Is the AI LinkedIn post generator really free?",
             answer:
-              "Yes. The 7-day Pro trial includes 3 AI post generations per month with no credit card required. For unlimited generation, paid plans start at $19 per month with BYOK AI costs of $2 to $4 per month.",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 26 models via BYOK, voice training, and scheduling - no credit card required to start. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
           },
           {
             question: "What AI models are available?",

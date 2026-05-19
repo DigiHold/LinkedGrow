@@ -330,7 +330,7 @@ export function ContentCreationAiContent() {
           {
             question: "How many posts can I generate?",
             answer:
-              "Unlimited on all paid plans. 7-day Pro trial includes 3 generations per month. No caps, no credit limits, no token restrictions.",
+              "Unlimited on the 7-day Pro trial AND on all paid plans. No caps, no credit limits, no token restrictions. BYOK means you pay the AI provider directly at cost - usually a few cents per post.",
           },
           {
             question: "Does LinkedGrow also schedule and publish?",
