@@ -683,12 +683,6 @@ export const blogPosts = sqliteTable("blog_posts", {
   scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
   publishedAt: integer("published_at", { mode: "timestamp" }),
   qstashMessageId: text("qstash_message_id"),
-  // Cross-posting (canonical points back to linkedgrow.ai)
-  devtoUrl: text("devto_url"),
-  devtoId: text("devto_id"),
-  hashnodeUrl: text("hashnode_url"),
-  hashnodeId: text("hashnode_id"),
-  crossPostedAt: integer("cross_posted_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }),
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
