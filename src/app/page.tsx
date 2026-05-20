@@ -6,6 +6,7 @@ import { BYOKSection } from "@/components/marketing/byok-section";
 import { Features } from "@/components/marketing/features";
 import { FreeToolsHighlight } from "@/components/marketing/free-tools-highlight";
 import { HowItWorks } from "@/components/marketing/how-it-works";
+import { WhyLinkedGrow } from "@/components/marketing/why-linkedgrow";
 import { Pricing } from "@/components/marketing/pricing";
 import { FAQ } from "@/components/marketing/faq";
 import { CTASection } from "@/components/marketing/cta-section";
@@ -31,6 +32,7 @@ export default function HomePage() {
       <Features />
       <FreeToolsHighlight />
       <HowItWorks />
+      <WhyLinkedGrow />
       <Pricing />
       <FAQ />
       <CTASection />

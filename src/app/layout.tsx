@@ -34,14 +34,14 @@ const dmSans = DM_Sans({
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 
 export const metadata: Metadata = {
-  title: "LinkedGrow - Grow Your LinkedIn Presence with AI",
+  title: "LinkedIn Post Generator AI: LinkedGrow",
   description:
-    "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools. Bring your own AI API key and take control.",
+    "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month. No credit card required.",
   authors: [{ name: "LinkedGrow" }],
   openGraph: {
-    title: "LinkedGrow - Grow Your LinkedIn Presence with AI",
+    title: "LinkedIn Post Generator AI: LinkedGrow",
     description:
-      "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools.",
+      "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month.",
     url: "https://linkedgrow.ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -50,15 +50,15 @@ export const metadata: Metadata = {
         url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
         width: 1200,
         height: 630,
-        alt: "LinkedGrow - AI-Powered LinkedIn Growth Platform",
+        alt: "LinkedGrow - AI LinkedIn Post Generator",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedGrow - Grow Your LinkedIn Presence with AI",
+    title: "LinkedIn Post Generator AI: LinkedGrow",
     description:
-      "Create viral LinkedIn posts, schedule content, and grow your audience with AI-powered tools.",
+      "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

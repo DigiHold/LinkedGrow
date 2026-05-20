@@ -420,6 +420,18 @@ export function CollectionPageJsonLd() {
 // LinkedGrow FAQs for JSON-LD (must match the FAQ component content)
 export const linkedGrowFAQs = [
   {
+    question: "What is an AI LinkedIn post generator?",
+    answer: "An AI LinkedIn post generator is a tool that writes LinkedIn content for you based on a topic, idea, or source material. The best ones - like LinkedGrow - also act as a LinkedIn post writer that learns your personal voice, so the output reads like you wrote it, not a bot. LinkedGrow goes further as a full LinkedIn content generator: carousels, scheduling, and voice training all in one place.",
+  },
+  {
+    question: "How is LinkedGrow different from other LinkedIn post generators?",
+    answer: "Most tools using AI for LinkedIn posts charge $50/month or more. LinkedGrow uses a Bring Your Own API Key model: you pay under $4/month for unlimited content. That's not a typo. On top of the price, LinkedGrow is the only LinkedIn AI generator that trains on your existing posts, so every draft matches your real voice - not a generic style. It's cheaper, smarter, and built for volume creators.",
+  },
+  {
+    question: "Can I create LinkedIn posts for free?",
+    answer: "Yes - you can create LinkedIn posts with LinkedGrow on a free trial, no credit card required. It's the fastest way to test the voice training and see a draft that actually sounds like you before spending a cent.",
+  },
+  {
     question: "What is BYOK (Bring Your Own Key)?",
     answer: "BYOK means you connect your own AI API key (OpenAI, Claude, Gemini, etc.) to LinkedGrow. This gives you complete control over costs, model selection, and usage limits. You pay the AI provider directly at their rates with no markup from us.",
   },

@@ -358,7 +358,7 @@ export function CarouselGeneratorContent() {
         }}
         description="Paste your topic, watch the AI structure it into slides, and tweak the draft until you are happy. Most carousels are published in under 10 minutes."
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
+        secondaryCta={{ text: "LinkedIn post generator", href: "/" }}
         trustIndicators={[
           "Business plan feature",
           "AI writes every slide",
