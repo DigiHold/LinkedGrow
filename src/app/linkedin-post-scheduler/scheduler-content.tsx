@@ -336,7 +336,7 @@ export function PostSchedulerContent() {
         links={[
           { title: "How to Schedule LinkedIn Posts in Advance (step-by-step)", href: "/features/post-scheduling" },
           { title: "Content Calendar", href: "/features/content-calendar" },
-          { title: "Best Time to Post on LinkedIn", href: "/blog/best-time-to-post-linkedin" },
+          { title: "Best Time to Post on LinkedIn", href: "/free-tools/linkedin-best-time-to-post" },
         ]}
       />
 

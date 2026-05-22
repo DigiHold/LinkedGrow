@@ -118,6 +118,30 @@ const nextConfig: NextConfig = {
         destination: "/",
         permanent: true,
       },
+      {
+        // best-time-to-post blog post consolidated into the free tool
+        source: "/blog/best-time-to-post-linkedin",
+        destination: "/free-tools/linkedin-best-time-to-post",
+        permanent: true,
+      },
+      {
+        // carousel-guide consolidated into the carousel-templates guide
+        source: "/blog/linkedin-carousel-guide",
+        destination: "/blog/linkedin-carousel-templates",
+        permanent: true,
+      },
+      {
+        // byok-explained consolidated into the AI API cost comparison
+        source: "/blog/byok-bring-your-own-key-explained",
+        destination: "/blog/ai-api-cost-comparison-linkedin-tools",
+        permanent: true,
+      },
+      {
+        // off-topic news article removed
+        source: "/blog/claude-refused-pentagon-switch",
+        destination: "/blog",
+        permanent: true,
+      },
     ];
   },
   // Rewrite IndexNow key files to the API route

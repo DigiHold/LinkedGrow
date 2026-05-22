@@ -345,7 +345,7 @@ export function CarouselGeneratorContent() {
         headline="Related Resources"
         links={[
           { title: "Visual Carousel Editor", href: "/features/carousel-generator" },
-          { title: "LinkedIn Carousel Guide", href: "/blog/linkedin-carousel-guide" },
+          { title: "LinkedIn Carousel Guide", href: "/blog/linkedin-carousel-templates" },
           { title: "LinkedIn Image Sizes", href: "/free-tools/linkedin-image-sizes" },
         ]}
       />
