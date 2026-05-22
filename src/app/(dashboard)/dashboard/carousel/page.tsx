@@ -1249,7 +1249,7 @@ showToast("Failed to export images");
               </p>
               <Link href="/dashboard/settings/ai-api">
                 <Button className="bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
-                  <Settings className="w-4 h-4 mr-2" />
+                  <Settings className="w-4 h-4" />
                   Configure API Keys
                 </Button>
               </Link>
@@ -1352,7 +1352,7 @@ showToast("Failed to export images");
               size="sm"
               onClick={() => setShowTemplateGallery(true)}
             >
-              <LayoutTemplate className="w-4 h-4 mr-2" />
+              <LayoutTemplate className="w-4 h-4" />
               Templates
             </Button>
 
@@ -1363,7 +1363,7 @@ showToast("Failed to export images");
                   variant="outline"
                   size="sm"
                 >
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="w-4 h-4" />
                   Save Template
                 </Button>
               </DialogTrigger>
@@ -1403,9 +1403,9 @@ showToast("Failed to export images");
                     className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                   >
                     {isSavingTemplate ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="w-4 h-4" />
                     )}
                     {isSavingTemplate ? "Saving..." : "Save Template"}
                   </Button>
@@ -1421,7 +1421,7 @@ showToast("Failed to export images");
               size="sm"
               onClick={handleNewCarousel}
             >
-              <FilePlus className="w-4 h-4 mr-2" />
+              <FilePlus className="w-4 h-4" />
               New Carousel
             </Button>
 
@@ -1431,7 +1431,7 @@ showToast("Failed to export images");
               size="sm"
               onClick={() => setShowMyCarousels(true)}
             >
-              <FolderOpen className="w-4 h-4 mr-2" />
+              <FolderOpen className="w-4 h-4" />
               My Carousels
             </Button>
 
@@ -1446,9 +1446,9 @@ showToast("Failed to export images");
                   disabled={isSavingCarousel}
                 >
                   {isSavingCarousel ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-4 h-4" />
                   )}
                   {isSavingCarousel ? "Saving..." : "Save"}
                 </Button>
@@ -1458,7 +1458,7 @@ showToast("Failed to export images");
                   size="sm"
                   onClick={() => setShowSaveCarouselDialog(true)}
                 >
-                  <Copy className="w-4 h-4 mr-2" />
+                  <Copy className="w-4 h-4" />
                   Save As
                 </Button>
               </>
@@ -1468,7 +1468,7 @@ showToast("Failed to export images");
                 size="sm"
                 onClick={() => setShowSaveCarouselDialog(true)}
               >
-                <Layers className="w-4 h-4 mr-2" />
+                <Layers className="w-4 h-4" />
                 Save Carousel
               </Button>
             )}
@@ -1511,9 +1511,9 @@ showToast("Failed to export images");
                     className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                   >
                     {isSavingCarousel ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Layers className="w-4 h-4 mr-2" />
+                      <Layers className="w-4 h-4" />
                     )}
                     {isSavingCarousel ? "Saving..." : `Save ${slides.length} Slides`}
                   </Button>
@@ -1531,9 +1531,9 @@ showToast("Failed to export images");
               disabled={isExporting}
             >
               {isExporting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Images className="w-4 h-4 mr-2" />
+                <Images className="w-4 h-4" />
               )}
               Export As Images
             </Button>
@@ -1544,9 +1544,9 @@ showToast("Failed to export images");
               className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
             >
               {isExporting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <FileDown className="w-4 h-4 mr-2" />
+                <FileDown className="w-4 h-4" />
               )}
               Export As PDF
             </Button>
