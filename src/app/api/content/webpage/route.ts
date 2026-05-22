@@ -185,7 +185,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { url } = await request.json();
+    const body = await request.json();
+    const url = body?.url;
+    // The browser may pre-fetch the page HTML via the Cloudflare proxy worker and
+    // pass it here. That bypasses host firewalls that block Vercel datacenter IPs.
+    const providedHtml =
+      typeof body?.html === "string" && body.html.length > 0 ? (body.html as string) : null;
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -223,74 +228,88 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This URL is not allowed." }, { status: 400 });
     }
 
-    // Fetch the page HTML with browser-like headers to avoid bot blocking
-    let response: Response;
-    try {
-      response = await fetch(parsedUrl.toString(), {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Cache-Control": "no-cache",
-        },
-        signal: AbortSignal.timeout(15000),
-        redirect: "follow",
-      });
-    } catch (error) {
-      if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
-        return NextResponse.json(
-          { error: "This page took too long to load. Please check the URL and try again." },
-          { status: 408 }
-        );
-      }
-      return NextResponse.json(
-        { error: "Failed to fetch the page. Please check the URL and try again." },
-        { status: 502 }
-      );
-    }
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: "This page doesn't exist or has been removed." },
-          { status: 404 }
-        );
-      }
-      if (response.status === 403 || response.status === 401) {
-        return NextResponse.json(
-          { error: "This page requires login or is blocking automated access. Try a publicly accessible article." },
-          { status: 403 }
-        );
-      }
-      return NextResponse.json(
-        { error: `Failed to fetch the page (HTTP ${response.status}). Please try a different URL.` },
-        { status: 502 }
-      );
-    }
-
-    // Check content type
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml") && !contentType.includes("text/plain")) {
-      return NextResponse.json(
-        { error: "This URL doesn't point to a web page. Make sure it's a blog post or article URL." },
-        { status: 400 }
-      );
-    }
-
-    // Read HTML with size limit
+    // The HTML can arrive two ways:
+    //  1. Pre-fetched by the browser via the Cloudflare proxy worker (preferred -
+    //     Cloudflare edge IPs are far less likely to be firewall-blocked than
+    //     Vercel's datacenter IPs).
+    //  2. Fetched here server-side as a fallback when the worker is unavailable.
     let html: string;
-    try {
-      const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > MAX_HTML_SIZE) {
-        html = new TextDecoder().decode(buffer.slice(0, MAX_HTML_SIZE));
-      } else {
-        html = new TextDecoder().decode(buffer);
+
+    if (providedHtml) {
+      html =
+        providedHtml.length > MAX_HTML_SIZE
+          ? providedHtml.slice(0, MAX_HTML_SIZE)
+          : providedHtml;
+    } else {
+      // Fallback: fetch the page server-side with browser-like headers. Some hosts
+      // block Vercel datacenter IPs at this step - that is why the worker exists.
+      let response: Response;
+      try {
+        response = await fetch(parsedUrl.toString(), {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cache-Control": "no-cache",
+          },
+          signal: AbortSignal.timeout(15000),
+          redirect: "follow",
+        });
+      } catch (error) {
+        if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+          return NextResponse.json(
+            { error: "This page took too long to load. Please check the URL and try again." },
+            { status: 408 }
+          );
+        }
+        return NextResponse.json(
+          { error: "Failed to fetch the page. Please check the URL and try again." },
+          { status: 502 }
+        );
       }
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to read the page content. Please try again." },
-        { status: 500 }
-      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return NextResponse.json(
+            { error: "This page doesn't exist or has been removed." },
+            { status: 404 }
+          );
+        }
+        if (response.status === 403 || response.status === 401) {
+          return NextResponse.json(
+            { error: "This page requires login or is blocking automated access. Try a publicly accessible article." },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json(
+          { error: `Failed to fetch the page (HTTP ${response.status}). Please try a different URL.` },
+          { status: 502 }
+        );
+      }
+
+      // Check content type
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/html") && !contentType.includes("application/xhtml") && !contentType.includes("text/plain")) {
+        return NextResponse.json(
+          { error: "This URL doesn't point to a web page. Make sure it's a blog post or article URL." },
+          { status: 400 }
+        );
+      }
+
+      // Read HTML with size limit
+      try {
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength > MAX_HTML_SIZE) {
+          html = new TextDecoder().decode(buffer.slice(0, MAX_HTML_SIZE));
+        } else {
+          html = new TextDecoder().decode(buffer);
+        }
+      } catch {
+        return NextResponse.json(
+          { error: "Failed to read the page content. Please try again." },
+          { status: 500 }
+        );
+      }
     }
 
     if (!html || html.length < 100) {
@@ -330,7 +349,7 @@ export async function POST(request: NextRequest) {
     let warning: string | undefined;
     if (words.length < 100) {
       return NextResponse.json(
-        { error: "This article appears to be behind a paywall or requires login. Only the preview text was extracted. Try a freely accessible article." },
+        { error: "We could only extract a small amount of text from this page. It may be paywalled, login-gated, or blocking automated readers. Try a different article." },
         { status: 400 }
       );
     }

@@ -207,6 +207,11 @@ function decodeHtmlEntities(text: string): string {
 // CF Worker for YouTube captions - browser calls directly (CORS enabled, Cloudflare edge IPs)
 const YT_WORKER = "https://youtube-captions.digihold-account.workers.dev";
 
+// CF Worker that proxy-fetches webpage/blog HTML - browser calls directly so the
+// fetch runs from Cloudflare edge IPs instead of Vercel datacenter IPs, which
+// many host firewalls (WPX, managed WordPress, etc.) block.
+const WEBPAGE_WORKER = "https://webpage-proxy.digihold-account.workers.dev";
+
 function extractYoutubeVideoId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return match ? match[1] : null;
@@ -319,10 +324,29 @@ async function fetchYoutubeContent(url: string): Promise<ContentData & { warning
 }
 
 async function fetchWebpageContent(url: string): Promise<ContentData & { warning?: string }> {
+  // Primary: fetch the page HTML via the CF Worker (Cloudflare edge IPs - same
+  // principle as the YouTube worker). Fallback: let the server fetch it directly.
+  let prefetchedHtml: string | null = null;
+  try {
+    const workerResp = await fetch(WEBPAGE_WORKER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (workerResp.ok) {
+      const data = await workerResp.json();
+      if (data?.html && typeof data.html === "string") {
+        prefetchedHtml = data.html;
+      }
+    }
+  } catch {
+    // Worker unavailable - fall through to the server-side fetch
+  }
+
   const response = await fetch("/api/content/webpage", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify(prefetchedHtml ? { url, html: prefetchedHtml } : { url }),
   });
 
   if (!response.ok) {
