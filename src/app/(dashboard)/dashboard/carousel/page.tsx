@@ -190,6 +190,7 @@ export default function CarouselPage() {
   // My Carousels state
   const [showMyCarousels, setShowMyCarousels] = useState(false);
   const [showSaveCarouselDialog, setShowSaveCarouselDialog] = useState(false);
+  const [showNewCarouselDialog, setShowNewCarouselDialog] = useState(false);
   const [carouselName, setCarouselName] = useState("");
   const [carouselDescription, setCarouselDescription] = useState("");
   const [isSavingCarousel, setIsSavingCarousel] = useState(false);
@@ -1168,12 +1169,7 @@ showToast("Failed to export images");
   };
 
   // Start a fresh blank carousel - clears the editor and the saved draft
-  const handleNewCarousel = () => {
-    const confirmed = window.confirm(
-      'Start a new carousel? Your current canvas will be cleared. Saved carousels in "My Carousels" are not affected - this only clears the editor.'
-    );
-    if (!confirmed) return;
-
+  const confirmNewCarousel = () => {
     // Cancel pending auto-saves so they don't re-write the draft we're about to clear
     if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
     if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
@@ -1197,6 +1193,7 @@ showToast("Failed to export images");
       });
     });
 
+    setShowNewCarouselDialog(false);
     showToast("New blank carousel ready", "success");
   };
 
@@ -1419,7 +1416,7 @@ showToast("Failed to export images");
             <Button
               variant="outline"
               size="sm"
-              onClick={handleNewCarousel}
+              onClick={() => setShowNewCarouselDialog(true)}
             >
               <FilePlus className="w-4 h-4" />
               New Carousel
@@ -1517,6 +1514,47 @@ showToast("Failed to export images");
                     )}
                     {isSavingCarousel ? "Saving..." : `Save ${slides.length} Slides`}
                   </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* New Carousel Confirmation Dialog */}
+            <Dialog open={showNewCarouselDialog} onOpenChange={setShowNewCarouselDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FilePlus className="w-5 h-5 text-cyan-600" />
+                    Start a New Carousel
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Your current canvas will be cleared so you can start from a blank slide.
+                  </p>
+                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-800 dark:bg-amber-900/10">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                      Saved carousels in &quot;My Carousels&quot; are not affected - this only clears the
+                      editor. If you have unsaved work, save it first.
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewCarouselDialog(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={confirmNewCarousel}
+                      className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    >
+                      <FilePlus className="w-4 h-4" />
+                      Start New Carousel
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
