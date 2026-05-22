@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { ContentCreationToolsContent } from "./tools-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Content Creation Tools: The All-in-One Stack ($13/mo)",
+  title: "LinkedIn Content Creation Tools: All-in-One Stack",
   description:
-    "The all-in-one stack of LinkedIn content creation tools: post generator, carousel maker, scheduler, analytics, photo generator. One subscription instead of five. From $13/mo.",
+    "Post generator, carousel maker, scheduler, analytics, and photo generator: one LinkedIn content stack instead of five separate tools. From $13/mo.",
   openGraph: {
-    title: "LinkedIn Content Creation Tools: The All-in-One Stack ($13/mo)",
+    title: "LinkedIn Content Creation Tools: All-in-One Stack",
     description:
-      "The all-in-one stack: post generator, carousel maker, scheduler, analytics. One subscription instead of five. From $13/mo.",
+      "Post generator, carousel maker, scheduler, analytics, and photo generator: one LinkedIn content stack instead of five separate tools. From $13/mo.",
     url: "https://linkedgrow.ai/linkedin-content-creation-tools",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Content Creation Tools: All-in-One Stack ($13/mo)",
+    title: "LinkedIn Content Creation Tools: All-in-One Stack",
     description:
-      "All-in-one stack: post generator, carousel maker, scheduler, analytics. From $13/mo.",
+      "Post generator, carousel maker, scheduler, analytics, and photo generator: one LinkedIn content stack instead of five separate tools. From $13/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

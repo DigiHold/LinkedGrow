@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { PhotoGeneratorContent } from "./photo-generator-content";
 
 export const metadata: Metadata = {
-  title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
+  title: "AI LinkedIn Photo Generator: Create Free Post Visuals",
   description:
-    "Generate professional photos for LinkedIn posts with AI for free. 10+ AI image models from OpenAI, Google, and Replicate. Create unique visuals in seconds - no design skills needed.",
+    "Generate professional LinkedIn post visuals with AI for free. 10+ image models from OpenAI, Google, and Replicate. Unique visuals in seconds.",
   openGraph: {
-    title: "AI LinkedIn Photo Generator Free - Create Stunning Post Visuals | LinkedGrow",
+    title: "AI LinkedIn Photo Generator: Create Free Post Visuals",
     description:
-      "Generate professional photos for LinkedIn posts with AI for free. 10+ AI models, unique visuals in seconds.",
+      "Generate professional LinkedIn post visuals with AI for free. 10+ image models from OpenAI, Google, and Replicate. Unique visuals in seconds.",
     url: "https://linkedgrow.ai/ai-linkedin-photo-generator-free",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI LinkedIn Photo Generator Free | LinkedGrow",
+    title: "AI LinkedIn Photo Generator: Create Free Post Visuals",
     description:
-      "Generate professional photos for LinkedIn posts with AI. 10+ models, unique visuals in seconds, no design skills needed.",
+      "Generate professional LinkedIn post visuals with AI for free. 10+ image models from OpenAI, Google, and Replicate. Unique visuals in seconds.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

@@ -5,11 +5,11 @@ import { FreePostGeneratorContent } from "./free-generator-content";
 export const metadata: Metadata = {
   title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
   description:
-    "Free AI LinkedIn post writer with 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK pricing. Voice training matches your style. 7-day Pro trial, no credit card.",
+    "26 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, no credit card required to start.",
   openGraph: {
     title: "Free AI LinkedIn Post Writer: 26 Models, BYOK Pricing",
     description:
-      "Free AI LinkedIn post writer with 26 models via BYOK. Voice training, 7-day Pro trial, no credit card.",
+      "26 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, no credit card required to start.",
     url: "https://linkedgrow.ai/free-linkedin-post-generator-ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free AI LinkedIn Post Writer: BYOK + 26 Models",
     description:
-      "Free AI LinkedIn post writer: 26 models via BYOK + voice training.",
+      "26 AI models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK. Voice training matches your style. 7-day Pro trial, no credit card required to start.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

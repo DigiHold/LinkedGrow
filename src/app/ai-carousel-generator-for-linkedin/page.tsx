@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { CarouselGeneratorContent } from "./carousel-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Carousel Maker (2026): AI Builds Multi-Slide Posts in Minutes",
+  title: "LinkedIn Carousel Maker: AI Builds Multi-Slide Posts Fast",
   description:
-    "The LinkedIn carousel maker that builds multi-slide posts in minutes. AI-generated text per slide, brand customization, direct publishing. Included on the Business plan.",
+    "AI-generated LinkedIn carousel posts with text per slide, brand customization, and direct publishing. Builds multi-slide posts in minutes.",
   openGraph: {
-    title: "LinkedIn Carousel Maker (2026): AI Builds Multi-Slide Posts in Minutes",
+    title: "LinkedIn Carousel Maker: AI Builds Multi-Slide Posts Fast",
     description:
-      "The LinkedIn carousel maker that builds multi-slide posts in minutes. AI-generated text, brand customization, direct publishing.",
+      "AI-generated LinkedIn carousel posts with text per slide, brand customization, and direct publishing. Builds multi-slide posts in minutes.",
     url: "https://linkedgrow.ai/ai-carousel-generator-for-linkedin",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Carousel Maker: AI-Powered Multi-Slide Builder",
+    title: "LinkedIn Carousel Maker: AI Builds Multi-Slide Posts Fast",
     description:
-      "The LinkedIn carousel maker. AI-built multi-slide posts in minutes, brand customization, direct publishing.",
+      "AI-generated LinkedIn carousel posts with text per slide, brand customization, and direct publishing. Builds multi-slide posts in minutes.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

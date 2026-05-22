@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { BestPracticesContent } from "./best-practices-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Best Practices for Business Profiles and Posting | LinkedGrow",
+  title: "LinkedIn Best Practices for Business Profiles and Posting",
   description:
-    "LinkedIn best practices for business profiles and posting in 2026. Profile optimization, content strategy, posting frequency, engagement tactics, and the tools to execute it all.",
+    "Profile optimization, content strategy, posting frequency, engagement tactics, and the tools to execute LinkedIn best practices for business growth in 2026.",
   openGraph: {
-    title: "LinkedIn Best Practices for Business Profiles and Posting | LinkedGrow",
+    title: "LinkedIn Best Practices for Business Profiles and Posting",
     description:
-      "LinkedIn best practices for business profiles and posting in 2026. Profile optimization, content strategy, engagement tactics.",
+      "Profile optimization, content strategy, posting frequency, engagement tactics, and the tools to execute LinkedIn best practices for business growth in 2026.",
     url: "https://linkedgrow.ai/linkedin-best-practices",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Best Practices for Business Profiles and Posting | LinkedGrow",
+    title: "LinkedIn Best Practices for Business Profiles and Posting",
     description:
-      "LinkedIn best practices for 2026. Profile optimization, content strategy, posting frequency, engagement tactics.",
+      "Profile optimization, content strategy, posting frequency, engagement tactics, and the tools to execute LinkedIn best practices for business growth in 2026.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

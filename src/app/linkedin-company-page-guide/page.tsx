@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { CompanyPageGuideContent } from "./company-page-guide-content";
 
 export const metadata: Metadata = {
-  title: "How to Create a LinkedIn Company Page Step by Step | LinkedGrow",
+  title: "How to Create a LinkedIn Company Page Step by Step",
   description:
-    "How to create a LinkedIn company page step by step in 2026. Complete guide covering setup, verification, optimization, common mistakes, and the tools to manage your page.",
+    "Complete guide to creating a LinkedIn company page: setup, verification, optimization, common mistakes, and the tools to manage and grow your page over time.",
   openGraph: {
-    title: "How to Create a LinkedIn Company Page Step by Step | LinkedGrow",
+    title: "How to Create a LinkedIn Company Page Step by Step",
     description:
-      "How to create a LinkedIn company page step by step. Complete setup guide, optimization tips, and management tools for 2026.",
+      "Complete guide to creating a LinkedIn company page: setup, verification, optimization, common mistakes, and the tools to manage and grow your page over time.",
     url: "https://linkedgrow.ai/linkedin-company-page-guide",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How to Create a LinkedIn Company Page Step by Step | LinkedGrow",
+    title: "How to Create a LinkedIn Company Page Step by Step",
     description:
-      "How to create a LinkedIn company page step by step. Complete setup guide and management tools for 2026.",
+      "Complete guide to creating a LinkedIn company page: setup, verification, optimization, common mistakes, and the tools to manage and grow your page over time.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

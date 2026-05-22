@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { PostGeneratorFreeContent } from "./post-generator-content";
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card Required",
+  title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
   description:
-    "Try the free LinkedIn post generator: 7-day Pro trial with full access to 26 AI models, voice training, scheduling, and unlimited generation. No credit card required to start.",
+    "7-day Pro trial with full access to 26 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: no credit card needed.",
   openGraph: {
-    title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card Required",
+    title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
     description:
-      "Free LinkedIn post generator: 7-day Pro trial with 26 AI models, voice training, scheduling. No credit card needed.",
+      "7-day Pro trial with full access to 26 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: no credit card needed.",
     url: "https://linkedgrow.ai/ai-linkedin-post-generator-free",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn Post Generator: 7-Day Pro Trial",
+    title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
     description:
-      "Free LinkedIn post generator: 7-day Pro trial with 26 AI models + voice training.",
+      "7-day Pro trial with full access to 26 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: no credit card needed.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

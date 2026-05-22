@@ -2,11 +2,11 @@ import { Metadata } from "next";
 import LifetimeDealClient from "./lifetime-deal-client";
 
 export const metadata: Metadata = {
-  title: "Lifetime Deal - LinkedGrow Business Plan Forever | $99 One-Time",
-  description: "Get the full LinkedGrow Business plan forever for a one-time payment. AI-powered LinkedIn content tool with BYOK - bring your own API key and pay 96% less than competitors.",
+  title: "Lifetime Deal: LinkedGrow Business Plan for $99",
+  description: "Get the full LinkedGrow Business plan forever for a one-time $99 payment. AI-powered LinkedIn content with BYOK: pay 96% less in AI costs than competitors.",
   openGraph: {
-    title: "LinkedGrow Lifetime Deal - Business Plan Forever",
-    description: "Get the full LinkedGrow Business plan forever for a one-time payment. AI-powered LinkedIn content tool with BYOK.",
+    title: "Lifetime Deal: LinkedGrow Business Plan for $99",
+    description: "Get the full LinkedGrow Business plan forever for a one-time $99 payment. AI-powered LinkedIn content with BYOK: pay 96% less in AI costs than competitors.",
     url: "https://linkedgrow.ai/lifetime-deal",
     siteName: "LinkedGrow",
     type: "website",
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedGrow Lifetime Deal - Business Plan Forever",
-    description: "Get the full LinkedGrow Business plan forever for a one-time payment. BYOK model - pay 96% less.",
+    title: "Lifetime Deal: LinkedGrow Business Plan for $99",
+    description: "Get the full LinkedGrow Business plan forever for a one-time $99 payment. AI-powered LinkedIn content with BYOK: pay 96% less in AI costs than competitors.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
 };

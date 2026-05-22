@@ -1,6 +1,39 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import CookiesClient from "./cookies-client";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy | LinkedGrow",
+  description:
+    "How LinkedGrow uses cookies and similar technologies. Learn what we collect, why we collect it, and how to manage your cookie preferences.",
+  openGraph: {
+    title: "Cookie Policy | LinkedGrow",
+    description:
+      "How LinkedGrow uses cookies and similar technologies. Learn what we collect, why we collect it, and how to manage your cookie preferences.",
+    url: "https://linkedgrow.ai/cookies",
+    siteName: "LinkedGrow",
+    type: "website",
+    images: [
+      {
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        width: 1200,
+        height: 630,
+        alt: "LinkedGrow Cookie Policy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cookie Policy | LinkedGrow",
+    description:
+      "How LinkedGrow uses cookies. Learn what we collect, why, and how to manage your cookie preferences.",
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+  },
+  alternates: {
+    canonical: "https://linkedgrow.ai/cookies",
+  },
+};
 
 export default async function CookiesPage() {
   const t = await getTranslations("cookies");
