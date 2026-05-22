@@ -94,6 +94,10 @@ function createPopupResponse(success: boolean, data: { name?: string; error?: st
   );
 }
 
+// Fetching org names involves one LinkedIn API call per company page, with
+// retries on rate limiting - give the callback room for users with many pages.
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');

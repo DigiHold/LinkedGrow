@@ -1110,6 +1110,62 @@ export async function validateLinkedInToken(accessToken: string): Promise<boolea
 }
 
 /**
+ * Retries LinkedIn calls that hit rate limiting (429) or transient 5xx errors.
+ * LinkedIn aggressively throttles the organizations endpoint, so a burst of
+ * per-org lookups would otherwise fail and fall back to "Unknown Organization".
+ */
+async function linkedInFetchWithRetry(
+  url: string,
+  init: RequestInit,
+  retries = 3
+): Promise<Response> {
+  let res = await fetch(url, init);
+  let attempt = 0;
+  while ((res.status === 429 || res.status >= 500) && attempt < retries) {
+    res.body?.cancel().catch(() => {});
+    attempt++;
+    // Backoff: 1s, 2s, 4s - LinkedIn 429s usually clear within seconds
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+    res = await fetch(url, init);
+  }
+  return res;
+}
+
+/**
+ * Pulls a usable organization name out of a LinkedIn org payload, tolerating
+ * the different shapes the v2 and versioned REST APIs return.
+ */
+function extractOrgName(org: Record<string, unknown> | null | undefined): string {
+  if (!org) return '';
+
+  const localizedName = org.localizedName;
+  if (typeof localizedName === 'string' && localizedName.trim()) {
+    return localizedName.trim();
+  }
+
+  const nameField = org.name;
+  if (nameField && typeof nameField === 'object') {
+    const localized = (nameField as { localized?: Record<string, string> }).localized;
+    const preferred = (nameField as { preferredLocale?: { language?: string; country?: string } }).preferredLocale;
+    if (localized) {
+      const key =
+        preferred?.language && preferred?.country
+          ? `${preferred.language}_${preferred.country}`
+          : undefined;
+      const value = (key && localized[key]) || Object.values(localized)[0];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+  } else if (typeof nameField === 'string' && nameField.trim()) {
+    return nameField.trim();
+  }
+
+  const vanityName = org.vanityName;
+  if (typeof vanityName === 'string' && vanityName.trim()) return vanityName.trim();
+
+  return '';
+}
+
+/**
  * Get organizations where the user is an administrator
  * Uses the Organization Access Control API (requires Advertising API access)
  */
@@ -1117,7 +1173,7 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
   try {
     // Try REST API first (Community Management API - requires LinkedIn-Version header)
     // Try REST API first (Community Management API)
-    const restResponse = await fetch(
+    const restResponse = await linkedInFetchWithRetry(
       `${LINKEDIN_REST_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR`,
       {
         headers: {
@@ -1150,7 +1206,7 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
 
     // Fallback: v2 API with projection
     // Fallback: v2 API with projection
-    const aclResponse = await fetch(
+    const aclResponse = await linkedInFetchWithRetry(
       `${LINKEDIN_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organization~(localizedName,logoV2(original~:playableStreams))))`,
       {
         headers: {
@@ -1203,10 +1259,14 @@ export async function getAdministeredOrganizations(accessToken: string): Promise
 async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): Promise<LinkedInOrganization[]> {
   const organizations: LinkedInOrganization[] = [];
 
-  for (const orgId of orgIds) {
+  for (let i = 0; i < orgIds.length; i++) {
+    const orgId = orgIds[i];
+    // Space out requests - LinkedIn burst-throttles the organizations endpoint.
+    if (i > 0) await new Promise((r) => setTimeout(r, 150));
+
     try {
-      // Use v2 API with projection to get resolved logo URLs directly
-      const response = await fetch(
+      // v2 API with projection: one request, logo URL resolved inline.
+      const response = await linkedInFetchWithRetry(
         `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,logoV2(original~:playableStreams))`,
         {
           headers: {
@@ -1216,19 +1276,23 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
         }
       );
 
-      let name = 'Unknown Organization';
+      let name = '';
       let logoUrl: string | undefined;
+      const v2Status = response.status;
 
       if (response.ok) {
         const orgData = await response.json();
-        name = orgData.localizedName || name;
+        name = extractOrgName(orgData);
         // v2 with projection returns resolved image URLs
         if (orgData.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
           logoUrl = orgData.logoV2['original~'].elements[0].identifiers[0].identifier;
         }
-      } else {
-        // Fallback: REST API for name only
-        const restResponse = await fetch(
+      }
+
+      // Fall back to the versioned REST API whenever the name is still missing -
+      // covers both a failed v2 call and a v2 success that returned no name.
+      if (!name) {
+        const restResponse = await linkedInFetchWithRetry(
           `${LINKEDIN_REST_API_BASE}/organizations/${orgId}`,
           {
             headers: {
@@ -1240,19 +1304,28 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
         );
         if (restResponse.ok) {
           const restData = await restResponse.json();
-          name = restData.localizedName || name;
+          name = extractOrgName(restData);
           // REST API returns a URN for logo - resolve it via images API
           const logoUrn = restData.logoV2?.original;
-          if (logoUrn && logoUrn.startsWith('urn:li:')) {
+          if (!logoUrl && typeof logoUrn === 'string' && logoUrn.startsWith('urn:li:')) {
             const resolved = await getImageDownloadUrls(accessToken, [logoUrn]).catch(() => new Map());
             logoUrl = resolved.get(logoUrn);
           }
         }
+        if (!name) {
+          console.error(
+            `[linkedin] organization ${orgId} name unresolved (v2=${v2Status}, rest=${restResponse.status})`
+          );
+        }
       }
 
-      organizations.push({ id: orgId, name, logoUrl });
-    } catch {
-      // Skip organizations we can't fetch details for
+      organizations.push({ id: orgId, name: name || 'Unknown Organization', logoUrl });
+    } catch (err) {
+      console.error(
+        `[linkedin] organization ${orgId} lookup threw:`,
+        err instanceof Error ? err.message : err
+      );
+      organizations.push({ id: orgId, name: 'Unknown Organization' });
     }
   }
 
