@@ -330,7 +330,7 @@ export function FreePostGeneratorContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "AI Post Generator", href: "/" },
           { title: "AI LinkedIn Posts Without Sounding Robotic", href: "/blog/ai-linkedin-posts-without-sounding-robotic" },
           { title: "Best AI LinkedIn Post Generator", href: "/best-ai-linkedin-post-generator" },
         ]}

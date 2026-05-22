@@ -109,6 +109,17 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Permanent redirects for removed/consolidated pages
+  async redirects() {
+    return [
+      {
+        // ai-post-generator consolidated into the homepage
+        source: "/features/ai-post-generator",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
   // Rewrite IndexNow key files to the API route
   async rewrites() {
     return [

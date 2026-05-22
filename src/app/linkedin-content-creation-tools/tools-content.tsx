@@ -344,7 +344,7 @@ export function ContentCreationToolsContent() {
         headline="Related Resources"
         links={[
           { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
-          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "AI Post Generator", href: "/" },
           { title: "Carousel Generator", href: "/features/carousel-generator" },
         ]}
       />

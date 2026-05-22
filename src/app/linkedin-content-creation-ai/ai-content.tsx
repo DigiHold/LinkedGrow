@@ -336,7 +336,7 @@ export function ContentCreationAiContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "AI Post Generator", href: "/" },
           { title: "Voice Training", href: "/features/voice-training" },
           { title: "AI LinkedIn Posts Without Sounding Robotic", href: "/blog/ai-linkedin-posts-without-sounding-robotic" },
         ]}

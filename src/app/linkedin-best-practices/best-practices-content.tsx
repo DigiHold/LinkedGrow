@@ -338,7 +338,7 @@ export function BestPracticesContent() {
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "AI Post Generator", href: "/features/ai-post-generator" },
+          { title: "AI Post Generator", href: "/" },
           { title: "Post Scheduling", href: "/features/post-scheduling" },
           { title: "LinkedIn Algorithm 2026", href: "/blog/linkedin-algorithm-2026" },
         ]}

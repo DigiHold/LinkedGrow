@@ -1144,7 +1144,7 @@ function LtdFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/features/ai-post-generator" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <Link href="/" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                     All Features
                   </Link>
                 </li>
