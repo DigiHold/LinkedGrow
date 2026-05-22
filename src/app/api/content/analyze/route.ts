@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { fetchAIWithRetry } from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
@@ -129,7 +130,7 @@ async function generateHooks(
       requestBody.reasoning_effort = "low";
     }
 
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -152,7 +153,7 @@ async function generateHooks(
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "anthropic") {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+    response = await fetchAIWithRetry("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -196,7 +197,7 @@ async function generateHooks(
       };
     }
 
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
+    response = await fetchAIWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -226,7 +227,7 @@ async function generateHooks(
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "grok") {
-    response = await fetch("https://api.x.ai/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -253,7 +254,7 @@ async function generateHooks(
       throw new Error("AI returned invalid JSON. Please try again.");
     }
   } else if (provider === "perplexity") {
-    response = await fetch("https://api.perplexity.ai/chat/completions", {
+    response = await fetchAIWithRetry("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -281,7 +282,7 @@ async function generateHooks(
     }
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
-    response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.moonshot.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

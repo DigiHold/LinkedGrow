@@ -5,6 +5,7 @@ import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { buildLanguageInstruction } from "@/lib/content-languages";
+import { fetchAIWithRetry } from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
@@ -199,7 +200,7 @@ async function generatePosts(
       requestBody.reasoning_effort = "low";
     }
 
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -217,7 +218,7 @@ async function generatePosts(
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
   } else if (provider === "anthropic") {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+    response = await fetchAIWithRetry("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -256,7 +257,7 @@ async function generatePosts(
       };
     }
 
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
+    response = await fetchAIWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -281,7 +282,7 @@ async function generatePosts(
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
   } else if (provider === "grok") {
-    response = await fetch("https://api.x.ai/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -303,7 +304,7 @@ async function generatePosts(
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
   } else if (provider === "perplexity") {
-    response = await fetch("https://api.perplexity.ai/chat/completions", {
+    response = await fetchAIWithRetry("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -326,7 +327,7 @@ async function generatePosts(
     posts = JSON.parse(cleanContent);
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
-    response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
+    response = await fetchAIWithRetry("https://api.moonshot.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
