@@ -373,6 +373,60 @@ export function WebApplicationJsonLd({
   );
 }
 
+interface ArticleJsonLdProps {
+  headline: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  image?: string;
+  wordCount?: number;
+  authorName?: string;
+  authorUrl?: string;
+}
+
+// Article schema for editorial pages that are not blog posts (e.g. data-backed free tools)
+export function ArticleJsonLd({
+  headline,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  image,
+  wordCount,
+  authorName = "Nicolas Lecocq",
+  authorUrl = "https://www.linkedin.com/in/lecocq-nicolas/",
+}: ArticleJsonLdProps) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline,
+    description,
+    url,
+    datePublished,
+    dateModified: dateModified || datePublished,
+    author: {
+      "@type": "Person",
+      name: authorName,
+      url: authorUrl,
+      sameAs: [authorUrl],
+    },
+    publisher: { "@id": ORG_ID },
+    isPartOf: { "@id": WEBSITE_ID },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    ...(image && { image }),
+    ...(wordCount && { wordCount }),
+  };
+
+  return (
+    <Script
+      id={`article-jsonld-${headline.slice(0, 20).replace(/\s/g, "-").toLowerCase()}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 // AboutPage schema for the about page
 export function AboutPageJsonLd() {
   const jsonLd = {
