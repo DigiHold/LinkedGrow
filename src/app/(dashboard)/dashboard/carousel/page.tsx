@@ -46,6 +46,7 @@ import {
   Save,
   FolderOpen,
   Copy,
+  FilePlus,
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -1166,6 +1167,39 @@ showToast("Failed to export images");
     }
   };
 
+  // Start a fresh blank carousel - clears the editor and the saved draft
+  const handleNewCarousel = () => {
+    const confirmed = window.confirm(
+      'Start a new carousel? Your current canvas will be cleared. Saved carousels in "My Carousels" are not affected - this only clears the editor.'
+    );
+    if (!confirmed) return;
+
+    // Cancel pending auto-saves so they don't re-write the draft we're about to clear
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+
+    // Wipe the localStorage draft so a refresh doesn't restore the old project
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+    // Reset all carousel state to a single blank slide
+    loadFailedRef.current = false;
+    setCurrentCarouselId(null);
+    setCarouselName("");
+    setCarouselDescription("");
+    setSelectedElement(null);
+    setSlides([{ id: generateId(), canvasJSON: '', thumbnail: '' }]);
+    setCurrentSlideIndex(0);
+    setSaveStatus('idle');
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        canvasRef.current?.clearCanvas();
+      });
+    });
+
+    showToast("New blank carousel ready", "success");
+  };
+
   // Loading state
   if (isCheckingApiKey) {
     return (
@@ -1380,6 +1414,16 @@ showToast("Failed to export images");
             </Dialog>
 
             <div className="h-6 w-px bg-border" />
+
+            {/* New Carousel Button - clears the editor for a fresh blank canvas */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNewCarousel}
+            >
+              <FilePlus className="w-4 h-4 mr-2" />
+              New Carousel
+            </Button>
 
             {/* My Carousels Button */}
             <Button
