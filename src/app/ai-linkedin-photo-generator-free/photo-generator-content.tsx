@@ -234,7 +234,7 @@ export function PhotoGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$39/month",
+          price: "$27/month",
           apiCost: "$0.50-1.50/month",
           benefits: [
             { text: "Unique AI photos tailored to every single post topic" },

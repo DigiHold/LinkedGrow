@@ -321,7 +321,7 @@ export function CompanyPageGuideContent() {
           {
             question: "Can LinkedGrow help manage my LinkedIn company page?",
             answer:
-              "Yes. LinkedGrow lets you create AI-generated content in your brand voice, schedule posts at optimal times, manage a visual content calendar, create carousels, and collaborate with your team. Everything from one dashboard for $19 per month plus your own AI key costs.",
+              "Yes. LinkedGrow lets you create AI-generated content in your brand voice, schedule posts at optimal times, manage a visual content calendar, create carousels, and collaborate with your team. Everything from one dashboard for $13 per month plus your own AI key costs.",
           },
         ]}
       />

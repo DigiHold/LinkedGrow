@@ -233,7 +233,7 @@ export function CarouselGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$79/month (Business)",
+          price: "$55/month (Business)",
           apiCost: "$2 to $4/month BYOK",
           benefits: [
             { text: "AI drafts the entire carousel before you open the editor" },
@@ -326,7 +326,7 @@ export function CarouselGeneratorContent() {
           {
             question: "Which plan includes the AI carousel maker?",
             answer:
-              "The carousel maker is available on the Business plan at $79 per month. This plan also includes A/B testing, team collaboration, advanced analytics, API access, and priority support. The Pro plan at $39 per month includes post generation and image generation but not carousel creation.",
+              "The carousel maker is available on the Business plan at $55 per month. This plan also includes A/B testing, team collaboration, advanced analytics, API access, and priority support. The Pro plan at $27 per month includes post generation and image generation but not carousel creation.",
           },
           {
             question: "Can I schedule carousels to publish to LinkedIn?",

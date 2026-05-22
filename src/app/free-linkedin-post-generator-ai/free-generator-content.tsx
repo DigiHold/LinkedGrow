@@ -229,7 +229,7 @@ export function FreePostGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19/month (or $13/mo billed yearly)",
+          price: "$13/mo billed yearly",
           apiCost: "$2 to $4/month BYOK",
           benefits: [
             { text: "7-day Pro trial with full Pro access - no card required" },
@@ -312,7 +312,7 @@ export function FreePostGeneratorContent() {
           {
             question: "How much does the AI writer cost after the 7-day trial?",
             answer:
-              "Starter is $19/mo with unlimited writing. Pro is $39/mo and adds image generation, analytics, and network notifications. Business is $79/mo and adds carousels, A/B testing, team collaboration, and API access. BYOK AI costs are typically $2 to $4/month with zero markup from LinkedGrow.",
+              "Starter is $13/mo with unlimited writing. Pro is $27/mo and adds image generation, analytics, and network notifications. Business is $55/mo and adds carousels, A/B testing, team collaboration, and API access. BYOK AI costs are typically $2 to $4/month with zero markup from LinkedGrow.",
           },
           {
             question: "What is BYOK and why does the writer use it?",

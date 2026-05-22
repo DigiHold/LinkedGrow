@@ -305,7 +305,7 @@ export function BestPostGeneratorContent() {
           {
             question: "How does it compare to Taplio, AuthoredUp, or Supergrow?",
             answer:
-              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, and integrated tools for $19 to $79 plus $2 to $4 in BYOK AI costs.",
+              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, and integrated tools for $13 to $55 plus $2 to $4 in BYOK AI costs.",
           },
           {
             question: "Why do 26+ AI models matter?",
@@ -320,7 +320,7 @@ export function BestPostGeneratorContent() {
           {
             question: "Is there a free trial?",
             answer:
-              "Yes. 3 generations per month with voice training and all AI models. No credit card. Paid plans start at $19 per month for unlimited.",
+              "Yes. 3 generations per month with voice training and all AI models. No credit card. Paid plans start at $13 per month for unlimited.",
           },
           {
             question: "What AI models are available?",
@@ -330,7 +330,7 @@ export function BestPostGeneratorContent() {
           {
             question: "How much does it cost?",
             answer:
-              "7-day Pro trial included. Starter $19 per month, Pro $39 per month, Business $79 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
+              "7-day Pro trial included. Starter $13 per month, Pro $27 per month, Business $55 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
           },
           {
             question: "Can I publish directly to LinkedIn?",

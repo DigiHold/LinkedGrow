@@ -78,7 +78,7 @@ export default function LinkedinCompanyPageGuidePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - LinkedIn Company Page Management"
         url="https://linkedgrow.ai/linkedin-company-page-guide"
-        description="Create and manage your LinkedIn company page with AI-powered content generation, team collaboration, and scheduling tools. From $19/month."
+        description="Create and manage your LinkedIn company page with AI-powered content generation, team collaboration, and scheduling tools. From $13/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <CompanyPageGuideContent />

@@ -246,7 +246,7 @@ export function ProfileViewsContent() {
             { text: "Voice training that matches your authentic writing style" },
             { text: "Scheduling with visual calendar and optimal time suggestions" },
             { text: "Hook generator, carousel creator, and image generation" },
-            { text: "Everything in one platform from $19 per month" },
+            { text: "Everything in one platform from $13 per month" },
           ],
         }}
         savingsText="All the tools to maximize your LinkedIn visibility for under $25 per month"

@@ -53,7 +53,7 @@ const schedulerFAQs = [
   {
     question: "How many posts can I schedule?",
     answer:
-      "The Starter plan at $19 per month includes scheduling for up to 10 posts at a time. The Pro plan at $39 per month and Business plan at $79 per month include unlimited scheduling. The 7-day Pro trial does not include scheduling but you can publish posts directly.",
+      "The Starter plan at $13 per month includes scheduling for up to 10 posts at a time. The Pro plan at $27 per month and Business plan at $55 per month include unlimited scheduling. The 7-day Pro trial does not include scheduling but you can publish posts directly.",
   },
   {
     question: "Does the scheduler include a content calendar?",

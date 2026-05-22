@@ -232,7 +232,7 @@ export function PostGeneratorFreeContent() {
           ],
         }}
         linkedgrow={{
-          price: "Free - $19/month",
+          price: "Free - $13/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "7-day Pro trial with full Pro access - no card required" },
@@ -325,7 +325,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "How do I upgrade from free to paid?",
             answer:
-              "Upgrade anytime from your dashboard. Plans start at $19 per month for Starter with unlimited generations. Your voice training and content history carry over automatically.",
+              "Upgrade anytime from your dashboard. Plans start at $13 per month for Starter with unlimited generations. Your voice training and content history carry over automatically.",
           },
         ]}
       />

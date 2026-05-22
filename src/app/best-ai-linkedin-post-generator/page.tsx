@@ -38,12 +38,12 @@ const bestGenFAQs = [
   {
     question: "What makes LinkedGrow the best AI LinkedIn post generator?",
     answer:
-      "Three things set LinkedGrow apart. First, you get access to 26+ AI models (ChatGPT, Claude, Gemini, Grok, and more) instead of being locked into one. Second, voice training analyzes your past posts so every AI-generated post matches your writing style. Third, the BYOK model means unlimited generations at $19 per month plus $2 to $4 in AI costs - 80% less than competitors charging $49 to $199 with caps.",
+      "Three things set LinkedGrow apart. First, you get access to 26+ AI models (ChatGPT, Claude, Gemini, Grok, and more) instead of being locked into one. Second, voice training analyzes your past posts so every AI-generated post matches your writing style. Third, the BYOK model means unlimited generations at $13 per month plus $2 to $4 in AI costs - 80% less than competitors charging $49 to $199 with caps.",
   },
   {
     question: "How does LinkedGrow compare to Taplio, AuthoredUp, or Supergrow?",
     answer:
-      "Most LinkedIn tools offer 1 AI model, cap generations at 30 to 100 per month, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, integrated image generation, scheduling, and analytics for $19 to $79 per month. The BYOK model adds only $2 to $4 in AI costs. No other tool offers this combination at this price.",
+      "Most LinkedIn tools offer 1 AI model, cap generations at 30 to 100 per month, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, integrated image generation, scheduling, and analytics for $13 to $55 per month. The BYOK model adds only $2 to $4 in AI costs. No other tool offers this combination at this price.",
   },
   {
     question: "Why does having 26+ AI models matter?",
@@ -68,7 +68,7 @@ const bestGenFAQs = [
   {
     question: "How much does the best AI LinkedIn post generator cost?",
     answer:
-      "LinkedGrow includes a 7-day Pro trial with full Pro access, no credit card required. Starter is $19 per month with unlimited generations. Pro is $39 per month adding image generation and analytics. Business is $79 per month with carousels, A/B testing, team collaboration, and API access. BYOK AI costs are $2 to $4 per month on average with zero markup from LinkedGrow.",
+      "LinkedGrow includes a 7-day Pro trial with full Pro access, no credit card required. Starter is $13 per month with unlimited generations. Pro is $27 per month adding image generation and analytics. Business is $55 per month with carousels, A/B testing, team collaboration, and API access. BYOK AI costs are $2 to $4 per month on average with zero markup from LinkedGrow.",
   },
   {
     question: "Can I publish directly to LinkedIn from the generator?",

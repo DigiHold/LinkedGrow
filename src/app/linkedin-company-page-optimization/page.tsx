@@ -78,7 +78,7 @@ export default function LinkedinCompanyPageOptimizationPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - LinkedIn Company Page Optimization"
         url="https://linkedgrow.ai/linkedin-company-page-optimization"
-        description="Optimize your LinkedIn company page for more followers with AI content generation, scheduling, employee advocacy tools, and analytics. From $19/month."
+        description="Optimize your LinkedIn company page for more followers with AI content generation, scheduling, employee advocacy tools, and analytics. From $13/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <CompanyPageOptimizationContent />

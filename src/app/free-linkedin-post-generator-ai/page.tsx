@@ -63,7 +63,7 @@ const freeGenFAQs = [
   {
     question: "How much does the paid plan cost after free?",
     answer:
-      "Starter is $19 per month with unlimited post generations, scheduling for up to 10 posts, and a content calendar. Pro is $39 per month adding image generation, analytics, and network notifications. Business is $79 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
+      "Starter is $13 per month with unlimited post generations, scheduling for up to 10 posts, and a content calendar. Pro is $27 per month adding image generation, analytics, and network notifications. Business is $55 per month with carousels, A/B testing, team collaboration, and advanced analytics. BYOK AI costs are typically $2 to $4 per month with zero markup.",
   },
   {
     question: "What is BYOK and why does it matter for a free generator?",
@@ -73,7 +73,7 @@ const freeGenFAQs = [
   {
     question: "Can I schedule posts on the 7-day Pro trial?",
     answer:
-      "Scheduling is available on paid plans starting at Starter ($19 per month). On the 7-day Pro trial, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Upgrade to Starter for scheduling up to 10 posts.",
+      "Scheduling is available on paid plans starting at Starter ($13 per month). On the 7-day Pro trial, you can generate posts and copy them to LinkedIn manually, or publish directly to your connected LinkedIn account. Upgrade to Starter for scheduling up to 10 posts.",
   },
 ];
 

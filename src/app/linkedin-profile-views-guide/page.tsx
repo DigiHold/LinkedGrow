@@ -93,7 +93,7 @@ export default function LinkedinProfileViewsGuidePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - LinkedIn Profile Views & Content Growth"
         url="https://linkedgrow.ai/linkedin-profile-views-guide"
-        description="Get more LinkedIn profile views with AI-powered content creation, voice training, and optimal scheduling. Turn profile visitors into connections and leads. From $19/month."
+        description="Get more LinkedIn profile views with AI-powered content creation, voice training, and optimal scheduling. Turn profile visitors into connections and leads. From $13/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <ProfileViewsContent />
