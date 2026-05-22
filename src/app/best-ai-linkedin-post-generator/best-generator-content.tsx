@@ -242,7 +242,7 @@ export function BestPostGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-79/month",
+          price: "$13-55/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "26+ AI models - ChatGPT, Claude, Gemini, Grok, Perplexity, Kimi, and more" },

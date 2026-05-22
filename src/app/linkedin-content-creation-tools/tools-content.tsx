@@ -49,7 +49,7 @@ export function ContentCreationToolsContent() {
         valuePropBadges={[
           { icon: Sparkles, text: "26+ AI models" },
           { icon: Layers, text: "6 tools in one" },
-          { icon: CircleDollarSign, text: "From $19/month" },
+          { icon: CircleDollarSign, text: "From $13/month" },
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
@@ -242,7 +242,7 @@ export function ContentCreationToolsContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-79/month",
+          price: "$13-55/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "All 6 content tools in one platform with shared workflow" },

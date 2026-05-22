@@ -2,7 +2,7 @@
 
 > **CRITICAL: NO BACKWARD COMPATIBILITY CODE**
 >
-> LinkedGrow is pre-launch with ZERO users. Never add backward compatibility code, legacy field mappings, migration shims, or "for old users" logic. If something needs to change, change it directly. Delete unused code completely - no commented code, no "deprecated" markers, no fallbacks.
+> LinkedGrow is an early-stage product moving fast. Never add backward compatibility code, legacy field mappings, migration shims, or "for old users" logic. If something needs to change, change it directly. Delete unused code completely - no commented code, no "deprecated" markers, no fallbacks.
 
 > **CRITICAL: LINKEDGROW HAS NO FREE PLAN**
 >
@@ -61,7 +61,7 @@
 LinkedGrow is a SaaS platform that helps users create, schedule, and optimize LinkedIn content using AI. The key differentiator is the **BYOK (Bring Your Own Key)** model - users connect their own AI API keys (OpenAI, Anthropic, Google, etc.) for unlimited generations without monthly caps.
 
 **Website:** https://linkedgrow.ai
-**Status:** Pre-launch (collecting waitlist emails)
+**Status:** Live (80+ users, including paying customers)
 
 ## Tech Stack
 
@@ -833,6 +833,7 @@ The project includes a local BOS (Business Operating System) framework at `./BOS
 | "X comment" + paste post | `BOS/Knowledge/X_Comment_Skill.md` | Generate ONE value-add reply 15-35 words for X (Twitter). Shorter and punchier than LinkedIn. Same anti-AI-slop pre-flight. Target creators 5K-50K solo SaaS / AI / indie hackers. Quote-tweet bonus 1-2x/week on viral niche posts. |
 | "BOS" / "BOS:" / "act as BOS" / "Yomi mode" | `BOS/CLAUDE.md` (full advisor mode) | Strategic business advisor: reads all `Core/` files, diagnoses bottleneck, prescribes highest-leverage move with Yomi-style direct voice |
 | "write reddit" | `REDDIT-POST-GUIDE.md` | Research trending AI topics, write a r/WTFisAI post with flair, title, and content ready to paste |
+| "recycle linkedin" / "recycle linkedin [id or url]" | `BOS/Knowledge/LinkedIn_Recycling_Workflow.md` | Pull a past published post via LinkedGrow API, classify into WINNER (≥40K imp, repost 90% same body with new hook in 14-21 days) / POTENTIAL (5-40K, rewrite hook + first 3 lines in 4-6 weeks) / FLOP (<5K, skip). Enforces timing rules per archetype, re-runs Step 4.5 triple-check + Step 4.7 LLM Audience Validation + pre-flight, generates fresh image (never reuse original). Appends to `BOS/Core/Recycling_Log.md`. |
 
 When the user says any of these commands, read the corresponding workflow file and follow it step by step.
 

@@ -93,7 +93,7 @@ export default function BestAiLinkedinPostGeneratorPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - Best AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/best-ai-linkedin-post-generator"
-        description="The best AI LinkedIn post generator with 26+ models, voice training, and unlimited generations. ChatGPT, Claude, Gemini, Grok. BYOK pricing from $19/month."
+        description="The best AI LinkedIn post generator with 26+ models, voice training, and unlimited generations. ChatGPT, Claude, Gemini, Grok. BYOK pricing from $13/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <BestPostGeneratorContent />

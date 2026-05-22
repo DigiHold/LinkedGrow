@@ -53,7 +53,7 @@ export function PostSchedulerContent() {
         ]}
         primaryCta={{ text: "Start scheduling posts", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["From $19/month", "No credit card to try", "Cancel anytime"]}
+        trustIndicators={["From $13/month", "No credit card to try", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -233,7 +233,7 @@ export function PostSchedulerContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19/month",
+          price: "$13/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Scheduling + AI post generator + image creator in one platform" },
@@ -257,7 +257,7 @@ export function PostSchedulerContent() {
           { value: "15 min", label: "To schedule a full week", color: "text-cyan-600 dark:text-cyan-400" },
           { value: "3-5x", label: "More posts per week with batching", color: "text-emerald-600 dark:text-emerald-400" },
           { value: "40%", label: "Higher reach with optimal timing", color: "text-violet-600 dark:text-violet-400" },
-          { value: "$19", label: "Per month with AI generation included", color: "text-amber-600 dark:text-amber-400" },
+          { value: "$13", label: "Per month with AI generation included", color: "text-amber-600 dark:text-amber-400" },
         ]}
         testimonials={[
           {
@@ -350,7 +350,7 @@ export function PostSchedulerContent() {
         primaryCta={{ text: "Start scheduling free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "From $19/month",
+          "From $13/month",
           "Visual calendar",
           "Cancel anytime",
           "Auto-publish included",

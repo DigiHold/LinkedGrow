@@ -239,7 +239,7 @@ export function ProfileViewsContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19/month",
+          price: "$13/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI generations with your own API key" },

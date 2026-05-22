@@ -228,7 +228,7 @@ export function CompanyPageOptimizationContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19/month",
+          price: "$13/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI content generation with your own API key" },
