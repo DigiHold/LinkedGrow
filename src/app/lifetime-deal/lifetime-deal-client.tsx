@@ -15,15 +15,10 @@ import {
   Crown,
   Loader2,
   Infinity as InfinityIcon,
-  TrendingUp,
   Calendar,
-  BarChart3,
   Image as ImageIcon,
   Layers,
   FlaskConical,
-  Users,
-  Code,
-  Headphones,
   RefreshCw,
   Key,
   Brain,
@@ -31,10 +26,6 @@ import {
   Clock,
   Star,
   Gift,
-  MessageSquare,
-  Bell,
-  Megaphone,
-  Repeat,
   Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -81,24 +72,13 @@ const TIERS = [
 ];
 
 const FEATURES = [
-  { icon: Sparkles, name: "Unlimited AI Post Generation", description: "Generate as many posts as you want with your own AI key" },
-  { icon: Lightbulb, name: "Ideas Generator", description: "AI-generated post ideas tailored to your niche and audience" },
-  { icon: TrendingUp, name: "Advanced Post Editor", description: "Rich text editor with formatting and LinkedIn preview" },
-  { icon: Calendar, name: "Content Calendar + Scheduling", description: "Plan and schedule posts with visual calendar" },
-  { icon: ImageIcon, name: "AI Image Generation", description: "Create stunning images for your posts with AI" },
-  { icon: Layers, name: "Carousel Generator", description: "Create multi-slide carousels that get 3x engagement" },
-  { icon: Brain, name: "Hooks Generator", description: "Generate viral opening lines that stop the scroll" },
-  { icon: Repeat, name: "Content Repurposing", description: "Turn one idea into multiple formats and angles" },
-  { icon: MessageSquare, name: "First Comment Scheduling", description: "Auto-post a first comment when your post goes live" },
-  { icon: BarChart3, name: "Analytics Dashboard", description: "Track engagement, impressions, and growth" },
-  { icon: TrendingUp, name: "Algorithm Optimizer", description: "AI-powered suggestions to boost reach" },
-  { icon: Bell, name: "Network Notifications", description: "Get notified by email when people in your circle publish on LinkedIn" },
-  { icon: Megaphone, name: "Team Notifications", description: "Notify your team by email when your company page publishes" },
-  { icon: FlaskConical, name: "A/B Testing", description: "Test different post versions to find what works" },
-  { icon: Users, name: "Team Collaboration", description: "Invite team members with role-based access" },
-  { icon: Megaphone, name: "Advanced Analytics", description: "Deep engagement trends, best times, export reports" },
-  { icon: Code, name: "API Access", description: "REST API for custom integrations" },
-  { icon: Headphones, name: "Priority Support", description: "Fast, dedicated support from the founder" },
+  { icon: Sparkles, name: "Unlimited AI Post Generation", description: "Write a week of LinkedIn posts in your voice, in minutes" },
+  { icon: Lightbulb, name: "Ideas Generator", description: "Endless post ideas tailored to your niche, never stare at a blank page again" },
+  { icon: ImageIcon, name: "AI Image Generation", description: "Stunning images for every post, generated with your own AI key" },
+  { icon: Layers, name: "Carousel Generator", description: "Multi-slide carousels that get 3x engagement, no Canva needed" },
+  { icon: Brain, name: "Hooks Generator", description: "Viral opening lines that stop the scroll and pull readers in" },
+  { icon: Calendar, name: "Content Calendar + Scheduling", description: "Plan and schedule weeks of content in one sitting" },
+  { icon: FlaskConical, name: "A/B Testing", description: "Test post versions side-by-side to find what actually works" },
   { icon: RefreshCw, name: "All Future Updates", description: "Every new feature we ship is yours, forever" },
 ];
 
@@ -156,12 +136,12 @@ const COMPETITORS = [
 // ============================================
 
 function StickyHeader({
-  counter,
+  tierJumpText,
   currentPrice,
   onCta,
   loading,
 }: {
-  counter: number;
+  tierJumpText: string;
   currentPrice: number;
   onCta: () => void;
   loading: boolean;
@@ -196,7 +176,7 @@ function StickyHeader({
           </Link>
           <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-xs font-semibold text-amber-700 dark:text-amber-400">
             <Clock className="w-3 h-3" />
-            {counter} licenses remaining
+            {tierJumpText}
           </span>
         </div>
         <Button
@@ -205,7 +185,7 @@ function StickyHeader({
           className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/25"
         >
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-          Lock in ${currentPrice} forever
+          Get Lifetime Access - ${currentPrice}
         </Button>
       </div>
     </motion.div>
@@ -217,12 +197,10 @@ function StickyHeader({
 // ============================================
 
 function HeroSection({
-  counter,
   currentPrice,
   onCta,
   loading,
 }: {
-  counter: number;
   currentPrice: number;
   onCta: () => void;
   loading: boolean;
@@ -241,7 +219,7 @@ function HeroSection({
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-sm font-semibold text-amber-700 dark:text-amber-400 mb-6"
         >
           <Gift className="w-4 h-4" />
-          <span>Limited Offer - Only {counter} Lifetime Licenses</span>
+          <span>Launch pricing - Tier 1 at ${currentPrice}</span>
         </motion.div>
 
         {/* Headline */}
@@ -251,9 +229,9 @@ function HeroSection({
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-6 leading-tight"
         >
-          AI LinkedIn Content Tool.{" "}
+          A week of LinkedIn posts{" "}
           <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
-            Pay Once, Use Forever.
+            in 10 minutes.
           </span>
         </motion.h1>
 
@@ -264,8 +242,7 @@ function HeroSection({
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed"
         >
-          Pay ${currentPrice} once for the full Business plan. Keep every feature forever.
-          Run AI on your own key for $3/mo instead of $79/mo subscriptions that cap at 100 generations.
+          One payment of ${currentPrice}. Lifetime access to every feature. Every future update included. No subscription, ever.
         </motion.p>
 
         {/* Price */}
@@ -281,7 +258,7 @@ function HeroSection({
             <span className="text-xl sm:text-2xl font-semibold text-slate-500">one-time</span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            + your own AI API key ($3/mo). Save $1,557 over 3 years vs Taplio.
+            Save $1,557 over 3 years vs Taplio.
           </p>
         </motion.div>
 
@@ -303,7 +280,7 @@ function HeroSection({
             ) : (
               <ArrowRight className="w-5 h-5 mr-2" />
             )}
-            Lock in ${currentPrice} forever
+            Get Lifetime Access - ${currentPrice}
           </Button>
 
           {/* Trust elements */}
@@ -500,7 +477,7 @@ function FeaturesGrid() {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((feature, i) => (
             <motion.div
               key={feature.name}
@@ -565,11 +542,11 @@ function ByokSection() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-            How{" "}
+            Why your AI costs{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-500 to-orange-500">
-              BYOK
+              $3/mo
             </span>{" "}
-            saves you 96%
+            here, and $49/mo everywhere else
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
             Every AI LinkedIn tool charges $30-80/month. The actual AI API cost is $2-4. We cut out the markup.
@@ -625,10 +602,12 @@ function ByokSection() {
 
 function PricingTiers({
   status,
+  tierJumpText,
   onSelectTier,
   loading,
 }: {
   status: LtdStatus;
+  tierJumpText: string;
   onSelectTier: (tier: string) => void;
   loading: string | null;
 }) {
@@ -637,31 +616,6 @@ function PricingTiers({
 
   const tierOrder = ["early-bird", "regular", "final-call"];
   const currentTierIndex = tierOrder.indexOf(status.currentTier);
-
-  // Each tier's own spot count
-  // Early Bird: 100 spots, Regular: 150 spots, Final Call: 250 spots
-  // Total: 500 licenses
-  const tierConfig: Record<string, { ownTotal: number }> = {
-    "early-bird": { ownTotal: 100 },
-    "regular": { ownTotal: 150 },
-    "final-call": { ownTotal: 250 },
-  };
-
-  const getTierDisplay = (tierId: string) => {
-    const tierIndex = tierOrder.indexOf(tierId);
-    const config = tierConfig[tierId];
-
-    if (tierIndex < currentTierIndex) {
-      // Past tier - fully sold out
-      return { left: 0, total: config.ownTotal };
-    }
-    if (tierIndex === currentTierIndex) {
-      // Active tier - tierSpotsLeft from API is remaining within this tier
-      return { left: Math.min(config.ownTotal, status.tierSpotsLeft), total: config.ownTotal };
-    }
-    // Future tier - full capacity
-    return { left: config.ownTotal, total: config.ownTotal };
-  };
 
   return (
     <section ref={ref} id="pricing" className="relative z-10 py-16 md:py-24 px-4">
@@ -676,7 +630,7 @@ function PricingTiers({
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700">
             <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
             <span className="text-sm sm:text-base font-semibold text-amber-700 dark:text-amber-400">
-              {status.counter} lifetime licenses remaining
+              {tierJumpText}
             </span>
           </div>
         </motion.div>
@@ -688,13 +642,13 @@ function PricingTiers({
           className="text-center mb-12"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-            Price increases as{" "}
+            Lock in $99 before the{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
-              spots fill up
+              next tier opens
             </span>
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
-            All tiers include the exact same Business plan. When all 500 sell, LTD closes for good and pricing returns to $79/month.
+            All tiers include the exact same Business plan. When the LTD closes, pricing returns to $79/month forever.
           </p>
         </motion.div>
 
@@ -704,7 +658,6 @@ function PricingTiers({
             const isSoldOut = tierIndex < currentTierIndex;
             const isActive = tier.id === status.currentTier;
             const isLocked = tierIndex > currentTierIndex;
-            const display = getTierDisplay(tier.id);
 
             return (
               <motion.div
@@ -759,43 +712,26 @@ function PricingTiers({
                     </div>
                   </div>
 
-                  {/* Spots counter - prominent for active tier */}
+                  {/* Tier status - no spot ratios */}
                   {isActive && (
-                    <div className="mb-5">
-                      <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-amber-700 dark:text-amber-400">
-                          Only {display.left}/{display.total} spots left
-                        </span>
-                        <span className="text-slate-400">{Math.round(((display.total - display.left) / display.total) * 100)}% claimed</span>
-                      </div>
-                      <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-linear-to-r from-amber-400 to-red-500 transition-all duration-500"
-                          style={{ width: `${((display.total - display.left) / display.total) * 100}%` }}
-                        />
-                      </div>
+                    <div className="mb-5 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                      <p className="text-sm font-semibold text-amber-700 dark:text-amber-400 text-center">
+                        {tierOrder.indexOf(tier.id) < tierOrder.length - 1
+                          ? `Lock in $${tier.price} before tier moves to $${TIERS[tierOrder.indexOf(tier.id) + 1].price}`
+                          : "Last tier before LTD closes forever"}
+                      </p>
                     </div>
                   )}
                   {isSoldOut && (
-                    <div className="mb-5">
-                      <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-slate-400">0/{display.total} spots left</span>
-                        <span className="text-slate-400">100% claimed</span>
-                      </div>
-                      <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                        <div className="h-full rounded-full bg-slate-400 w-full" />
-                      </div>
+                    <div className="mb-5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <p className="text-sm font-semibold text-slate-500 text-center">Sold out</p>
                     </div>
                   )}
                   {isLocked && (
-                    <div className="mb-5">
-                      <div className="flex items-center justify-between text-sm mb-1.5">
-                        <span className="font-semibold text-slate-400">{display.total}/{display.total} spots</span>
-                        <span className="text-slate-400">{tier.id === "final-call" ? "When 500 sell out, LTD ends" : "Buy early to save"}</span>
-                      </div>
-                      <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                        <div className="h-full rounded-full bg-slate-200 dark:bg-slate-600" style={{ width: "0%" }} />
-                      </div>
+                    <div className="mb-5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <p className="text-sm font-semibold text-slate-500 text-center">
+                        {tier.id === "final-call" ? "Final tier before LTD ends" : "Buy at the previous tier to save"}
+                      </p>
                     </div>
                   )}
 
@@ -829,7 +765,7 @@ function PricingTiers({
                     ) : (
                       <>
                         <ArrowRight className="w-4 h-4 mr-2" />
-                        Lock in ${tier.price} forever
+                        Get Lifetime Access - ${tier.price}
                       </>
                     )}
                   </Button>
@@ -1000,12 +936,12 @@ function FaqSection() {
 // ============================================
 
 function FinalCta({
-  counter,
+  tierJumpText,
   currentPrice,
   onCta,
   loading,
 }: {
-  counter: number;
+  tierJumpText: string;
   currentPrice: number;
   onCta: () => void;
   loading: boolean;
@@ -1032,18 +968,18 @@ function FinalCta({
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium mb-6">
             <Clock className="w-4 h-4" />
-            {counter} licenses remaining
+            {tierJumpText}
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6">
-            Don&apos;t miss this deal
+            Get LinkedGrow forever for ${currentPrice}
           </h2>
           <p className="text-lg md:text-xl text-white/80 mb-2">
             <span className="line-through text-white/40">$948/year</span>{" "}
             <span className="text-white font-bold text-3xl sm:text-4xl md:text-6xl">${currentPrice} once</span>
           </p>
           <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto">
-            The full Business plan, yours forever, with every feature and every future update included
+            After Tier 1 sells out, pricing jumps to $149. After all 500 licenses sell, LTD closes for good and pricing returns to $79/month.
           </p>
         </motion.div>
 
@@ -1063,7 +999,7 @@ function FinalCta({
             ) : (
               <ArrowRight className="w-5 h-5 mr-2" />
             )}
-            Lock in ${currentPrice} forever
+            Get Lifetime Access - ${currentPrice}
           </Button>
         </motion.div>
 
@@ -1085,6 +1021,23 @@ function FinalCta({
             <InfinityIcon className="w-4 h-4" />
             <span>No recurring charges ever</span>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-12 max-w-2xl mx-auto text-left space-y-3 text-white/90"
+        >
+          <p className="text-sm md:text-base">
+            <span className="font-bold">P.S.</span> Tier 1 pricing ends after the first 100 sales. After all 500 licenses sell, the LTD closes for good.
+          </p>
+          <p className="text-sm md:text-base">
+            <span className="font-bold">P.P.S.</span> 14-day money-back guarantee. Try everything risk-free and get a full refund if it&apos;s not for you.
+          </p>
+          <p className="text-sm md:text-base">
+            <span className="font-bold">P.P.P.S.</span> One payment of ${currentPrice}. Lifetime access to every feature. No subscription, no caps, no recurring charges.
+          </p>
         </motion.div>
       </div>
     </section>
@@ -1242,7 +1195,7 @@ function LtdStickyMobileCTA({
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
-              Lock in ${currentPrice} forever
+              Get Lifetime Access - ${currentPrice}
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -1271,6 +1224,11 @@ export default function LifetimeDealClient() {
   }, []);
 
   const currentPrice = TIERS.find((t) => t.id === status.currentTier)?.price || 99;
+  const currentTierIndex = TIERS.findIndex((t) => t.id === status.currentTier);
+  const nextTier = TIERS[currentTierIndex + 1];
+  const tierJumpText = nextTier
+    ? `Tier ${currentTierIndex + 1}: $${currentPrice} - then $${nextTier.price}`
+    : `Final tier: $${currentPrice}`;
 
   const handleSelectTier = (tier: string) => {
     if (session?.user?.email) {
@@ -1306,13 +1264,13 @@ export default function LifetimeDealClient() {
           </span>
           <div className="hidden md:flex items-center gap-2 text-sm">
             <span className="text-slate-400">|</span>
-            <span className="text-amber-400 font-semibold">{status.counter} licenses remaining</span>
+            <span className="text-amber-400 font-semibold">{tierJumpText}</span>
           </div>
         </div>
       </div>
 
       {/* Sticky Header (appears on scroll) */}
-      <StickyHeader counter={status.counter} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
+      <StickyHeader tierJumpText={tierJumpText} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
 
       {/* Structured Data */}
       <BreadcrumbJsonLd
@@ -1335,14 +1293,14 @@ export default function LifetimeDealClient() {
       />
 
       {/* Sections */}
-      <HeroSection counter={status.counter} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
+      <HeroSection currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
       <PriceComparison currentPrice={currentPrice} />
       <FeaturesGrid />
       <ByokSection />
-      <PricingTiers status={status} onSelectTier={handleSelectTier} loading={loading} />
+      <PricingTiers status={status} tierJumpText={tierJumpText} onSelectTier={handleSelectTier} loading={loading} />
       <TestimonialsSection />
       <FaqSection />
-      <FinalCta counter={status.counter} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
+      <FinalCta tierJumpText={tierJumpText} currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
       <LtdFooter />
 
       <LtdStickyMobileCTA currentPrice={currentPrice} onCta={handleCtaClick} loading={loading === status.currentTier} />
