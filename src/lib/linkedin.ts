@@ -1165,87 +1165,100 @@ function extractOrgName(org: Record<string, unknown> | null | undefined): string
   return '';
 }
 
+// Roles that grant posting permission on a LinkedIn org page.
+// ADMINISTRATOR = super admin; CONTENT_ADMIN = can post but not manage admins.
+// Both can publish via the share API.
+const POSTING_ROLES = ['ADMINISTRATOR', 'CONTENT_ADMIN'] as const;
+
 /**
- * Get organizations where the user is an administrator
- * Uses the Organization Access Control API (requires Advertising API access)
+ * Get organizations where the user has posting rights.
+ * Filters by state=APPROVED to avoid REQUESTED/REVOKED/REJECTED ghost rows that
+ * would otherwise resolve to "Unknown Organization" because their org-details
+ * lookup fails. Queries both ADMINISTRATOR and CONTENT_ADMIN roles since both
+ * can post.
  */
 export async function getAdministeredOrganizations(accessToken: string): Promise<LinkedInOrganization[]> {
   try {
     // Try REST API first (Community Management API - requires LinkedIn-Version header)
-    // Try REST API first (Community Management API)
-    const restResponse = await linkedInFetchWithRetry(
-      `${LINKEDIN_REST_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': LINKEDIN_API_VERSION,
-        },
-      }
-    );
-
-    if (restResponse.ok) {
-      const restData = await restResponse.json();
-      const orgIds: string[] = [];
-
-      if (restData.elements && Array.isArray(restData.elements)) {
-        for (const element of restData.elements) {
-          const orgUrn = element.organization || element.organizationalTarget;
-          if (orgUrn && orgUrn.includes('urn:li:organization:')) {
-            orgIds.push(orgUrn.replace('urn:li:organization:', ''));
-          }
+    const restIds = new Set<string>();
+    let restReachable = false;
+    for (const role of POSTING_ROLES) {
+      const restResponse = await linkedInFetchWithRetry(
+        `${LINKEDIN_REST_API_BASE}/organizationAcls?q=roleAssignee&role=${role}&state=APPROVED`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+            'LinkedIn-Version': LINKEDIN_API_VERSION,
+          },
         }
-      }
+      );
 
-      if (orgIds.length > 0) {
-        return await fetchOrganizationDetails(accessToken, orgIds);
-      }
-    } else {
-      const errText = await restResponse.text();
-    }
-
-    // Fallback: v2 API with projection
-    // Fallback: v2 API with projection
-    const aclResponse = await linkedInFetchWithRetry(
-      `${LINKEDIN_API_BASE}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organization~(localizedName,logoV2(original~:playableStreams))))`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0',
-        },
-      }
-    );
-
-    if (aclResponse.ok) {
-      const aclData = await aclResponse.json();
-      const organizations: LinkedInOrganization[] = [];
-
-      if (aclData.elements && Array.isArray(aclData.elements)) {
-        for (const element of aclData.elements) {
-          const orgUrn = element.organization;
-          const orgDetails = element['organization~'];
-
-          if (orgUrn && orgDetails) {
-            const orgId = orgUrn.replace('urn:li:organization:', '');
-            let logoUrl: string | undefined;
-            if (orgDetails.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
-              logoUrl = orgDetails.logoV2['original~'].elements[0].identifiers[0].identifier;
+      if (restResponse.ok) {
+        restReachable = true;
+        const restData = await restResponse.json();
+        if (restData.elements && Array.isArray(restData.elements)) {
+          for (const element of restData.elements) {
+            const orgUrn = element.organization || element.organizationalTarget;
+            if (orgUrn && orgUrn.includes('urn:li:organization:')) {
+              restIds.add(orgUrn.replace('urn:li:organization:', ''));
             }
-
-            organizations.push({
-              id: orgId,
-              name: orgDetails.localizedName || 'Unknown Organization',
-              logoUrl,
-            });
           }
         }
       }
-
-      if (organizations.length > 0) return organizations;
-    } else {
     }
 
-    // Last fallback: organizationalEntityAcls
+    if (restReachable) {
+      if (restIds.size === 0) return [];
+      return await fetchOrganizationDetails(accessToken, Array.from(restIds));
+    }
+
+    // Fallback: v2 API with projection
+    const v2Orgs: LinkedInOrganization[] = [];
+    const v2Seen = new Set<string>();
+    let v2Reachable = false;
+    for (const role of POSTING_ROLES) {
+      const aclResponse = await linkedInFetchWithRetry(
+        `${LINKEDIN_API_BASE}/organizationAcls?q=roleAssignee&role=${role}&state=APPROVED&projection=(elements*(organization~(localizedName,logoV2(original~:playableStreams))))`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      );
+
+      if (aclResponse.ok) {
+        v2Reachable = true;
+        const aclData = await aclResponse.json();
+        if (aclData.elements && Array.isArray(aclData.elements)) {
+          for (const element of aclData.elements) {
+            const orgUrn = element.organization;
+            const orgDetails = element['organization~'];
+
+            if (orgUrn && orgDetails) {
+              const orgId = orgUrn.replace('urn:li:organization:', '');
+              if (v2Seen.has(orgId)) continue;
+              v2Seen.add(orgId);
+
+              const name = extractOrgName(orgDetails);
+              // Drop unresolved orgs - better no row than a "Unknown Organization" ghost.
+              if (!name) continue;
+
+              let logoUrl: string | undefined;
+              if (orgDetails.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
+                logoUrl = orgDetails.logoV2['original~'].elements[0].identifiers[0].identifier;
+              }
+
+              v2Orgs.push({ id: orgId, name, logoUrl });
+            }
+          }
+        }
+      }
+    }
+
+    if (v2Reachable) return v2Orgs;
+
     // Last fallback: organizationalEntityAcls
     return await getOrganizationsAlternate(accessToken);
   } catch {
@@ -1319,13 +1332,14 @@ async function fetchOrganizationDetails(accessToken: string, orgIds: string[]): 
         }
       }
 
-      organizations.push({ id: orgId, name: name || 'Unknown Organization', logoUrl });
+      // Drop unresolved orgs - LinkedIn ACL can hold ghost rows the user can't actually read.
+      if (!name) continue;
+      organizations.push({ id: orgId, name, logoUrl });
     } catch (err) {
       console.error(
         `[linkedin] organization ${orgId} lookup threw:`,
         err instanceof Error ? err.message : err
       );
-      organizations.push({ id: orgId, name: 'Unknown Organization' });
     }
   }
 
@@ -2749,37 +2763,34 @@ export interface LinkedInFeedPost {
  */
 async function getOrganizationsAlternate(accessToken: string): Promise<LinkedInOrganization[]> {
   try {
-    const response = await fetch(
-      `${LINKEDIN_API_BASE}/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0',
-        },
-      }
-    );
+    const orgIds = new Set<string>();
 
-    if (!response.ok) {
-      return [];
-    }
+    for (const role of POSTING_ROLES) {
+      const response = await fetch(
+        `${LINKEDIN_API_BASE}/organizationalEntityAcls?q=roleAssignee&role=${role}&state=APPROVED`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
+        }
+      );
 
-    const data = await response.json();
-    const organizations: LinkedInOrganization[] = [];
-    const orgIds: string[] = [];
+      if (!response.ok) continue;
 
-    // Extract organization IDs
-    if (data.elements && Array.isArray(data.elements)) {
-      for (const element of data.elements) {
-        const orgUrn = element.organizationalTarget;
-        if (orgUrn && orgUrn.includes('urn:li:organization:')) {
-          const orgId = orgUrn.replace('urn:li:organization:', '');
-          orgIds.push(orgId);
+      const data = await response.json();
+      if (data.elements && Array.isArray(data.elements)) {
+        for (const element of data.elements) {
+          const orgUrn = element.organizationalTarget;
+          if (orgUrn && orgUrn.includes('urn:li:organization:')) {
+            orgIds.add(orgUrn.replace('urn:li:organization:', ''));
+          }
         }
       }
     }
 
-    // Fetch organization details for each ID
-    for (const orgId of orgIds) {
+    const organizations: LinkedInOrganization[] = [];
+    for (const orgId of Array.from(orgIds)) {
       try {
         const orgResponse = await fetch(
           `${LINKEDIN_API_BASE}/organizations/${orgId}?projection=(localizedName,logoV2(original~:playableStreams))`,
@@ -2793,16 +2804,15 @@ async function getOrganizationsAlternate(accessToken: string): Promise<LinkedInO
 
         if (orgResponse.ok) {
           const orgData = await orgResponse.json();
+          const name = extractOrgName(orgData);
+          if (!name) continue;
+
           let logoUrl: string | undefined;
           if (orgData.logoV2?.['original~']?.elements?.[0]?.identifiers?.[0]?.identifier) {
             logoUrl = orgData.logoV2['original~'].elements[0].identifiers[0].identifier;
           }
 
-          organizations.push({
-            id: orgId,
-            name: orgData.localizedName || 'Unknown Organization',
-            logoUrl,
-          });
+          organizations.push({ id: orgId, name, logoUrl });
         }
       } catch {
         // Skip organizations we can't fetch details for
