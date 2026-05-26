@@ -8,6 +8,77 @@ import { fetchAIWithRetry } from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
+// Extract a JSON array of strings from an AI response that may be wrapped in
+// markdown fences, prose preamble, or trailing commentary. Models also
+// occasionally emit unescaped newlines inside string literals, so we repair
+// that as a last resort before bailing.
+function parseHookArray(raw: string): string[] {
+  if (!raw) throw new Error("empty response");
+
+  // Strip common markdown wrappers.
+  let text = raw.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+
+  // Pull out the outermost [...] in case the model added prose before/after.
+  const first = text.indexOf("[");
+  const last = text.lastIndexOf("]");
+  if (first !== -1 && last !== -1 && last > first) {
+    text = text.slice(first, last + 1);
+  }
+
+  const tryParse = (s: string): string[] | null => {
+    try {
+      const v = JSON.parse(s);
+      return Array.isArray(v) ? v.filter((x) => typeof x === "string") : null;
+    } catch {
+      return null;
+    }
+  };
+
+  let parsed = tryParse(text);
+  if (parsed) return parsed;
+
+  // Repair raw newlines inside string literals - models forget to escape them.
+  // Walk char-by-char, escape any literal \n / \r that fall between quotes.
+  let inString = false;
+  let escaped = false;
+  const buf: string[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (escaped) {
+      buf.push(c);
+      escaped = false;
+      continue;
+    }
+    if (c === "\\") {
+      buf.push(c);
+      escaped = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      buf.push(c);
+      continue;
+    }
+    if (inString && (c === "\n" || c === "\r")) {
+      buf.push("\\n");
+      continue;
+    }
+    buf.push(c);
+  }
+  parsed = tryParse(buf.join(""));
+  if (parsed) return parsed;
+
+  throw new Error("could not parse JSON array");
+}
+
+function failInvalidJson(provider: string, raw: string): never {
+  console.error(
+    `[content/analyze] ${provider} returned unparseable response (first 500 chars):`,
+    raw.slice(0, 500)
+  );
+  throw new Error("AI returned invalid JSON. Please try again.");
+}
+
 // Generic content input (replaces Reddit-specific trimmedJson)
 interface ContentInput {
   source: "reddit" | "youtube" | "webpage" | "blog";
@@ -123,8 +194,10 @@ async function generateHooks(
     if (!isOSeries && !isGPT5) {
       requestBody.temperature = 0.8;
     }
+    // Reasoning models burn budget on thinking before emitting JSON. 2048 was
+    // tight enough to truncate output mid-array and break JSON.parse.
     if (isOSeries || isGPT5) {
-      requestBody.max_completion_tokens = 2048;
+      requestBody.max_completion_tokens = 4096;
     }
     if (isGPT5) {
       requestBody.reasoning_effort = "low";
@@ -146,11 +219,10 @@ async function generateHooks(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("openai", content);
     }
   } else if (provider === "anthropic") {
     response = await fetchAIWithRetry("https://api.anthropic.com/v1/messages", {
@@ -162,7 +234,8 @@ async function generateHooks(
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-4-6",
-        max_tokens: 1024,
+        // 1024 truncated occasionally on longer 5-hook payloads.
+        max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -174,11 +247,10 @@ async function generateHooks(
 
     const data = await response.json();
     const content = data.content[0]?.text || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("anthropic", content);
     }
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
@@ -220,11 +292,10 @@ async function generateHooks(
         break;
       }
     }
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("google", content);
     }
   } else if (provider === "grok") {
     response = await fetchAIWithRetry("https://api.x.ai/v1/chat/completions", {
@@ -237,6 +308,7 @@ async function generateHooks(
         model: model || "grok-4-1-fast-reasoning",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
+        max_tokens: 2048,
       }),
     });
 
@@ -247,11 +319,10 @@ async function generateHooks(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("grok", content);
     }
   } else if (provider === "perplexity") {
     response = await fetchAIWithRetry("https://api.perplexity.ai/chat/completions", {
@@ -264,6 +335,7 @@ async function generateHooks(
         model: model || "sonar-pro",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
+        max_tokens: 2048,
       }),
     });
 
@@ -274,11 +346,10 @@ async function generateHooks(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("perplexity", content);
     }
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
@@ -291,6 +362,7 @@ async function generateHooks(
       body: JSON.stringify({
         model: model || "kimi-k2",
         messages: [{ role: "user", content: prompt }],
+        max_tokens: 2048,
       }),
     });
 
@@ -301,11 +373,10 @@ async function generateHooks(
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content || "[]";
-    const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     try {
-      hooks = JSON.parse(cleanContent);
+      hooks = parseHookArray(content);
     } catch {
-      throw new Error("AI returned invalid JSON. Please try again.");
+      failInvalidJson("kimi", content);
     }
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
