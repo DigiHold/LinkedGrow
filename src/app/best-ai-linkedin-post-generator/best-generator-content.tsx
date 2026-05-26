@@ -443,14 +443,14 @@ export function BestPostGeneratorContent({
         </div>
       </section>
 
-      {/* ===== TL;DR COMPARISON ===== */}
+      {/* ===== AT A GLANCE COMPARISON ===== */}
       <section className="py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
-              TL;DR:{" "}
+              The 8 best LinkedIn post generators{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
-                The 8 best LinkedIn post generators at a glance
+                at a glance
               </span>
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
