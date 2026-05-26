@@ -19,7 +19,7 @@ export const metadata: Metadata = {
         url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/blog/best-ai-linkedin-post-generator/best-linkedin-post-generators-ranked-2026-cover.webp",
         width: 1376,
         height: 768,
-        alt: "Best LinkedIn post generators in 2026 ranked and reviewed - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully",
+        alt: "Best LinkedIn post generators 2026 - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully",
       },
     ],
   },

@@ -54,7 +54,7 @@ const tools: ToolReview[] = [
     freeTrial: "7-day Pro trial, no card required",
     bestFor: "Founders, coaches, and consultants who post 2 to 5 times a week and care about sounding like themselves.",
     imageSlug: "linkedgrow-card",
-    imageAlt: "LinkedGrow LinkedIn post generator dashboard with cyan-to-blue gradient branding showing the post editor and 26 AI model selector",
+    imageAlt: "LinkedGrow dashboard with BYOK API key setup and 26 model selector covering GPT, Claude, Gemini, Grok, Perplexity, and Kimi",
     overview: [
       "LinkedGrow is the only LinkedIn post generator built around BYOK (bring your own key) across 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key once and pay the AI provider directly at wholesale rates - typically $2 to $4 per month for regular posting.",
       "Voice training is the core differentiator. You paste 3 to 5 of your best posts, LinkedGrow builds a style profile, and every generation matches your sentence structure and tone. The hook generator, carousel builder, AI image generation, scheduling, content calendar, A/B testing, and analytics all sit in one dashboard.",
@@ -86,7 +86,7 @@ const tools: ToolReview[] = [
     freeTrial: "7-day free trial, card required",
     bestFor: "Salespeople and growth marketers who want LinkedIn content + automated DMs + a lead database in one tool.",
     imageSlug: "taplio-card",
-    imageAlt: "Taplio LinkedIn growth platform interface with purple branding showing the viral posts library and AI post composer",
+    imageAlt: "Taplio viral posts library panel paired with the AI composer and lead database outreach module",
     overview: [
       "Taplio is the most established name in the LinkedIn AI tool space. It pairs AI content generation with a 3+ million contact lead database, automated DMs, auto-connection requests, and a famous library of viral LinkedIn posts you can swipe ideas from.",
       "AI access is gated. The $39 Starter plan ships with zero AI credits - you only get scheduling and the hooks library. AI generation starts at the $52 Standard plan, and the lead database plus automation requires the $149 Pro plan (on annual billing).",
@@ -117,7 +117,7 @@ const tools: ToolReview[] = [
     freeTrial: "14-day free trial",
     bestFor: "Writers who already know what to write and want a better editor inside LinkedIn, plus analytics on what works.",
     imageSlug: "authoredup-card",
-    imageAlt: "AuthoredUp Chrome extension overlay on a LinkedIn post composer with formatting toolbar and post preview",
+    imageAlt: "AuthoredUp Chrome extension formatting toolbar over the native LinkedIn composer with bold, italic, Unicode controls",
     overview: [
       "AuthoredUp is not a content generator. It is a Chrome extension that upgrades the native LinkedIn composer with bold, italic, Unicode formatting, line break controls, post preview, snippets, and analytics on every post you publish.",
       "The analytics are the secret weapon. You see which hooks, lengths, and formats actually move the needle on your account specifically, not on some abstract benchmark.",
@@ -147,7 +147,7 @@ const tools: ToolReview[] = [
     freeTrial: "Free plan with 3 posts/mo",
     bestFor: "Creators who want LinkedGrow-style features at a simpler interface with no BYOK setup.",
     imageSlug: "supergrow-card",
-    imageAlt: "Supergrow LinkedIn AI tool dashboard with calendar view, carousel maker, and voice-to-post feature",
+    imageAlt: "Supergrow weekly calendar view alongside the Voice-to-Post microphone feature and Swipe File content inspiration feed",
     overview: [
       "Supergrow is the cleanest all-in-one alternative to Taplio. The Starter plan at $19/mo already includes AI content generation, scheduling, and a content inspiration feed. The Pro plan at $39/mo adds a carousel maker, advanced analytics, and team features.",
       "Voice-to-Post is a standout: dictate a half-formed thought, get a polished post back. The tool also avoids the aggressive automation features (like auto-DMs) that can trigger LinkedIn account restrictions on other platforms.",
@@ -177,7 +177,7 @@ const tools: ToolReview[] = [
     freeTrial: "Free plan available",
     bestFor: "Busy professionals who want a Chrome extension that drafts a post in 30 seconds from a topic.",
     imageSlug: "easygen-card",
-    imageAlt: "EasyGen Chrome extension popup showing one-click LinkedIn post generation with blue branding and post template options",
+    imageAlt: "EasyGen browser extension popup with topic input field and one-click format templates for story, how-to, and hot take",
     overview: [
       "EasyGen lives as a Chrome extension. Click the icon, type a topic, pick a format (story, listicle, contrarian take, how-to), and get a draft in a few seconds. It is the lowest-friction generator on this list.",
       "Generation is based on proven LinkedIn post patterns scraped from high-performing accounts. You will not get deeply original content, but you will get safe, structured drafts that you can edit and ship.",
@@ -207,7 +207,7 @@ const tools: ToolReview[] = [
     freeTrial: "Free trial available",
     bestFor: "First-time LinkedIn creators who want hand-holding via templates and a simple workflow.",
     imageSlug: "magicpost-card",
-    imageAlt: "MagicPost LinkedIn AI tool with pink and magenta sparkle branding showing template selection screen and post generator",
+    imageAlt: "MagicPost template grid with case study, hot take, tutorial, carousel, story, and listicle starter templates",
     overview: [
       "MagicPost leans into the template angle. Pick a template (case study, hot take, motivational story, tutorial), fill in the slots, generate, edit, post. The UI is friendly and the carousel maker is solid for beginners.",
       "Pricing starts at $39/mo, which feels high for what is essentially a thin template layer over a single AI model. Stronger fit for someone new to LinkedIn who needs structure than for an experienced creator who wants flexibility.",
@@ -236,7 +236,7 @@ const tools: ToolReview[] = [
     freeTrial: "Free plan available",
     bestFor: "Daily LinkedIn posters who want an idea bank + swipe file + scheduling in one place.",
     imageSlug: "contentin-card",
-    imageAlt: "ContentIn LinkedIn content tool dashboard showing idea bank, swipe file, and weekly calendar view",
+    imageAlt: "ContentIn idea bank with categorized post ideas next to a weekly scheduling calendar for daily LinkedIn cadence",
     overview: [
       "ContentIn is LinkedIn-only by design. The standout feature is the idea bank and swipe file - thousands of pre-categorized LinkedIn post ideas you can riff on when you cannot think of what to post.",
       "AI generation is present but not the headline feature. The strength is the daily-cadence workflow: open the app, pick an idea, edit it in your voice, schedule, done.",
@@ -266,7 +266,7 @@ const tools: ToolReview[] = [
     freeTrial: "Free plan available",
     bestFor: "Short-form writers who post primarily on X and want LinkedIn as a secondary distribution channel.",
     imageSlug: "typefully-card",
-    imageAlt: "Typefully clean writing interface with multi-platform post composer for X, LinkedIn, Threads, and Bluesky",
+    imageAlt: "Typefully minimalist writing canvas with cross-platform badges for LinkedIn, X, Threads, and Bluesky in the top-right corner",
     overview: [
       "Typefully is a writer-first tool. The UI is minimal, distraction-free, and feels closer to Notion than a social scheduler. It started as an X-focused tool and added LinkedIn, Threads, and Bluesky.",
       "AI assist is present (rewrite, expand, generate) but LinkedIn is not the primary muscle here - it is a port of the X workflow with LinkedIn formatting layered on top.",
@@ -433,7 +433,7 @@ export function BestPostGeneratorContent({
           <div className="relative aspect-video rounded-2xl overflow-hidden mt-12 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50">
             <Image
               src={`${R2}/best-linkedin-post-generators-ranked-2026-cover.avif`}
-              alt="Best LinkedIn post generators in 2026 ranked and reviewed - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully"
+              alt="Best LinkedIn post generators 2026 - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully"
               fill
               priority
               className="object-cover"
