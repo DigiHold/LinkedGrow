@@ -1,367 +1,806 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { AnimatedBackground } from "@/components/marketing/animated-background";
-import { LandingHero } from "@/components/landing/landing-hero";
-import { LandingPainPoints } from "@/components/landing/landing-pain-points";
-import { LandingFeatures } from "@/components/landing/landing-features";
-import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
-import { LandingBYOK } from "@/components/landing/landing-byok";
-import { LandingTestimonials } from "@/components/landing/landing-testimonials";
-import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
-import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
-import {
-  Sparkles,
-  Zap,
-  CircleDollarSign,
-  Clock,
-  Target,
-  Key,
-  AlertTriangle,
-  Users,
-  Wand2,
-  Brain,
-  Mic,
-  Award,
-  Shield,
-  BarChart3,
-  PenTool,
-  Layers,
-} from "lucide-react";
+import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { FAQAccordion } from "@/components/blog/faq-accordion";
+import { Award, Check, X, ArrowRight, Mic, Brain, CircleDollarSign, Sparkles, BarChart3 } from "lucide-react";
 
-export function BestPostGeneratorContent() {
+const R2 =
+  "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/blog/best-ai-linkedin-post-generator";
+
+type ToolReview = {
+  rank: number;
+  name: string;
+  tagline: string;
+  href: string;
+  internalHref?: string;
+  pricing: string;
+  freeTrial: string;
+  bestFor: string;
+  imageSlug: string;
+  imageAlt: string;
+  overview: string[];
+  pros: string[];
+  cons: string[];
+  accent: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+type GlanceRow = {
+  tool: string;
+  bestFor: string;
+  pricing: string;
+  freeTrial: string;
+  modelChoice: string;
+  voiceTraining: boolean;
+  highlight?: boolean;
+};
+
+const tools: ToolReview[] = [
+  {
+    rank: 1,
+    name: "LinkedGrow",
+    tagline: "Best overall - authentic voice + lowest total cost",
+    href: "https://linkedgrow.ai",
+    internalHref: "/",
+    pricing: "$13/mo Starter, $27/mo Pro, $55/mo Business (yearly)",
+    freeTrial: "7-day Pro trial, no card required",
+    bestFor: "Founders, coaches, and consultants who post 2 to 5 times a week and care about sounding like themselves.",
+    imageSlug: "linkedgrow-card",
+    imageAlt: "LinkedGrow LinkedIn post generator dashboard with cyan-to-blue gradient branding showing the post editor and 26 AI model selector",
+    overview: [
+      "LinkedGrow is the only LinkedIn post generator built around BYOK (bring your own key) across 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key once and pay the AI provider directly at wholesale rates - typically $2 to $4 per month for regular posting.",
+      "Voice training is the core differentiator. You paste 3 to 5 of your best posts, LinkedGrow builds a style profile, and every generation matches your sentence structure and tone. The hook generator, carousel builder, AI image generation, scheduling, content calendar, A/B testing, and analytics all sit in one dashboard.",
+      "Publishing goes directly to personal profiles and company pages you manage. Reddit URLs can be turned into post drafts, scheduled posts fire at exact times via QStash, and the editor previews exactly how the post will look on LinkedIn before you publish.",
+    ],
+    pros: [
+      "26+ AI models with model freedom (use Claude for thought leadership, ChatGPT for storytelling, Gemini for speed)",
+      "Voice training that audiences cannot distinguish from manual writing",
+      "Unlimited generations on every paid plan (no credits, no caps, no overage)",
+      "Total cost stays at $15 to $30/mo all-in including AI fees",
+      "Built-in AI image + carousel generation - no second subscription needed",
+    ],
+    cons: [
+      "BYOK setup adds 2 minutes (creating an API key with OpenAI or Anthropic)",
+      "Smaller community than legacy tools like Taplio",
+      "Native analytics still rolling out (LinkedIn API limitation, affects every tool)",
+    ],
+    accent: "from-cyan-500 to-blue-600",
+    ctaLabel: "Start free 7-day Pro trial",
+    ctaHref: "/sign-up",
+  },
+  {
+    rank: 2,
+    name: "Taplio",
+    tagline: "Best for outreach + viral hooks library",
+    href: "https://taplio.com",
+    internalHref: "/compare/taplio-alternative",
+    pricing: "Starter $39, Standard $52, Pro $149/mo (yearly)",
+    freeTrial: "7-day free trial, card required",
+    bestFor: "Salespeople and growth marketers who want LinkedIn content + automated DMs + a lead database in one tool.",
+    imageSlug: "taplio-card",
+    imageAlt: "Taplio LinkedIn growth platform interface with purple branding showing the viral posts library and AI post composer",
+    overview: [
+      "Taplio is the most established name in the LinkedIn AI tool space. It pairs AI content generation with a 3+ million contact lead database, automated DMs, auto-connection requests, and a famous library of viral LinkedIn posts you can swipe ideas from.",
+      "AI access is gated. The $39 Starter plan ships with zero AI credits - you only get scheduling and the hooks library. AI generation starts at the $52 Standard plan, and the lead database plus automation requires the $149 Pro plan (on annual billing).",
+      "The viral hooks library is genuinely useful for ideation, and outreach automation is the real reason most users stay despite the price.",
+    ],
+    pros: [
+      "Massive library of high-performing LinkedIn post inspiration",
+      "Lead database with 3 million+ contacts (Pro plan)",
+      "Strong outreach automation - DMs, connection requests, comment-at-scale",
+    ],
+    cons: [
+      "Starter at $39/mo includes zero AI credits",
+      "AI cost is bundled and marked up vs BYOK alternatives",
+      "Pro plan needed for outreach features ($149/mo on yearly billing)",
+      "Single AI model under the hood with no choice",
+    ],
+    accent: "from-violet-500 to-purple-600",
+    ctaLabel: "See LinkedGrow vs Taplio",
+    ctaHref: "/compare/taplio-alternative",
+  },
+  {
+    rank: 3,
+    name: "AuthoredUp",
+    tagline: "Best post editor + formatter for pure writers",
+    href: "https://authoredup.com",
+    internalHref: "/compare/authoredup-alternative",
+    pricing: "Individual $19.95/mo, Business $14.95/user/mo (3+ seats)",
+    freeTrial: "14-day free trial",
+    bestFor: "Writers who already know what to write and want a better editor inside LinkedIn, plus analytics on what works.",
+    imageSlug: "authoredup-card",
+    imageAlt: "AuthoredUp Chrome extension overlay on a LinkedIn post composer with formatting toolbar and post preview",
+    overview: [
+      "AuthoredUp is not a content generator. It is a Chrome extension that upgrades the native LinkedIn composer with bold, italic, Unicode formatting, line break controls, post preview, snippets, and analytics on every post you publish.",
+      "The analytics are the secret weapon. You see which hooks, lengths, and formats actually move the needle on your account specifically, not on some abstract benchmark.",
+      "There is no AI writing, no scheduling, and no carousel builder. AuthoredUp pairs well with a separate AI generator or scheduler. Solo writers love it; full-funnel marketers usually need a second tool.",
+    ],
+    pros: [
+      "Best in-LinkedIn text formatting tools on the market",
+      "Excellent per-post analytics with cohort comparisons",
+      "Predictable flat pricing, no AI credit gymnastics",
+    ],
+    cons: [
+      "No AI post generation at all",
+      "No native scheduling - you publish manually or pair with another tool",
+      "No image or carousel generation",
+    ],
+    accent: "from-rose-500 to-red-600",
+    ctaLabel: "See LinkedGrow vs AuthoredUp",
+    ctaHref: "/compare/authoredup-alternative",
+  },
+  {
+    rank: 4,
+    name: "Supergrow",
+    tagline: "Best budget all-in-one",
+    href: "https://supergrow.ai",
+    internalHref: "/compare/supergrow-alternative",
+    pricing: "Starter $19/mo, Pro $39/mo",
+    freeTrial: "Free plan with 3 posts/mo",
+    bestFor: "Creators who want LinkedGrow-style features at a simpler interface with no BYOK setup.",
+    imageSlug: "supergrow-card",
+    imageAlt: "Supergrow LinkedIn AI tool dashboard with calendar view, carousel maker, and voice-to-post feature",
+    overview: [
+      "Supergrow is the cleanest all-in-one alternative to Taplio. The Starter plan at $19/mo already includes AI content generation, scheduling, and a content inspiration feed. The Pro plan at $39/mo adds a carousel maker, advanced analytics, and team features.",
+      "Voice-to-Post is a standout: dictate a half-formed thought, get a polished post back. The tool also avoids the aggressive automation features (like auto-DMs) that can trigger LinkedIn account restrictions on other platforms.",
+      "AI is bundled (not BYOK), so you cannot switch models or pay wholesale rates. For users who want simplicity over flexibility, that is a fair trade.",
+    ],
+    pros: [
+      "AI included on the $19/mo Starter plan (no gating)",
+      "Voice-to-Post for capturing ideas on the go",
+      "Conservative on risky automation - protects your LinkedIn account",
+    ],
+    cons: [
+      "Single bundled AI model, no BYOK option",
+      "Voice training less mature than LinkedGrow's",
+      "Carousel maker locked behind the $39 Pro plan",
+    ],
+    accent: "from-emerald-500 to-green-600",
+    ctaLabel: "See LinkedGrow vs Supergrow",
+    ctaHref: "/compare/supergrow-alternative",
+  },
+  {
+    rank: 5,
+    name: "EasyGen",
+    tagline: "Best for one-click generation in-browser",
+    href: "https://easygen.io",
+    internalHref: "/compare/easygen-alternative",
+    pricing: "Free tier, Starter $9/mo, Pro $29/mo",
+    freeTrial: "Free plan available",
+    bestFor: "Busy professionals who want a Chrome extension that drafts a post in 30 seconds from a topic.",
+    imageSlug: "easygen-card",
+    imageAlt: "EasyGen Chrome extension popup showing one-click LinkedIn post generation with blue branding and post template options",
+    overview: [
+      "EasyGen lives as a Chrome extension. Click the icon, type a topic, pick a format (story, listicle, contrarian take, how-to), and get a draft in a few seconds. It is the lowest-friction generator on this list.",
+      "Generation is based on proven LinkedIn post patterns scraped from high-performing accounts. You will not get deeply original content, but you will get safe, structured drafts that you can edit and ship.",
+      "No scheduling, no analytics, no carousel builder. EasyGen is a content-generation utility, not a full platform.",
+    ],
+    pros: [
+      "Cheapest entry point ($9/mo Starter, free tier exists)",
+      "Browser extension keeps you inside LinkedIn",
+      "Template-driven outputs work well for non-writers",
+    ],
+    cons: [
+      "Templates can feel formulaic over time",
+      "No scheduling, calendar, or analytics",
+      "Limited voice customization",
+    ],
+    accent: "from-sky-500 to-cyan-600",
+    ctaLabel: "See LinkedGrow vs EasyGen",
+    ctaHref: "/compare/easygen-alternative",
+  },
+  {
+    rank: 6,
+    name: "MagicPost",
+    tagline: "Best for beginners + template-driven posts",
+    href: "https://magicpost.in",
+    internalHref: "/compare/magicpost-alternative",
+    pricing: "Starter $39/mo, Pro $59/mo",
+    freeTrial: "Free trial available",
+    bestFor: "First-time LinkedIn creators who want hand-holding via templates and a simple workflow.",
+    imageSlug: "magicpost-card",
+    imageAlt: "MagicPost LinkedIn AI tool with pink and magenta sparkle branding showing template selection screen and post generator",
+    overview: [
+      "MagicPost leans into the template angle. Pick a template (case study, hot take, motivational story, tutorial), fill in the slots, generate, edit, post. The UI is friendly and the carousel maker is solid for beginners.",
+      "Pricing starts at $39/mo, which feels high for what is essentially a thin template layer over a single AI model. Stronger fit for someone new to LinkedIn who needs structure than for an experienced creator who wants flexibility.",
+    ],
+    pros: [
+      "Beginner-friendly UI with clear template paths",
+      "Carousel maker included",
+      "Simple onboarding with no API key setup",
+    ],
+    cons: [
+      "Starts at $39/mo - same as Supergrow Pro for fewer features",
+      "Template-locked - hard to escape the patterns",
+      "No BYOK, single bundled model",
+    ],
+    accent: "from-pink-500 to-fuchsia-600",
+    ctaLabel: "See LinkedGrow vs MagicPost",
+    ctaHref: "/compare/magicpost-alternative",
+  },
+  {
+    rank: 7,
+    name: "ContentIn",
+    tagline: "Best LinkedIn-only daily-posting workflow",
+    href: "https://contentin.io",
+    internalHref: "/compare/contentin-alternative",
+    pricing: "Free plan, Pro $29/mo, Premium $39/mo",
+    freeTrial: "Free plan available",
+    bestFor: "Daily LinkedIn posters who want an idea bank + swipe file + scheduling in one place.",
+    imageSlug: "contentin-card",
+    imageAlt: "ContentIn LinkedIn content tool dashboard showing idea bank, swipe file, and weekly calendar view",
+    overview: [
+      "ContentIn is LinkedIn-only by design. The standout feature is the idea bank and swipe file - thousands of pre-categorized LinkedIn post ideas you can riff on when you cannot think of what to post.",
+      "AI generation is present but not the headline feature. The strength is the daily-cadence workflow: open the app, pick an idea, edit it in your voice, schedule, done.",
+      "Free plan exists with limited generations. Paid plans unlock the full swipe file, scheduling, and analytics.",
+    ],
+    pros: [
+      "Excellent idea bank if you struggle with what to post",
+      "Reasonable mid-tier pricing ($29-$39/mo)",
+      "Clean workflow for daily LinkedIn posters",
+    ],
+    cons: [
+      "No BYOK, no AI model choice",
+      "Carousel and image generation are weaker than dedicated tools",
+      "No voice training",
+    ],
+    accent: "from-amber-500 to-orange-600",
+    ctaLabel: "See LinkedGrow vs ContentIn",
+    ctaHref: "/compare/contentin-alternative",
+  },
+  {
+    rank: 8,
+    name: "Typefully",
+    tagline: "Best for cross-posting to X, Threads, Bluesky + LinkedIn",
+    href: "https://typefully.com",
+    internalHref: "/compare/typefully-alternative",
+    pricing: "Free, Pro from $12.50/mo, Team from $49/mo (yearly)",
+    freeTrial: "Free plan available",
+    bestFor: "Short-form writers who post primarily on X and want LinkedIn as a secondary distribution channel.",
+    imageSlug: "typefully-card",
+    imageAlt: "Typefully clean writing interface with multi-platform post composer for X, LinkedIn, Threads, and Bluesky",
+    overview: [
+      "Typefully is a writer-first tool. The UI is minimal, distraction-free, and feels closer to Notion than a social scheduler. It started as an X-focused tool and added LinkedIn, Threads, and Bluesky.",
+      "AI assist is present (rewrite, expand, generate) but LinkedIn is not the primary muscle here - it is a port of the X workflow with LinkedIn formatting layered on top.",
+      "Great if you write threads + LinkedIn posts in tandem. Suboptimal if LinkedIn is your only or primary channel.",
+    ],
+    pros: [
+      "Cheapest entry on this list ($12.50/mo on yearly billing)",
+      "Clean, distraction-free writing experience",
+      "True multi-platform - X, LinkedIn, Threads, Bluesky in one composer",
+    ],
+    cons: [
+      "LinkedIn-specific features (hooks, voice training, carousels) are thin",
+      "AI generation feels generic vs LinkedIn-trained alternatives",
+      "Analytics are basic",
+    ],
+    accent: "from-slate-700 to-slate-900",
+    ctaLabel: "See LinkedGrow vs Typefully",
+    ctaHref: "/compare/typefully-alternative",
+  },
+];
+
+const glanceTools: GlanceRow[] = [
+  {
+    tool: "LinkedGrow",
+    bestFor: "Best overall - voice + cost",
+    pricing: "$13/mo (BYOK +$2-4)",
+    freeTrial: "7-day Pro trial",
+    modelChoice: "26+ models",
+    voiceTraining: true,
+    highlight: true,
+  },
+  {
+    tool: "Taplio",
+    bestFor: "Outreach + viral hooks",
+    pricing: "$39-$149/mo",
+    freeTrial: "7-day trial",
+    modelChoice: "1 bundled",
+    voiceTraining: false,
+  },
+  {
+    tool: "AuthoredUp",
+    bestFor: "Editor + formatter",
+    pricing: "$19.95/mo",
+    freeTrial: "14-day trial",
+    modelChoice: "No AI gen",
+    voiceTraining: false,
+  },
+  {
+    tool: "Supergrow",
+    bestFor: "Budget all-in-one",
+    pricing: "$19-$39/mo",
+    freeTrial: "Free plan",
+    modelChoice: "1 bundled",
+    voiceTraining: true,
+  },
+  {
+    tool: "EasyGen",
+    bestFor: "One-click in-browser",
+    pricing: "$9-$29/mo",
+    freeTrial: "Free tier",
+    modelChoice: "1 bundled",
+    voiceTraining: false,
+  },
+  {
+    tool: "MagicPost",
+    bestFor: "Beginners + templates",
+    pricing: "$39-$59/mo",
+    freeTrial: "Free trial",
+    modelChoice: "1 bundled",
+    voiceTraining: false,
+  },
+  {
+    tool: "ContentIn",
+    bestFor: "Idea bank + daily posts",
+    pricing: "$29-$39/mo",
+    freeTrial: "Free plan",
+    modelChoice: "1 bundled",
+    voiceTraining: false,
+  },
+  {
+    tool: "Typefully",
+    bestFor: "Cross-post X + LinkedIn",
+    pricing: "$12.50-$49/mo",
+    freeTrial: "Free plan",
+    modelChoice: "1 bundled",
+    voiceTraining: false,
+  },
+];
+
+const criteria = [
+  {
+    icon: Brain,
+    title: "AI model choice",
+    description:
+      "Tools that lock you into one model age fast. The best generators let you pick from multiple frontier models so quality stays high as AI evolves.",
+  },
+  {
+    icon: Mic,
+    title: "Voice training",
+    description:
+      "If posts sound generic, audiences scroll past. Voice training analyzes your past writing so every generation sounds like you, not like ChatGPT.",
+  },
+  {
+    icon: CircleDollarSign,
+    title: "Total cost (subscription + AI)",
+    description:
+      "Bundled-AI tools mark up wholesale API calls. BYOK pricing reveals the true cost: a few dollars per month, not $69+ in bundled credits.",
+  },
+  {
+    icon: Sparkles,
+    title: "Integrated workflow",
+    description:
+      "Hook generation, carousels, scheduling, images, and analytics in one tool beat juggling 4 subscriptions. Look for breadth without losing depth.",
+  },
+  {
+    icon: BarChart3,
+    title: "Direct LinkedIn publishing",
+    description:
+      "Manual copy-paste burns time. Direct API publishing to personal profiles and company pages is table stakes in 2026.",
+  },
+];
+
+export function BestPostGeneratorContent({
+  faqs,
+}: {
+  faqs: Array<{ question: string; answer: string }>;
+}) {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
       <AnimatedBackground />
       <Header />
 
-      <LandingHero
-        badge={{ icon: Award, text: "Best LinkedIn Post Generator 2026" }}
-        headline={{
-          line1: "Best LinkedIn Post Generator:",
-          gradient: "What to Look For + Why LinkedGrow Wins",
-        }}
-        descriptionBold="The best LinkedIn post generator comes down to three things: AI model choice, voice training, and transparent pricing."
-        description="Most LinkedIn AI tools lock you into a single model, cap your generations, and bury the real cost in opaque pricing. LinkedGrow approaches it differently with 26+ AI models via BYOK, voice training on every plan, and total cost transparency. Here is what to evaluate and why this approach wins."
-        valuePropBadges={[
-          { icon: Award, text: "26+ AI models" },
-          { icon: Mic, text: "Voice training" },
-          { icon: CircleDollarSign, text: "80% cheaper" },
-        ]}
-        primaryCta={{ text: "Try the best generator", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
-        video={{
-          videoId: "5cE1BRvxfiQ",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
-          duration: "0:10",
-          ctaText: "See Pricing",
-          ctaHref: "/pricing",
-        }}
-      />
+      {/* ===== HERO ===== */}
+      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex justify-center mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-xs font-semibold text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300">
+              <Award className="w-3.5 h-3.5" />
+              Independent ranking · Updated May 2026
+            </span>
+          </div>
+          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            Best LinkedIn Post Generators in 2026:{" "}
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+              Ranked &amp; Reviewed
+            </span>
+          </h1>
+          <p className="mt-6 text-center text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
+            We tested the 8 most popular LinkedIn post generators side by side on pricing, AI model choice,
+            voice training, and integration depth. Here is the honest ranking, with pros and cons for each.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm">
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              8 tools compared
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              No affiliate links
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              Real pricing breakdowns
+            </span>
+          </div>
 
-      <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "The Problem with Most AI Tools" }}
-        badgeColor="orange"
-        headline={{
-          text: "Most AI LinkedIn tools are expensive,",
-          gradient: "limited, and generic.",
-        }}
-        descriptionBold="You deserve better than one model, capped generations, and robotic output."
-        description="The typical LinkedIn AI tool locks you into a single AI model, caps your generations at 30 to 100 per month, charges $49 to $199, and produces content that sounds like every other AI-written post on the platform. That is not the best. That is the status quo."
-        problems={[
-          {
-            icon: Layers,
-            stat: "1",
-            title: "AI model on most platforms",
-            description:
-              "Most LinkedIn tools use a single AI model (usually an older GPT version) for all generations. You get one writing style with no alternatives. Different topics need different models - a storytelling post needs a different touch than a technical how-to.",
-            color: "from-red-500 to-rose-600",
-          },
-          {
-            icon: Target,
-            stat: "30-100",
-            title: "Generation caps per month",
-            description:
-              "Most tools limit you to 30 to 100 AI generations per month. If you post 5 times per week and iterate on each post, you hit the cap in 2 to 3 weeks. Then you either stop posting or pay overage fees to keep going.",
-            color: "from-orange-500 to-amber-600",
-          },
-          {
-            icon: CircleDollarSign,
-            stat: "$49-199",
-            title: "Monthly cost for basic functionality",
-            description:
-              "The standard price for LinkedIn AI tools is $49 to $199 per month. For that price you get capped generations, one model, and often no image generation, analytics, or scheduling. The value proposition is poor.",
-            color: "from-red-500 to-orange-600",
-          },
-          {
-            icon: Mic,
-            stat: "None",
-            title: "Voice training on competitors",
-            description:
-              "Without voice training, AI-generated posts sound generic and formulaic. Your audience can spot them immediately. Most LinkedIn tools do not offer any way to train the AI on your personal writing style and vocabulary.",
-            color: "from-rose-500 to-red-600",
-          },
-        ]}
-        bottomQuote="I have tried 4 different AI LinkedIn tools and they all produce the same generic, capped, overpriced output..."
-      />
+          <div className="relative aspect-video rounded-2xl overflow-hidden mt-12 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50">
+            <Image
+              src={`${R2}/best-linkedin-post-generators-ranked-2026-cover.avif`}
+              alt="Best LinkedIn post generators in 2026 ranked and reviewed - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully"
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 896px"
+            />
+          </div>
+        </div>
+      </section>
 
-      <LandingFeatures
-        badge={{ icon: Award, text: "Why LinkedGrow Is the Best" }}
-        headline={{
-          text: "What makes this the",
-          gradient: "best AI post generator",
-        }}
-        description="LinkedGrow addresses every limitation of typical LinkedIn AI tools. More models, no caps, voice training, and integrated tools at a fraction of the cost."
-        features={[
-          {
-            icon: Brain,
-            title: "26+ AI Models",
-            description:
-              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Each model has different strengths. Use Claude for nuanced thought leadership, ChatGPT for storytelling, Gemini for speed. Switch between models per post.",
-            highlights: ["6 AI providers", "26+ models", "Switch per post"],
-            badge: "BYOK",
-            color: "from-cyan-500 to-blue-600",
-          },
-          {
-            icon: Mic,
-            title: "Voice Training",
-            description:
-              "Paste 3 to 5 of your best LinkedIn posts. The AI analyzes your writing patterns, vocabulary, sentence length, and tone. Every post it generates matches your unique voice. This is the single most important feature for authentic AI content.",
-            highlights: ["Style analysis", "Tone matching", "Authentic output"],
-            badge: "Unique",
-            color: "from-emerald-500 to-green-600",
-          },
-          {
-            icon: Sparkles,
-            title: "Unlimited Generations",
-            description:
-              "Every paid plan includes unlimited AI post generations. No monthly caps, no credit limits, no overage fees. Generate as many posts as you need, iterate as much as you want, and never worry about hitting a limit mid-month.",
-            highlights: ["No caps", "No credits", "No overage fees"],
-            badge: "Unlimited",
-            color: "from-amber-500 to-yellow-600",
-          },
-          {
-            icon: Wand2,
-            title: "Integrated Hook Generator",
-            description:
-              "The first line of your post determines if people read the rest. The built-in hook generator creates multiple scroll-stopping opening lines for each post. Pick the one that grabs the most attention and watch your engagement climb.",
-            highlights: ["Multiple hooks", "Proven patterns", "Higher read rate"],
-            badge: "Pro",
-            color: "from-violet-500 to-purple-600",
-          },
-          {
-            icon: BarChart3,
-            title: "Analytics and A/B Testing",
-            description:
-              "Track which posts perform best, identify optimal posting times, and run A/B tests to scientifically determine what resonates with your audience. Data-driven content creation instead of guessing.",
-            highlights: ["Engagement tracking", "Best time insights", "A/B testing"],
-            badge: "Pro/Biz",
-            color: "from-pink-500 to-rose-500",
-          },
-          {
-            icon: Shield,
-            title: "All-in-One Platform",
-            description:
-              "Post generation, image creation, carousel building, scheduling, analytics, network notifications, and a content calendar. Everything in one platform instead of juggling multiple tools. One subscription, one dashboard.",
-            highlights: ["6+ tools", "One platform", "One price"],
-            badge: "Complete",
-            color: "from-teal-500 to-cyan-600",
-          },
-        ]}
-        ctaText="Try the Best Generator"
-        ctaHref="/sign-up"
-      />
+      {/* ===== TL;DR COMPARISON ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              TL;DR:{" "}
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+                The 8 best LinkedIn post generators at a glance
+              </span>
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              The fast version. Full reviews below.
+            </p>
+          </div>
 
-      <LandingHowItWorks
-        headline={{
-          text: "See why 179+ founders chose",
-          gradient: "LinkedGrow",
-        }}
-        description="The best AI post generator works in under 2 minutes, every time."
-        steps={[
-          {
-            number: "01",
-            title: "Enter your topic",
-            description:
-              "Type a topic, key insight, or paste a Reddit URL. Select a post type (storytelling, how-to, thought leadership, listicle, and more) and choose your preferred AI model from 26+ options.",
-            icon: PenTool,
-            color: "from-cyan-500 to-blue-500",
-            time: "20 sec",
-          },
-          {
-            number: "02",
-            title: "AI generates in your voice",
-            description:
-              "The AI creates a complete LinkedIn post matching your trained writing style. Review, edit, or regenerate with a different model for a fresh perspective. Each model brings different strengths to the same topic.",
-            icon: Brain,
-            color: "from-violet-500 to-purple-500",
-            time: "30 sec",
-          },
-          {
-            number: "03",
-            title: "Add visuals if you want",
-            description:
-              "Optionally generate a custom AI image with the latest models from Google, OpenAI, or Replicate directly in the editor. Or build a carousel. Attach to your post in one click - no separate tools needed.",
-            icon: Sparkles,
-            color: "from-emerald-500 to-green-500",
-            time: "30 sec",
-          },
-          {
-            number: "04",
-            title: "Publish or schedule",
-            description:
-              "Publish immediately to LinkedIn or schedule for the optimal time. The content calendar keeps your posting consistent. Set it and forget it - LinkedGrow handles the rest.",
-            icon: Zap,
-            color: "from-amber-500 to-yellow-500",
-            time: "10 sec",
-          },
-        ]}
-        totalTime="Under 2 minutes per post"
-      />
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tool</th>
+                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Best for</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pricing</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Free trial</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">AI models</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Voice training</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {glanceTools.map((row, i) => (
+                    <tr
+                      key={row.tool}
+                      className={`${i < glanceTools.length - 1 ? "border-b border-slate-100 dark:border-slate-800/60" : ""} ${row.highlight ? "bg-cyan-50/60 dark:bg-cyan-900/10" : ""}`}
+                    >
+                      <td className="p-4">
+                        <div className={`font-bold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>
+                          {row.tool}
+                        </div>
+                        {row.highlight && (
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-semibold">
+                            #1 RANKED
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-sm text-slate-700 dark:text-slate-300">{row.bestFor}</td>
+                      <td className={`p-4 text-center text-sm font-semibold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>
+                        {row.pricing}
+                      </td>
+                      <td className="p-4 text-center text-sm text-slate-700 dark:text-slate-300">{row.freeTrial}</td>
+                      <td className={`p-4 text-center text-sm ${row.highlight ? "font-bold text-cyan-600 dark:text-cyan-400" : "text-slate-700 dark:text-slate-300"}`}>
+                        {row.modelChoice}
+                      </td>
+                      <td className="p-4 text-center">
+                        {row.voiceTraining ? (
+                          <Check className="w-5 h-5 text-emerald-500 inline-block" />
+                        ) : (
+                          <X className="w-5 h-5 text-slate-300 dark:text-slate-600 inline-block" />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      <LandingBYOK
-        badge={{ icon: Key, text: "Best Value in the Market" }}
-        headline={{
-          text: "Why LinkedGrow beats every",
-          gradient: "competitor on value",
-        }}
-        description="The best AI LinkedIn post generator is also the most affordable. BYOK pricing eliminates the markup that makes other tools so expensive."
-        competitor={{
-          name: "Typical LinkedIn AI Tools",
-          price: "$49-199/month",
-          issues: [
-            { text: "1 AI model with no alternatives or choice" },
-            { text: "30 to 100 generation caps with premium overage fees" },
-            { text: "No voice training - generic output for everyone" },
-            { text: "Separate subscriptions needed for images, scheduling, analytics" },
-            { text: "High monthly cost for basic AI writing functionality" },
-          ],
-        }}
-        linkedgrow={{
-          price: "$13-55/month",
-          apiCost: "$2-4/month",
-          benefits: [
-            { text: "26+ AI models - ChatGPT, Claude, Gemini, Grok, Perplexity, Kimi, and more" },
-            { text: "Unlimited generations on all paid plans - no caps ever" },
-            { text: "Voice training that matches your exact writing style" },
-            { text: "Images, scheduling, analytics, hooks, carousels all included" },
-            { text: "BYOK AI costs of $2 to $4 per month - zero markup" },
-          ],
-        }}
-        savingsText="The best AI generator at 80% less than the competition"
-      />
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+              {glanceTools.map((row) => (
+                <div
+                  key={row.tool}
+                  className={`p-4 ${row.highlight ? "bg-cyan-50/60 dark:bg-cyan-900/10" : ""}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className={`font-bold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>
+                        {row.tool}
+                      </div>
+                      {row.highlight && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-semibold">
+                          #1 RANKED
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{row.pricing}</div>
+                  </div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300 mb-2">{row.bestFor}</div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                    <span>Free: {row.freeTrial}</span>
+                    <span>Models: {row.modelChoice}</span>
+                    <span className="inline-flex items-center gap-1">
+                      Voice:{" "}
+                      {row.voiceTraining ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <X className="w-3.5 h-3.5 text-slate-400" />
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      <LandingTestimonials
-        badge={{ icon: Users, text: "Why Creators Switch" }}
-        headline={{
-          text: "Creators are switching to the",
-          gradient: "best AI post generator",
-        }}
-        description="LinkedIn professionals who have tried multiple AI tools are choosing LinkedGrow for its model variety, voice training, and value."
-        stats={[
-          { value: "26+", label: "AI models to choose from", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "0", label: "Generation caps on paid plans", color: "text-emerald-600 dark:text-emerald-400" },
-          { value: "80%", label: "Cheaper than competitors", color: "text-violet-600 dark:text-violet-400" },
-          { value: "179+", label: "Founders trust LinkedGrow", color: "text-amber-600 dark:text-amber-400" },
-        ]}
-        testimonials={[
-          {
-            quote:
-              "I switched from Taplio after hitting the generation cap for the third month in a row. LinkedGrow gives me unlimited generations, 26+ models to choose from, and voice training that actually works. My total cost dropped from $79 to $22.",
-            author: "Thomas B.",
-            role: "SaaS Founder, 31K Followers",
-          },
-          {
-            quote:
-              "Having 26+ models is not a gimmick - it genuinely matters. I use Claude for my leadership posts and ChatGPT for casual storytelling. Different models, different voices, better content. And the BYOK pricing is unbeatable.",
-            author: "Amara J.",
-            role: "Executive Coach, 45K Followers",
-          },
-          {
-            quote:
-              "The voice training is what makes this the best generator I have used. I pasted 5 of my posts and every AI-generated post since then sounds exactly like me. People have no idea I am using AI. That is the whole point.",
-            author: "Kevin D.",
-            role: "Marketing VP, 20K Followers",
-          },
-        ]}
-      />
+          <p className="mt-6 text-center text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            Total cost matters more than sticker price. A $13/mo BYOK tool with $3 in AI fees beats a
+            $52/mo bundled tool on capability per dollar.
+          </p>
+        </div>
+      </section>
 
-      <LandingFAQ
-        headline={{
-          text: "Best AI Generator",
-          gradient: "FAQ",
-        }}
-        description="Common questions about the best AI LinkedIn post generator"
-        faqs={[
-          {
-            question: "What makes LinkedGrow the best AI LinkedIn post generator?",
-            answer:
-              "26+ AI models instead of one, voice training for authentic output, unlimited generations with no caps, and BYOK pricing at 80% less than competitors. Plus integrated image generation, scheduling, analytics, and more.",
-          },
-          {
-            question: "How does it compare to Taplio, AuthoredUp, or Supergrow?",
-            answer:
-              "Most competitors offer 1 model, cap generations, and charge $49 to $199. LinkedGrow offers 26+ models, unlimited generations, voice training, and integrated tools for $13 to $55 plus $2 to $4 in BYOK AI costs.",
-          },
-          {
-            question: "Why do 26+ AI models matter?",
-            answer:
-              "Different models excel at different content types. ChatGPT for storytelling, Claude for thought leadership, Gemini for speed. Having choice means better content for every post type.",
-          },
-          {
-            question: "How accurate is voice training?",
-            answer:
-              "Very. Paste 3 to 5 of your best posts and the AI learns your style, vocabulary, and tone. Users report their audience cannot distinguish AI-generated from manually written posts.",
-          },
-          {
-            question: "Is there a free trial?",
-            answer:
-              "Yes. 3 generations per month with voice training and all AI models. No credit card. Paid plans start at $13 per month for unlimited.",
-          },
-          {
-            question: "What AI models are available?",
-            answer:
-              "The latest models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi - 26+ text models in total. Plus 14 image models from OpenAI, Google, and Replicate.",
-          },
-          {
-            question: "How much does it cost?",
-            answer:
-              "7-day Pro trial included. Starter $13 per month, Pro $27 per month, Business $55 per month with carousels, A/B testing, and team collaboration. BYOK AI costs average $2 to $4 per month with zero markup. 80% less than typical LinkedIn AI tools.",
-          },
-          {
-            question: "Can I publish directly to LinkedIn?",
-            answer:
-              "Yes. Publish immediately or schedule for later. Content calendar, optimal time suggestions, profiles and company pages supported.",
-          },
-        ]}
-      />
+      {/* ===== HOW WE EVALUATED ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              How we evaluated these tools
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Five criteria that actually predict whether a tool will pay for itself.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {criteria.map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-4">
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+                <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== THE 8 RANKED TOOLS ===== */}
+      <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              The 8 best LinkedIn post generators in 2026
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              Ranked from best overall to most specialized. Click any tool name to jump.
+            </p>
+          </div>
+
+          <div className="space-y-20">
+            {tools.map((tool) => (
+              <article
+                key={tool.name}
+                id={tool.name.toLowerCase()}
+                className="scroll-mt-24"
+              >
+                <div className="flex flex-wrap items-baseline gap-3 mb-3">
+                  <span
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br ${tool.accent} text-white font-black text-lg shrink-0`}
+                  >
+                    {tool.rank}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-white">
+                    {tool.name}
+                  </h3>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {tool.tagline}
+                  </span>
+                </div>
+
+                <div className="relative aspect-video rounded-2xl overflow-hidden my-6 bg-slate-100 dark:bg-slate-800">
+                  <Image
+                    src={`${R2}/${tool.imageSlug}.avif`}
+                    alt={tool.imageAlt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 768px"
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-3 mb-6 text-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Best for
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.bestFor}</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Pricing
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.pricing}</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Free trial
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.freeTrial}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {tool.overview.map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 mt-6">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                    <div className="font-bold text-emerald-700 dark:text-emerald-300 text-sm uppercase tracking-wide mb-3">
+                      Pros
+                    </div>
+                    <ul className="space-y-2">
+                      {tool.pros.map((p, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-[15px] text-slate-700 dark:text-slate-300"
+                        >
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-5 dark:border-rose-900/50 dark:bg-rose-950/20">
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-sm uppercase tracking-wide mb-3">
+                      Cons
+                    </div>
+                    <ul className="space-y-2">
+                      {tool.cons.map((c, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-[15px] text-slate-700 dark:text-slate-300"
+                        >
+                          <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Link
+                    href={tool.ctaHref}
+                    className={`inline-flex items-center gap-2 rounded-xl bg-linear-to-r ${tool.accent} px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200/50 dark:shadow-slate-950/50 hover:opacity-95 transition`}
+                  >
+                    {tool.ctaLabel}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW TO CHOOSE ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              How to choose the right LinkedIn post generator
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Match the tool to your actual workflow. Three real personas, three honest picks.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                You are a founder, coach, or consultant posting 2 to 5 times a week
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
+                You care about sounding like yourself (voice training), you want flexibility on AI models as new ones launch (BYOK), and
+                you do not want to juggle subscriptions for images, scheduling, and analytics. Total monthly cost stays at $15 to $30 all-in.
+                Runner-up: Supergrow if you prefer a single bundled model with no API key setup.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                You are a salesperson or growth marketer using LinkedIn for outbound
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick Taplio if outreach automation (auto-DMs, lead database) is core to your workflow and you can justify $149/mo on the Pro
+                plan. Otherwise pick LinkedGrow + manual outreach - you keep 65% of the cost in your pocket and the content quality is higher.
+                Most growth marketers do not actually need Taplio Pro; they just need consistent content.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                You write all your posts yourself and want a better editor + analytics
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick AuthoredUp. The Chrome extension format and detailed per-post analytics are unmatched if you do not need AI generation.
+                Pair it with a separate scheduler if you ever start scheduling more than 2 weeks out.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                You post on X primarily and LinkedIn is secondary
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick Typefully. The multi-platform composer was built for this. Just know that LinkedIn-specific features like hook libraries
+                and voice training are thin compared to LinkedIn-only tools.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              LinkedIn post generator FAQ
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              The most common questions before picking a tool.
+            </p>
+          </div>
+          <FAQAccordion faqs={faqs} />
+        </div>
+      </section>
 
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "AI Post Generator", href: "/" },
-          { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
+          { title: "Best LinkedIn AI Tools 2026 (Blog)", href: "/blog/best-linkedin-ai-tools-2026" },
           { title: "Free LinkedIn Post Generator", href: "/free-linkedin-post-generator-ai" },
+          { title: "AI API Cost Comparison", href: "/blog/ai-api-cost-comparison-linkedin-tools" },
+          { title: "LinkedIn Content Creation Tools", href: "/linkedin-content-creation-tools" },
         ]}
       />
 
       <LandingCTA
-        badge="Try the Best AI LinkedIn Post Generator"
+        badge="Try the #1 ranked LinkedIn post generator"
         headline={{
-          line1: "Ready to use the best",
-          gradient: "AI post generator for LinkedIn?",
+          line1: "Start free with the best",
+          gradient: "LinkedIn post generator in 2026",
         }}
-        description="26+ AI models, voice training, unlimited generations, and 80% lower cost than competitors. Join 179+ founders who made the switch."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        description="26+ AI models via BYOK, voice training, unlimited generations. Total monthly cost $15 to $30 all-in. Join 179+ founders."
+        primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "7-day Pro trial included",
-          "26+ AI models",
-          "Voice training",
+          "No credit card required",
+          "Unlimited generations",
+          "Voice training included",
           "Cancel anytime",
         ]}
       />
