@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
-import { FAQJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { FAQJsonLd, BreadcrumbJsonLd, ItemListJsonLd } from "@/components/seo/json-ld";
 import { BestPostGeneratorContent } from "./best-generator-content";
 
 export const metadata: Metadata = {
@@ -80,81 +79,16 @@ const bestGenFAQs = [
   },
 ];
 
-const itemListSchema = {
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: "Best LinkedIn Post Generators in 2026",
-  description:
-    "Ranked list of the 8 best LinkedIn post generators in 2026 covering pricing, AI model choice, voice training, and use cases.",
-  numberOfItems: 8,
-  itemListOrder: "https://schema.org/ItemListOrderDescending",
-  itemListElement: [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "LinkedGrow",
-      url: "https://linkedgrow.ai",
-      description:
-        "Best overall for authentic voice and lowest total cost. 26+ AI models via BYOK, voice training, unlimited generations from $13/mo plus $2-4/mo in AI costs.",
-    },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: "Taplio",
-      url: "https://taplio.com",
-      description:
-        "Best for outreach + viral hooks library. Strong on automated DMs and lead database, bundled AI starts at $52/mo Standard.",
-    },
-    {
-      "@type": "ListItem",
-      position: 3,
-      name: "AuthoredUp",
-      url: "https://authoredup.com",
-      description:
-        "Best post editor and formatter. Chrome extension that lives inside LinkedIn with deep analytics. $19.95/mo, no AI generation or scheduling.",
-    },
-    {
-      "@type": "ListItem",
-      position: 4,
-      name: "Supergrow",
-      url: "https://supergrow.ai",
-      description:
-        "Best budget all-in-one. AI writing, scheduling, carousels, and voice-to-post from $19/mo Starter.",
-    },
-    {
-      "@type": "ListItem",
-      position: 5,
-      name: "EasyGen",
-      url: "https://easygen.io",
-      description:
-        "Best for one-click generation. Chrome extension that drafts posts from proven LinkedIn patterns. Free tier plus paid plans from $9/mo.",
-    },
-    {
-      "@type": "ListItem",
-      position: 6,
-      name: "MagicPost",
-      url: "https://magicpost.in",
-      description:
-        "Best for beginners. Template-driven AI generation with simple UI and built-in carousel maker. Plans from $39/mo.",
-    },
-    {
-      "@type": "ListItem",
-      position: 7,
-      name: "ContentIn",
-      url: "https://contentin.io",
-      description:
-        "Best for LinkedIn-only writers who post daily. Idea bank, swipe file, and scheduling. Paid plans from $29/mo.",
-    },
-    {
-      "@type": "ListItem",
-      position: 8,
-      name: "Typefully",
-      url: "https://typefully.com",
-      description:
-        "Best for short-form writers who cross-post to X, Threads, and Bluesky. Clean writer UI with AI assist from $12.50/mo.",
-    },
-  ],
-};
+const rankedGenerators = [
+  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall for authentic voice and lowest total cost. 26+ AI models via BYOK, voice training, unlimited generations from $13/mo plus $2-4/mo in AI costs." },
+  { name: "Taplio", url: "https://taplio.com", description: "Best for outreach + viral hooks library. Strong on automated DMs and lead database, bundled AI starts at $52/mo Standard." },
+  { name: "AuthoredUp", url: "https://authoredup.com", description: "Best post editor and formatter. Chrome extension that lives inside LinkedIn with deep analytics. $19.95/mo, no AI generation or scheduling." },
+  { name: "Supergrow", url: "https://supergrow.ai", description: "Best budget all-in-one. AI writing, scheduling, carousels, and voice-to-post from $19/mo Starter." },
+  { name: "EasyGen", url: "https://easygen.io", description: "Best for one-click generation. Chrome extension that drafts posts from proven LinkedIn patterns. Free tier plus paid plans from $9/mo." },
+  { name: "MagicPost", url: "https://magicpost.in", description: "Best for beginners. Template-driven AI generation with simple UI and built-in carousel maker. Plans from $39/mo." },
+  { name: "ContentIn", url: "https://contentin.io", description: "Best for LinkedIn-only writers who post daily. Idea bank, swipe file, and scheduling. Paid plans from $29/mo." },
+  { name: "Typefully", url: "https://typefully.com", description: "Best for short-form writers who cross-post to X, Threads, and Bluesky. Clean writer UI with AI assist from $12.50/mo." },
+];
 
 export default function BestAiLinkedinPostGeneratorPage() {
   return (
@@ -169,10 +103,10 @@ export default function BestAiLinkedinPostGeneratorPage() {
         ]}
       />
       <FAQJsonLd questions={bestGenFAQs} />
-      <Script
-        id="itemlist-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      <ItemListJsonLd
+        name="Best LinkedIn Post Generators in 2026"
+        description="Ranked list of the 8 best LinkedIn post generators in 2026 covering pricing, AI model choice, voice training, and use cases."
+        items={rankedGenerators}
       />
       <BestPostGeneratorContent faqs={bestGenFAQs} />
     </>
