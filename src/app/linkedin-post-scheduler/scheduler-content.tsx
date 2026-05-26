@@ -1,359 +1,740 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { AnimatedBackground } from "@/components/marketing/animated-background";
-import { LandingHero } from "@/components/landing/landing-hero";
-import { LandingPainPoints } from "@/components/landing/landing-pain-points";
-import { LandingFeatures } from "@/components/landing/landing-features";
-import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
-import { LandingBYOK } from "@/components/landing/landing-byok";
-import { LandingTestimonials } from "@/components/landing/landing-testimonials";
-import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
-import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
+import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
+import { FAQAccordion } from "@/components/blog/faq-accordion";
 import {
-  Sparkles,
-  Zap,
-  CircleDollarSign,
-  Clock,
-  Target,
-  Key,
-  AlertTriangle,
-  Users,
+  Award,
+  Check,
+  X,
+  ArrowRight,
   Calendar,
-  Bell,
-  Globe2,
-  BarChart3,
+  Zap,
   Building2,
-  PenTool,
-  CalendarCheck,
-  Timer,
+  CircleDollarSign,
+  Sparkles,
 } from "lucide-react";
 
-export function PostSchedulerContent() {
+const R2 =
+  "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/blog/best-ai-linkedin-post-generator";
+
+type ToolReview = {
+  rank: number;
+  name: string;
+  tagline: string;
+  pricing: string;
+  freeTrial: string;
+  bestFor: string;
+  imageSlug: string;
+  imageAlt: string;
+  overview: string[];
+  pros: string[];
+  cons: string[];
+  accent: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+const tools: ToolReview[] = [
+  {
+    rank: 1,
+    name: "LinkedGrow",
+    tagline: "Best for AI-powered scheduling with BYOK",
+    pricing: "$13/mo Starter, $27/mo Pro, $55/mo Business (yearly)",
+    freeTrial: "7-day Pro trial, no card required",
+    bestFor:
+      "Founders and creators who want to write with AI and schedule from the same dashboard at the lowest total cost.",
+    imageSlug: "linkedgrow-card",
+    imageAlt:
+      "LinkedGrow dashboard with content calendar, AI post composer, and direct publishing to LinkedIn profiles and company pages",
+    overview: [
+      "LinkedGrow is the only LinkedIn scheduling tool with BYOK AI generation built in across 26+ models. You write or generate a post, schedule it from the same editor, and the tool publishes directly to your profile or any company page you manage. Total monthly cost lands at $15 to $30 all-in including AI fees.",
+      "Scheduling is powered by QStash for exact-time delivery, so posts fire even if you are offline. The visual content calendar shows a week or month view with drag-and-drop rescheduling, and color coding distinguishes drafts, scheduled, and published posts.",
+      "Starter unlocks scheduling for 10 posts at a time. Pro and Business plans ship unlimited scheduling plus carousel scheduling, A/B test scheduling, and team workflows on Business.",
+    ],
+    pros: [
+      "AI post generation + scheduling in one dashboard, no copy-paste between tools",
+      "BYOK across 26+ AI models keeps total cost at $15 to $30/mo all-in",
+      "Direct publishing to personal profiles AND company pages on every plan",
+      "Visual content calendar with drag-and-drop rescheduling",
+      "Exact-time delivery via QStash, fires even if you are offline",
+    ],
+    cons: [
+      "10-post scheduling cap on Starter (Pro and Business are unlimited)",
+      "BYOK setup adds 2 minutes for the API key",
+      "Smaller community than legacy schedulers like Hootsuite or Buffer",
+    ],
+    accent: "from-cyan-500 to-blue-600",
+    ctaLabel: "Start free 7-day Pro trial",
+    ctaHref: "/sign-up",
+  },
+  {
+    rank: 2,
+    name: "Taplio",
+    tagline: "Best for scheduling + outreach in one tool",
+    pricing: "Starter $39, Standard $52, Pro $149/mo (yearly)",
+    freeTrial: "7-day free trial, card required",
+    bestFor:
+      "Salespeople who want LinkedIn content scheduling plus automated DMs and a lead database in a single subscription.",
+    imageSlug: "taplio-card",
+    imageAlt:
+      "Taplio scheduling interface with viral posts library, AI composer, and lead database outreach module",
+    overview: [
+      "Taplio combines scheduling with the largest viral LinkedIn posts library on the market plus outreach automation (auto-DMs, auto-connect, comment-at-scale). The scheduler itself is solid - calendar view, queue, recurring posts - but the lock-in is the outreach side.",
+      "AI generation is bundled in the $52 Standard plan and above. The $39 Starter ships scheduling and the hooks library but zero AI credits.",
+    ],
+    pros: [
+      "Best-in-class viral hooks library for ideation before scheduling",
+      "3M+ lead database on the Pro plan",
+      "Outreach automation built in - DMs, connection requests, comments",
+    ],
+    cons: [
+      "Starter at $39/mo includes zero AI credits",
+      "Single bundled AI model, no choice or BYOK",
+      "Pro plan needed for the features that justify the price ($149/mo yearly)",
+    ],
+    accent: "from-violet-500 to-purple-600",
+    ctaLabel: "See LinkedGrow vs Taplio",
+    ctaHref: "/compare/taplio-alternative",
+  },
+  {
+    rank: 3,
+    name: "Buffer",
+    tagline: "Best for multi-platform scheduling",
+    pricing: "Free, Essentials $20/mo, Team $40/mo",
+    freeTrial: "Free plan available",
+    bestFor:
+      "Creators and small teams who post to LinkedIn alongside X, Instagram, TikTok, Facebook, Pinterest, and YouTube from one dashboard.",
+    imageSlug: "buffer-card",
+    imageAlt:
+      "Buffer multi-platform composer with channel selector for LinkedIn, X, Instagram, Facebook, TikTok, and Pinterest",
+    overview: [
+      "Buffer is the established multi-platform scheduler. The free plan covers 3 channels with 10 scheduled posts per channel - enough for a solo LinkedIn-only creator. Paid plans add unlimited posts and the AI Assistant for content suggestions.",
+      "LinkedIn is supported alongside every major social network, but it is treated as one of many - you will not find LinkedIn-specific features like hook libraries, voice training, or 360Brew algorithm optimization. If LinkedIn is your only channel, a LinkedIn-first scheduler will serve you better.",
+    ],
+    pros: [
+      "Generous free plan with 3 channels",
+      "Clean, reliable UI with a long track record",
+      "Multi-platform - X, Instagram, TikTok, Facebook, LinkedIn, Pinterest, YouTube",
+    ],
+    cons: [
+      "LinkedIn-specific features (hooks, analytics, voice) are thin",
+      "AI assist is generic, not LinkedIn-trained",
+      "Per-channel pricing gets expensive at scale",
+    ],
+    accent: "from-sky-500 to-blue-500",
+    ctaLabel: "See LinkedGrow vs Buffer",
+    ctaHref: "/compare/buffer-alternative",
+  },
+  {
+    rank: 4,
+    name: "Supergrow",
+    tagline: "Best budget scheduling all-in-one",
+    pricing: "Free plan, Starter $19/mo, Pro $39/mo",
+    freeTrial: "Free plan with 3 posts/mo",
+    bestFor:
+      "Solo LinkedIn creators who want bundled AI + scheduling at the lowest sticker price with no API key setup.",
+    imageSlug: "supergrow-card",
+    imageAlt:
+      "Supergrow weekly calendar view alongside the Voice-to-Post microphone feature and Swipe File content inspiration feed",
+    overview: [
+      "Supergrow's $19/mo Starter is the cheapest paid plan that ships AI content generation alongside scheduling. The Pro plan at $39/mo adds the carousel scheduler, advanced analytics, and team features.",
+      "Voice-to-Post is a standout - dictate a half-formed thought and schedule a polished post within a minute. Supergrow also avoids the aggressive automation features that risk LinkedIn account restrictions.",
+    ],
+    pros: [
+      "AI included on the $19/mo Starter (no gating)",
+      "Voice-to-Post for capturing scheduling ideas on the go",
+      "Conservative on risky automation - protects your account",
+    ],
+    cons: [
+      "Single bundled AI model, no BYOK choice",
+      "Carousel scheduling locked behind the $39 Pro plan",
+      "Voice training less mature than LinkedGrow's",
+    ],
+    accent: "from-emerald-500 to-green-600",
+    ctaLabel: "See LinkedGrow vs Supergrow",
+    ctaHref: "/compare/supergrow-alternative",
+  },
+  {
+    rank: 5,
+    name: "AuthoredUp",
+    tagline: "Best for in-LinkedIn writers + analytics",
+    pricing: "Individual $19.95/mo, Business $14.95/user/mo (3+ seats)",
+    freeTrial: "14-day free trial",
+    bestFor:
+      "Solo writers who draft posts inside LinkedIn and want a lightweight scheduler plus deep per-post analytics.",
+    imageSlug: "authoredup-card",
+    imageAlt:
+      "AuthoredUp Chrome extension formatting toolbar over the native LinkedIn composer with bold, italic, Unicode controls",
+    overview: [
+      "AuthoredUp lives as a Chrome extension on top of LinkedIn. The scheduler is functional but lightweight compared to dedicated platforms - it queues posts and publishes them from your browser session. Where AuthoredUp wins is the editor (bold, italic, Unicode, line-break controls) and the per-post analytics.",
+      "If you write all your posts yourself and just need a way to queue them with formatting intact, AuthoredUp is hard to beat. If you want AI generation, carousel scheduling, or company-page publishing, look elsewhere.",
+    ],
+    pros: [
+      "Best in-LinkedIn formatting tools on the market",
+      "Excellent per-post analytics with cohort comparisons",
+      "Predictable flat pricing with no AI credit gymnastics",
+    ],
+    cons: [
+      "No AI post generation",
+      "Scheduling is lightweight vs dedicated tools",
+      "No carousel scheduling or AI image generation",
+    ],
+    accent: "from-rose-500 to-red-600",
+    ctaLabel: "See LinkedGrow vs AuthoredUp",
+    ctaHref: "/compare/authoredup-alternative",
+  },
+  {
+    rank: 6,
+    name: "Hootsuite",
+    tagline: "Best for enterprise teams + approvals",
+    pricing: "Professional $99/mo, Team $249/mo, Enterprise custom",
+    freeTrial: "30-day free trial",
+    bestFor:
+      "Marketing departments and agencies managing 5+ team members and 10+ social profiles across multiple networks.",
+    imageSlug: "hootsuite-card",
+    imageAlt:
+      "Hootsuite enterprise dashboard with multi-stream feed, team approval workflow, and social listening panels",
+    overview: [
+      "Hootsuite is the enterprise-grade option. It ships team workflows, approval chains, role-based permissions, social listening, and unified reporting across every major social network. For a single creator or small team, it is overkill at $99/mo. For an agency or marketing department, the workflow tooling justifies the price.",
+      "AI generation is included in most plans but treated as a generic content assist, not a LinkedIn-trained model. The scheduling itself is rock-solid across networks.",
+    ],
+    pros: [
+      "Enterprise-grade workflows, approvals, and permissions",
+      "Wide platform coverage and team scaling",
+      "Social listening and unified reporting built in",
+    ],
+    cons: [
+      "Expensive for solo creators or small teams",
+      "LinkedIn-specific features are basic",
+      "AI generation is generic, not LinkedIn-trained",
+    ],
+    accent: "from-amber-500 to-yellow-600",
+    ctaLabel: "See LinkedGrow vs Hootsuite",
+    ctaHref: "/compare/hootsuite-alternative",
+  },
+  {
+    rank: 7,
+    name: "Later",
+    tagline: "Best visual content calendar",
+    pricing: "Starter $25/mo, Growth $45/mo, Advanced $80/mo",
+    freeTrial: "14-day free trial",
+    bestFor:
+      "Visual creators who think in grid layouts and want the same Instagram-style preview workflow on LinkedIn.",
+    imageSlug: "later-card",
+    imageAlt:
+      "Later visual content calendar grid with thumbnail-based weekly scheduling and platform indicator badges",
+    overview: [
+      "Later originated as the Instagram visual planner and added LinkedIn (plus TikTok, Pinterest, X, YouTube) over the past few years. The standout is the visual content calendar - you see scheduled posts as image thumbnails arranged in a grid, which makes it easy to plan a cohesive content week.",
+      "If LinkedIn is your primary channel and you do not need the Instagram-grid heritage, Later is a costly choice vs LinkedIn-first tools. If you cross-post visually across networks, the unified preview is genuinely useful.",
+    ],
+    pros: [
+      "Best visual calendar UI on the market",
+      "Multi-platform with strong Instagram + LinkedIn parity",
+      "Hashtag suggestions and bio-link tools",
+    ],
+    cons: [
+      "Pricing starts higher than LinkedIn-first tools at $25/mo",
+      "LinkedIn-specific features (hooks, algorithm signals) are thin",
+      "AI assist is generic across platforms",
+    ],
+    accent: "from-pink-500 to-rose-500",
+    ctaLabel: "Compare LinkedIn schedulers",
+    ctaHref: "/compare",
+  },
+  {
+    rank: 8,
+    name: "Sprout Social",
+    tagline: "Best for large social media teams",
+    pricing: "Standard $249/seat/mo, Professional $399/seat/mo",
+    freeTrial: "30-day free trial",
+    bestFor:
+      "Large marketing departments and agencies that need unified scheduling, social listening, CRM integration, and team workflows across every major network.",
+    imageSlug: "sprout-social-card",
+    imageAlt:
+      "Sprout Social enterprise dashboard with Smart Inbox, publishing calendar, and team member workspace assignments",
+    overview: [
+      "Sprout Social is the premium end of the enterprise scheduling market. It ships unified scheduling, a Smart Inbox for cross-network engagement, social listening, CRM-style audience profiles, and unified analytics. The per-seat pricing reflects the depth.",
+      "For a solo creator or small team, this is wildly overkill. For an enterprise that needs LinkedIn alongside Twitter, Facebook, Instagram, TikTok, and YouTube with team workflows, Sprout's depth is unmatched.",
+    ],
+    pros: [
+      "Most comprehensive enterprise feature set in this comparison",
+      "Smart Inbox unifies social mentions across networks",
+      "Strong reporting, CRM, and listening integrations",
+    ],
+    cons: [
+      "Per-seat pricing starts at $249/mo - prohibitive for solo or small teams",
+      "LinkedIn-specific tooling is thin relative to the price",
+      "Steep learning curve",
+    ],
+    accent: "from-green-600 to-emerald-700",
+    ctaLabel: "Compare LinkedIn schedulers",
+    ctaHref: "/compare",
+  },
+];
+
+type GlanceRow = {
+  rank: number;
+  tool: string;
+  bestFor: string;
+  pricing: string;
+  freeTrial: string;
+  companyPages: boolean;
+  aiBuiltIn: boolean;
+  highlight?: boolean;
+};
+
+const glanceTools: GlanceRow[] = [
+  { rank: 1, tool: "LinkedGrow", bestFor: "AI scheduling with BYOK", pricing: "$13/mo (+$2-4 AI)", freeTrial: "7-day Pro", companyPages: true, aiBuiltIn: true, highlight: true },
+  { rank: 2, tool: "Taplio", bestFor: "Scheduling + outreach", pricing: "$39-$149/mo", freeTrial: "7-day", companyPages: true, aiBuiltIn: true },
+  { rank: 3, tool: "Buffer", bestFor: "Multi-platform scheduling", pricing: "Free, $20/mo", freeTrial: "Free plan", companyPages: true, aiBuiltIn: true },
+  { rank: 4, tool: "Supergrow", bestFor: "Budget all-in-one", pricing: "$19-$39/mo", freeTrial: "Free plan", companyPages: true, aiBuiltIn: true },
+  { rank: 5, tool: "AuthoredUp", bestFor: "In-LinkedIn writers", pricing: "$19.95/mo", freeTrial: "14-day", companyPages: false, aiBuiltIn: false },
+  { rank: 6, tool: "Hootsuite", bestFor: "Enterprise teams", pricing: "$99-$249/mo", freeTrial: "30-day", companyPages: true, aiBuiltIn: true },
+  { rank: 7, tool: "Later", bestFor: "Visual content calendar", pricing: "$25-$80/mo", freeTrial: "14-day", companyPages: true, aiBuiltIn: true },
+  { rank: 8, tool: "Sprout Social", bestFor: "Large social teams", pricing: "$249+/seat/mo", freeTrial: "30-day", companyPages: true, aiBuiltIn: true },
+];
+
+const criteria = [
+  {
+    icon: Zap,
+    title: "Auto-publish vs reminder-based",
+    description:
+      "Auto-publishing fires the post at the scheduled time without any action from you. Reminder-based scheduling pings you to publish manually - useful for Instagram's Stories quirks, mostly unnecessary for LinkedIn.",
+  },
+  {
+    icon: Sparkles,
+    title: "AI post generation built in",
+    description:
+      "Tools that pair scheduling with AI generation save the copy-paste tax. The best schedulers let you draft, edit, and queue from the same editor without leaving the page.",
+  },
+  {
+    icon: Building2,
+    title: "Company page support",
+    description:
+      "Not every scheduler can publish to LinkedIn company pages you manage. If you run a company page or post for clients, verify this before subscribing.",
+  },
+  {
+    icon: CircleDollarSign,
+    title: "Pricing model",
+    description:
+      "Flat per-account pricing scales linearly. Per-channel (Buffer) or per-seat (Hootsuite, Sprout) pricing scales fast for teams. BYOK pricing (LinkedGrow) strips AI markup so total cost stays low.",
+  },
+  {
+    icon: Calendar,
+    title: "Calendar UI quality",
+    description:
+      "Drag-and-drop rescheduling, color-coded status, and a quick week/month toggle are table stakes. Visual thumbnail calendars (Later) help cross-network creators plan cohesive content.",
+  },
+];
+
+export function PostSchedulerContent({
+  faqs,
+}: {
+  faqs: Array<{ question: string; answer: string }>;
+}) {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
       <AnimatedBackground />
       <Header />
 
-      <LandingHero
-        badge={{ icon: CalendarCheck, text: "The LinkedIn Scheduler Tool" }}
-        headline={{
-          line1: "LinkedIn post scheduler with AI,",
-          gradient: "profile + company page publishing",
-        }}
-        descriptionBold="The tool itself: an AI-integrated scheduler dashboard with visual calendar, profile + company page targeting, and auto-publish."
-        description="LinkedGrow's post scheduler is a product, not a how-to. The dashboard combines AI post generation, visual content calendar, profile and company page targeting, and reliable auto-publish into one tool. Looking for the step-by-step workflow on scheduling LinkedIn posts in advance? See our scheduling guide."
-        valuePropBadges={[
-          { icon: Calendar, text: "Visual calendar UI" },
-          { icon: Building2, text: "Profile + company pages" },
-          { icon: Sparkles, text: "AI-integrated" },
-        ]}
-        primaryCta={{ text: "Start scheduling posts", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["From $13/month", "No credit card to try", "Cancel anytime"]}
-        video={{
-          videoId: "5cE1BRvxfiQ",
-          thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
-          duration: "0:10",
-          ctaText: "See Pricing",
-          ctaHref: "/pricing",
-        }}
-      />
+      {/* ===== HERO ===== */}
+      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex justify-center mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-xs font-semibold text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300">
+              <Award className="w-3.5 h-3.5" />
+              Independent ranking · Updated May 2026
+            </span>
+          </div>
+          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            Best LinkedIn Scheduling Tools in 2026:{" "}
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+              Ranked &amp; Reviewed
+            </span>
+          </h1>
+          <p className="mt-6 text-center text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
+            We tested the top LinkedIn scheduling tools for 2026 - 8 platforms ranked by use case, with
+            pricing, pros and cons, and the best pick for each type of creator.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm">
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              8 tools compared
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              No affiliate links
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              Real pricing breakdowns
+            </span>
+          </div>
 
-      <LandingPainPoints
-        badge={{ icon: AlertTriangle, text: "What Most Schedulers Are Missing" }}
-        badgeColor="red"
-        headline={{
-          text: "Most LinkedIn schedulers are",
-          gradient: "stripped-down tools.",
-        }}
-        descriptionBold="A scheduler that only schedules is a feature, not a product."
-        description="Buffer, Hootsuite, and the generic social media schedulers were built for cross-platform reach. They schedule. That is the entire product. They have no AI post generation, no native company page targeting workflow, and no integrated content calendar that connects to a LinkedIn-specific editor. The result is a tool you have to glue to four other tools to actually use."
-        problems={[
-          {
-            icon: Sparkles,
-            stat: "0",
-            title: "AI integration in standalone schedulers",
-            description:
-              "Standalone schedulers expect you to bring a finished post. They have no built-in AI generation, no voice training, and no model choice. You write the post elsewhere, paste it into the scheduler, and lose the connection between drafting and publishing.",
-            color: "from-red-500 to-rose-600",
-          },
-          {
-            icon: Building2,
-            stat: "Manual",
-            title: "Company page targeting in most tools",
-            description:
-              "Posting to a company page versus a personal profile is a different workflow in most schedulers - if it is supported at all. LinkedGrow's scheduler treats both as first-class destinations from the same dashboard, with a single dropdown to switch.",
-            color: "from-orange-500 to-amber-600",
-          },
-          {
-            icon: Calendar,
-            stat: "Generic",
-            title: "Calendar UI built for every platform at once",
-            description:
-              "Cross-platform schedulers ship a calendar designed for Instagram, X, Facebook, and LinkedIn together. It works for none of them well. LinkedGrow's calendar UI shows LinkedIn-specific draft, scheduled, and published statuses with color coding.",
-            color: "from-red-500 to-orange-600",
-          },
-          {
-            icon: Timer,
-            stat: "15-min",
-            title: "Approximate windows on most scheduling APIs",
-            description:
-              "Most scheduling tools batch their publishing into 15-minute windows for cost. LinkedGrow uses QStash to fire posts at the exact minute you scheduled. The difference matters when your audience checks LinkedIn at 8:07 AM and your post lands at 8:15.",
-            color: "from-rose-500 to-red-600",
-          },
-        ]}
-        bottomQuote="My old scheduler was just a queue. I want a tool that knows it is scheduling LinkedIn posts, not generic social posts..."
-      />
+          <div className="relative aspect-video rounded-2xl overflow-hidden mt-12 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50">
+            <Image
+              src={`${R2}/best-linkedin-scheduling-tools-2026-cover.avif`}
+              alt="Best LinkedIn scheduling tools 2026 - LinkedGrow, Taplio, Buffer, Supergrow, AuthoredUp, Hootsuite, Later, Sprout Social"
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 896px"
+            />
+          </div>
+        </div>
+      </section>
 
-      <LandingFeatures
-        badge={{ icon: CalendarCheck, text: "Scheduler Features" }}
-        headline={{
-          text: "Everything you need to schedule",
-          gradient: "LinkedIn posts consistently",
-        }}
-        description="A complete LinkedIn scheduling system with visual calendar, optimal time suggestions, and auto-publish to profiles and company pages."
-        features={[
-          {
-            icon: Calendar,
-            title: "Visual Content Calendar",
-            description:
-              "See your week and month at a glance with a visual calendar showing all scheduled, published, and draft posts. Drag and drop to reschedule, click to edit, and identify gaps in your posting frequency immediately.",
-            highlights: ["Week and month views", "Drag and drop", "Gap detection"],
-            badge: "Visual",
-            color: "from-cyan-500 to-blue-600",
-          },
-          {
-            icon: Timer,
-            title: "Optimal Time Suggestions",
-            description:
-              "LinkedGrow suggests the best posting times based on when LinkedIn engagement is highest for your industry and audience. Schedule posts at times when your content will reach the most people without guessing.",
-            highlights: ["Data-driven timing", "Industry-specific", "Audience analysis"],
-            badge: "Smart",
-            color: "from-emerald-500 to-green-600",
-          },
-          {
-            icon: Building2,
-            title: "Profiles and Company Pages",
-            description:
-              "Schedule posts to your personal LinkedIn profile or any company page you manage. Switch between posting targets from the same dashboard. Manage multiple LinkedIn presences from one place.",
-            highlights: ["Personal profiles", "Company pages", "One dashboard"],
-            badge: "Multi-target",
-            color: "from-amber-500 to-yellow-600",
-          },
-          {
-            icon: Zap,
-            title: "Reliable Auto-Publish",
-            description:
-              "Posts publish automatically at the scheduled time using QStash for exact-time delivery. No manual intervention needed. Your content goes live whether you are online, in a meeting, sleeping, or on vacation.",
-            highlights: ["Exact-time delivery", "Zero manual work", "Always reliable"],
-            badge: "Automatic",
-            color: "from-violet-500 to-purple-600",
-          },
-          {
-            icon: Sparkles,
-            title: "AI Post Generation + Scheduling",
-            description:
-              "Generate posts with AI and schedule them in the same workflow. Write a week of content in 15 minutes on Monday morning, schedule each post for the optimal time, and your LinkedIn presence runs itself all week.",
-            highlights: ["Generate + schedule", "Batch creation", "Weekly workflow"],
-            badge: "Integrated",
-            color: "from-pink-500 to-rose-500",
-          },
-          {
-            icon: BarChart3,
-            title: "Post Performance Tracking",
-            description:
-              "Track how scheduled posts perform after they publish. See engagement metrics, identify which posting times drive the most engagement, and optimize your schedule based on real data from your audience.",
-            highlights: ["Engagement metrics", "Time analysis", "Data-driven"],
-            badge: "Pro",
-            color: "from-teal-500 to-cyan-600",
-          },
-        ]}
-        ctaText="Start Scheduling Posts"
-        ctaHref="/sign-up"
-      />
+      {/* ===== AT A GLANCE COMPARISON ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              The 8 best LinkedIn schedulers{" "}
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+                at a glance
+              </span>
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              The fast version. Full reviews below.
+            </p>
+          </div>
 
-      <LandingHowItWorks
-        headline={{
-          text: "Schedule a full week of LinkedIn content in",
-          gradient: "15 minutes",
-        }}
-        description="Batch your content creation and let the scheduler handle the rest."
-        steps={[
-          {
-            number: "01",
-            title: "Create or generate your posts",
-            description:
-              "Write posts manually or use the AI generator to create multiple posts in one session. Generate 5 posts for the week in about 10 minutes with AI assistance. Each post matches your voice thanks to voice training.",
-            icon: PenTool,
-            color: "from-cyan-500 to-blue-500",
-            time: "10 min",
-          },
-          {
-            number: "02",
-            title: "Pick the best times to post",
-            description:
-              "Choose posting times for each day of the week using optimal time suggestions. The content calendar shows you the full week so you can spread posts evenly and avoid gaps or overlaps in your publishing schedule.",
-            icon: Calendar,
-            color: "from-violet-500 to-purple-500",
-            time: "3 min",
-          },
-          {
-            number: "03",
-            title: "Schedule and relax",
-            description:
-              "Confirm the schedule and LinkedGrow takes over. Posts publish automatically at the exact times you set, to your personal profile or company page. Check back at the end of the week to see performance metrics.",
-            icon: Zap,
-            color: "from-emerald-500 to-green-500",
-            time: "2 min",
-          },
-        ]}
-        totalTime="15 minutes for a full week"
-      />
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">#</th>
+                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tool</th>
+                    <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Best for</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pricing</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Free trial</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Company pages</th>
+                    <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">AI built in</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {glanceTools.map((row, i, arr) => (
+                    <tr
+                      key={row.tool}
+                      className={`${i < arr.length - 1 ? "border-b border-slate-100 dark:border-slate-800/60" : ""} ${row.highlight ? "bg-cyan-50/60 dark:bg-cyan-900/10" : ""}`}
+                    >
+                      <td className="p-4 font-semibold text-slate-500 dark:text-slate-400">{row.rank}</td>
+                      <td className="p-4">
+                        <div className={`font-bold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>
+                          {row.tool}
+                          {row.highlight && (
+                            <span className="ml-2 inline-block px-1.5 py-0.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-[9px] font-bold">#1</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-slate-700 dark:text-slate-300">{row.bestFor}</td>
+                      <td className={`p-4 text-center font-semibold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>{row.pricing}</td>
+                      <td className="p-4 text-center text-slate-700 dark:text-slate-300">{row.freeTrial}</td>
+                      <td className="p-4 text-center">
+                        {row.companyPages ? <Check className="w-5 h-5 text-emerald-500 inline-block" /> : <X className="w-5 h-5 text-slate-300 dark:text-slate-600 inline-block" />}
+                      </td>
+                      <td className="p-4 text-center">
+                        {row.aiBuiltIn ? <Check className="w-5 h-5 text-emerald-500 inline-block" /> : <X className="w-5 h-5 text-slate-300 dark:text-slate-600 inline-block" />}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      <LandingBYOK
-        badge={{ icon: Key, text: "Smart Economics" }}
-        headline={{
-          text: "Why pay $25+ per month for just",
-          gradient: "a scheduling tool?",
-        }}
-        description="Standalone LinkedIn schedulers charge $20 to $45 per month for scheduling alone. LinkedGrow includes scheduling alongside AI post generation, image creation, analytics, and more."
-        competitor={{
-          name: "Standalone Scheduling Tools",
-          price: "$20-45/month",
-          issues: [
-            { text: "Only scheduling - no AI content generation included" },
-            { text: "Limited scheduling slots on cheaper plans" },
-            { text: "No image generation or carousel creation" },
-            { text: "Basic calendar with no AI-powered time suggestions" },
-            { text: "Separate tool needed for writing, images, and analytics" },
-          ],
-        }}
-        linkedgrow={{
-          price: "$13/month",
-          apiCost: "$2-4/month",
-          benefits: [
-            { text: "Scheduling + AI post generator + image creator in one platform" },
-            { text: "10 scheduled posts on Starter, unlimited on Pro and Business" },
-            { text: "Visual content calendar with optimal time suggestions" },
-            { text: "AI costs average $2 to $4 per month with BYOK pricing" },
-            { text: "Auto-publish to personal profiles and company pages" },
-          ],
-        }}
-        savingsText="Scheduling + AI content creation for less than scheduling alone"
-      />
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+              {glanceTools.map((row) => (
+                <div
+                  key={row.tool}
+                  className={`p-4 ${row.highlight ? "bg-cyan-50/60 dark:bg-cyan-900/10" : ""}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className={`font-bold ${row.highlight ? "text-cyan-600 dark:text-cyan-400" : "text-slate-900 dark:text-white"}`}>
+                        #{row.rank} {row.tool}
+                      </div>
+                      {row.highlight && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-semibold">
+                          #1 RANKED
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{row.pricing}</div>
+                  </div>
+                  <div className="text-sm text-slate-700 dark:text-slate-300 mb-2">{row.bestFor}</div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                    <span>Trial: {row.freeTrial}</span>
+                    <span className="inline-flex items-center gap-1">
+                      Pages: {row.companyPages ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      AI: {row.aiBuiltIn ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <X className="w-3.5 h-3.5 text-slate-400" />}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      <LandingTestimonials
-        badge={{ icon: Users, text: "Scheduling Results" }}
-        headline={{
-          text: "Consistent scheduling is driving",
-          gradient: "real LinkedIn growth",
-        }}
-        description="LinkedIn creators who switched from manual posting to LinkedGrow's scheduler are seeing measurable improvements in reach, engagement, and follower growth."
-        stats={[
-          { value: "15 min", label: "To schedule a full week", color: "text-cyan-600 dark:text-cyan-400" },
-          { value: "3-5x", label: "More posts per week with batching", color: "text-emerald-600 dark:text-emerald-400" },
-          { value: "40%", label: "Higher reach with optimal timing", color: "text-violet-600 dark:text-violet-400" },
-          { value: "$13", label: "Per month with AI generation included", color: "text-amber-600 dark:text-amber-400" },
-        ]}
-        testimonials={[
-          {
-            quote:
-              "I went from posting sporadically to 5 posts per week by scheduling everything on Monday morning. It takes me 15 minutes to generate and schedule the whole week. My follower count has grown 50% in 3 months since I started scheduling consistently.",
-            author: "Alex M.",
-            role: "Startup Advisor, 22K Followers",
-          },
-          {
-            quote:
-              "The optimal time suggestions made a real difference. I was posting at random times and getting mediocre reach. After switching to the suggested times, my average impressions per post increased about 40%. Data-driven scheduling works.",
-            author: "Claire B.",
-            role: "Content Strategist, 16K Followers",
-          },
-          {
-            quote:
-              "Being able to schedule to both my personal profile and company page from the same dashboard saves me so much time. I used to manage two separate tools. Now it is one platform, one calendar, one workflow.",
-            author: "Patrick O.",
-            role: "Agency Owner, 13K Followers",
-          },
-        ]}
-      />
+          <p className="mt-6 text-center text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            Total monthly cost matters more than sticker price. LinkedGrow Starter at $13/mo plus $2-4 in AI
+            fees beats $52-$249 bundled tools on capability per dollar.
+          </p>
+        </div>
+      </section>
 
-      <LandingFAQ
-        headline={{
-          text: "LinkedIn Post Scheduler",
-          gradient: "FAQ",
-        }}
-        description="Everything about scheduling LinkedIn posts with LinkedGrow"
-        faqs={[
-          {
-            question: "How does the scheduler work?",
-            answer:
-              "Create or generate a post, pick a date and time, and LinkedGrow auto-publishes to your LinkedIn profile or company page. Visual calendar shows all scheduled posts.",
-          },
-          {
-            question: "Can I schedule to company pages?",
-            answer:
-              "Yes. Schedule to personal profiles and company pages you manage from the same dashboard.",
-          },
-          {
-            question: "What is the best time to post on LinkedIn?",
-            answer:
-              "Typically Tuesday through Thursday, 8 to 10 AM in your audience's timezone. LinkedGrow provides optimal time suggestions based on engagement data.",
-          },
-          {
-            question: "How many posts can I schedule?",
-            answer:
-              "Starter: 10 posts. Pro and Business: unlimited. 7-day Pro trial does not include scheduling but you can publish directly.",
-          },
-          {
-            question: "Does it include a content calendar?",
-            answer:
-              "Yes. Week and month views, drag-and-drop rescheduling, color-coded post statuses, and gap detection to maintain consistency.",
-          },
-          {
-            question: "Can I schedule AI-generated posts?",
-            answer:
-              "Yes. Generate with AI and schedule in the same workflow. Batch-generate a full week of posts and schedule them all in 15 minutes.",
-          },
-          {
-            question: "What if I am offline when a post publishes?",
-            answer:
-              "Posts publish automatically using QStash for exact-time delivery. No manual intervention needed. Reliable publishing whether you are online or not.",
-          },
-          {
-            question: "Can I include images with scheduled posts?",
-            answer:
-              "Yes. Attach photos, AI-generated images, or carousels before scheduling. Media is stored in Cloudflare R2 and published alongside your text.",
-          },
-        ]}
-      />
+      {/* ===== HOW WE EVALUATED ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              What makes a great LinkedIn scheduling tool?
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Five criteria that decide whether the subscription pays for itself.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {criteria.map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-4">
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+                <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== THE 8 RANKED TOOLS ===== */}
+      <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              The 8 best LinkedIn scheduling tools in 2026
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              Ranked from best overall to most specialized.
+            </p>
+          </div>
+
+          <div className="space-y-20">
+            {tools.map((tool) => (
+              <article
+                key={tool.name}
+                id={tool.name.toLowerCase().replace(/\s+/g, "-")}
+                className="scroll-mt-24"
+              >
+                <div className="flex flex-wrap items-baseline gap-3 mb-3">
+                  <span
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br ${tool.accent} text-white font-black text-lg shrink-0`}
+                  >
+                    {tool.rank}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-white">
+                    {tool.name}
+                  </h3>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">{tool.tagline}</span>
+                </div>
+
+                <div className="relative aspect-video rounded-2xl overflow-hidden my-6 bg-slate-100 dark:bg-slate-800">
+                  <Image
+                    src={`${R2}/${tool.imageSlug}.avif`}
+                    alt={tool.imageAlt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 768px"
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-3 mb-6 text-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Best for
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.bestFor}</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Pricing
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.pricing}</div>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                    <div className="font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide mb-1">
+                      Free trial
+                    </div>
+                    <div className="text-slate-900 dark:text-white">{tool.freeTrial}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {tool.overview.map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 mt-6">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                    <div className="font-bold text-emerald-700 dark:text-emerald-300 text-sm uppercase tracking-wide mb-3">
+                      Pros
+                    </div>
+                    <ul className="space-y-2">
+                      {tool.pros.map((p, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-[15px] text-slate-700 dark:text-slate-300"
+                        >
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-5 dark:border-rose-900/50 dark:bg-rose-950/20">
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-sm uppercase tracking-wide mb-3">
+                      Cons
+                    </div>
+                    <ul className="space-y-2">
+                      {tool.cons.map((c, i) => (
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-[15px] text-slate-700 dark:text-slate-300"
+                        >
+                          <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Link
+                    href={tool.ctaHref}
+                    className={`inline-flex items-center gap-2 rounded-xl bg-linear-to-r ${tool.accent} px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200/50 dark:shadow-slate-950/50 hover:opacity-95 transition`}
+                  >
+                    {tool.ctaLabel}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW TO CHOOSE ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              How to choose the right LinkedIn scheduling tool
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Match the tool to your real workflow. Four personas, four honest picks.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                For solo creators posting 2 to 5 times a week
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
+                You get AI generation + scheduling in one dashboard for $13/mo (Starter) plus $2-4/mo in BYOK AI fees.
+                The 10-post Starter cap covers most solo cadences; upgrade to Pro at $27/mo for unlimited if you batch-schedule a month ahead.
+                Runner-up: Supergrow at $19/mo if you prefer bundled AI with no API key setup.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                For agencies and ghostwriters managing multiple LinkedIn accounts
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick LinkedGrow Business at $55/mo - it ships team workflows, per-client content calendars, BYOK per client
+                (so AI costs stay on the client side), and a public API. Hootsuite Team at $249/mo is the alternative if you also
+                manage non-LinkedIn channels for the same clients. Sprout Social only makes sense at 5+ seats with cross-network listening needs.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                For teams and B2B companies posting from a company page
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick LinkedGrow Business at $55/mo if LinkedIn is your primary B2B channel - you get unlimited company-page scheduling,
+                team collaboration with role-based access, and AI generation tuned to your brand voice via voice training. Hootsuite Professional
+                at $99/mo if your team manages 5+ social profiles across networks. Buffer Team at $40/mo if you cross-post heavily and just need clean scheduling.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                For multi-platform creators where LinkedIn is one of many
+              </h3>
+              <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+                Pick Buffer if your stack is LinkedIn + X + Instagram + TikTok and you want one composer. Later is the pick if you think
+                visually and want a thumbnail-grid calendar. Just know you trade LinkedIn-specific depth (hooks, voice, algorithm signals) for multi-platform convenience.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+              LinkedIn scheduling tools FAQ
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              The most common questions before picking a scheduler.
+            </p>
+          </div>
+          <FAQAccordion faqs={faqs} />
+        </div>
+      </section>
 
       <LandingRelatedContent
         headline="Related Resources"
         links={[
-          { title: "How to Schedule LinkedIn Posts in Advance (step-by-step)", href: "/features/post-scheduling" },
-          { title: "Content Calendar", href: "/features/content-calendar" },
-          { title: "Best Time to Post on LinkedIn", href: "/free-tools/linkedin-best-time-to-post" },
+          { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
+          { title: "Best LinkedIn Post Generators 2026", href: "/best-ai-linkedin-post-generator" },
+          { title: "LinkedIn Content Calendar Guide", href: "/blog/linkedin-content-calendar-guide" },
+          { title: "Compare LinkedIn Tools", href: "/compare" },
         ]}
       />
 
       <LandingCTA
-        badge="Start Scheduling LinkedIn Posts Today"
+        badge="Try the #1 ranked LinkedIn scheduler"
         headline={{
-          line1: "Ready to post on LinkedIn",
-          gradient: "consistently without the stress?",
+          line1: "Start free with the best",
+          gradient: "LinkedIn scheduling tool in 2026",
         }}
-        description="Schedule a full week of LinkedIn content in 15 minutes. AI generates your posts, the scheduler publishes them at the perfect time. Your LinkedIn presence runs on autopilot."
-        primaryCta={{ text: "Start scheduling free", href: "/sign-up" }}
+        description="AI generation + auto-publishing + visual calendar in one dashboard. Total cost stays at $15 to $30/mo all-in. Join 179+ founders."
+        primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "From $13/month",
-          "Visual calendar",
+          "No credit card required",
+          "Unlimited generations on Pro+",
+          "Auto-publish to profiles and pages",
           "Cancel anytime",
-          "Auto-publish included",
         ]}
       />
 
