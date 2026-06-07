@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
 
-// Publishing days: Monday (1) and Friday (5) at 7:00 AM Los Angeles time
-const PUBLISH_DAYS = [1, 5]; // JS getDay(): 0=Sun, 1=Mon, 5=Fri
+// Publishing days: Monday (1), Wednesday (3), Friday (5) at 7:00 AM Los Angeles time
+const PUBLISH_DAYS = [1, 3, 5]; // JS getDay(): 0=Sun, 1=Mon, 3=Wed, 5=Fri
 const PUBLISH_HOUR = 7;
 const PUBLISH_TIMEZONE = "America/Los_Angeles";
 
@@ -53,7 +53,7 @@ function getUtcDateForLATime(
 }
 
 /**
- * Find the next available Monday or Friday at 7:00 AM LA time
+ * Find the next available Monday, Wednesday, or Friday at 7:00 AM LA time
  * that doesn't already have a scheduled blog post.
  */
 export async function findNextAvailableSlot(): Promise<Date> {
@@ -98,7 +98,7 @@ export async function findNextAvailableSlot(): Promise<Date> {
 }
 
 /**
- * Schedule a blog post for the next available Monday/Friday slot via QStash
+ * Schedule a blog post for the next available Monday/Wednesday/Friday slot via QStash
  */
 export async function scheduleBlogPost(
   slug: string
