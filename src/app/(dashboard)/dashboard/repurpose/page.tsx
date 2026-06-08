@@ -205,12 +205,12 @@ function decodeHtmlEntities(text: string): string {
 }
 
 // CF Worker for YouTube captions - browser calls directly (CORS enabled, Cloudflare edge IPs)
-const YT_WORKER = "https://youtube-captions.digihold-account.workers.dev";
+const YT_WORKER = "https://youtube-captions.vayalis.workers.dev";
 
 // CF Worker that proxy-fetches webpage/blog HTML - browser calls directly so the
 // fetch runs from Cloudflare edge IPs instead of Vercel datacenter IPs, which
 // many host firewalls (WPX, managed WordPress, etc.) block.
-const WEBPAGE_WORKER = "https://webpage-proxy.digihold-account.workers.dev";
+const WEBPAGE_WORKER = "https://webpage-proxy.vayalis.workers.dev";
 
 function extractYoutubeVideoId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
