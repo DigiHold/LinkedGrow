@@ -309,6 +309,31 @@ interface ImageProviderSettings {
   quality: string | null;
 }
 
+// Turn a failed response into a message that says WHAT went wrong, not just "failed".
+// `action` is a short verb phrase, e.g. "save your API key".
+async function describeResponseError(response: Response, action: string): Promise<string> {
+  if (response.status === 401) {
+    return "Your session expired. Sign out, sign back in, then try again.";
+  }
+  let serverError = "";
+  try {
+    const data = await response.json();
+    if (data?.error) serverError = String(data.error);
+  } catch {
+    // No JSON body to read.
+  }
+  if (response.status === 429) {
+    return `Too many requests. Wait a moment, then try to ${action} again.`;
+  }
+  const detail = serverError || `server error ${response.status}`;
+  return `Could not ${action} (${detail}). Please try again.`;
+}
+
+// Network-level failure (request never reached the server): connection, ad blocker, extension, etc.
+function describeNetworkError(action: string): string {
+  return `Could not reach the server to ${action}. Check your connection, or disable ad blockers and browser extensions for this site, then try again.`;
+}
+
 export default function AIAPISettingsPage() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
@@ -508,10 +533,10 @@ export default function AIAPISettingsPage() {
         setShowApiKey(false);
         setTextApiMessage({ type: "success", text: `${aiProviders.find(p => p.id === viewingProvider)?.name} API key saved!` });
       } else {
-        setTextApiMessage({ type: "error", text: "Failed to save API key" });
+        setTextApiMessage({ type: "error", text: await describeResponseError(response, "save your API key") });
       }
-    } catch (error) {
-setTextApiMessage({ type: "error", text: "Failed to save API key" });
+    } catch {
+      setTextApiMessage({ type: "error", text: describeNetworkError("save your API key") });
     } finally {
       setIsSavingApiKey(false);
     }
@@ -607,10 +632,10 @@ setTextApiMessage({ type: "error", text: "Failed to save API key" });
         }));
         setTextApiMessage({ type: "success", text: `Model updated to ${selectedModel}!` });
       } else {
-        setTextApiMessage({ type: "error", text: "Failed to save model" });
+        setTextApiMessage({ type: "error", text: await describeResponseError(response, "save your model") });
       }
-    } catch (error) {
-setTextApiMessage({ type: "error", text: "Failed to save model" });
+    } catch {
+      setTextApiMessage({ type: "error", text: describeNetworkError("save your model") });
     } finally {
       setIsSavingModel(false);
     }
@@ -656,10 +681,10 @@ setTextApiMessage({ type: "error", text: "Failed to save model" });
         }));
         setImageApiMessage({ type: "success", text: "Image settings saved!" });
       } else {
-        setImageApiMessage({ type: "error", text: "Failed to save image settings" });
+        setImageApiMessage({ type: "error", text: await describeResponseError(response, "save your image settings") });
       }
-    } catch (error) {
-setImageApiMessage({ type: "error", text: "Failed to save image settings" });
+    } catch {
+      setImageApiMessage({ type: "error", text: describeNetworkError("save your image settings") });
     } finally {
       setIsSavingImageSettings(false);
     }
@@ -721,10 +746,10 @@ setImageApiMessage({ type: "error", text: "Failed to save image settings" });
         setShowImageApiKey(false);
         setImageApiMessage({ type: "success", text: `${provider?.name} API key saved!` });
       } else {
-        setImageApiMessage({ type: "error", text: "Failed to save image API key" });
+        setImageApiMessage({ type: "error", text: await describeResponseError(response, "save your image API key") });
       }
-    } catch (error) {
-setImageApiMessage({ type: "error", text: "Failed to save image API key" });
+    } catch {
+      setImageApiMessage({ type: "error", text: describeNetworkError("save your image API key") });
     } finally {
       setIsSavingImageApiKey(false);
     }
