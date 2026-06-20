@@ -345,7 +345,7 @@ export function AutomationToolsContent() {
         links={[
           { title: "Safe LinkedIn Automation Use Cases", href: "/use-cases/automation" },
           { title: "LinkedIn Content Creation Tools", href: "/linkedin-content-creation-tools" },
-          { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
+          { title: "LinkedIn Marketing Tool", href: "/linkedin-marketing-tool" },
           { title: "LinkedIn Post Scheduling", href: "/features/post-scheduling" },
           { title: "AI Post Generator", href: "/features/blog-to-linkedin" },
         ]}

@@ -345,7 +345,7 @@ export function ContentCreationToolsContent() {
         links={[
           { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
           { title: "AI LinkedIn Content Creation", href: "/linkedin-content-creation-ai" },
-          { title: "AI Post Generator", href: "/" },
+          { title: "LinkedIn Marketing Tool", href: "/linkedin-marketing-tool" },
           { title: "Carousel Generator", href: "/features/carousel-generator" },
         ]}
       />
