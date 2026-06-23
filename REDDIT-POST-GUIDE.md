@@ -183,17 +183,27 @@ Assign flairs from this table:
 
 | Flair             | When to use                                                     | Target length |
 | ----------------- | --------------------------------------------------------------- | ------------- |
-| Money & Business  | Making money with AI, costs, side hustles, pricing, freelancing | 400-700 words |
-| Tools & Reviews   | Honest comparisons, reviews, recommendations, hidden gems       | 500-800 words |
-| News & Discussion | AI trends, debates, industry shifts, opinion pieces             | 300-600 words |
-| Question          | Beginner-friendly questions that spark conversation             | 200-400 words |
-| Weekly Thread     | Recurring formats (see Step 1 table)                            | 200-500 words |
+| Money & Business  | Making money with AI, costs, side hustles, pricing, freelancing | 180-320 words |
+| Tools & Reviews   | Honest comparisons, reviews, recommendations, hidden gems       | 200-360 words |
+| News & Discussion | AI trends, debates, industry shifts, opinion pieces             | 140-260 words |
+| Question          | Beginner-friendly questions that spark conversation             | 90-180 words  |
+| Weekly Thread     | Recurring formats (see Step 1 table)                            | 120-240 words |
+
+**SHORTER IS BETTER — a HARD rule, not a suggestion.** r/WTFisAI readers skim on mobile and bounce off walls of text. Aim for the LOW end of the range. Hard ceiling: **never exceed 280 words** for any post. Every sentence must earn its place; cut anything that repeats a prior point, states the obvious, or pads to fill length. A tight 160-word post beats a meandering 350-word one every time.
 
 Pick the flair that best matches the angle, not the topic. Same news story could be "News & Discussion" (what happened) or "Money & Business" (how it affects your wallet) or "Question" (what does this mean for us?).
 
 ---
 
 ## Step 4: Write the Post
+
+### Invoke the anti-slop skill WHILE writing (mandatory)
+
+BEFORE you draft a single line, invoke the **`no-slop`** skill (installed globally at `~/.claude/skills/no-slop`) and keep it active for the entire draft, so the FIRST draft is already clean: no AI vocabulary, no em/en dashes, no rule-of-three, no robotic cadence. This is the DURING-writing guardrail. The AFTER-writing pass is the **`humanizer`** skill in Step 5.
+
+These two skills are a layer ON TOP of the Reddit rules below, never a replacement. On anything Reddit-specific the rules below WIN: casual newbie voice, contractions, no jargon, no benchmark dumps, and **no standalone sentence under 6 words**. The skills only strip AI slop; they must NOT formalize the casual Reddit tone. If `no-slop` and a rule below ever disagree, follow the rule below.
+
+---
 
 ### Nicolas -- Who You Write As
 
@@ -347,6 +357,7 @@ Read these rules. Internalize them. Violating any of them = the post gets reject
 
 Go through this checklist mentally. If ANY check fails, fix it before showing the post.
 
+0. **Run the `humanizer` skill on the post body (mandatory, AFTER writing).** Invoke **`humanizer`** (`~/.claude/skills/humanizer`) on the drafted post to strip any remaining AI-slop patterns: em/en dashes, rule-of-three, "not X, it's Y", "X is the new Y" aphorisms, filler transitions, and choppy fragment chains. Apply its rewrite first, THEN run the rest of this checklist. Keep the casual Reddit voice and contractions intact; `humanizer` removes slop, it does not formalize the tone. After it runs, re-confirm the Reddit-specific rules below still hold (especially no standalone sentence under 6 words and no banned words).
 1. **Punctuation outside quotes:** Scan for ANY comma or period INSIDE closing quotation marks. Must be zero. Wrong: "word," and "word." Correct: "word", and "word". The comma/period always goes AFTER the closing quote mark. Check every single quoted string in the post.
 2. **Em dashes:** Scan for any occurrence of -- (em dash) or - (en dash used as em dash). Must be zero.
 3. **Banned words:** Scan for all words from the banned list. Must find zero.

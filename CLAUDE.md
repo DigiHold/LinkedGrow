@@ -837,6 +837,8 @@ The project includes a local BOS (Business Operating System) framework at `./BOS
 
 When the user says any of these commands, read the corresponding workflow file and follow it step by step.
 
+**Anti-AI-slop skills (mandatory for every writing command above).** All of these workflows now wire in the two globally-installed skills: invoke **`no-slop`** (`~/.claude/skills/no-slop`) WHILE writing so the first draft is already clean, then **`humanizer`** (`~/.claude/skills/humanizer`) AFTER writing to strip any remaining slop (em/en dashes, rule-of-three, "not X, it's Y", aphorisms, filler), then run that platform's own checklist/pre-flight as the final gate. The skills are a layer ON TOP of each guide's rules, never a replacement: the platform format always wins. For `write reddit`, keep the casual newbie voice and the no-sentence-under-6-words rule. For `write linkedin` (and the X / comment / newsletter workflows), KEEP the platform's short-line format (the 2-line hook, line breaks, white space) — never let `humanizer` flatten it into paragraphs or force the article "≥6 words everywhere" rule onto the hook.
+
 **Default behavior for `write linkedin`**: ALWAYS routes through BOS now. Reads `BOS/Core/` + relevant `BOS/Knowledge/` files, applies algo playbook rules + verified stories (if Story day), generates the post + X version + Facebook version, saves as draft on LinkedGrow API.
 
 ## Founders
