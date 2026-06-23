@@ -101,7 +101,17 @@ export async function PUT(
 
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
-    if (plan !== undefined) updateData.plan = plan;
+    if (plan !== undefined) {
+      updateData.plan = plan;
+      // Downgrading to free = full revoke (e.g. after a refund). Clear the
+      // lifetime-deal flag and its source so the user stops being treated as a
+      // paying customer (isPaidUser, support gating) and the badge stops
+      // showing "Free LTD".
+      if (plan === "free") {
+        updateData.isLifetimeDeal = false;
+        updateData.ltdSource = null;
+      }
+    }
     if (isAdmin !== undefined) updateData.isAdmin = isAdmin;
 
     // Handle password change

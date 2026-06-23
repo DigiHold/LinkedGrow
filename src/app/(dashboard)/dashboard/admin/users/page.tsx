@@ -212,11 +212,15 @@ export default function AdminUsersPage() {
         return;
       }
 
-      // Update local state
+      // Update local state - mirror the server-side LTD clear on downgrade
       setUsers((prev) =>
         prev.map((u) =>
           u.id === editingUser.id
-            ? { ...u, ...editForm }
+            ? {
+                ...u,
+                ...editForm,
+                isLifetimeDeal: editForm.plan === "free" ? false : u.isLifetimeDeal,
+              }
             : u
         )
       );
@@ -402,7 +406,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td data-label="" className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {user.stripeCustomerId && (
+                        {user.stripeCustomerId ? (
                           <a
                             href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
                             target="_blank"
@@ -412,6 +416,19 @@ export default function AdminUsersPage() {
                             Stripe
                             <ExternalLink className="w-3 h-3" />
                           </a>
+                        ) : (
+                          user.isLifetimeDeal && (
+                            <a
+                              href={`https://dashboard.stripe.com/search?query=${encodeURIComponent(user.email)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                              title="No stored Stripe customer - search by email to issue a refund"
+                            >
+                              Find on Stripe
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )
                         )}
                         {user.id !== session?.user?.id && (
                           <>
