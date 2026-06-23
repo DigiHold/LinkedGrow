@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, ItemListJsonLd } from "@/components/seo/js
 import { PostSchedulerContent } from "./scheduler-content";
 
 export const metadata: Metadata = {
-  title: "Best LinkedIn Scheduling Tools in 2026: Ranked & Reviewed",
+  title: "8 Best LinkedIn Schedulers in 2026: Ranked by Use Case",
   description:
-    "We tested the top LinkedIn scheduling tools for 2026. Ranked by use case, with pricing and pros/cons for each.",
+    "We tested the 8 best LinkedIn schedulers for 2026. Each ranked by use case with real pricing, pros/cons, and the best scheduler for solo creators, teams, and agencies.",
   openGraph: {
-    title: "Best LinkedIn Scheduling Tools in 2026: Ranked & Reviewed",
+    title: "8 Best LinkedIn Schedulers in 2026: Ranked by Use Case",
     description:
-      "We tested the top LinkedIn scheduling tools for 2026. Ranked by use case, with pricing and pros/cons for each.",
+      "We tested the 8 best LinkedIn schedulers for 2026. Each ranked by use case with real pricing, pros/cons, and the best scheduler for solo creators, teams, and agencies.",
     url: "https://linkedgrow.ai/linkedin-post-scheduler",
     siteName: "LinkedGrow",
     type: "article",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best LinkedIn Scheduling Tools in 2026: Ranked & Reviewed",
+    title: "8 Best LinkedIn Schedulers in 2026: Ranked by Use Case",
     description:
-      "We tested the top LinkedIn scheduling tools for 2026. Ranked by use case, with pricing and pros/cons for each.",
+      "We tested the 8 best LinkedIn schedulers for 2026. Each ranked by use case with real pricing, pros/cons, and the best scheduler for solo creators, teams, and agencies.",
     images: [
       "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/blog/best-ai-linkedin-post-generator/best-linkedin-scheduling-tools-2026-cover.webp",
     ],
