@@ -313,7 +313,7 @@ export async function GET(request: NextRequest) {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}' }, '${appOrigin}');
+                window.opener.postMessage({ type: 'google-success', callbackUrl: '${redirectUrl}', isNewUser: ${mode === 'register'} }, '${appOrigin}');
                 window.close();
               } else {
                 window.location.href = '${redirectUrl}';

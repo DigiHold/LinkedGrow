@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { redirectToCheckout, redirectToLtdCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
+import { trackSignup } from "@/lib/insight";
 
 type SocialProvider = "linkedin" | "google" | null;
 
@@ -86,6 +87,11 @@ function SignUpContent() {
 
       if (event.data.type === `${provider}-success`) {
         window.removeEventListener('message', handleMessage);
+        // Only a brand-new account counts as a signup, not a returning login.
+        // The OAuth callback sends isNewUser=true only when it created the user.
+        if (event.data.isNewUser === true) {
+          trackSignup();
+        }
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
         const userEmail = session?.user?.email;
@@ -163,6 +169,9 @@ function SignUpContent() {
         setErrorMessage(data.error || "Failed to create account");
         return;
       }
+
+      // Account was really created (register returned ok) - fire signup goal once
+      trackSignup();
 
       // Redirect to sign in page, preserving plan selection and callbackUrl
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
