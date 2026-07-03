@@ -105,7 +105,7 @@ export default async function RootLayout({
           }}
         />
         {/* Privacy-friendly analytics */}
-        <script defer data-site="linkedgrow" src="https://insight.nicolaslecocq.com/t.js" />
+        <script defer data-site="linkedgrow" data-persist="true" src="https://insight.nicolaslecocq.com/t.js" />
         {/* Google Tag Manager with Consent Mode V2 */}
         {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
         {/* JSON-LD Structured Data for SEO */}
