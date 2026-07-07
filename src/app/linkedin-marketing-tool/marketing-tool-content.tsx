@@ -345,6 +345,7 @@ export function MarketingToolContent() {
         links={[
           { title: "LinkedIn Content Creation Tools", href: "/linkedin-content-creation-tools" },
           { title: "LinkedIn Automation Tools", href: "/linkedin-automation-tools" },
+          { title: "LinkedIn Lead Generation Tools", href: "/linkedin-lead-generation-tools" },
           { title: "LinkedIn Post Scheduler", href: "/linkedin-post-scheduler" },
           { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
           { title: "LinkedIn Content Strategy for Coaches", href: "/blog/linkedin-content-strategy-coaches" },

@@ -99,7 +99,7 @@ const nextConfig: NextConfig = {
       },
       {
         // Public marketing pages only (logged-out) - CDN cache 1 hour, stale-while-revalidate
-        source: "/:path(about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|docs|docs/.*|help|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*|free-linkedin-course|switch-to-claude|linkedin-profile-views-guide|linkedin-analytics-tool|linkedin-new-job-announcement|linkedin-automation-tools|linkedin-marketing-tool)",
+        source: "/:path(about|privacy|terms|cookies|beta|sign-in|sign-up|pricing|blog|blog/.*|docs|docs/.*|help|for/.*|features/.*|free-tools/.*|use-cases/.*|industries/.*|compare/.*|affiliate|affiliate/.*|free-linkedin-course|switch-to-claude|linkedin-profile-views-guide|linkedin-analytics-tool|linkedin-new-job-announcement|linkedin-automation-tools|linkedin-marketing-tool|linkedin-lead-generation-tools)",
         headers: [
           {
             key: "Cache-Control",
