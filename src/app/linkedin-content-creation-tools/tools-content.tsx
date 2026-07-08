@@ -347,6 +347,8 @@ export function ContentCreationToolsContent() {
           { title: "AI LinkedIn Content Creation", href: "/linkedin-content-creation-ai" },
           { title: "LinkedIn Marketing Tool", href: "/linkedin-marketing-tool" },
           { title: "Carousel Generator", href: "/features/carousel-generator" },
+          { title: "LinkedIn Content Calendar Planning", href: "/blog/linkedin-content-calendar-planning" },
+          { title: "LinkedIn Post Scheduler", href: "/linkedin-post-scheduler" },
         ]}
       />
 
