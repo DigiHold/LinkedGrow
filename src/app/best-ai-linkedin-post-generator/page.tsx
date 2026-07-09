@@ -5,11 +5,11 @@ import { BestPostGeneratorContent } from "./best-generator-content";
 export const metadata: Metadata = {
   title: "Best LinkedIn Post Generators in 2026: Ranked & Reviewed",
   description:
-    "8 best LinkedIn post generators in 2026 ranked side by side: pricing, AI model choice, voice training, and pros/cons. LinkedGrow, Taplio, AuthoredUp, Supergrow and more.",
+    "The 8 best AI LinkedIn post generators in 2026, ranked on pricing, model choice, and voice training. LinkedGrow, Taplio, AuthoredUp, Supergrow and more.",
   openGraph: {
     title: "Best LinkedIn Post Generators in 2026: Ranked & Reviewed",
     description:
-      "8 best LinkedIn post generators in 2026 ranked side by side: pricing, AI model choice, voice training, and pros/cons. LinkedGrow, Taplio, AuthoredUp, Supergrow and more.",
+      "The 8 best AI LinkedIn post generators in 2026, ranked on pricing, model choice, and voice training. LinkedGrow, Taplio, AuthoredUp, Supergrow and more.",
     url: "https://linkedgrow.ai/best-ai-linkedin-post-generator",
     siteName: "LinkedGrow",
     type: "article",

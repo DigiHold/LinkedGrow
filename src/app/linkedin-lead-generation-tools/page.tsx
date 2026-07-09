@@ -5,11 +5,11 @@ import { LeadGenerationToolsContent } from "./lead-generation-tools-content";
 export const metadata: Metadata = {
   title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
   description:
-    "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics. BYOK model, from $19/mo.",
+    "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
   openGraph: {
     title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
     description:
-      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics. BYOK model, from $19/mo.",
+      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
     url: "https://linkedgrow.ai/linkedin-lead-generation-tools",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
     description:
-      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics. BYOK model, from $19/mo.",
+      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

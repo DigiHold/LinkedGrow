@@ -115,7 +115,7 @@ function CategoryPage({
   articles,
   searchIndex,
 }: {
-  category: { slug: string; title: string; description: string };
+  category: { slug: string; title: string; description: string; overview?: string[] };
   articles: { slug: string; title: string; description: string; order: number }[];
   searchIndex: { title: string; description: string; category: string; categoryTitle: string; slug: string }[];
 }) {
@@ -142,7 +142,19 @@ function CategoryPage({
           </nav>
 
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">{category.title}</h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-10">{category.description}</p>
+          <p className={`text-lg text-slate-600 dark:text-slate-400 ${category.overview?.length ? "mb-6" : "mb-10"}`}>
+            {category.description}
+          </p>
+
+          {category.overview && category.overview.length > 0 && (
+            <div className="space-y-4 mb-10">
+              {category.overview.map((paragraph) => (
+                <p key={paragraph} className="text-base text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-3">
             {articles.map((article, index) => (

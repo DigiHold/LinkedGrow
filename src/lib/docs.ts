@@ -14,6 +14,8 @@ export interface DocCategory {
   slug: string;
   title: string;
   description: string;
+  /** Paragraphs rendered above the article list on the category page. */
+  overview?: string[];
   order: number;
   icon?: string;
   articleCount: number;
@@ -47,6 +49,7 @@ export interface TableOfContentsItem {
 interface CategoryJson {
   title: string;
   description: string;
+  overview?: string[];
   order: number;
   icon?: string;
 }
@@ -76,6 +79,7 @@ export function getAllCategories(): DocCategory[] {
       slug: entry.name,
       title: catData.title,
       description: catData.description,
+      overview: catData.overview,
       order: catData.order,
       icon: catData.icon,
       articleCount: articleFiles.length,

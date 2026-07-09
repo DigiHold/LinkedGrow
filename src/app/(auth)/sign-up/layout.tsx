@@ -3,7 +3,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Sign Up - Create Your LinkedGrow Account",
   description:
-    "Create your free LinkedGrow account and start growing your LinkedIn presence with AI-powered content creation. Bring your own API keys for unlimited generations.",
+    "Create your LinkedGrow account and start a 7-day Pro trial. Bring your own API key for unlimited AI post generation. No credit card required.",
   openGraph: {
     title: "Sign Up - Create Your LinkedGrow Account",
     description:
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
       "Create your free LinkedGrow account and start growing your LinkedIn presence.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
   alternates: {

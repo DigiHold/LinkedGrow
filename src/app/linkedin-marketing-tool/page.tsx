@@ -3,11 +3,11 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { MarketingToolContent } from "./marketing-tool-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Marketing Tool for Content, Scheduling and Analytics",
+  title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
   description:
     "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
   openGraph: {
-    title: "LinkedIn Marketing Tool for Content, Scheduling and Analytics",
+    title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
     description:
       "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
     url: "https://linkedgrow.ai/linkedin-marketing-tool",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Marketing Tool for Content, Scheduling and Analytics",
+    title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
     description:
       "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],

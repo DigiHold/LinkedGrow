@@ -16,6 +16,7 @@ const EXCLUDED_PATHS = [
   "/maintenance",
   "/reset-password",
   "/team/invite",
+  "/network-notifications/invite",
   "/sign-in",
   "/sign-up",
   "/forgot-password",

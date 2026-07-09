@@ -5,11 +5,11 @@ import { ContentCreationToolsContent } from "./tools-content";
 export const metadata: Metadata = {
   title: "Best LinkedIn Content Creation Tools in One Platform (2026)",
   description:
-    "LinkedIn content creation tools for strategy and execution: AI post generator, carousel maker, scheduler, analytics, and photo creator in one stack. From $13/mo with BYOK.",
+    "LinkedIn content creation tools in one stack: AI post generator, carousel maker, scheduler, analytics, and photo creator. From $13/mo with BYOK.",
   openGraph: {
     title: "Best LinkedIn Content Creation Tools in One Platform (2026)",
     description:
-      "LinkedIn content creation tools for strategy and execution: AI post generator, carousel maker, scheduler, analytics, and photo creator in one stack. From $13/mo with BYOK.",
+      "LinkedIn content creation tools in one stack: AI post generator, carousel maker, scheduler, analytics, and photo creator. From $13/mo with BYOK.",
     url: "https://linkedgrow.ai/linkedin-content-creation-tools",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Best LinkedIn Content Creation Tools in One Platform (2026)",
     description:
-      "LinkedIn content creation tools for strategy and execution: AI post generator, carousel maker, scheduler, analytics, and photo creator in one stack. From $13/mo with BYOK.",
+      "LinkedIn content creation tools in one stack: AI post generator, carousel maker, scheduler, analytics, and photo creator. From $13/mo with BYOK.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
