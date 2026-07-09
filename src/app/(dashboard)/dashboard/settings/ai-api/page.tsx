@@ -109,63 +109,61 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-5.2, GPT-5, o4-mini, o3",
+    description: "GPT-5.5, GPT-5.4, GPT-5.4 mini, GPT-5.4 nano",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
     models: [
-      { id: "gpt-5.2", name: "GPT-5.2", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "gpt-5", name: "GPT-5", tag: "Balanced", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "gpt-5-nano", name: "GPT-5 Nano", tag: "Fastest", price: "$0.002/post", monthly: "~$0.06/mo" },
-      { id: "o4-mini", name: "o4-mini", tag: "Recommended", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "o3", name: "o3", tag: "Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "o3-mini", name: "o3-mini", tag: "Fast Reasoning", price: "$0.005/post", monthly: "~$0.15/mo" },
+      { id: "gpt-5.5", name: "GPT-5.5", tag: "Most Capable", price: "$0.06/post", monthly: "~$1.80/mo" },
+      { id: "gpt-5.4", name: "GPT-5.4", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gpt-5.4-mini", name: "GPT-5.4 mini", tag: "Recommended", price: "$0.008/post", monthly: "~$0.25/mo" },
+      { id: "gpt-5.4-nano", name: "GPT-5.4 nano", tag: "Cheapest", price: "$0.002/post", monthly: "~$0.07/mo" },
     ],
   },
   {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude Opus 4.7, Sonnet 4.6, Haiku 4.5",
+    description: "Claude Fable 5, Opus 4.8, Sonnet 5, Haiku 4.5",
     placeholder: "sk-ant-...",
     icon: AnthropicIcon,
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
     models: [
-      { id: "claude-opus-4-7", name: "Claude Opus 4.7", tag: "Most Capable", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "claude-opus-4-6", name: "Claude Opus 4.6", tag: "Powerful", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "claude-opus-4-5-20251101", name: "Claude Opus 4.5", tag: "Legacy", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-fable-5", name: "Claude Fable 5", tag: "Most Capable", price: "$0.10/post", monthly: "~$3.00/mo" },
+      { id: "claude-opus-4-8", name: "Claude Opus 4.8", tag: "Powerful", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tag: "Fastest", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "claude-opus-4-7", name: "Claude Opus 4.7", tag: "Legacy", price: "$0.05/post", monthly: "~$1.50/mo" },
+      { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
     ],
   },
   {
     id: "google",
     name: "Gemini",
-    description: "Gemini 3 Pro, 3 Flash, 2.5 Pro, 2.5 Flash",
+    description: "Gemini 3.1 Pro, 3.5 Flash, 3 Flash, 2.5 Pro",
     placeholder: "AIza...",
     icon: GeminiIcon,
     apiKeyUrl: "https://aistudio.google.com/apikey",
     models: [
-      { id: "gemini-3-pro-preview", name: "Gemini 3 Pro", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.66/mo" },
+      { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", tag: "Powerful", price: "$0.017/post", monthly: "~$0.50/mo" },
       { id: "gemini-3-flash-preview", name: "Gemini 3 Flash", tag: "Recommended", price: "$0.006/post", monthly: "~$0.18/mo" },
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Faster", price: "$0.005/post", monthly: "~$0.15/mo" },
+      { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tag: "Faster", price: "$0.003/post", monthly: "~$0.09/mo" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tag: "Reasoning", price: "$0.018/post", monthly: "~$0.53/mo" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tag: "Balanced", price: "$0.005/post", monthly: "~$0.15/mo" },
       { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tag: "Cheapest", price: "$0.001/post", monthly: "~$0.03/mo" },
     ],
   },
   {
     id: "grok",
     name: "Grok",
-    description: "Grok 4, Grok 4.1 Fast, Grok 3",
+    description: "Grok 4.5, Grok 4.3, Grok 4.20",
     placeholder: "xai-...",
     icon: GrokIcon,
     apiKeyUrl: "https://console.x.ai/team/default/api-keys",
     models: [
-      { id: "grok-4", name: "Grok 4", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "grok-4-1-fast-reasoning", name: "Grok 4.1 Fast", tag: "Recommended", price: "$0.01/post", monthly: "~$0.30/mo" },
-      { id: "grok-code-fast-1", name: "Grok Code Fast", tag: "Coding", price: "$0.005/post", monthly: "~$0.15/mo" },
-      { id: "grok-3", name: "Grok 3", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "grok-4.5", name: "Grok 4.5", tag: "Most Capable", price: "$0.013/post", monthly: "~$0.39/mo" },
+      { id: "grok-4.3", name: "Grok 4.3", tag: "Recommended", price: "$0.006/post", monthly: "~$0.19/mo" },
+      { id: "grok-4.20-0309-reasoning", name: "Grok 4.20 Reasoning", tag: "Reasoning", price: "$0.006/post", monthly: "~$0.19/mo" },
     ],
   },
   {
@@ -177,22 +175,21 @@ const aiProviders = [
     apiKeyUrl: "https://www.perplexity.ai/settings/api",
     models: [
       { id: "sonar-deep-research", name: "Sonar Deep Research", tag: "Best Research", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", tag: "Deep Reasoning", price: "$0.05/post", monthly: "~$1.50/mo" },
-      { id: "sonar-reasoning", name: "Sonar Reasoning", tag: "Reasoning", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "sonar-reasoning-pro", name: "Sonar Reasoning Pro", tag: "Deep Reasoning", price: "$0.02/post", monthly: "~$0.60/mo" },
       { id: "sonar-pro", name: "Sonar Pro", tag: "Recommended", price: "$0.03/post", monthly: "~$0.90/mo" },
-      { id: "sonar", name: "Sonar", tag: "Fastest", price: "$0.002/post", monthly: "~$0.06/mo" },
+      { id: "sonar", name: "Sonar", tag: "Fastest", price: "$0.004/post", monthly: "~$0.11/mo" },
     ],
   },
   {
     id: "kimi",
     name: "Kimi",
-    description: "Kimi K2.5, Kimi K2 by Moonshot AI",
+    description: "Kimi K2.6, K2.7 Code by Moonshot AI",
     placeholder: "sk-...",
     icon: KimiIcon,
-    apiKeyUrl: "https://platform.moonshot.ai/console/api-keys",
+    apiKeyUrl: "https://platform.kimi.ai/console/api-keys",
     models: [
-      { id: "kimi-k2.5", name: "Kimi K2.5", tag: "Most Capable", price: "$0.02/post", monthly: "~$0.60/mo" },
-      { id: "kimi-k2", name: "Kimi K2", tag: "Recommended", price: "$0.015/post", monthly: "~$0.45/mo" },
+      { id: "kimi-k2.6", name: "Kimi K2.6", tag: "Recommended", price: "$0.008/post", monthly: "~$0.24/mo" },
+      { id: "kimi-k2.7-code", name: "Kimi K2.7 Code", tag: "Coding", price: "$0.008/post", monthly: "~$0.24/mo" },
     ],
   },
 ];
@@ -201,7 +198,7 @@ const aiProviders = [
 const resolutionOptions = {
   google: [
     { id: "1K", name: "1K (~1376x768)", price: "$0.13" },
-    { id: "2K", name: "2K (~2752x1536)", price: "$0.18" },
+    { id: "2K", name: "2K (~2752x1536)", price: "$0.13" },
     { id: "4K", name: "4K (~4096x2304)", price: "$0.24" },
   ],
   openai: [
@@ -236,45 +233,43 @@ const imageProviders = [
   {
     id: "google",
     name: "Google AI",
-    description: "Nano Banana Pro, Nano Banana, Imagen 4",
+    description: "Nano Banana Pro, Nano Banana 2, Nano Banana",
     placeholder: "AIza...",
     icon: GeminiIcon,
     apiKeyUrl: "https://aistudio.google.com/apikey",
     note: "Nano Banana Pro (Gemini 3 Pro Image) - state-of-the-art image generation up to 4K",
-    price: "$0.02-0.24/image",
-    monthly: "~$0.60-7.20/mo (30 images)",
+    price: "$0.03-0.24/image",
+    monthly: "~$0.90-7.20/mo (30 images)",
     hasResolution: true,
     hasAspectRatio: true,
     models: [
-      { id: "gemini-3-pro-image-preview", name: "Nano Banana Pro", tag: "Best Quality ($0.13-0.24)" },
+      { id: "gemini-3-pro-image", name: "Nano Banana Pro", tag: "Best Quality ($0.13-0.24)" },
+      { id: "gemini-3.1-flash-image", name: "Nano Banana 2", tag: "Balanced ($0.07-0.15)" },
+      { id: "gemini-3.1-flash-lite-image", name: "Nano Banana Lite", tag: "Cheapest ($0.03)" },
       { id: "gemini-2.5-flash-image", name: "Nano Banana", tag: "Fast ($0.04)" },
-      { id: "imagen-4-ultra-generate", name: "Imagen 4 Ultra", tag: "Best Quality ($0.06)" },
-      { id: "imagen-4-generate", name: "Imagen 4", tag: "Standard ($0.04)" },
-      { id: "imagen-4-fast-generate", name: "Imagen 4 Fast", tag: "10x Faster ($0.02)" },
     ],
   },
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT Image 1.5, GPT Image 1, GPT Image 1 Mini",
+    description: "GPT Image 2, GPT Image 1.5",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
     note: "GPT Image models with transparency support and base64 output",
-    price: "$0.005-0.25/image",
-    monthly: "~$0.15-7.50/mo (30 images)",
+    price: "$0.006-0.21/image",
+    monthly: "~$0.18-6.30/mo (30 images)",
     hasResolution: true,
     hasQuality: true,
     models: [
-      { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Best Quality ($0.04-0.08)" },
-      { id: "gpt-image-1", name: "GPT Image 1", tag: "Standard ($0.01-0.25)" },
-      { id: "gpt-image-1-mini", name: "GPT Image 1 Mini", tag: "Cheapest ($0.005-0.05)" },
+      { id: "gpt-image-2", name: "GPT Image 2", tag: "Best Quality ($0.006-0.21)" },
+      { id: "gpt-image-1.5", name: "GPT Image 1.5", tag: "Standard ($0.009-0.13)" },
     ],
   },
   {
     id: "replicate",
     name: "Replicate",
-    description: "FLUX.2 Pro, FLUX 1.1 Pro, FLUX Schnell",
+    description: "FLUX.2 Max, FLUX.2 Pro, FLUX Schnell",
     placeholder: "r8_...",
     icon: ReplicateIcon,
     apiKeyUrl: "https://replicate.com/account/api-tokens",
@@ -285,11 +280,12 @@ const imageProviders = [
     hasAspectRatio: true,
     hasGuidanceScale: true,
     models: [
+      { id: "flux-2-max", name: "FLUX.2 Max", tag: "Highest Fidelity" },
       { id: "flux-2-pro", name: "FLUX.2 Pro", tag: "Best Quality + 8 refs" },
-      { id: "flux-2-flex", name: "FLUX.2 Flex", tag: "Max Quality + 10 refs" },
+      { id: "flux-2-flex", name: "FLUX.2 Flex", tag: "Typography + 10 refs" },
       { id: "flux-2-dev", name: "FLUX.2 Dev", tag: "Standard + refs" },
+      { id: "flux-2-klein-4b", name: "FLUX.2 Klein 4B", tag: "Sub-second" },
       { id: "flux-1.1-pro-ultra", name: "FLUX 1.1 Pro Ultra", tag: "4MP ($0.06)" },
-      { id: "flux-1.1-pro", name: "FLUX 1.1 Pro", tag: "Quality ($0.055)" },
       { id: "flux-schnell", name: "FLUX Schnell", tag: "Fastest ($0.003)" },
     ],
   },
@@ -378,7 +374,7 @@ export default function AIAPISettingsPage() {
   // Image AI API state
   const [activeImageProvider, setActiveImageProvider] = useState("google"); // The provider used for generation
   const [viewingImageProvider, setViewingImageProvider] = useState("google"); // The provider being configured
-  const [selectedImageModel, setSelectedImageModel] = useState("gemini-3-pro-image-preview");
+  const [selectedImageModel, setSelectedImageModel] = useState("gemini-3-pro-image");
   const [selectedImageResolution, setSelectedImageResolution] = useState("1K");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("16:9");
   const [selectedQuality, setSelectedQuality] = useState("high");
@@ -1266,7 +1262,7 @@ export default function AIAPISettingsPage() {
                 )}
 
                 {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 4 - fixed 1024px) */}
-                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "imagen-4-ultra-generate", "imagen-4-generate", "imagen-4-fast-generate"].includes(selectedImageModel) && (
+                {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "gemini-3.1-flash-lite-image"].includes(selectedImageModel) && (
                   <div className="mb-4">
                     <Label className="mb-2 block text-sm">Resolution / Size</Label>
                     <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>

@@ -158,7 +158,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
   let comment = "";
 
   if (provider === "openai") {
-    const openaiModel = model || "o4-mini";
+    const openaiModel = model || "gpt-5.4-mini";
     const isOSeries = openaiModel.startsWith("o3") || openaiModel.startsWith("o4");
     const isGPT5 = openaiModel.startsWith("gpt-5");
 
@@ -201,7 +201,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: model || "claude-sonnet-4-6",
+        model: model || "claude-sonnet-5",
         max_tokens: 500,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -262,7 +262,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "grok-4-1-fast-reasoning",
+        model: model || "grok-4.3",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.8,
       }),
@@ -305,7 +305,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: model || "kimi-k2",
+        model: model || "kimi-k2.6",
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -396,12 +396,12 @@ export async function POST(request: NextRequest) {
       kimi: aiSettingsUser.kimiModel,
     };
 
-    const defaultModel = provider === "openai" ? "o4-mini" :
-                         provider === "anthropic" ? "claude-sonnet-4-6" :
+    const defaultModel = provider === "openai" ? "gpt-5.4-mini" :
+                         provider === "anthropic" ? "claude-sonnet-5" :
                          provider === "google" ? "gemini-3-flash-preview" :
-                         provider === "grok" ? "grok-4-1-fast-reasoning" :
+                         provider === "grok" ? "grok-4.3" :
                          provider === "perplexity" ? "sonar-pro" :
-                         provider === "kimi" ? "kimi-k2" : "o4-mini";
+                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     const comment = await generateComment(

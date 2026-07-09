@@ -120,12 +120,12 @@ export async function POST(request: NextRequest) {
       kimi: aiSettingsUser.kimiModel,
     };
 
-    const defaultModel = provider === "openai" ? "o4-mini" :
-                         provider === "anthropic" ? "claude-sonnet-4-6" :
+    const defaultModel = provider === "openai" ? "gpt-5.4-mini" :
+                         provider === "anthropic" ? "claude-sonnet-5" :
                          provider === "google" ? "gemini-3-flash-preview" :
-                         provider === "grok" ? "grok-4-1-fast-reasoning" :
+                         provider === "grok" ? "grok-4.3" :
                          provider === "perplexity" ? "sonar-pro" :
-                         provider === "kimi" ? "kimi-k2" : "o4-mini";
+                         provider === "kimi" ? "kimi-k2.6" : "gpt-5.4-mini";
     const model = providerModelMap[provider] || defaultModel;
 
     let generatedPrompt: string;
