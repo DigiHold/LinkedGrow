@@ -64,7 +64,7 @@ const analyticsFAQs = [
   {
     question: "Which LinkedIn analytics tool is best for agencies?",
     answer:
-      "LinkedGrow Business at $55/mo is the best pick for agencies that manage LinkedIn accounts for clients - it ships team collaboration, per-client calendars, a public API, and BYOK so AI costs stay on the client side. Hootsuite Team at $249/mo is the alternative if the agency also manages non-LinkedIn channels for the same clients. SocialPilot at $30+/mo is a mid-tier option with white-label reporting.",
+      "LinkedGrow Business at $55/mo is the best pick for agencies that manage LinkedIn accounts for clients. It ships team collaboration, per-client calendars, a public API, and BYOK so AI costs stay on the client side. Hootsuite Team at $249/mo is the alternative if the agency also manages non-LinkedIn channels for the same clients. Shield at $50/user/mo is a strong mid-tier option for agency teams that only need analytics without AI generation.",
   },
   {
     question: "What LinkedIn metrics should I track?",
@@ -108,10 +108,10 @@ const rankedTools = [
       "Best for growth analytics plus AI content. Follower tracking, viral post library, and lead database. From $39/mo.",
   },
   {
-    name: "Keyhole",
-    url: "https://keyhole.co",
+    name: "Shield",
+    url: "https://shieldapp.ai",
     description:
-      "Best for competitive benchmarking and real-time sentiment analysis. Cross-platform analytics from $179/mo.",
+      "Best LinkedIn-only analytics with the deepest per-profile metrics. Solo at $25/mo, Team at $50/user/mo.",
   },
   {
     name: "Supergrow",

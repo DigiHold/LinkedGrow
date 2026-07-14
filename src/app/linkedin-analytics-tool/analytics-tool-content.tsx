@@ -137,28 +137,28 @@ const tools: ToolReview[] = [
   },
   {
     rank: 4,
-    name: "Keyhole",
-    tagline: "Best for competitive benchmarking and sentiment",
-    pricing: "Tracking $179/mo, Suite $349/mo, Enterprise $999/mo",
-    freeTrial: "Limited free preview",
+    name: "Shield",
+    tagline: "Best LinkedIn-only analytics depth",
+    pricing: "Solo $25/mo, Team $50/user/mo, Enterprise custom",
+    freeTrial: "14-day free trial, no card required",
     bestFor:
-      "Marketing teams and agencies that need competitive benchmarking, sentiment analysis, and real-time hashtag tracking across LinkedIn and other networks.",
-    imageSrc: `${R2_PAGE}/keyhole-analytics-dashboard.avif`,
+      "Creators and small teams who want the deepest LinkedIn-specific analytics without the distraction of content creation tools or multi-network dashboards.",
+    imageSrc: `${R2_PAGE}/shield-analytics-dashboard.avif`,
     imageAlt:
-      "Keyhole real-time analytics dashboard with competitive benchmarking charts, sentiment analysis, and hashtag tracking",
+      "Shield analytics dashboard with LinkedIn post metrics, audience demographics, and period comparison charts",
     overview: [
-      "Keyhole is a dedicated social analytics platform built for competitive intelligence. It tracks your LinkedIn performance alongside competitors in real time, so you can benchmark engagement rates, follower growth, and content cadence against specific rival accounts. Sentiment analysis shows how your audience feels about your brand mentions.",
-      "The price reflects the depth: $179/mo is the entry point, and most useful features require the Suite plan at $349/mo. For a solo creator or small team, Keyhole is overkill and overpriced. For an agency running competitive reports for clients or a brand tracking share-of-voice against named competitors, it is the strongest option in this list.",
+      "Shield is a LinkedIn-only analytics tool built for creators who take their data seriously. The dashboard tracks impressions, engagement rate, follower growth, and audience demographics at both the post level and profile level. Period comparisons let you benchmark any date range against another, so you can measure the impact of strategy changes over time.",
+      "The Team plan at $50/user/mo adds centralized dashboards for agencies managing multiple LinkedIn profiles, with user role management and volume discounts at 10+ profiles. Shield recently added an AI-powered co-pilot that generates reports and answers questions about your data in natural language. If you want pure LinkedIn analytics with no AI writing or scheduling, Shield is the most focused option on this list.",
     ],
     pros: [
-      "Real-time competitive benchmarking across LinkedIn accounts",
-      "Sentiment analysis on brand mentions and hashtags",
-      "White-label reporting for agencies",
+      "Deepest LinkedIn-specific analytics with period comparisons and audience demographics",
+      "AI co-pilot generates reports and answers data questions in natural language",
+      "Team dashboards with role management and volume discounts",
     ],
     cons: [
-      "Expensive starting point at $179/mo",
-      "No content creation, scheduling, or AI generation",
-      "Overkill for solo creators or small teams",
+      "No content creation, scheduling, or AI post generation",
+      "LinkedIn only, no cross-platform analytics",
+      "$25/mo for analytics alone is expensive next to all-in-one tools",
     ],
     accent: "from-orange-500 to-amber-600",
     ctaLabel: "Compare LinkedIn analytics tools",
@@ -297,7 +297,7 @@ const glanceTools: GlanceRow[] = [
   { rank: 1, tool: "LinkedGrow", bestFor: "AI content + analytics", pricing: "$13/mo (+$2-4 AI)", freeTrial: "7-day Pro", postAnalytics: true, growthTracking: true, highlight: true },
   { rank: 2, tool: "AuthoredUp", bestFor: "Per-post analytics", pricing: "$19.95/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: false },
   { rank: 3, tool: "Taplio", bestFor: "Growth + lead tracking", pricing: "$39-$149/mo", freeTrial: "7-day", postAnalytics: true, growthTracking: true },
-  { rank: 4, tool: "Keyhole", bestFor: "Competitive benchmarking", pricing: "$179-$999/mo", freeTrial: "Limited free", postAnalytics: true, growthTracking: true },
+  { rank: 4, tool: "Shield", bestFor: "LinkedIn-only analytics", pricing: "$25-$50/user/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: true },
   { rank: 5, tool: "Supergrow", bestFor: "Budget all-in-one", pricing: "$19-$39/mo", freeTrial: "Free plan", postAnalytics: true, growthTracking: true },
   { rank: 6, tool: "Hootsuite", bestFor: "Enterprise multi-network", pricing: "$99-$249/mo", freeTrial: "30-day", postAnalytics: true, growthTracking: true },
   { rank: 7, tool: "Buffer", bestFor: "Simple multi-platform", pricing: "Free, $20/mo", freeTrial: "Free plan", postAnalytics: true, growthTracking: false },
@@ -353,7 +353,7 @@ export function AnalyticsToolContent({
           <div className="flex justify-center mb-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-xs font-semibold text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300">
               <Award className="w-3.5 h-3.5" />
-              Independent ranking - Updated June 2026
+              Independent ranking - Updated July 2026
             </span>
           </div>
           <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-black font-display tracking-tight text-slate-900 dark:text-white">
@@ -388,6 +388,22 @@ export function AnalyticsToolContent({
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 896px"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== QUICK ANSWER ===== */}
+      <section className="pb-8 sm:pb-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-6 sm:p-8 dark:border-cyan-900 dark:bg-cyan-950/30">
+            <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
+              <strong className="text-slate-900 dark:text-white">The best LinkedIn analytics tool in 2026 is{" "}
+              <Link href="/" className="text-cyan-600 dark:text-cyan-400 hover:underline">LinkedGrow</Link></strong>{" "}
+              for creators and teams who also generate and schedule content from the same dashboard. It tracks impressions,
+              engagement rate, follower growth, and format performance per post while keeping total costs at $15 to $30/mo
+              thanks to BYOK pricing. For analytics-only users, Shield ($25/mo) and AuthoredUp ($19.95/mo) are the strongest
+              LinkedIn-specific alternatives.
+            </p>
           </div>
         </div>
       </section>
@@ -550,7 +566,11 @@ export function AnalyticsToolContent({
             <p>
               If you post 3+ times per week, manage content for clients, or need to prove ROI to a
               stakeholder, a dedicated LinkedIn analytics tool saves hours of manual tracking and gives you
-              insights that native analytics simply cannot surface.
+              insights that native analytics simply cannot surface. Pairing analytics with a solid{" "}
+              <Link href="/blog/linkedin-content-strategy-guide" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
+                LinkedIn content strategy
+              </Link>{" "}
+              is how you turn data into growth.
             </p>
           </div>
         </div>
@@ -710,7 +730,11 @@ export function AnalyticsToolContent({
                 Track <strong>engagement rate</strong> (interactions divided by impressions) as your primary signal. Break it
                 down by content format (carousel vs text vs image) and by posting time to find your personal sweet
                 spots. A post with 500 impressions and 5% engagement is more valuable than one with 5,000
-                impressions and 0.3% engagement - the first is converting attention into interaction.
+                impressions and 0.3% engagement, because the first is converting attention into interaction. Our{" "}
+                <Link href="/free-tools/linkedin-engagement-rate-calculator" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
+                  free engagement rate calculator
+                </Link>{" "}
+                gives you this number instantly.
               </p>
             </div>
 
@@ -777,7 +801,7 @@ export function AnalyticsToolContent({
                 </Link>
                 , per-client content calendars, exportable analytics, and BYOK so AI costs stay on the client
                 side. Hootsuite Team at $249/mo is the alternative if you also manage non-LinkedIn channels.
-                Keyhole at $179/mo adds competitive benchmarking for agencies running brand monitoring.
+                Shield at $50/user/mo is a strong mid-tier option for agency teams that only need analytics without AI generation.
               </p>
             </div>
 
@@ -810,6 +834,54 @@ export function AnalyticsToolContent({
         </div>
       </section>
 
+      {/* ===== DISCONTINUED TOOLS ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white text-center mb-6">
+            Which LinkedIn analytics tools have been discontinued?
+          </h2>
+          <p className="text-center text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-3xl mx-auto">
+            Several tools that appeared on older &quot;best LinkedIn analytics&quot; lists no longer operate or have
+            pivoted away from LinkedIn analytics. Avoid recommendations that still include these.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Inlytics</h3>
+              <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Formerly a popular LinkedIn analytics dashboard for personal profiles. The service shut down and the
+                domain is no longer active. Any article still recommending Inlytics is outdated.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Keyhole (pivoted)</h3>
+              <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Keyhole was acquired by Muck Rack and pivoted to PR and media intelligence. It no longer operates as a
+                standalone LinkedIn analytics tool. Older comparison articles may still list it at $179/mo, but that
+                product no longer exists in the same form.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Kleo</h3>
+              <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Kleo offered Chrome-based LinkedIn analytics and content formatting. The analytics features have been
+                deprioritized and the tool is no longer a reliable choice for analytics-first users. LinkedGrow offers a{" "}
+                <Link href="/compare/kleo-alternative" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
+                  Kleo alternative comparison
+                </Link>{" "}
+                for users looking to switch.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">UseAware</h3>
+              <p className="text-[15px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Previously offered LinkedIn profile and company page analytics. The service is no longer active.
+                Recommendations from 2023 or 2024 that still include UseAware should be disregarded.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== FAQ ===== */}
       <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -831,6 +903,7 @@ export function AnalyticsToolContent({
           { title: "LinkedIn Analytics & Metrics Explained", href: "/blog/linkedin-analytics-metrics-guide" },
           { title: "Best LinkedIn AI Tools 2026", href: "/blog/best-linkedin-ai-tools-2026" },
           { title: "LinkedIn Impressions Explained", href: "/blog/linkedin-impressions-explained" },
+          { title: "Free Engagement Rate Calculator", href: "/free-tools/linkedin-engagement-rate-calculator" },
           { title: "Compare LinkedIn Tools", href: "/compare" },
         ]}
       />
