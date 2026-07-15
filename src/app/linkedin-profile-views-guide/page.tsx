@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { ProfileViewsContent } from "./profile-views-content";
 
 export const metadata: Metadata = {
-  title: "How to See Who Viewed Your LinkedIn Profile (Free & Premium)",
+  title: "LinkedIn Profile Views 2026: Who Viewed Your Profile | LinkedGrow",
   description:
-    "See who viewed your LinkedIn profile without Premium. Understand view mechanics, privacy settings, and how to turn profile visitors into connections and leads.",
+    "How to see who viewed your LinkedIn profile in 2026 on free and Premium accounts. Privacy modes, viewer limits, and strategies to increase profile visits.",
   openGraph: {
-    title: "How to See Who Viewed Your LinkedIn Profile (Free & Premium)",
+    title: "LinkedIn Profile Views 2026: Who Viewed Your Profile | LinkedGrow",
     description:
-      "See who viewed your LinkedIn profile without Premium. Understand view mechanics, privacy settings, and how to turn profile visitors into connections and leads.",
+      "How to see who viewed your LinkedIn profile in 2026 on free and Premium accounts. Privacy modes, viewer limits, and strategies to increase profile visits.",
     url: "https://linkedgrow.ai/linkedin-profile-views-guide",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How to See Who Viewed Your LinkedIn Profile (Free & Premium)",
+    title: "LinkedIn Profile Views 2026: Who Viewed Your Profile | LinkedGrow",
     description:
-      "See who viewed your LinkedIn profile without Premium. Understand view mechanics, privacy settings, and how to turn profile visitors into connections and leads.",
+      "How to see who viewed your LinkedIn profile in 2026 on free and Premium accounts. Privacy modes, viewer limits, and strategies to increase profile visits.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
