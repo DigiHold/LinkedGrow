@@ -53,8 +53,8 @@ Here is what real-world AI costs look like at different usage levels:
 | 50 regenerations | $0.30 |
 | 50 ideas generated | $0.10 |
 | 30 hooks generated | $0.06 |
-| 30 images (Imagen 4 Fast) | $0.60 |
-| **Total AI cost** | **~$1.66** |
+| 30 images (Nano Banana Lite) | $0.90 |
+| **Total AI cost** | **~$1.96** |
 
 Even heavy usage with image generation rarely exceeds $5 per month.
 
