@@ -109,13 +109,16 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-5.5, GPT-5.4, GPT-5.4 mini, GPT-5.4 nano",
+    description: "GPT-5.6 Sol, Terra, Luna, GPT-5.5, GPT-5.4 mini",
     placeholder: "sk-...",
     icon: OpenAIIcon,
     apiKeyUrl: "https://platform.openai.com/api-keys",
     models: [
-      { id: "gpt-5.5", name: "GPT-5.5", tag: "Most Capable", price: "$0.06/post", monthly: "~$1.80/mo" },
-      { id: "gpt-5.4", name: "GPT-5.4", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gpt-5.6-sol", name: "GPT-5.6 Sol", tag: "Most Capable", price: "$0.06/post", monthly: "~$1.80/mo" },
+      { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", tag: "Balanced", price: "$0.03/post", monthly: "~$0.90/mo" },
+      { id: "gpt-5.6-luna", name: "GPT-5.6 Luna", tag: "Fastest", price: "$0.012/post", monthly: "~$0.36/mo" },
+      { id: "gpt-5.5", name: "GPT-5.5", tag: "Legacy", price: "$0.06/post", monthly: "~$1.80/mo" },
+      { id: "gpt-5.4", name: "GPT-5.4", tag: "Legacy", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "gpt-5.4-mini", name: "GPT-5.4 mini", tag: "Recommended", price: "$0.008/post", monthly: "~$0.25/mo" },
       { id: "gpt-5.4-nano", name: "GPT-5.4 nano", tag: "Cheapest", price: "$0.002/post", monthly: "~$0.07/mo" },
     ],
@@ -183,11 +186,12 @@ const aiProviders = [
   {
     id: "kimi",
     name: "Kimi",
-    description: "Kimi K2.6, K2.7 Code by Moonshot AI",
+    description: "Kimi K3, K2.6, K2.7 Code by Moonshot AI",
     placeholder: "sk-...",
     icon: KimiIcon,
     apiKeyUrl: "https://platform.kimi.ai/console/api-keys",
     models: [
+      { id: "kimi-k3", name: "Kimi K3", tag: "Most Capable", price: "$0.03/post", monthly: "~$0.90/mo" },
       { id: "kimi-k2.6", name: "Kimi K2.6", tag: "Recommended", price: "$0.008/post", monthly: "~$0.24/mo" },
       { id: "kimi-k2.7-code", name: "Kimi K2.7 Code", tag: "Coding", price: "$0.008/post", monthly: "~$0.24/mo" },
     ],

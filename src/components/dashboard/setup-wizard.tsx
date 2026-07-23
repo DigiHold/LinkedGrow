@@ -96,7 +96,7 @@ const aiProviders = [
   {
     id: "openai",
     name: "OpenAI",
-    description: "GPT-5.5, GPT-5.4 mini",
+    description: "GPT-5.6, GPT-5.4 mini",
     icon: OpenAIIcon,
     placeholder: "sk-...",
     apiKeyUrl: "https://platform.openai.com/api-keys",
@@ -106,6 +106,9 @@ const aiProviders = [
     modelField: "openaiModel",
     models: [
       { id: "gpt-5.4-mini", name: "GPT-5.4 mini", recommended: true, price: "~$0.008/post" },
+      { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", price: "~$0.03/post" },
+      { id: "gpt-5.6-sol", name: "GPT-5.6 Sol", price: "~$0.06/post" },
+      { id: "gpt-5.6-luna", name: "GPT-5.6 Luna", price: "~$0.012/post" },
       { id: "gpt-5.4", name: "GPT-5.4", price: "~$0.03/post" },
       { id: "gpt-5.4-nano", name: "GPT-5.4 nano", price: "~$0.002/post" },
     ],
@@ -180,7 +183,7 @@ const aiProviders = [
   {
     id: "kimi",
     name: "Kimi",
-    description: "K2.6, K2.7 Code by Moonshot",
+    description: "K3, K2.6, K2.7 Code by Moonshot",
     icon: KimiIcon,
     placeholder: "sk-...",
     apiKeyUrl: "https://platform.kimi.ai/console/api-keys",
@@ -190,6 +193,7 @@ const aiProviders = [
     modelField: "kimiModel",
     models: [
       { id: "kimi-k2.6", name: "Kimi K2.6", recommended: true, price: "~$0.008/post" },
+      { id: "kimi-k3", name: "Kimi K3", price: "~$0.03/post" },
       { id: "kimi-k2.7-code", name: "Kimi K2.7 Code", price: "~$0.008/post" },
     ],
   },
