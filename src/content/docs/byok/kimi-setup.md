@@ -11,27 +11,26 @@ order: 6
 
 ## Overview
 
-Moonshot AI provides the Kimi model family - Kimi K2.5 and Kimi K2. Kimi models are known for strong reasoning, long context support (up to 262K tokens), and competitive pricing that makes them an excellent choice for LinkedIn content generation.
+Moonshot AI provides the Kimi model family, and LinkedGrow supports Kimi K3, Kimi K2.6, and Kimi K2.7 Code. Kimi is strong at reasoning and long context work, and it costs less per token than most frontier models, which makes it a practical choice if you post often.
 
 ## Step 1 - Create a Moonshot AI account
 
-1. Go to [platform.moonshot.ai](https://platform.moonshot.ai/)
+1. Go to [platform.kimi.ai](https://platform.kimi.ai/)
 2. Click **Sign Up** or sign in with your Google account
 3. Verify your email address
 
 ## Step 2 - Add balance to your account
 
-1. Navigate to [platform.moonshot.ai/console/pay](https://platform.moonshot.ai/console/pay)
+1. Open the [Kimi Console](https://platform.kimi.ai/console) and go to the billing section
 2. Add a payment method
 3. Recharge at least $1 to start using the API
-4. When your cumulative recharge reaches $5, you receive a $5 bonus voucher
 
 ## Step 3 - Generate your API key
 
-1. Go to [platform.moonshot.ai/console/api-keys](https://platform.moonshot.ai/console/api-keys)
+1. Go to [platform.kimi.ai/console/api-keys](https://platform.kimi.ai/console/api-keys)
 2. Click **Create API Key**
-3. Give your key a descriptive name (e.g., "LinkedGrow")
-4. Copy the key immediately - it starts with `sk-` and will only be shown once
+3. Give your key a descriptive name, for example "LinkedGrow"
+4. Copy the key right away, because Moonshot shows it only once
 
 ## Step 4 - Configure in LinkedGrow
 
@@ -45,26 +44,32 @@ Moonshot AI provides the Kimi model family - Kimi K2.5 and Kimi K2. Kimi models 
 
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
-| Kimi K2.5 | Highest quality, multimodal reasoning | ~$0.02 | ~$0.60 |
-| Kimi K2 (Recommended) | Best value, strong text and coding | ~$0.015 | ~$0.45 |
+| Kimi K3 | Highest quality, long context work | ~$0.03 | ~$0.90 |
+| Kimi K2.6 (Recommended) | Everyday posts at the lowest cost | ~$0.008 | ~$0.24 |
+| Kimi K2.7 Code | Technical and engineering content | ~$0.008 | ~$0.24 |
 
-**Recommendation:** **Kimi K2** offers the best balance of quality and price for LinkedIn content. It produces well-structured, engaging posts at very competitive rates. Choose **Kimi K2.5** if you want the latest and most capable model with multimodal support.
+**Recommendation:** Kimi K2.6 is the right default for most people. It writes LinkedIn posts well and costs roughly a quarter of what K3 costs per post. Move up to Kimi K3 when you want the strongest reasoning and its 1M token context window, and pick Kimi K2.7 Code if most of your posts cover engineering topics.
 
 ## Pricing details
 
-Kimi pricing is based on tokens (roughly 750 words per 1,000 tokens):
+Kimi bills by token, and 1,000 tokens covers roughly 750 words.
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |---|---|---|
-| Kimi K2.5 | $0.60 | $3.00 |
-| Kimi K2 | $0.60 | $2.50 |
+| Kimi K3 | $3.00 | $15.00 |
+| Kimi K2.6 | $0.95 | $4.00 |
+| Kimi K2.7 Code | $0.95 | $4.00 |
 
-Kimi also supports prompt caching, which can reduce input costs to as low as $0.10-0.15 per million tokens for repeated prompts.
+Kimi also caches prompts, so when one repeats, the input rate drops to $0.30 per million tokens on K3, $0.16 on K2.6, and $0.19 on K2.7 Code.
+
+## How K3 handles reasoning
+
+Kimi K3 always runs in thinking mode, and Moonshot bills those reasoning tokens at the output rate. LinkedGrow sets the reasoning effort to low on every K3 request, which keeps one post from costing several times what the same prompt costs on K2.6. You do not need to configure anything for this.
 
 ## Key format
 
-Kimi API keys start with `sk-` followed by a string of characters. Store your key securely - LinkedGrow encrypts it with AES-256-GCM.
+Kimi API keys start with `sk-` followed by a string of characters. Keep your key somewhere safe until you paste it in, and LinkedGrow encrypts it with AES-256-GCM once you save it.
 
 ## Monitoring your spending
 
-Track your API usage and costs in the Moonshot AI Console at [platform.moonshot.ai/console](https://platform.moonshot.ai/console). Review your call history, token usage, and remaining balance to keep spending under control.
+Track your usage and costs in the [Kimi Console](https://platform.kimi.ai/console). Review your call history and remaining balance to keep spending under control.
