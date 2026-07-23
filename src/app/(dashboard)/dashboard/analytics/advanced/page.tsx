@@ -93,7 +93,8 @@ export default function AdvancedAnalyticsPage() {
       else setIsRefreshing(true);
       setError(null);
 
-      const res = await fetch(`/api/analytics?days=${days}&advanced=true${refresh ? "&refresh=true" : ""}`);
+      const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+      const res = await fetch(`/api/analytics?days=${days}&advanced=true&tz=${tz}${refresh ? "&refresh=true" : ""}`);
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || "Failed to fetch analytics");

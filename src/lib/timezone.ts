@@ -24,6 +24,26 @@ export function resolveTimezone(timezone: string | null | undefined): string {
 }
 
 /**
+ * Check that a string is an IANA timezone the runtime actually accepts.
+ *
+ * The settings form defaults its selector to the literal "auto", which is not a
+ * zone name: passing it to Intl.DateTimeFormat throws a RangeError. Anything
+ * reaching a formatter has to go through here first.
+ *
+ * @param timezone - Candidate timezone string
+ * @returns true when Intl accepts it as a time zone
+ */
+export function isValidTimezone(timezone: string | null | undefined): boolean {
+  if (!timezone || timezone === "auto") return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Convert a local date/time string in a specific timezone to UTC ISO string
  *
  * @param dateStr - Date string in YYYY-MM-DD format

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isValidTimezone } from "@/lib/timezone";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { encryptApiKey, decryptApiKey } from "@/lib/encryption";
@@ -336,7 +337,16 @@ export async function PUT(request: NextRequest) {
     }
 
     if (timezone !== undefined) {
-      updateData.timezone = timezone || null;
+      // The form's selector defaults to the literal "auto", which is not a zone
+      // name and makes Intl throw wherever it is used. Store null for it and
+      // let each consumer fall back, and refuse anything Intl cannot parse.
+      if (!timezone || timezone === "auto") {
+        updateData.timezone = null;
+      } else if (isValidTimezone(timezone)) {
+        updateData.timezone = timezone;
+      } else {
+        return NextResponse.json({ error: "Invalid timezone" }, { status: 400 });
+      }
     }
 
     if (autoLikeAfterPublish !== undefined) {

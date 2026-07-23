@@ -5,6 +5,7 @@ import { posts, users, media } from "@/lib/db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { canAccessFeature } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
+import { isValidTimezone } from "@/lib/timezone";
 import {
   getAnalyticsCapabilities,
   getMemberAggregatedAnalytics,
@@ -453,7 +454,18 @@ export async function GET(request: NextRequest) {
 
     log(`RESULT: ${allPosts.length} total posts, ${withAnalytics.length} with analytics, returning ${sortedPosts.length}`);
 
-    const userTimezone = user.timezone || "America/New_York";
+    // Posting times are grouped by the hour the user actually posted, in their
+    // own timezone. Almost nobody has ever opened the timezone setting, so
+    // falling back to a hardcoded zone silently shifted every one of those
+    // users' charts by their offset from it. Prefer the saved setting, fall
+    // back to the timezone the browser reports on the request, and only then to
+    // UTC, which at least labels itself honestly.
+    const clientTimezone = searchParams.get("tz");
+    const userTimezone = isValidTimezone(user.timezone)
+      ? user.timezone as string
+      : isValidTimezone(clientTimezone)
+        ? clientTimezone as string
+        : "UTC";
 
     const response: Record<string, unknown> = {
       summary: {
@@ -513,8 +525,11 @@ export async function GET(request: NextRequest) {
 
 // Convert a UTC date to day/hour in the user's timezone
 function getLocalDayHour(date: Date, timezone: string): { day: number; hour: number } {
+  // An unusable zone name makes Intl throw, which would fail the whole
+  // analytics request rather than one chart. UTC keeps the page alive.
+  const zone = isValidTimezone(timezone) ? timezone : "UTC";
   const formatted = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
+    timeZone: zone,
     weekday: "short",
     hour: "numeric",
     hour12: false,
