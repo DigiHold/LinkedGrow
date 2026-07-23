@@ -53,7 +53,7 @@ You have sent too many requests in a short period.
 
 ### "Quota exceeded" or "Insufficient credits"
 
-You have hit your monthly spending limit or your prepaid credits have run out.
+You have reached your monthly spending limit, or your prepaid credits have run out.
 
 **How to fix:**
 

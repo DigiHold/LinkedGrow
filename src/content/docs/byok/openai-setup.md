@@ -1,6 +1,6 @@
 ---
 title: "OpenAI Setup"
-description: "How to create an OpenAI account, get your API key, set up billing, and configure it in LinkedGrow for GPT-5, o4-mini, and other models."
+description: "How to create an OpenAI account, get your API key, set up billing, and configure GPT-5.6 and other OpenAI models in LinkedGrow."
 category: "byok"
 order: 2
 ---
@@ -11,7 +11,7 @@ order: 2
 
 ## Overview
 
-OpenAI provides GPT-5.2, GPT-5, GPT-5 Nano, o4-mini, o3, and o3-mini models. These are versatile models that work well for LinkedIn content generation, with options ranging from ultra-affordable to premium quality.
+OpenAI provides the GPT-5.6 family, made up of Sol, Terra and Luna, alongside GPT-5.5 and the GPT-5.4 models. All of them write LinkedIn content well, and the range covers everything from a fraction of a cent per post to premium quality.
 
 ## Step 1 - Create an OpenAI account
 
@@ -27,17 +27,17 @@ Before you can use the API, you need to add a payment method:
 2. Navigate to **Settings > Billing**
 3. Click **Add payment method**
 4. Enter your credit or debit card details
-5. Set a monthly spending limit if desired (recommended - $10 is more than enough for most users)
+5. Set a monthly spending limit if you want one, and $10 covers most users comfortably
 
-OpenAI uses pay-as-you-go billing. You are only charged for what you use. There is no minimum deposit required.
+OpenAI bills pay-as-you-go, so you are only charged for what you actually use, and there is no minimum deposit.
 
 ## Step 3 - Generate your API key
 
 1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 2. Click **Create new secret key**
-3. Give it a name (e.g., "LinkedGrow")
+3. Give it a name, for example "LinkedGrow"
 4. Click **Create**
-5. Copy the key immediately - it starts with `sk-` and will not be shown again
+5. Copy the key immediately, because it starts with `sk-` and will not be shown again
 
 **Important:** Save your key somewhere safe. If you lose it, you will need to generate a new one.
 
@@ -53,14 +53,33 @@ OpenAI uses pay-as-you-go billing. You are only charged for what you use. There 
 
 | Model | Best for | Cost per post | Monthly estimate (30 posts) |
 |---|---|---|---|
-| GPT-5.2 | Highest quality content | ~$0.03 | ~$0.90 |
-| GPT-5 | Balanced quality and cost | ~$0.02 | ~$0.60 |
-| GPT-5 Nano | Fastest, most affordable | ~$0.002 | ~$0.06 |
-| o4-mini (Recommended) | Best value for quality | ~$0.01 | ~$0.30 |
-| o3 | Deep reasoning tasks | ~$0.02 | ~$0.60 |
-| o3-mini | Fast reasoning | ~$0.005 | ~$0.15 |
+| GPT-5.6 Sol | Highest quality, hardest reasoning | ~$0.06 | ~$1.80 |
+| GPT-5.6 Terra | Balanced quality and cost | ~$0.03 | ~$0.90 |
+| GPT-5.6 Luna | Fast and cost-sensitive work | ~$0.012 | ~$0.36 |
+| GPT-5.5 | Complex professional writing | ~$0.06 | ~$1.80 |
+| GPT-5.4 | Reliable, well-tested quality | ~$0.03 | ~$0.90 |
+| GPT-5.4 mini (Recommended) | Best value for everyday posts | ~$0.008 | ~$0.24 |
+| GPT-5.4 nano | Cheapest option available | ~$0.002 | ~$0.06 |
 
-**Recommendation:** Start with **o4-mini** for the best balance of quality and cost. It is marked as "Recommended" in LinkedGrow for a reason - it produces excellent LinkedIn content at a very low cost.
+**Recommendation:** GPT-5.4 mini is the default in LinkedGrow and the right starting point for most people. It writes solid LinkedIn posts for well under a cent each. Move up to GPT-5.6 Terra when you want stronger reasoning at moderate cost, or to GPT-5.6 Sol when quality matters more than the bill.
+
+## Pricing details
+
+OpenAI bills by token, and 1,000 tokens covers roughly 750 words.
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|---|---|---|
+| GPT-5.6 Sol | $5.00 | $30.00 |
+| GPT-5.6 Terra | $2.50 | $15.00 |
+| GPT-5.6 Luna | $1.00 | $6.00 |
+| GPT-5.5 | $5.00 | $30.00 |
+| GPT-5.4 | $2.50 | $15.00 |
+| GPT-5.4 mini | $0.75 | $4.50 |
+| GPT-5.4 nano | $0.20 | $1.25 |
+
+## How reasoning affects your bill
+
+Every GPT-5 model reasons before it answers, and OpenAI bills those reasoning tokens at the output rate. LinkedGrow sets the reasoning effort to low on every request, which keeps a single post from costing several times the headline rate. You do not need to configure anything for this.
 
 ## Key format
 
@@ -72,4 +91,4 @@ Track your API usage and costs at [platform.openai.com/usage](https://platform.o
 
 ## Image generation
 
-OpenAI also supports image generation (GPT Image 1.5, GPT Image 1, GPT Image 1 Mini). The same API key works for both text and image generation. See [Image Providers](/docs/byok/image-providers) for details on setting up image AI.
+OpenAI also supports image generation through GPT Image 2 and GPT Image 1.5. The same API key works for text and images. See [Image Providers](/docs/byok/image-providers) for details on setting up image AI.

@@ -11,9 +11,9 @@ order: 1
 
 ## Bring Your Own Key explained
 
-BYOK stands for Bring Your Own Key. It is LinkedGrow's approach to AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.
+BYOK stands for Bring Your Own Key, and it is how LinkedGrow approaches AI-powered content creation. Instead of bundling AI costs into an expensive subscription with generation limits, LinkedGrow lets you connect your own API key from providers like OpenAI, Anthropic, Google AI, or Kimi.
 
-You pay your LinkedGrow subscription for the platform features, and you pay the AI provider directly for actual usage at their wholesale API rates. No markup, no middleman.
+You pay your LinkedGrow subscription for the platform features, and you pay the AI provider directly for actual usage at their wholesale API rates. Nothing is marked up along the way.
 
 ## How it works
 
@@ -27,7 +27,7 @@ The AI provider charges you based on actual usage. Each post generation typicall
 
 ## Why BYOK saves money
 
-Most LinkedIn content tools charge $39-69 per month and include AI generation with monthly caps. When you hit the cap, you either stop generating or pay extra.
+Most LinkedIn content tools charge $39-69 per month and include AI generation with monthly caps. Once you reach the cap, you either stop generating or pay extra.
 
 With LinkedGrow's BYOK model:
 
