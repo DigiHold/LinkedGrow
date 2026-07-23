@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
@@ -142,7 +143,10 @@ Return the edited post:`;
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 2048,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 8000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -153,7 +157,7 @@ Return the edited post:`;
     }
 
     const data = await response.json();
-    editedContent = data.content[0]?.text || "";
+    editedContent = extractAnthropicText(data);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -239,7 +243,7 @@ Return the edited post:`;
     }
 
     const data = await response.json();
-    editedContent = data.choices[0]?.message?.content || "";
+    editedContent = stripReasoningTags(data.choices[0]?.message?.content || "") || "";
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -250,6 +254,7 @@ Return the edited post:`;
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });

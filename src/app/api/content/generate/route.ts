@@ -5,7 +5,7 @@ import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { buildLanguageInstruction } from "@/lib/content-languages";
-import { fetchAIWithRetry } from "@/lib/ai-fetch";
+import { fetchAIWithRetry, anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
@@ -227,7 +227,10 @@ async function generatePosts(
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 4096,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 16000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -237,7 +240,7 @@ async function generatePosts(
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || "[]";
+    const content = extractAnthropicText(data) || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
   } else if (provider === "google") {
@@ -322,7 +325,7 @@ async function generatePosts(
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || "[]";
+    const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     posts = JSON.parse(cleanContent);
   } else if (provider === "kimi") {
@@ -335,6 +338,7 @@ async function generatePosts(
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });

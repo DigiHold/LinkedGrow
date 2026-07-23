@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
 import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
 import type { PlanId } from "@/lib/plans";
@@ -258,7 +259,10 @@ Return ONLY the post text. No quotes, no explanations.`;
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 2048,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 8000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -269,7 +273,7 @@ Return ONLY the post text. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    post = data.content[0]?.text || "";
+    post = extractAnthropicText(data);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -357,7 +361,7 @@ Return ONLY the post text. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    post = data.choices[0]?.message?.content || "";
+    post = stripReasoningTags(data.choices[0]?.message?.content || "") || "";
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -368,6 +372,7 @@ Return ONLY the post text. No quotes, no explanations.`;
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -486,7 +491,10 @@ Return ONLY a JSON array of 5 strings. Example:
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 1024,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 8000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -497,7 +505,7 @@ Return ONLY a JSON array of 5 strings. Example:
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || "[]";
+    const content = extractAnthropicText(data) || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "google") {
@@ -590,7 +598,7 @@ Return ONLY a JSON array of 5 strings. Example:
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || "[]";
+    const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
     const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     ideas = JSON.parse(cleanContent);
   } else if (provider === "kimi") {
@@ -603,6 +611,7 @@ Return ONLY a JSON array of 5 strings. Example:
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -723,7 +732,10 @@ Return ONLY the edited post. No quotes, no explanations.`;
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 2048,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 8000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -734,7 +746,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    editedPost = data.content[0]?.text || "";
+    editedPost = extractAnthropicText(data);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -819,7 +831,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
     }
 
     const data = await response.json();
-    editedPost = data.choices[0]?.message?.content || "";
+    editedPost = stripReasoningTags(data.choices[0]?.message?.content || "") || "";
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -830,6 +842,7 @@ Return ONLY the edited post. No quotes, no explanations.`;
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -1076,7 +1089,10 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
           },
           body: JSON.stringify({
             model: model || "claude-sonnet-5",
-            max_tokens: 4096,
+            // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5,
+            // so this has to leave room for the reasoning and the answer.
+            max_tokens: 16000,
+            ...anthropicEffort(model || "claude-sonnet-5"),
             messages: [{ role: "user", content: carouselPrompt }],
           }),
         });
@@ -1087,7 +1103,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         }
 
         const data = await response.json();
-        const jsonContent = data.content[0]?.text || "[]";
+        const jsonContent = extractAnthropicText(data) || "[]";
         const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         slides = JSON.parse(cleanContent);
       } else if (provider === "google") {
@@ -1178,7 +1194,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
         }
 
         const data = await response.json();
-        const jsonContent = data.choices[0]?.message?.content || "[]";
+        const jsonContent = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
         const cleanContent = jsonContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         slides = JSON.parse(cleanContent);
       } else if (provider === "kimi") {
@@ -1191,6 +1207,7 @@ Return ONLY a valid JSON array. Each object has "title", "content", and "imagePr
           },
           body: JSON.stringify({
             model: model || "kimi-k2.6",
+            ...kimiReasoningEffort(model || "kimi-k2.6"),
             messages: [{ role: "user", content: carouselPrompt }],
           }),
         });

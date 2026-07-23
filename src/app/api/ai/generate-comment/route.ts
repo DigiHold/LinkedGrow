@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
 
 export const maxDuration = 120;
@@ -202,7 +203,10 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        max_tokens: 500,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 4000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -213,7 +217,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
     }
 
     const data = await response.json();
-    comment = data.content[0]?.text || "";
+    comment = extractAnthropicText(data);
   } else if (provider === "google") {
     const googleModel = model || "gemini-3-flash-preview";
     const isProModel = googleModel.includes("-pro");
@@ -295,7 +299,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
     }
 
     const data = await response.json();
-    comment = data.choices[0]?.message?.content || "";
+    comment = stripReasoningTags(data.choices[0]?.message?.content || "") || "";
   } else if (provider === "kimi") {
     // Kimi uses OpenAI-compatible API
     response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
@@ -306,6 +310,7 @@ Return ONLY the comment text. No quotes, no explanations, no labels.`;
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
       }),
     });

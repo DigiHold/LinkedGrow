@@ -4,6 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
@@ -236,7 +237,10 @@ async function generateWithAnthropic(apiKey: string, postContent: string, model:
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1500,
+      // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+      // this has to leave room for the reasoning and the answer together.
+      max_tokens: 8000,
+      ...anthropicEffort(model),
       system: SYSTEM_PROMPT,
       messages: [
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
@@ -250,7 +254,7 @@ async function generateWithAnthropic(apiKey: string, postContent: string, model:
   }
 
   const data = await response.json();
-  return data.content[0].text.trim();
+  return extractAnthropicText(data).trim();
 }
 
 async function generateWithGoogle(apiKey: string, postContent: string, model: string): Promise<string> {
@@ -407,7 +411,7 @@ async function generateWithPerplexity(apiKey: string, postContent: string, model
   }
 
   const data = await response.json();
-  return data.choices[0].message.content.trim();
+  return stripReasoningTags(data.choices[0].message.content || "").trim();
 }
 
 async function generateWithKimi(apiKey: string, postContent: string, model: string): Promise<string> {
@@ -420,11 +424,13 @@ async function generateWithKimi(apiKey: string, postContent: string, model: stri
     },
     body: JSON.stringify({
       model,
+      ...kimiReasoningEffort(model),
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Create a detailed image prompt for this LinkedIn post:\n\n${postContent}` },
       ],
-      max_tokens: 1500,
+      // K3 reasons on every call and its reasoning counts here too.
+      max_tokens: 8000,
     }),
   });
 

@@ -4,7 +4,7 @@ import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { canAccessFeature, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
-import { fetchAIWithRetry } from "@/lib/ai-fetch";
+import { fetchAIWithRetry, anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 
 export const maxDuration = 120;
 
@@ -234,8 +234,10 @@ async function generateHooks(
       },
       body: JSON.stringify({
         model: model || "claude-sonnet-5",
-        // 1024 truncated occasionally on longer 5-hook payloads.
-        max_tokens: 2048,
+        // Thinking tokens count against max_tokens on Sonnet 5 and Fable 5, so
+        // this has to leave room for the reasoning and the answer together.
+        max_tokens: 8000,
+        ...anthropicEffort(model || "claude-sonnet-5"),
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -246,7 +248,7 @@ async function generateHooks(
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || "[]";
+    const content = extractAnthropicText(data) || "[]";
     try {
       hooks = parseHookArray(content);
     } catch {
@@ -345,7 +347,7 @@ async function generateHooks(
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || "[]";
+    const content = stripReasoningTags(data.choices[0]?.message?.content || "") || "[]";
     try {
       hooks = parseHookArray(content);
     } catch {
@@ -361,8 +363,10 @@ async function generateHooks(
       },
       body: JSON.stringify({
         model: model || "kimi-k2.6",
+        ...kimiReasoningEffort(model || "kimi-k2.6"),
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 2048,
+        // K3 reasons on every call and its reasoning counts here too.
+        max_tokens: 8000,
       }),
     });
 
