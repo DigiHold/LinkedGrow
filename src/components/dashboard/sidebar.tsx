@@ -6,20 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/dashboard/sidebar-context";
 import { isPaidUser } from "@/lib/is-paid-user";
 import { Logo } from "@/components/ui/logo";
-import {
-  Crown,
-  Key,
-  Code,
-  Handshake,
-  MessageSquare,
-  Settings,
-  CreditCard,
-  Shield,
-  LogOut,
-  ChevronUp,
-} from "lucide-react";
 import {
   HomeIcon,
   AgentIcon,
@@ -39,7 +28,17 @@ import {
   TeamIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   CloseIcon,
+  CrownIcon,
+  KeyIcon,
+  CodeIcon,
+  HandshakeIcon,
+  LifeBuoyIcon,
+  SettingsIcon,
+  CardIcon,
+  ShieldIcon,
+  SignOutIcon,
 } from "@/components/dashboard/nav-icons";
 
 type NavItem = {
@@ -128,24 +127,41 @@ export function Sidebar() {
   const router = useRouter();
   const { data: session } = useSession();
 
+  const { isOpen: isMobileOpen, close: closeMobile } = useSidebar();
   const [section, setSection] = useState<Section>(() => sectionForPath(pathname));
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Follow the URL: navigating anywhere re-opens the owning section.
+  // Follow the URL: navigating anywhere re-opens the owning section and closes
+  // the drawer, so tapping a link on mobile does not leave it hanging open.
   useEffect(() => {
     setSection(sectionForPath(pathname));
-    setIsMobileOpen(false);
-  }, [pathname]);
+    closeMobile();
+  }, [pathname, closeMobile]);
 
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 1024) setIsMobileOpen(false);
+      if (window.innerWidth >= 1024) closeMobile();
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [closeMobile]);
+
+  // Escape closes the drawer, and the page underneath must not scroll while it
+  // is open or the body scrolls behind the overlay on iOS.
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMobile();
+    };
+    document.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [isMobileOpen, closeMobile]);
 
   useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
@@ -243,23 +259,16 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile opener, hidden while the drawer is open so it never sits on top of it */}
-      {!isMobileOpen && (
-        <button
-          onClick={() => setIsMobileOpen(true)}
-          className="fixed left-0 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-r-xl bg-blue-600 text-white shadow-lg lg:hidden"
-          aria-label="Open menu"
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </button>
-      )}
-
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-      )}
+      {/* The drawer is opened from the topbar burger, not from a tab stuck to
+          the viewport edge. */}
+      <div
+        onClick={closeMobile}
+        aria-hidden={!isMobileOpen}
+        className={cn(
+          "fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
+          isMobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      />
 
       <aside
         className={cn(
@@ -274,7 +283,7 @@ export function Sidebar() {
             <Logo />
           </Link>
           <button
-            onClick={() => setIsMobileOpen(false)}
+            onClick={closeMobile}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 lg:hidden dark:hover:bg-white/5"
             aria-label="Close menu"
           >
@@ -370,14 +379,14 @@ export function Sidebar() {
                         : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50"
                     )}
                   >
-                    <Crown className="h-4 w-4" />
+                    <CrownIcon className="h-4 w-4" />
                     {plan === "business" ? "Our plans" : "Upgrade"}
                   </button>
                   <button
                     onClick={() => goToMenuItem("/dashboard/settings/ai-api")}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                   >
-                    <Key className="h-4 w-4" />
+                    <KeyIcon className="h-4 w-4" />
                     AI API keys
                   </button>
                 </>
@@ -388,7 +397,7 @@ export function Sidebar() {
                   onClick={() => goToMenuItem("/dashboard/settings/api")}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                 >
-                  <Code className="h-4 w-4" />
+                  <CodeIcon className="h-4 w-4" />
                   API keys
                 </button>
               )}
@@ -397,7 +406,7 @@ export function Sidebar() {
                 onClick={() => goToMenuItem("/dashboard/affiliate")}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <Handshake className="h-4 w-4" />
+                <HandshakeIcon className="h-4 w-4" />
                 Affiliate
               </button>
 
@@ -414,7 +423,7 @@ export function Sidebar() {
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <MessageSquare className="h-4 w-4" />
+                <LifeBuoyIcon className="h-4 w-4" />
                 Need help?
               </button>
 
@@ -422,7 +431,7 @@ export function Sidebar() {
                 onClick={() => goToMenuItem("/dashboard/settings")}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <Settings className="h-4 w-4" />
+                <SettingsIcon className="h-4 w-4" />
                 Account settings
               </button>
 
@@ -431,7 +440,7 @@ export function Sidebar() {
                   onClick={() => goToMenuItem("/dashboard/settings/billing")}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                 >
-                  <CreditCard className="h-4 w-4" />
+                  <CardIcon className="h-4 w-4" />
                   Billing and invoices
                 </button>
               )}
@@ -440,7 +449,7 @@ export function Sidebar() {
                 <>
                   <div className="my-1 border-t border-slate-200 dark:border-white/10" />
                   <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
-                    <Shield className="h-3 w-3" />
+                    <ShieldIcon className="h-3.5 w-3.5" />
                     Admin
                   </div>
                   {adminLinks.map((link) => (
@@ -460,7 +469,7 @@ export function Sidebar() {
                 onClick={handleSignOut}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
               >
-                <LogOut className="h-4 w-4" />
+                <SignOutIcon className="h-4 w-4" />
                 Sign out
               </button>
             </div>
@@ -489,7 +498,7 @@ export function Sidebar() {
                 {planLabel}
               </p>
             </div>
-            <ChevronUp
+            <ChevronUpIcon
               className={cn(
                 "h-4 w-4 shrink-0 text-slate-400 transition-transform",
                 isUserMenuOpen && "rotate-180"

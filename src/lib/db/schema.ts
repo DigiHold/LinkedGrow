@@ -806,3 +806,301 @@ export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
 export type NewAffiliateCommission = typeof affiliateCommissions.$inferInsert;
 export type AffiliatePayout = typeof affiliatePayouts.$inferSelect;
 export type NewAffiliatePayout = typeof affiliatePayouts.$inferInsert;
+
+// ===== v2: agents =====
+// "workspace" is the owner user id, resolved through getAISettingsUser. The
+// product has teams but no workspaces table, and adding one would fork
+// ownership across two places.
+
+// A connected LinkedIn account. Credentials are AES-256-GCM ciphertext and are
+// never selected into an API response.
+export const linkedinAccounts = sqliteTable("linkedin_accounts", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  passwordEncrypted: text("password_encrypted").notNull(),
+  totpSecretEncrypted: text("totp_secret_encrypted"),
+  profileId: text("profile_id"),
+  profileUrl: text("profile_url"),
+  fullName: text("full_name"),
+  headline: text("headline"),
+  avatarUrl: text("avatar_url"),
+  country: text("country").notNull(),
+  proxyAllocationId: text("proxy_allocation_id"),
+  // R2 key for the archived Chrome profile. The blob never lives in Turso.
+  sessionRef: text("session_ref"),
+  status: text("status", {
+    enum: ["pending", "connected", "checkpoint", "restricted", "disconnected"],
+  })
+    .notNull()
+    .default("pending"),
+  statusReason: text("status_reason"),
+  lastCheckAt: integer("last_check_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// Section 5c: an IP belongs to a (workspace, country) pair, never to an agent.
+// A partial unique index on (workspace_id, country) WHERE status = 'active'
+// enforces that in the database rather than in application code.
+export const proxyAllocations = sqliteTable("proxy_allocations", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  country: text("country").notNull(),
+  provider: text("provider").notNull(),
+  host: text("host").notNull(),
+  port: integer("port").notNull(),
+  usernameEncrypted: text("username_encrypted").notNull(),
+  passwordEncrypted: text("password_encrypted").notNull(),
+  providerRef: text("provider_ref"),
+  status: text("status", { enum: ["active", "cooling", "burned"] })
+    .notNull()
+    .default("active"),
+  // Denormalised, capped at 3 per section 5c.
+  accountCount: integer("account_count").notNull().default(0),
+  burnedAt: integer("burned_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// One agent is one LinkedIn account is one ICP. The sender cannot change after
+// creation (section 7b), so linkedin_account_id carries a unique index.
+export const agents = sqliteTable("agents", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  linkedinAccountId: text("linkedin_account_id")
+    .notNull()
+    .references(() => linkedinAccounts.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  status: text("status", {
+    enum: ["paused", "warming", "active", "stopped", "blocked"],
+  })
+    .notNull()
+    .default("paused"),
+  pausedReason: text("paused_reason"),
+  icpSummary: text("icp_summary"),
+  jobRoles: text("job_roles"),
+  industries: text("industries"),
+  locations: text("locations"),
+  companySizes: text("company_sizes"),
+  matchLevel: text("match_level", {
+    enum: ["precision", "balanced", "volume"],
+  })
+    .notNull()
+    .default("balanced"),
+  goal: text("goal", { enum: ["conversations", "meetings"] })
+    .notNull()
+    .default("conversations"),
+  tone: text("tone", {
+    enum: ["professional", "conversational", "direct"],
+  })
+    .notNull()
+    .default("conversational"),
+  companyInfo: text("company_info"),
+  sequence: text("sequence"),
+  skipConnected: integer("skip_connected", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  reviewMode: integer("review_mode", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  warmupStartedAt: integer("warmup_started_at", { mode: "timestamp" }),
+  dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
+  timezone: text("timezone").notNull().default("Europe/Zurich"),
+  // Minutes from midnight, so the envelope survives a timezone change.
+  workdayStart: integer("workday_start").notNull().default(540),
+  workdayEnd: integer("workday_end").notNull().default(1080),
+  lastRunAt: integer("last_run_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// Wizard step 2 signals. The counters are denormalised so the Sources tab can
+// show which source actually earns replies without aggregating on every render.
+export const agentSources = sqliteTable("agent_sources", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  type: text("type", {
+    enum: [
+      "keyword",
+      "market",
+      "competitor",
+      "brand",
+      "buying_event",
+      "linkedin_search",
+      "csv",
+    ],
+  }).notNull(),
+  label: text("label").notNull(),
+  config: text("config"),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  leadsFound: integer("leads_found").notNull().default(0),
+  contacted: integer("contacted").notNull().default(0),
+  accepted: integer("accepted").notNull().default(0),
+  replied: integer("replied").notNull().default(0),
+  lastMinedAt: integer("last_mined_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// Section 9c: the lead pool is scoped to the workspace, not the agent, and the
+// unique index on (workspace_id, profile_id) IS the atomic claim. Two agents
+// racing for the same person resolve in the database, never in a read-then-write.
+export const agentLeads = sqliteTable("agent_leads", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id").references(() => agents.id, {
+    onDelete: "set null",
+  }),
+  sourceId: text("source_id").references(() => agentSources.id, {
+    onDelete: "set null",
+  }),
+  profileId: text("profile_id").notNull(),
+  profileUrl: text("profile_url").notNull(),
+  fullName: text("full_name").notNull(),
+  headline: text("headline"),
+  jobTitle: text("job_title"),
+  company: text("company"),
+  location: text("location"),
+  avatarUrl: text("avatar_url"),
+  matchScore: integer("match_score"),
+  // The one-line reason shown beside the score. A score with no reason is not
+  // credible, so the two are stored together.
+  matchReason: text("match_reason"),
+  signalType: text("signal_type"),
+  // Plain English, already assembled: "Commented on a post about hiring".
+  signalText: text("signal_text"),
+  // The proof. A signal with no link is a claim, so this is never optional in
+  // practice even though the column allows it for imported leads.
+  signalUrl: text("signal_url"),
+  signalAuthor: text("signal_author"),
+  step: text("step", {
+    enum: [
+      "found",
+      "queued",
+      "invited",
+      "accepted",
+      "messaged",
+      "replied",
+      "finished",
+      "skipped",
+      "excluded",
+    ],
+  })
+    .notNull()
+    .default("found"),
+  stepAt: integer("step_at", { mode: "timestamp" }),
+  foundAt: integer("found_at", { mode: "timestamp" }).notNull(),
+  rejectedAt: integer("rejected_at", { mode: "timestamp" }),
+  excludedReason: text("excluded_reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// Today's queue. The message body is stored rather than generated at send time,
+// because section 7b requires the user to read and edit it beforehand.
+export const agentQueue = sqliteTable("agent_queue", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  leadId: text("lead_id")
+    .notNull()
+    .references(() => agentLeads.id, { onDelete: "cascade" }),
+  action: text("action", {
+    enum: ["visit", "like", "invite", "dm1", "dm2", "withdraw"],
+  }).notNull(),
+  scheduledAt: integer("scheduled_at", { mode: "timestamp" }).notNull(),
+  messageBody: text("message_body"),
+  state: text("state", {
+    enum: ["pending", "approved", "skipped", "sent", "failed"],
+  })
+    .notNull()
+    .default("pending"),
+  approvedAt: integer("approved_at", { mode: "timestamp" }),
+  sentAt: integer("sent_at", { mode: "timestamp" }),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+// Every message either way. readAt drives the unread state that both the
+// Replies view and the activity feed need.
+export const agentMessages = sqliteTable("agent_messages", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  leadId: text("lead_id")
+    .notNull()
+    .references(() => agentLeads.id, { onDelete: "cascade" }),
+  direction: text("direction", { enum: ["out", "in"] }).notNull(),
+  step: text("step"),
+  body: text("body").notNull(),
+  sentAt: integer("sent_at", { mode: "timestamp" }).notNull(),
+  readAt: integer("read_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+// The activity log. message is a finished plain-English phrase, per section 2c,
+// so the feed never assembles copy from a type code at render time.
+export const agentEvents = sqliteTable("agent_events", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  leadId: text("lead_id").references(() => agentLeads.id, {
+    onDelete: "set null",
+  }),
+  type: text("type").notNull(),
+  message: text("message").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export type LinkedinAccount = typeof linkedinAccounts.$inferSelect;
+export type NewLinkedinAccount = typeof linkedinAccounts.$inferInsert;
+export type ProxyAllocation = typeof proxyAllocations.$inferSelect;
+export type NewProxyAllocation = typeof proxyAllocations.$inferInsert;
+export type Agent = typeof agents.$inferSelect;
+export type NewAgent = typeof agents.$inferInsert;
+export type AgentSource = typeof agentSources.$inferSelect;
+export type NewAgentSource = typeof agentSources.$inferInsert;
+export type AgentLead = typeof agentLeads.$inferSelect;
+export type NewAgentLead = typeof agentLeads.$inferInsert;
+export type AgentQueueItem = typeof agentQueue.$inferSelect;
+export type NewAgentQueueItem = typeof agentQueue.$inferInsert;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+export type NewAgentMessage = typeof agentMessages.$inferInsert;
+export type AgentEvent = typeof agentEvents.$inferSelect;
+export type NewAgentEvent = typeof agentEvents.$inferInsert;

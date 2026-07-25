@@ -4,8 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
-import { ChevronRightIcon } from "@/components/dashboard/nav-icons";
+import {
+  ChevronRightIcon,
+  MenuIcon,
+  MoonIcon,
+  SunIcon,
+} from "@/components/dashboard/nav-icons";
+import { useSidebar } from "@/components/dashboard/sidebar-context";
 
 /**
  * Labels for path segments that do not read well when de-slugified, plus the
@@ -52,6 +57,7 @@ function labelFor(segment: string): string {
 export function Topbar() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
+  const { toggle, isOpen } = useSidebar();
   const [mounted, setMounted] = useState(false);
 
   // The theme is only known on the client, so the toggle renders a stable
@@ -67,8 +73,14 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl lg:px-6 dark:border-white/10 dark:bg-slate-950/80">
-      {/* Room for the mobile sidebar opener, which is fixed to the viewport edge */}
-      <div className="w-6 shrink-0 lg:hidden" />
+      <button
+        onClick={toggle}
+        aria-label="Toggle menu"
+        aria-expanded={isOpen}
+        className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 lg:hidden dark:text-slate-300 dark:hover:bg-white/5"
+      >
+        <MenuIcon className="h-[18px] w-[18px]" />
+      </button>
 
       <nav
         aria-label="Breadcrumb"
@@ -81,7 +93,7 @@ export function Topbar() {
                 {crumb.label}
               </span>
             ) : (
-              <>
+              <span className="hidden items-center gap-1.5 sm:flex">
                 <Link
                   href={crumb.href}
                   prefetch={false}
@@ -90,7 +102,7 @@ export function Topbar() {
                   {crumb.label}
                 </Link>
                 <ChevronRightIcon className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" />
-              </>
+              </span>
             )}
           </span>
         ))}
@@ -104,9 +116,9 @@ export function Topbar() {
         aria-label="Toggle theme"
       >
         {mounted && resolvedTheme === "dark" ? (
-          <Sun className="h-4 w-4" />
+          <SunIcon className="h-[18px] w-[18px]" />
         ) : (
-          <Moon className="h-4 w-4" />
+          <MoonIcon className="h-[18px] w-[18px]" />
         )}
       </button>
     </header>
