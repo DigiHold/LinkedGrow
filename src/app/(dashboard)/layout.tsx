@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { Topbar } from "@/components/dashboard/topbar";
 import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
 
 export default function DashboardLayout({
@@ -7,18 +8,20 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    // lg-v2 scopes the Host Grotesk headings to the v2 dashboard without
+    // touching the marketing pages, which still run on Sora.
+    <div className="lg-v2 min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="flex">
-        {/* Sidebar */}
         <Sidebar />
 
-        {/* Main Content - relative for overlay positioning */}
-        <main className="flex-1 min-w-0 min-h-screen relative">
-          {children}
-        </main>
+        {/* min-w-0 stops wide tables from forcing horizontal page scroll */}
+        <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
+          <Topbar />
+          <main className="relative flex-1">{children}</main>
+        </div>
       </div>
 
-      {/* Setup wizard for first-time users (any dashboard page) */}
+      {/* Setup wizard for first-time users, on any dashboard page */}
       <OnboardingCheck />
     </div>
   );

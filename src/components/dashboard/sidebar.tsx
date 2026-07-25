@@ -3,231 +3,170 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { isPaidUser } from "@/lib/is-paid-user";
 import { Logo } from "@/components/ui/logo";
 import {
-  Sparkles,
-  PenLine,
-  Lightbulb,
-  FileText,
-  Calendar,
-  BarChart3,
+  Crown,
+  Key,
+  Code,
+  Handshake,
+  MessageSquare,
   Settings,
-  ChevronLeft,
-  ChevronRight,
+  CreditCard,
+  Shield,
   LogOut,
   ChevronUp,
-  Key,
-  Layers,
-  Users,
-  Anchor,
-  GitBranch,
-  UsersRound,
-  TrendingUp,
-  Code,
-  Crown,
-  Shield,
-  Database,
-  CreditCard,
-  Search,
-  MessageSquare,
-  Handshake,
-  ShoppingCart,
-  Repeat,
-  BookOpen,
-  Bell,
-  Gift,
-  LifeBuoy,
 } from "lucide-react";
+import {
+  HomeIcon,
+  AgentIcon,
+  ReplyIcon,
+  LinkedInAccountIcon,
+  GeneratorIcon,
+  EditorIcon,
+  RepurposeIcon,
+  CalendarIcon,
+  PostsIcon,
+  CarouselIcon,
+  HookIcon,
+  IdeaIcon,
+  AnalyticsIcon,
+  BellIcon,
+  SplitTestIcon,
+  TeamIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+} from "@/components/dashboard/nav-icons";
 
-import { useState, useEffect, useRef } from "react";
-import { useSession, signOut } from "next-auth/react";
+type NavItem = {
+  name: string;
+  href: string;
+  icon: (props: { className?: string }) => React.ReactElement;
+  /** Team members use the owner's setup, so some destinations are hidden. */
+  hideForTeamMember?: boolean;
+};
 
-const navigation = [
+/** Level 1, the lead-generation section. */
+const agentNav: NavItem[] = [
+  { name: "All agents", href: "/dashboard/agents", icon: AgentIcon },
+  { name: "Replies", href: "/dashboard/replies", icon: ReplyIcon },
   {
-    name: "Generator",
-    href: "/dashboard/generator",
-    icon: Sparkles,
-    description: "Create posts from ideas",
-  },
-  {
-    name: "Editor",
-    href: "/dashboard/editor",
-    icon: PenLine,
-    description: "Write and edit posts",
-  },
-  {
-    name: "Repurpose",
-    href: "/dashboard/repurpose",
-    icon: Repeat,
-    description: "Turn any URL into a post",
-  },
-  {
-    name: "Ideas",
-    href: "/dashboard/ideas",
-    icon: Lightbulb,
-    description: "Get content ideas",
-  },
-  {
-    name: "Carousel",
-    href: "/dashboard/carousel",
-    icon: Layers,
-    description: "Create slide carousels",
-  },
-  {
-    name: "Hooks",
-    href: "/dashboard/hooks",
-    icon: Anchor,
-    description: "Create catchy hooks",
-  },
-  {
-    name: "My Posts",
-    href: "/dashboard/posts",
-    icon: FileText,
-    description: "Manage all posts",
-  },
-  {
-    name: "Calendar",
-    href: "/dashboard/calendar",
-    icon: Calendar,
-    description: "Schedule content",
-  },
-  {
-    name: "Analytics",
-    href: "/dashboard/analytics",
-    icon: BarChart3,
-    description: "Track performance",
-  },
-  {
-    name: "Network Notifications",
-    href: "/dashboard/network-notifications",
-    icon: Bell,
-    description: "Get notified of new posts",
+    name: "LinkedIn accounts",
+    href: "/dashboard/linkedin-accounts",
+    icon: LinkedInAccountIcon,
+    hideForTeamMember: true,
   },
 ];
 
-// Business plan exclusive features
-const businessNavigation = [
+/** Level 1, the content section. */
+const contentNav: NavItem[] = [
+  { name: "Generator", href: "/dashboard/generator", icon: GeneratorIcon },
+  { name: "Editor", href: "/dashboard/editor", icon: EditorIcon },
+  { name: "Repurpose", href: "/dashboard/repurpose", icon: RepurposeIcon },
+  { name: "Ideas", href: "/dashboard/ideas", icon: IdeaIcon },
+  { name: "Carousels", href: "/dashboard/carousel", icon: CarouselIcon },
+  { name: "Hooks", href: "/dashboard/hooks", icon: HookIcon },
+  { name: "My posts", href: "/dashboard/posts", icon: PostsIcon },
+  { name: "Calendar", href: "/dashboard/calendar", icon: CalendarIcon },
+  { name: "Analytics", href: "/dashboard/analytics", icon: AnalyticsIcon },
   {
-    name: "A/B Testing",
-    href: "/dashboard/ab-testing",
-    icon: GitBranch,
-    description: "Test post variations",
+    name: "Network notifications",
+    href: "/dashboard/network-notifications",
+    icon: BellIcon,
   },
+];
+
+/** Business plan only, appended under the content section. */
+const businessNav: NavItem[] = [
+  { name: "A/B testing", href: "/dashboard/ab-testing", icon: SplitTestIcon },
+  { name: "Team", href: "/dashboard/team", icon: TeamIcon },
   {
-    name: "Team",
-    href: "/dashboard/team",
-    icon: UsersRound,
-    description: "Collaborate with team",
-  },
-  {
-    name: "Advanced Analytics",
+    name: "Advanced analytics",
     href: "/dashboard/analytics/advanced",
-    icon: TrendingUp,
-    description: "Deep insights & export",
+    icon: AnalyticsIcon,
   },
+];
+
+const adminLinks = [
+  { name: "Support tickets", href: "/dashboard/admin/support" },
+  { name: "Blog comments", href: "/dashboard/admin/comments" },
+  { name: "Users", href: "/dashboard/admin/users" },
+  { name: "SEO", href: "/dashboard/admin/seo" },
+  { name: "Affiliates", href: "/dashboard/admin/affiliates" },
+  { name: "Site data", href: "/dashboard/admin/site-data" },
+  { name: "Abandoned carts", href: "/dashboard/admin/abandoned-carts" },
+  { name: "Docs feedback", href: "/dashboard/admin/docs-feedback" },
+  { name: "LTD codes", href: "/dashboard/admin/ltd-codes" },
 ];
 
 const planNames: Record<string, string> = {
-  free: "Free Plan",
-  starter: "Starter Plan",
-  pro: "Pro Plan",
-  business: "Business Plan",
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
 };
+
+type Section = "root" | "agents" | "content";
+
+/** A deep link has to open the sidebar on the section that owns it. */
+function sectionForPath(pathname: string): Section {
+  if (agentNav.some((i) => pathname.startsWith(i.href))) return "agents";
+  if (
+    [...contentNav, ...businessNav].some((i) => pathname.startsWith(i.href))
+  ) {
+    return "content";
+  }
+  return "root";
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const [section, setSection] = useState<Section>(() => sectionForPath(pathname));
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [tooltip, setTooltip] = useState<{ text: string; top: number } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile sidebar on route change
+  // Follow the URL: navigating anywhere re-opens the owning section.
   useEffect(() => {
+    setSection(sectionForPath(pathname));
     setIsMobileOpen(false);
   }, [pathname]);
 
-  // Handle resize
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsMobileOpen(false);
-      }
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setIsMobileOpen(false);
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Close user menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+    const onClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const handleSignOut = () => {
-    setIsUserMenuOpen(false);
-    signOut({ redirectTo: "/" });
-  };
+  const isTeamMember = session?.user?.isTeamMember === true;
+  const teamRole = session?.user?.teamRole;
+  const plan = session?.user?.plan || "free";
 
-  const showTooltip = (e: React.MouseEvent, text: string) => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltip({ text, top: rect.top + rect.height / 2 });
-  };
-
-  const hideTooltip = () => setTooltip(null);
-
-  // Fetch LinkedIn posting target to show company page info in sidebar
-  const [linkedInTarget, setLinkedInTarget] = useState<{
-    postingTarget: string;
-    selectedOrgName?: string | null;
-    selectedOrgLogoUrl?: string | null;
-  } | null>(null);
-
-  const fetchLinkedInTarget = () => {
-    fetch("/api/linkedin/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.connected && data.postingTarget === "organization") {
-          const orgs = data.organizations || [];
-          const selectedOrg = orgs.find((o: { id: string }) => o.id === data.selectedOrgId);
-          setLinkedInTarget({
-            postingTarget: "organization",
-            selectedOrgName: data.selectedOrgName,
-            selectedOrgLogoUrl: selectedOrg?.logoUrl || null,
-          });
-        } else {
-          setLinkedInTarget(null);
-        }
-      })
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    fetchLinkedInTarget();
-    // Listen for posting target changes from settings page
-    const handleTargetChange = () => fetchLinkedInTarget();
-    window.addEventListener("linkedin-target-changed", handleTargetChange);
-    return () => window.removeEventListener("linkedin-target-changed", handleTargetChange);
-  }, []);
-
-  // User display info - show company page when posting to org
-  const isPostingToOrg = linkedInTarget?.postingTarget === "organization";
-  const userName = isPostingToOrg && linkedInTarget?.selectedOrgName
-    ? linkedInTarget.selectedOrgName
-    : session?.user?.name || session?.user?.email?.split("@")[0] || "User";
-  const userImage = isPostingToOrg && linkedInTarget?.selectedOrgLogoUrl
-    ? linkedInTarget.selectedOrgLogoUrl
-    : session?.user?.image;
-  const userPlan = planNames[session?.user?.plan || "free"] || "Free Plan";
+  const userName =
+    session?.user?.name || session?.user?.email?.split("@")[0] || "User";
+  const userImage = session?.user?.image;
   const userInitials = userName
     .split(" ")
     .map((n) => n[0])
@@ -235,437 +174,301 @@ export function Sidebar() {
     .toUpperCase()
     .slice(0, 2);
 
-  // Check if user is a team member (not owner)
-  const isTeamMember = session?.user?.isTeamMember === true;
-  const teamRole = session?.user?.teamRole;
+  const planLabel = planNames[plan] || "Free";
+
+  const visibleAgentNav = useMemo(
+    () => agentNav.filter((i) => !(isTeamMember && i.hideForTeamMember)),
+    [isTeamMember]
+  );
+
+  const showBusinessNav =
+    plan === "business" && !(isTeamMember && teamRole === "member");
+
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
+  const handleSignOut = () => {
+    setIsUserMenuOpen(false);
+    signOut({ redirectTo: "/" });
+  };
+
+  const goToMenuItem = (href: string) => {
+    setIsUserMenuOpen(false);
+    router.push(href);
+  };
+
+  const navLink = (item: NavItem) => {
+    const Icon = item.icon;
+    const active = isActive(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        prefetch={false}
+        className={cn(
+          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+          active
+            ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-[18px] w-[18px] shrink-0 transition-colors",
+            active
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300"
+          )}
+        />
+        <span className="truncate">{item.name}</span>
+      </Link>
+    );
+  };
+
+  const sectionLabel = (label: string) => (
+    <div className="px-3 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+      {label}
+    </div>
+  );
+
+  const backLink = (
+    <button
+      onClick={() => setSection("root")}
+      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+    >
+      <ChevronLeftIcon className="h-3.5 w-3.5" />
+      Back to home
+    </button>
+  );
 
   return (
     <>
-      {/* Mobile Sidebar Toggle - hidden while sidebar is open so it doesn't
-          float over the sidebar content */}
+      {/* Mobile opener, hidden while the drawer is open so it never sits on top of it */}
       {!isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="lg:hidden fixed top-4 left-0 z-50 w-7.5 h-7.5 rounded-r-xl bg-linkedin text-white shadow-lg flex items-center justify-center touch-target"
+          className="fixed left-0 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-r-xl bg-blue-600 text-white shadow-lg lg:hidden"
           aria-label="Open menu"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRightIcon className="h-4 w-4" />
         </button>
       )}
 
-      {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          // h-dvh (dynamic viewport height) instead of h-screen so iOS Safari's
-          // URL bar doesn't push the user button below the visible viewport.
-          // h-screen = 100vh, which on iOS includes the area behind the chrome.
-          "fixed lg:sticky top-0 left-0 z-40 h-dvh flex flex-col bg-white dark:bg-gray-950 border-r border-border transition-all duration-300",
-          isCollapsed ? "lg:w-20" : "lg:w-64",
-          isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"
+          // h-dvh rather than h-screen: on iOS Safari 100vh includes the area
+          // behind the chrome, which pushes the user button out of view.
+          "fixed left-0 top-0 z-40 flex h-dvh w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:sticky lg:w-64 lg:translate-x-0 dark:border-white/10 dark:bg-slate-950",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-border">
-          <Link
-            href="/dashboard"
-            prefetch={true}
-            className={cn(
-              "flex items-center gap-2",
-              isCollapsed && "lg:justify-center"
-            )}
-          >
-            <div className="w-9 h-9 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 379 230" className="w-5 h-5 text-white" fill="currentColor">
-                <path d="M205.9185,32.0339c.9512,8.7484,8.8874,15.128,17.6358,14.1767l88.8761-9.6638-93.389,116.1758-93.3595-75.0479c-6.8339-5.4935-16.9741-4.3909-22.4676,2.443L3.9774,203.5681c-5.4935,6.8339-4.3909,16.9741,2.443,22.4676,6.8339,5.4935,16.9741,4.3909,22.4676-2.443l89.2246-110.9953,93.3595,75.0479c6.8339,5.4935,16.9741,4.3909,22.4676-2.443l103.4013-128.631,9.6638,88.8761c.9512,8.7484,8.8874,15.128,17.6358,14.1767s15.128-8.8874,14.1767-17.6358l-13.8363-127.25c-.9512-8.7484-8.8874-15.128-17.6358-14.1767l-127.25,13.8363c-8.7484.9512-15.128,8.8874-14.1767,17.6358Z"/>
-              </svg>
-            </div>
-            {(!isCollapsed || isMobileOpen) && (
-              <Logo />
-            )}
+        <div className="flex h-16 items-center justify-between px-4">
+          <Link href="/dashboard" prefetch={false} className="flex items-center">
+            <Logo />
           </Link>
-
-          {/* Mobile Close Button */}
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 lg:hidden dark:hover:bg-white/5"
             aria-label="Close menu"
           >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          {/* Desktop Collapse Button */}
-          <button
-            onClick={() => { setIsCollapsed(!isCollapsed); setTooltip(null); }}
-            className="hidden lg:flex p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronLeft className="w-4 h-4" />
-            )}
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-          {navigation
-            .filter((item) => {
-              if (isTeamMember) {
-                // Analytics: admins can see, members cannot
-                if (item.href === "/dashboard/analytics") {
-                  return teamRole === "admin";
-                }
-              }
-              return true;
-            })
-            .map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={true}
-                onMouseEnter={(e) => isCollapsed && !isMobileOpen && showTooltip(e, item.name)}
-                onMouseLeave={hideTooltip}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
-                  isActive
-                    ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  isCollapsed && "lg:justify-center lg:px-2"
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "w-5 h-5 shrink-0",
-                    isActive && "text-cyan-600 dark:text-cyan-400"
-                  )}
-                />
-                {(!isCollapsed || isMobileOpen) && (
-                  <div className="flex-1 min-w-0">
-                    <span className="block truncate">{item.name}</span>
-                    <span className="block text-xs text-muted-foreground truncate">
-                      {item.description}
-                    </span>
-                  </div>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          {section === "root" && (
+            <div className="space-y-1">
+              {navLink({ name: "Home", href: "/dashboard", icon: HomeIcon })}
 
-          {/* Business Plan Features */}
-          {/* Hide for member role (they see no business features), show for admin (Team access) and owners */}
-          {session?.user?.plan === "business" && !(isTeamMember && teamRole === "member") && (
-            <>
-              {(!isCollapsed || isMobileOpen) && (
-                <div className="pt-4 pb-2">
-                  <div className="flex items-center gap-2 px-3 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    <Crown className="w-3 h-3" />
-                    <span>Business</span>
-                  </div>
-                </div>
+              <button
+                onClick={() => setSection("agents")}
+                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+              >
+                <AgentIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+                <span className="truncate">Agents</span>
+                <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+              </button>
+
+              <button
+                onClick={() => setSection("content")}
+                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+              >
+                <EditorIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+                <span className="truncate">Posts</span>
+                <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+              </button>
+            </div>
+          )}
+
+          {section === "agents" && (
+            <div>
+              {backLink}
+              {sectionLabel("Lead generation")}
+              <div className="space-y-1">{visibleAgentNav.map(navLink)}</div>
+            </div>
+          )}
+
+          {section === "content" && (
+            <div>
+              {backLink}
+              {sectionLabel("Content")}
+              <div className="space-y-1">{contentNav.map(navLink)}</div>
+              {showBusinessNav && (
+                <>
+                  {sectionLabel("Business")}
+                  <div className="space-y-1">{businessNav.map(navLink)}</div>
+                </>
               )}
-              {businessNavigation
-                .filter((item) => {
-                  // Team members can only see Team page if they are admin
-                  if (isTeamMember) {
-                    if (item.href === "/dashboard/team") {
-                      return teamRole === "admin"; // Only admin can manage team
-                    }
-                    return false; // Hide A/B Testing and Advanced Analytics for team members
-                  }
-                  return true; // Owners see everything
-                })
-                .map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch={true}
-                    onMouseEnter={(e) => isCollapsed && !isMobileOpen && showTooltip(e, item.name)}
-                    onMouseLeave={hideTooltip}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all touch-target",
-                      isActive
-                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                      isCollapsed && "lg:justify-center lg:px-2"
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "w-5 h-5 shrink-0",
-                        isActive && "text-amber-600 dark:text-amber-400"
-                      )}
-                    />
-                    {(!isCollapsed || isMobileOpen) && (
-                      <div className="flex-1 min-w-0">
-                        <span className="block truncate">{item.name}</span>
-                        <span className="block text-xs text-muted-foreground truncate">
-                          {item.description}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-                );
-              })}
-            </>
+            </div>
           )}
         </nav>
 
-        {/* User Section with Custom Menu */}
-        {/* Safe-area padding ensures the user button sits above the iPhone home
-            indicator on iOS Safari & Chrome (both use WebKit). */}
-        <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border relative" ref={userMenuRef}>
-          {/* Menu popup - appears above the button */}
+        {/* Safe-area padding keeps the user button above the iOS home indicator. */}
+        <div
+          ref={userMenuRef}
+          className="relative border-t border-slate-200 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-white/10"
+        >
           {isUserMenuOpen && (
-            <div className={cn(
-              "absolute bottom-full mb-2 bg-white dark:bg-gray-900 rounded-lg border border-border shadow-lg overflow-hidden z-50",
-              isCollapsed ? "left-0 right-0 lg:left-auto lg:right-auto lg:w-56" : "left-3 right-3"
-            )}>
-              <div className="px-3 py-3 border-b border-border flex items-center gap-3">
+            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900">
+              <div className="flex items-center gap-3 border-b border-slate-200 px-3 py-3 dark:border-white/10">
                 {userImage ? (
                   <Image
                     src={userImage}
                     alt={userName}
                     width={40}
                     height={40}
-                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                    className="h-10 w-10 shrink-0 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-sm font-medium text-white">
                     {userInitials}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{userName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
+                  <p className="truncate text-sm font-medium">{userName}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {session?.user?.email}
+                  </p>
                 </div>
               </div>
-              {/* Hide Upgrade and AI API Keys for team members - they use owner's settings */}
+
               {!isTeamMember && (
                 <>
                   <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/upgrade");
-                    }}
+                    onClick={() => goToMenuItem("/dashboard/upgrade")}
                     className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                      session?.user?.plan === "business"
-                        ? "hover:bg-accent"
-                        : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                      "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
+                      plan === "business"
+                        ? "hover:bg-slate-100 dark:hover:bg-white/5"
+                        : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50"
                     )}
                   >
-                    <Crown className="w-4 h-4" />
-                    {session?.user?.plan === "business" ? "Our Plans" : "Upgrade"}
+                    <Crown className="h-4 w-4" />
+                    {plan === "business" ? "Our plans" : "Upgrade"}
                   </button>
                   <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/settings/ai-api");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    onClick={() => goToMenuItem("/dashboard/settings/ai-api")}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                   >
-                    <Key className="w-4 h-4" />
-                    AI API Keys
+                    <Key className="h-4 w-4" />
+                    AI API keys
                   </button>
                 </>
               )}
-              {/* Business features - only for owners, not team members */}
-              {session?.user?.plan === "business" && !isTeamMember && (
-                <>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/settings/api");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Code className="w-4 h-4" />
-                    API Keys
-                  </button>
-                </>
+
+              {plan === "business" && !isTeamMember && (
+                <button
+                  onClick={() => goToMenuItem("/dashboard/settings/api")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <Code className="h-4 w-4" />
+                  API keys
+                </button>
               )}
+
               <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  router.push("/dashboard/affiliate");
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onClick={() => goToMenuItem("/dashboard/affiliate")}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <Handshake className="w-4 h-4" />
+                <Handshake className="h-4 w-4" />
                 Affiliate
               </button>
+
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
-                  // Paid users (Stripe sub, LTD, or manually-granted paid
-                  // plans like internal/comp accounts) get the proper ticket
-                  // system; trial / free users keep the chatbot.
+                  // Paying accounts get the ticket system; trial and free
+                  // accounts keep the chatbot.
                   if (isPaidUser(session?.user)) {
                     router.push("/dashboard/support");
                   } else {
                     window.dispatchEvent(new Event("open-chat-widget"));
                   }
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <MessageSquare className="w-4 h-4" />
-                Need Help?
+                <MessageSquare className="h-4 w-4" />
+                Need help?
               </button>
+
               <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  router.push("/dashboard/settings");
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onClick={() => goToMenuItem("/dashboard/settings")}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <Settings className="w-4 h-4" />
-                Account Settings
+                <Settings className="h-4 w-4" />
+                Account settings
               </button>
-              {/* Billing - only for paid users (not free, not team members) */}
-              {session?.user?.plan !== "free" && !isTeamMember && (
+
+              {plan !== "free" && !isTeamMember && (
                 <button
-                  onClick={() => {
-                    setIsUserMenuOpen(false);
-                    router.push("/dashboard/settings/billing");
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  onClick={() => goToMenuItem("/dashboard/settings/billing")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
                 >
-                  <CreditCard className="w-4 h-4" />
-                  Billing & Invoices
+                  <CreditCard className="h-4 w-4" />
+                  Billing and invoices
                 </button>
               )}
+
               {session?.user?.isAdmin && (
                 <>
-                  <div className="border-t border-border my-1" />
-                  <div className="px-3 py-1.5">
-                    <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Shield className="w-3 h-3" />
-                      Admin
-                    </span>
+                  <div className="my-1 border-t border-slate-200 dark:border-white/10" />
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+                    <Shield className="h-3 w-3" />
+                    Admin
                   </div>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/support");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <LifeBuoy className="w-4 h-4" />
-                    Support Tickets
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/comments");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    Comments
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/users");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Users className="w-4 h-4" />
-                    Users
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/seo");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Search className="w-4 h-4" />
-                    SEO
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/affiliates");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Handshake className="w-4 h-4" />
-                    Affiliates
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/site-data");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Database className="w-4 h-4" />
-                    Site Data
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/abandoned-carts");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    Abandoned Carts
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/docs-feedback");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    Docs Feedback
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      router.push("/dashboard/admin/ltd-codes");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                  >
-                    <Gift className="w-4 h-4" />
-                    LTD Codes
-                  </button>
+                  {adminLinks.map((link) => (
+                    <button
+                      key={link.href}
+                      onClick={() => goToMenuItem(link.href)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+                    >
+                      {link.name}
+                    </button>
+                  ))}
                 </>
               )}
+
+              <div className="my-1 border-t border-slate-200 dark:border-white/10" />
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
               >
-                <LogOut className="w-4 h-4" />
-                Sign Out
+                <LogOut className="h-4 w-4" />
+                Sign out
               </button>
             </div>
           )}
 
-          {/* User button */}
           <button
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className={cn(
-              "w-full flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors cursor-pointer",
-              isCollapsed && !isMobileOpen && "lg:justify-center lg:p-2"
-            )}
-            aria-label={userName}
+            onClick={() => setIsUserMenuOpen((open) => !open)}
+            className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
           >
             {userImage ? (
               <Image
@@ -673,40 +476,28 @@ export function Sidebar() {
                 alt={userName}
                 width={36}
                 height={36}
-                className="w-9 h-9 rounded-full object-cover shrink-0"
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-r from-cyan-500 to-blue-600 text-xs font-semibold text-white">
                 {userInitials}
               </div>
             )}
-            {(!isCollapsed || isMobileOpen) && (
-              <>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium truncate">{userName}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {userPlan}
-                  </p>
-                </div>
-                <ChevronUp className={cn(
-                  "w-4 h-4 text-muted-foreground shrink-0 transition-transform",
-                  isUserMenuOpen && "rotate-180"
-                )} />
-              </>
-            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{userName}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                {planLabel}
+              </p>
+            </div>
+            <ChevronUp
+              className={cn(
+                "h-4 w-4 shrink-0 text-slate-400 transition-transform",
+                isUserMenuOpen && "rotate-180"
+              )}
+            />
           </button>
         </div>
       </aside>
-
-      {/* Fixed tooltip rendered outside sidebar to avoid overflow */}
-      {tooltip && isCollapsed && !isMobileOpen && (
-        <div
-          className="fixed pointer-events-none z-50 rounded-md bg-gray-900 dark:bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-white dark:text-gray-900 whitespace-nowrap shadow-lg"
-          style={{ top: tooltip.top, left: 72, transform: "translateY(-50%)" }}
-        >
-          {tooltip.text}
-        </div>
-      )}
     </>
   );
 }

@@ -203,6 +203,14 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: -0.03em;
 }
 
+/* v2 display face. Scoped to the v2 dashboard: any subtree carrying
+   .lg-v2 gets Host Grotesk headings without touching the v1 marketing pages. */
+.font-grotesk,
+.lg-v2 h1, .lg-v2 h2, .lg-v2 h3, .lg-v2 h4, .lg-v2 h5, .lg-v2 h6 {
+  font-family: var(--font-grotesk), var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.035em;
+}
+
 h1 {
   font-weight: 800;
 }

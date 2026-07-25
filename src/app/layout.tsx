@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, DM_Sans } from "next/font/google";
+import { Sora, DM_Sans, Host_Grotesk } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { SessionProvider } from "@/components/providers/session-provider";
@@ -27,6 +27,14 @@ const sora = Sora({
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Host Grotesk - v2 display face. Scoped to the v2 dashboard for now via
+// font-grotesk; --font-display stays on Sora until the marketing rebuild.
+const hostGrotesk = Host_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-grotesk",
   weight: ["400", "500", "600", "700"],
 });
 
@@ -113,7 +121,7 @@ export default async function RootLayout({
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
       </head>
-      <body className={`${sora.variable} ${dmSans.variable} font-sans antialiased`}>
+      <body className={`${sora.variable} ${dmSans.variable} ${hostGrotesk.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
         {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
 
