@@ -690,7 +690,7 @@ export async function POST(request: NextRequest) {
             name: agents.name,
             status: agents.status,
             pausedReason: agents.pausedReason,
-            dailyInviteCap: agents.dailyInviteCap,
+            dailyInviteCap: linkedinAccounts.dailyInviteCap,
             lastRunAt: agents.lastRunAt,
             country: linkedinAccounts.country,
           })
@@ -763,7 +763,7 @@ export async function POST(request: NextRequest) {
             tone: agents.tone,
             matchLevel: agents.matchLevel,
             reviewMode: agents.reviewMode,
-            dailyInviteCap: agents.dailyInviteCap,
+            dailyInviteCap: linkedinAccounts.dailyInviteCap,
             lastRunAt: agents.lastRunAt,
             // Country only. The address the agent runs from never leaves here.
             country: linkedinAccounts.country,
@@ -820,6 +820,8 @@ export async function POST(request: NextRequest) {
       }
 
       case "list_linkedin_accounts": {
+        // Grouped, because an account can drive several agents and an
+        // ungrouped join returns the account once per agent.
         const rows = await db
           .select({
             id: linkedinAccounts.id,
@@ -827,11 +829,13 @@ export async function POST(request: NextRequest) {
             country: linkedinAccounts.country,
             status: linkedinAccounts.status,
             warmupStartedAt: linkedinAccounts.warmupStartedAt,
-            agentId: agents.id,
+            dailyInviteCap: linkedinAccounts.dailyInviteCap,
+            agentCount: count(agents.id),
           })
           .from(linkedinAccounts)
           .leftJoin(agents, eq(agents.linkedinAccountId, linkedinAccounts.id))
           .where(eq(linkedinAccounts.workspaceId, workspaceId))
+          .groupBy(linkedinAccounts.id)
           .orderBy(asc(linkedinAccounts.createdAt));
 
         const quota = agentQuotaFor(workspace.plan);
@@ -846,10 +850,10 @@ export async function POST(request: NextRequest) {
         return rpc(
           id,
           toolText(
-            `${rows.length} of ${quota} connected.\n\n${rows
+            `${rows.length} of ${quota} connected. Each account sends up to its own daily number of invitations, and any agents on it share that one budget.\n\n${rows
               .map(
                 (r) =>
-                  `id: ${r.id}\nname: ${r.fullName ?? "not signed in yet"}\ncountry: ${r.country}\nstatus: ${r.status}\nagent: ${r.agentId ? "already driving one" : "free"}`
+                  `id: ${r.id}\nname: ${r.fullName ?? "not signed in yet"}\ncountry: ${r.country}\nstatus: ${r.status}\ndaily invitations: ${r.dailyInviteCap}\nagents on it: ${r.agentCount}`
               )
               .join("\n\n")}`
           )
@@ -880,6 +884,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // An account can drive several agents, one per ICP, so the picker
+        // reports how many each already has rather than free or taken.
         const [[used], accounts] = await Promise.all([
           db
             .select({ total: count() })
@@ -890,11 +896,13 @@ export async function POST(request: NextRequest) {
               id: linkedinAccounts.id,
               fullName: linkedinAccounts.fullName,
               country: linkedinAccounts.country,
-              agentId: agents.id,
+              dailyInviteCap: linkedinAccounts.dailyInviteCap,
+              agentCount: count(agents.id),
             })
             .from(linkedinAccounts)
             .leftJoin(agents, eq(agents.linkedinAccountId, linkedinAccounts.id))
-            .where(eq(linkedinAccounts.workspaceId, workspaceId)),
+            .where(eq(linkedinAccounts.workspaceId, workspaceId))
+            .groupBy(linkedinAccounts.id),
         ]);
 
         if ((used?.total ?? 0) >= quota) {
@@ -907,23 +915,18 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const free = accounts.filter((a) => !a.agentId);
         let accountId = text(args.linkedinAccountId, 64);
         if (accountId) {
-          const match = accounts.find((a) => a.id === accountId);
-          if (!match) return rpc(id, toolText("No LinkedIn account with that id.", true));
-          if (match.agentId) {
-            return rpc(id, toolText("That account already drives an agent.", true));
+          if (!accounts.some((a) => a.id === accountId)) {
+            return rpc(id, toolText("No LinkedIn account with that id.", true));
           }
-        } else if (free.length === 1) {
-          accountId = free[0].id;
-        } else if (free.length === 0) {
+        } else if (accounts.length === 1) {
+          accountId = accounts[0].id;
+        } else if (accounts.length === 0) {
           return rpc(
             id,
             toolText(
-              accounts.length === 0
-                ? "No LinkedIn account is connected yet, and an agent runs on one. The user connects theirs at Dashboard, LinkedIn accounts, picking the country the agent should work from; a dedicated address in that country is allocated to it there. Credentials are entered on that page rather than here, because they never travel through an assistant."
-                : "Every connected account already drives an agent. The user connects another at Dashboard, LinkedIn accounts, choosing the country the agent should work from; a dedicated address in that country is allocated to it there. Credentials are never entered through an assistant.",
+              "No LinkedIn account is connected yet, and an agent sends from one. The user connects theirs at Dashboard, LinkedIn accounts, picking the country it should work from; a dedicated address in that country is allocated to it there. Credentials are entered on that page rather than here, because they never travel through an assistant.",
               true
             )
           );
@@ -931,8 +934,11 @@ export async function POST(request: NextRequest) {
           return rpc(
             id,
             toolText(
-              `More than one account is free, so pick one and pass linkedinAccountId:\n${free
-                .map((a) => `- ${a.id}: ${a.fullName ?? "unnamed"} (${a.country})`)
+              `Several accounts are connected, so pick which one sends and pass linkedinAccountId:\n${accounts
+                .map(
+                  (a) =>
+                    `- ${a.id}: ${a.fullName ?? "unnamed"} (${a.country}), ${a.agentCount} agent${a.agentCount === 1 ? "" : "s"} already on it`
+                )
                 .join("\n")}`,
               true
             )
@@ -941,7 +947,7 @@ export async function POST(request: NextRequest) {
 
         const now = new Date();
         const newId = crypto.randomUUID();
-        try {
+        {
           await db.insert(agents).values({
             id: newId,
             workspaceId,
@@ -963,17 +969,23 @@ export async function POST(request: NextRequest) {
             createdAt: now,
             updatedAt: now,
           });
-        } catch {
-          // uq_agents_linkedin_account settles the race in the database.
-          return rpc(id, toolText("That account already drives an agent.", true));
         }
 
         await logEvent(workspaceId, newId, "Created by your assistant");
         const account = accounts.find((a) => a.id === accountId);
+        const sharing = (account?.agentCount ?? 0) > 0;
         return rpc(
           id,
           toolText(
-            `Created "${agentName}" (id: ${newId}) on the ${account?.country ?? "connected"} account, with its own dedicated address there. It is paused and has no sources yet. Call find_leads to give it a market, then start_agent when the user is ready for it to reach out.`
+            [
+              `Created "${agentName}" (id: ${newId}) on the ${account?.country ?? "connected"} account, sending from that account's own dedicated address.`,
+              sharing
+                ? `That account already runs ${account?.agentCount} other agent${account?.agentCount === 1 ? "" : "s"}, and they share its ${account?.dailyInviteCap ?? 8} invitations a day rather than each getting their own. More agents means more precise targeting, not more volume; more volume means another LinkedIn account.`
+                : "",
+              "It is paused and has no sources yet. Call find_leads to give it a market, then start_agent when the user is ready for it to reach out.",
+            ]
+              .filter(Boolean)
+              .join("\n")
           )
         );
       }
@@ -1017,7 +1029,7 @@ export async function POST(request: NextRequest) {
             id: agents.id,
             name: agents.name,
             status: agents.status,
-            dailyInviteCap: agents.dailyInviteCap,
+            dailyInviteCap: linkedinAccounts.dailyInviteCap,
             accountId: linkedinAccounts.id,
             accountStatus: linkedinAccounts.status,
             warmupStartedAt: linkedinAccounts.warmupStartedAt,
@@ -1101,8 +1113,14 @@ export async function POST(request: NextRequest) {
           return rpc(id, toolText("brief is required: say who to look for.", true));
         }
         const [agent] = await db
-          .select({ id: agents.id, name: agents.name, status: agents.status, cap: agents.dailyInviteCap })
+          .select({
+            id: agents.id,
+            name: agents.name,
+            status: agents.status,
+            cap: linkedinAccounts.dailyInviteCap,
+          })
           .from(agents)
+          .innerJoin(linkedinAccounts, eq(linkedinAccounts.id, agents.linkedinAccountId))
           .where(and(eq(agents.id, String(args.agentId)), eq(agents.workspaceId, workspaceId)))
           .limit(1);
         if (!agent) return rpc(id, toolText("No agent with that id.", true));

@@ -10,7 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
-import type { PlanId } from "@/lib/plans";
+import { agentQuotaFor, effectivePlan, type PlanId } from "@/lib/plans";
 
 /**
  * The workspace owns agents, not the individual user, so a team member sees
@@ -22,15 +22,14 @@ async function resolveWorkspace(userId: string) {
   if (!data) return null;
   return {
     workspaceId: data.teamOwnerId ?? data.user.id,
-    plan: (data.owner?.plan ?? data.user.plan) as PlanId,
+    // effectivePlan, not the raw column: an admin runs on the top plan and a
+    // local copy of that rule is how the session and an API route end up
+    // disagreeing about what someone is allowed to do.
+    plan: effectivePlan({
+      plan: data.owner?.plan ?? data.user.plan,
+      isAdmin: data.user.isAdmin,
+    }) as PlanId,
   };
-}
-
-/** Pro carries 2 agents, Business 3. Section 5c and the 2026-07-26 decision. */
-function agentQuotaFor(plan: PlanId): number {
-  if (plan === "business") return 3;
-  if (plan === "pro") return 2;
-  return 0;
 }
 
 // GET /api/agents - every agent in the workspace, with its funnel counts
@@ -53,7 +52,7 @@ export async function GET() {
         status: agents.status,
         pausedReason: agents.pausedReason,
         icpSummary: agents.icpSummary,
-        dailyInviteCap: agents.dailyInviteCap,
+        dailyInviteCap: linkedinAccounts.dailyInviteCap,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
@@ -248,63 +247,54 @@ export async function POST(request: NextRequest) {
     const bool = (value: unknown, fallback: boolean) =>
       typeof value === "boolean" ? value : fallback;
 
-    try {
-      await db.insert(agents).values({
-        id,
+    await db.insert(agents).values({
+      id,
+      workspaceId: workspace.workspaceId,
+      createdBy: session.user.id,
+      linkedinAccountId,
+      name,
+      icpSummary: text(body?.icpSummary, 2000),
+      jobRoles: list(body?.jobRoles, 20),
+      industries: list(body?.industries, 20),
+      locations: list(body?.locations, 20),
+      companySizes: list(body?.companySizes, 10),
+      matchLevel: pick(body?.matchLevel, ["precision", "balanced", "volume"] as const, "balanced"),
+      goal: pick(body?.goal, ["conversations", "meetings"] as const, "conversations"),
+      tone: pick(body?.tone, ["professional", "conversational", "direct"] as const, "conversational"),
+      companyInfo: text(body?.companyInfo, 4000),
+      skipConnected: bool(body?.skipConnected, true),
+      reviewMode: bool(body?.reviewMode, false),
+      smartLeadFinder: bool(body?.smartLeadFinder, true),
+      // Agents are always created paused. Activating is a separate,
+      // deliberate action, per section 7b.
+      status: "paused",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const SOURCE_TYPES = [
+      "keyword", "market", "competitor", "brand",
+      "buying_event", "linkedin_search", "csv",
+    ] as const;
+    const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
+    const rows = sources
+      .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
+        !!r && typeof r === "object" &&
+        SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
+        typeof (r as { label?: unknown }).label === "string")
+      .map((r: { type: string; label: string; config?: unknown }) => ({
+        id: crypto.randomUUID(),
         workspaceId: workspace.workspaceId,
-        createdBy: session.user.id,
-        linkedinAccountId,
-        name,
-        icpSummary: text(body?.icpSummary, 2000),
-        jobRoles: list(body?.jobRoles, 20),
-        industries: list(body?.industries, 20),
-        locations: list(body?.locations, 20),
-        companySizes: list(body?.companySizes, 10),
-        matchLevel: pick(body?.matchLevel, ["precision", "balanced", "volume"] as const, "balanced"),
-        goal: pick(body?.goal, ["conversations", "meetings"] as const, "conversations"),
-        tone: pick(body?.tone, ["professional", "conversational", "direct"] as const, "conversational"),
-        companyInfo: text(body?.companyInfo, 4000),
-        skipConnected: bool(body?.skipConnected, true),
-        reviewMode: bool(body?.reviewMode, false),
-        smartLeadFinder: bool(body?.smartLeadFinder, true),
-        // Agents are always created paused. Activating is a separate,
-        // deliberate action, per section 7b.
-        status: "paused",
+        agentId: id,
+        type: r.type as (typeof SOURCE_TYPES)[number],
+        label: r.label.trim().slice(0, 120),
+        config: r.config ? JSON.stringify(r.config).slice(0, 4000) : null,
         createdAt: now,
         updatedAt: now,
-      });
+      }))
+      .filter((r: { label: string }) => r.label);
 
-      const SOURCE_TYPES = [
-        "keyword", "market", "competitor", "brand",
-        "buying_event", "linkedin_search", "csv",
-      ] as const;
-      const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
-      const rows = sources
-        .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
-          !!r && typeof r === "object" &&
-          SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
-          typeof (r as { label?: unknown }).label === "string")
-        .map((r: { type: string; label: string; config?: unknown }) => ({
-          id: crypto.randomUUID(),
-          workspaceId: workspace.workspaceId,
-          agentId: id,
-          type: r.type as (typeof SOURCE_TYPES)[number],
-          label: r.label.trim().slice(0, 120),
-          config: r.config ? JSON.stringify(r.config).slice(0, 4000) : null,
-          createdAt: now,
-          updatedAt: now,
-        }))
-        .filter((r: { label: string }) => r.label);
-
-      if (rows.length) await db.insert(agentSources).values(rows);
-    } catch {
-      // uq_agents_linkedin_account: one agent per connected account, enforced
-      // by the database rather than by a read-then-write that can race.
-      return NextResponse.json(
-        { error: "That LinkedIn account already has an agent" },
-        { status: 409 }
-      );
-    }
+    if (rows.length) await db.insert(agentSources).values(rows);
 
     return NextResponse.json({ id, status: "paused" }, { status: 201 });
   } catch {

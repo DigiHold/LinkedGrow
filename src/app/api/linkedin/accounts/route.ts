@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { linkedinAccounts, agents } from "@/lib/db/schema";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 import { encryptApiKey, EncryptionNotConfiguredError } from "@/lib/encryption";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
@@ -19,7 +19,8 @@ import { effectivePlan } from "@/lib/plans";
  *
  * Never returns passwordEncrypted, totpSecretEncrypted, sessionRef or
  * proxyAllocationId. Those are the credentials themselves and the picker only
- * needs to show a person and say whether the account is free.
+ * needs to show a person, how many agents already send from them, and the daily
+ * budget those agents share.
  */
 export async function GET() {
   try {
@@ -34,8 +35,9 @@ export async function GET() {
     }
     const workspaceId = data.teamOwnerId ?? data.user.id;
 
-    // One left join instead of a query per account: an account already driving
-    // an agent cannot drive a second one, and the picker has to show that.
+    // One grouped join instead of a query per account. An account can drive
+    // several agents, one per ICP, and they share its daily budget, so the
+    // picker shows the count and the budget rather than free or taken.
     const rows = await db
       .select({
         id: linkedinAccounts.id,
@@ -45,11 +47,13 @@ export async function GET() {
         country: linkedinAccounts.country,
         status: linkedinAccounts.status,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
-        agentId: agents.id,
+        dailyInviteCap: linkedinAccounts.dailyInviteCap,
+        agentCount: count(agents.id),
       })
       .from(linkedinAccounts)
       .leftJoin(agents, eq(agents.linkedinAccountId, linkedinAccounts.id))
       .where(eq(linkedinAccounts.workspaceId, workspaceId))
+      .groupBy(linkedinAccounts.id)
       .orderBy(asc(linkedinAccounts.createdAt));
 
     return NextResponse.json({
@@ -61,7 +65,8 @@ export async function GET() {
         country: r.country,
         status: r.status,
         warmupStartedAt: r.warmupStartedAt,
-        inUse: r.agentId !== null,
+        dailyInviteCap: r.dailyInviteCap,
+        agentCount: r.agentCount,
       })),
     });
   } catch {

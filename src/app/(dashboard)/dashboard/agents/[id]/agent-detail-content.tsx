@@ -33,6 +33,7 @@ type Agent = {
   reviewMode: boolean;
   smartLeadFinder: boolean;
   dailyInviteCap: number;
+  accountAgentCount: number;
   timezone: string;
   workdayStart: number;
   workdayEnd: number;
@@ -323,7 +324,12 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                 <div className="flex justify-between gap-4">
                   <dt className="text-slate-500 dark:text-slate-400">Pace today</dt>
                   <dd className="font-medium tabular-nums">
-                    up to {agent.dailyInviteCap} invitations
+                    {/* The cap belongs to the LinkedIn account. When more than
+                        one agent sends from it they divide this number, so
+                        presenting it as this agent's own would overstate it. */}
+                    {agent.accountAgentCount > 1
+                      ? `${agent.dailyInviteCap} invitations, shared across ${agent.accountAgentCount} agents on this account`
+                      : `up to ${agent.dailyInviteCap} invitations`}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">

@@ -840,6 +840,11 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   // account, so an aged account that gets a new agent must keep its earned
   // pace, and only a freshly connected account starts the ramp over.
   warmupStartedAt: integer("warmup_started_at", { mode: "timestamp" }),
+  // The daily ceiling lives here rather than on the agent, because LinkedIn
+  // watches the profile. Several agents can drive one account and they share
+  // this one budget; a per-agent cap cannot see its siblings, so two agents at
+  // 25 each would send 50 a day from one profile and lose it.
+  dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
   status: text("status", {
     enum: ["pending", "connected", "checkpoint", "restricted", "disconnected"],
   })
@@ -925,7 +930,6 @@ export const agents = sqliteTable("agents", {
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),
-  dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
   timezone: text("timezone").notNull().default("Europe/Zurich"),
   // Minutes from midnight, so the envelope survives a timezone change.
   workdayStart: integer("workday_start").notNull().default(540),
@@ -934,6 +938,9 @@ export const agents = sqliteTable("agents", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
+// No unique index on linkedin_account_id: one account can drive several agents,
+// one per ICP. They divide that account's daily budget rather than each taking
+// a full one. Section 5c.
 
 // Wizard step 2 signals. The counters are denormalised so the Sources tab can
 // show which source actually earns replies without aggregating on every render.

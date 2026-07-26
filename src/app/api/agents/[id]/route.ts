@@ -50,7 +50,7 @@ export async function GET(
         skipConnected: agents.skipConnected,
         reviewMode: agents.reviewMode,
         smartLeadFinder: agents.smartLeadFinder,
-        dailyInviteCap: agents.dailyInviteCap,
+        dailyInviteCap: linkedinAccounts.dailyInviteCap,
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,
         workdayEnd: agents.workdayEnd,
@@ -62,6 +62,7 @@ export async function GET(
         accountHeadline: linkedinAccounts.headline,
         accountStatus: linkedinAccounts.status,
         accountCountry: linkedinAccounts.country,
+        accountId: linkedinAccounts.id,
       })
       .from(agents)
       .innerJoin(
@@ -75,8 +76,8 @@ export async function GET(
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    // Four independent reads, so they go together rather than in sequence.
-    const [sources, funnel, events, queued] = await Promise.all([
+    // Five independent reads, so they go together rather than in sequence.
+    const [sources, funnel, events, queued, siblings] = await Promise.all([
       db
         .select()
         .from(agentSources)
@@ -96,13 +97,24 @@ export async function GET(
         .select({ total: count() })
         .from(agentQueue)
         .where(and(eq(agentQueue.agentId, id), eq(agentQueue.state, "pending"))),
+      // How many agents send from the same LinkedIn account. They divide its
+      // daily budget, so the screen cannot present the cap as this agent's own.
+      db
+        .select({ total: count() })
+        .from(agents)
+        .where(
+          and(
+            eq(agents.linkedinAccountId, agent.accountId),
+            eq(agents.workspaceId, workspaceId)
+          )
+        ),
     ]);
 
     const steps: Record<string, number> = {};
     for (const row of funnel) steps[row.step] = row.total;
 
     return NextResponse.json({
-      agent,
+      agent: { ...agent, accountAgentCount: siblings[0]?.total ?? 1 },
       sources,
       steps,
       events,

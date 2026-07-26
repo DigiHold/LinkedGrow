@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
   PageShell,
@@ -28,6 +28,7 @@ type Agent = {
   pausedReason: string | null;
   icpSummary: string | null;
   dailyInviteCap: number;
+  accountId: string;
   warmupStartedAt: string | null;
   lastRunAt: string | null;
   accountName: string | null;
@@ -92,6 +93,18 @@ function FunnelBar({ funnel }: { funnel: Funnel }) {
 export function AgentsContent() {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // How many agents send from each LinkedIn account. The daily cap belongs to
+  // the account, so two agents on one account divide it rather than each
+  // getting their own, and the row has to say so.
+  const perAccount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of data?.agents ?? []) {
+      counts.set(a.accountId, (counts.get(a.accountId) ?? 0) + 1);
+    }
+    return counts;
+  }, [data]);
+  const sharedBy = (accountId: string) => perAccount.get(accountId) ?? 1;
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +187,7 @@ export function AgentsContent() {
 
         {data?.agents.map((agent) => {
           const status = STATUS[agent.status];
+          const siblings = sharedBy(agent.accountId);
           return (
             <Link
               key={agent.id}
@@ -215,7 +229,13 @@ export function AgentsContent() {
                   </div>
                   <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
                     {agent.accountName || "LinkedIn account"} ·{" "}
-                    {agent.accountCountry} · up to {agent.dailyInviteCap} invitations a day
+                    {agent.accountCountry} ·{" "}
+                    {/* The cap belongs to the LinkedIn account, so when two
+                        agents send from one it is a budget they divide, and
+                        saying "up to 25 each" would be a lie. */}
+                    {siblings > 1
+                      ? `${agent.dailyInviteCap} invitations a day shared with ${siblings - 1} other agent${siblings > 2 ? "s" : ""}`
+                      : `up to ${agent.dailyInviteCap} invitations a day`}
                   </p>
                   {agent.pausedReason && (
                     <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">

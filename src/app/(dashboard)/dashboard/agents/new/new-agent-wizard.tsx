@@ -97,6 +97,8 @@ interface LinkedInAccount {
   fullName: string | null;
   headline: string | null;
   status: string | null;
+  dailyInviteCap: number;
+  agentCount: number;
 }
 
 export function NewAgentWizard() {
@@ -406,7 +408,14 @@ export function NewAgentWizard() {
                       picked={linkedinAccountId === a.id}
                       onClick={() => setLinkedinAccountId(a.id)}
                       label={a.fullName || "LinkedIn account"}
-                      hint={a.headline || a.status || ""}
+                      // An account can send for several agents, and they share
+                      // its daily budget. Saying so here is the only place the
+                      // user can still change their mind cheaply.
+                      hint={
+                        a.agentCount > 0
+                          ? `Already sending for ${a.agentCount} agent${a.agentCount === 1 ? "" : "s"}, sharing ${a.dailyInviteCap} invitations a day`
+                          : a.headline || a.status || ""
+                      }
                     />
                   ))}
                 </div>
