@@ -1,0 +1,239 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { requireEnv } from "./config.ts";
+import type { AgentContext } from "./config.ts";
+import { db } from "./db.ts";
+import { log } from "./logger.ts";
+
+/**
+ * Every model call in the worker goes through here.
+ *
+ * Three things the single-tenant original did not need, all mandatory now:
+ *
+ * 1. **API only.** Plan section 8b settles that subscription mode cannot serve
+ *    a product. The CLI path is gone rather than disabled.
+ * 2. **Routing.** Section 8c: Haiku for classification, where volume is the
+ *    cost driver and quality barely moves, Sonnet for anything a human reads.
+ *    Built naively this bill is five times larger for no gain.
+ * 3. **Ceilings, checked before the call.** Section 8g: $1.00 a day and $12 a
+ *    month per agent. Scoring is the one cost line LinkedIn's limits do not
+ *    bound, so an agent pointed at fifteen broad sources could otherwise score
+ *    tens of thousands of profiles while contacting the same 500 people.
+ *
+ * The spend is metered before the response is used, so a call whose cost cannot
+ * be recorded is a call that does not happen.
+ */
+
+export const MODELS = {
+  /** Classification and scoring. Volume is the cost driver here. */
+  fast: "claude-haiku-4-5-20251001",
+  /** Anything a person will read: notes, DMs, comments. */
+  writer: "claude-sonnet-5",
+} as const;
+
+/** Standard pricing, dollars per million tokens. Sonnet's intro rate ended 2026-08-31. */
+const PRICE = {
+  [MODELS.fast]: { input: 1, output: 5 },
+  [MODELS.writer]: { input: 3, output: 15 },
+} as const;
+
+export const DAILY_CEILING_USD = 1.0;
+export const MONTHLY_CEILING_USD = 12.0;
+
+let client: Anthropic | null = null;
+
+function anthropic(): Anthropic {
+  if (!client) client = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
+  return client;
+}
+
+export class BudgetExceededError extends Error {
+  readonly window: "day" | "month";
+  readonly spent: number;
+
+  constructor(window: "day" | "month", spent: number) {
+    super(
+      window === "day"
+        ? `This agent has spent $${spent.toFixed(2)} on AI today, which is its daily ceiling.`
+        : `This agent has spent $${spent.toFixed(2)} on AI this month, which is its monthly ceiling.`
+    );
+    this.name = "BudgetExceededError";
+    this.window = window;
+    this.spent = spent;
+  }
+}
+
+async function spentSince(agentId: string, sinceEpochSeconds: number): Promise<number> {
+  const { rows } = await db().execute({
+    sql: `SELECT COALESCE(SUM(cost_usd), 0) AS total
+          FROM agent_ai_usage
+          WHERE agent_id = ? AND created_at >= ?`,
+    args: [agentId, sinceEpochSeconds],
+  });
+  return Number(rows[0]?.total ?? 0);
+}
+
+/**
+ * Both windows, because they do different jobs: the daily figure bounds a
+ * runaway to one day, the monthly one protects the margin.
+ */
+export async function assertBudget(ctx: AgentContext): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  const [day, month] = await Promise.all([
+    spentSince(ctx.agentId, now - 86_400),
+    spentSince(ctx.agentId, now - 30 * 86_400),
+  ]);
+  if (day >= DAILY_CEILING_USD) throw new BudgetExceededError("day", day);
+  if (month >= MONTHLY_CEILING_USD) throw new BudgetExceededError("month", month);
+}
+
+function costOf(model: string, inputTokens: number, outputTokens: number): number {
+  const price = PRICE[model as keyof typeof PRICE] ?? PRICE[MODELS.writer];
+  return (inputTokens * price.input + outputTokens * price.output) / 1_000_000;
+}
+
+async function meter(
+  ctx: AgentContext,
+  model: string,
+  purpose: string,
+  inputTokens: number,
+  outputTokens: number
+): Promise<void> {
+  await db().execute({
+    sql: `INSERT INTO agent_ai_usage
+            (id, workspace_id, agent_id, model, purpose, input_tokens, output_tokens,
+             cost_usd, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      crypto.randomUUID(), ctx.workspaceId, ctx.agentId, model, purpose,
+      inputTokens, outputTokens, costOf(model, inputTokens, outputTokens),
+      Math.floor(Date.now() / 1000),
+    ],
+  });
+}
+
+export interface GenerateOptions {
+  maxTokens?: number;
+  /** Named so the metering log can say which line of the bill this was. */
+  purpose: string;
+  /** Cached across calls: the ICP, the rubric, the product description. */
+  systemPrompt?: string;
+  model?: string;
+}
+
+/**
+ * One model call, metered and capped.
+ *
+ * The system prompt is sent with a cache breakpoint because it is identical
+ * across thousands of scoring calls, and cached reads bill at roughly a tenth
+ * of input. Section 8c: without caching the same workload costs several times
+ * more, and that is the difference between the agent AI being affordable to
+ * include and not.
+ */
+export async function generate(
+  ctx: AgentContext,
+  prompt: string,
+  opts: GenerateOptions
+): Promise<string> {
+  await assertBudget(ctx);
+  const model = opts.model ?? MODELS.writer;
+
+  const message = await anthropic().messages.create({
+    model,
+    max_tokens: opts.maxTokens ?? 1024,
+    ...(opts.systemPrompt
+      ? {
+          system: [
+            {
+              type: "text" as const,
+              text: opts.systemPrompt,
+              cache_control: { type: "ephemeral" as const },
+            },
+          ],
+        }
+      : {}),
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  await meter(
+    ctx,
+    model,
+    opts.purpose,
+    message.usage.input_tokens,
+    message.usage.output_tokens
+  );
+
+  const text = message.content
+    .map((block) => (block.type === "text" ? block.text : ""))
+    .join("")
+    .trim();
+  if (!text) throw new Error("The model returned nothing");
+  return text;
+}
+
+/**
+ * Cheap classification: a headline and a name, in, a keep-or-drop decision out.
+ *
+ * Section 8c rule 1: the reactions list gives name and headline for free, so
+ * rejecting 70 to 80% of candidates here means only the survivors cost a
+ * profile fetch and a full scoring call. This one function is roughly three
+ * quarters of the scoring saving.
+ */
+export async function prefilter(
+  ctx: AgentContext,
+  icp: string,
+  candidates: { name: string; headline: string }[]
+): Promise<boolean[]> {
+  if (!candidates.length) return [];
+  const list = candidates
+    .map((c, i) => `${i + 1}. ${c.name} — ${c.headline}`)
+    .join("\n");
+
+  const answer = await generate(
+    ctx,
+    `Ideal customer: ${icp}\n\nPeople:\n${list}\n\nFor each number, answer keep or drop. One word per line, in order, nothing else.`,
+    {
+      model: MODELS.fast,
+      purpose: "prefilter",
+      maxTokens: Math.min(1000, candidates.length * 5 + 20),
+      systemPrompt:
+        "You screen prospects on a single line of text. Keep anyone who could plausibly be the ideal customer. Drop only clear mismatches. Answer with one word per line: keep or drop.",
+    }
+  );
+
+  const verdicts = answer
+    .split("\n")
+    .map((l) => l.trim().toLowerCase())
+    .filter(Boolean);
+  return candidates.map((_, i) => verdicts[i]?.startsWith("keep") ?? false);
+}
+
+/** Full scoring, still on the cheap model. Sonnet here is the biggest cost mistake available. */
+export async function scoreLead(
+  ctx: AgentContext,
+  icp: string,
+  profile: { name: string; headline: string; company?: string; about?: string }
+): Promise<{ score: number; reason: string }> {
+  const answer = await generate(
+    ctx,
+    `Ideal customer: ${icp}\n\nProspect:\nName: ${profile.name}\nHeadline: ${profile.headline}\nCompany: ${profile.company ?? "unknown"}\nAbout: ${(profile.about ?? "").slice(0, 600)}\n\nReply with a score from 0 to 100 and a one-sentence reason, formatted exactly as: SCORE|reason`,
+    {
+      model: MODELS.fast,
+      purpose: "score",
+      maxTokens: 150,
+      systemPrompt:
+        "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one. Answer only as SCORE|reason.",
+    }
+  );
+
+  const [rawScore, ...rest] = answer.split("|");
+  const score = Math.max(0, Math.min(100, parseInt(rawScore ?? "", 10) || 0));
+  const reason = rest.join("|").trim() || "No reason given";
+  return { score, reason };
+}
+
+/** Logged rather than thrown, because a metering failure must not stop the run twice. */
+export async function reportBudget(ctx: AgentContext, error: unknown): Promise<void> {
+  if (error instanceof BudgetExceededError) {
+    log(`agent ${ctx.agentId}: ${error.message}`);
+  }
+}
