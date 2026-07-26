@@ -132,11 +132,11 @@ export default function AdvancedAnalyticsPage() {
   if (isTeamMember) {
     return (
       <PageShell>
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+        <Card >
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                <ShieldX className="w-10 h-10 text-slate-400 dark:text-slate-500" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access restricted</h3>
               <p className="text-slate-500 dark:text-slate-400">

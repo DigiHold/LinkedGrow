@@ -345,7 +345,7 @@ export default function AIAPISettingsPage() {
   if (isTeamMember) {
     return (
       <PageShell>
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+        <Card >
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">

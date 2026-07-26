@@ -98,10 +98,10 @@ export default function SupportPage() {
   if (needsUpgrade) {
     return (
       <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+        <Card >
           <CardContent className="py-12 px-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-slate-400 dark:text-slate-500" />
             </div>
             <h1 className="text-2xl font-bold mb-2">Direct support is a paid feature</h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
