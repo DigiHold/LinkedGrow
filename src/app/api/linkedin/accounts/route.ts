@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { linkedinAccounts, agents } from "@/lib/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
+import { encryptApiKey, EncryptionNotConfiguredError } from "@/lib/encryption";
+import { rateLimit, getClientIP } from "@/lib/rate-limit";
+import { agentQuotaFor } from "@/lib/plans";
+import { effectivePlan } from "@/lib/plans";
 
 /**
  * The connected LinkedIn accounts in this workspace, for the agent wizard's
@@ -63,6 +67,136 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       { error: "Failed to load LinkedIn accounts" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Connect a LinkedIn account with its own credentials.
+ *
+ * This is the single place credentials are entered. v2 drops the LinkedIn API
+ * entirely, posting included, so the same connection serves the agents and
+ * the content side; there is no second form in settings.
+ *
+ * The password is stored encrypted because it is the source of truth for
+ * automatic re-login, so the user is never asked again. That makes this route
+ * security-critical: nothing here is logged, and no credential is ever read
+ * back out by the API.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Credential submission is expensive and abusable, so it is capped per IP
+    // as well as being behind a session.
+    const limited = rateLimit(`li-connect:${getClientIP(request)}`, {
+      maxRequests: 10,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!limited.success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Try again later." },
+        { status: 429 }
+      );
+    }
+
+    const data = await loadSessionUser(session.user.id);
+    if (!data) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const workspaceId = data.teamOwnerId ?? data.user.id;
+
+    const body = await request.json();
+    const email =
+      typeof body?.email === "string" ? body.email.toLowerCase().trim() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    const country =
+      typeof body?.country === "string" ? body.country.trim().toUpperCase() : "";
+    const totpSecret =
+      typeof body?.totpSecret === "string" ? body.totpSecret.trim() : "";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
+      return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
+    }
+    if (!password || password.length > 256) {
+      return NextResponse.json({ error: "A password is required" }, { status: 400 });
+    }
+    // ISO 3166-1 alpha-2. Country is the level ISP proxies are sold at, so
+    // there is no city anywhere in the product.
+    if (!/^[A-Z]{2}$/.test(country)) {
+      return NextResponse.json({ error: "Pick a country" }, { status: 400 });
+    }
+
+    // One account per agent slot: connecting more than the plan allows would
+    // leave accounts stranded with no agent to run them.
+    const plan = effectivePlan({ plan: data.user.plan, isAdmin: data.user.isAdmin });
+    const quota = agentQuotaFor(plan);
+    if (quota === 0) {
+      return NextResponse.json(
+        { error: "Connecting an account needs a paid plan", feature: "agents" },
+        { status: 403 }
+      );
+    }
+
+    const [existingSame] = await db
+      .select({ id: linkedinAccounts.id })
+      .from(linkedinAccounts)
+      .where(
+        and(
+          eq(linkedinAccounts.workspaceId, workspaceId),
+          eq(linkedinAccounts.email, email)
+        )
+      )
+      .limit(1);
+    if (existingSame) {
+      return NextResponse.json(
+        { error: "That account is already connected" },
+        { status: 409 }
+      );
+    }
+
+    const current = await db
+      .select({ id: linkedinAccounts.id })
+      .from(linkedinAccounts)
+      .where(eq(linkedinAccounts.workspaceId, workspaceId));
+    if (current.length >= quota) {
+      return NextResponse.json(
+        {
+          error: `Your plan covers ${quota} account${quota === 1 ? "" : "s"}`,
+          quota: { used: current.length, limit: quota },
+        },
+        { status: 403 }
+      );
+    }
+
+    const now = new Date();
+    const id = crypto.randomUUID();
+    await db.insert(linkedinAccounts).values({
+      id,
+      workspaceId,
+      createdBy: session.user.id,
+      email,
+      passwordEncrypted: encryptApiKey(password)!,
+      totpSecretEncrypted: totpSecret ? encryptApiKey(totpSecret) : null,
+      country,
+      // Nothing is verified until the session layer signs in for the first
+      // time and handles LinkedIn's approval prompt.
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return NextResponse.json({ id, status: "pending" }, { status: 201 });
+  } catch (error) {
+    if (error instanceof EncryptionNotConfiguredError) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(
+      { error: "Failed to connect the account" },
       { status: 500 }
     );
   }

@@ -234,12 +234,13 @@ export function NewAgentWizard() {
 
       {step === 2 && (
         <Panel className="p-6">
-          <PanelTitle>What should it watch for?</PanelTitle>
-          <div className="mt-5 space-y-5">
-            <Field
-              label={`Signals (${keywords.length}/${MAX_SIGNALS})`}
+          <PanelTitle>Who should it go after?</PanelTitle>
+          <div className="mt-5 space-y-8">
+            <Group
+              title={`Signals ${keywords.length}/${MAX_SIGNALS}`}
               hint={`Topics your buyers talk about. At least ${MIN_SIGNALS}, so the agent has enough to work with.`}
             >
+            <div>
               <div className="flex gap-2">
                 <Input
                   value={keywordDraft}
@@ -282,8 +283,10 @@ export function NewAgentWizard() {
                   ))}
                 </div>
               )}
-            </Field>
+            </div>
+            </Group>
 
+            <Group title="Filters" hint="Leave any of these empty to allow everything.">
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Job titles" hint="Comma separated. Leave empty for any.">
                 <Input
@@ -310,25 +313,22 @@ export function NewAgentWizard() {
             </Field>
 
             <Field label="Match level" hint="How strictly a lead has to fit before the agent takes it.">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {MATCH_LEVELS.map((m) => (
-                  <SelectCard
-                    key={m.id}
-                    picked={matchLevel === m.id}
-                    onClick={() => setMatchLevel(m.id)}
-                    label={m.label}
-                    hint={m.hint}
-                  />
-                ))}
-              </div>
+              <Segmented
+                options={MATCH_LEVELS}
+                value={matchLevel}
+                onChange={setMatchLevel}
+              />
             </Field>
+            </Group>
 
-            <Toggle
-              checked={smartLeadFinder}
-              onChange={setSmartLeadFinder}
-              label="Widen the search when signals run dry"
-              hint="An agent with nothing left to do looks broken. This keeps it fed."
-            />
+            <Group title="Volume">
+              <Toggle
+                checked={smartLeadFinder}
+                onChange={setSmartLeadFinder}
+                label="Widen the search when signals run dry"
+                hint="An agent with nothing left to do looks broken. This keeps it fed."
+              />
+            </Group>
           </div>
         </Panel>
       )}
@@ -361,7 +361,8 @@ export function NewAgentWizard() {
             Nothing goes out without you. Everything below is prepared, and at
             the end you decide whether to start it or leave it paused.
           </p>
-          <div className="mt-5 space-y-5">
+          <div className="mt-5 space-y-8">
+            <Group title="Who sends">
             <Field
               label="Sending account"
               hint="This cannot change later: switching mid-sequence breaks the session and the IP it is pinned to."
@@ -394,6 +395,9 @@ export function NewAgentWizard() {
               )}
             </Field>
 
+            </Group>
+
+            <Group title="What the messages say">
             <Field
               label="What you sell"
               hint="This is what the messages are built from. Be specific about who it helps."
@@ -422,18 +426,11 @@ export function NewAgentWizard() {
             </Field>
 
             <Field label="Tone" hint="How the messages should sound.">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {TONES.map((t) => (
-                  <SelectCard
-                    key={t.id}
-                    picked={tone === t.id}
-                    onClick={() => setTone(t.id)}
-                    label={t.label}
-                    hint={t.hint}
-                  />
-                ))}
-              </div>
+              <Segmented options={TONES} value={tone} onChange={setTone} />
             </Field>
+            </Group>
+
+            <Group title="Rules">
 
             <Toggle
               checked={skipConnected}
@@ -447,6 +444,7 @@ export function NewAgentWizard() {
               label="Review each contact before anything is sent"
               hint="Slower, but nothing leaves without you seeing it."
             />
+            </Group>
           </div>
         </Panel>
       )}
@@ -532,6 +530,70 @@ export function NewAgentWizard() {
         )}
       </div>
     </PageShell>
+  );
+}
+
+/** A titled block inside a step, separated by a rule from the one above. */
+function Group({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 border-t border-border pt-6 first:border-t-0 first:pt-0">
+      <div>
+        <h3 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500">
+          {title}
+        </h3>
+        {hint && (
+          <p className="mt-1 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+            {hint}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Three mutually exclusive choices do not need three cards. */
+function Segmented({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly { id: string; label: string; hint: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-white/5">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(o.id)}
+            aria-pressed={value === o.id}
+            className={cn(
+              "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+              value === o.id
+                ? "bg-white text-slate-900 shadow-xs dark:bg-white/10 dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
+        {options.find((o) => o.id === value)?.hint}
+      </p>
+    </div>
   );
 }
 
