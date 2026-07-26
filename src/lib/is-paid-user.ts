@@ -3,6 +3,7 @@
 // paying users from trial / free users.
 //
 // Paid means ANY of:
+//   0. Admin (granted the top plan by the session; see src/lib/auth.ts)
 //   1. Active Stripe subscription
 //   2. Lifetime deal
 //   3. Plan is pro/business AND not currently in an active trial
@@ -16,6 +17,7 @@
 
 export interface PaidUserShape {
   plan?: string | null;
+  isAdmin?: boolean | null;
   stripeSubscriptionId?: string | null;
   isLifetimeDeal?: boolean | null;
   trialEndedAt?: number | Date | null;
@@ -23,6 +25,9 @@ export interface PaidUserShape {
 
 export function isPaidUser(user: PaidUserShape | null | undefined): boolean {
   if (!user) return false;
+  // Admins run on the top plan regardless of billing, so every path that asks
+  // "is this a paying customer" has to agree with the session.
+  if (user.isAdmin) return true;
   if (user.stripeSubscriptionId) return true;
   if (user.isLifetimeDeal) return true;
   if (!user.plan || user.plan === "free") return false;

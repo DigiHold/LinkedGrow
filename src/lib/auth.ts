@@ -160,6 +160,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (data.isTeamMember && data.owner?.plan) {
             token.plan = data.owner.plan;
           }
+          // An admin gets the top plan, whatever the billing row says. They
+          // have to be able to open every screen to support customers on it,
+          // and the paywall must never lock them out of their own product.
+          // The database keeps what they actually pay for; this only changes
+          // what the session grants.
+          if (dbUser.isAdmin) {
+            token.plan = "business";
+          }
         }
       }
 
