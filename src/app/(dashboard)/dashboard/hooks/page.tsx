@@ -294,35 +294,26 @@ export default function HooksPage() {
         {/* Hooks Grid */}
         {hooks.length > 0 && (
           <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Generated Hooks</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleGenerate}
-                disabled={isGenerating}
-              >
-                <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
-                Regenerate
-              </Button>
-            </div>
+            <h2 className="text-[17px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Six openings for the same post
+            </h2>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {hooks.map((hook, index) => (
                 <Card
                   key={index}
-                  className="group hover:shadow-lg transition-all hover:-translate-y-1"
+                  className="flex flex-col transition-colors hover:border-slate-300 dark:hover:border-white/20"
                 >
-                  <CardContent className="p-4 sm:p-5">
+                  <CardContent className="flex flex-1 flex-col p-4 sm:p-5">
                     <div className="flex items-start justify-between mb-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
-                        Hook #{index + 1}
+                      <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                        {index + 1}
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400">{hook.firstLine.length} chars</span>
                     </div>
 
                     {/* Hook Preview - no empty line between */}
-                    <div className="mb-4">
+                    <div className="mb-4 flex-1">
                       <p className="font-semibold text-sm sm:text-base leading-snug">
                         {hook.firstLine}
                       </p>
@@ -357,7 +348,7 @@ export default function HooksPage() {
                         onClick={() => handleUseInEditor(hook)}
                         className="flex-1"
                       >
-                        Use in Editor
+                        Open in the editor
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </div>
@@ -370,7 +361,7 @@ export default function HooksPage() {
             <div className="text-center">
               <Button variant="outline" onClick={handleGenerate} disabled={isGenerating}>
                 <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
-                Generate More Hooks
+                Six more
               </Button>
             </div>
           </>

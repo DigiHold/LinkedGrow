@@ -345,24 +345,14 @@ function IdeasContent() {
               <Card
                 key={index}
                 onClick={() => handleIdeaClick(idea)}
-                className="group hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
+                className="group flex flex-col transition-colors hover:border-slate-300 cursor-pointer dark:hover:border-white/20"
               >
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start justify-between mb-3">
-                    <span
-                      className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-medium",
-                        idea.engagement === "Very High"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : idea.engagement === "High"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                      )}
-                    >
-                      <TrendingUp className="w-3 h-3 inline mr-1" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                      <TrendingUp className="h-3 w-3" />
                       {idea.engagement}
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">#{index + 1}</span>
                   </div>
 
                   <p className="font-medium text-sm sm:text-base leading-snug mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors whitespace-pre-line">
@@ -379,16 +369,16 @@ function IdeasContent() {
                   </div>
 
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="w-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="mt-4 w-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleIdeaClick(idea);
                     }}
                   >
-                    Create Post
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    Write this one
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
@@ -399,7 +389,7 @@ function IdeasContent() {
           <div className="text-center">
             <Button variant="outline" onClick={handleGenerate} disabled={isGenerating}>
               <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
-              Generate More Ideas
+              Ten more ideas
             </Button>
           </div>
         </>
