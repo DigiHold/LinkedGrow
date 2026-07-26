@@ -273,7 +273,7 @@ export function Sidebar() {
         className={cn(
           // h-dvh rather than h-screen: on iOS Safari 100vh includes the area
           // behind the chrome, which pushes the user button out of view.
-          "fixed left-0 top-0 z-40 flex h-dvh w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:sticky lg:w-64 lg:translate-x-0 dark:border-white/10 dark:bg-slate-950",
+          "fixed left-0 top-0 z-40 flex h-dvh w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:sticky lg:w-64 lg:translate-x-0 dark:border-white/10 dark:bg-card",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -344,7 +344,7 @@ export function Sidebar() {
           className="relative border-t border-slate-200 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-white/10"
         >
           {isUserMenuOpen && (
-            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-slate-900">
+            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-card">
               <div className="flex items-center gap-3 border-b border-slate-200 px-3 py-3 dark:border-white/10">
                 {userImage ? (
                   <Image

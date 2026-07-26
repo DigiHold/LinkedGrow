@@ -72,7 +72,7 @@ export function Topbar() {
   }));
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl lg:px-6 dark:border-white/10 dark:bg-slate-950/80">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl lg:px-6 dark:border-white/10 dark:bg-card/80">
       <button
         onClick={toggle}
         aria-label="Toggle menu"

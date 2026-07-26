@@ -23,7 +23,10 @@ export default async function DashboardLayout({
         {/* lg-v2 scopes the Host Grotesk headings to the v2 dashboard without
             touching the marketing pages, which still run on Sora.
             overflow-x-clip is the standing rule: nothing ever scrolls sideways. */}
-        <div className="lg-v2 min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-900">
+        {/* Light: slate-50 page under white cards. Dark: the background token
+            sits at 6% lightness and --color-card at 8%, so cards read as
+            raised. bg-slate-900 was 11% and inverted that relationship. */}
+        <div className="lg-v2 min-h-screen overflow-x-clip bg-slate-50 dark:bg-background">
           <div className="flex">
             <Sidebar />
 

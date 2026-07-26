@@ -115,7 +115,7 @@ export function Panel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950",
+        "rounded-2xl border border-border bg-card text-card-foreground",
         padded && "p-5 sm:p-6",
         className
       )}
@@ -194,7 +194,7 @@ export function StatCard({
   tone?: "neutral" | "good";
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
         {label}
       </p>
