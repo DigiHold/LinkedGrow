@@ -11,7 +11,6 @@ import {
   Save,
   MoreHorizontal,
   Wand2,
-  PenLine,
   Copy,
   Check,
   X,
@@ -653,13 +652,10 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-                <PenLine className="w-5 h-5 text-white" />
-              </div>
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               Post Editor
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
               Write and refine your LinkedIn post
             </p>
           </div>

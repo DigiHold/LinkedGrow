@@ -33,7 +33,7 @@ import {
   CrownIcon,
   KeyIcon,
   CodeIcon,
-  HandshakeIcon,
+  AffiliateIcon,
   LifeBuoyIcon,
   SettingsIcon,
   CardIcon,
@@ -406,7 +406,7 @@ export function Sidebar() {
                 onClick={() => goToMenuItem("/dashboard/affiliate")}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
               >
-                <HandshakeIcon className="h-4 w-4" />
+                <AffiliateIcon className="h-4 w-4" />
                 Affiliate
               </button>
 

@@ -14,7 +14,6 @@ import {
   Zap,
   Target,
   Loader2,
-  Settings,
   Key,
   CheckCircle2,
   Clock,
@@ -211,8 +210,8 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {userName}!</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">Welcome back, {userName}!</h1>
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
             {hasApiKey
               ? "Ready to create some viral content today?"
               : "Set up your AI API key to get started"}
@@ -278,7 +277,7 @@ export default function DashboardPage() {
                     <action.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${action.color}`} />
                   </div>
                   <h3 className="font-semibold">{action.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
                     {action.description}
                   </p>
                 </CardContent>
@@ -409,7 +408,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold">Connect Your AI Provider</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
                     Add your OpenAI, Claude, or Gemini API key to start generating posts.
                   </p>
                 </div>
@@ -432,7 +431,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-green-800 dark:text-green-200">AI Provider Connected</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
                   You're all set! Start creating content with AI-powered generation.
                 </p>
               </div>

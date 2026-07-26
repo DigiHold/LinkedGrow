@@ -88,13 +88,13 @@ export default function NewABTestPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to A/B Tests
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <GitBranch className="w-5 h-5 text-white" />
             </div>
             Create A/B Test
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
             Test two versions of your post to see which performs better
           </p>
         </div>

@@ -280,7 +280,7 @@ setScError("Failed to connect");
             <Search className="w-5 sm:w-6 h-5 sm:h-6 text-cyan-600 shrink-0" />
             SEO Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
             Monitor indexing, page health, and search engine visibility
           </p>
         </div>

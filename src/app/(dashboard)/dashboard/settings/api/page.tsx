@@ -8,8 +8,6 @@ import {
   Trash2,
   Copy,
   Check,
-  Eye,
-  EyeOff,
   Shield,
   Clock,
   AlertTriangle,
@@ -192,9 +190,6 @@ showError("Failed to delete API key");
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                <Key className="w-5 h-5 text-white" />
-              </div>
               API Keys
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">

@@ -8,7 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LifeBuoy, Plus, Loader2, MessageCircle, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  MessageCircle,
+  Lock,
+  ArrowRight,
+  AlertCircle,
+} from "lucide-react";
 
 import { statusColor, STATUS_LABELS as STATUS_LABEL, type TicketStatus } from "@/lib/support-status";
 
@@ -116,13 +123,10 @@ export default function SupportPage() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <LifeBuoy className="w-5 h-5 text-white" />
-            </div>
+          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             Support
           </h1>
-          <p className="text-muted-foreground mt-1">Open a ticket - we&apos;ll reply right here. You&apos;ll get an email notification when we answer.</p>
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">Open a ticket - we&apos;ll reply right here. You&apos;ll get an email notification when we answer.</p>
         </div>
         {!showCreate && (
           <Button onClick={() => setShowCreate(true)}>

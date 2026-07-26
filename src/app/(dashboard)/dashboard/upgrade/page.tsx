@@ -6,13 +6,11 @@ import {
   Crown,
   Check,
   Sparkles,
-  Image as ImageIcon,
   Layers,
   Calendar,
   Clock,
   BarChart3,
   Lightbulb,
-  Users,
   Zap,
   GitBranch,
   Code,
@@ -26,6 +24,7 @@ import {
   X,
   MessageSquare,
   Bell,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

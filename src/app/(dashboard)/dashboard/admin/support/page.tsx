@@ -5,7 +5,12 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LifeBuoy, Loader2, Search, MessageCircle, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  MessageCircle,
+  RefreshCw,
+} from "lucide-react";
 
 import { statusColor, type TicketStatus } from "@/lib/support-status";
 
@@ -96,13 +101,10 @@ export default function AdminSupportPage() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-              <LifeBuoy className="w-5 h-5 text-white" />
-            </div>
+          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             Support Tickets
           </h1>
-          <p className="text-muted-foreground mt-1">All customer support tickets, search and manage them here.</p>
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">All customer support tickets, search and manage them here.</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchTickets} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh

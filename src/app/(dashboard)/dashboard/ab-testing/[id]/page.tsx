@@ -11,12 +11,6 @@ import {
   Pause,
   CheckCircle,
   Trophy,
-  ExternalLink,
-  BarChart3,
-  Eye,
-  Heart,
-  MessageSquare,
-  Share2,
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -210,7 +204,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
                 <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                   <GitBranch className="w-5 h-5 text-white" />
                 </div>

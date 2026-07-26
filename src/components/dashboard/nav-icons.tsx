@@ -194,13 +194,18 @@ export function CodeIcon({ className }: IconProps) {
   );
 }
 
-export function HandshakeIcon({ className }: IconProps) {
+/**
+ * Affiliate. A handshake at 18px turns to mush, so this is a share graph
+ * instead: one node paying forward into two others. It reads at nav size,
+ * which the handshake did not.
+ */
+export function AffiliateIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>
-      <path d="M12 8.5 9.8 6.7a2 2 0 0 0-2.6.1L3.5 10" />
-      <path d="m12 8.5 2.2-1.8a2 2 0 0 1 2.6.1L20.5 10" />
-      <path d="M20.5 10v4.5l-3.5 3-3-2.6" />
-      <path d="M3.5 10v4.5l3 2.6 2.4-2" />
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="17.5" cy="6.5" r="2.6" />
+      <circle cx="17.5" cy="17.5" r="2.6" />
+      <path d="M8.3 10.8 15.2 7.6M8.3 13.2l6.9 3.2" />
     </svg>
   );
 }

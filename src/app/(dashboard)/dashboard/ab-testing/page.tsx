@@ -16,7 +16,6 @@ import {
   Loader2,
   BarChart3,
   AlertCircle,
-  X,
   ShieldX,
   HelpCircle,
 } from "lucide-react";
@@ -137,13 +136,10 @@ export default function ABTestingPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                <GitBranch className="w-5 h-5 text-white" />
-              </div>
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               A/B Testing
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
               Test different versions of your posts to see what works best
             </p>
           </div>

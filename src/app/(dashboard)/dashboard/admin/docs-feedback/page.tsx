@@ -107,7 +107,7 @@ export default function DocsFeedbackPage() {
           <BookOpen className="w-6 h-6" />
           Docs Feedback
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
           See which documentation articles are helpful and which need improvement.
         </p>
       </div>

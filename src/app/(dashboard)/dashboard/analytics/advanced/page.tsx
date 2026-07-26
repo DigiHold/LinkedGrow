@@ -151,13 +151,13 @@ export default function AdvancedAnalyticsPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Analytics
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
               Advanced Analytics
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
               Deep insights into your LinkedIn performance
             </p>
           </div>

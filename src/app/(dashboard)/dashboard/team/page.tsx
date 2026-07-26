@@ -77,13 +77,10 @@ export default function TeamPage() {
       <FeatureGate feature="teamCollaboration">
         <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               Team
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
               You are part of this team. Team management is handled by your team admin or owner.
             </p>
           </div>
@@ -354,13 +351,10 @@ export default function TeamPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
+            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               Teams
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
               Collaborate with your teams on LinkedIn content
             </p>
           </div>
