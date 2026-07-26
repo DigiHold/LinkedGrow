@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VideoModal } from "@/components/dashboard/video-modal";
 import {
+  PageShell,
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/dashboard/ui/page";
+import {
   FileText,
   Search,
   Eye,
@@ -30,6 +36,25 @@ import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
 import Link from "next/link";
 import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
+
+// The header actions are identical on the empty and populated branches, so
+// they live in one place rather than being copied into both returns.
+function PostsHeaderActions() {
+  return (
+    <>
+      <VideoModal videoId="8jGzpoWUSC4" />
+      <Link
+        href="/docs/scheduling/scheduling-posts"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white"
+      >
+        <HelpCircle className="h-3.5 w-3.5" />
+        Docs
+      </Link>
+    </>
+  );
+}
 
 type PostStatus = "all" | "draft" | "scheduled" | "published";
 
@@ -300,86 +325,61 @@ export default function PostsPage() {
   // Empty state - no posts at all
   if (posts.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-              My Posts
-            </h1>
-            <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-              Manage all your LinkedIn content in one place
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <VideoModal videoId="8jGzpoWUSC4" />
-            <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Docs
-            </Link>
-          </div>
-        </div>
+      <PageShell className="space-y-6">
+        <PageHeader
+          title="My posts"
+          description="Every draft, scheduled post and published post in one place."
+          actions={<PostsHeaderActions />}
+        />
 
-        {/* Empty State */}
-        <Card>
-          <CardContent className="py-16 px-8">
-            <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                <FileText className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No posts yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                Create your first LinkedIn post using AI-powered content generation or start from scratch.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Panel>
+          <EmptyState
+            icon={<FileText className="h-5 w-5" />}
+            title="No posts yet"
+            description="Generate a first draft from an idea, or open the editor and write it yourself."
+            action={
+              <div className="flex flex-col justify-center gap-3 sm:flex-row">
                 <Link href="/dashboard/ideas">
-                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
-                    <Sparkles className="w-4 h-4 mr-2" />
+                  <Button className="w-full sm:w-auto">
+                    <Sparkles className="mr-2 h-4 w-4" />
                     Generate with AI
                   </Button>
                 </Link>
                 <Link href="/dashboard/editor">
                   <Button variant="outline" className="w-full sm:w-auto">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Manually
+                    <Plus className="mr-2 h-4 w-4" />
+                    Write it myself
                   </Button>
                 </Link>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            }
+          />
+        </Panel>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-            {isTeamView ? "Team Posts" : "My Posts"}
-          </h1>
-          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-            {isTeamView
-              ? "View and manage posts from all team members"
-              : "Manage all your LinkedIn content in one place"}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <VideoModal videoId="8jGzpoWUSC4" />
-          <Link href="/docs/scheduling/scheduling-posts" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
-            <HelpCircle className="w-3.5 h-3.5" />
-            Docs
-          </Link>
-          <Link href="/dashboard/editor">
-            <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              New Post
-            </Button>
-          </Link>
-        </div>
-      </div>
+    <PageShell className="space-y-6">
+      <PageHeader
+        title={isTeamView ? "Team posts" : "My posts"}
+        description={
+          isTeamView
+            ? "Every post from all team members, in one place."
+            : "Every draft, scheduled post and published post in one place."
+        }
+        actions={
+          <>
+            <PostsHeaderActions />
+            <Link href="/dashboard/editor">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New post
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Filters stay reachable while a long list scrolls, which is the whole
           point of having them. */}
@@ -978,6 +978,6 @@ export default function PostsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

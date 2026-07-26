@@ -277,8 +277,24 @@ export function Sidebar() {
         )}
       >
         <div className="flex h-16 items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center">
-            <Logo />
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-linear-to-br from-cyan-500 to-blue-600 shadow-sm shadow-cyan-500/25">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4 text-white"
+                aria-hidden="true"
+              >
+                <path
+                  d="M5 19V8m0 11h14M5 19l5.5-6 3.5 3.5L19 9"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <Logo size="md" />
           </Link>
           <button
             onClick={closeMobile}

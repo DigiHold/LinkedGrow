@@ -108,11 +108,44 @@ const timezones = [
   { value: "Africa/Lagos", label: "Lagos (WAT, UTC+1)", region: "Africa" },
 ];
 
+const SETTINGS_TABS = [
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "publishing", label: "Publishing" },
+  { id: "account", label: "Account" },
+  { id: "timezone", label: "Timezone" },
+  { id: "security", label: "Security" },
+  { id: "appearance", label: "Appearance" },
+  { id: "voice", label: "Voice" },
+  { id: "business", label: "Business" },
+] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+  return SETTINGS_TABS.some((t) => t.id === value);
+}
+
 function SettingsContent() {
   const { theme, setTheme } = useTheme();
   const { data: session, update: updateSession } = useSession();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
+
+  // The tab lives in the URL so "your voice settings are under Settings >
+  // Voice" can be a link, and so a reload keeps you where you were.
+  const tabParam = searchParams.get("tab");
+  const [tab, setTab] = useState<SettingsTab>(
+    isSettingsTab(tabParam) ? tabParam : "linkedin"
+  );
+
+  const selectTab = (next: SettingsTab) => {
+    setTab(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", next);
+    // replaceState rather than router.replace: this is a view toggle, not a
+    // navigation, and it must not re-run the page's data fetches.
+    window.history.replaceState(null, "", url);
+  };
 
   // Check if user is a team member (not owner)
   const isTeamMember = session?.user?.isTeamMember === true;
@@ -330,8 +363,11 @@ function SettingsContent() {
     };
 
     fetchLinkedInSettings().then(() => {
-      // Check for showSelection URL parameter (non-popup mode)
-      if (searchParams.get("showSelection") === "true") {
+      // Read straight off the location rather than the hook: switching tabs
+      // rewrites the query string, and depending on the hook would refetch
+      // LinkedIn settings on every tab click.
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("showSelection") === "true") {
         setShowSelectionModal(true);
         // Clean up URL
         window.history.replaceState({}, "", "/dashboard/settings?linkedin=connected");
@@ -364,7 +400,8 @@ function SettingsContent() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [searchParams]);
+    // Mount-time bootstrap: it reads the query string once and then listens.
+  }, []);
 
   // Load user data
   useEffect(() => {
@@ -817,29 +854,30 @@ function SettingsContent() {
         </Link>
       </div>
 
-      {/* Settings was one long scroll with no way to find anything. These jump
-          to the section instead, and stick to the top on the way down. */}
+      {/* Settings used to be a 4,000px scroll with a jump list on top. One
+          section at a time means the save button is always in view, and the
+          hidden sections stay mounted so a half-filled form survives a tab
+          switch. */}
       <nav className="sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-slate-50/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:bg-background/90">
-        {[
-          ["linkedin", "LinkedIn"],
-          ["publishing", "Publishing"],
-          ["account", "Account"],
-          ["timezone", "Timezone"],
-          ["security", "Security"],
-          ["appearance", "Appearance"],
-          ["voice", "Voice"],
-          ["business", "Business"],
-        ].map(([id, label]) => (
-          <a
+        {SETTINGS_TABS.map(({ id, label }) => (
+          <button
             key={id}
-            href={`#${id}`}
-            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+            type="button"
+            onClick={() => selectTab(id)}
+            aria-current={tab === id ? "page" : undefined}
+            className={cn(
+              "shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+              tab === id
+                ? "bg-white text-slate-900 shadow-xs dark:bg-white/10 dark:text-white"
+                : "text-slate-500 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+            )}
           >
             {label}
-          </a>
+          </button>
         ))}
       </nav>
 
+      <div className={tab === "linkedin" ? "space-y-6" : "hidden"}>
       <div id="linkedin" className="scroll-mt-24" />
       {/* LinkedIn Connection - Read-only for team members (they use owner's LinkedIn) */}
       {isTeamMember ? (
@@ -1018,6 +1056,8 @@ function SettingsContent() {
         </>
       )}
 
+      </div>
+      <div className={tab === "publishing" ? "space-y-6" : "hidden"}>
       <div id="publishing" className="scroll-mt-24" />
       {/* Publishing Preferences */}
       <Card>
@@ -1058,6 +1098,8 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      </div>
+      <div className={tab === "account" ? "space-y-6" : "hidden"}>
       {/* Account Settings */}
       <Card id="account">
         <CardHeader>
@@ -1167,6 +1209,8 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      </div>
+      <div className={tab === "timezone" ? "space-y-6" : "hidden"}>
       {/* Timezone */}
       <Card>
         <CardHeader>
@@ -1247,6 +1291,8 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      </div>
+      <div className={tab === "security" ? "space-y-6" : "hidden"}>
       <div id="security" className="scroll-mt-24" />
       {/* Security / 2FA */}
       <Card>
@@ -1318,6 +1364,7 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      </div>
       {/* 2FA Setup Dialog */}
       <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
         <DialogContent className="sm:max-w-md">
@@ -1566,6 +1613,7 @@ function SettingsContent() {
         </DialogContent>
       </Dialog>
 
+      <div className={tab === "appearance" ? "space-y-6" : "hidden"}>
       <div id="appearance" className="scroll-mt-24" />
       {/* Appearance Settings */}
       <Card>
@@ -1651,6 +1699,8 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      </div>
+      <div className={tab === "voice" ? "space-y-6" : "hidden"}>
       <div id="voice" className="scroll-mt-24" />
       {/* Voice & Style - Hidden for team members (they use owner's settings) */}
       {!isTeamMember && (
@@ -1806,6 +1856,8 @@ function SettingsContent() {
         </Card>
       )}
 
+      </div>
+      <div className={tab === "business" ? "space-y-6" : "hidden"}>
       <div id="business" className="scroll-mt-24" />
       {/* Business Profile - Hidden for team members (they use owner's settings) */}
       {!isTeamMember && (
@@ -1947,6 +1999,8 @@ function SettingsContent() {
         </Card>
       )}
 
+      </div>
+      <div className={tab === "account" ? "space-y-6" : "hidden"}>
       <Card className="border-red-200 dark:border-red-900/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
@@ -2001,6 +2055,7 @@ function SettingsContent() {
           </CardContent>
         </Card>
 
+      </div>
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent>
           <DialogHeader>
