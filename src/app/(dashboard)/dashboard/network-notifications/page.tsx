@@ -282,9 +282,9 @@ export default function NetworkNotificationsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/docs/business-features/network-notifications" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/business-features/network-notifications" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
               <HelpCircle className="w-3.5 h-3.5" />
-              Help?
+              Docs
             </Link>
             <Button
               onClick={() => setShowCreateDialog(true)}
