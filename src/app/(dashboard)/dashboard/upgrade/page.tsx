@@ -442,11 +442,12 @@ showError("Something went wrong. Please try again.");
           </span>
           <div>
             <h3 className="text-[15px] font-medium text-slate-900 dark:text-white">
-              Every plan runs on your own AI key
+              The agents come with their AI, your posts run on your own key
             </h3>
             <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              Connect an OpenAI, Anthropic or Google key and generate without a
-              cap. Most people spend $2-4 a month on their key.
+              Everything the agents write is included in the plan. Posts and
+              images stay on your own OpenAI, Anthropic or Google key, so they
+              are never capped, and most people spend $2-4 a month on it.
             </p>
           </div>
         </div>
