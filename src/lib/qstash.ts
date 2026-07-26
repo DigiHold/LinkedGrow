@@ -1,10 +1,29 @@
 import { Client } from "@upstash/qstash";
 
-// Initialize QStash client - US East 1 region
+// Initialize QStash client - US East 1 region.
+// Built on first use for the same reason as src/lib/stripe.ts: constructing it
+// at import time warns loudly during the build in any environment without a
+// token, and couples every route that imports this file to QStash being
+// configured.
 const QSTASH_BASE_URL = process.env.QSTASH_URL || "https://qstash-us-east-1.upstash.io";
-const qstash = new Client({
-  token: process.env.QSTASH_TOKEN!,
-  baseUrl: QSTASH_BASE_URL,
+
+let client: Client | null = null;
+
+function getQstash(): Client {
+  if (!client) {
+    const token = process.env.QSTASH_TOKEN;
+    if (!token) {
+      throw new Error("QSTASH_TOKEN is not set in this environment");
+    }
+    client = new Client({ token, baseUrl: QSTASH_BASE_URL });
+  }
+  return client;
+}
+
+const qstash = new Proxy({} as Client, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getQstash(), prop, receiver);
+  },
 });
 
 // Always use production URL for QStash webhooks - staging deployments have
