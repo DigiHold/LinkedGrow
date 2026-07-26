@@ -3,7 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Loader2, Plus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Crosshair,
+  Loader2,
+  Plus,
+  Search,
+  Users,
+  X,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,8 +24,6 @@ import { StepRail } from "@/components/dashboard/step-rail";
 import {
   PageShell,
   PageHeader,
-  Panel,
-  PanelTitle,
   Field,
 } from "@/components/dashboard/ui/page";
 import { cn } from "@/lib/utils";
@@ -31,28 +41,33 @@ const LEAD_SOURCES: {
   id: string;
   label: string;
   hint: string;
+  icon: LucideIcon;
   recommended?: boolean;
 }[] = [
   {
     id: "buying_event",
     label: "High-intent signals",
-    hint: "People showing buying signals right now. The best place to start.",
+    hint: "People showing buying signals right now.",
+    icon: Zap,
     recommended: true,
   },
   {
     id: "market",
     label: "Lookalike audience",
     hint: "People who resemble the customers you already have.",
+    icon: Users,
   },
   {
     id: "competitor",
     label: "Competitor engagement",
-    hint: "People interacting with the companies you compete against.",
+    hint: "People interacting with who you compete against.",
+    icon: Crosshair,
   },
   {
     id: "linkedin_search",
     label: "A LinkedIn search",
-    hint: "Paste a LinkedIn or Sales Navigator search and work through it.",
+    hint: "Work through a search or a Sales Navigator list.",
+    icon: Search,
   },
 ];
 
@@ -199,10 +214,29 @@ export function NewAgentWizard() {
       )}
 
       {step === 1 && (
-        <Panel className="p-6">
-          <PanelTitle>Where should it look for leads?</PanelTitle>
-          <div className="mt-5 space-y-5">
-            <Field label="Agent name" hint="Only you see this. Name it after who it targets.">
+        <StepBody
+          title="Where should it find people?"
+          lead="Pick one to start with. You can add more sources once the agent is running."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            {LEAD_SOURCES.map((s) => (
+              <OptionCard
+                key={s.id}
+                picked={source === s.id}
+                onClick={() => setSource(s.id)}
+                icon={s.icon}
+                label={s.label}
+                hint={s.hint}
+                badge={s.recommended ? "Start here" : undefined}
+              />
+            ))}
+          </div>
+
+          <div className="mt-8 border-t border-border pt-6">
+            <Field
+              label="Name it"
+              hint="Only you see this. Naming it after who it targets makes a list of agents readable."
+            >
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -210,32 +244,16 @@ export function NewAgentWizard() {
                 maxLength={80}
               />
             </Field>
-
-            <Field
-              label="Lead source"
-              hint="One to start with. You can add more once it is running."
-            >
-              <div className="grid gap-3 sm:grid-cols-2">
-                {LEAD_SOURCES.map((s) => (
-                  <SelectCard
-                    key={s.id}
-                    picked={source === s.id}
-                    onClick={() => setSource(s.id)}
-                    label={s.label}
-                    hint={s.hint}
-                    badge={s.recommended ? "Recommended" : undefined}
-                  />
-                ))}
-              </div>
-            </Field>
           </div>
-        </Panel>
+        </StepBody>
       )}
 
       {step === 2 && (
-        <Panel className="p-6">
-          <PanelTitle>Who should it go after?</PanelTitle>
-          <div className="mt-5 space-y-8">
+        <StepBody
+          title="Who should it go after?"
+          lead="The signals tell it what to watch. The filters narrow who counts."
+        >
+          <div className="space-y-8">
             <Group
               title={`Signals ${keywords.length}/${MAX_SIGNALS}`}
               hint={`Topics your buyers talk about. At least ${MIN_SIGNALS}, so the agent has enough to work with.`}
@@ -330,13 +348,15 @@ export function NewAgentWizard() {
               />
             </Group>
           </div>
-        </Panel>
+        </StepBody>
       )}
 
       {step === 3 && (
-        <Panel className="p-6">
-          <PanelTitle>The first leads it found</PanelTitle>
-          <div className="mt-5">
+        <StepBody
+          title="The first leads it finds"
+          lead="You reject the ones that do not fit, and every rejection sharpens what it looks for next."
+        >
+          <div>
             {/* Honest placeholder: lead discovery is the outreach-agent port,
                 phase 2 of the plan. Showing invented people here would make
                 the ICP feel validated when nothing has run. */}
@@ -351,17 +371,15 @@ export function NewAgentWizard() {
               </p>
             </div>
           </div>
-        </Panel>
+        </StepBody>
       )}
 
       {step === 4 && (
-        <Panel className="p-6">
-          <PanelTitle>How it reaches out</PanelTitle>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            Nothing goes out without you. Everything below is prepared, and at
-            the end you decide whether to start it or leave it paused.
-          </p>
-          <div className="mt-5 space-y-8">
+        <StepBody
+          title="How it reaches out"
+          lead="Nothing goes out without you. This is prepared now, and at the end you decide whether to start it or leave it paused."
+        >
+          <div className="space-y-8">
             <Group title="Who sends">
             <Field
               label="Sending account"
@@ -446,14 +464,15 @@ export function NewAgentWizard() {
             />
             </Group>
           </div>
-        </Panel>
+        </StepBody>
       )}
 
       {step === 5 && (
-        <div className="space-y-4">
-          <Panel className="p-6">
-            <PanelTitle>Before you create it</PanelTitle>
-            <dl className="mt-5 divide-y divide-border">
+        <StepBody
+          title="Check it over"
+          lead="Nothing here is final. Everything can be changed after the agent exists."
+        >
+          <dl className="divide-y divide-border">
               <SummaryRow label="Name" value={name || "Not set"} />
               <SummaryRow label="Lead source" value={labelForSource(source)} />
               <SummaryRow label="Signals" value={keywords.join(", ") || "None"} />
@@ -477,12 +496,13 @@ export function NewAgentWizard() {
                 label="Review each contact"
                 value={reviewMode ? "Yes" : "No"}
               />
-            </dl>
-          </Panel>
+          </dl>
 
-          <Panel className="p-6">
-            <PanelTitle>What happens next</PanelTitle>
-            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          <div className="mt-6 border-t border-border pt-6">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500">
+              What happens next
+            </h3>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
               <li>
                 The agent is created paused. It does nothing until you start it.
               </li>
@@ -495,8 +515,8 @@ export function NewAgentWizard() {
                 anything at any time.
               </li>
             </ul>
-          </Panel>
-        </div>
+          </div>
+        </StepBody>
       )}
 
       <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
@@ -594,6 +614,97 @@ function Segmented({
         {options.find((o) => o.id === value)?.hint}
       </p>
     </div>
+  );
+}
+
+/**
+ * A step: its question as a real heading outside any card, then the content.
+ *
+ * The first draft put everything inside one white panel at the same visual
+ * level, so the question, the decision and an admin text field all read as
+ * equally important. The heading now sits on the page and the card holds only
+ * what you act on.
+ */
+function StepBody({
+  title,
+  lead,
+  children,
+}: {
+  title: string;
+  lead?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+        {title}
+      </h2>
+      {lead && (
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+          {lead}
+        </p>
+      )}
+      <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** A choice with an icon, so four options are scannable at a glance. */
+function OptionCard({
+  picked,
+  onClick,
+  icon: Icon,
+  label,
+  hint,
+  badge,
+}: {
+  picked: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+  hint: string;
+  badge?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={picked}
+      className={cn(
+        "flex gap-3 rounded-xl border p-4 text-left transition-colors",
+        picked
+          ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+          : "border-border hover:border-slate-300 dark:hover:border-white/20"
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+          picked
+            ? "bg-cyan-500 text-white"
+            : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
+        )}
+      >
+        {picked ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2">
+          <span className="text-[15px] font-medium text-slate-900 dark:text-white">
+            {label}
+          </span>
+          {badge && !picked && (
+            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
+              {badge}
+            </span>
+          )}
+        </span>
+        <span className="mt-1 block text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          {hint}
+        </span>
+      </span>
+    </button>
   );
 }
 

@@ -324,7 +324,9 @@ function SettingsContent() {
     // Fetch LinkedIn settings from API
     const fetchLinkedInSettings = async () => {
       try {
-        const response = await fetch("/api/linkedin/settings");
+        // /api/linkedin/settings is gone with the LinkedIn API. Nothing
+        // to read until the browser session layer replaces it.
+        const response = { ok: false } as Response;
         if (response.ok) {
           const data = await response.json();
           if (data.connected) {
@@ -879,185 +881,28 @@ function SettingsContent() {
       </nav>
 
       <div className={tab === "linkedin" ? "space-y-6" : "hidden"}>
-      <div id="linkedin" className="scroll-mt-24" />
-      {/* LinkedIn Connection - Read-only for team members (they use owner's LinkedIn) */}
-      {isTeamMember ? (
-        // Team member view - read-only status of owner's LinkedIn
-        <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
-          <div className={cn(
-            "px-5 py-4",
-            linkedInConnected ? "bg-linkedin" : "bg-slate-400"
-          )}>
-            <div className="flex items-center gap-3">
-              <Linkedin className="w-6 h-6 text-white" />
-              <div>
-                <h3 className="text-white font-semibold">
-                  {linkedInConnected ? "LinkedIn Connected" : "LinkedIn Not Connected"}
-                </h3>
-                <p className="text-white/80 text-sm">
-                  {linkedInConnected
-                    ? "Team owner's account is linked for publishing"
-                    : "Ask team owner to connect LinkedIn in Settings"}
-                </p>
-              </div>
-            </div>
-          </div>
-          {linkedInConnected && (
-            <div className="bg-white dark:bg-slate-900 p-5">
-              <div className="flex items-center gap-4">
-                {linkedInSettings?.postingTarget === "organization" ? (
-                  <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                    <Building2 className="w-8 h-8 text-slate-500" />
-                  </div>
-                ) : linkedInSettings?.profileImage ? (
-                  <Image
-                    src={linkedInSettings.profileImage}
-                    alt={linkedInName}
-                    width={64}
-                    height={64}
-                    className="w-16 h-16 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
-                    {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                  </div>
-                )}
-                <div>
-                  <p className="font-semibold text-lg">{linkedInName}</p>
-                  <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-                    {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
-                    <Check className="w-4 h-4" />
-                    <span>Ready to publish</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        // Owner view - full controls
-        <>
-          {linkedInMessage && (
-            <div className={cn(
-              "p-3 rounded-lg text-sm flex items-center gap-2",
-              linkedInMessage.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-            )}>
-              {linkedInMessage.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-              {linkedInMessage.text}
-            </div>
-          )}
-
-          {linkedInConnected ? (
-            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
-              {/* Header with LinkedIn blue */}
-              <div className="bg-linkedin px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <Linkedin className="w-6 h-6 text-white" />
-                  <div>
-                    <h3 className="text-white font-semibold">LinkedIn Connected</h3>
-                    <p className="text-white/80 text-sm">Your account is linked for direct publishing</p>
-                  </div>
-                </div>
-              </div>
-              {/* Profile info */}
-              <div className="bg-white dark:bg-slate-900 p-5">
-                <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    {linkedInSettings?.postingTarget === "organization" ? (
-                      (() => {
-                        const selectedOrg = linkedInSettings?.organizations?.find(o => o.id === linkedInSettings?.selectedOrgId);
-                        return selectedOrg?.logoUrl ? (
-                          <Image
-                            src={selectedOrg.logoUrl}
-                            alt={linkedInName}
-                            width={64}
-                            height={64}
-                            className="w-16 h-16 rounded-lg object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                            <Building2 className="w-8 h-8 text-slate-500" />
-                          </div>
-                        );
-                      })()
-                    ) : session?.user?.image ? (
-                      <Image
-                        src={session.user.image}
-                        alt={linkedInName}
-                        width={64}
-                        height={64}
-                        className="w-16 h-16 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-linkedin flex items-center justify-center text-white text-xl font-bold shrink-0">
-                        {linkedInName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-lg">{linkedInName}</p>
-                      <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-                        {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
-                      </p>
-                      <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
-                        <Check className="w-4 h-4" />
-                        <span>Ready to publish</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {linkedInSettings?.hasOrganizations && (
-                      <Button
-                        variant="outline"
-                        onClick={handleChangePostingTarget}
-                      >
-                        Change
-                      </Button>
-                    )}
-                    <Button
-                      onClick={handleDisconnectLinkedIn}
-                      className="bg-red-600 hover:bg-red-700 text-white border-0"
-                    >
-                      Disconnect
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg bg-linkedin">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <Linkedin className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <h3 className="text-white font-semibold text-lg">Connect LinkedIn</h3>
-                    <p className="text-white/80 text-sm">Publish posts directly to your LinkedIn profile</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleConnectLinkedIn}
-                  disabled={isConnectingLinkedIn}
-                  className="bg-white hover:bg-slate-100 text-linkedin font-semibold px-6 shrink-0"
-                >
-                  {isConnectingLinkedIn ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Linkedin className="w-4 h-4 mr-2" />
-                  )}
-                  {isConnectingLinkedIn ? "Connecting..." : "Connect"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
+        {/* One connection point, not two. v2 drops the LinkedIn API, so an
+            account is connected with its own credentials on the accounts
+            page, and that single connection serves the agents and posting. */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Linkedin className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              LinkedIn
+            </CardTitle>
+            <CardDescription>
+              You connect an account once, with its own email and password, and
+              the same connection runs both your agents and your posting.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard/linkedin-accounts">
+              <Button variant="outline">Manage LinkedIn accounts</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
+
       <div className={tab === "publishing" ? "space-y-6" : "hidden"}>
       <div id="publishing" className="scroll-mt-24" />
       {/* Publishing Preferences */}

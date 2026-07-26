@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, Shield, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
+import { GoogleButton, AuthDivider } from "@/components/auth/google-button";
 
 // LinkedIn "in" icon only
 function LinkedInIcon({ className }: { className?: string }) {
@@ -233,6 +234,9 @@ function SignInForm() {
               </div>
             </>
           )}
+
+          <GoogleButton />
+          <AuthDivider>or with email</AuthDivider>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {!requires2FA ? (

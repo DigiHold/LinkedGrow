@@ -99,8 +99,6 @@ export default function AnalyticsPage() {
   const hasLinkedIn = data?.capabilities.hasLinkedInConnected === true;
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAnalytics = useCallback(async (refresh = false) => {
@@ -138,29 +136,6 @@ export default function AnalyticsPage() {
     window.addEventListener("linkedin-target-changed", handleTargetChange);
     return () => window.removeEventListener("linkedin-target-changed", handleTargetChange);
   }, [fetchAnalytics]);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setSyncMessage(null);
-    try {
-      const res = await fetch("/api/analytics/sync", { method: "POST" });
-      const result = await res.json();
-      if (res.ok) {
-        setSyncMessage(`Synced ${result.synced} new posts, ${result.imagesDownloaded} images downloaded`);
-        // Refresh analytics after sync
-        await fetchAnalytics(true);
-        setTimeout(() => setSyncMessage(null), 5000);
-      } else {
-        setSyncMessage(result.error || "Sync failed");
-        setTimeout(() => setSyncMessage(null), 5000);
-      }
-    } catch {
-      setSyncMessage("Sync failed");
-      setTimeout(() => setSyncMessage(null), 5000);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   // Only "member" role is restricted - admins can view analytics
   if (isTeamMember && teamRole === "member") {
@@ -203,20 +178,6 @@ export default function AnalyticsPage() {
                 <DateRangeSelector value={days} onChange={setDays} />
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={handleSync}
-                  disabled={isSyncing}
-                  title="Sync all LinkedIn posts"
-                >
-                  {isSyncing ? (
-                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-1.5" />
-                  )}
-                  Sync
-                </Button>
-                <Button
-                  variant="outline"
                   size="icon-sm"
                   onClick={() => fetchAnalytics(true)}
                   disabled={isRefreshing}
@@ -240,12 +201,6 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Sync Message */}
-        {syncMessage && (
-          <div className="p-3 rounded-lg text-sm flex items-center gap-2 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400">
-            <Download className="w-4 h-4 shrink-0" />
-            {syncMessage}
-          </div>
-        )}
 
         {/* Advanced Analytics Link */}
         {isBusinessPlan && (

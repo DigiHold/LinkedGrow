@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
+import { GoogleButton, AuthDivider } from "@/components/auth/google-button";
 import { trackSignup } from "@/lib/insight";
 
 type SocialProvider = "linkedin" | "google" | null;
@@ -279,6 +280,9 @@ function SignUpContent() {
                 </span>
               </div>
             </div>
+
+            <GoogleButton />
+            <AuthDivider>or with email</AuthDivider>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

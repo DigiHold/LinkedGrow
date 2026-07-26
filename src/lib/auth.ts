@@ -1,5 +1,6 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, users } from "./db";
 import { loadSessionUser, invalidateSessionUser } from "./auth-user";
@@ -30,6 +31,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: "/sign-in",
   },
   providers: [
+    // 49 accounts in production were created with Google and 45 of them have
+    // no password, so this provider is not optional. Added conditionally so a
+    // deployment without the credentials still boots and still serves the
+    // password form, rather than failing the whole auth config.
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
     Credentials({
       name: "credentials",
       credentials: {
