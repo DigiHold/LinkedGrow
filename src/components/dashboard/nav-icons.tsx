@@ -210,6 +210,25 @@ export function AffiliateIcon({ className }: IconProps) {
   );
 }
 
+export function BookIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M5 4.5h9.5A2.5 2.5 0 0 1 17 7v12.5H7.5A2.5 2.5 0 0 1 5 17z" />
+      <path d="M5 17a2.5 2.5 0 0 1 2.5-2.5H17" />
+      <path d="M8.5 8.5h5" />
+    </svg>
+  );
+}
+
+export function ChatIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M20 12.5c0 3.8-3.6 6.9-8 6.9a9.3 9.3 0 0 1-2.6-.4L4.5 20.5l1.3-3.4A6.5 6.5 0 0 1 4 12.5c0-3.8 3.6-6.9 8-6.9s8 3.1 8 6.9z" />
+      <path d="M9 12h6" />
+    </svg>
+  );
+}
+
 export function LifeBuoyIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

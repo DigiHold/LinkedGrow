@@ -34,6 +34,8 @@ import {
   KeyIcon,
   CodeIcon,
   AffiliateIcon,
+  BookIcon,
+  ChatIcon,
   LifeBuoyIcon,
   SettingsIcon,
   CardIcon,
@@ -322,6 +324,49 @@ export function Sidebar() {
                 <span className="truncate">Posts</span>
                 <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
               </Link>
+
+              {/* Help sits under the two sections rather than in the account
+                  menu, because someone who is stuck looks at the navigation,
+                  not at their own avatar. */}
+              <div className="pt-6">
+                <Link
+                  href="/dashboard/support"
+                  onClick={closeMobile}
+                  className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-cyan-100 bg-linear-to-br from-cyan-50 to-blue-50 px-3 py-3.5 transition-colors hover:border-cyan-200 dark:border-cyan-500/20 dark:from-cyan-500/10 dark:to-blue-500/5 dark:hover:border-cyan-500/35"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-600 shadow-sm dark:bg-cyan-500/15 dark:text-cyan-300">
+                    <ChatIcon className="h-[18px] w-[18px]" />
+                  </span>
+                  {/* The sidebar is 256px wide, so this copy wraps rather than
+                      truncating. Anything longer loses its second line. */}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold leading-snug text-slate-900 dark:text-white">
+                      Need a hand?
+                    </span>
+                    <span className="block text-[12px] leading-snug text-slate-500 dark:text-slate-400">
+                      We answer every message
+                    </span>
+                  </span>
+                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-cyan-500/70 transition-transform group-hover:translate-x-0.5 dark:text-cyan-400/70" />
+                </Link>
+
+                <div className="mt-3 space-y-1">
+                  <a
+                    href="/docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+                  >
+                    <BookIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+                    <span className="truncate">Read the guides</span>
+                  </a>
+                  {navLink({
+                    name: "Earn with referrals",
+                    href: "/dashboard/affiliate",
+                    icon: AffiliateIcon,
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
