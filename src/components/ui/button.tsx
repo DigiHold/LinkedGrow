@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-target active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-target active:scale-[0.98]",
   {
     variants: {
       variant: {
@@ -21,15 +21,15 @@ const buttonVariants = cva(
         linkedin:
           "bg-linkedin text-white shadow hover:bg-linkedin-dark",
         gradient:
-          "bg-linear-to-r from-linkedin to-primary text-white shadow-lg hover:shadow-xl hover:scale-[1.02]",
+          "bg-linear-to-r from-linkedin to-primary text-white shadow-sm hover:-translate-y-0.5 hover:shadow-md",
         // Primary gradient button - matches prelaunch page style (cyan to blue)
         primary:
-          "bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 hover:scale-[1.02]",
+          "bg-linear-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-sm shadow-blue-600/20 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-600/30",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3 text-xs",
-        lg: "h-12 rounded-lg px-8 text-base",
+        sm: "h-9 rounded-lg px-3 text-[13px]",
+        lg: "h-12 rounded-xl px-8 text-base",
         xl: "h-14 rounded-xl px-10 text-lg",
         icon: "h-10 w-10",
         "icon-sm": "h-8 w-8",
