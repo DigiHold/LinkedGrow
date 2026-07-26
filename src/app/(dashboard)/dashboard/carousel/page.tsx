@@ -47,9 +47,18 @@ import {
   Copy,
   FilePlus,
   HelpCircle,
+  Plus,
+  Palette,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VideoModal } from "@/components/dashboard/video-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
 // Import new carousel components
@@ -99,6 +108,31 @@ export default function CarouselPage() {
 
   // UI state
   const [zoom, setZoom] = useState(0.4);
+  // Fit the slide to whatever room the workspace has, instead of a hardcoded
+  // 40% that left a phone showing a stamp and a desktop showing a lot of grey.
+  //
+  // A callback ref rather than useRef + useEffect: the page returns early
+  // while settings load and while the key gate shows, so an effect with an
+  // empty dependency list runs before this element exists and never runs again.
+  const observerRef = useRef<ResizeObserver | null>(null);
+  const workspaceRef = useCallback((el: HTMLDivElement | null) => {
+    observerRef.current?.disconnect();
+    if (!el) return;
+
+    const fit = () => {
+      const pad = 32;
+      const w = el.clientWidth - pad;
+      const h = el.clientHeight - pad;
+      if (w <= 0 || h <= 0) return;
+      const next = Math.min(w / CANVAS_WIDTH, h / CANVAS_HEIGHT, 1);
+      // Round to 5% steps so the readout does not jitter while resizing.
+      setZoom(Math.max(0.1, Math.round(next * 20) / 20));
+    };
+
+    fit();
+    observerRef.current = new ResizeObserver(fit);
+    observerRef.current.observe(el);
+  }, []);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -1296,7 +1330,9 @@ showToast("Failed to export images");
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-slate-500 dark:text-slate-400 w-12 text-center">
+              {/* The readout is the first thing to go on a narrow phone:
+                  the plus and minus buttons already say what they do. */}
+              <span className="hidden w-12 text-center text-sm text-slate-500 min-[420px]:inline dark:text-slate-400">
                 {Math.round(zoom * 100)}%
               </span>
               <Button
@@ -1312,7 +1348,44 @@ showToast("Failed to export images");
 
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Under 1080px the seven file actions hid 714px of themselves behind
+              a horizontal scroll. They collapse into one menu, and Save stays
+              out because it is the one people reach for. */}
+          <div className="flex items-center gap-2 min-[1080px]:hidden">
+            <Button variant="outline" size="sm" onClick={() => handleSaveCarousel()} disabled={isSavingCarousel}>
+              <Save className="mr-1.5 h-4 w-4" />
+              Save
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="More actions">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowTemplateGallery(true)}>
+                  Templates
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowSaveTemplateDialog(true)}>
+                  Save as template
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowNewCarouselDialog(true)}>
+                  New
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowMyCarousels(true)}>
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadImages}>
+                  Export images
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadPDF}>
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="hidden items-center gap-2 min-[1080px]:flex">
             {/* Templates Button */}
             <Button
               variant="outline"
@@ -1560,29 +1633,16 @@ showToast("Failed to export images");
 
         {/* Main Editor Area */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Left Sidebar Toggle Button (visible on small screens or when sidebar hidden) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "absolute left-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
-              showLeftSidebar && "min-[1080px]:hidden"
-            )}
-            onClick={toggleLeftSidebar}
-          >
-            {showLeftSidebar ? (
-              <PanelLeftClose className="w-4 h-4" />
-            ) : (
-              <PanelLeftOpen className="w-4 h-4" />
-            )}
-          </Button>
-
           {/* Left Sidebar - Element Toolbar or Layers Panel */}
+          {/* Below 1080px this is a bottom sheet, not a side sheet. A 256px
+              side panel on a 390px phone left 134px of canvas; a sheet keeps
+              the slide visible above what you are editing. */}
           <div className={cn(
             "transition-all duration-300 ease-in-out",
-            showLeftSidebar ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
+            showLeftSidebar ? "opacity-100 min-[1080px]:w-64" : "w-0 opacity-0 overflow-hidden",
             "hidden min-[1080px]:block",
-            showLeftSidebar && "block! absolute min-[1080px]:relative z-10 h-full bg-background shadow-lg min-[1080px]:shadow-none"
+            showLeftSidebar &&
+              "block! fixed inset-x-0 bottom-14 top-auto z-30 h-[58svh] w-full overflow-y-auto rounded-t-2xl border-t border-border bg-background pb-2 shadow-2xl min-[1080px]:relative min-[1080px]:inset-auto min-[1080px]:h-full min-[1080px]:w-64 min-[1080px]:rounded-none min-[1080px]:border-t-0 min-[1080px]:pb-0 min-[1080px]:shadow-none"
           )}>
             {leftPanelView === 'layers' ? (
               <LayersPanel
@@ -1600,7 +1660,10 @@ showToast("Failed to export images");
           </div>
 
           {/* Canvas Workspace */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900 overflow-auto p-4">
+          <div
+            ref={workspaceRef}
+            className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-900 overflow-auto p-4 pb-18 min-[1080px]:pb-4"
+          >
             <CanvasWorkspace
               ref={canvasRef}
               zoom={zoom}
@@ -1619,29 +1682,13 @@ showToast("Failed to export images");
             />
           </div>
 
-          {/* Right Sidebar Toggle Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "absolute right-2 top-2 z-20 h-8 w-8 bg-background/80 backdrop-blur-sm shadow-sm",
-              showRightSidebar && "min-[1080px]:hidden"
-            )}
-            onClick={toggleRightSidebar}
-          >
-            {showRightSidebar ? (
-              <PanelRightClose className="w-4 h-4" />
-            ) : (
-              <PanelRightOpen className="w-4 h-4" />
-            )}
-          </Button>
-
           {/* Right Sidebar - Properties Panel */}
           <div className={cn(
             "transition-all duration-300 ease-in-out",
-            showRightSidebar ? "w-72 opacity-100" : "w-0 opacity-0 overflow-hidden",
+            showRightSidebar ? "opacity-100 min-[1080px]:w-72" : "w-0 opacity-0 overflow-hidden",
             "hidden min-[1080px]:block",
-            showRightSidebar && "block! absolute min-[1080px]:relative right-0 z-10 h-full bg-background shadow-lg min-[1080px]:shadow-none"
+            showRightSidebar &&
+              "block! fixed inset-x-0 bottom-14 top-auto z-30 h-[58svh] w-full overflow-y-auto rounded-t-2xl border-t border-border bg-background pb-2 shadow-2xl min-[1080px]:relative min-[1080px]:inset-auto min-[1080px]:h-full min-[1080px]:w-72 min-[1080px]:rounded-none min-[1080px]:border-t-0 min-[1080px]:pb-0 min-[1080px]:shadow-none"
           )}>
             <ElementProperties
               selectedElement={selectedElement}
@@ -1662,28 +1709,10 @@ showToast("Failed to export images");
 
         </div>
 
-        {/* Slide Manager Toggle Button - fixed so it sits above the slide overlay on small screens */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "fixed left-1/2 -translate-x-1/2 z-40 h-8 w-8 bg-background/95 backdrop-blur-sm shadow-md min-[1080px]:hidden",
-            showSlideManager ? "bottom-42" : "bottom-3"
-          )}
-          onClick={toggleSlideManager}
-          title={showSlideManager ? "Hide slides" : "Show slides"}
-        >
-          {showSlideManager ? (
-            <PanelBottomClose className="w-4 h-4" />
-          ) : (
-            <PanelBottomOpen className="w-4 h-4" />
-          )}
-        </Button>
-
         {/* Bottom - Slide Manager */}
         <div className={cn(
           "hidden min-[1080px]:block",
-          showSlideManager && "block! fixed bottom-0 left-0 right-0 z-30 shadow-lg min-[1080px]:relative min-[1080px]:bottom-auto min-[1080px]:shadow-none min-[1080px]:z-auto"
+          showSlideManager && "block! fixed bottom-14 left-0 right-0 z-30 rounded-t-2xl border-t border-border bg-background shadow-2xl min-[1080px]:relative min-[1080px]:bottom-auto min-[1080px]:rounded-none min-[1080px]:border-t-0 min-[1080px]:shadow-none min-[1080px]:z-auto"
         )}>
           <SlideManager
             slides={slides}
@@ -1695,6 +1724,33 @@ showToast("Failed to export images");
             onSlidesReorder={handleSlidesReorder}
           />
         </div>
+
+        {/* One labelled bar instead of three unlabelled icons floating over
+            the canvas. Fixed to the bottom so it is in thumb reach, and the
+            active sheet is obvious. Desktop keeps its side panels. */}
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-stretch border-t border-border bg-background min-[1080px]:hidden">
+          {([
+            { id: "elements", label: "Add", icon: Plus, open: showLeftSidebar, toggle: toggleLeftSidebar },
+            { id: "design", label: "Design", icon: Palette, open: showRightSidebar, toggle: toggleRightSidebar },
+            { id: "slides", label: "Slides", icon: Layers, open: showSlideManager, toggle: toggleSlideManager },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={t.toggle}
+              aria-pressed={t.open}
+              className={cn(
+                "flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors",
+                t.open
+                  ? "text-cyan-600 dark:text-cyan-400"
+                  : "text-slate-500 dark:text-slate-400"
+              )}
+            >
+              <t.icon className="h-5 w-5" />
+              {t.label}
+            </button>
+          ))}
+        </nav>
 
         {/* Template Gallery Modal */}
         <TemplateGallery

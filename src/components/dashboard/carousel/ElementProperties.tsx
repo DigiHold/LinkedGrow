@@ -704,7 +704,7 @@ export function ElementProperties({
   }, [selectedElement, canvasRef]);
 
   return (
-    <div className={cn("w-72 bg-background border-l border-border flex flex-col h-full overflow-hidden", className)}>
+    <div className={cn("flex h-full w-full flex-col overflow-hidden bg-background min-[1080px]:w-72 min-[1080px]:border-l min-[1080px]:border-border", className)}>
       <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">
           {selectedElement ? 'Element Properties' : 'Canvas'}

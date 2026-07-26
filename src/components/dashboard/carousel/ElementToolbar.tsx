@@ -449,7 +449,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
     : undefined;
 
   return (
-    <div className={cn("w-64 bg-background border-r border-border flex flex-col h-full overflow-hidden", className)}>
+    <div className={cn("flex h-full w-full flex-col overflow-hidden bg-background min-[1080px]:w-64 min-[1080px]:border-r min-[1080px]:border-border", className)}>
       <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">Elements</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click or drag to add</p>
