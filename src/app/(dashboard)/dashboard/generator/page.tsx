@@ -857,10 +857,12 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
   // Show loading state while fetching settings
   if (isLoadingSettings) {
     return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-100">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading generator...</p>
+      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <div className="h-8 w-56 animate-pulse rounded-lg bg-slate-200 dark:bg-white/10" />
+        <div className="mt-3 h-4 w-80 max-w-full animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <div className="h-64 animate-pulse rounded-2xl border border-border bg-card" />
+          <div className="h-64 animate-pulse rounded-2xl border border-border bg-card" />
         </div>
       </div>
     );
@@ -871,7 +873,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
   // No API key configured - show setup prompt
   if (!hasApiKey) {
     return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -951,7 +953,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+    <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
       {/* Limit Reached Overlay */}
       {showLimitOverlay && <LimitReachedOverlay />}
 

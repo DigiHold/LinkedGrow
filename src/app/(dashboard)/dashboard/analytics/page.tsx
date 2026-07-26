@@ -7,9 +7,6 @@ import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Eye,
-  Heart,
-  Users,
   TrendingUp,
   ShieldX,
   HelpCircle,
@@ -17,6 +14,9 @@ import {
   RefreshCw,
   ArrowRight,
   Download,
+  Eye,
+  Heart,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
   // Only "member" role is restricted - admins can view analytics
   if (isTeamMember && teamRole === "member") {
     return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
