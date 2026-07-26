@@ -117,16 +117,16 @@ export default function AffiliateDashboardPage() {
     try {
       const response = await fetch("/api/affiliate");
 
-      if (response.status === 404) {
-        setNotFound(true);
-        return;
-      }
-
       if (!response.ok) {
         throw new Error("Failed to load affiliate data");
       }
 
       const result: AffiliateData = await response.json();
+      // A null affiliate means they have not applied, which is the form state.
+      if (!result.affiliate) {
+        setNotFound(true);
+        return;
+      }
       setData(result);
       setPaypalEmail(result.affiliate.paypalEmail || "");
     } catch (err) {
