@@ -16,7 +16,6 @@ import {
   Loader2,
   Clock,
   AlertCircle,
-  ExternalLink,
   BadgeCheck,
   XCircle,
 } from "lucide-react";
@@ -24,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { AffiliateApplyForm } from "@/components/dashboard/affiliate-apply-form";
 
 interface Affiliate {
   id: string;
@@ -282,23 +282,30 @@ export default function AffiliateDashboardPage() {
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         <AffiliateHeader />
         <Card>
-          <CardContent className="py-12 px-8">
-            <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                <Link2 className="w-10 h-10 text-slate-500 dark:text-slate-400" />
+          <CardContent className="px-6 py-8 sm:px-8">
+            <div className="mx-auto max-w-xl">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/5">
+                  <Link2 className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">
+                  Earn 30% recurring on everyone you refer
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  The commission is paid for as long as they stay subscribed, not
+                  once. Applications are reviewed within 1 to 2 business days.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                You don&apos;t have an affiliate account yet
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                Join our affiliate program and earn 30% recurring commissions on every referral. Apply now to get started.
-              </p>
-              <Link href="/affiliate/apply">
-                <Button>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Apply to Affiliate Program
-                </Button>
-              </Link>
+              {/* The form is here rather than behind a link to the marketing
+                  page, because the user is already signed in and a detour out
+                  of the dashboard is where applications get abandoned. */}
+              <AffiliateApplyForm
+                onApplied={() => {
+                  setNotFound(false);
+                  setIsLoading(true);
+                  fetchAffiliateData();
+                }}
+              />
             </div>
           </CardContent>
         </Card>

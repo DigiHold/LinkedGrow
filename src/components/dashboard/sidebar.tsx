@@ -36,7 +36,6 @@ import {
   AffiliateIcon,
   BookIcon,
   ChatIcon,
-  LifeBuoyIcon,
   SettingsIcon,
   CardIcon,
   ShieldIcon,
@@ -247,6 +246,64 @@ export function Sidebar() {
     </div>
   );
 
+  /**
+   * Help, the guides and the referral programme, pinned to the foot of the
+   * sidebar in every section.
+   *
+   * They used to live in the account menu, which is the last place someone who
+   * is stuck thinks to look. The support target keeps the rule the menu had:
+   * paying accounts get the ticket system, trial and free accounts get the
+   * chatbot, because a free account with no ticket history has nothing to open
+   * a ticket against.
+   */
+  const helpBlock = (
+    <div className="px-3 pb-3">
+      <button
+        onClick={() => {
+          closeMobile();
+          if (isPaidUser(session?.user)) {
+            router.push("/dashboard/support");
+          } else {
+            window.dispatchEvent(new Event("open-chat-widget"));
+          }
+        }}
+        className="group flex w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-linear-to-br from-cyan-50 to-blue-50 px-3 py-3.5 text-left transition-colors hover:border-cyan-200 dark:border-cyan-500/20 dark:from-cyan-500/10 dark:to-blue-500/5 dark:hover:border-cyan-500/35"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-600 shadow-sm dark:bg-cyan-500/15 dark:text-cyan-300">
+          <ChatIcon className="h-[18px] w-[18px]" />
+        </span>
+        {/* The sidebar is 256px wide, so this copy wraps rather than
+            truncating. Anything longer loses its second line. */}
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold leading-snug text-slate-900 dark:text-white">
+            Need a hand?
+          </span>
+          <span className="block text-[12px] leading-snug text-slate-500 dark:text-slate-400">
+            We answer every message
+          </span>
+        </span>
+        <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-cyan-500/70 transition-transform group-hover:translate-x-0.5 dark:text-cyan-400/70" />
+      </button>
+
+      <div className="mt-3 space-y-1">
+        <a
+          href="/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
+        >
+          <BookIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+          <span className="truncate">Read the guides</span>
+        </a>
+        {navLink({
+          name: "Earn with referrals",
+          href: "/dashboard/affiliate",
+          icon: AffiliateIcon,
+        })}
+      </div>
+    </div>
+  );
+
   const backLink = (
     <button
       onClick={() => setSection("root")}
@@ -325,48 +382,6 @@ export function Sidebar() {
                 <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
               </Link>
 
-              {/* Help sits under the two sections rather than in the account
-                  menu, because someone who is stuck looks at the navigation,
-                  not at their own avatar. */}
-              <div className="pt-6">
-                <Link
-                  href="/dashboard/support"
-                  onClick={closeMobile}
-                  className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-cyan-100 bg-linear-to-br from-cyan-50 to-blue-50 px-3 py-3.5 transition-colors hover:border-cyan-200 dark:border-cyan-500/20 dark:from-cyan-500/10 dark:to-blue-500/5 dark:hover:border-cyan-500/35"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-600 shadow-sm dark:bg-cyan-500/15 dark:text-cyan-300">
-                    <ChatIcon className="h-[18px] w-[18px]" />
-                  </span>
-                  {/* The sidebar is 256px wide, so this copy wraps rather than
-                      truncating. Anything longer loses its second line. */}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold leading-snug text-slate-900 dark:text-white">
-                      Need a hand?
-                    </span>
-                    <span className="block text-[12px] leading-snug text-slate-500 dark:text-slate-400">
-                      We answer every message
-                    </span>
-                  </span>
-                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-cyan-500/70 transition-transform group-hover:translate-x-0.5 dark:text-cyan-400/70" />
-                </Link>
-
-                <div className="mt-3 space-y-1">
-                  <a
-                    href="/docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
-                  >
-                    <BookIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
-                    <span className="truncate">Read the guides</span>
-                  </a>
-                  {navLink({
-                    name: "Earn with referrals",
-                    href: "/dashboard/affiliate",
-                    icon: AffiliateIcon,
-                  })}
-                </div>
-              </div>
             </div>
           )}
 
@@ -392,6 +407,8 @@ export function Sidebar() {
             </div>
           )}
         </nav>
+
+        {helpBlock}
 
         {/* Safe-area padding keeps the user button above the iOS home indicator. */}
         <div
@@ -455,31 +472,6 @@ export function Sidebar() {
                   API keys
                 </button>
               )}
-
-              <button
-                onClick={() => goToMenuItem("/dashboard/affiliate")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-              >
-                <AffiliateIcon className="h-4 w-4" />
-                Affiliate
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  // Paying accounts get the ticket system; trial and free
-                  // accounts keep the chatbot.
-                  if (isPaidUser(session?.user)) {
-                    router.push("/dashboard/support");
-                  } else {
-                    window.dispatchEvent(new Event("open-chat-widget"));
-                  }
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-              >
-                <LifeBuoyIcon className="h-4 w-4" />
-                Need help?
-              </button>
 
               <button
                 onClick={() => goToMenuItem("/dashboard/settings")}
