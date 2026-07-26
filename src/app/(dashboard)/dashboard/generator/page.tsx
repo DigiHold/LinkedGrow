@@ -241,12 +241,12 @@ function calculateScore(content: string): number {
 
 // AI Quick Edit Actions
 const aiQuickActions = [
-  { id: "shorter", label: "Make Shorter", icon: Zap },
-  { id: "emojis", label: "Add Emojis", icon: Smile },
-  { id: "hook", label: "Stronger Hook", icon: Sparkles },
-  { id: "cta", label: "Better CTA", icon: MessageSquare },
-  { id: "formal", label: "More Formal", icon: Pencil },
-  { id: "casual", label: "More Casual", icon: Smile },
+  { id: "shorter", label: "Shorter", icon: Zap },
+  { id: "emojis", label: "Add emojis", icon: Smile },
+  { id: "hook", label: "Stronger hook", icon: Sparkles },
+  { id: "cta", label: "Better ending", icon: MessageSquare },
+  { id: "formal", label: "More formal", icon: Pencil },
+  { id: "casual", label: "More casual", icon: Smile },
 ];
 
 export default function GeneratorPage() {
@@ -1089,73 +1089,81 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <Lightbulb className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               Pick an idea
             </CardTitle>
             <CardDescription>
-              Select one to generate a full post, or regenerate for new ideas
+              One of these becomes the post. Not convinced by any of them? Ask
+              for five more.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {generatedIdeas.map((idea, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedIdea(index)}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    selectedIdea === index
-                      ? "border-linkedin bg-linkedin/5"
-                      : "border-border hover:border-linkedin/50"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
+            <div className="space-y-2">
+              {generatedIdeas.map((idea, index) => {
+                const picked = selectedIdea === index;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedIdea(index)}
+                    aria-pressed={picked}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors",
+                      picked
+                        ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+                        : "border-border hover:border-slate-300 dark:hover:border-white/20"
+                    )}
+                  >
                     <span
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                        selectedIdea === index
-                          ? "bg-linkedin text-white"
-                          : "bg-gray-100 dark:bg-gray-800"
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-medium",
+                        picked
+                          ? "bg-cyan-500 text-white"
+                          : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
                       )}
                     >
-                      {index + 1}
+                      {picked ? <Check className="h-3.5 w-3.5" /> : index + 1}
                     </span>
-                    <p className="font-medium">{idea}</p>
-                  </div>
-                </button>
-              ))}
+                    <span className="text-[15px] leading-relaxed text-slate-900 dark:text-white">
+                      {idea}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                Back
+            <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+              <Button
+                onClick={handleGeneratePost}
+                disabled={selectedIdea === null || isGeneratingIdeas || isGeneratingPost}
+              >
+                {isGeneratingPost ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Writing it...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Write this post
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
                 onClick={handleGenerateIdeas}
                 disabled={isGeneratingIdeas || isGeneratingPost}
               >
-                <RefreshCw className={cn("w-4 h-4 mr-2", isGeneratingIdeas && "animate-spin")} />
-                Regenerate
+                <RefreshCw className={cn("mr-2 h-4 w-4", isGeneratingIdeas && "animate-spin")} />
+                Five more
               </Button>
-              <Button
-                variant="linkedin"
-                onClick={handleGeneratePost}
-                disabled={selectedIdea === null || isGeneratingIdeas || isGeneratingPost}
-                className="flex-1 sm:flex-none"
-              >
-                {isGeneratingPost ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating Post...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate Post
-                  </>
-                )}
+              <Button variant="ghost" onClick={() => setStep(2)}>
+                Back
               </Button>
+              {selectedIdea === null && !isGeneratingPost && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Pick one to carry on.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1171,7 +1179,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-linkedin" />
-                    {isEditing ? "Edit Your Post" : "Generated Post"}
+                    {isEditing ? "Editing your post" : "Your draft"}
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" onClick={handleCopy}>
@@ -1226,13 +1234,17 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 {!isEditing && (
                   <div className="flex items-center justify-between mt-4 text-sm text-slate-500 dark:text-slate-400">
                     <span>{currentPost.length} / 3000 characters</span>
-                    <span className={cn(
-                      "font-medium",
-                      calculateScore(currentPost) >= 80 ? "text-green-600" :
-                      calculateScore(currentPost) >= 60 ? "text-yellow-600" :
-                      calculateScore(currentPost) === 0 ? "text-gray-400" : "text-red-600"
-                    )}>
-                      Algorithm Score: {calculateScore(currentPost)}/100
+                    {/* Only a weak score is worth colouring. A good one is
+                        not news, and amber on a fine post reads as a warning. */}
+                    <span
+                      className={cn(
+                        "font-medium",
+                        calculateScore(currentPost) >= 60
+                          ? "text-slate-500 dark:text-slate-400"
+                          : "text-amber-600 dark:text-amber-400"
+                      )}
+                    >
+                      Score {calculateScore(currentPost)}/100
                     </span>
                   </div>
                 )}
@@ -1251,14 +1263,14 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
             )}
 
             {/* AI Quick Actions */}
-            <Card className="border-linkedin/20 bg-linkedin/5">
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Wand2 className="w-4 h-4 text-linkedin" />
+                  <Wand2 className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                   Quick actions
                 </CardTitle>
                 <CardDescription>
-                  Click to instantly modify your post with AI
+                  One click rewrites the draft above.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1288,7 +1300,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                     className="text-sm text-linkedin hover:underline flex items-center gap-1"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    {showAIPanel ? "Hide" : "Custom AI instruction..."}
+                    {showAIPanel ? "Hide" : "Tell it what to change"}
                   </button>
 
                   {showAIPanel && (
@@ -1406,7 +1418,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                       disabled={isVideoMedia(attachedImage)}
                     >
                       <Calendar className="w-4 h-4 mr-2" />
-                      Schedule for Later
+                      Schedule it
                     </Button>
                     {showScheduler && (
                       <div className="p-3 rounded-lg bg-accent/50 space-y-2">
@@ -1495,7 +1507,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="w-4 h-4 mr-2" />
-                  Upload Image
+                  Upload an image
                 </Button>
                 <Button
                   variant="outline"
@@ -1503,7 +1515,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   onClick={() => setShowLinkInput(!showLinkInput)}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Add Link Preview
+                  Add a link preview
                 </Button>
                 {showLinkInput && (
                   <div className="p-3 rounded-lg bg-accent/50 space-y-2">
@@ -1525,20 +1537,20 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
             {/* Regenerate Options */}
             <Card>
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
-                <CardTitle className="text-base">Regenerate</CardTitle>
+                <CardTitle className="text-base">Start over</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button variant="outline" className="w-full" onClick={() => setStep(3)}>
                   <Lightbulb className="w-4 h-4 mr-2" />
-                  Pick Different Idea
+                  Pick another idea
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleGeneratePost}>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Regenerate Post
+                  Write it again
                 </Button>
                 <Button variant="outline" className="w-full">
                   <Wand2 className="w-4 h-4 mr-2" />
-                  3 More Variations
+                  Three variations
                 </Button>
               </CardContent>
             </Card>
@@ -1575,23 +1587,32 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               const allPassed = passedCount === checks.length;
 
               return (
-                <Card className={cn(
-                  allPassed
-                    ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                    : "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800"
-                )}>
+                <Card>
                   <CardContent className="p-4">
-                    <h4 className={cn(
-                      "font-medium mb-2 flex items-center gap-2",
-                      allPassed ? "text-green-800 dark:text-green-200" : "text-amber-800 dark:text-amber-200"
-                    )}>
-                      <Zap className="w-4 h-4" />
-                      Optimization Tips ({passedCount}/4)
+                    <h4 className="mb-3 flex items-center gap-2 text-[13px] font-medium text-slate-900 dark:text-white">
+                      <Zap className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                      {allPassed
+                        ? "This one checks out"
+                        : `${passedCount} of ${checks.length} checks passed`}
                     </h4>
-                    <ul className="text-sm space-y-1.5">
+                    <ul className="space-y-2 text-sm">
                       {checks.map((check, i) => (
-                        <li key={i} className={check.passed ? "text-green-700 dark:text-green-300" : "text-amber-700 dark:text-amber-300"}>
-                          • {check.label} {check.passed ? "✓" : "✗"}
+                        <li key={i} className="flex items-start gap-2">
+                          {check.passed ? (
+                            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                          )}
+                          <span
+                            className={cn(
+                              "leading-relaxed",
+                              check.passed
+                                ? "text-slate-500 dark:text-slate-400"
+                                : "text-slate-900 dark:text-white"
+                            )}
+                          >
+                            {check.label}
+                          </span>
                         </li>
                       ))}
                     </ul>
