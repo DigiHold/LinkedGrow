@@ -3,7 +3,11 @@ import { auth } from "@/lib/auth";
 import { isValidTimezone } from "@/lib/timezone";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { encryptApiKey, decryptApiKey } from "@/lib/encryption";
+import {
+  encryptApiKey,
+  decryptApiKey,
+  EncryptionNotConfiguredError,
+} from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
 import { setBrevoAttributes, removeFromStuckSetupList } from "@/lib/newsletter";
 
@@ -409,6 +413,11 @@ export async function PUT(request: NextRequest) {
       message: "Settings updated successfully",
     });
   } catch (error) {
+    // A missing or malformed ENCRYPTION_KEY is our problem, not the user's,
+    // and "please try again" sends them round the same loop forever.
+    if (error instanceof EncryptionNotConfiguredError) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }

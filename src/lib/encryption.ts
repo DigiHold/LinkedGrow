@@ -7,13 +7,33 @@ const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
+/**
+ * Thrown when the environment cannot encrypt at all, as opposed to a request
+ * being wrong. Callers surface this differently: it is our misconfiguration,
+ * not the user's mistake, and "please try again" is useless advice for it.
+ */
+export class EncryptionNotConfiguredError extends Error {
+  constructor(detail: string) {
+    super(`Encryption is not configured on this environment: ${detail}`);
+    this.name = "EncryptionNotConfiguredError";
+  }
+}
+
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
-    throw new Error("ENCRYPTION_KEY environment variable is not set");
+    throw new EncryptionNotConfiguredError("ENCRYPTION_KEY is not set");
   }
-  // Key must be 32 bytes for AES-256
-  return Buffer.from(key, "hex");
+  // Must be exactly 32 bytes for AES-256. Buffer.from(..., "hex") silently
+  // truncates at the first non-hex character, so a malformed value would
+  // otherwise fail deep inside createCipheriv with "Invalid key length".
+  const buf = Buffer.from(key, "hex");
+  if (buf.length !== 32) {
+    throw new EncryptionNotConfiguredError(
+      `ENCRYPTION_KEY must be 64 hex characters (32 bytes), got ${buf.length} bytes`
+    );
+  }
+  return buf;
 }
 
 /**
