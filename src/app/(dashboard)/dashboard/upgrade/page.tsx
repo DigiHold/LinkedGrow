@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import {
-  Crown,
   Check,
   Zap,
   Loader2,
@@ -193,38 +192,28 @@ showError("Something went wrong. Please try again.");
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
       {/* Header */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-medium mb-4">
-          <Crown className="w-4 h-4" />
-          <span>{isOnHighestPlan ? "Your Plans" : "Upgrade Your Plan"}</span>
-        </div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-          {isOnHighestPlan
-            ? "You're on the Business plan"
-            : "Unlock More Features"}
+      <div className="mb-8 text-center">
+        <h1 className="text-[26px] font-semibold tracking-[-0.035em] text-slate-900 sm:text-[32px] dark:text-white">
+          {isOnHighestPlan ? "You are on Business" : "Plans"}
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+        <p className="mx-auto mt-2 max-w-xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
           {isOnHighestPlan
-            ? "You have access to all features. Manage your subscription or view other plans."
-            : "Choose the plan that best fits your needs. Upgrade or downgrade anytime."}
+            ? "Every feature is unlocked. Manage your subscription below, or look at the other plans."
+            : "Change plan whenever you want, and the switch takes effect on your next invoice."}
         </p>
-      </div>
-
-      {/* Current Plan Badge */}
-      <div className="flex justify-center mb-6">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-          <span className="text-sm">Current plan:</span>
-          <span className="font-semibold text-slate-900 dark:text-white">
+        {/* One quiet line rather than a badge: the reader already knows what
+            they pay, they came here to compare. */}
+        <p className="mt-4 text-[13px] text-slate-500 dark:text-slate-400">
+          You are on{" "}
+          <span className="font-medium text-slate-900 dark:text-white">
             {PLANS[userPlan].name}
-          </span>
-          <span className="text-sm text-slate-500">
-            {isLtd
-              ? "(Lifetime Deal)"
-              : userBillingInterval === "year"
-              ? `($${PLANS[userPlan].yearlyPrice}/yr)`
-              : `($${PLANS[userPlan].price}/mo)`}
-          </span>
-        </div>
+          </span>{" "}
+          {isLtd
+            ? "(lifetime deal)"
+            : userBillingInterval === "year"
+            ? `at $${PLANS[userPlan].yearlyPrice} a year`
+            : `at $${PLANS[userPlan].price} a month`}
+        </p>
       </div>
 
       {/* Billing Toggle */}
@@ -484,19 +473,20 @@ showError("Something went wrong. Please try again.");
         </div>
       )}
 
-      {/* BYOK Notice */}
-      <div className="mt-10 p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-        <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
-          <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
-            <Zap className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-          </div>
+      {/* Every plan runs on your own AI key, so this belongs under the table
+          rather than inside any one column. */}
+      <div className="mt-10 rounded-2xl border border-border bg-card p-6">
+        <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400">
+            <Zap className="h-5 w-5" />
+          </span>
           <div>
-            <h3 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
-              Bring Your Own AI Key
+            <h3 className="text-[15px] font-medium text-slate-900 dark:text-white">
+              Every plan runs on your own AI key
             </h3>
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              All plans support BYOK - connect your own OpenAI, Anthropic, or Google API key.
-              Pay only for what you use (typically $0.01-0.05 per post).
+            <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Connect an OpenAI, Anthropic or Google key and generate without a
+              cap. Most people spend $2-4 a month on their key.
             </p>
           </div>
         </div>

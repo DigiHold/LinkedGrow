@@ -94,6 +94,9 @@ export default function AnalyticsPage() {
 
   const [days, setDays] = useState(30);
   const [data, setData] = useState<AnalyticsData | null>(null);
+  // Undefined while the first fetch is in flight, so the controls appear only
+  // once we know there is something for them to act on.
+  const hasLinkedIn = data?.capabilities.hasLinkedInConnected === true;
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -166,7 +169,7 @@ export default function AnalyticsPage() {
         <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
@@ -182,7 +185,7 @@ export default function AnalyticsPage() {
 
   return (
     <FeatureGate feature="analytics">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -194,26 +197,36 @@ export default function AnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <DateRangeSelector value={days} onChange={setDays} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSync}
-              disabled={isSyncing}
-              title="Sync all LinkedIn posts"
-            >
-              {isSyncing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
-              Sync
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={() => fetchAnalytics(true)}
-              disabled={isRefreshing}
-              title="Refresh data"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            </Button>
+            {/* Range and sync act on LinkedIn data. With no account connected
+                they are five controls that cannot do anything. */}
+            {hasLinkedIn && (
+              <>
+                <DateRangeSelector value={days} onChange={setDays} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  title="Sync all LinkedIn posts"
+                >
+                  {isSyncing ? (
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1.5" />
+                  )}
+                  Sync
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onClick={() => fetchAnalytics(true)}
+                  disabled={isRefreshing}
+                  title="Refresh data"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                </Button>
+              </>
+            )}
             <VideoModal videoId="u3glQrlzhHs" />
             <Link
               href="/docs/getting-started/understanding-dashboard"

@@ -969,7 +969,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-orange-500/20 to-red-600/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <Key className="w-10 h-10 text-orange-600 dark:text-orange-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>

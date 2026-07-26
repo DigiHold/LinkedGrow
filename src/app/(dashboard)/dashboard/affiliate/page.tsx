@@ -81,6 +81,21 @@ function formatDate(date: string | Date): string {
   });
 }
 
+// The page had six branches and none of them printed a title, so whichever
+// state you landed in the screen opened on a floating card.
+function AffiliateHeader() {
+  return (
+    <div className="min-w-0">
+      <h1 className="text-[26px] font-semibold tracking-[-0.035em] text-slate-900 sm:text-[32px] dark:text-white">
+        Affiliate
+      </h1>
+      <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+        Your referral link, who signed up through it, and what you have earned.
+      </p>
+    </div>
+  );
+}
+
 export default function AffiliateDashboardPage() {
   const { data: session, status: sessionStatus } = useSession();
 
@@ -183,12 +198,13 @@ export default function AffiliateDashboardPage() {
   // Not logged in
   if (sessionStatus === "unauthenticated") {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
         <Card>
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                <Users className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                <Users className="w-10 h-10 text-slate-500 dark:text-slate-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Sign In Required</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-6">
@@ -207,25 +223,18 @@ export default function AffiliateDashboardPage() {
   // Loading state
   if (isLoading || sessionStatus === "loading") {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
-          <div className="space-y-2">
-            <div className="h-7 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-            <div className="h-4 w-64 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-          </div>
-        </div>
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
 
         {/* Stats skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6"
+              className="rounded-2xl border border-border bg-card shadow-sm p-6"
             >
-              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-3" />
-              <div className="h-8 w-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-slate-200 dark:bg-white/10 rounded animate-pulse mb-3" />
+              <div className="h-8 w-16 bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -234,10 +243,10 @@ export default function AffiliateDashboardPage() {
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6"
+            className="rounded-2xl border border-border bg-card shadow-sm p-6"
           >
-            <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-4" />
-            <div className="h-12 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+            <div className="h-5 w-40 bg-slate-200 dark:bg-white/10 rounded animate-pulse mb-4" />
+            <div className="h-12 w-full bg-slate-200 dark:bg-white/10 rounded animate-pulse" />
           </div>
         ))}
       </div>
@@ -247,11 +256,12 @@ export default function AffiliateDashboardPage() {
   // Error state
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
         <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-red-500/20 to-red-600/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                 <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Something Went Wrong</h3>
@@ -269,12 +279,13 @@ export default function AffiliateDashboardPage() {
   // No affiliate account
   if (notFound) {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
         <Card>
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                <Link2 className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                <Link2 className="w-10 h-10 text-slate-500 dark:text-slate-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
                 You don&apos;t have an affiliate account yet
@@ -283,7 +294,7 @@ export default function AffiliateDashboardPage() {
                 Join our affiliate program and earn 30% recurring commissions on every referral. Apply now to get started.
               </p>
               <Link href="/affiliate/apply">
-                <Button className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
+                <Button>
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Apply to Affiliate Program
                 </Button>
@@ -298,11 +309,12 @@ export default function AffiliateDashboardPage() {
   // Pending status
   if (data?.affiliate.status === "pending") {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
         <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <Clock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Application Under Review</h3>
@@ -322,11 +334,12 @@ export default function AffiliateDashboardPage() {
   // Rejected status
   if (data?.affiliate.status === "rejected") {
     return (
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <AffiliateHeader />
         <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-linear-to-br from-red-500/20 to-red-600/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                 <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Application Not Approved</h3>
@@ -357,19 +370,11 @@ export default function AffiliateDashboardPage() {
       : null;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-            Affiliate Dashboard
-          </h1>
-          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-            Track your referrals, earnings, and commissions
-          </p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 w-fit">
-          <BadgeCheck className="w-3.5 h-3.5" />
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <AffiliateHeader />
+        <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+          <BadgeCheck className="h-3.5 w-3.5" />
           Approved
         </span>
       </div>
@@ -377,7 +382,7 @@ export default function AffiliateDashboardPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Clicks */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+        <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Clicks</p>
             <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -388,11 +393,11 @@ export default function AffiliateDashboardPage() {
         </div>
 
         {/* Total Sign-ups */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+        <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Sign-ups</p>
             <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-              <Users className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
+              <Users className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
             </div>
           </div>
           <p className="text-2xl font-bold">{affiliate.totalSignups.toLocaleString()}</p>
@@ -404,7 +409,7 @@ export default function AffiliateDashboardPage() {
         </div>
 
         {/* Total Conversions */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+        <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Conversions</p>
             <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -415,7 +420,7 @@ export default function AffiliateDashboardPage() {
         </div>
 
         {/* Available Balance */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+        <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Available Balance</p>
             <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -429,7 +434,7 @@ export default function AffiliateDashboardPage() {
       </div>
 
       {/* Referral Link */}
-      <Card className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Link2 className="w-5 h-5 text-cyan-500" />
@@ -469,7 +474,7 @@ export default function AffiliateDashboardPage() {
       </Card>
 
       {/* Earnings Overview */}
-      <Card className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -526,7 +531,7 @@ export default function AffiliateDashboardPage() {
       </Card>
 
       {/* PayPal Email Settings */}
-      <Card className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Mail className="w-5 h-5 text-blue-500" />
@@ -577,7 +582,7 @@ export default function AffiliateDashboardPage() {
       </Card>
 
       {/* Referrals Table */}
-      <Card className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="w-5 h-5 text-cyan-500" />
@@ -663,7 +668,7 @@ export default function AffiliateDashboardPage() {
       </Card>
 
       {/* Commissions Table */}
-      <Card className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <DollarSign className="w-5 h-5 text-emerald-500" />

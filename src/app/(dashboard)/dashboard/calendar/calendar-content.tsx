@@ -1086,31 +1086,38 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
 
   return (
     <>
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center">
-                <CalendarDays className="w-5 h-5 text-white" />
-              </div>
-              Content Calendar
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-semibold tracking-[-0.035em] text-slate-900 sm:text-[32px] dark:text-white">
+              Calendar
             </h1>
-            <p className="text-muted-foreground mt-1">Plan and visualize your content schedule</p>
+            <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Everything you have scheduled, and the gaps you have not filled
+              yet.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <VideoModal videoId="6Vr6eYA-gI4" />
-            <Link href="/docs/scheduling/content-calendar" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Help?
+            <Link
+              href="/docs/scheduling/content-calendar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Docs
             </Link>
-            <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+            <Button variant="outline" size="sm" onClick={goToToday}>
+              Today
+            </Button>
           </div>
         </div>
 
         {/* Calendar */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-border shadow-sm">
+        <div className="bg-card rounded-2xl border border-border shadow-sm">
           {/* Calendar Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <h2 className="text-xl font-semibold">{MONTHS[month]} {year}</h2>
@@ -1125,7 +1132,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
           </div>
 
           {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-border bg-gray-50/50 dark:bg-gray-800/50">
+          <div className="grid grid-cols-7 border-b border-border bg-slate-50/70 dark:bg-white/5">
             {DAYS.map((day) => (
               <div key={day} className="text-center text-sm font-medium text-muted-foreground py-3">{day}</div>
             ))}
@@ -1153,10 +1160,10 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                   onDragLeave={handleDayDragLeave}
                   onDrop={(e) => handleDayDrop(item, e)}
                   className={cn(
-                    "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-white dark:bg-gray-900",
-                    !item.isCurrentMonth && "bg-gray-50/80 dark:bg-gray-800/30",
-                    isClickable && "hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer",
-                    dayIsPast && item.isCurrentMonth && "bg-gray-50/50 dark:bg-gray-800/20 calendar-past-stripes",
+                    "min-h-32 sm:p-2 p-1 border-b border-r border-border/50 transition-all text-left flex flex-col relative bg-card",
+                    !item.isCurrentMonth && "bg-slate-50/80 dark:bg-white/2",
+                    isClickable && "hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer",
+                    dayIsPast && item.isCurrentMonth && "bg-slate-50/60 dark:bg-white/2 calendar-past-stripes",
                     isSelected && "bg-primary/5 dark:bg-primary/10 ring-2 ring-inset ring-primary",
                     index % 7 === 6 && "border-r-0",
                     // Drag and drop visual feedback
@@ -1214,14 +1221,14 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                                 post.status === "scheduled" && "bg-blue-100 dark:bg-blue-800/40",
                                 post.status === "published" && "bg-green-100 dark:bg-green-800/40"
                               )}>
-                                <CalendarDays className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                                <CalendarDays className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                               </div>
                             )}
-                            <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                            <p className="line-clamp-1 text-[10px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
                               {getPostPreview(post.content, 30)}
                             </p>
                           </div>
-                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
+                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-slate-500">
                             <Calendar className="w-2.5 h-2.5" />
                             <span className="font-medium">{formatTime(getPostDisplayDate(post))}</span>
                           </div>
@@ -1235,17 +1242,17 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                           draggable
                           onDragStart={(e) => handleIdeaDragStart(idea, e)}
                           onDragEnd={handleIdeaDragEnd}
-                          className="w-full p-1 rounded-sm overflow-hidden border border-gray-300 bg-gray-100 dark:bg-gray-800 transition-opacity hover:opacity-80 text-left cursor-grab active:cursor-grabbing"
+                          className="w-full p-1 rounded-sm overflow-hidden border border-slate-300 bg-slate-100 dark:bg-white/5 transition-opacity hover:opacity-80 text-left cursor-grab active:cursor-grabbing"
                         >
                           <div className="flex items-center gap-1.5 px-1.5 py-1">
-                            <div className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0 bg-gray-200 dark:bg-gray-700">
-                              <Lightbulb className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                            <div className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0 bg-slate-200 dark:bg-white/10">
+                              <Lightbulb className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                             </div>
-                            <p className="line-clamp-1 text-[10px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                            <p className="line-clamp-1 text-[10px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
                               {getPostPreview(idea.title, 30)}
                             </p>
                           </div>
-                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-gray-500">
+                          <div className="px-1.5 py-1 flex items-center gap-1.5 text-[9px] text-slate-500">
                             <Lightbulb className="w-2.5 h-2.5" />
                             <span className="font-medium">Idea</span>
                           </div>
@@ -1278,7 +1285,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
       {dropdownOpen && selectedDay && dropdownPosition && (
         <div
           ref={dayDropdownRef}
-          className="fixed z-50 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg p-2 min-w-44"
+          className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-2 min-w-44"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -1286,19 +1293,19 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
         >
           <button
             onClick={() => openDrawer("create-post")}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Plus className="w-4 h-4" /> Create a post
           </button>
           <button
             onClick={() => openDrawer("schedule-post")}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <CalendarPlus className="w-4 h-4" /> Schedule a post
           </button>
           <button
             onClick={openIdeaModal}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Lightbulb className="w-4 h-4" /> Insert an idea
           </button>
@@ -1309,10 +1316,10 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
       {ideaModalOpen && createPortal(
         <div className="fixed inset-0 z-200 flex items-center justify-center p-4 pointer-events-auto">
           <div className="fixed inset-0 bg-black/40" onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 z-201">
+          <div className="relative bg-card rounded-xl shadow-xl w-full max-w-lg p-6 z-201">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">{selectedIdeaForModal ? "Your idea" : "Insert an idea"}</h2>
-              <button onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => { setIdeaModalOpen(false); setSelectedIdeaForModal(null); }} className="text-slate-500 hover:text-slate-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1352,10 +1359,10 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
       {showDeleteConfirm && selectedPost && createPortal(
         <div className="fixed inset-0 z-200 flex items-center justify-center p-4 pointer-events-auto">
           <div className="fixed inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 z-201">
+          <div className="relative bg-card rounded-xl shadow-xl w-full max-w-md p-6 z-201">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Delete post</h2>
-              <button onClick={() => setShowDeleteConfirm(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowDeleteConfirm(false)} className="text-slate-500 hover:text-slate-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1394,26 +1401,26 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
             {/* POST DETAIL VIEW */}
             {drawerView === "post-detail" && selectedPost && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                      <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:hidden">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">
                         {selectedPost.status === "published" ? "Your post published" : selectedPost.status === "draft" ? "Draft post" : "Scheduled post"}
                       </h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
-                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-slate-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <div className="w-full transition-opacity duration-200">
-                        <div className="w-full max-w-lg m-auto bg-white dark:bg-gray-900 rounded-xl border border-border mb-10">
+                        <div className="w-full max-w-lg m-auto bg-card rounded-xl border border-border mb-10">
                           <div className="px-4 pt-4 pb-0">
                             <div className="flex w-full justify-between items-start">
                               <div className="flex max-w-[90%] items-start">
@@ -1438,15 +1445,15 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                               <div className="relative" ref={postMenuRef}>
                                 <button
                                   onClick={() => setPostMenuOpen(!postMenuOpen)}
-                                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-sm"
+                                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm"
                                 >
                                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                                 </button>
                                 {postMenuOpen && (
-                                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-lg py-1 min-w-32">
+                                  <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-32">
                                     <button
                                       onClick={() => openEditPost(selectedPost)}
-                                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                      className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                                     >
                                       Edit post
                                     </button>
@@ -1499,7 +1506,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                               <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                               <span className="text-sm font-medium">First Comment</span>
                             </div>
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-border p-4">
+                            <div className="bg-card rounded-xl border border-border p-4">
                               <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedPost.firstComment}</p>
                             </div>
                           </div>
@@ -1507,9 +1514,9 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l md:border-border flex flex-col gap-5 transition-all w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-hidden h-full bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 transition-all w-full md:w-65 lg:w-90 p-8 pt-10 pb-10 sm:p-10 md:p-6 lg:p-10 overflow-hidden h-full bg-card">
+                    <div className="relative bg-card border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-card border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
                           <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
@@ -1525,7 +1532,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                       </div>
                     </div>
                     {selectedPost.linkedinPostUrl && (
-                      <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-white dark:bg-gray-900 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <a href={selectedPost.linkedinPostUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full h-10 text-sm bg-card border border-border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         View on LinkedIn <ExternalLink className="w-4 h-4" />
                       </a>
                     )}
@@ -1561,22 +1568,22 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
             {/* CREATE POST VIEW */}
             {drawerView === "create-post" && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                      <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:hidden">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">Plan a new post</h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   {/* LEFT SIDE - Editor */}
-                  <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-white dark:bg-gray-900">
+                  <div className="relative flex flex-col flex-1 min-h-0 overflow-y-auto p-6 bg-card">
                     <div className="space-y-4">
                       <PostEditor
                         ref={postEditorRef}
@@ -1687,7 +1694,7 @@ Tips for viral posts:
                               <button
                                 key={suggestion}
                                 onClick={() => setAIInstruction(suggestion)}
-                                className="px-3 py-1 text-xs rounded-full bg-white dark:bg-gray-900 border border-border hover:border-linkedin/50 transition-colors"
+                                className="px-3 py-1 text-xs rounded-full bg-card border border-border hover:border-linkedin/50 transition-colors"
                               >
                                 {suggestion}
                               </button>
@@ -1707,10 +1714,10 @@ Tips for viral posts:
                   </div>
 
                   {/* RIGHT SIDE - Settings */}
-                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-slate-50 dark:bg-slate-800/50">
                     {/* To be planned status box */}
-                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
+                    <div className="relative bg-card border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-card border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-yellow-500" />
                           <span className="text-xs font-medium text-muted-foreground">To be planned</span>
@@ -1794,15 +1801,15 @@ Tips for viral posts:
             {/* SCHEDULE POST VIEW - Post List */}
             {drawerView === "schedule-post" && !selectedPostToSchedule && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                      <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:hidden">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">Schedule a post</h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
@@ -1810,13 +1817,13 @@ Tips for viral posts:
                 <div className="flex flex-col w-full h-full min-h-0">
                   <div className="flex w-full justify-between items-center gap-4 flex-wrap p-4 border-b border-border">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                       <input
                         type="text"
                         placeholder="Search for a post"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm bg-white dark:bg-gray-900"
+                        className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm bg-card"
                       />
                     </div>
                     <Select value={filterType} onValueChange={setFilterType}>
@@ -1840,14 +1847,14 @@ Tips for viral posts:
                         filteredPosts.map((post) => (
                           <div
                             key={post.id}
-                            className="flex items-center gap-4 p-4 rounded-lg border transition-colors bg-white dark:bg-gray-900 border-gray-200 hover:border-primary"
+                            className="flex items-center gap-4 p-4 rounded-lg border transition-colors bg-card border-slate-200 hover:border-primary"
                           >
                             <div
                               className="flex-1 flex flex-col gap-1.5 overflow-hidden cursor-pointer"
                               onClick={() => setSelectedPostToSchedule(post)}
                             >
                               <h3 className="font-bold truncate">{getPostPreview(post.content, 80)}</h3>
-                              <p className="text-sm text-gray-500 flex items-center gap-2">
+                              <p className="text-sm text-slate-500 flex items-center gap-2">
                                 <span>
                                   {post.status === "published" ? "Published" : post.status === "draft" ? "Draft" : "Scheduled"} on {formatShortDate(post.createdAt)}
                                 </span>
@@ -1891,21 +1898,21 @@ Tips for viral posts:
             {/* SCHEDULE POST VIEW - Post Preview */}
             {drawerView === "schedule-post" && selectedPostToSchedule && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setSelectedPostToSchedule(null)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                      <button onClick={() => setSelectedPostToSchedule(null)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:hidden">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">Schedule this post</h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
-                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-gray-800">
+                  <div className="relative flex flex-col flex-1 min-h-fit w-full bg-[#f4f2ee] dark:bg-slate-800">
                     <div className="pt-10 px-6 lg:px-10 flex flex-col items-start h-full min-h-0 flex-1 overflow-y-auto w-full">
                       <button
                         onClick={() => setSelectedPostToSchedule(null)}
@@ -1913,7 +1920,7 @@ Tips for viral posts:
                       >
                         <ArrowLeft className="w-4 h-4" /> Back to selection
                       </button>
-                      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl border border-border mb-10">
+                      <div className="w-full max-w-lg bg-card rounded-xl border border-border mb-10">
                         <div className="px-4 pt-4 pb-0">
                           <div className="flex w-full justify-between items-start">
                             <div className="flex max-w-[90%] items-start">
@@ -1945,9 +1952,9 @@ Tips for viral posts:
                       </div>
                     </div>
                   </div>
-                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-card">
+                    <div className="relative bg-card border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-card border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-yellow-500" />
                           <span className="text-xs font-medium text-muted-foreground">To be scheduled</span>
@@ -2012,22 +2019,22 @@ Tips for viral posts:
             {/* DAY DETAIL VIEW */}
             {drawerView === "day-detail" && selectedDay && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:hidden">
+                      <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:hidden">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">
                         {selectedDay.day} {MONTHS[selectedDay.month]} {selectedDay.year}
                       </h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-col w-full h-full min-h-0 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-800/50">
+                <div className="flex flex-col w-full h-full min-h-0 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-800/50">
                   {/* Actions */}
                   <div className="flex gap-2 mb-6">
                     <Button
@@ -2070,7 +2077,7 @@ Tips for viral posts:
                                 <div
                                   key={post.id}
                                   className={cn(
-                                    "p-4 rounded-lg border bg-white dark:bg-gray-900 transition-all hover:shadow-md cursor-pointer",
+                                    "p-4 rounded-lg border bg-card transition-all hover:shadow-md cursor-pointer",
                                     post.status === "draft" && "border-l-4 border-l-yellow-500",
                                     post.status === "scheduled" && "border-l-4 border-l-blue-500",
                                     post.status === "published" && "border-l-4 border-l-green-500",
@@ -2097,18 +2104,18 @@ Tips for viral posts:
                                           {formatTime(getPostDisplayDate(post))}
                                         </span>
                                       </div>
-                                      <p className="text-sm line-clamp-2 text-gray-700 dark:text-gray-300">
+                                      <p className="text-sm line-clamp-2 text-slate-700 dark:text-slate-300">
                                         {post.content}
                                       </p>
                                     </div>
                                     {post.media && post.media.length > 0 && (
                                       <div className="shrink-0">
                                         {post.media[0].mimeType === "application/pdf" ? (
-                                          <div className="w-16 h-16 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                          <div className="w-16 h-16 rounded-md bg-slate-200 dark:bg-white/10 flex items-center justify-center">
                                             <CalendarDays className="w-6 h-6 text-muted-foreground" />
                                           </div>
                                         ) : post.media[0].mimeType.startsWith("video/") ? (
-                                          <div className="w-16 h-16 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                          <div className="w-16 h-16 rounded-md bg-slate-200 dark:bg-white/10 flex items-center justify-center">
                                             <ImageIcon className="w-6 h-6 text-muted-foreground" />
                                           </div>
                                         ) : (
@@ -2163,7 +2170,7 @@ Tips for viral posts:
                               {dayIdeas.map((idea) => (
                                 <div
                                   key={idea.id}
-                                  className="p-4 rounded-lg border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 transition-all hover:shadow-md cursor-pointer"
+                                  className="p-4 rounded-lg border border-slate-200 bg-card dark:border-slate-700 transition-all hover:shadow-md cursor-pointer"
                                   onClick={() => {
                                     setSelectedIdeaForModal(idea);
                                     setNewIdeaText(idea.content || idea.title);
@@ -2194,7 +2201,7 @@ Tips for viral posts:
                         {/* Empty State */}
                         {dayPosts.length === 0 && dayIdeas.length === 0 && (
                           <div className="text-center py-12">
-                            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
                               <CalendarDays className="w-8 h-8 text-muted-foreground" />
                             </div>
                             <p className="text-muted-foreground mb-4">No posts or ideas for this day</p>
@@ -2216,22 +2223,22 @@ Tips for viral posts:
             {/* EDIT POST VIEW */}
             {drawerView === "edit-post" && selectedPost && (
               <>
-                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-10">
+                <div className="py-4 md:pl-10 pl-4 md:pr-8 pr-4 border-b border-border bg-card sticky top-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setDrawerView("post-detail")} className="text-gray-500 hover:text-gray-700 cursor-pointer">
+                      <button onClick={() => setDrawerView("post-detail")} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <h2 className="sm:text-2xl text-xl font-semibold">Edit post</h2>
                     </div>
-                    <button onClick={() => setDrawerOpen(false)} className="text-gray-500 hover:text-gray-700 cursor-pointer sm:block hidden">
+                    <button onClick={() => setDrawerOpen(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer sm:block hidden">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
                 <div className="flex md:flex-row flex-col w-full flex-1 min-h-0">
                   {/* LEFT SIDE - Editor */}
-                  <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-gray-800">
+                  <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto p-6 bg-[#f4f2ee] dark:bg-slate-800">
                     <div className="w-full max-w-lg mx-auto">
                       <PostEditor
                         value={editPostContent}
@@ -2278,9 +2285,9 @@ Tips for viral posts:
                   </div>
 
                   {/* RIGHT SIDE - Settings */}
-                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="relative bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
-                      <div className="absolute -top-2 left-4 px-3 py-1 bg-white dark:bg-gray-900 border border-border rounded-full shadow-sm">
+                  <div className="md:border-l md:border-border flex flex-col gap-5 w-full md:w-80 lg:w-96 p-6 overflow-y-auto bg-card">
+                    <div className="relative bg-card border border-border rounded-lg p-4 shadow-sm">
+                      <div className="absolute -top-2 left-4 px-3 py-1 bg-card border border-border rounded-full shadow-sm">
                         <div className="flex items-center gap-2">
                           <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedPost.status))} />
                           <span className="text-xs font-medium text-muted-foreground">{getStatusLabel(selectedPost.status)}</span>
