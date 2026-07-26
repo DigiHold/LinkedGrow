@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Users table
 export const users = sqliteTable("users", {
@@ -881,8 +881,10 @@ export const proxyAllocations = sqliteTable("proxy_allocations", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
-// One agent is one LinkedIn account is one ICP. The sender cannot change after
-// creation (section 7b), so linkedin_account_id carries a unique index.
+// An agent is one ICP: its own sources, scoring, tone and sequence. Several
+// agents can send from one LinkedIn account and they divide that account's
+// daily budget, because the limit is LinkedIn's and it watches the profile.
+// The sender cannot change after creation (section 7b).
 export const agents = sqliteTable("agents", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id")
@@ -1110,6 +1112,41 @@ export const agentEvents = sqliteTable("agent_events", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
+// Every model call the worker makes, written before the response is used.
+// This log IS the meter the per-agent spend ceilings read (plan section 8g),
+// so a call whose cost cannot be recorded is a call that does not happen.
+// Scoring is the one cost line LinkedIn's own limits do not bound.
+export const agentAiUsage = sqliteTable("agent_ai_usage", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  model: text("model").notNull(),
+  /** Which line of the bill this was: prefilter, score, note, dm1, dm2. */
+  purpose: text("purpose").notNull(),
+  inputTokens: integer("input_tokens").notNull(),
+  outputTokens: integer("output_tokens").notNull(),
+  costUsd: real("cost_usd").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+}, (table) => [
+  index("idx_agent_ai_usage_agent_time").on(table.agentId, table.createdAt),
+]);
+
+// The switches the worker plane reads before every send.
+//
+// A row rather than an environment variable, deliberately: the fleet-wide halt
+// is the one you reach for at 2am and it has to take effect within seconds,
+// without a deploy and without restarting anything. A non-empty value is the
+// reason, shown to the customer and written to the activity log.
+export const workerFlags = sqliteTable("worker_flags", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
 export type LinkedinAccount = typeof linkedinAccounts.$inferSelect;
 export type NewLinkedinAccount = typeof linkedinAccounts.$inferInsert;
 export type ProxyAllocation = typeof proxyAllocations.$inferSelect;
@@ -1125,4 +1162,5 @@ export type NewAgentQueueItem = typeof agentQueue.$inferInsert;
 export type AgentMessage = typeof agentMessages.$inferSelect;
 export type NewAgentMessage = typeof agentMessages.$inferInsert;
 export type AgentEvent = typeof agentEvents.$inferSelect;
+export type AgentAiUsage = typeof agentAiUsage.$inferSelect;
 export type NewAgentEvent = typeof agentEvents.$inferInsert;

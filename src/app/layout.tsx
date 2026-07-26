@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, DM_Sans, Host_Grotesk } from "next/font/google";
+import { Sora, DM_Sans, Host_Grotesk, Instrument_Sans, Caveat } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { SessionProvider } from "@/components/providers/session-provider";
@@ -36,6 +36,20 @@ const hostGrotesk = Host_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",
   weight: ["400", "500", "600", "700"],
+});
+
+// Instrument Sans and Caveat belong to the v3 marketing design. Scoped to those
+// components by their own variables, so nothing already shipped changes face.
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-instrument",
+  weight: ["400", "500", "600", "700"],
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-hand",
+  weight: ["400", "600"],
 });
 
 // Google Tag Manager ID from environment
@@ -121,7 +135,7 @@ export default async function RootLayout({
         <WebsiteJsonLd />
         <SoftwareApplicationJsonLd />
       </head>
-      <body className={`${sora.variable} ${dmSans.variable} ${hostGrotesk.variable} font-sans antialiased`}>
+      <body className={`${sora.variable} ${dmSans.variable} ${hostGrotesk.variable} ${instrumentSans.variable} ${caveat.variable} font-sans antialiased`}>
         {/* GTM NoScript Fallback */}
         {GTM_ID && <GoogleTagManagerNoScript gtmId={GTM_ID} />}
 

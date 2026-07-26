@@ -656,3 +656,35 @@ html[style] {
     display: none;
   }
 }
+
+/* ============================================================
+   v3 marketing design tokens
+   ============================================================
+   Lifted from the approved landing prototype. Scoped to the v3
+   marketing components by name, so nothing already shipped changes
+   colour or face. The dashboard keeps its own scale.
+*/
+:root {
+  --v3-ink: #060911;
+  --v3-ink2: #1e2a41;
+  --v3-mut: #586780;
+  --v3-faint: #8996ac;
+  --v3-bg2: #f6f9fd;
+  --v3-bg3: #eaf0f8;
+  --v3-cream: #faf6f1;
+  --v3-line: #e7edf5;
+  --v3-line2: #d3dde9;
+  --v3-cyan: #00b8db;
+  --v3-blue: #155dfc;
+  --v3-blue-deep: #0b3fc4;
+  --v3-deep: #07204f;
+  --v3-wash: #eff5ff;
+}
+
+.font-instrument {
+  font-family: var(--font-instrument), var(--font-body), system-ui, sans-serif;
+}
+
+.font-hand {
+  font-family: var(--font-hand), cursive;
+}
