@@ -408,7 +408,9 @@ export function Sidebar() {
           )}
         </nav>
 
-        {helpBlock}
+        {/* Home only. The Leads and Posts sections are working screens and the
+            footer would just push their lists up. */}
+        {section === "root" && helpBlock}
 
         {/* Safe-area padding keeps the user button above the iOS home indicator. */}
         <div
