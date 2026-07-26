@@ -220,7 +220,6 @@ export function Sidebar() {
       <Link
         key={item.href}
         href={item.href}
-        prefetch={false}
         className={cn(
           "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
           active
@@ -279,7 +278,7 @@ export function Sidebar() {
         )}
       >
         <div className="flex h-16 items-center justify-between px-4">
-          <Link href="/dashboard" prefetch={false} className="flex items-center">
+          <Link href="/dashboard" className="flex items-center">
             <Logo />
           </Link>
           <button

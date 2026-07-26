@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -17,8 +19,18 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DateRangeSelector } from "@/components/dashboard/analytics/date-range-selector";
 import { StatCard } from "@/components/dashboard/analytics/stat-card";
-import { PostTypeChart } from "@/components/dashboard/analytics/post-type-chart";
-import { EngagementTrendChart } from "@/components/dashboard/analytics/engagement-trend-chart";
+// Both charts pull recharts. Lazy so the page shell paints without it.
+const chartSkeleton = () => (
+  <div className="h-64 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" />
+);
+const PostTypeChart = dynamic(
+  () => import("@/components/dashboard/analytics/post-type-chart").then((m) => m.PostTypeChart),
+  { ssr: false, loading: chartSkeleton }
+);
+const EngagementTrendChart = dynamic(
+  () => import("@/components/dashboard/analytics/engagement-trend-chart").then((m) => m.EngagementTrendChart),
+  { ssr: false, loading: chartSkeleton }
+);
 import { PostingHeatmap } from "@/components/dashboard/analytics/posting-heatmap";
 import { DemographicsCharts } from "@/components/dashboard/analytics/demographics-charts";
 import { ExportReport } from "@/components/dashboard/analytics/export-report";

@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-toast",
       "@radix-ui/react-tooltip",
       "framer-motion",
+      "recharts",
+      "date-fns",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-switch",
     ],
   },
   images: {

@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
@@ -22,7 +24,12 @@ import { DateRangeSelector } from "@/components/dashboard/analytics/date-range-s
 import { VideoModal } from "@/components/dashboard/video-modal";
 import { StatCard } from "@/components/dashboard/analytics/stat-card";
 import { AnalyticsEmptyState } from "@/components/dashboard/analytics/empty-state";
-import { FollowerChart } from "@/components/dashboard/analytics/follower-chart";
+// recharts is ~400 KB and only renders below the fold. Loading it lazily takes
+// it out of the analytics page bundle; ssr:false because it measures the DOM.
+const FollowerChart = dynamic(
+  () => import("@/components/dashboard/analytics/follower-chart").then((m) => m.FollowerChart),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" /> }
+);
 import { BestTimeCard } from "@/components/dashboard/analytics/best-time-card";
 import { PostPerformanceTable } from "@/components/dashboard/analytics/post-performance-table";
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FabricObject, Textbox, Rect, Circle, Line, Gradient } from "fabric";
-import { jsPDF } from "jspdf";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -712,6 +711,11 @@ setSaveStatus('idle');
       // Save current canvas JSON before export loop
       const currentCanvasJSON = canvasRef.current.exportToJSON();
       saveCurrentSlide();
+
+      // jspdf and its html2canvas dependency are ~500 KB and are only needed
+      // the moment somebody exports. Loading them here keeps them out of the
+      // page bundle entirely.
+      const { jsPDF } = await import("jspdf");
 
       const pdf = new jsPDF({
         orientation: 'portrait',

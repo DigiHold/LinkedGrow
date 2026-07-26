@@ -1,32 +1,43 @@
+import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { SidebarProvider } from "@/components/dashboard/sidebar-context";
+import { SessionProvider } from "@/components/providers/session-provider";
 import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Resolved here rather than in the root layout on purpose: the root layout
+  // also wraps the marketing pages, and awaiting auth() there would read
+  // cookies and turn every statically generated page dynamic. Handing the
+  // session to the provider means useSession() is populated on first render
+  // instead of costing a /api/auth/session round trip on every page.
+  const session = await auth();
+
   return (
-    // lg-v2 scopes the Host Grotesk headings to the v2 dashboard without
-    // touching the marketing pages, which still run on Sora.
-    // overflow-x-clip is the standing rule: no page ever scrolls sideways.
-    <SidebarProvider>
-      <div className="lg-v2 min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-900">
-        <div className="flex">
-          <Sidebar />
+    <SessionProvider session={session}>
+      <SidebarProvider>
+        {/* lg-v2 scopes the Host Grotesk headings to the v2 dashboard without
+            touching the marketing pages, which still run on Sora.
+            overflow-x-clip is the standing rule: nothing ever scrolls sideways. */}
+        <div className="lg-v2 min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-900">
+          <div className="flex">
+            <Sidebar />
 
-          {/* min-w-0 stops wide tables from forcing horizontal page scroll */}
-          <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
-            <Topbar />
-            <main className="relative flex-1">{children}</main>
+            {/* min-w-0 stops wide tables from forcing horizontal page scroll */}
+            <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
+              <Topbar />
+              <main className="relative flex-1">{children}</main>
+            </div>
           </div>
-        </div>
 
-        {/* Setup wizard for first-time users, on any dashboard page */}
-        <OnboardingCheck />
-      </div>
-    </SidebarProvider>
+          {/* Setup wizard for first-time users, on any dashboard page */}
+          <OnboardingCheck />
+        </div>
+      </SidebarProvider>
+    </SessionProvider>
   );
 }
