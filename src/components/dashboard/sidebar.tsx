@@ -56,7 +56,7 @@ const agentNav: NavItem[] = [
   { name: "Replies", href: "/dashboard/replies", icon: ReplyIcon },
   {
     name: "LinkedIn accounts",
-    href: "/dashboard/linkedin-accounts",
+    href: "/dashboard/settings/linkedin-accounts",
     icon: LinkedInAccountIcon,
     hideForTeamMember: true,
   },

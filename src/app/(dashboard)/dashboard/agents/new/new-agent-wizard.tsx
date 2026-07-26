@@ -394,7 +394,7 @@ export function NewAgentWizard() {
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     No LinkedIn account connected yet.
                   </p>
-                  <Link href="/dashboard/linkedin-accounts" className="mt-3 inline-block">
+                  <Link href="/dashboard/settings/linkedin-accounts" className="mt-3 inline-block">
                     <Button size="sm" variant="outline">
                       Connect one
                     </Button>

@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
 import { eq, desc, and, inArray, or, count, gte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { schedulePost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
 import { setBrevoAttributes, brevoDate } from "@/lib/newsletter";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
@@ -330,13 +329,6 @@ export async function POST(request: NextRequest) {
 
     const postId = nanoid();
     const now = new Date();
-    let qstashMessageId: string | null = null;
-
-    // If scheduling, create QStash job for exact-time delivery
-    if (status === "scheduled" && scheduledAt) {
-      const scheduleDate = new Date(scheduledAt);
-      qstashMessageId = await schedulePost(postId, scheduleDate);
-    }
 
     // Handle mediaData (base64) by uploading to R2 first
     // This supports Reddit/Generator pages that send base64 images directly
@@ -412,7 +404,6 @@ return NextResponse.json(
       status,
       postType: actualPostType,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-      qstashMessageId,
       metadata: metadata ? JSON.stringify(metadata) : null,
       createdAt: now,
       updatedAt: now,

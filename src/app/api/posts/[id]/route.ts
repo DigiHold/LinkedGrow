@@ -6,7 +6,7 @@ import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
-import { schedulePost, cancelScheduledPost, reschedulePost } from "@/lib/qstash";
+import { cancelScheduledPost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 import { PLANS, PlanId } from "@/lib/plans";
 
@@ -230,36 +230,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (firstComment !== undefined)
       updateData.firstComment = firstComment?.trim() || null;
 
-    // Handle QStash scheduling changes
+    // Unscheduling still cancels an upstream job, because posts scheduled
+    // before the API removal can still have one. Nothing new is queued: see
+    // the note in src/lib/qstash.ts.
     const wasScheduled = existingPost.status === "scheduled";
     const willBeScheduled = (status ?? existingPost.status) === "scheduled";
-    const newScheduleDate = scheduledAt ? new Date(scheduledAt) : existingPost.scheduledAt;
 
-    let qstashMessageId = existingPost.qstashMessageId;
-
-    if (wasScheduled && !willBeScheduled) {
-      // Post is being unscheduled (changed to draft or other status)
-      if (existingPost.qstashMessageId) {
-        await cancelScheduledPost(existingPost.qstashMessageId);
-        qstashMessageId = null;
-      }
-    } else if (!wasScheduled && willBeScheduled && newScheduleDate) {
-      // Post is being scheduled for the first time
-      qstashMessageId = await schedulePost(postId, newScheduleDate);
-    } else if (wasScheduled && willBeScheduled && scheduledAt) {
-      // Post is being rescheduled to a different time
-      const oldScheduleTime = existingPost.scheduledAt?.getTime();
-      const newScheduleTime = new Date(scheduledAt).getTime();
-      if (oldScheduleTime !== newScheduleTime && existingPost.qstashMessageId) {
-        qstashMessageId = await reschedulePost(
-          existingPost.qstashMessageId,
-          postId,
-          new Date(scheduledAt)
-        );
-      }
+    if (wasScheduled && !willBeScheduled && existingPost.qstashMessageId) {
+      await cancelScheduledPost(existingPost.qstashMessageId);
+      updateData.qstashMessageId = null;
     }
-
-    updateData.qstashMessageId = qstashMessageId;
 
     // Handle media removal if requested
     if (removeMedia === true) {

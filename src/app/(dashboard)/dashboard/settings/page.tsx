@@ -896,7 +896,7 @@ function SettingsContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/dashboard/linkedin-accounts">
+            <Link href="/dashboard/settings/linkedin-accounts">
               <Button variant="outline">Manage LinkedIn accounts</Button>
             </Link>
           </CardContent>

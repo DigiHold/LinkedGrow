@@ -9,7 +9,7 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, deleteFromR2, isR2Configured } from "@/lib/storage/r2";
-import { schedulePost, cancelScheduledPost } from "@/lib/qstash";
+import { cancelScheduledPost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -258,17 +258,16 @@ export async function PATCH(
       if (!finalScheduledAt) {
         return apiErrorResponse("scheduledAt is required for scheduled posts", 400);
       }
-      // Cancel old schedule
+      // Cancel any job left from before the API removal. Nothing new is
+      // queued: see the note in src/lib/qstash.ts.
       if (existingPost.qstashMessageId) {
         try {
           await cancelScheduledPost(existingPost.qstashMessageId);
         } catch {
           // Non-fatal
         }
+        updates.qstashMessageId = null;
       }
-      // Create new schedule
-      const newQstashId = await schedulePost(id, finalScheduledAt);
-      updates.qstashMessageId = newQstashId;
       updates.status = "scheduled";
     }
 

@@ -31,21 +31,18 @@ const qstash = new Proxy({} as Client, {
 const APP_URL = "https://linkedgrow.ai";
 
 /**
- * Schedule a post to be published at a specific time
- * @param postId - The ID of the post to publish
- * @param scheduledAt - The exact Date/time to publish
- * @returns The QStash message ID for tracking/cancellation
+ * Post scheduling no longer creates a QStash job.
+ *
+ * v2 drops the LinkedIn API, so /api/qstash/publish-post, /auto-like and
+ * /post-first-comment are gone and the helpers that targeted them went with
+ * them. A scheduled post is now a row with a status and a time, which is the
+ * user's calendar, and the browser publisher will read it when phase 12 builds
+ * it. Queueing a job at a deleted URL would have failed silently at delivery
+ * time, which is the worst place to find out.
+ *
+ * cancelScheduledPost stays: jobs created before the removal are still queued
+ * upstream and deleting a user has to cancel them.
  */
-export async function schedulePost(postId: string, scheduledAt: Date): Promise<string> {
-  const response = await qstash.publishJSON({
-    url: `${APP_URL}/api/qstash/publish-post`,
-    body: { postId },
-    notBefore: Math.floor(scheduledAt.getTime() / 1000), // Unix timestamp in seconds
-    retries: 5,
-  });
-
-  return response.messageId;
-}
 
 /**
  * Cancel a scheduled post
@@ -57,65 +54,6 @@ export async function cancelScheduledPost(messageId: string): Promise<void> {
   } catch (error) {
     // Message might already be delivered or not exist
 }
-}
-
-/**
- * Reschedule a post to a new time
- * @param oldMessageId - The existing QStash message ID to cancel
- * @param postId - The post ID
- * @param newScheduledAt - The new scheduled time
- * @returns The new QStash message ID
- */
-export async function reschedulePost(
-  oldMessageId: string,
-  postId: string,
-  newScheduledAt: Date
-): Promise<string> {
-  // Cancel the old scheduled message
-  await cancelScheduledPost(oldMessageId);
-
-  // Schedule a new one
-  return schedulePost(postId, newScheduledAt);
-}
-
-/**
- * Schedule an auto-like on the user's own post after publication
- * @param postId - The ID of the post to like
- * @param delaySeconds - Random delay in seconds (10-120)
- * @returns The QStash message ID
- */
-export async function scheduleAutoLike(
-  postId: string,
-  delaySeconds: number
-): Promise<string> {
-  const response = await qstash.publishJSON({
-    url: `${APP_URL}/api/qstash/auto-like`,
-    body: { postId },
-    delay: delaySeconds,
-    retries: 3,
-  });
-
-  return response.messageId;
-}
-
-/**
- * Schedule a first comment to be posted after publication
- * @param postId - The ID of the post to comment on
- * @param delaySeconds - Random delay in seconds (60-300)
- * @returns The QStash message ID
- */
-export async function scheduleFirstComment(
-  postId: string,
-  delaySeconds: number
-): Promise<string> {
-  const response = await qstash.publishJSON({
-    url: `${APP_URL}/api/qstash/post-first-comment`,
-    body: { postId },
-    delay: delaySeconds,
-    retries: 3,
-  });
-
-  return response.messageId;
 }
 
 export { qstash };

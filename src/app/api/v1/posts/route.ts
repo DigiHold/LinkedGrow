@@ -9,7 +9,6 @@ import {
   apiSuccessResponse,
 } from "@/lib/api-auth";
 import { uploadToR2, isR2Configured } from "@/lib/storage/r2";
-import { schedulePost } from "@/lib/qstash";
 import { PLANS, PlanId } from "@/lib/plans";
 import { users } from "@/lib/db/schema";
 import sharp from "sharp";
@@ -335,13 +334,6 @@ export async function POST(request: NextRequest) {
     // Create post
     const postId = nanoid();
     const now = new Date();
-    let qstashMessageId: string | null = null;
-
-    // Schedule via QStash if scheduled
-    if (status === "scheduled" && scheduledAt) {
-      const scheduleDate = new Date(scheduledAt);
-      qstashMessageId = await schedulePost(postId, scheduleDate);
-    }
 
     await db.insert(posts).values({
       id: postId,
@@ -351,7 +343,6 @@ export async function POST(request: NextRequest) {
       status: status as "draft" | "scheduled",
       postType: postType as "text" | "image",
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-      qstashMessageId,
       metadata: metadata ? JSON.stringify(metadata) : null,
       createdAt: now,
       updatedAt: now,
