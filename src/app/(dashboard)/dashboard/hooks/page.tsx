@@ -161,16 +161,16 @@ export default function HooksPage() {
           <AiKeyGate what="write hooks" />
 
           {/* Preview of what's possible */}
-          <Card className="opacity-60">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base">Preview - Popular Topics</CardTitle>
+              <CardTitle className="text-base">Popular topics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {popularTopics.map((topic) => (
                   <span
                     key={topic}
-                    className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
+                    className="px-3 py-1.5 rounded-full text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
                   >
                     {topic}
                   </span>
@@ -247,7 +247,7 @@ export default function HooksPage() {
               <Button
                 onClick={handleGenerate}
                 disabled={(!selectedTopic && !customTopic) || isGenerating}
-                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="px-6"
               >
                 {isGenerating ? (
                   <>

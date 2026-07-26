@@ -206,16 +206,16 @@ function IdeasContent() {
         <AiKeyGate what="generate content ideas" />
 
         {/* Preview of what's possible */}
-        <Card className="opacity-60">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base">Preview - Popular Themes</CardTitle>
+            <CardTitle className="text-base">Popular themes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {popularThemes.map((theme) => (
                 <span
                   key={theme}
-                  className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
+                  className="px-3 py-1.5 rounded-full text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
                 >
                   {theme}
                 </span>
@@ -290,7 +290,7 @@ function IdeasContent() {
             <Button
               onClick={handleGenerate}
               disabled={(!selectedTheme && !customTheme) || isGenerating}
-              className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              className="px-6"
             >
               {isGenerating ? (
                 <>
@@ -443,7 +443,7 @@ function IdeasContent() {
               <Button
                 onClick={handleGeneratePost}
                 disabled={isGeneratingPost}
-                className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="flex-1"
               >
                 {isGeneratingPost ? (
                   <>

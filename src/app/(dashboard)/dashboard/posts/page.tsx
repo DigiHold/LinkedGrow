@@ -732,7 +732,7 @@ export default function PostsPage() {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                  className="flex-1"
                   onClick={handleScheduleConfirm}
                   disabled={isScheduling || !scheduleDate || !scheduleTime}
                 >

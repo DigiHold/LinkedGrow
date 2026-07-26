@@ -1382,7 +1382,7 @@ showToast("Failed to export images");
                   <Button
                     onClick={handleSaveTemplate}
                     disabled={!templateName.trim() || isSavingTemplate}
-                    className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    className="w-full"
                   >
                     {isSavingTemplate ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1490,7 +1490,7 @@ showToast("Failed to export images");
                   <Button
                     onClick={() => handleSaveCarousel(true)}
                     disabled={!carouselName.trim() || isSavingCarousel}
-                    className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                    className="w-full"
                   >
                     {isSavingCarousel ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1534,8 +1534,7 @@ showToast("Failed to export images");
                     <Button
                       size="sm"
                       onClick={confirmNewCarousel}
-                      className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                    >
+                                          >
                       <FilePlus className="w-4 h-4" />
                       Start New Carousel
                     </Button>
@@ -1564,8 +1563,7 @@ showToast("Failed to export images");
               size="sm"
               onClick={handleDownloadPDF}
               disabled={isExporting}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-            >
+                          >
               {isExporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

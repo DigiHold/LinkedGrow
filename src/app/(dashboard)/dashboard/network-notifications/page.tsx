@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Panel, EmptyState } from "@/components/dashboard/ui/page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -286,13 +287,14 @@ export default function NetworkNotificationsPage() {
               <HelpCircle className="w-3.5 h-3.5" />
               Docs
             </Link>
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Group
-            </Button>
+            {/* The empty state already offers this, so the header only
+                carries it once there is a list to add to. */}
+            {groups.length > 0 && (
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New group
+              </Button>
+            )}
           </div>
         </div>
 
@@ -313,22 +315,19 @@ export default function NetworkNotificationsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-slate-500 dark:text-slate-400" />
           </div>
         ) : groups.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Bell className="w-12 h-12 text-slate-500 dark:text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-4 max-w-md mx-auto">
-                Create a group and invite people whose posts you want to see. When they publish on LinkedIn, you'll get an email with a link to the post.
-              </p>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Group
-              </Button>
-            </CardContent>
-          </Card>
+          <Panel>
+            <EmptyState
+              icon={<Bell className="h-5 w-5" />}
+              title="No groups yet"
+              description="Add the people whose posts you want to catch early. When one of them publishes, you get an email with a link straight to it."
+              action={
+                <Button onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create a group
+                </Button>
+              }
+            />
+          </Panel>
         ) : (
           <div className="grid gap-4">
             {groups.map((group) => (
@@ -517,7 +516,7 @@ export default function NetworkNotificationsPage() {
               <Button
                 onClick={handleCreateGroup}
                 disabled={isCreating || !newGroupName.trim()}
-                className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="w-full"
               >
                 {isCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
                 Create Group
@@ -549,7 +548,7 @@ export default function NetworkNotificationsPage() {
               <Button
                 onClick={handleInvite}
                 disabled={isInviting || !inviteEmail.trim()}
-                className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="w-full"
               >
                 {isInviting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
                 Send Invitation
@@ -577,7 +576,7 @@ export default function NetworkNotificationsPage() {
               <Button
                 onClick={handleRenameGroup}
                 disabled={isRenaming || !renameValue.trim()}
-                className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="w-full"
               >
                 {isRenaming ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pencil className="w-4 h-4 mr-2" />}
                 Save

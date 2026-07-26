@@ -364,10 +364,10 @@ async function fetchWebpageContent(url: string): Promise<ContentData & { warning
 }
 
 const steps = [
-  { num: 1, label: "Paste URL" },
-  { num: 2, label: "Select Hook" },
-  { num: 3, label: "Choose Post" },
-  { num: 4, label: "Edit & Publish" },
+  { num: 1, label: "Paste a URL" },
+  { num: 2, label: "Pick a hook" },
+  { num: 3, label: "Pick a post" },
+  { num: 4, label: "Edit and publish" },
 ];
 
 interface SettingsResponse {
@@ -969,7 +969,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
 
         <AiKeyGate what="turn a link or a file into posts" />
 
-        <Card className="opacity-60">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">How it works</CardTitle>
           </CardHeader>
@@ -977,8 +977,8 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <div className="flex items-center gap-2 flex-wrap">
               {steps.map((s, i) => (
                 <div key={s.num} className="flex items-center">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-slate-200 dark:bg-white/10">
                       {s.num}
                     </span>
                     <span>{s.label}</span>
@@ -1025,7 +1025,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
                 step >= s.num
                   ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
               )}
             >
               <span
@@ -1033,7 +1033,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   "w-5 h-5 rounded-full flex items-center justify-center text-xs",
                   step >= s.num
                     ? "bg-white/20"
-                    : "bg-gray-200 dark:bg-gray-700"
+                    : "bg-slate-200 dark:bg-white/10"
                 )}
               >
                 {s.num}
@@ -1074,7 +1074,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </div>
       )}
 
-      {/* Step 1: Paste URL */}
+      {/* Step 1: Paste a URL */}
       {step === 1 && (
         <Card>
           <CardHeader>
@@ -1138,7 +1138,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               <Button
                 onClick={handleExtractContent}
                 disabled={!detectedSource || isLoading}
-                className="px-6 bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shrink-0"
+                className="px-6 shrink-0"
               >
                 {isLoading ? (
                   <>
@@ -1169,7 +1169,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </Card>
       )}
 
-      {/* Step 2: Select Hook */}
+      {/* Step 2: Pick a hook */}
       {step === 2 && hooks.length > 0 && (
         <Card>
           <CardHeader>
@@ -1232,7 +1232,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               <Button
                 onClick={handleGeneratePosts}
                 disabled={selectedHook === null || isLoading}
-                className="flex-1 sm:flex-none bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                className="flex-1 sm:flex-none"
               >
                 {isLoading ? (
                   <>
@@ -1251,7 +1251,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </Card>
       )}
 
-      {/* Step 3: Choose Post */}
+      {/* Step 3: Pick a post */}
       {step === 3 && posts.length > 0 && (
         <div className="space-y-4">
           <Card>
@@ -1299,7 +1299,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <Button
               disabled={selectedPost === null}
               onClick={() => setStep(4)}
-              className="flex-1 sm:flex-none bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+              className="flex-1 sm:flex-none"
             >
               Continue to Edit
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -1308,7 +1308,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </div>
       )}
 
-      {/* Step 4: Edit & Publish with Image Generation */}
+      {/* Step 4: Edit and publish with Image Generation */}
       {step === 4 && selectedPost !== null && (
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Post Content - 2 columns */}
@@ -1503,7 +1503,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   </div>
                 )}
                 <Button
-                  className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                  className="w-full"
                   size="lg"
                   onClick={handlePublish}
                   disabled={isPublishing || !getCurrentPost().trim()}

@@ -64,7 +64,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
                 Automatically post a comment 1-5 min after publication to drive early interactions and boost your post in the algorithm. Available on Pro plan.
               </p>
               <Link href="/dashboard/upgrade">
-                <Button size="sm" className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
+                <Button size="sm">
                   Upgrade to Pro
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1.5" />
                 </Button>

@@ -600,7 +600,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       <Button
                         size="lg"
                         onClick={goNext}
-                        className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-10 h-12 text-base shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
+                        className="px-10 h-12 text-base shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
                       >
                         Get Started
                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -1012,7 +1012,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
 
                       <Button
                         onClick={handleComplete}
-                        className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-11 px-8 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
+                        className="h-11 px-8 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
                       >
                         Go to Dashboard
                         <ArrowRight className="w-4 h-4 ml-2" />
@@ -1051,7 +1051,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                   size="sm"
                   onClick={handleContinue}
                   disabled={isSaving || (step === 2 && !aiSaved && (selectedProvider === null || apiKey.length <= 5))}
-                  className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white min-w-[110px] shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="min-w-[110px] shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
                   {step === 3 ? "Finish" : "Continue"}

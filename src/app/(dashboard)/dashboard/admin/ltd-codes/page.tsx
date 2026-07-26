@@ -221,7 +221,7 @@ export default function AdminLtdCodesPage() {
           <Button
             type="submit"
             disabled={genBusy}
-            className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-10"
+            className="h-10"
           >
             {genBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Download className="w-4 h-4 mr-2" />Generate + download</>}
           </Button>

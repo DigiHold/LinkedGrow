@@ -897,7 +897,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
         <AiKeyGate what="write posts with AI" />
 
         {/* Preview of the workflow */}
-        <Card className="opacity-60">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">How it works</CardTitle>
           </CardHeader>
@@ -910,8 +910,8 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 { num: 4, label: "Post" },
               ].map((s, i) => (
                 <div key={s.num} className="flex items-center">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-slate-200 dark:bg-white/10">
                       {s.num}
                     </span>
                     <span>{s.label}</span>
@@ -973,7 +973,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
                 step >= s.num
                   ? "bg-linkedin text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
               )}
             >
               <span
@@ -981,7 +981,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   "w-5 h-5 rounded-full flex items-center justify-center text-xs",
                   step >= s.num
                     ? "bg-white/20"
-                    : "bg-gray-200 dark:bg-gray-700"
+                    : "bg-slate-200 dark:bg-white/10"
                 )}
               >
                 {s.num}
