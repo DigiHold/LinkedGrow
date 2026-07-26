@@ -707,7 +707,7 @@ export function ElementProperties({
     <div className={cn("w-72 bg-background border-l border-border flex flex-col h-full overflow-hidden", className)}>
       <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">
-          {selectedElement ? 'Element Properties' : 'Canvas Settings'}
+          {selectedElement ? 'Element Properties' : 'Canvas'}
         </h2>
       </div>
 
@@ -2026,7 +2026,7 @@ export function ElementProperties({
             <>
               {/* Canvas Background Settings */}
               <div>
-                <Label className="text-xs text-slate-500 dark:text-slate-400">Background Color</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Background</Label>
                 <div className="mt-2">
                   <div className="flex gap-2 items-center mb-2">
                     <input
@@ -2103,7 +2103,7 @@ export function ElementProperties({
               <Separator />
 
               <div>
-                <Label className="text-xs text-slate-500 dark:text-slate-400">Gradient Presets</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Gradients</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   {GRADIENT_PRESETS.map((gradient) => (
                     <button
@@ -2121,7 +2121,7 @@ export function ElementProperties({
 
               <div className="text-center py-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Click an element on the canvas to edit its properties
+                  Select something on the canvas to edit it.
                 </p>
               </div>
             </>

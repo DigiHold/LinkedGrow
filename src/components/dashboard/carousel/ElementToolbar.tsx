@@ -507,7 +507,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   <Upload className="w-4 h-4" />
-                  <span className="text-xs">Upload Image</span>
+                  <span className="text-xs">Upload</span>
                 </Button>
               </div>
 
@@ -515,7 +515,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
               <div className="pt-2 border-t border-border border-dashed">
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  AI Image Generator
+                  Generate an image
                 </p>
                 <div className="space-y-2">
                   <textarea
@@ -545,12 +545,12 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
                       <Sparkles className="w-4 h-4" />
                     )}
                     <span className="text-xs">
-                      {isGenerating ? 'Generating...' : 'Generate with AI'}
+                      {isGenerating ? 'Generating...' : 'Generate'}
                     </span>
                   </Button>
                   {!onAIImageGenerate && (
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
-                      Configure Image AI API key in settings
+                      Add an image key in settings
                     </p>
                   )}
                 </div>

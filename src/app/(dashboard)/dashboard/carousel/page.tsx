@@ -1244,8 +1244,8 @@ showToast("Failed to export images");
       <div className="h-screen flex flex-col overflow-hidden">
         {/* Top Toolbar - horizontally scrollable on small screens, full height always */}
         <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-          <div className="h-full flex items-center justify-between gap-4 px-4 min-w-max">
-          <div className="flex items-center gap-4">
+          <div className="h-full flex items-center justify-between gap-3 px-3 min-w-max">
+          <div className="flex items-center gap-3">
             {/* Undo/Redo */}
             <div className="flex items-center gap-1">
               <Button
@@ -1268,7 +1268,6 @@ showToast("Failed to export images");
               </Button>
             </div>
 
-            <div className="h-6 w-px bg-border" />
 
             {/* Auto-save Status */}
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -1285,7 +1284,6 @@ showToast("Failed to export images");
               ) : null}
             </div>
 
-            <div className="h-6 w-px bg-border" />
 
             {/* Zoom Controls */}
             <div className="flex items-center gap-1">
@@ -1312,16 +1310,6 @@ showToast("Failed to export images");
               </Button>
             </div>
 
-            <div className="h-6 w-px bg-border" />
-
-            <VideoModal videoId="LwxqG4Y5Z6g" />
-
-            <div className="h-6 w-px bg-border" />
-
-            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0">
-              <HelpCircle className="w-3.5 h-3.5 shrink-0" />
-              Docs
-            </Link>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1343,7 +1331,7 @@ showToast("Failed to export images");
                   size="sm"
                 >
                   <Save className="w-4 h-4" />
-                  Save Template
+                  Save as template
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -1386,13 +1374,12 @@ showToast("Failed to export images");
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    {isSavingTemplate ? "Saving..." : "Save Template"}
+                    {isSavingTemplate ? "Saving..." : "Save as template"}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
 
-            <div className="h-6 w-px bg-border" />
 
             {/* New Carousel Button - clears the editor for a fresh blank canvas */}
             <Button
@@ -1401,7 +1388,7 @@ showToast("Failed to export images");
               onClick={() => setShowNewCarouselDialog(true)}
             >
               <FilePlus className="w-4 h-4" />
-              New Carousel
+              New
             </Button>
 
             {/* My Carousels Button */}
@@ -1411,7 +1398,7 @@ showToast("Failed to export images");
               onClick={() => setShowMyCarousels(true)}
             >
               <FolderOpen className="w-4 h-4" />
-              My Carousels
+              Open
             </Button>
 
             {/* Save Carousel Button - saves directly if editing existing, opens dialog for new */}
@@ -1448,7 +1435,7 @@ showToast("Failed to export images");
                 onClick={() => setShowSaveCarouselDialog(true)}
               >
                 <Layers className="w-4 h-4" />
-                Save Carousel
+                Save
               </Button>
             )}
 
@@ -1540,7 +1527,6 @@ showToast("Failed to export images");
               </DialogContent>
             </Dialog>
 
-            <div className="h-6 w-px bg-border" />
 
             {/* Export Buttons */}
             <Button
@@ -1554,7 +1540,7 @@ showToast("Failed to export images");
               ) : (
                 <Images className="w-4 h-4" />
               )}
-              Export As Images
+              Export images
             </Button>
             <Button
               size="sm"
@@ -1566,7 +1552,7 @@ showToast("Failed to export images");
               ) : (
                 <FileDown className="w-4 h-4" />
               )}
-              Export As PDF
+              Export PDF
             </Button>
           </div>
           </div>
