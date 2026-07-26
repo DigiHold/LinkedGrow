@@ -143,7 +143,7 @@ export default function AdminSiteDataPage() {
           <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
             <Database className="w-6 h-6 text-violet-600 dark:text-violet-400" />
           </div>
-          <h1 className="text-2xl font-bold">Site Data</h1>
+          <h1 className="text-2xl font-bold">Site data</h1>
         </div>
         <p className="text-slate-500 dark:text-slate-400">
           Monitor cookie consent choices and visitor analytics

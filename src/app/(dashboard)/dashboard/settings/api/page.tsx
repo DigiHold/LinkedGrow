@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PageShell } from "@/components/dashboard/ui/page";
+import { PageShell, Panel, EmptyState } from "@/components/dashboard/ui/page";
 import { useSession } from "next-auth/react";
 import {
   Key,
@@ -186,46 +186,45 @@ showError("Failed to delete API key");
 
   return (
     <FeatureGate feature="apiAccess">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              API Keys
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-semibold tracking-[-0.035em] text-slate-900 sm:text-[32px] dark:text-white">
+              API keys
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Manage API keys for programmatic access to LinkedGrow
+            <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Keys for reaching LinkedGrow from your own code, and for the MCP
+              server.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <Link href="/docs/business-features/api-access" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">
               <HelpCircle className="w-3.5 h-3.5" />
               Docs
             </Link>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create API Key
-            </Button>
+            {/* Only shown once there is a list to add to: with no keys the
+                empty state already carries the primary action. */}
+            {apiKeys.length > 0 && (
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New key
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Security Notice */}
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+        {/* A key is a password. Saying so once, quietly, beats an amber panel
+            that people learn to scroll past. */}
+        <div className="mb-6 rounded-xl border border-border bg-slate-50/70 p-4 dark:bg-white/2">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-amber-800 dark:text-amber-300">Security Best Practices</h3>
-              <ul className="text-sm text-amber-700 dark:text-amber-400 mt-1 space-y-1">
-                <li>Never share your API keys or commit them to version control</li>
-                <li>Use environment variables to store keys securely</li>
-                <li>Create separate keys for different applications</li>
-                <li>Rotate keys regularly and delete unused ones</li>
-              </ul>
-            </div>
+            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
+            <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Treat a key like a password. Keep it in an environment variable
+              rather than in your source, give each application its own key, and
+              delete the ones you stop using.
+            </p>
           </div>
         </div>
 
@@ -235,28 +234,25 @@ showError("Failed to delete API key");
             <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
           </div>
         ) : apiKeys.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
-            <Key className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              No API keys yet
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-4">
-              Create your first API key to start integrating with LinkedGrow
-            </p>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-linear-to-r from-cyan-500 to-blue-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create API Key
-            </Button>
-          </div>
+          <Panel>
+            <EmptyState
+              icon={<Key className="h-5 w-5" />}
+              title="No API keys yet"
+              description="Create one to call the REST API from your own code, or to connect the MCP server to ChatGPT, Claude Code or Hermes."
+              action={
+                <Button onClick={() => setShowCreateModal(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create a key
+                </Button>
+              }
+            />
+          </Panel>
         ) : (
           <div className="space-y-4">
             {apiKeys.map((key) => (
               <div
                 key={key.id}
-                className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4"
+                className="rounded-xl border border-border bg-card p-4"
               >
                 <div className="flex items-start justify-between">
                   <div>

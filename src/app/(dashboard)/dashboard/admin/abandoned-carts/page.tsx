@@ -200,7 +200,7 @@ export default function AdminAbandonedCartsPage() {
           <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
             <ShoppingCart className="w-6 h-6 text-amber-600 dark:text-amber-400" />
           </div>
-          <h1 className="text-2xl font-bold">Abandoned Carts</h1>
+          <h1 className="text-2xl font-bold">Abandoned carts</h1>
         </div>
         <p className="text-slate-500 dark:text-slate-400">
           Track checkout abandonments and recovery via Brevo automation

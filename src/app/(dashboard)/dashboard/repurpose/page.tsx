@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AiKeyGate } from "@/components/dashboard/ai-key-gate";
 import { Input } from "@/components/ui/input";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { VideoModal } from "@/components/dashboard/video-modal";
@@ -951,10 +952,10 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-              Content Repurposing
+              Repurpose
             </h1>
             <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-              Turn any URL into a LinkedIn post
+              Paste a link, a video or a document and turn it into posts.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -966,31 +967,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
           </div>
         </div>
 
-        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-900/10">
-          <CardContent className="py-12 px-8">
-            <div className="text-center max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Key className="w-10 h-10 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                To analyze content and generate LinkedIn posts, you need to configure your AI API key in settings.
-                LinkedGrow uses your own API key (BYOK) for unlimited generations.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/dashboard/settings/ai-api">
-                  <Button className="w-full sm:w-auto bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure API Key
-                  </Button>
-                </Link>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
-                We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <AiKeyGate what="turn a link or a file into posts" />
 
         <Card className="opacity-60">
           <CardHeader>
@@ -1024,10 +1001,10 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-            Content Repurposing
+            Repurpose
           </h1>
           <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-            Turn any URL into a LinkedIn post
+            Paste a link, a video or a document and turn it into posts.
           </p>
         </div>
         <div className="flex items-center gap-3">

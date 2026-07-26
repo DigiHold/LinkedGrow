@@ -115,7 +115,7 @@ export default function AdminLtdCodesPage() {
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Marketplace LTD Codes</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">LTD codes</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
           Generate codes to send to Dealify / DealMirror / DealFuel, and revoke codes on refund.
         </p>

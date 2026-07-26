@@ -138,10 +138,10 @@ export default function ABTestingPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-              A/B Testing
+              A/B testing
             </h1>
             <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-              Test different versions of your posts to see what works best
+              Run two versions of a post and keep the one that performs.
             </p>
           </div>
           <div className="flex items-center gap-3">

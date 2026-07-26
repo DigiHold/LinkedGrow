@@ -77,6 +77,7 @@ const planHighlights: Record<PlanId, string[]> = {
     "Hooks generator",
     "Algorithm optimizer",
     "Network Notifications",
+    "API access and MCP server",
   ],
   business: [
     "Everything in Pro",
@@ -85,7 +86,6 @@ const planHighlights: Record<PlanId, string[]> = {
     "Team collaboration",
     "Team Notifications",
     "Advanced analytics",
-    "API access",
     "Priority support",
   ],
 };

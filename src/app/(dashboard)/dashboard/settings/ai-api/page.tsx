@@ -813,10 +813,10 @@ export default function AIAPISettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-            AI API Keys
+            AI keys
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
-            Connect your own AI providers for unlimited post and image generation
+            Your own provider keys. You pay the provider directly, so nothing here is capped.
           </p>
         </div>
         <Link href="/docs/byok" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:border-white/20 dark:hover:text-white">

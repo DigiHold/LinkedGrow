@@ -275,10 +275,10 @@ export default function NetworkNotificationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-              Network Notifications
+              Network notifications
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2">
-              Get an email when people in your circle publish on LinkedIn so you never miss their posts
+              An email when someone you follow publishes, so you can comment while the post is fresh.
             </p>
           </div>
           <div className="flex items-center gap-3">

@@ -9,7 +9,7 @@ order: 3
 
 LinkedGrow provides a REST API that lets you manage your posts programmatically. You can create, read, update, and delete posts through API calls, making it easy to integrate LinkedGrow into your existing tools and workflows.
 
-API access is available exclusively on the **Business plan**.
+API access is available on the **Pro** and **Business** plans.
 
 ## What You Can Do with the API
 

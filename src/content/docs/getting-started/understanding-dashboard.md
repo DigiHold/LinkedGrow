@@ -63,7 +63,7 @@ Every new account starts with a 7-day Pro trial that unlocks every Pro feature. 
 - **7-day Pro trial** - Full Pro access for 7 days, no card needed
 - **Starter** - Unlimited posts, advanced editor, 10 scheduled posts, calendar, Reddit ideas, content repurposing
 - **Pro** - Everything in Starter plus unlimited scheduling, AI image generation, hooks generator, algorithm optimizer, analytics, network notifications
-- **Business** - Everything in Pro plus carousel generator, A/B testing, team collaboration, API access
+- **Business** - Everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics
 
 When you try to access a feature not included in your plan, you will see a friendly prompt explaining what the feature does and a link to upgrade.
 

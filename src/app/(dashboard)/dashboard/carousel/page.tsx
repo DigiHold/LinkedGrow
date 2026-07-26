@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { FabricObject, Textbox, Rect, Circle, Line, Gradient } from "fabric";
 import { FeatureGate } from "@/components/dashboard/feature-gate";
 import { Button } from "@/components/ui/button";
+import { AiKeyGate } from "@/components/dashboard/ai-key-gate";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1220,10 +1221,10 @@ showToast("Failed to export images");
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
-                Carousel Editor
+                Carousel
               </h1>
               <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-                Create engaging multi-slide carousels for LinkedIn
+                Build a multi-slide PDF carousel and publish it as a document post.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -1235,23 +1236,7 @@ showToast("Failed to export images");
             </div>
           </div>
 
-          <div className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-8">
-            <div className="text-center max-w-lg mx-auto">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-4">Text AI API Key Required</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                The Carousel Editor uses AI to generate content. Please configure your Text AI API key to unlock AI features.
-              </p>
-              <Link href="/dashboard/settings/ai-api">
-                <Button className="bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700">
-                  <Settings className="w-4 h-4" />
-                  Configure API Keys
-                </Button>
-              </Link>
-            </div>
-          </div>
+          <AiKeyGate what="write the slides for a carousel" />
         </div>
       </FeatureGate>
     );

@@ -280,7 +280,7 @@ setFeedback({
             <Users className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Manage Affiliates
+            Affiliates
           </h1>
           <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">
             ({affiliates.length} total)

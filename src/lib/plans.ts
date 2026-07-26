@@ -135,8 +135,10 @@ export const PLANS: Record<PlanId, PlanInfo> = {
         teamNotifications: false,
         abTesting: false,
         teamCollaboration: false,
-                advancedAnalytics: false,
-        apiAccess: false,
+        advancedAnalytics: false,
+        // Pro carries the API and the MCP server; Business keeps the team,
+        // carousel and advanced-analytics side.
+        apiAccess: true,
         prioritySupport: false,
       },
     },

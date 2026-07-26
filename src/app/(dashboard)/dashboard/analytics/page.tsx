@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
               Analytics
             </h1>
             <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-              Track your LinkedIn performance and growth
+              How your published posts did, and how your follower count moved.
             </p>
           </div>
           <div className="flex items-center gap-3">

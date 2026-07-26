@@ -189,7 +189,7 @@ function CommentsContent() {
         <div className="flex items-center gap-3">
           <MessageSquare className="w-6 h-6 text-slate-400" />
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Blog Comments
+            Comments
           </h1>
           {pendingCount > 0 && (
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
