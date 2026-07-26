@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AiKeyGate } from "@/components/dashboard/ai-key-gate";
+import { StepRail } from "@/components/dashboard/step-rail";
 import { Input } from "@/components/ui/input";
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { VideoModal } from "@/components/dashboard/video-modal";
@@ -1016,36 +1017,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {steps.map((s, i) => (
-          <div key={s.num} className="flex items-center">
-            <div
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
-                step >= s.num
-                  ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
-                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              <span
-                className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
-                  step >= s.num
-                    ? "bg-white/20"
-                    : "bg-slate-200 dark:bg-white/10"
-                )}
-              >
-                {s.num}
-              </span>
-              <span className="hidden sm:inline">{s.label}</span>
-            </div>
-            {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
-            )}
-          </div>
-        ))}
-      </div>
+      <StepRail steps={steps} current={step} />
 
       {/* Warning Message */}
       {warning && (
@@ -1256,7 +1228,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Choose Your Post</CardTitle>
+              <CardTitle>Pick a post</CardTitle>
               <CardDescription>
                 Select the version that resonates with your audience
               </CardDescription>

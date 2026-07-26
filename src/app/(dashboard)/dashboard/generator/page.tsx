@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AiKeyGate } from "@/components/dashboard/ai-key-gate";
+import { StepRail } from "@/components/dashboard/step-rail";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -40,6 +41,13 @@ import { ImageGeneratorModal } from "@/components/dashboard/image-generator-moda
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
+
+const GENERATOR_STEPS = [
+  { num: 1, label: "Type" },
+  { num: 2, label: "Topic" },
+  { num: 3, label: "Ideas" },
+  { num: 4, label: "Post" },
+];
 
 const postTypes = [
   { id: "actionable", label: "Actionable", description: "Tips and how-tos" },
@@ -872,12 +880,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 flex-wrap">
-              {[
-                { num: 1, label: "Type" },
-                { num: 2, label: "Topic" },
-                { num: 3, label: "Ideas" },
-                { num: 4, label: "Post" },
-              ].map((s, i) => (
+              {GENERATOR_STEPS.map((s, i) => (
                 <div key={s.num} className="flex items-center">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-slate-200 dark:bg-white/10">
@@ -928,84 +931,72 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
         userPlan={userPlan}
       />
 
-      {/* Progress Steps */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {[
-          { num: 1, label: "Type" },
-          { num: 2, label: "Topic" },
-          { num: 3, label: "Ideas" },
-          { num: 4, label: "Post" },
-        ].map((s, i) => (
-          <div key={s.num} className="flex items-center">
-            <div
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
-                step >= s.num
-                  ? "bg-linkedin text-white"
-                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              <span
-                className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
-                  step >= s.num
-                    ? "bg-white/20"
-                    : "bg-slate-200 dark:bg-white/10"
-                )}
-              >
-                {s.num}
-              </span>
-              <span className="hidden sm:inline">{s.label}</span>
-            </div>
-            {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
-            )}
-          </div>
-        ))}
-      </div>
+      <StepRail
+        steps={GENERATOR_STEPS}
+        current={step}
+        onSelect={(n) => setStep(n)}
+      />
 
       {/* Step 1: Select Post Type */}
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>What type of post do you want to create?</CardTitle>
+            <CardTitle>What kind of post is this?</CardTitle>
             <CardDescription>
-              Choose the style that fits your message
+              This sets the shape of the draft. You can change it later.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Four across on a wide screen: these are short labels, and at
+                two-up they were 110px tall with one line of text in them. */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {postTypes.map((type) => (
                 <button
                   key={type.id}
                   onClick={() => setSelectedType(type.id)}
+                  aria-pressed={selectedType === type.id}
                   className={cn(
-                    "p-4 rounded-xl border-2 text-left transition-all",
+                    "rounded-xl border p-4 text-left transition-colors",
                     selectedType === type.id
-                      ? "border-linkedin bg-linkedin/5"
-                      : "border-border hover:border-linkedin/50"
+                      ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+                      : "border-border hover:border-slate-300 dark:hover:border-white/20"
                   )}
                 >
-                  <p className="font-semibold">{type.label}</p>
-                  <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-[15px] font-medium text-slate-900 dark:text-white">
+                      {type.label}
+                    </span>
+                    {selectedType === type.id && (
+                      <Check className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                    )}
+                  </span>
+                  <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
                     {type.description}
-                  </p>
+                  </span>
                 </button>
               ))}
             </div>
 
-            <div className="mt-6">
-              <p className="text-sm font-medium mb-3">Post Category (Optional)</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="mt-7">
+              <p className="text-[13px] font-medium text-slate-900 dark:text-white">
+                Angle
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Optional. Skip it and the AI picks one that suits the topic.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {postCategories.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() =>
+                      setSelectedCategory(selectedCategory === cat.id ? "" : cat.id)
+                    }
+                    aria-pressed={selectedCategory === cat.id}
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-sm transition-colors",
+                      "rounded-full border px-3 py-1.5 text-sm transition-colors",
                       selectedCategory === cat.id
-                        ? "bg-linkedin text-white"
-                        : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                        ? "border-cyan-500 bg-cyan-50/60 text-cyan-800 dark:border-cyan-400/60 dark:bg-cyan-400/10 dark:text-cyan-200"
+                        : "border-border text-slate-600 hover:border-slate-300 dark:text-slate-300 dark:hover:border-white/20"
                     )}
                   >
                     {cat.label}
@@ -1014,15 +1005,17 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               </div>
             </div>
 
-            <Button
-              variant="linkedin"
-              className="mt-6 w-full sm:w-auto"
-              disabled={!selectedType}
-              onClick={() => setStep(2)}
-            >
-              Continue
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <div className="mt-7 flex items-center gap-3 border-t border-border pt-6">
+              <Button disabled={!selectedType} onClick={() => setStep(2)}>
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              {!selectedType && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Pick a kind to carry on.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -1046,7 +1039,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
 
             <div className="flex flex-wrap gap-2 mt-4">
               <p className="w-full text-sm text-slate-500 dark:text-slate-400 mb-1">
-                Quick suggestions:
+                Or try one of these
               </p>
               {[
                 "Career growth tips",
@@ -1082,7 +1075,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generate 5 Ideas
+                    Generate 5 ideas
                   </>
                 )}
               </Button>
@@ -1466,7 +1459,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
             {/* Media & Enhancements */}
             <Card>
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
-                <CardTitle className="text-base">Add Media</CardTitle>
+                <CardTitle className="text-base">Add media</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* AI Image Generation - only show if has API key */}
