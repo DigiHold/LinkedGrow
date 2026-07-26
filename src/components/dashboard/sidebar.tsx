@@ -94,7 +94,6 @@ const adminLinks = [
   { name: "Support tickets", href: "/dashboard/admin/support" },
   { name: "Blog comments", href: "/dashboard/admin/comments" },
   { name: "Users", href: "/dashboard/admin/users" },
-  { name: "SEO", href: "/dashboard/admin/seo" },
   { name: "Affiliates", href: "/dashboard/admin/affiliates" },
   { name: "Site data", href: "/dashboard/admin/site-data" },
   { name: "Abandoned carts", href: "/dashboard/admin/abandoned-carts" },

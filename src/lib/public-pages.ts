@@ -1,5 +1,5 @@
 // Shared utility for discovering all public pages from the filesystem.
-// Used by: sitemap.ts, cron/index-sitemap, admin/seo API
+// Used by: sitemap.ts and cron/index-sitemap
 
 import fs from "fs";
 import path from "path";
