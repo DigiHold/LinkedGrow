@@ -807,8 +807,8 @@ function SettingsContent() {
           <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             Settings
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your account and preferences
+          <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
+            Your account, how you publish, and how the AI writes for you.
           </p>
         </div>
         <Link href="/docs/settings/profile-settings" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
@@ -817,6 +817,30 @@ function SettingsContent() {
         </Link>
       </div>
 
+      {/* Settings was one long scroll with no way to find anything. These jump
+          to the section instead, and stick to the top on the way down. */}
+      <nav className="sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-slate-50/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:bg-background/90">
+        {[
+          ["linkedin", "LinkedIn"],
+          ["publishing", "Publishing"],
+          ["account", "Account"],
+          ["timezone", "Timezone"],
+          ["security", "Security"],
+          ["appearance", "Appearance"],
+          ["voice", "Voice"],
+          ["business", "Business"],
+        ].map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <div id="linkedin" className="scroll-mt-24" />
       {/* LinkedIn Connection - Read-only for team members (they use owner's LinkedIn) */}
       {isTeamMember ? (
         // Team member view - read-only status of owner's LinkedIn
@@ -994,6 +1018,7 @@ function SettingsContent() {
         </>
       )}
 
+      <div id="publishing" className="scroll-mt-24" />
       {/* Publishing Preferences */}
       <Card>
         <CardHeader>
@@ -1222,6 +1247,7 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      <div id="security" className="scroll-mt-24" />
       {/* Security / 2FA */}
       <Card>
         <CardHeader>
@@ -1540,6 +1566,7 @@ function SettingsContent() {
         </DialogContent>
       </Dialog>
 
+      <div id="appearance" className="scroll-mt-24" />
       {/* Appearance Settings */}
       <Card>
         <CardHeader>
@@ -1624,6 +1651,7 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
+      <div id="voice" className="scroll-mt-24" />
       {/* Voice & Style - Hidden for team members (they use owner's settings) */}
       {!isTeamMember && (
         <Card>
@@ -1778,6 +1806,7 @@ function SettingsContent() {
         </Card>
       )}
 
+      <div id="business" className="scroll-mt-24" />
       {/* Business Profile - Hidden for team members (they use owner's settings) */}
       {!isTeamMember && (
         <Card>
