@@ -8,19 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
 import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
-import { GoogleButton, AuthDivider } from "@/components/auth/google-button";
 import { trackSignup } from "@/lib/insight";
 
-type SocialProvider = "linkedin" | "google" | null;
-
-// LinkedIn "in" icon only
-function LinkedInIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2" className={className}>
-      <path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z"/>
-    </svg>
-  );
-}
+type SocialProvider = "google" | null;
 
 // Official Google G icon
 function GoogleIcon({ className }: { className?: string }) {
@@ -58,7 +48,8 @@ function SignUpContent() {
     }
   }, [searchParams]);
 
-  const handleSocialSignUp = (provider: "linkedin" | "google") => {
+  // LinkedIn OAuth went with the API in v2; Google keeps its own route.
+  const handleSocialSignUp = (provider: "google") => {
     setSocialLoading(provider);
 
     // Build OAuth URL with params
@@ -242,19 +233,7 @@ function SignUpContent() {
             )}
 
             {/* Social Login Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => handleSocialSignUp("linkedin")}
-                disabled={socialLoading !== null}
-                className="h-12 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {socialLoading === "linkedin" ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <LinkedInIcon className="w-5 h-5 text-linkedin" />
-                )}
-              </button>
+            <div className="mb-6">
               <button
                 type="button"
                 onClick={() => handleSocialSignUp("google")}
@@ -280,10 +259,6 @@ function SignUpContent() {
                 </span>
               </div>
             </div>
-
-            <GoogleButton />
-            <AuthDivider>or with email</AuthDivider>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <div className="relative">
