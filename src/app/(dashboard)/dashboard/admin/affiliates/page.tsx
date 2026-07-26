@@ -277,7 +277,7 @@ setFeedback({
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
-            <Users className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+            <Users className="w-6 h-6 text-slate-500 dark:text-slate-400" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             Affiliates

@@ -277,7 +277,7 @@ export default function AdminUsersPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
-            <Users className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+            <Users className="w-6 h-6 text-slate-500 dark:text-slate-400" />
           </div>
           <h1 className="text-2xl font-bold">Users</h1>
         </div>
@@ -360,7 +360,7 @@ export default function AdminUsersPage() {
                               {user.name || "No name"}
                             </span>
                             {user.isAdmin && (
-                              <Shield className="w-3.5 h-3.5 text-cyan-500" />
+                              <Shield className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                             )}
                           </div>
                           <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
@@ -378,7 +378,7 @@ export default function AdminUsersPage() {
                     <td data-label="Plan" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {user.plan === "business" && (
-                          <Crown className="w-3.5 h-3.5 text-amber-500" />
+                          <Crown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         )}
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${

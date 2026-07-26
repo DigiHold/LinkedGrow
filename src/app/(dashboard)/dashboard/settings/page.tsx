@@ -1104,7 +1104,7 @@ function SettingsContent() {
       <Card id="account">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-cyan-600" />
+            <User className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Account
           </CardTitle>
           <CardDescription>
@@ -1298,7 +1298,7 @@ function SettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-cyan-600" />
+            <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Security
           </CardTitle>
           <CardDescription>
@@ -1370,7 +1370,7 @@ function SettingsContent() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-cyan-600" />
+              <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               Set Up Two-Factor Authentication
             </DialogTitle>
             <DialogDescription>
@@ -1707,7 +1707,7 @@ function SettingsContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5 text-cyan-600" />
+              <Mic className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               Voice & Style
             </CardTitle>
             <CardDescription>
@@ -1865,7 +1865,7 @@ function SettingsContent() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-cyan-600" />
-              Business Profile
+              Business profile
             </CardTitle>
             <CardDescription>
               Help AI understand your brand and create more relevant content

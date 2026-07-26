@@ -1460,7 +1460,7 @@ showToast("Failed to export images");
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-cyan-600" />
+                    <Layers className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     {currentCarouselId ? "Save As New Carousel" : "Save Carousel"}
                   </DialogTitle>
                 </DialogHeader>

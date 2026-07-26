@@ -1503,7 +1503,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                         {selectedPost.firstComment && (
                           <div className="w-full max-w-lg m-auto mb-10">
                             <div className="flex items-center gap-2 mb-2">
-                              <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <MessageSquare className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                               <span className="text-sm font-medium">First comment</span>
                             </div>
                             <div className="bg-card rounded-xl border border-border p-4">
@@ -1624,7 +1624,7 @@ Tips for viral posts:
                               setShowImageModal(true);
                             }}
                           >
-                            <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
+                            <Sparkles className="w-4 h-4 mr-1 text-slate-500 dark:text-slate-400" />
                             <span className="hidden sm:inline">AI Image</span>
                             {!hasImageAccess && (
                               <span className="ml-1 text-xs text-amber-600">Pro</span>
@@ -2180,7 +2180,7 @@ Tips for viral posts:
                                 >
                                   <div className="flex items-start gap-3">
                                     <div className="w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                                      <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                      <Lightbulb className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium text-sm mb-1 line-clamp-1">{idea.title}</p>
@@ -2273,7 +2273,7 @@ Tips for viral posts:
                               setShowEditImageModal(true);
                             }}
                           >
-                            <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
+                            <Sparkles className="w-4 h-4 mr-1 text-slate-500 dark:text-slate-400" />
                             <span className="hidden sm:inline">AI Image</span>
                             {!hasImageAccess && (
                               <span className="ml-1 text-xs text-amber-600">Pro</span>

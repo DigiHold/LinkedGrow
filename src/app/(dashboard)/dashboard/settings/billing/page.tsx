@@ -177,7 +177,7 @@ function BillingContent() {
         <Card className="text-center py-12">
           <CardContent>
             <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
-              <Crown className="w-8 h-8 text-amber-600" />
+              <Crown className="w-8 h-8 text-slate-500 dark:text-slate-400" />
             </div>
             <h2 className="text-xl font-semibold mb-2">No Active Subscription</h2>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
@@ -278,7 +278,7 @@ function BillingContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-500" />
+            <Crown className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Current Plan
           </CardTitle>
         </CardHeader>
@@ -332,8 +332,8 @@ function BillingContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-cyan-600" />
-              Payment Method
+              <CreditCard className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              Payment method
             </CardTitle>
             <CardDescription>
               Your saved payment method for automatic billing
@@ -370,7 +370,7 @@ function BillingContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-cyan-600" />
+            <Receipt className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Invoices
           </CardTitle>
           <CardDescription>

@@ -276,7 +276,7 @@ showError("Something went wrong. Please try again.");
               {isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <div className="px-3 py-1 rounded-full bg-cyan-500 text-white text-xs font-semibold shadow-lg">
-                    Current Plan
+                    Current plan
                   </div>
                 </div>
               )}
@@ -350,7 +350,7 @@ showError("Something went wrong. Please try again.");
                     disabled
                   >
                     <Check className="w-4 h-4 mr-2" />
-                    Current Plan
+                    Current plan
                   </Button>
                 ) : action.type === "switch" ? (
                   // Same plan, different billing period: Stripe Portal

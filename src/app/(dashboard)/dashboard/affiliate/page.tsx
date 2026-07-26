@@ -424,7 +424,7 @@ export default function AffiliateDashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Available Balance</p>
             <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <Wallet className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
+              <Wallet className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -437,7 +437,7 @@ export default function AffiliateDashboardPage() {
       <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Link2 className="w-5 h-5 text-cyan-500" />
+            <Link2 className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Your Referral Link
           </CardTitle>
         </CardHeader>
@@ -477,7 +477,7 @@ export default function AffiliateDashboardPage() {
       <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
+            <DollarSign className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Earnings Overview
           </CardTitle>
         </CardHeader>
@@ -534,7 +534,7 @@ export default function AffiliateDashboardPage() {
       <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Mail className="w-5 h-5 text-blue-500" />
+            <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             PayPal Email for Payouts
           </CardTitle>
         </CardHeader>
@@ -585,7 +585,7 @@ export default function AffiliateDashboardPage() {
       <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="w-5 h-5 text-cyan-500" />
+            <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Referrals
           </CardTitle>
         </CardHeader>
@@ -671,7 +671,7 @@ export default function AffiliateDashboardPage() {
       <Card className="rounded-2xl border border-border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
+            <DollarSign className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             Commissions
           </CardTitle>
         </CardHeader>

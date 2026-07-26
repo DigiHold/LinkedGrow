@@ -738,7 +738,7 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                   <CardTitle className="text-base flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Wand2 className="w-4 h-4 text-linkedin" />
-                      AI Edit
+                      Edit with AI
                     </span>
                     <Button
                       variant="ghost"
@@ -829,7 +829,7 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                   setShowImageModal(true);
                 }}
               >
-                <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                <Sparkles className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />
                 Generate AI Image
                 {!hasImageAccess && (
                   <span className="ml-auto text-xs text-amber-600">Pro</span>
@@ -1011,7 +1011,7 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
             <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
               <div className="p-6">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <Calendar className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                 </div>
                 <h2 className="text-lg font-semibold text-center mb-2">
                   Schedule post

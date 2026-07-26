@@ -217,7 +217,7 @@ Try a different approach:
           <Card className="bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800">
             <CardContent className="p-6">
               <h3 className="font-semibold flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-violet-600" />
+                <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                 Tips for Effective A/B Tests
               </h3>
               <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">

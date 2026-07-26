@@ -91,7 +91,7 @@ function UsageLimitBanner({
               {isLimitReached ? (
                 <Lock className="w-5 h-5 text-red-500" />
               ) : (
-                <Sparkles className="w-5 h-5 text-blue-500" />
+                <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               )}
               <span className="font-semibold text-sm">
                 {isLimitReached
@@ -1127,8 +1127,8 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-yellow-500" />
-              Pick Your Favorite Idea
+              <Lightbulb className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              Pick an idea
             </CardTitle>
             <CardDescription>
               Select one to generate a full post, or regenerate for new ideas
@@ -1293,7 +1293,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wand2 className="w-4 h-4 text-linkedin" />
-                  AI Quick Actions
+                  Quick actions
                 </CardTitle>
                 <CardDescription>
                   Click to instantly modify your post with AI
@@ -1367,7 +1367,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Image className="w-4 h-4 text-green-600" />
-                      Attached Image
+                      Attached image
                     </CardTitle>
                     <Button
                       variant="ghost"
@@ -1513,7 +1513,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                       setShowImageModal(true);
                     }}
                   >
-                    <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                    <Sparkles className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />
                     Generate AI Image
                     {!hasImageAccess && (
                       <span className="ml-auto text-xs text-amber-600">Pro</span>

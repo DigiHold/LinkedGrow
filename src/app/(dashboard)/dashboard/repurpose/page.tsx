@@ -1174,8 +1174,8 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-500" />
-              Choose Your Hook
+              <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              Pick a hook
             </CardTitle>
             <CardDescription>
               Select the hook that will grab attention
@@ -1443,8 +1443,8 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <Card className="border-cyan-200 bg-cyan-50/50 dark:border-cyan-800 dark:bg-cyan-950/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Wand2 className="w-4 h-4 text-cyan-500" />
-                  AI Quick Edit
+                  <Wand2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  Quick edit
                   {isAiEditing && <Loader2 className="w-4 h-4 animate-spin" />}
                 </CardTitle>
               </CardHeader>
@@ -1589,7 +1589,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                       setShowImageModal(true);
                     }}
                   >
-                    <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                    <Sparkles className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />
                     Generate AI Image
                     {!hasImageAccess && (
                       <span className="ml-2 text-xs text-amber-600 flex items-center gap-1">

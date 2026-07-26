@@ -349,7 +349,7 @@ export default function AIAPISettingsPage() {
           <CardContent className="py-12 px-8">
             <div className="text-center max-w-md mx-auto">
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Key className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                <Key className="w-10 h-10 text-slate-500 dark:text-slate-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access restricted</h3>
               <p className="text-slate-500 dark:text-slate-400">
@@ -825,15 +825,15 @@ export default function AIAPISettingsPage() {
         </Link>
       </div>
 
-      {/* Text AI API Keys */}
+      {/* Text models */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cyan-600" />
-            Text AI API Keys
+            <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            Text models
           </CardTitle>
           <CardDescription>
-            Connect your AI provider for post generation. Your keys are encrypted and stored securely.
+            The key that writes your posts, ideas and hooks. Stored encrypted.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -877,7 +877,7 @@ export default function AIAPISettingsPage() {
 
           {/* Provider Selector - for viewing/configuring */}
           <div>
-            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Select a provider to configure:</Label>
+            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Pick a provider</Label>
             <div className="flex flex-wrap gap-2">
               {aiProviders.map((provider) => {
                 const Icon = provider.icon;
@@ -1068,7 +1068,7 @@ export default function AIAPISettingsPage() {
                       className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                     >
                       {isSavingApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      Save API Key
+                      Save key
                     </Button>
                   </div>
                 )}
@@ -1077,9 +1077,9 @@ export default function AIAPISettingsPage() {
           )}
 
           <div className="flex items-start gap-2 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800">
-            <Key className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
+            <Key className="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" />
             <p className="text-sm text-cyan-700 dark:text-cyan-300">
-              Your API keys are encrypted with AES-256 and never shared. You only pay for what you use directly to the provider.
+              Keys are encrypted with AES-256 and never leave your account. You pay the provider directly.
             </p>
           </div>
         </CardContent>
@@ -1091,11 +1091,11 @@ export default function AIAPISettingsPage() {
           <div className="absolute inset-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center justify-center">
             <div className="text-center p-6 max-w-sm">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                <Crown className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
+                <Crown className="w-8 h-8 text-slate-500 dark:text-slate-400" />
               </div>
               <h3 className="font-semibold text-lg mb-2">Pro Feature</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                AI Image Generation is available on the Pro plan and above
+                Image models is available on the Pro plan and above
               </p>
               <a href="/dashboard/upgrade">
                 <Button
@@ -1111,7 +1111,7 @@ export default function AIAPISettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-cyan-600" />
-            AI Image Generation
+            Image models
             {!hasImageAccess && (
               <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-normal">
                 Pro
@@ -1119,7 +1119,7 @@ export default function AIAPISettingsPage() {
             )}
           </CardTitle>
           <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span>Connect an image generation API for creating visuals with your posts</span>
+            <span>A separate key, only used when you generate an image for a post.</span>
             <Link href="/docs/byok/image-providers" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
               <HelpCircle className="w-3 h-3" />
               Setup guide
@@ -1167,7 +1167,7 @@ export default function AIAPISettingsPage() {
 
           {/* Provider Selector - for viewing/configuring */}
           <div>
-            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Select a provider to configure:</Label>
+            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Pick a provider</Label>
             <div className="flex flex-wrap gap-2">
               {imageProviders.map((provider) => {
                 const Icon = provider.icon;
@@ -1266,7 +1266,7 @@ export default function AIAPISettingsPage() {
                 {/* Resolution/Size Selector - hidden for models that don't support it (Nano Banana, Imagen 4 - fixed 1024px) */}
                 {viewingImageProviderDetails.hasResolution && resolutionOptions[viewingImageProvider as keyof typeof resolutionOptions] && !["gemini-2.5-flash-image", "gemini-3.1-flash-lite-image"].includes(selectedImageModel) && (
                   <div className="mb-4">
-                    <Label className="mb-2 block text-sm">Resolution / Size</Label>
+                    <Label className="mb-2 block text-sm">Resolution</Label>
                     <Select value={selectedImageResolution} onValueChange={setSelectedImageResolution} disabled={!hasImageAccess}>
                       <SelectTrigger className="bg-white dark:bg-slate-800">
                         <SelectValue placeholder="Select resolution" />
@@ -1285,10 +1285,10 @@ export default function AIAPISettingsPage() {
                   </div>
                 )}
 
-                {/* Aspect Ratio Selector (Google & Replicate) */}
+                {/* Aspect ratio Selector (Google & Replicate) */}
                 {viewingImageProviderDetails.hasAspectRatio && aspectRatioOptions[viewingImageProvider as keyof typeof aspectRatioOptions] && (
                   <div className="mb-4">
-                    <Label className="mb-2 block text-sm">Aspect Ratio</Label>
+                    <Label className="mb-2 block text-sm">Aspect ratio</Label>
                     <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio} disabled={!hasImageAccess}>
                       <SelectTrigger className="bg-white dark:bg-slate-800">
                         <SelectValue placeholder="Select aspect ratio" />
@@ -1425,7 +1425,7 @@ export default function AIAPISettingsPage() {
                       className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                     >
                       {isSavingImageApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      Save Image API Key
+                      Save key
                     </Button>
                   </div>
                 )}

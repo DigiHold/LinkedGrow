@@ -239,14 +239,14 @@ export default function AdminAbandonedCartsPage() {
         <StatCard
           label="Revenue Recovered"
           value={`$${stats.revenueRecovered}/mo`}
-          icon={<DollarSign className="w-4 h-4 text-green-500" />}
+          icon={<DollarSign className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
           color="bg-green-100 dark:bg-green-900/30"
           textColor="text-green-700 dark:text-green-400"
         />
         <StatCard
           label="Potential Revenue"
           value={`$${stats.potentialRevenue}/mo`}
-          icon={<DollarSign className="w-4 h-4 text-red-500" />}
+          icon={<DollarSign className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
           color="bg-red-100 dark:bg-red-900/30"
           textColor="text-red-700 dark:text-red-400"
         />

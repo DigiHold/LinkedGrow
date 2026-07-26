@@ -340,7 +340,7 @@ export default function NetworkNotificationsPage() {
                       onClick={() => loadGroupDetails(group.id)}
                     >
                       <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-                        <Users className="w-5 h-5 text-cyan-600" />
+                        <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold truncate">{group.name}</h3>

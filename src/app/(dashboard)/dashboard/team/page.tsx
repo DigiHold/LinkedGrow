@@ -386,7 +386,7 @@ export default function TeamPage() {
               <CardContent className="py-12 px-8">
                 <div className="text-center max-w-md mx-auto">
                   <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <Users className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                    <Users className="w-10 h-10 text-slate-500 dark:text-slate-400" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No Team Found</h3>
                   <p className="text-slate-500 dark:text-slate-400">
@@ -469,7 +469,7 @@ export default function TeamPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-cyan-600" />
+                      <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </div>
                     <div className="text-left">
                       <p className="font-medium">{selectedTeam?.team.name || "Select a team"}</p>
@@ -496,7 +496,7 @@ export default function TeamPage() {
                         )}
                       >
                         <div className="w-8 h-8 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
-                          <Users className="w-4 h-4 text-cyan-600" />
+                          <Users className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                         </div>
                         <div className="text-left flex-1">
                           <p className="font-medium text-sm">{t.team.name}</p>
@@ -609,7 +609,7 @@ export default function TeamPage() {
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center">
-                                <Mail className="w-5 h-5 text-amber-600" />
+                                <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                               </div>
                               <div>
                                 <p className="font-medium">{invite.email}</p>
@@ -732,7 +732,7 @@ export default function TeamPage() {
                     <div className="grid sm:grid-cols-3 gap-4 text-sm">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <Crown className="w-4 h-4 text-amber-500" />
+                          <Crown className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                           <span className="font-medium">Owner</span>
                         </div>
                         <ul className="text-slate-500 dark:text-slate-400 space-y-1">
@@ -743,7 +743,7 @@ export default function TeamPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <Shield className="w-4 h-4 text-blue-500" />
+                          <Shield className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                           <span className="font-medium">Admin</span>
                         </div>
                         <ul className="text-slate-500 dark:text-slate-400 space-y-1">
@@ -831,7 +831,7 @@ export default function TeamPage() {
                 <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden z-10">
                   <div className="p-6">
                     <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                      <Mail className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                      <Mail className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                     </div>
                     <h2 className="text-lg font-semibold text-center mb-2">Cancel Invitation</h2>
                     <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-2">
