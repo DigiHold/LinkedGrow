@@ -84,10 +84,10 @@ function detectSourceType(url: string): SourceType {
 }
 
 const sourceLabels: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  reddit: { label: "Reddit thread", icon: RedditIcon, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800" },
-  youtube: { label: "YouTube video", icon: Youtube, color: "text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800" },
-  webpage: { label: "Web page", icon: Globe, color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" },
-  blog: { label: "Blog article", icon: FileText, color: "text-green-500 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" },
+  reddit: { label: "Reddit thread", icon: RedditIcon, color: "text-[#FF4500] bg-card border-border" },
+  youtube: { label: "YouTube video", icon: Youtube, color: "text-[#FF0000] bg-card border-border" },
+  webpage: { label: "Web page", icon: Globe, color: "text-slate-500 dark:text-slate-400 bg-card border-border" },
+  blog: { label: "Blog article", icon: FileText, color: "text-slate-500 dark:text-slate-400 bg-card border-border" },
 };
 
 interface ContentData {
@@ -1050,16 +1050,16 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Paste any URL to turn it into a LinkedIn post</CardTitle>
+            <CardTitle>Paste a link</CardTitle>
             <CardDescription>
-              We auto-detect the source and extract content from Reddit, YouTube, blogs, and web pages
+              Reddit, YouTube, a blog or any web page. We work out which it is.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 space-y-2">
                 <Input
-                  placeholder="Paste a Reddit, YouTube, blog, or web page URL"
+                  placeholder="https://"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={(e) => {
@@ -1120,7 +1120,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Extract Content
+                    Read it
                   </>
                 )}
               </Button>
