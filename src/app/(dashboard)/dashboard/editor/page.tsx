@@ -18,6 +18,7 @@ import {
   Loader2,
   Trash2,
   HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -811,8 +812,14 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                 }
               }}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI Assist
+              <Sparkles className="mr-2 h-4 w-4" />
+              Rewrite with AI
+              <ChevronDown
+                className={cn(
+                  "ml-auto h-4 w-4 transition-transform",
+                  showAIPanel && "rotate-180"
+                )}
+              />
             </Button>
 
             {/* AI Image Generation */}
@@ -855,46 +862,51 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
                   </p>
                 ) : (
                   <>
-                <div className="flex items-center justify-center mb-4">
+                {/* One accent, and colour only where it means something.
+                    Four saturated bars turned a decent post into a wall of
+                    red and amber, and the same score reads differently on the
+                    generator. */}
+                <div className="mb-5 flex items-center gap-4">
                   <div
                     className={cn(
-                      "w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-4",
-                      algorithmScore.total >= 80
-                        ? "border-green-500 text-green-600"
-                        : algorithmScore.total >= 60
-                        ? "border-yellow-500 text-yellow-600"
-                        : algorithmScore.total === 0
-                        ? "border-gray-300 text-gray-400"
-                        : "border-red-500 text-red-600"
+                      "flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 text-xl font-semibold",
+                      algorithmScore.total >= 60
+                        ? "border-cyan-500 text-slate-900 dark:text-white"
+                        : "border-amber-400 text-slate-900 dark:text-white"
                     )}
                   >
                     {algorithmScore.total}
                   </div>
+                  <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                    {algorithmScore.total >= 80
+                      ? "Ready to go out."
+                      : algorithmScore.total >= 60
+                      ? "Solid. The weakest line below is where to spend two minutes."
+                      : "Worth another pass before you publish."}
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   {[
-                    { label: "Hook Strength", value: algorithmScore.hookStrength },
+                    { label: "Hook", value: algorithmScore.hookStrength },
                     { label: "Length", value: algorithmScore.length },
                     { label: "Formatting", value: algorithmScore.formatting },
-                    { label: "Engagement", value: algorithmScore.engagement },
+                    { label: "Ends with a question", value: algorithmScore.engagement },
                   ].map((item) => (
                     <div key={item.label}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
-                        <span className="font-medium">{item.value}%</span>
+                      <div className="mb-1 flex justify-between text-sm">
+                        <span className="text-slate-500 dark:text-slate-400">
+                          {item.label}
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-white">
+                          {item.value}%
+                        </span>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            item.value >= 80
-                              ? "bg-green-500"
-                              : item.value >= 60
-                              ? "bg-yellow-500"
-                              : item.value === 0
-                              ? "bg-gray-300"
-                              : "bg-red-500"
+                            item.value >= 60 ? "bg-cyan-500" : "bg-amber-400"
                           )}
                           style={{ width: `${item.value}%` }}
                         />
