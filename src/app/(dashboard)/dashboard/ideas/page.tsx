@@ -341,11 +341,11 @@ function IdeasContent() {
 
       {/* Empty State - No Ideas Generated Yet */}
       {ideas.length === 0 && !isGenerating && (
-        <Card className="border-dashed">
+        <Card>
           <CardContent className="py-16 px-8">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-linear-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5">
+                <Sparkles className="w-6 h-6 text-slate-400 dark:text-slate-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Ready to generate ideas</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm">

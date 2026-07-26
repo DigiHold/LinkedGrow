@@ -435,7 +435,7 @@ function BillingContent() {
       </Card>
 
       {/* Help Section */}
-      <Card className="bg-slate-50 dark:bg-slate-900/50 border-dashed">
+      <Card className="bg-slate-50 dark:bg-slate-900/50">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1">

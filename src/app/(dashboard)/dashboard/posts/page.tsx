@@ -287,7 +287,7 @@ export default function PostsPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex items-center justify-center min-h-100">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-            <FileText className="w-8 h-8 text-red-600 dark:text-red-400" />
+            <FileText className="w-6 h-6 text-slate-400 dark:text-slate-500" />
           </div>
           <h3 className="font-semibold text-lg mb-2">Failed to load posts</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{error}</p>
@@ -321,7 +321,7 @@ export default function PostsPage() {
         </div>
 
         {/* Empty State */}
-        <Card className="border-dashed">
+        <Card>
           <CardContent className="py-16 px-8">
             <div className="text-center max-w-md mx-auto">
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">

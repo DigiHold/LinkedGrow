@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageShell } from "@/components/dashboard/ui/page";
 import { useSession } from "next-auth/react";
 import {
   Key,
@@ -62,7 +63,7 @@ export default function ApiKeysPage() {
   if (isTeamMember) {
     return (
       <FeatureGate feature="apiAccess">
-        <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
+        <PageShell>
           <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
             <CardContent className="py-12 px-8">
               <div className="text-center max-w-md mx-auto">
@@ -76,7 +77,7 @@ export default function ApiKeysPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </PageShell>
       </FeatureGate>
     );
   }
