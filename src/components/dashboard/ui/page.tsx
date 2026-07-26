@@ -216,3 +216,56 @@ export function StatCard({
     </div>
   );
 }
+
+/**
+ * One shape for every settings field.
+ *
+ * The forms had grown three different label/hint arrangements: hint above the
+ * control on some, below on others, and none at all on the rest. The hint
+ * belongs between the label and the control, because that is where it is read
+ * before you type rather than after.
+ */
+export function Field({
+  label,
+  hint,
+  htmlFor,
+  children,
+  className,
+}: {
+  label: string;
+  hint?: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <div className="space-y-1">
+        <label
+          htmlFor={htmlFor}
+          className="block text-[13px] font-medium text-slate-900 dark:text-white"
+        >
+          {label}
+        </label>
+        {hint && (
+          <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+            {hint}
+          </p>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The row a settings card ends on. Keeps every Save in the same place, on a
+ * rule, instead of floating at whatever height the form happened to end.
+ */
+export function FieldActions({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-border pt-5">
+      {children}
+    </div>
+  );
+}

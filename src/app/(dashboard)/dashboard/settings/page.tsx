@@ -53,6 +53,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FieldActions } from "@/components/dashboard/ui/page";
 import { CONTENT_LANGUAGES } from "@/lib/content-languages";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
@@ -923,7 +924,7 @@ function SettingsContent() {
                 )}
                 <div>
                   <p className="font-semibold text-lg">{linkedInName}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                     {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
                   </p>
                   <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
@@ -998,7 +999,7 @@ function SettingsContent() {
                     )}
                     <div>
                       <p className="font-semibold text-lg">{linkedInName}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                         {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
                       </p>
                       <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
@@ -1063,7 +1064,7 @@ function SettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ThumbsUp className="w-5 h-5 text-cyan-600" />
+            <ThumbsUp className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             Publishing
           </CardTitle>
           <CardDescription>
@@ -1104,7 +1105,7 @@ function SettingsContent() {
       <Card id="account">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             Account
           </CardTitle>
           <CardDescription>
@@ -1214,7 +1215,7 @@ function SettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-cyan-600" />
+            <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             Timezone
           </CardTitle>
           <CardDescription>
@@ -1296,7 +1297,7 @@ function SettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <Shield className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             Security
           </CardTitle>
           <CardDescription>
@@ -1331,7 +1332,7 @@ function SettingsContent() {
               </div>
               <div>
                 <p className="font-medium">Two-factor authentication</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                   {twoFactorEnabled ? "Protected with authenticator app" : "Add an extra layer of security"}
                 </p>
               </div>
@@ -1367,7 +1368,7 @@ function SettingsContent() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <Shield className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               Set Up Two-Factor Authentication
             </DialogTitle>
             <DialogDescription>
@@ -1616,7 +1617,7 @@ function SettingsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Moon className="w-5 h-5 text-cyan-600" />
+            <Moon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             Appearance
           </CardTitle>
           <CardDescription>
@@ -1704,11 +1705,11 @@ function SettingsContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mic className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <Mic className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               Voice & Style
             </CardTitle>
             <CardDescription>
-              Train the AI to write in your unique voice and style
+              What the AI reads before it writes anything for you.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1729,7 +1730,7 @@ function SettingsContent() {
               <div>
                 <Label className="text-base font-medium">Sample posts</Label>
                 <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
-                  Paste 3-5 of your best LinkedIn posts so the AI can learn your writing style
+                  Paste up to 5 of your best posts. The AI reads them for rhythm and vocabulary, not for topics.
                 </p>
               </div>
 
@@ -1772,7 +1773,7 @@ function SettingsContent() {
                     disabled={!newSamplePost.trim()}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Sample Post ({voiceSettings.samplePosts.length}/5)
+                    Add another ({voiceSettings.samplePosts.length}/5)
                   </Button>
                 </div>
               )}
@@ -1781,8 +1782,8 @@ function SettingsContent() {
             {/* Writing Tone */}
             <div className="space-y-2">
               <Label>Writing tone</Label>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Describe how you want your posts to sound
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Describe how you want your posts to sound.
               </p>
               <Input
                 placeholder="e.g., Professional but friendly, conversational, inspiring, direct and bold"
@@ -1797,7 +1798,7 @@ function SettingsContent() {
             {/* Content Language */}
             <div className="space-y-2">
               <Label>Content language</Label>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                 Language for all generated content (posts, ideas, hooks, comments). Overrides the language of your sample posts and business context.
               </p>
               <Select
@@ -1827,7 +1828,7 @@ function SettingsContent() {
             {/* Never Mention */}
             <div className="space-y-2">
               <Label>Never mention</Label>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                 Topics, competitors, or words the AI should avoid
               </p>
               <Textarea
@@ -1841,13 +1842,12 @@ function SettingsContent() {
               />
             </div>
 
-            <Button
-              onClick={handleSaveVoiceSettings}
-              disabled={isSavingVoice}
-                          >
+            <FieldActions>
+              <Button onClick={handleSaveVoiceSettings} disabled={isSavingVoice}>
               {isSavingVoice ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Voice Settings
-            </Button>
+              Save voice
+              </Button>
+            </FieldActions>
           </CardContent>
         </Card>
       )}
@@ -1860,17 +1860,17 @@ function SettingsContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-cyan-600" />
+              <Building2 className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               Business profile
             </CardTitle>
             <CardDescription>
-              Help AI understand your brand and create more relevant content
+              Context the AI uses so a post sounds like your business, not any business.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Business Name</Label>
+                <Label>Business name</Label>
                 <Input
                   placeholder="Your company or personal brand name"
                   value={businessProfile.name}
@@ -1880,7 +1880,7 @@ function SettingsContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Niche / Industry</Label>
+                <Label>Niche</Label>
                 <Input
                   placeholder="e.g., SaaS, Marketing, Tech"
                   value={businessProfile.niche}
@@ -1892,7 +1892,7 @@ function SettingsContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>What do you do?</Label>
+              <Label>What you do</Label>
               <Textarea
                 placeholder="Brief description of your business or what you help people with"
                 value={businessProfile.description}
@@ -1907,7 +1907,7 @@ function SettingsContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>Products / Services</Label>
+              <Label>What you sell</Label>
               <Textarea
                 placeholder="List your main products or services (one per line)"
                 value={businessProfile.products}
@@ -1923,7 +1923,7 @@ function SettingsContent() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Target Audience</Label>
+                <Label>Who you sell to</Label>
                 <Input
                   placeholder="e.g., Startup founders, Marketing managers"
                   value={businessProfile.audience}
@@ -1936,7 +1936,7 @@ function SettingsContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Key Topics</Label>
+                <Label>Topics you post about</Label>
                 <Input
                   placeholder="e.g., Productivity, Leadership, AI"
                   value={businessProfile.topics}
@@ -1951,9 +1951,9 @@ function SettingsContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>Additional Context / FAQ</Label>
+              <Label>Anything else</Label>
               <Textarea
-                placeholder="Any other information that would help AI create better content for you..."
+                placeholder="Anything the AI should know that does not fit above"
                 value={businessProfile.context}
                 onChange={(e) =>
                   setBusinessProfile({
@@ -1983,13 +1983,15 @@ function SettingsContent() {
               </div>
             )}
 
-            <Button
-              onClick={handleSaveBusinessProfile}
-              disabled={isSavingProfile}
-                          >
-              {isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Business Profile
-            </Button>
+            <FieldActions>
+              <Button
+                onClick={handleSaveBusinessProfile}
+                disabled={isSavingProfile}
+                            >
+                {isSavingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Save business profile
+              </Button>
+            </FieldActions>
           </CardContent>
         </Card>
       )}
