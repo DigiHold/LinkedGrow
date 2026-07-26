@@ -81,7 +81,7 @@ export function UpgradePrompt({
     return (
       <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="text-center p-8 max-w-md">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-linkedin to-purple-600 flex items-center justify-center mb-6 shadow-lg">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-6 shadow-lg">
             <Icon className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2">{featureInfo?.name || "Premium Feature"}</h3>
@@ -136,7 +136,7 @@ export function UpgradePrompt({
       <div className="min-h-[60vh] flex items-center justify-center p-8">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-linkedin via-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-xl">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center mb-6 shadow-xl">
               <Crown className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-3xl font-bold mb-3">
@@ -222,9 +222,9 @@ export function UpgradePrompt({
   // Card variant (default)
   const Icon = feature ? featureIcons[feature] : Lock;
   return (
-    <div className="bg-linear-to-br from-linkedin/5 via-purple-500/5 to-pink-500/5 rounded-2xl p-6 border border-linkedin/10 shadow-sm">
+    <div className="bg-linear-to-br from-cyan-500/5 to-blue-600/5 rounded-2xl p-6 border border-linkedin/10 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl bg-linear-to-br from-linkedin to-purple-600 flex items-center justify-center shrink-0 shadow-lg">
+        <div className="w-14 h-14 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg">
           <Icon className="w-7 h-7 text-white" />
         </div>
         <div className="flex-1">

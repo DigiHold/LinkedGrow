@@ -214,9 +214,9 @@ const toneOptions = [
 
 const quickActions = [
   { title: "Generate a Post", description: "Create with AI", href: "/dashboard/generator", icon: Sparkles, color: "text-cyan-500", bg: "bg-cyan-500/10" },
-  { title: "Repurpose Content", description: "URL to LinkedIn post", href: "/dashboard/repurpose", icon: Zap, color: "text-orange-500", bg: "bg-orange-500/10" },
-  { title: "Get Ideas", description: "Browse content ideas", href: "/dashboard/ideas", icon: Target, color: "text-green-500", bg: "bg-green-500/10" },
-  { title: "Write a Post", description: "Start from scratch", href: "/dashboard/editor", icon: PenLine, color: "text-purple-500", bg: "bg-purple-500/10" },
+  { title: "Repurpose Content", description: "URL to LinkedIn post", href: "/dashboard/repurpose", icon: Zap, color: "text-slate-500 dark:text-slate-400", bg: "bg-slate-100 dark:bg-white/5" },
+  { title: "Get Ideas", description: "Browse content ideas", href: "/dashboard/ideas", icon: Target, color: "text-slate-500 dark:text-slate-400", bg: "bg-slate-100 dark:bg-white/5" },
+  { title: "Write a Post", description: "Start from scratch", href: "/dashboard/editor", icon: PenLine, color: "text-slate-500 dark:text-slate-400", bg: "bg-slate-100 dark:bg-white/5" },
 ];
 
 const slideVariants = {
@@ -246,7 +246,7 @@ function SuccessAnimation() {
     const angle = (i / 14) * 360;
     const rad = (angle * Math.PI) / 180;
     const distance = 55 + Math.random() * 30;
-    const colors = ["bg-cyan-400", "bg-blue-400", "bg-green-400", "bg-emerald-400", "bg-teal-400", "bg-sky-400", "bg-violet-400"];
+    const colors = ["bg-cyan-400", "bg-blue-400", "bg-green-400", "bg-emerald-400", "bg-teal-400", "bg-sky-400", "bg-indigo-400"];
     const size = 4 + Math.random() * 4;
     return { x: Math.cos(rad) * distance, y: Math.sin(rad) * distance, color: colors[i % colors.length], delay: i * 0.02, size };
   });
@@ -278,7 +278,7 @@ function SuccessAnimation() {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
-        className="relative w-28 h-28 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center shadow-lg shadow-green-500/20"
+        className="relative w-28 h-28 rounded-full bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center shadow-lg shadow-green-500/20"
       >
         <svg viewBox="0 0 52 52" className="w-16 h-16">
           <motion.circle
@@ -316,9 +316,9 @@ function SegmentedProgress({ currentStep }: { currentStep: number }) {
               className={cn(
                 "h-full rounded-full",
                 currentStep > s
-                  ? "bg-gradient-to-r from-green-400 to-emerald-500"
+                  ? "bg-linear-to-r from-cyan-500 to-blue-600"
                   : currentStep === s
-                  ? "bg-gradient-to-r from-cyan-400 to-blue-500"
+                  ? "bg-linear-to-r from-cyan-500 to-blue-600"
                   : ""
               )}
               initial={{ width: "0%" }}
@@ -520,7 +520,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
         <DialogTitle className="sr-only">LinkedGrow Setup Wizard</DialogTitle>
 
         {/* Ambient gradient glow behind card (visible through semi-transparent overlay) */}
-        <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-cyan-500/10 via-transparent to-blue-500/10 dark:from-cyan-500/5 dark:to-blue-500/5 pointer-events-none" />
+        <div className="absolute -inset-px rounded-2xl bg-linear-to-br from-cyan-500/10 via-transparent to-blue-500/10 dark:from-cyan-500/5 dark:to-blue-500/5 pointer-events-none" />
 
         <div className="relative flex flex-col max-h-[85vh]">
           {/* Segmented progress bar - steps 1-3 */}
@@ -555,8 +555,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       className="relative w-24 h-24 mx-auto mb-8"
                     >
                       {/* Ambient glow */}
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 blur-xl opacity-40" />
-                      <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-xl shadow-cyan-500/30">
+                      <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 blur-xl opacity-40" />
+                      <div className="relative w-24 h-24 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-xl shadow-cyan-500/30">
                         <Rocket className="w-12 h-12 text-white" />
                       </div>
                     </motion.div>
@@ -568,7 +568,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       className="text-3xl sm:text-4xl font-bold tracking-tight mb-3"
                     >
                       Welcome to{" "}
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                      <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
                         LinkedGrow
                       </span>
                     </motion.h2>
@@ -600,7 +600,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       <Button
                         size="lg"
                         onClick={goNext}
-                        className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-10 h-12 text-base shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
+                        className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-10 h-12 text-base shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
                       >
                         Get Started
                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -642,7 +642,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                         animate={{ scale: 1, opacity: 1 }}
                         className="max-w-sm mx-auto"
                       >
-                        <div className="p-6 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/80 dark:border-green-800/60 shadow-sm">
+                        <div className="p-6 rounded-2xl bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/80 dark:border-green-800/60 shadow-sm">
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -691,7 +691,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
                         Set Up Your{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">AI</span>
+                        <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">AI</span>
                       </h2>
                       <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
                         Connect your own AI provider for unlimited content generation. You pay the provider directly - typically $2-4/month.
@@ -746,7 +746,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                         className="space-y-4"
                       >
                         {/* Fade-out divider */}
-                        <div className="h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
+                        <div className="h-px bg-linear-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
 
                         <div>
                           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">API Key</label>
@@ -832,7 +832,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="p-5 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/80 dark:border-green-800/60 text-center shadow-sm"
+                        className="p-5 rounded-2xl bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/80 dark:border-green-800/60 text-center shadow-sm"
                       >
                         <CheckCircle2 className="w-7 h-7 text-green-600 mx-auto mb-2" />
                         <p className="font-semibold text-green-700 dark:text-green-300">
@@ -853,14 +853,14 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                   <div>
                     <div className="text-center mb-6">
                       <div className="relative w-18 h-18 mx-auto mb-5">
-                        <div className="absolute inset-0 rounded-xl bg-purple-500/20 blur-lg" />
-                        <div className="relative w-18 h-18 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                          <Mic className="w-9 h-9 text-purple-600 dark:text-purple-400" />
+                        <div className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-lg" />
+                        <div className="relative w-18 h-18 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                          <Mic className="w-9 h-9 text-cyan-600 dark:text-cyan-400" />
                         </div>
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
                         Your{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-violet-500">Voice</span>
+                        <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">Voice</span>
                       </h2>
                       <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
                         Help the AI create content that sounds like you, not a robot. The more details, the better.
@@ -874,7 +874,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                           placeholder="e.g., John Doe or Acme Inc"
                           value={businessName}
                           onChange={(e) => setBusinessName(e.target.value)}
-                          className="h-11 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                          className="h-11 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                         />
                       </div>
 
@@ -884,7 +884,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                           placeholder="e.g., I help startups grow through content marketing and personal branding on LinkedIn..."
                           value={businessDescription}
                           onChange={(e) => setBusinessDescription(e.target.value)}
-                          className="min-h-[80px] resize-none bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                          className="min-h-[80px] resize-none bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                         />
                       </div>
 
@@ -895,7 +895,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                             placeholder="e.g., SaaS, Marketing"
                             value={businessNiche}
                             onChange={(e) => setBusinessNiche(e.target.value)}
-                            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                           />
                         </div>
                         <div>
@@ -904,7 +904,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                             placeholder="e.g., Founders, CTOs"
                             value={targetAudience}
                             onChange={(e) => setTargetAudience(e.target.value)}
-                            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                           />
                         </div>
                       </div>
@@ -919,8 +919,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                               className={cn(
                                 "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border",
                                 writingTone === tone
-                                  ? "bg-gradient-to-r from-purple-500 to-violet-500 text-white border-transparent shadow-sm shadow-purple-500/25"
-                                  : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-purple-400 hover:text-purple-600 dark:hover:text-purple-400"
+                                  ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white border-transparent shadow-sm shadow-cyan-500/25"
+                                  : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-400"
                               )}
                             >
                               {tone}
@@ -946,7 +946,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                     >
                       <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
                         You&apos;re{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500">
+                        <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
                           All Set!
                         </span>
                       </h2>
@@ -971,7 +971,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                           <div className={cn(
                             "w-11 h-11 rounded-xl flex items-center justify-center transition-all",
                             item.done
-                              ? "bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 shadow-sm shadow-green-500/10"
+                              ? "bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 shadow-sm shadow-green-500/10"
                               : "bg-slate-100 dark:bg-slate-800"
                           )}>
                             <item.icon className={cn(
@@ -1012,7 +1012,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
 
                       <Button
                         onClick={handleComplete}
-                        className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-11 px-8 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
+                        className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white h-11 px-8 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-300"
                       >
                         Go to Dashboard
                         <ArrowRight className="w-4 h-4 ml-2" />
@@ -1028,7 +1028,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           {step >= 1 && step <= 3 && (
             <>
               {/* Fade-out divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
+              <div className="h-px bg-linear-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
               <div className="px-6 sm:px-10 py-4 flex items-center justify-between">
                 <Button
                   variant="ghost"
@@ -1051,7 +1051,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                   size="sm"
                   onClick={handleContinue}
                   disabled={isSaving || (step === 2 && !aiSaved && (selectedProvider === null || apiKey.length <= 5))}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white min-w-[110px] shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white min-w-[110px] shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
                   {step === 3 ? "Finish" : "Continue"}

@@ -261,7 +261,7 @@ export function ImageGeneratorModal({
         <DialogContent className="sm:max-w-md z-200" overlayClassName="z-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Image className="w-5 h-5 text-purple-600" />
+              <Image className="w-5 h-5 text-cyan-600" />
               AI Image Generation
             </DialogTitle>
           </DialogHeader>
@@ -293,13 +293,13 @@ export function ImageGeneratorModal({
         <DialogContent className="sm:max-w-md z-200" overlayClassName="z-200">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Image className="w-5 h-5 text-purple-600" />
+              <Image className="w-5 h-5 text-cyan-600" />
               AI Image Generation
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-6">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-              <Image className="w-8 h-8 text-purple-600" />
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center mb-4">
+              <Image className="w-8 h-8 text-cyan-600" />
             </div>
             <h3 className="font-semibold mb-2">Pro Feature</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
@@ -321,7 +321,7 @@ export function ImageGeneratorModal({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto z-200" overlayClassName="z-200">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Image className="w-5 h-5 text-purple-600" />
+            <Image className="w-5 h-5 text-cyan-600" />
             Generate AI Image
           </DialogTitle>
           <DialogDescription>
@@ -408,7 +408,7 @@ export function ImageGeneratorModal({
               <Button
                 onClick={handleGenerate}
                 disabled={!prompt.trim()}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700"
               >
                 <Wand2 className="w-4 h-4 mr-2" />
                 Generate Image
@@ -424,11 +424,11 @@ export function ImageGeneratorModal({
         {/* Generating Step */}
         {step === "generating" && (
           <div className="text-center py-12">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-6 animate-pulse">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6 animate-pulse">
               <Image className="w-10 h-10 text-white" />
             </div>
             <div className="flex items-center justify-center gap-2 mb-3">
-              <RefreshCw className="w-5 h-5 animate-spin text-purple-600" />
+              <RefreshCw className="w-5 h-5 animate-spin text-cyan-600" />
               <span className="font-medium">Generating your image...</span>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">

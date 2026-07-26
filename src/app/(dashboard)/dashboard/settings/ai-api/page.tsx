@@ -1091,7 +1091,7 @@ export default function AIAPISettingsPage() {
           <div className="absolute inset-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center justify-center">
             <div className="text-center p-6 max-w-sm">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                <Crown className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
               </div>
               <h3 className="font-semibold text-lg mb-2">Pro Feature</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
@@ -1099,7 +1099,7 @@ export default function AIAPISettingsPage() {
               </p>
               <a href="/dashboard/upgrade">
                 <Button
-                  className="bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
+                  className="bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Upgrade to Pro
@@ -1110,10 +1110,10 @@ export default function AIAPISettingsPage() {
         )}
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-purple-600" />
+            <ImageIcon className="w-5 h-5 text-cyan-600" />
             AI Image Generation
             {!hasImageAccess && (
-              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-normal">
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-normal">
                 Pro
               </span>
             )}
@@ -1141,24 +1141,24 @@ export default function AIAPISettingsPage() {
 
           {/* Active Image Provider Banner */}
           {activeImageProvider && imageProviderSettings[activeImageProvider]?.hasKey && (
-            <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 flex items-center justify-between">
+            <div className="p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white">
                   {(() => {
                     const ActiveIcon = imageProviders.find(p => p.id === activeImageProvider)?.icon;
                     return ActiveIcon ? <ActiveIcon /> : null;
                   })()}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                  <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
                     Active Provider: {imageProviders.find(p => p.id === activeImageProvider)?.name}
                   </p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                  <p className="text-xs text-cyan-700 dark:text-cyan-300">
                     This provider will be used for all image generation
                   </p>
                 </div>
               </div>
-              <span className="flex items-center gap-1 text-xs text-purple-700 dark:text-purple-300 font-medium bg-purple-100 dark:bg-purple-800/50 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-xs text-cyan-700 dark:text-cyan-300 font-medium bg-cyan-100 dark:bg-cyan-800/50 px-2.5 py-1 rounded-full">
                 <Check className="w-3 h-3" />
                 Active
               </span>
@@ -1182,9 +1182,9 @@ export default function AIAPISettingsPage() {
                     className={cn(
                       "px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 relative",
                       isViewing
-                        ? "bg-linear-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/25"
+                        ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25"
                         : isActive
-                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-purple-500/50"
+                          ? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 ring-2 ring-cyan-500/50"
                           : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700",
                       !hasImageAccess && "opacity-50 cursor-not-allowed"
                     )}
@@ -1206,7 +1206,7 @@ export default function AIAPISettingsPage() {
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                       <viewingImageProviderDetails.icon />
                     </div>
                     <div>
@@ -1221,7 +1221,7 @@ export default function AIAPISettingsPage() {
                       <VideoModal videoId={imageProviderVideoIds[viewingImageProvider]} triggerClassName="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
                     )}
                     {viewingImageProvider === activeImageProvider && viewingImageProviderHasKey && (
-                      <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 rounded-full font-medium">
+                      <span className="flex items-center gap-1 text-xs text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 px-2.5 py-1 rounded-full font-medium">
                         <Check className="w-3 h-3" />
                         Active
                       </span>
@@ -1236,7 +1236,7 @@ export default function AIAPISettingsPage() {
                 </div>
 
                 {viewingImageProviderDetails.note && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 p-2 rounded bg-cyan-50 dark:bg-cyan-900/10">
                     {viewingImageProviderDetails.note}
                   </p>
                 )}
@@ -1327,8 +1327,8 @@ export default function AIAPISettingsPage() {
                 )}
 
                 {/* Pricing info */}
-                <div className="mb-3 p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                <div className="mb-3 p-2 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
+                  <p className="text-xs text-cyan-700 dark:text-cyan-300">
                     <span className="font-medium">Estimated cost:</span> {viewingImageProviderDetails.price} = {viewingImageProviderDetails.monthly}
                   </p>
                 </div>
@@ -1356,7 +1356,7 @@ export default function AIAPISettingsPage() {
                       href={viewingImageProviderDetails.apiKeyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                      className="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
                     >
                       Manage your {viewingImageProviderDetails.name} API keys
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -1367,7 +1367,7 @@ export default function AIAPISettingsPage() {
                         type="button"
                         onClick={handleSaveImageSettingsOnly}
                         disabled={isSavingImageSettings || !hasImageAccess}
-                        className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                       >
                         {isSavingImageSettings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                         Save Settings
@@ -1379,7 +1379,7 @@ export default function AIAPISettingsPage() {
                         type="button"
                         onClick={handleSetActiveImageProvider}
                         disabled={isSettingActiveImage || !hasImageAccess}
-                        className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                        className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                       >
                         {isSettingActiveImage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
                         Set as Active Provider
@@ -1413,7 +1413,7 @@ export default function AIAPISettingsPage() {
                       href={viewingImageProviderDetails.apiKeyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                      className="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
                     >
                       Get your {viewingImageProviderDetails.name} API key
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -1422,7 +1422,7 @@ export default function AIAPISettingsPage() {
                       type="button"
                       onClick={handleSaveImageApiKey}
                       disabled={isSavingImageApiKey || !imageApiKey.trim() || !hasImageAccess}
-                      className="w-full bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                      className="w-full bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
                     >
                       {isSavingImageApiKey ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save Image API Key
@@ -1433,9 +1433,9 @@ export default function AIAPISettingsPage() {
             </div>
           )}
 
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800">
-            <ImageIcon className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-purple-700 dark:text-purple-300">
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800">
+            <ImageIcon className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-cyan-700 dark:text-cyan-300">
               <strong>BYOK:</strong> Use your own API key - you pay directly to the provider (Google, OpenAI). LinkedGrow never sees your costs.
             </p>
           </div>
