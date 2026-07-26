@@ -125,12 +125,12 @@ export function BrandingSettings({
             {branding.logoUrl ? (
               <img src={branding.logoUrl} alt="Logo" className="w-6 h-6 object-contain" />
             ) : (
-              <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              <ImageIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             )}
           </div>
           <div>
             <p className="text-sm font-medium">Logo</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {hasBusinessPlan ? "From branding settings" : "Business plan only"}
             </p>
           </div>
@@ -149,12 +149,12 @@ export function BrandingSettings({
             {branding.avatarUrl ? (
               <img src={branding.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <User className="w-4 h-4 text-muted-foreground" />
+              <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             )}
           </div>
           <div>
             <p className="text-sm font-medium">Profile Picture</p>
-            <p className="text-xs text-muted-foreground">From LinkedIn profile</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">From LinkedIn profile</p>
           </div>
         </div>
         <Switch
@@ -169,11 +169,11 @@ export function BrandingSettings({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-              <AtSign className="w-4 h-4 text-muted-foreground" />
+              <AtSign className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             </div>
             <div>
               <p className="text-sm font-medium">Handle</p>
-              <p className="text-xs text-muted-foreground">Your username or name</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Your username or name</p>
             </div>
           </div>
           <Switch
@@ -196,11 +196,11 @@ export function BrandingSettings({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-              <Globe className="w-4 h-4 text-muted-foreground" />
+              <Globe className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             </div>
             <div>
               <p className="text-sm font-medium">Website</p>
-              <p className="text-xs text-muted-foreground">Your website or link</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Your website or link</p>
             </div>
           </div>
           <Switch

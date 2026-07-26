@@ -191,7 +191,7 @@ export default function AffiliateDashboardPage() {
                 <Users className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Sign In Required</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 You need to be logged in to access the affiliate dashboard.
               </p>
               <Link href="/sign-in">
@@ -255,7 +255,7 @@ export default function AffiliateDashboardPage() {
                 <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Something Went Wrong</h3>
-              <p className="text-muted-foreground mb-6">{error}</p>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
               <Button onClick={() => { setError(null); setIsLoading(true); fetchAffiliateData(); }}>
                 Try Again
               </Button>
@@ -279,7 +279,7 @@ export default function AffiliateDashboardPage() {
               <h3 className="text-xl font-semibold mb-2">
                 You don&apos;t have an affiliate account yet
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 Join our affiliate program and earn 30% recurring commissions on every referral. Apply now to get started.
               </p>
               <Link href="/affiliate/apply">
@@ -306,7 +306,7 @@ export default function AffiliateDashboardPage() {
                 <Clock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Application Under Review</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
                 Your affiliate application is being reviewed. We typically process applications within 1 - 2 business days. You&apos;ll receive an email once your application is approved.
               </p>
               <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 rounded-lg p-3">
@@ -330,7 +330,7 @@ export default function AffiliateDashboardPage() {
                 <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Application Not Approved</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
                 Unfortunately, your affiliate application was not approved at this time. If you believe this is an error or your circumstances have changed, feel free to reach out to us.
               </p>
               <a href="mailto:contact@linkedgrow.ai">
@@ -379,7 +379,7 @@ export default function AffiliateDashboardPage() {
         {/* Total Clicks */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">Total Clicks</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Clicks</p>
             <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <MousePointerClick className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
             </div>
@@ -390,14 +390,14 @@ export default function AffiliateDashboardPage() {
         {/* Total Sign-ups */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">Total Sign-ups</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Sign-ups</p>
             <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
               <Users className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
             </div>
           </div>
           <p className="text-2xl font-bold">{affiliate.totalSignups.toLocaleString()}</p>
           {conversionRate && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {conversionRate}% conversion rate
             </p>
           )}
@@ -406,7 +406,7 @@ export default function AffiliateDashboardPage() {
         {/* Total Conversions */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">Total Conversions</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Conversions</p>
             <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <TrendingUp className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -417,7 +417,7 @@ export default function AffiliateDashboardPage() {
         {/* Available Balance */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Available Balance</p>
             <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <Wallet className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
             </div>
@@ -462,7 +462,7 @@ export default function AffiliateDashboardPage() {
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Share this link on your website, social media, or with your audience. You earn 30% recurring commission on every paying customer you refer.
           </p>
         </CardContent>
@@ -514,7 +514,7 @@ export default function AffiliateDashboardPage() {
               </p>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <p className="text-xs font-medium text-muted-foreground mb-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Total Paid Out
               </p>
               <p className="text-lg font-bold">
@@ -570,7 +570,7 @@ export default function AffiliateDashboardPage() {
               {paypalSuccess}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Payouts are sent to this PayPal email when your available balance reaches $50 or more.
           </p>
         </CardContent>
@@ -590,7 +590,7 @@ export default function AffiliateDashboardPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <Users className="w-8 h-8 text-slate-400" />
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
                 No referrals yet. Share your link to get started.
               </p>
             </div>
@@ -599,19 +599,19 @@ export default function AffiliateDashboardPage() {
               <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       User
                     </th>
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Signed Up
                     </th>
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Status
                     </th>
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Plan
                     </th>
-                    <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Commission
                     </th>
                   </tr>
@@ -630,13 +630,13 @@ export default function AffiliateDashboardPage() {
                           <p className="text-sm font-medium">
                             {referral.userName || "Anonymous"}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {referral.userEmail}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-3">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           {formatDate(referral.createdAt)}
                         </p>
                       </td>
@@ -676,7 +676,7 @@ export default function AffiliateDashboardPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <DollarSign className="w-8 h-8 text-slate-400" />
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
                 No commissions yet. Commissions appear when your referrals make a purchase.
               </p>
             </div>
@@ -685,19 +685,19 @@ export default function AffiliateDashboardPage() {
               <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Date
                     </th>
-                    <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Invoice Amount
                     </th>
-                    <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Commission (30%)
                     </th>
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Status
                     </th>
-                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">
+                    <th className="text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-6 py-3">
                       Available Date
                     </th>
                   </tr>
@@ -712,7 +712,7 @@ export default function AffiliateDashboardPage() {
                       )}
                     >
                       <td className="px-6 py-3">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           {formatDate(commission.createdAt)}
                         </p>
                       </td>
@@ -730,7 +730,7 @@ export default function AffiliateDashboardPage() {
                         <CommissionStatusBadge status={commission.status} />
                       </td>
                       <td className="px-6 py-3">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           {formatDate(commission.availableDate)}
                         </p>
                       </td>

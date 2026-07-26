@@ -811,7 +811,7 @@ function SettingsContent() {
             Your account, how you publish, and how the AI writes for you.
           </p>
         </div>
-        <Link href="/docs/settings/profile-settings" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+        <Link href="/docs/settings/profile-settings" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
           Help?
         </Link>
@@ -885,7 +885,7 @@ function SettingsContent() {
                 )}
                 <div>
                   <p className="font-semibold text-lg">{linkedInName}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
                   </p>
                   <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
@@ -960,7 +960,7 @@ function SettingsContent() {
                     )}
                     <div>
                       <p className="font-semibold text-lg">{linkedInName}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {linkedInSettings?.postingTarget === "organization" ? "Company Page" : "Personal Profile"}
                       </p>
                       <div className="flex items-center gap-1 mt-1 text-sm text-green-600 dark:text-green-400">
@@ -1034,7 +1034,7 @@ function SettingsContent() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="auto-like" className="text-sm font-medium">Auto-like after publish</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Automatically like your own post right after it's published
               </p>
             </div>
@@ -1086,7 +1086,7 @@ function SettingsContent() {
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none z-10" />
                 <Input
                   id="name"
                   value={name}
@@ -1099,7 +1099,7 @@ function SettingsContent() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none z-10" />
                 <Input
                   id="email"
                   value={email}
@@ -1107,7 +1107,7 @@ function SettingsContent() {
                   className="pl-10 bg-muted"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Email cannot be changed</p>
             </div>
           </div>
 
@@ -1118,7 +1118,7 @@ function SettingsContent() {
                 <Lock className="w-4 h-4" />
                 Change Password
               </span>
-              <span className="text-xs text-muted-foreground font-normal">(leave empty for no changes)</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">(leave empty for no changes)</span>
             </h4>
             <div className="space-y-3">
               <div className="space-y-2">
@@ -1196,26 +1196,26 @@ function SettingsContent() {
             <Select value={timezone} onValueChange={setTimezone}>
               <SelectTrigger id="timezone" className="w-full text-left">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
                   <SelectValue placeholder="Select your timezone" />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {/* Auto-detect option */}
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-muted/50">
                   Recommended
                 </div>
                 <SelectItem value="auto">
                   <div className="flex flex-col">
                     <span>Your device timezone</span>
-                    <span className="text-xs text-muted-foreground">{browserTimezone || "Detecting..."}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{browserTimezone || "Detecting..."}</span>
                   </div>
                 </SelectItem>
                 <div className="my-1 border-t border-border" />
                 {/* Popular timezones by region */}
                 {["Americas", "Europe", "Asia & Pacific", "Africa"].map((region) => (
                   <div key={region}>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-muted/50">
                       {region}
                     </div>
                     {timezones
@@ -1229,7 +1229,7 @@ function SettingsContent() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {timezone === "auto"
                 ? `Posts will be scheduled using your device timezone (${browserTimezone || "detecting..."})`
                 : "When you schedule a post for 9:00 AM, it will be published at 9:00 AM in this timezone"}
@@ -1283,11 +1283,11 @@ function SettingsContent() {
                 "w-10 h-10 rounded-full flex items-center justify-center",
                 twoFactorEnabled ? "bg-green-500/20" : "bg-slate-200 dark:bg-slate-700"
               )}>
-                <Smartphone className={cn("w-5 h-5", twoFactorEnabled ? "text-green-600" : "text-muted-foreground")} />
+                <Smartphone className={cn("w-5 h-5", twoFactorEnabled ? "text-green-600" : "text-slate-500 dark:text-slate-400")} />
               </div>
               <div>
                 <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {twoFactorEnabled ? "Protected with authenticator app" : "Add an extra layer of security"}
                 </p>
               </div>
@@ -1340,7 +1340,7 @@ function SettingsContent() {
 
             {secret && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Or enter this code manually:</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Or enter this code manually:</Label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 p-2 bg-slate-100 dark:bg-slate-800 rounded text-sm font-mono break-all">
                     {secret}
@@ -1484,7 +1484,7 @@ function SettingsContent() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">Personal Profile</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Personal Profile</p>
                 </div>
               </div>
             </button>
@@ -1497,7 +1497,7 @@ function SettingsContent() {
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white dark:bg-slate-950 px-2 text-muted-foreground">
+                    <span className="bg-white dark:bg-slate-950 px-2 text-slate-500 dark:text-slate-400">
                       Company pages
                     </span>
                   </div>
@@ -1541,7 +1541,7 @@ function SettingsContent() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">Company Page</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Company Page</p>
                       </div>
                     </div>
                   </button>
@@ -1600,7 +1600,7 @@ function SettingsContent() {
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-sm">System</p>
-                    <p className="text-xs text-muted-foreground">Auto</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Auto</p>
                   </div>
                 </button>
 
@@ -1621,7 +1621,7 @@ function SettingsContent() {
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-sm">Light</p>
-                    <p className="text-xs text-muted-foreground">Always</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Always</p>
                   </div>
                 </button>
 
@@ -1642,7 +1642,7 @@ function SettingsContent() {
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-sm">Dark</p>
-                    <p className="text-xs text-muted-foreground">Always</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Always</p>
                   </div>
                 </button>
               </div>
@@ -1697,11 +1697,11 @@ function SettingsContent() {
                       <button
                         type="button"
                         onClick={() => handleRemoveSamplePost(index)}
-                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors"
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-500 dark:text-slate-400 hover:text-red-600 transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      <span className="text-xs text-muted-foreground mt-2 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 mt-2 block">
                         Sample {index + 1}
                       </span>
                     </div>
@@ -1734,7 +1734,7 @@ function SettingsContent() {
             {/* Writing Tone */}
             <div className="space-y-2">
               <Label>Writing Tone</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Describe how you want your posts to sound
               </p>
               <Input
@@ -1750,7 +1750,7 @@ function SettingsContent() {
             {/* Content Language */}
             <div className="space-y-2">
               <Label>Content Language</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Language for all generated content (posts, ideas, hooks, comments). Overrides the language of your sample posts and business context.
               </p>
               <Select
@@ -1767,7 +1767,7 @@ function SettingsContent() {
                     <SelectItem key={lang.code} value={lang.code}>
                       {lang.name}
                       {lang.nativeName !== lang.name && (
-                        <span className="text-muted-foreground ml-2">
+                        <span className="text-slate-500 dark:text-slate-400 ml-2">
                           {lang.nativeName}
                         </span>
                       )}
@@ -1780,7 +1780,7 @@ function SettingsContent() {
             {/* Never Mention */}
             <div className="space-y-2">
               <Label>Never Mention</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Topics, competitors, or words the AI should avoid
               </p>
               <Textarea

@@ -318,8 +318,8 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
           >
             {isLoading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">Loading fonts...</span>
+                <Loader2 className="h-5 w-5 animate-spin text-slate-500 dark:text-slate-400" />
+                <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">Loading fonts...</span>
               </div>
             ) : (
               <>
@@ -341,13 +341,13 @@ export function GoogleFontPicker({ value, onChange }: GoogleFontPickerProps) {
                       <span className="flex-1 truncate">
                         {font.family}
                       </span>
-                      <span className="text-[10px] text-muted-foreground ml-2 shrink-0">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-2 shrink-0">
                         {font.category}
                       </span>
                     </CommandItem>
                   ))}
                   {visibleCount < filteredFonts.length && (
-                    <div className="py-2 text-center text-xs text-muted-foreground">
+                    <div className="py-2 text-center text-xs text-slate-500 dark:text-slate-400">
                       Scroll for more ({filteredFonts.length - visibleCount} remaining)
                     </div>
                   )}

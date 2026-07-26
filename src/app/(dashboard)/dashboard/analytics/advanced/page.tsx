@@ -138,7 +138,7 @@ export default function AdvancedAnalyticsPage() {
                 <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-500 dark:text-slate-400">
                 Advanced analytics contains the team owner&apos;s private LinkedIn data and is not accessible to team members.
               </p>
             </div>
@@ -158,7 +158,7 @@ export default function AdvancedAnalyticsPage() {
           <div>
             <Link
               href="/dashboard/analytics"
-              className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2 transition-colors"
+              className="text-sm text-slate-500 dark:text-slate-400 hover:text-foreground inline-flex items-center gap-1 mb-2 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Analytics
@@ -271,7 +271,7 @@ export default function AdvancedAnalyticsPage() {
             />
 
             {/* Disclaimer */}
-            <p className="text-xs text-muted-foreground/70 text-center pt-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400/70 text-center pt-4">
               Overall statistics reflect all your LinkedIn activity. Per-post analytics are fully available for posts published through LinkedGrow. Posts published directly on LinkedIn may appear with limited or no individual metrics.
             </p>
           </>
@@ -281,7 +281,7 @@ export default function AdvancedAnalyticsPage() {
         {data && !data.advanced && !isLoading && (
           <Card>
             <CardContent className="py-16 px-8 text-center">
-              <p className="text-muted-foreground">
+              <p className="text-slate-500 dark:text-slate-400">
                 No advanced analytics data available yet. Start publishing posts to see insights.
               </p>
             </CardContent>

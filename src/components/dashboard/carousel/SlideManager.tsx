@@ -125,7 +125,7 @@ function SortableSlide({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-            <span className="text-xs text-muted-foreground">Empty</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Empty</span>
           </div>
         )}
       </div>
@@ -288,7 +288,7 @@ export function SlideManager({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                      <span className="text-xs text-muted-foreground">Empty</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">Empty</span>
                     </div>
                   )}
                 </div>
@@ -311,7 +311,7 @@ export function SlideManager({
       </Button>
 
       {/* Slide Counter */}
-      <div className="px-4 text-sm text-muted-foreground shrink-0 border-l border-border">
+      <div className="px-4 text-sm text-slate-500 dark:text-slate-400 shrink-0 border-l border-border">
         <span className="font-medium text-foreground">
           {currentSlideIndex + 1}
         </span>

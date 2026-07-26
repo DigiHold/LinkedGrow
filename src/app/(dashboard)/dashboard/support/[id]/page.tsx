@@ -162,14 +162,14 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
       <div>
         <button
           onClick={() => router.push("/dashboard/support")}
-          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-4"
+          className="text-sm text-slate-500 dark:text-slate-400 hover:text-foreground inline-flex items-center gap-1.5 mb-4"
         >
           <ArrowLeft className="w-4 h-4" /> All tickets
         </button>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold mb-2">{ticket.subject}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor(ticket)}`}>
                 {STATUS_LABEL[ticket.status]}
               </span>
@@ -221,7 +221,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
                         SUPPORT
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{formatDate(m.createdAt)}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(m.createdAt)}</span>
                   </div>
                   <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
                 </div>
@@ -242,7 +242,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
                 rows={4}
                 maxLength={10000}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Need to share a screenshot? Upload it for free on{" "}
                 <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
                 and paste the link.
@@ -265,7 +265,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
       ) : (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               This ticket is {STATUS_LABEL[ticket.status].toLowerCase()}. Reply below to reopen it if you need more help.
             </p>
             <form onSubmit={handleReply} className="space-y-3 text-left">
@@ -276,7 +276,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
                 rows={4}
                 maxLength={10000}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Need to share a screenshot? Upload it for free on{" "}
                 <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
                 and paste the link.
@@ -303,7 +303,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
             <button
               onClick={() => setShowResolveModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              className="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-foreground"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -312,7 +312,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-xl font-bold mb-2 text-center">Mark this ticket as resolved?</h2>
-            <p className="text-sm text-muted-foreground text-center mb-6">
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
               We&apos;ll close the conversation. You can always reopen it later by replying.
             </p>
             <div className="flex gap-2">

@@ -33,7 +33,7 @@ export function PostTypeChart({ data }: PostTypeChartProps) {
             <Layers className="w-4 h-4 text-purple-500" />
             Content Performance by Type
           </h3>
-          <p className="text-muted-foreground text-sm">No data available yet.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">No data available yet.</p>
         </CardContent>
       </Card>
     );
@@ -78,7 +78,7 @@ export function PostTypeChart({ data }: PostTypeChartProps) {
         </div>
         <div className="flex items-center gap-4 mt-4 justify-center">
           {chartData.map((d) => (
-            <div key={d.rawType} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div key={d.rawType} className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: TYPE_COLORS[d.rawType] || '#64748b' }} />
               {d.type} ({d.count})
             </div>

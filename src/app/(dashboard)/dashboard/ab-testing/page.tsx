@@ -70,7 +70,7 @@ export default function ABTestingPage() {
                   <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-                <p className="text-muted-foreground">
+                <p className="text-slate-500 dark:text-slate-400">
                   A/B testing management is only available to team owners. Contact the team owner to set up A/B tests.
                 </p>
               </div>
@@ -145,7 +145,7 @@ export default function ABTestingPage() {
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="al7K5HK8hxc" />
-            <Link href="/docs/business-features/ab-testing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/business-features/ab-testing" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -169,7 +169,7 @@ export default function ABTestingPage() {
             <Card key={stat.label}>
               <CardContent className="p-4">
                 <p className={cn("text-3xl font-bold", stat.color)}>{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{stat.label}</p>
               </CardContent>
             </Card>
           ))}
@@ -185,7 +185,7 @@ export default function ABTestingPage() {
             <CardContent className="py-12 text-center">
               <GitBranch className="w-12 h-12 mx-auto text-slate-300 mb-4" />
               <h3 className="text-lg font-semibold mb-2">No A/B tests yet</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
                 Create your first A/B test to compare different versions of your posts
               </p>
               <Link href="/dashboard/ab-testing/new">
@@ -262,11 +262,11 @@ export default function ABTestingPage() {
                               <Trophy className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
                             {test.variantAContent}
                           </p>
                           {test.variantAStats && (
-                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
                               <span>{test.variantAStats.impressions.toLocaleString()} impressions</span>
                               <span>{test.variantAStats.engagement}% engagement</span>
                             </div>
@@ -288,11 +288,11 @@ export default function ABTestingPage() {
                               <Trophy className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
                             {test.variantBContent}
                           </p>
                           {test.variantBStats && (
-                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
                               <span>{test.variantBStats.impressions.toLocaleString()} impressions</span>
                               <span>{test.variantBStats.engagement}% engagement</span>
                             </div>
@@ -303,7 +303,7 @@ export default function ABTestingPage() {
 
                     {/* Actions Panel */}
                     <div className="lg:w-48 p-4 lg:p-6 bg-slate-50 dark:bg-slate-800/50 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-700">
-                      <p className="text-xs text-muted-foreground mb-3">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                         Created {new Date(test.createdAt).toLocaleDateString()}
                       </p>
 
@@ -377,15 +377,15 @@ export default function ABTestingPage() {
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="font-medium text-cyan-700 dark:text-cyan-300">1. Create variants</p>
-                <p className="text-muted-foreground">Write two different versions of your post content</p>
+                <p className="text-slate-500 dark:text-slate-400">Write two different versions of your post content</p>
               </div>
               <div>
                 <p className="font-medium text-cyan-700 dark:text-cyan-300">2. Publish both</p>
-                <p className="text-muted-foreground">Post both variants to LinkedIn at similar times</p>
+                <p className="text-slate-500 dark:text-slate-400">Post both variants to LinkedIn at similar times</p>
               </div>
               <div>
                 <p className="font-medium text-cyan-700 dark:text-cyan-300">3. Pick the winner</p>
-                <p className="text-muted-foreground">After a few days, compare engagement and declare a winner</p>
+                <p className="text-slate-500 dark:text-slate-400">After a few days, compare engagement and declare a winner</p>
               </div>
             </div>
           </CardContent>
@@ -404,7 +404,7 @@ export default function ABTestingPage() {
                   <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <h2 className="text-lg font-semibold text-center mb-2">Delete A/B Test</h2>
-                <p className="text-muted-foreground text-center text-sm mb-2">
+                <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-2">
                   Are you sure you want to delete this A/B test?
                 </p>
                 <p className="text-sm font-medium text-center mb-6 text-foreground">

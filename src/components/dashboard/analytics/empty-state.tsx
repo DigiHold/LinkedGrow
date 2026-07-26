@@ -56,7 +56,7 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
               <Linkedin className="w-8 h-8 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Connect LinkedIn</h3>
-            <p className="text-muted-foreground text-sm mb-4">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
               Connect your LinkedIn account to start tracking your analytics and performance metrics.
             </p>
             <Button
@@ -87,7 +87,7 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
               <BarChart3 className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No Data Yet</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               Start publishing posts to LinkedIn to see your analytics data here. Your performance metrics will appear after your first published post.
             </p>
           </div>
@@ -104,7 +104,7 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
             <Lock className="w-8 h-8 text-amber-600" />
           </div>
           <h3 className="text-lg font-semibold mb-2">Upgrade Required</h3>
-          <p className="text-muted-foreground text-sm mb-4">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
             {featureName} requires a higher plan. Upgrade to unlock this feature.
           </p>
           <Link href="/dashboard/upgrade">

@@ -1206,7 +1206,7 @@ showToast("Failed to export images");
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-slate-500 dark:text-slate-400">Loading...</p>
         </div>
       </div>
     );
@@ -1228,7 +1228,7 @@ showToast("Failed to export images");
             </div>
             <div className="flex items-center gap-3">
               <VideoModal videoId="LwxqG4Y5Z6g" />
-              <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
                 <HelpCircle className="w-3.5 h-3.5" />
                 Help?
               </Link>
@@ -1241,7 +1241,7 @@ showToast("Failed to export images");
                 <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-4">Text AI API Key Required</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 The Carousel Editor uses AI to generate content. Please configure your Text AI API key to unlock AI features.
               </p>
               <Link href="/dashboard/settings/ai-api">
@@ -1289,7 +1289,7 @@ showToast("Failed to export images");
             <div className="h-6 w-px bg-border" />
 
             {/* Auto-save Status */}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               {saveStatus === 'saving' ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -1316,7 +1316,7 @@ showToast("Failed to export images");
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-muted-foreground w-12 text-center">
+              <span className="text-sm text-slate-500 dark:text-slate-400 w-12 text-center">
                 {Math.round(zoom * 100)}%
               </span>
               <Button
@@ -1336,7 +1336,7 @@ showToast("Failed to export images");
 
             <div className="h-6 w-px bg-border" />
 
-            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0">
+            <Link href="/docs/carousel/carousel-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0">
               <HelpCircle className="w-3.5 h-3.5 shrink-0" />
               Help?
             </Link>
@@ -1391,7 +1391,7 @@ showToast("Failed to export images");
                       rows={2}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Save the current slide design as a reusable template. You can access your saved templates from the Templates gallery.
                   </p>
                   <Button
@@ -1499,7 +1499,7 @@ showToast("Failed to export images");
                       rows={2}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Save all {slides.length} slides as a carousel. You can reuse or duplicate it later from "My Carousels".
                   </p>
                   <Button
@@ -1528,7 +1528,7 @@ showToast("Failed to export images");
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Your current canvas will be cleared so you can start from a blank slide.
                   </p>
                   <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-800 dark:bg-amber-900/10">
@@ -1768,7 +1768,7 @@ showToast("Failed to export images");
         {isExporting && generationStep && (
           <div className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40">
             <div className="px-4 py-2 rounded-lg bg-background border border-border shadow-lg">
-              <p className="text-sm text-muted-foreground">{generationStep}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{generationStep}</p>
             </div>
           </div>
         )}

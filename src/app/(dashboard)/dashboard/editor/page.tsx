@@ -665,7 +665,7 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="9pWn4OdcCNQ" />
-            <Link href="/docs/content-creation/post-editor" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/post-editor" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -753,7 +753,7 @@ Tips for viral posts:
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
                     Describe exactly what you want AI to change in your post above.
                     Be specific about the tone, style, or structure.
                   </p>
@@ -875,7 +875,7 @@ Tips for viral posts:
                   ].map((item) => (
                     <div key={item.label}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
                         <span className="font-medium">{item.value}%</span>
                       </div>
                       <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
@@ -1006,7 +1006,7 @@ Tips for viral posts:
                 <h2 className="text-lg font-semibold text-center mb-2">
                   Schedule Post
                 </h2>
-                <p className="text-muted-foreground text-center text-sm mb-6">
+                <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-6">
                   Choose when you want this post to be published.
                 </p>
                 <div className="space-y-4">

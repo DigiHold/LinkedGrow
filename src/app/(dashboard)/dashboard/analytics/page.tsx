@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
                 <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-500 dark:text-slate-400">
                 This page contains the team owner&apos;s private LinkedIn analytics data and is not accessible to team members.
               </p>
             </div>
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
               href="/docs/getting-started/understanding-dashboard"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+              className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
             )}
 
             {/* Disclaimer */}
-            <p className="text-xs text-muted-foreground/70 text-center pt-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400/70 text-center pt-4">
               Overall statistics reflect all your LinkedIn activity. Per-post analytics are fully available for posts published through LinkedGrow. Posts published directly on LinkedIn may appear with limited or no individual metrics.
             </p>
           </>

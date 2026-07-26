@@ -62,7 +62,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
             <BarChart3 className="w-4 h-4 text-blue-500" />
             Post Performance
           </h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             No published posts with analytics data yet.
           </p>
         </CardContent>
@@ -81,7 +81,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
     <button
       onClick={() => setSortBy(field)}
       className={`flex items-center gap-1 text-xs font-medium transition-colors ${
-        sortBy === field ? "text-cyan-600 dark:text-cyan-400" : "text-muted-foreground hover:text-foreground"
+        sortBy === field ? "text-cyan-600 dark:text-cyan-400" : "text-slate-500 dark:text-slate-400 hover:text-foreground"
       }`}
     >
       {label}
@@ -99,7 +99,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
         <div className="space-y-3">
           {/* Sort controls */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-muted-foreground">Sort by:</span>
+            <span className="text-slate-500 dark:text-slate-400">Sort by:</span>
             <SortButton field="impressions" label="Views" />
             <SortButton field="reactions" label="Reactions" />
             <SortButton field="comments" label="Comments" />
@@ -128,7 +128,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
                     <FileText className="w-6 h-6 text-purple-500" />
                   ) : (
                     <div className="w-full h-full bg-linear-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 flex items-center justify-center">
-                      <span className="text-[10px] text-muted-foreground font-medium">TEXT</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">TEXT</span>
                     </div>
                   )}
                 </div>
@@ -145,7 +145,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
                       </Badge>
                     )}
                     {post.publishedAt && (
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
                         {new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     )}
@@ -154,7 +154,7 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
                         href={post.linkedinPostUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-cyan-600 transition-colors"
+                        className="text-slate-500 dark:text-slate-400 hover:text-cyan-600 transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
                       </a>
@@ -167,23 +167,23 @@ export function PostPerformanceTable({ posts }: PostPerformanceTableProps) {
                   {/* Metrics row */}
                   <div className="flex items-center gap-3 sm:gap-4 text-xs">
                     <div>
-                      <span className="text-muted-foreground">Views </span>
+                      <span className="text-slate-500 dark:text-slate-400">Views </span>
                       <span className="font-semibold tabular-nums">{post.analytics!.impressions.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Reactions </span>
+                      <span className="text-slate-500 dark:text-slate-400">Reactions </span>
                       <span className="font-semibold tabular-nums">{post.analytics!.reactions.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Comments </span>
+                      <span className="text-slate-500 dark:text-slate-400">Comments </span>
                       <span className="font-semibold tabular-nums">{post.analytics!.comments.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Shares </span>
+                      <span className="text-slate-500 dark:text-slate-400">Shares </span>
                       <span className="font-semibold tabular-nums">{post.analytics!.reshares.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Rate </span>
+                      <span className="text-slate-500 dark:text-slate-400">Rate </span>
                       <span className={`font-semibold tabular-nums ${post.engagementRate > 3 ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
                         {formatEngagementRate(post.engagementRate)}
                       </span>

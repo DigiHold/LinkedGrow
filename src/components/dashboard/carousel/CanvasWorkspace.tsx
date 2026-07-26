@@ -2968,7 +2968,7 @@ return false;
 
         {!isReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80">
-            <div className="text-muted-foreground">Loading editor...</div>
+            <div className="text-slate-500 dark:text-slate-400">Loading editor...</div>
           </div>
         )}
 
@@ -3005,7 +3005,7 @@ return false;
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg>
                     Layer
                   </span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                  <ChevronRight className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                 </button>
                 {layerSubmenuOpen && (
                   <div className="absolute left-full top-0 ml-0.5 min-w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm">
@@ -3090,7 +3090,7 @@ return false;
                       return parent && parent instanceof Group && !(parent as any)._isSvgIcon ? 'Align to group' : 'Align to page';
                     })()}
                   </span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                  <ChevronRight className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                 </button>
                 {alignSubmenuOpen && (
                   <div className="absolute left-full top-0 ml-0.5 min-w-36 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-border py-1 text-sm">

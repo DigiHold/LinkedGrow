@@ -176,7 +176,7 @@ export function MyCarousels({
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
             <Input
               placeholder="Search carousels..."
               value={search}
@@ -189,15 +189,15 @@ export function MyCarousels({
           <ScrollArea className="flex-1 min-h-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <Loader2 className="w-6 h-6 animate-spin text-slate-500 dark:text-slate-400" />
               </div>
             ) : filteredCarousels.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                  <Layers className="w-8 h-8 text-muted-foreground" />
+                  <Layers className="w-8 h-8 text-slate-500 dark:text-slate-400" />
                 </div>
                 <h3 className="font-medium mb-1">No carousels saved yet</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                   Create a carousel in the editor and click "Save Carousel" to save it here for reuse.
                 </p>
               </div>
@@ -208,7 +208,7 @@ export function MyCarousels({
                     key={carousel.id}
                     className={cn(
                       "group relative rounded-lg border border-border bg-card overflow-hidden",
-                      "hover:border-cyan-300 hover:shadow-md transition-all duration-200"
+                      "hover:border-cyan-300 transition-colors hover:border-slate-300 dark:hover:border-white/20 duration-200"
                     )}
                   >
                     {/* Thumbnail */}
@@ -224,7 +224,7 @@ export function MyCarousels({
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <Layers className="w-12 h-12 text-muted-foreground/30" />
+                          <Layers className="w-12 h-12 text-slate-500 dark:text-slate-400/30" />
                         </div>
                       )}
 
@@ -263,7 +263,7 @@ export function MyCarousels({
                           <h3 className="font-medium text-sm truncate">
                             {carousel.name}
                           </h3>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                             <Calendar className="w-3 h-3" />
                             {formatDate(carousel.updatedAt)}
                           </p>

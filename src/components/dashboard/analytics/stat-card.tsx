@@ -19,13 +19,13 @@ export function StatCard({ icon: Icon, iconColor, iconBg, label, value, change, 
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
             <p className="text-2xl font-bold tracking-tight">{typeof value === 'number' ? value.toLocaleString() : value}</p>
             {change && (
               <p className={`text-xs font-medium ${
                 changeType === "positive" ? "text-emerald-600 dark:text-emerald-400" :
                 changeType === "negative" ? "text-red-600 dark:text-red-400" :
-                "text-muted-foreground"
+                "text-slate-500 dark:text-slate-400"
               }`}>
                 {change}
               </p>

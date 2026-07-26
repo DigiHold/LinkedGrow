@@ -60,7 +60,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium mb-1">Boost engagement with First Comment</p>
-              <p className="text-xs text-muted-foreground mb-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 Automatically post a comment 1-5 min after publication to drive early interactions and boost your post in the algorithm. Available on Pro plan.
               </p>
               <Link href="/dashboard/upgrade">
@@ -113,17 +113,17 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
           maxLength={1250}
         />
         <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Auto-posted 1-5 min after publication to boost engagement.
           </p>
           {value && (
             <div className="flex items-center gap-3 shrink-0">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 {value.length}/1250
               </span>
               <button
                 onClick={() => onChange("")}
-                className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors"
               >
                 Clear
               </button>

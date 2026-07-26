@@ -64,7 +64,7 @@ export function UsageLimit({
               ? "text-red-600 dark:text-red-400"
               : isNearLimit
               ? "text-amber-600 dark:text-amber-400"
-              : "text-muted-foreground"
+              : "text-slate-500 dark:text-slate-400"
           }`}
         >
           {currentUsage} / {limit}
@@ -104,7 +104,7 @@ export function UsageLimit({
           {remaining} {limitLabels[limitType].toLowerCase()} remaining this month
         </p>
       ) : (
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
           {remaining} remaining this month
         </p>
       )}
@@ -133,7 +133,7 @@ export function LimitReachedOverlay({ userPlan, limitType }: LimitReachedOverlay
         </div>
 
         <h2 className="text-2xl font-bold mb-2">Limit Reached</h2>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-slate-500 dark:text-slate-400 mb-6">
           You&apos;ve used all your free {limitLabels[limitType].toLowerCase()} this month.
           Upgrade to continue growing your LinkedIn presence!
         </p>
@@ -167,7 +167,7 @@ export function LimitReachedOverlay({ userPlan, limitType }: LimitReachedOverlay
             <p className="text-sm font-medium mb-2">
               With {PLANS[nextPlan].name} you get:
             </p>
-            <ul className="text-sm text-muted-foreground space-y-1">
+            <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-1">
               <li className="flex items-center gap-2">
                 <Sparkles className="w-3 h-3 text-linkedin" />
                 {PLANS[nextPlan].limits.postsPerMonth === -1
@@ -207,7 +207,7 @@ export function UsageBadge({
       className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
         isAtLimit
           ? "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300"
-          : "bg-accent text-muted-foreground"
+          : "bg-accent text-slate-500 dark:text-slate-400"
       }`}
     >
       {remaining}/{limit} left

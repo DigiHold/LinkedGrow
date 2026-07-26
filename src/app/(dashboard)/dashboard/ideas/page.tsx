@@ -195,7 +195,7 @@ function IdeasContent() {
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="53lsvhAIXq0" />
-            <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -210,7 +210,7 @@ function IdeasContent() {
                 <Key className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 To generate content ideas, you need to configure your AI API key in settings.
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
@@ -222,7 +222,7 @@ function IdeasContent() {
                   </Button>
                 </Link>
               </div>
-              <p className="text-xs text-muted-foreground mt-6">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
                 We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
               </p>
             </div>
@@ -239,7 +239,7 @@ function IdeasContent() {
               {popularThemes.map((theme) => (
                 <span
                   key={theme}
-                  className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground"
+                  className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
                 >
                   {theme}
                 </span>
@@ -265,7 +265,7 @@ function IdeasContent() {
         </div>
         <div className="flex items-center gap-3">
           <VideoModal videoId="53lsvhAIXq0" />
-          <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/ideas-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -348,7 +348,7 @@ function IdeasContent() {
                 <Sparkles className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Ready to generate ideas</h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
                 Select a theme above and click "Generate 10 Ideas" to get AI-powered content suggestions for your LinkedIn posts.
               </p>
             </div>
@@ -381,14 +381,14 @@ function IdeasContent() {
                       <TrendingUp className="w-3 h-3 inline mr-1" />
                       {idea.engagement}
                     </span>
-                    <span className="text-xs text-muted-foreground">#{index + 1}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">#{index + 1}</span>
                   </div>
 
                   <p className="font-medium text-sm sm:text-base leading-snug mb-4 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors whitespace-pre-line">
                     {idea.hook}
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
                       <Hash className="w-3 h-3" />
                       {idea.type}
@@ -439,12 +439,12 @@ function IdeasContent() {
             </div>
 
             <div className="mb-6">
-              <p className="text-muted-foreground mb-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
                 Are you sure you want to use this idea to generate a full LinkedIn post?
               </p>
               <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-border">
                 <p className="font-medium whitespace-pre-line">{selectedIdea.hook}</p>
-                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
                     <Hash className="w-3 h-3" />
                     {selectedIdea.type}

@@ -70,7 +70,7 @@ export default function ApiKeysPage() {
                   <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-                <p className="text-muted-foreground">
+                <p className="text-slate-500 dark:text-slate-400">
                   API key management is only available to team owners. Contact the team owner if you need API access.
                 </p>
               </div>
@@ -198,7 +198,7 @@ showError("Failed to delete API key");
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/docs/business-features/api-access" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/business-features/api-access" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -347,7 +347,7 @@ showError("Failed to delete API key");
                   <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <h2 className="text-lg font-semibold text-center mb-2">Delete API Key</h2>
-                <p className="text-muted-foreground text-center text-sm mb-2">
+                <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-2">
                   Are you sure you want to delete this API key? This action cannot be undone.
                 </p>
                 <p className="text-sm font-medium text-center mb-6 text-foreground">

@@ -85,7 +85,7 @@ export function UpgradePrompt({
             <Icon className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2">{featureInfo?.name || "Premium Feature"}</h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-slate-500 dark:text-slate-400 mb-6">
             {featureInfo?.description || `This feature requires the ${planInfo.name} plan or higher.`}
           </p>
           <a href="/dashboard/upgrade">
@@ -142,17 +142,17 @@ export function UpgradePrompt({
             <h2 className="text-3xl font-bold mb-3">
               Unlock Your Full Potential
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-slate-500 dark:text-slate-400">
               Upgrade to access premium features and supercharge your LinkedIn growth
             </p>
           </div>
 
           {/* Current Plan Info */}
           <div className="bg-accent/30 rounded-xl p-4 mb-6 text-center">
-            <span className="text-sm text-muted-foreground">Current plan: </span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">Current plan: </span>
             <span className="font-semibold">{PLANS[currentPlan].name}</span>
             {currentPlan === "free" && (
-              <span className="text-sm text-muted-foreground ml-2">
+              <span className="text-sm text-slate-500 dark:text-slate-400 ml-2">
                 ({PLANS.free.limits.postsPerMonth} posts remaining)
               </span>
             )}
@@ -174,7 +174,7 @@ export function UpgradePrompt({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{info.name}</p>
-                    <p className="text-xs text-muted-foreground">{PLANS[requiredFor].name}+</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{PLANS[requiredFor].name}+</p>
                   </div>
                 </div>
               );
@@ -231,7 +231,7 @@ export function UpgradePrompt({
           <h3 className="font-bold text-lg mb-1">
             {featureInfo?.name || "Premium Feature"}
           </h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
             {featureInfo?.description || `Upgrade to ${planInfo.name} to unlock this feature and more.`}
           </p>
           <a href="/dashboard/upgrade">

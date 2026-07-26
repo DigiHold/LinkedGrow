@@ -60,12 +60,12 @@ export function PdfCarouselPreviewInner({ url }: PdfCarouselPreviewInnerProps) {
         onLoadSuccess={onDocumentLoadSuccess}
         loading={
           <div className="flex items-center justify-center aspect-4/5 bg-muted/50">
-            <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
+            <div className="animate-pulse text-sm text-slate-500 dark:text-slate-400">Loading carousel...</div>
           </div>
         }
         error={
           <div className="flex items-center justify-center aspect-4/5 bg-muted/50">
-            <div className="text-sm text-muted-foreground">Failed to load PDF</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">Failed to load PDF</div>
           </div>
         }
       >

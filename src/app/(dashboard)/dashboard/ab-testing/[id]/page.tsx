@@ -197,7 +197,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
         <div>
           <Link
             href="/dashboard/ab-testing"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-foreground mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to A/B Tests
@@ -293,7 +293,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                   <h4 className="font-medium text-sm">Performance Stats</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground">Impressions</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Impressions</label>
                       <Input
                         type="number"
                         value={variantAStats.impressions}
@@ -302,7 +302,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Reactions</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Reactions</label>
                       <Input
                         type="number"
                         value={variantAStats.reactions}
@@ -311,7 +311,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Comments</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Comments</label>
                       <Input
                         type="number"
                         value={variantAStats.comments}
@@ -320,7 +320,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Shares</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Shares</label>
                       <Input
                         type="number"
                         value={variantAStats.shares}
@@ -382,7 +382,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                   <h4 className="font-medium text-sm">Performance Stats</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground">Impressions</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Impressions</label>
                       <Input
                         type="number"
                         value={variantBStats.impressions}
@@ -391,7 +391,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Reactions</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Reactions</label>
                       <Input
                         type="number"
                         value={variantBStats.reactions}
@@ -400,7 +400,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Comments</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Comments</label>
                       <Input
                         type="number"
                         value={variantBStats.comments}
@@ -409,7 +409,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Shares</label>
+                      <label className="text-xs text-slate-500 dark:text-slate-400">Shares</label>
                       <Input
                         type="number"
                         value={variantBStats.shares}
@@ -459,7 +459,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
           <Card className="bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2">Next Steps</h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <li>Click "Start Test" to begin the experiment</li>
                 <li>Copy each variant and post them to LinkedIn at similar times</li>
                 <li>Wait 48-72 hours for engagement data to accumulate</li>
@@ -474,7 +474,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
           <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2">How to Get Stats from LinkedIn</h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <li>Go to your LinkedIn profile and find each post</li>
                 <li>Click on the post to see detailed analytics</li>
                 <li>Note down impressions, reactions, comments, and shares</li>
@@ -498,7 +498,7 @@ export default function ABTestDetailPage({ params }: { params: Promise<{ id: str
                   <Trophy className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
                 <h2 className="text-lg font-semibold text-center mb-2">Declare Winner</h2>
-                <p className="text-muted-foreground text-center text-sm mb-6">
+                <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-6">
                   Are you sure you want to declare <span className="font-semibold text-foreground">Variant {winnerModal.toUpperCase()}</span> as the winner?
                   This will end the test.
                 </p>

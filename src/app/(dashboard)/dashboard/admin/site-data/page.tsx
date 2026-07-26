@@ -145,7 +145,7 @@ export default function AdminSiteDataPage() {
           </div>
           <h1 className="text-2xl font-bold">Site Data</h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-slate-500 dark:text-slate-400">
           Monitor cookie consent choices and visitor analytics
         </p>
       </div>
@@ -225,7 +225,7 @@ export default function AdminSiteDataPage() {
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-x-auto">
           {consentRecords.length === 0 ? (
-            <div className="px-4 py-12 text-center text-muted-foreground">
+            <div className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
               <Cookie className="w-8 h-8 mx-auto mb-3 opacity-50" />
               <p>No consent records yet</p>
               <p className="text-sm mt-1">Records will appear as visitors interact with the cookie banner</p>
@@ -235,22 +235,22 @@ export default function AdminSiteDataPage() {
                 <table className="w-full responsive-table">
                   <thead>
                     <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         Action
                       </th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         Choices
                       </th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         IP Address
                       </th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         Country
                       </th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         Browser
                       </th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                         Date
                       </th>
                     </tr>
@@ -296,23 +296,23 @@ export default function AdminSiteDataPage() {
                           </td>
                           <td data-label="IP" className="px-4 py-3">
                             <div className="flex items-center gap-2 text-sm font-mono">
-                              <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                              <Monitor className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               {record.ipAddress || "unknown"}
                             </div>
                           </td>
                           <td data-label="Country" className="px-4 py-3">
                             <div className="flex items-center gap-2 text-sm">
-                              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                              <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               {record.country || "unknown"}
                             </div>
                           </td>
                           <td data-label="Browser" className="px-4 py-3">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
                               {getBrowserFromUA(record.userAgent)}
                             </span>
                           </td>
                           <td data-label="Date" className="px-4 py-3">
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
                               {formatDate(record.createdAt)}
                             </span>
                           </td>
@@ -325,7 +325,7 @@ export default function AdminSiteDataPage() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
                     Page {page} of {totalPages}
                   </div>
                   <div className="flex gap-2">
@@ -371,10 +371,10 @@ function StatCard({
 }) {
   return (
     <div className={`rounded-xl p-4 ${color}`}>
-      <div className="text-sm text-muted-foreground mb-1">{label}</div>
+      <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">{label}</div>
       <div className={`text-2xl font-bold ${textColor}`}>{value.toLocaleString()}</div>
       {percentage !== undefined && (
-        <div className="text-xs text-muted-foreground mt-1">{percentage}%</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{percentage}%</div>
       )}
     </div>
   );

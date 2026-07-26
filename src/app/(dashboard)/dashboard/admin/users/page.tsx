@@ -281,7 +281,7 @@ export default function AdminUsersPage() {
           </div>
           <h1 className="text-2xl font-bold">Users</h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-slate-500 dark:text-slate-400">
           Manage and view all registered users on the platform
         </p>
       </div>
@@ -298,7 +298,7 @@ export default function AdminUsersPage() {
           />
           <Button type="submit">Search</Button>
         </form>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
           <span className="font-medium text-foreground">{total}</span> total users
         </div>
       </div>
@@ -308,22 +308,22 @@ export default function AdminUsersPage() {
           <table className="w-full responsive-table">
             <thead>
               <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   User
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   Email
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   Plan
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   LinkedIn
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   Joined
                 </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                   Actions
                 </th>
               </tr>
@@ -339,7 +339,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                     No users found
                   </td>
                 </tr>
@@ -363,7 +363,7 @@ export default function AdminUsersPage() {
                               <Shield className="w-3.5 h-3.5 text-cyan-500" />
                             )}
                           </div>
-                          <span className="text-xs text-muted-foreground font-mono">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                             {user.id.slice(0, 8)}...
                           </span>
                         </div>
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td data-label="Email" className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         <span className="text-sm">{user.email}</span>
                       </div>
                     </td>
@@ -395,11 +395,11 @@ export default function AdminUsersPage() {
                           {user.linkedinProfileName}
                         </span>
                       ) : (
-                        <span className="text-sm text-muted-foreground">Not connected</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Not connected</span>
                       )}
                     </td>
                     <td data-label="Joined" className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatDate(user.createdAt)}
                       </div>
@@ -475,7 +475,7 @@ export default function AdminUsersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               Page {page} of {totalPages}
             </div>
             <div className="flex gap-2">
@@ -588,7 +588,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -597,7 +597,7 @@ export default function AdminUsersPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Min 8 characters. Leave empty to keep the current password.
               </p>
             </div>
@@ -686,16 +686,16 @@ export default function AdminUsersPage() {
                   </div>
                   <div>
                     <p className="font-medium">{deletingUser.name || "No name"}</p>
-                    <p className="text-sm text-muted-foreground">{deletingUser.email}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{deletingUser.email}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
               This will delete:
             </p>
-            <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside space-y-1">
+            <ul className="mt-2 text-sm text-slate-500 dark:text-slate-400 list-disc list-inside space-y-1">
               <li>User account and profile</li>
               <li>All posts and scheduled content</li>
               <li>All media files</li>

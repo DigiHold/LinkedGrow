@@ -452,14 +452,14 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
     <div className={cn("w-64 bg-background border-r border-border flex flex-col h-full overflow-hidden", className)}>
       <div className="p-4 border-b border-border shrink-0">
         <h2 className="font-semibold text-sm">Elements</h2>
-        <p className="text-xs text-muted-foreground mt-1">Click or drag to add</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click or drag to add</p>
       </div>
 
       <ScrollArea className="flex-1 h-0">
         <div className="p-4 space-y-6">
           {/* Text Elements */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Text
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -487,7 +487,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
           {/* Images */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Images
             </h3>
             <div className="space-y-3">
@@ -513,7 +513,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
               {/* AI Image Generation */}
               <div className="pt-2 border-t border-border border-dashed">
-                <p className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   AI Image Generator
                 </p>
@@ -549,7 +549,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
                     </span>
                   </Button>
                   {!onAIImageGenerate && (
-                    <p className="text-[10px] text-muted-foreground text-center">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
                       Configure Image AI API key in settings
                     </p>
                   )}
@@ -562,7 +562,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
           {/* Shapes */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Shapes
             </h3>
             <div className="grid grid-cols-3 gap-2">
@@ -590,10 +590,10 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
           {/* Frames */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Frames
             </h3>
-            <p className="text-[10px] text-muted-foreground mb-2">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2">
               Drop an image on a frame to clip it
             </p>
 
@@ -607,7 +607,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
                     "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
                     selectedFrameCategory === cat.id
                       ? "bg-cyan-100 border-cyan-300 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
-                      : "border-border text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800"
+                      : "border-border text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
                   {cat.label}
@@ -671,7 +671,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
           {/* Icons */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Icons
             </h3>
 
@@ -702,7 +702,7 @@ alert('Failed to add avatar. LinkedIn profile images may have access restriction
 
           {/* Branding */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
               Branding
             </h3>
             <div className="space-y-2">

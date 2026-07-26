@@ -26,7 +26,7 @@ export function EngagementTrendChart({ data }: EngagementTrendChartProps) {
             <TrendingUp className="w-4 h-4 text-cyan-500" />
             Engagement Trends
           </h3>
-          <p className="text-muted-foreground text-sm">Not enough data to show trends yet.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Not enough data to show trends yet.</p>
         </CardContent>
       </Card>
     );

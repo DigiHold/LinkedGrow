@@ -180,7 +180,7 @@ function BillingContent() {
               <Crown className="w-8 h-8 text-amber-600" />
             </div>
             <h2 className="text-xl font-semibold mb-2">No Active Subscription</h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
               You are currently on the 7-day Pro trial. Upgrade to unlock billing management, invoices, and premium features.
             </p>
             <Button
@@ -212,7 +212,7 @@ function BillingContent() {
         {fromPortal && (
           <Link
             href="/dashboard/settings/billing"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Billing
@@ -236,7 +236,7 @@ function BillingContent() {
       {fromPortal && (
         <Link
           href="/dashboard/settings/billing"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Billing
@@ -249,13 +249,13 @@ function BillingContent() {
           <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             Billing
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
             Manage your subscription and view invoices
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/docs/billing/pricing-plans" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/billing/pricing-plans" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -302,7 +302,7 @@ function BillingContent() {
                 )}
               </div>
               {billing?.subscription && (
-                <div className="space-y-1 text-sm text-muted-foreground">
+                <div className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
                   <p>
                     {formatCurrency(billing.subscription.amount, billing.subscription.currency)}
                     /{billing.subscription.interval}
@@ -350,7 +350,7 @@ function BillingContent() {
                     <span className="text-lg">{getCardBrandIcon(card.brand)}</span>
                     <div>
                       <p className="font-medium">**** **** **** {card.last4}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         Expires {card.expMonth.toString().padStart(2, "0")}/{card.expYear}
                       </p>
                     </div>
@@ -387,14 +387,14 @@ function BillingContent() {
                 >
                   <div className="flex items-start sm:items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <Calendar className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{invoice.number || `Invoice`}</p>
                         {getStatusBadge(invoice.status || "paid")}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {formatDate(invoice.created)}
                       </p>
                     </div>
@@ -425,7 +425,7 @@ function BillingContent() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400">
               <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No invoices yet</p>
               <p className="text-sm">Your invoices will appear here after your first payment</p>
@@ -440,7 +440,7 @@ function BillingContent() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1">
               <h3 className="font-medium mb-1">Need help with billing?</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 If you have questions about your subscription or invoices, we are here to help.
               </p>
             </div>

@@ -277,7 +277,7 @@ function SortableLayerRow({
       )}
 
       {/* Type icon */}
-      <div className="text-muted-foreground shrink-0">
+      <div className="text-slate-500 dark:text-slate-400 shrink-0">
         {getLayerIcon(item.fabricObject)}
       </div>
 
@@ -327,7 +327,7 @@ function SortableLayerRow({
           onClick={(e) => { e.stopPropagation(); onToggleVisibility(item.fabricObject); }}
           title={item.visible ? "Hide" : "Show"}
         >
-          {item.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground" />}
+          {item.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-slate-500 dark:text-slate-400" />}
         </button>
         <button
           className={cn(
@@ -809,7 +809,7 @@ export function LayersPanel({ canvasRef, onClose }: LayersPanelProps) {
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-0.5">
           {flatItems.length === 0 ? (
-            <div className="text-center py-8 text-xs text-muted-foreground">
+            <div className="text-center py-8 text-xs text-slate-500 dark:text-slate-400">
               No elements on canvas
             </div>
           ) : (

@@ -557,7 +557,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
           <DialogTitle className="flex items-center gap-2">
             <Star className="w-5 h-5 text-cyan-600" />
             Choose an Icon
-            <span className="text-xs font-normal text-muted-foreground ml-2">
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-2">
               {allIcons.length}+ icons available
             </span>
           </DialogTitle>
@@ -565,7 +565,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
 
         {/* Search */}
         <div className="relative z-10">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none" />
           <Input
             placeholder="Search icons... (e.g., rocket, chart, user)"
             value={search}
@@ -617,7 +617,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                           title={item.name}
                         >
                           <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                          <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                          <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate w-full text-center">
                             {item.name}
                           </span>
                         </button>
@@ -627,7 +627,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                   {hasMoreIcons && (
                     <div className="flex justify-center py-4">
                       {isLoadingMore ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-500 dark:text-slate-400" />
                       ) : (
                         <Button
                           variant="ghost"
@@ -661,7 +661,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                             title={item.name}
                           >
                             <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                            <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate w-full text-center">
                               {item.name}
                             </span>
                           </button>
@@ -676,7 +676,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
             <ScrollArea className="h-[380px] mt-2">
               {filteredIcons.length > 0 ? (
                 <>
-                  <p className="text-xs text-muted-foreground mb-3 px-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 px-1">
                     Found {filteredIcons.length} icons matching "{search}"
                   </p>
                   <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 p-1">
@@ -694,7 +694,7 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                           title={item.name}
                         >
                           <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                          <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                          <span className="text-[9px] text-slate-500 dark:text-slate-400 truncate w-full text-center">
                             {item.name}
                           </span>
                         </button>
@@ -704,15 +704,15 @@ export function IconPicker({ onSelectIcon, open: controlledOpen, onOpenChange }:
                 </>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">No icons found for "{search}"</p>
-                  <p className="text-xs text-muted-foreground mt-2">Try searching for: rocket, chart, user, star, heart...</p>
+                  <p className="text-slate-500 dark:text-slate-400">No icons found for "{search}"</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Try searching for: rocket, chart, user, star, heart...</p>
                 </div>
               )}
             </ScrollArea>
           )}
         </div>
 
-        <div className="pt-2 border-t border-border text-xs text-muted-foreground text-center">
+        <div className="pt-2 border-t border-border text-xs text-slate-500 dark:text-slate-400 text-center">
           Click on an icon to add it to the canvas
         </div>
       </DialogContent>

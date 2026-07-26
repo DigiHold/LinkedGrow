@@ -25,7 +25,7 @@ export function FollowerChart({ data }: FollowerChartProps) {
             <Users className="w-4 h-4 text-purple-500" />
             Follower Growth
           </h3>
-          <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
+          <div className="h-64 flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
             Not enough data to show follower growth yet
           </div>
         </CardContent>

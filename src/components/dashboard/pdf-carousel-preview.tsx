@@ -14,7 +14,7 @@ const PdfCarouselPreviewInner = dynamic(
     ssr: false,
     loading: () => (
       <div className="rounded-lg overflow-hidden border flex items-center justify-center aspect-4/5">
-        <div className="animate-pulse text-sm text-muted-foreground">Loading carousel...</div>
+        <div className="animate-pulse text-sm text-slate-500 dark:text-slate-400">Loading carousel...</div>
       </div>
     ),
   }

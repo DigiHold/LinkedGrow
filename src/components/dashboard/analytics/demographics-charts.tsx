@@ -23,7 +23,7 @@ function HorizontalBarChart({ items, labelKey, color }: { items: Array<Record<st
     <div className="space-y-2">
       {topItems.map((item, index) => (
         <div key={index} className="flex items-center gap-3">
-          <div className="w-24 text-xs text-muted-foreground truncate text-right shrink-0">
+          <div className="w-24 text-xs text-slate-500 dark:text-slate-400 truncate text-right shrink-0">
             {String(item[labelKey] || 'Unknown')}
           </div>
           <div className="flex-1 h-5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -50,7 +50,7 @@ export function DemographicsCharts({ data, isOrganization }: DemographicsChartsP
             <Users className="w-4 h-4 text-blue-500" />
             Follower Demographics
           </h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             Demographics data is available for company pages only. Switch to a company page to see this data.
           </p>
         </CardContent>
@@ -68,7 +68,7 @@ export function DemographicsCharts({ data, isOrganization }: DemographicsChartsP
             <Users className="w-4 h-4 text-blue-500" />
             Follower Demographics
           </h3>
-          <p className="text-muted-foreground text-sm">No demographics data available yet.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">No demographics data available yet.</p>
         </CardContent>
       </Card>
     );

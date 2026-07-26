@@ -736,7 +736,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
                   ? "text-destructive font-medium"
                   : charCount > LINKEDIN_MAX_CHARS * 0.9
                   ? "text-amber-600"
-                  : "text-muted-foreground"
+                  : "text-slate-500 dark:text-slate-400"
               )}
             >
               {charCount} / {LINKEDIN_MAX_CHARS}
@@ -762,10 +762,10 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
             <div className="relative inline-block">
               {isPdfMedia(attachedImage) ? (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/50">
-                  <Layers className="w-8 h-8 text-muted-foreground shrink-0" />
+                  <Layers className="w-8 h-8 text-slate-500 dark:text-slate-400 shrink-0" />
                   <div>
                     <p className="text-sm font-medium">Carousel (PDF)</p>
-                    <p className="text-xs text-muted-foreground">Ready to publish</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Ready to publish</p>
                   </div>
                 </div>
               ) : isVideoMedia(attachedImage) ? (
@@ -798,7 +798,7 @@ export const PostEditor = forwardRef<PostEditorRef, PostEditorProps>(
         )}
 
         {!showToolbar && (
-          <div className="px-3 py-2 border-t border-border text-xs text-muted-foreground flex justify-between">
+          <div className="px-3 py-2 border-t border-border text-xs text-slate-500 dark:text-slate-400 flex justify-between">
             <span>{charCount} / {LINKEDIN_MAX_CHARS}</span>
             <span>~{Math.ceil(charCount / 200)} min read</span>
           </div>

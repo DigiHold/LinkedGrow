@@ -104,7 +104,7 @@ export default function SupportPage() {
               <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
             </div>
             <h1 className="text-2xl font-bold mb-2">Direct support is a paid feature</h1>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
               Upgrade to any paid plan to open a support ticket and get a personal reply from the LinkedGrow team. Conversations happen on the ticket page, with email notifications when we answer.
             </p>
             <Link href="/dashboard/upgrade">
@@ -171,7 +171,7 @@ export default function SupportPage() {
                   maxLength={10000}
                   required
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                   Need to share a screenshot? Upload it for free on{" "}
                   <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">imgur.com</a>{" "}
                   and paste the link in your message.
@@ -206,9 +206,9 @@ export default function SupportPage() {
       {!loading && tickets && tickets.length === 0 && !showCreate && (
         <Card>
           <CardContent className="py-12 text-center">
-            <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <MessageCircle className="w-12 h-12 mx-auto text-slate-500 dark:text-slate-400 mb-4" />
             <h3 className="font-semibold mb-2">No tickets yet</h3>
-            <p className="text-muted-foreground text-sm mb-4">Open your first ticket - we&apos;ll reply right here and email you when we do.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">Open your first ticket - we&apos;ll reply right here and email you when we do.</p>
             <Button onClick={() => setShowCreate(true)}>
               <Plus className="w-4 h-4 mr-2" /> New ticket
             </Button>
@@ -230,7 +230,7 @@ export default function SupportPage() {
                           <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" title="New reply" />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">{t.preview}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{t.preview}</p>
                     </div>
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${statusColor(t)}`}>
                       {STATUS_LABEL[t.status]}

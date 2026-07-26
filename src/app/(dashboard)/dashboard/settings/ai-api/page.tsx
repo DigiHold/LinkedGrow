@@ -351,7 +351,7 @@ export default function AIAPISettingsPage() {
                 <Key className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-500 dark:text-slate-400">
                 As a team member, you use the AI API keys configured by the team owner.
                 Contact the team owner if you need changes to the AI settings.
               </p>
@@ -814,11 +814,11 @@ export default function AIAPISettingsPage() {
           <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
             AI API Keys
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
             Connect your own AI providers for unlimited post and image generation
           </p>
         </div>
-        <Link href="/docs/byok" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+        <Link href="/docs/byok" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
           <HelpCircle className="w-3.5 h-3.5" />
           Help?
         </Link>
@@ -876,7 +876,7 @@ export default function AIAPISettingsPage() {
 
           {/* Provider Selector - for viewing/configuring */}
           <div>
-            <Label className="mb-2 block text-sm text-muted-foreground">Select a provider to configure:</Label>
+            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Select a provider to configure:</Label>
             <div className="flex flex-wrap gap-2">
               {aiProviders.map((provider) => {
                 const Icon = provider.icon;
@@ -918,17 +918,17 @@ export default function AIAPISettingsPage() {
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-medium">{viewingProviderDetails.name}</h4>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                         {viewingProviderDetails.description}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {providerVideoIds[viewingProvider] && (
-                      <VideoModal videoId={providerVideoIds[viewingProvider]} triggerClassName="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
+                      <VideoModal videoId={providerVideoIds[viewingProvider]} triggerClassName="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
                     )}
                     {providerHelpUrls[viewingProvider] && (
-                      <Link href={providerHelpUrls[viewingProvider]} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+                      <Link href={providerHelpUrls[viewingProvider]} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
                         <HelpCircle className="w-3 h-3" />
                         Setup guide
                       </Link>
@@ -960,7 +960,7 @@ export default function AIAPISettingsPage() {
                         <SelectItem key={model.id} value={model.id}>
                           <div className="flex items-center justify-between w-full gap-3">
                             <span>{model.name}</span>
-                            <span className="text-xs text-muted-foreground">{model.tag}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{model.tag}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -1046,7 +1046,7 @@ export default function AIAPISettingsPage() {
                       <button
                         type="button"
                         onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-foreground"
                       >
                         {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -1093,7 +1093,7 @@ export default function AIAPISettingsPage() {
                 <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="font-semibold text-lg mb-2">Pro Feature</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 AI Image Generation is available on the Pro plan and above
               </p>
               <a href="/dashboard/upgrade">
@@ -1119,7 +1119,7 @@ export default function AIAPISettingsPage() {
           </CardTitle>
           <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>Connect an image generation API for creating visuals with your posts</span>
-            <Link href="/docs/byok/image-providers" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
+            <Link href="/docs/byok/image-providers" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors shrink-0">
               <HelpCircle className="w-3 h-3" />
               Setup guide
             </Link>
@@ -1166,7 +1166,7 @@ export default function AIAPISettingsPage() {
 
           {/* Provider Selector - for viewing/configuring */}
           <div>
-            <Label className="mb-2 block text-sm text-muted-foreground">Select a provider to configure:</Label>
+            <Label className="mb-2 block text-sm text-slate-500 dark:text-slate-400">Select a provider to configure:</Label>
             <div className="flex flex-wrap gap-2">
               {imageProviders.map((provider) => {
                 const Icon = provider.icon;
@@ -1210,14 +1210,14 @@ export default function AIAPISettingsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium">{viewingImageProviderDetails.name}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {viewingImageProviderDetails.description}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {imageProviderVideoIds[viewingImageProvider] && (
-                      <VideoModal videoId={imageProviderVideoIds[viewingImageProvider]} triggerClassName="text-xs text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
+                      <VideoModal videoId={imageProviderVideoIds[viewingImageProvider]} triggerClassName="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors" />
                     )}
                     {viewingImageProvider === activeImageProvider && viewingImageProviderHasKey && (
                       <span className="flex items-center gap-1 text-xs text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 rounded-full font-medium">
@@ -1235,7 +1235,7 @@ export default function AIAPISettingsPage() {
                 </div>
 
                 {viewingImageProviderDetails.note && (
-                  <p className="text-xs text-muted-foreground mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 p-2 rounded bg-purple-50 dark:bg-purple-900/10">
                     {viewingImageProviderDetails.note}
                   </p>
                 )}
@@ -1253,7 +1253,7 @@ export default function AIAPISettingsPage() {
                           <SelectItem key={model.id} value={model.id}>
                             <div className="flex items-center justify-between w-full gap-3">
                               <span>{model.name}</span>
-                              <span className="text-xs text-muted-foreground">{model.tag}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{model.tag}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -1275,7 +1275,7 @@ export default function AIAPISettingsPage() {
                           <SelectItem key={res.id} value={res.id}>
                             <div className="flex items-center justify-between w-full gap-3">
                               <span>{res.name}</span>
-                              <span className="text-xs text-muted-foreground">{res.price}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{res.price}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -1316,7 +1316,7 @@ export default function AIAPISettingsPage() {
                           <SelectItem key={q.id} value={q.id}>
                             <div className="flex items-center justify-between w-full gap-3">
                               <span>{q.name}</span>
-                              <span className="text-xs text-muted-foreground">{q.description}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{q.description}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -1403,7 +1403,7 @@ export default function AIAPISettingsPage() {
                         type="button"
                         onClick={() => setShowImageApiKey(!showImageApiKey)}
                         disabled={!hasImageAccess}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-foreground disabled:opacity-50"
                       >
                         {showImageApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>

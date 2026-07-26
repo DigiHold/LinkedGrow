@@ -202,7 +202,7 @@ export default function AdminAbandonedCartsPage() {
           </div>
           <h1 className="text-2xl font-bold">Abandoned Carts</h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-slate-500 dark:text-slate-400">
           Track checkout abandonments and recovery via Brevo automation
         </p>
       </div>
@@ -255,7 +255,7 @@ export default function AdminAbandonedCartsPage() {
       {/* Secondary Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="rounded-xl p-4 bg-violet-100 dark:bg-violet-900/30">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-1">
             <Timer className="w-4 h-4 text-violet-500" />
             Avg Recovery Time
           </div>
@@ -268,11 +268,11 @@ export default function AdminAbandonedCartsPage() {
           const rate = data.total > 0 ? Math.round((data.recovered / data.total) * 100) : 0;
           return (
             <div key={plan} className={`rounded-xl p-4 ${planConfig[plan].color.replace("text-", "").split(" ")[0]} dark:${planConfig[plan].color.split("dark:")[1]?.split(" ")[0] || "bg-gray-800"}`}>
-              <div className="text-sm text-muted-foreground mb-1 capitalize">{plan} Plan</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 capitalize">{plan} Plan</div>
               <div className="text-xl font-bold">
                 {data.recovered}/{data.total}
               </div>
-              <div className="text-xs text-muted-foreground">{rate}% recovery</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{rate}% recovery</div>
             </div>
           );
         })}
@@ -288,7 +288,7 @@ export default function AdminAbandonedCartsPage() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === f.key
                   ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "text-slate-500 dark:text-slate-400 hover:text-foreground hover:bg-accent"
               }`}
             >
               {f.label}
@@ -312,7 +312,7 @@ export default function AdminAbandonedCartsPage() {
       {/* Records Table */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-border overflow-x-auto">
         {records.length === 0 ? (
-          <div className="px-4 py-12 text-center text-muted-foreground">
+          <div className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
             <ShoppingCart className="w-8 h-8 mx-auto mb-3 opacity-50" />
             <p>No abandoned carts{filter !== "all" ? ` with status "${filter}"` : ""}</p>
             <p className="text-sm mt-1">
@@ -324,22 +324,22 @@ export default function AdminAbandonedCartsPage() {
             <table className="w-full responsive-table">
               <thead>
                 <tr className="border-b border-border bg-gray-50 dark:bg-gray-800/50">
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Contact
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Plan
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Status
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Abandoned
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Recovery Link
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                     Actions
                   </th>
                 </tr>
@@ -361,7 +361,7 @@ export default function AdminAbandonedCartsPage() {
                           <div className="text-sm font-medium truncate max-w-[200px]">
                             {record.name || "-"}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
                             {record.email}
                           </div>
                         </div>
@@ -385,7 +385,7 @@ export default function AdminAbandonedCartsPage() {
                       </td>
                       <td data-label="Abandoned" className="px-4 py-3">
                         <div className="text-sm">{formatDate(record.abandonedAt)}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {getTimeSince(record.abandonedAt)}
                         </div>
                       </td>
@@ -405,7 +405,7 @@ export default function AdminAbandonedCartsPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">-</span>
                         )}
                       </td>
                       <td data-label="Actions" className="px-4 py-3">
@@ -436,7 +436,7 @@ export default function AdminAbandonedCartsPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-slate-500 dark:text-slate-400">
                   Page {page} of {totalPages} ({total} total)
                 </div>
                 <div className="flex gap-2">
@@ -481,7 +481,7 @@ function StatCard({
 }) {
   return (
     <div className={`rounded-xl p-4 ${color}`}>
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
+      <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-1">
         {icon}
         {label}
       </div>

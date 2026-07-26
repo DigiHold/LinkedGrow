@@ -83,7 +83,7 @@ export default function NewABTestPage() {
         <div className="mb-8">
           <Link
             href="/dashboard/ab-testing"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-foreground mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to A/B Tests
@@ -147,7 +147,7 @@ Or a bold statement:
                   onChange={(e) => setVariantA(e.target.value)}
                   maxLength={3000}
                 />
-                <p className="text-xs text-muted-foreground mt-2 text-right">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-right">
                   {variantA.length}/3000
                 </p>
               </CardContent>
@@ -193,7 +193,7 @@ Try a different approach:
                   onChange={(e) => setVariantB(e.target.value)}
                   maxLength={3000}
                 />
-                <p className="text-xs text-muted-foreground mt-2 text-right">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-right">
                   {variantB.length}/3000
                 </p>
               </CardContent>
@@ -220,7 +220,7 @@ Try a different approach:
                 <Sparkles className="w-5 h-5 text-violet-600" />
                 Tips for Effective A/B Tests
               </h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <li>- Test one variable at a time (hook, structure, CTA, etc.)</li>
                 <li>- Keep the core message the same in both variants</li>
                 <li>- Post both variants at similar times for fair comparison</li>

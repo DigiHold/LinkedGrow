@@ -119,7 +119,7 @@ export default function AdminSupportPage() {
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.value
                 ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-foreground"
             }`}
           >
             {t.label}
@@ -131,7 +131,7 @@ export default function AdminSupportPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -149,9 +149,9 @@ export default function AdminSupportPage() {
       {!loading && tickets.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
-            <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <MessageCircle className="w-12 h-12 mx-auto text-slate-500 dark:text-slate-400 mb-4" />
             <h3 className="font-semibold mb-2">No tickets in &quot;{TABS.find((t) => t.value === tab)?.label}&quot;</h3>
-            <p className="text-muted-foreground text-sm">{search ? "Try a different search." : "All caught up here."}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">{search ? "Try a different search." : "All caught up here."}</p>
           </CardContent>
         </Card>
       )}
@@ -178,7 +178,7 @@ export default function AdminSupportPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {t.userName || t.userEmail} · {t.userPlan} · {t.category} · {timeAgo(t.updatedAt)}
                       </p>
                     </div>

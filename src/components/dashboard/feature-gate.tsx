@@ -121,7 +121,7 @@ export function FeatureGate({
             </h1>
 
             {/* Description */}
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
               {featureInfo.description}. Upgrade to{" "}
               <span className="font-semibold text-foreground">{planInfo.name}</span>{" "}
               to access this and more powerful features.
@@ -165,7 +165,7 @@ export function FeatureGate({
             </div>
 
             {/* Current plan info */}
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
               Current plan: <span className="font-medium">{PLANS[userPlan].name}</span>
             </p>
           </div>
@@ -224,7 +224,7 @@ export function FeatureGateInline({
           <Lock className="w-6 h-6 text-amber-600" />
         </div>
         <h3 className="font-semibold mb-1">{featureInfo.name}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           Available on {planInfo.name} plan
         </p>
         <UpgradeButton

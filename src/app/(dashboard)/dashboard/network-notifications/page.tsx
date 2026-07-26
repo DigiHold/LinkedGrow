@@ -277,12 +277,12 @@ export default function NetworkNotificationsPage() {
             <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.035em] text-slate-900 dark:text-white">
               Network Notifications
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-slate-500 dark:text-slate-400 mt-2">
               Get an email when people in your circle publish on LinkedIn so you never miss their posts
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/docs/business-features/network-notifications" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/business-features/network-notifications" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -310,14 +310,14 @@ export default function NetworkNotificationsPage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-slate-500 dark:text-slate-400" />
           </div>
         ) : groups.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <Bell className="w-12 h-12 text-slate-500 dark:text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
-              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              <p className="text-slate-500 dark:text-slate-400 mb-4 max-w-md mx-auto">
                 Create a group and invite people whose posts you want to see. When they publish on LinkedIn, you'll get an email with a link to the post.
               </p>
               <Button
@@ -344,7 +344,7 @@ export default function NetworkNotificationsPage() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold truncate">{group.name}</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           {group.memberCount} member{group.memberCount !== 1 ? "s" : ""}
                           {group.ownerId === session?.user?.id && (
                             <span className="ml-2 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
@@ -410,11 +410,11 @@ export default function NetworkNotificationsPage() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-muted-foreground">Members</h4>
+                          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">Members</h4>
                           {selectedGroupMembers.map((member) => (
                             <div key={member.id} className="flex items-center justify-between py-2">
                               <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <Mail className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                 <span className="text-sm">
                                   {member.name || member.email}
                                 </span>
@@ -471,7 +471,7 @@ export default function NetworkNotificationsPage() {
                       <p className="text-sm">
                         <span className="font-medium">{item.publisherName}</span>
                         {item.groupName && (
-                          <span className="text-muted-foreground"> in {item.groupName}</span>
+                          <span className="text-slate-500 dark:text-slate-400"> in {item.groupName}</span>
                         )}
                       </p>
                       {item.linkedinPostId && (
@@ -486,7 +486,7 @@ export default function NetworkNotificationsPage() {
                         </a>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.postPreview}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{item.postPreview}</p>
                   </div>
                 ))}
               </div>

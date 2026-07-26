@@ -270,10 +270,10 @@ export function ImageGeneratorModal({
               <AlertCircle className="w-8 h-8 text-amber-600" />
             </div>
             <h3 className="font-semibold mb-2">AI Image API Key Required</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               To generate AI images, you need to add an Image AI API key. Go to Settings &gt; AI API and scroll down to the &quot;AI Image Generation&quot; section.
             </p>
-            <p className="text-xs text-muted-foreground mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               Supported providers: Google AI (Gemini), OpenAI (DALL-E 3), Replicate (FLUX)
             </p>
             <Button onClick={() => window.location.href = "/dashboard/settings/ai-api"}>
@@ -302,7 +302,7 @@ export function ImageGeneratorModal({
               <Image className="w-8 h-8 text-purple-600" />
             </div>
             <h3 className="font-semibold mb-2">Pro Feature</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               AI image generation is available on the Pro plan and above. Upgrade to create stunning visuals for your LinkedIn posts.
             </p>
             <a href="/dashboard/upgrade">
@@ -339,7 +339,7 @@ export function ImageGeneratorModal({
               <Loader2 className="w-5 h-5 animate-spin text-cyan-600" />
               <span className="font-medium">Analyzing your post...</span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               AI is creating a detailed image prompt based on your post content
             </p>
           </div>
@@ -387,7 +387,7 @@ export function ImageGeneratorModal({
                 }
                 className="min-h-[200px] text-sm"
               />
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                 {prompt
                   ? "AI generated this prompt from your post. Feel free to edit it!"
                   : "Write a detailed description of the image you want."
@@ -415,7 +415,7 @@ export function ImageGeneratorModal({
               </Button>
             </div>
 
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center text-slate-500 dark:text-slate-400">
               Uses your Image API key (BYOK) - you pay directly to Google/OpenAI
             </p>
           </div>
@@ -431,7 +431,7 @@ export function ImageGeneratorModal({
               <RefreshCw className="w-5 h-5 animate-spin text-purple-600" />
               <span className="font-medium">Generating your image...</span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               This usually takes 10-30 seconds depending on your AI provider
             </p>
           </div>
@@ -466,7 +466,7 @@ export function ImageGeneratorModal({
               </Button>
             </div>
 
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center text-slate-500 dark:text-slate-400">
               Image will be automatically attached to your LinkedIn post
             </p>
           </div>

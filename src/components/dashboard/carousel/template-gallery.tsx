@@ -403,7 +403,7 @@ export function TemplateGallery({
                   <Layers className="w-8 h-8 text-slate-400" />
                 </div>
                 <h3 className="font-medium text-lg mb-2">No saved templates yet</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                   Create a design you like and click "Save Template" to save it here for future use.
                 </p>
               </div>
@@ -422,7 +422,7 @@ export function TemplateGallery({
               <p className="font-medium text-sm">
                 {carouselTemplates.find(t => t.id === selectedTemplateId)?.name}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {carouselTemplates.find(t => t.id === selectedTemplateId)?.description}
               </p>
             </div>
@@ -542,12 +542,12 @@ export function TemplateSelect({
           onClick={onOpenGallery}
           className="w-10 h-12 rounded-lg border-2 border-dashed border-slate-300 hover:border-cyan-500 flex items-center justify-center transition-colors"
         >
-          <span className="text-xs text-muted-foreground">+{carouselTemplates.length - 5}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">+{carouselTemplates.length - 5}</span>
         </button>
       </div>
 
       {selectedTemplate && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           {selectedTemplate.name} - {selectedTemplate.description}
         </p>
       )}

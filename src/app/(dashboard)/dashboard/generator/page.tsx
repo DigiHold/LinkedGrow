@@ -106,7 +106,7 @@ function UsageLimitBanner({
                   isLimitReached ? "[&>div]:bg-red-500" : isNearLimit ? "[&>div]:bg-amber-500" : "[&>div]:bg-blue-500"
                 )}
               />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
+              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                 {postsUsed}/{postsLimit} used
               </span>
             </div>
@@ -151,10 +151,10 @@ function LimitReachedOverlay() {
           <Lock className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-2xl font-bold mb-3">Trial Expired</h2>
-        <p className="text-muted-foreground mb-2">
+        <p className="text-slate-500 dark:text-slate-400 mb-2">
           Your <span className="font-semibold">7-day Pro trial</span> has ended.
         </p>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Pick Starter or higher to keep generating posts with <span className="font-semibold text-foreground">your own AI API key</span>.
         </p>
 
@@ -189,7 +189,7 @@ function LimitReachedOverlay() {
             Upgrade to Unlock
           </Button>
         </a>
-        <p className="text-xs text-muted-foreground mt-4">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">
           Use your own AI API key • Only pay for what you use
         </p>
       </div>
@@ -886,7 +886,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="LaFbdueDLBg" />
-            <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -901,7 +901,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 <Wand2 className="w-10 h-10 text-cyan-600 dark:text-cyan-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 To generate LinkedIn posts with AI, you need to configure your AI API key.
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
@@ -913,7 +913,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   </Button>
                 </a>
               </div>
-              <p className="text-xs text-muted-foreground mt-6">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
                 We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
               </p>
             </div>
@@ -934,14 +934,14 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 { num: 4, label: "Post" },
               ].map((s, i) => (
                 <div key={s.num} className="flex items-center">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
                       {s.num}
                     </span>
                     <span>{s.label}</span>
                   </div>
                   {i < 3 && (
-                    <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+                    <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
                   )}
                 </div>
               ))}
@@ -969,7 +969,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
         </div>
         <div className="flex items-center gap-3">
           <VideoModal videoId="LaFbdueDLBg" />
-          <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/post-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -997,7 +997,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
                 step >= s.num
                   ? "bg-linkedin text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"
+                  : "bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
               )}
             >
               <span
@@ -1013,7 +1013,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
               <span className="hidden sm:inline">{s.label}</span>
             </div>
             {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+              <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
             )}
           </div>
         ))}
@@ -1100,7 +1100,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
             />
 
             <div className="flex flex-wrap gap-2 mt-4">
-              <p className="w-full text-sm text-muted-foreground mb-1">
+              <p className="w-full text-sm text-slate-500 dark:text-slate-400 mb-1">
                 Quick suggestions:
               </p>
               {[
@@ -1286,7 +1286,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 )}
 
                 {!isEditing && (
-                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between mt-4 text-sm text-slate-500 dark:text-slate-400">
                     <span>{currentPost.length} / 3000 characters</span>
                     <span className={cn(
                       "font-medium",
@@ -1576,7 +1576,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                       onChange={(e) => setLinkPreviewUrl(e.target.value)}
                       className="w-full"
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Paste a URL to include in your post. LinkedIn will automatically generate a preview.
                     </p>
                   </div>

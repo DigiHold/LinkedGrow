@@ -959,7 +959,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="YQIP3Fvk1VU" />
-            <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -973,7 +973,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 <Key className="w-10 h-10 text-orange-600 dark:text-orange-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
                 To analyze content and generate LinkedIn posts, you need to configure your AI API key in settings.
                 LinkedGrow uses your own API key (BYOK) for unlimited generations.
               </p>
@@ -985,7 +985,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   </Button>
                 </Link>
               </div>
-              <p className="text-xs text-muted-foreground mt-6">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
                 We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
               </p>
             </div>
@@ -1000,14 +1000,14 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <div className="flex items-center gap-2 flex-wrap">
               {steps.map((s, i) => (
                 <div key={s.num} className="flex items-center">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-gray-200 dark:bg-gray-700">
                       {s.num}
                     </span>
                     <span>{s.label}</span>
                   </div>
                   {i < 3 && (
-                    <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+                    <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
                   )}
                 </div>
               ))}
@@ -1032,7 +1032,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
         </div>
         <div className="flex items-center gap-3">
           <VideoModal videoId="YQIP3Fvk1VU" />
-          <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+          <Link href="/docs/content-creation/content-repurposing" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
             <HelpCircle className="w-3.5 h-3.5" />
             Help?
           </Link>
@@ -1048,7 +1048,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
                 step >= s.num
                   ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"
+                  : "bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
               )}
             >
               <span
@@ -1064,7 +1064,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               <span className="hidden sm:inline">{s.label}</span>
             </div>
             {i < 3 && (
-              <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground shrink-0" />
+              <ArrowRight className="w-4 h-4 mx-2 text-slate-500 dark:text-slate-400 shrink-0" />
             )}
           </div>
         ))}
@@ -1142,7 +1142,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                     <button
                       type="button"
                       onClick={() => setShowManualTranscript(!showManualTranscript)}
-                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-foreground transition-colors"
                     >
                       <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showManualTranscript && "rotate-180")} />
                       Paste transcript manually
@@ -1152,7 +1152,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                         value={manualTranscript}
                         onChange={(e) => setManualTranscript(e.target.value)}
                         placeholder={'On YouTube: click "..." under the video, then "Show transcript", copy all the text and paste it here'}
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-30 resize-y"
+                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-slate-500 dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-30 resize-y"
                       />
                     )}
                   </div>
@@ -1183,7 +1183,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 return (
                   <div key={key} className={cn("flex items-center gap-2 p-3 rounded-xl border text-sm", info.color.split(" ").slice(1).join(" "))}>
                     <Icon className={cn("w-5 h-5 shrink-0", info.color.split(" ")[0])} />
-                    <span className="text-muted-foreground">{info.label}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{info.label}</span>
                   </div>
                 );
               })}
@@ -1307,7 +1307,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                       <Check className="w-5 h-5 text-cyan-500" />
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-100 overflow-y-auto">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 whitespace-pre-wrap max-h-100 overflow-y-auto">
                     {post}
                   </div>
                 </CardContent>
@@ -1436,7 +1436,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 )}
 
                 {!isEditing && (
-                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between mt-4 text-sm text-slate-500 dark:text-slate-400">
                     <span>
                       {posts[selectedPost].length} / 3000 characters
                     </span>

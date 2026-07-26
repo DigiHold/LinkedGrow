@@ -165,14 +165,14 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
       <div>
         <button
           onClick={() => router.push("/dashboard/admin/support")}
-          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-4"
+          className="text-sm text-slate-500 dark:text-slate-400 hover:text-foreground inline-flex items-center gap-1.5 mb-4"
         >
           <ArrowLeft className="w-4 h-4" /> All tickets
         </button>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold mb-2">{ticket.subject}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor(ticket)}`}>
                 {STATUS_LABEL[ticket.status]}
                 {ticket.status === "closed" && !ticket.resolvedAt ? " (no reply)" : ""}
@@ -231,7 +231,7 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
                         SUPPORT
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">{formatDate(m.createdAt)}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(m.createdAt)}</span>
                   </div>
                   <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
                 </div>
@@ -298,7 +298,7 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
 
       {isClosed && (
         <Card>
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
+          <CardContent className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
             This ticket is closed. The user can reopen it by replying.
           </CardContent>
         </Card>
@@ -307,11 +307,11 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
       {showCloseModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
-            <button onClick={() => setShowCloseModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground" disabled={closing}>
+            <button onClick={() => setShowCloseModal(false)} className="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-foreground" disabled={closing}>
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-xl font-bold mb-2">Close this ticket</h2>
-            <p className="text-sm text-muted-foreground mb-6">Pick a closing template - we&apos;ll insert a system message in the thread and email the user. Need to write something custom? Cancel and use the reply box instead.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Pick a closing template - we&apos;ll insert a system message in the thread and email the user. Need to write something custom? Cancel and use the reply box instead.</p>
             <div className="space-y-3">
               <button
                 onClick={() => handleClose("review")}
@@ -331,7 +331,7 @@ export default function AdminTicketPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center gap-2 font-semibold mb-1">
                   <CheckCircle className="w-5 h-5 text-cyan-600" /> Send thank-you &amp; close
                 </div>
-                <p className="text-sm text-muted-foreground">Friendly thank-you email + invites them to open another ticket anytime.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Friendly thank-you email + invites them to open another ticket anytime.</p>
               </button>
             </div>
             {closing && (

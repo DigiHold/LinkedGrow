@@ -22,7 +22,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
             <Clock className="w-4 h-4 text-orange-500" />
             Posting Times Heatmap
           </h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             Publish more posts at different times to see your heatmap.
           </p>
         </CardContent>
@@ -99,7 +99,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
             {/* Hour labels */}
             <div className="flex ml-10 mb-1">
               {HOURS.filter((_, i) => i % 3 === 0).map((hour) => (
-                <div key={hour} className="text-[10px] text-muted-foreground" style={{ width: `${(100 / 8)}%` }}>
+                <div key={hour} className="text-[10px] text-slate-500 dark:text-slate-400" style={{ width: `${(100 / 8)}%` }}>
                   {hour === 0 ? '12a' : hour < 12 ? `${hour}a` : hour === 12 ? '12p' : `${hour - 12}p`}
                 </div>
               ))}
@@ -107,7 +107,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
             {/* Grid rows */}
             {DAYS.map((day, dayIndex) => (
               <div key={day} className="flex items-center gap-1 mb-1">
-                <div className="w-9 text-xs text-muted-foreground text-right pr-1 shrink-0">{day}</div>
+                <div className="w-9 text-xs text-slate-500 dark:text-slate-400 text-right pr-1 shrink-0">{day}</div>
                 <div className="flex-1 flex gap-px">
                   {HOURS.map((hour) => {
                     const count = getCount(dayIndex, hour);
@@ -131,7 +131,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
             ))}
             {/* Legend */}
             <div className="flex items-center gap-2 mt-3 ml-10">
-              <span className="text-[10px] text-muted-foreground">Less</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Less</span>
               {[0.1, 0.3, 0.5, 0.7, 1].map((opacity) => (
                 <div
                   key={opacity}
@@ -139,7 +139,7 @@ export function PostingHeatmap({ data }: PostingHeatmapProps) {
                   style={{ backgroundColor: `rgba(6, 182, 212, ${opacity})` }}
                 />
               ))}
-              <span className="text-[10px] text-muted-foreground">More engagement</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">More engagement</span>
             </div>
           </div>
         </div>

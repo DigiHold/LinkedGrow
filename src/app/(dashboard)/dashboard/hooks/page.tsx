@@ -150,7 +150,7 @@ export default function HooksPage() {
             </div>
             <div className="flex items-center gap-3">
               <VideoModal videoId="ylHZIxbFCOA" />
-              <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+              <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
                 <HelpCircle className="w-3.5 h-3.5" />
                 Help?
               </Link>
@@ -165,7 +165,7 @@ export default function HooksPage() {
                   <Key className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">AI API Key Required</h3>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-slate-500 dark:text-slate-400 mb-6">
                   To generate hooks, you need to configure your AI API key in settings.
                   LinkedGrow uses your own API key (BYOK) for unlimited generations.
                 </p>
@@ -177,7 +177,7 @@ export default function HooksPage() {
                     </Button>
                   </Link>
                 </div>
-                <p className="text-xs text-muted-foreground mt-6">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-6">
                   We support OpenAI, Anthropic, Google AI, Grok (xAI), Perplexity, and Kimi. Your key is encrypted and stored securely.
                 </p>
               </div>
@@ -194,7 +194,7 @@ export default function HooksPage() {
                 {popularTopics.map((topic) => (
                   <span
                     key={topic}
-                    className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-muted-foreground"
+                    className="px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-slate-400"
                   >
                     {topic}
                   </span>
@@ -222,7 +222,7 @@ export default function HooksPage() {
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="ylHZIxbFCOA" />
-            <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/content-creation/hooks-generator" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -305,7 +305,7 @@ export default function HooksPage() {
                   <Anchor className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Ready to generate hooks</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
                   Select a topic above and click &quot;Generate 6 Hooks&quot; to get attention-grabbing opening lines for your LinkedIn posts.
                 </p>
               </div>
@@ -340,7 +340,7 @@ export default function HooksPage() {
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
                         Hook #{index + 1}
                       </span>
-                      <span className="text-xs text-muted-foreground">{hook.firstLine.length} chars</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{hook.firstLine.length} chars</span>
                     </div>
 
                     {/* Hook Preview - no empty line between */}
@@ -348,7 +348,7 @@ export default function HooksPage() {
                       <p className="font-semibold text-sm sm:text-base leading-snug">
                         {hook.firstLine}
                       </p>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-snug">
+                      <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-snug">
                         {hook.secondLine}
                       </p>
                     </div>

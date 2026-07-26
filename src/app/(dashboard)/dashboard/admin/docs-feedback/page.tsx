@@ -83,7 +83,7 @@ export default function DocsFeedbackPage() {
   if (!session?.user?.isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Unauthorized</p>
+        <p className="text-slate-500 dark:text-slate-400">Unauthorized</p>
       </div>
     );
   }
@@ -115,23 +115,23 @@ export default function DocsFeedbackPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-muted-foreground">Total Feedback</div>
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Total Feedback</div>
           <div className="text-xl sm:text-2xl font-bold mt-1">{summary.totalFeedback}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <ThumbsUp className="w-3.5 h-3.5 text-emerald-500" /> Helpful
           </div>
           <div className="text-xl sm:text-2xl font-bold mt-1 text-emerald-600">{summary.totalHelpful}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <ThumbsDown className="w-3.5 h-3.5 text-red-500" /> Not Helpful
           </div>
           <div className="text-xl sm:text-2xl font-bold mt-1 text-red-600">{summary.totalNotHelpful}</div>
         </div>
         <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
-          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" /> Helpful Rate
           </div>
           <div className={`text-xl sm:text-2xl font-bold mt-1 ${helpfulRate >= 70 ? "text-emerald-600" : helpfulRate >= 40 ? "text-amber-600" : "text-red-600"}`}>
@@ -147,7 +147,7 @@ export default function DocsFeedbackPage() {
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === "overview"
               ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              : "border-transparent text-slate-500 dark:text-slate-400 hover:text-foreground"
           }`}
         >
           Article Rankings
@@ -157,7 +157,7 @@ export default function DocsFeedbackPage() {
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === "feedback"
               ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              : "border-transparent text-slate-500 dark:text-slate-400 hover:text-foreground"
           }`}
         >
           All Feedback
@@ -171,7 +171,7 @@ export default function DocsFeedbackPage() {
       ) : tab === "overview" ? (
         <>
           {stats.length === 0 ? (
-            <div className="rounded-xl border border-border p-8 text-center text-muted-foreground">
+            <div className="rounded-xl border border-border p-8 text-center text-slate-500 dark:text-slate-400">
               No feedback yet. Feedback will appear here as users interact with docs.
             </div>
           ) : (
@@ -254,7 +254,7 @@ export default function DocsFeedbackPage() {
                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                   filter === f
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    : "bg-muted text-slate-500 dark:text-slate-400 hover:text-foreground"
                 }`}
               >
                 {f === "all" ? "All" : f === "helpful" ? "Helpful" : "Not Helpful"}
@@ -264,7 +264,7 @@ export default function DocsFeedbackPage() {
 
           <div className="space-y-3">
             {entries.length === 0 ? (
-              <div className="rounded-xl border border-border p-8 text-center text-muted-foreground">
+              <div className="rounded-xl border border-border p-8 text-center text-slate-500 dark:text-slate-400">
                 No feedback entries found.
               </div>
             ) : (
@@ -291,7 +291,7 @@ export default function DocsFeedbackPage() {
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       {new Date(entry.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -303,7 +303,7 @@ export default function DocsFeedbackPage() {
                   </div>
                   {entry.reason && (
                     <div className="flex items-start gap-2 pl-1 mt-2 p-3 rounded-lg bg-muted/50">
-                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <MessageSquare className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 mt-0.5 shrink-0" />
                       <p className="text-sm text-foreground">{entry.reason}</p>
                     </div>
                   )}
@@ -322,7 +322,7 @@ export default function DocsFeedbackPage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
                 Page {page} of {totalPages}
               </span>
               <button
@@ -365,12 +365,12 @@ function DesktopRow({
         <td className="p-3 font-medium">
           <div className="flex items-center gap-2">
             {hasComments && (
-              <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
             )}
             {slugToTitle(stat.articleSlug)}
           </div>
         </td>
-        <td className="p-3 text-muted-foreground">{slugToTitle(stat.categorySlug)}</td>
+        <td className="p-3 text-slate-500 dark:text-slate-400">{slugToTitle(stat.categorySlug)}</td>
         <td className="p-3 text-center text-emerald-600 font-medium">{stat.helpfulVotes}</td>
         <td className="p-3 text-center text-red-600 font-medium">{stat.notHelpfulVotes}</td>
         <td className="p-3 text-center">{stat.totalVotes}</td>
@@ -388,7 +388,7 @@ function DesktopRow({
         </td>
         <td className="p-3 text-center">
           {stat.commentCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               <MessageSquare className="w-3 h-3" />
               {stat.commentCount}
             </span>
@@ -399,7 +399,7 @@ function DesktopRow({
             href={`/docs/${stat.categorySlug}/${stat.articleSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-slate-500 dark:text-slate-400 hover:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -410,15 +410,15 @@ function DesktopRow({
         <tr>
           <td colSpan={8} className="p-0">
             <div className="bg-muted/30 px-6 py-4 space-y-3 border-b border-border">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 User Comments ({comments.length})
               </div>
               {comments.map((comment) => (
                 <div key={comment.id} className="flex items-start gap-3 p-3 rounded-lg bg-background border border-border">
-                  <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <MessageSquare className="w-4 h-4 text-slate-500 dark:text-slate-400 mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{comment.reason}</p>
-                    <span className="text-xs text-muted-foreground mt-1 block">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
                       {new Date(comment.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -464,17 +464,17 @@ function MobileCard({
           <div className="min-w-0">
             <div className="font-medium text-sm flex items-center gap-1.5">
               {hasComments && (
-                <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
               )}
               {slugToTitle(stat.articleSlug)}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">{slugToTitle(stat.categorySlug)}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{slugToTitle(stat.categorySlug)}</div>
           </div>
           <a
             href={`/docs/${stat.categorySlug}/${stat.articleSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="text-slate-500 dark:text-slate-400 hover:text-foreground transition-colors shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -490,7 +490,7 @@ function MobileCard({
             <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
             <span className="font-medium text-red-600">{stat.notHelpfulVotes}</span>
           </div>
-          <span className="text-muted-foreground">{stat.totalVotes} total</span>
+          <span className="text-slate-500 dark:text-slate-400">{stat.totalVotes} total</span>
           <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
             score >= 70
               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
@@ -501,7 +501,7 @@ function MobileCard({
             {score}%
           </span>
           {stat.commentCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               <MessageSquare className="w-3 h-3" />
               {stat.commentCount}
             </span>
@@ -511,15 +511,15 @@ function MobileCard({
 
       {isExpanded && comments.length > 0 && (
         <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Comments ({comments.length})
           </div>
           {comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2 p-3 rounded-lg bg-background border border-border">
-              <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <MessageSquare className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">{comment.reason}</p>
-                <span className="text-xs text-muted-foreground mt-1 block">
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
                   {new Date(comment.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",

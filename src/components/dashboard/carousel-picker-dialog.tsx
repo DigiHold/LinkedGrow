@@ -204,11 +204,11 @@ onError?.(error instanceof Error ? error.message : "Failed to generate PDF from 
           {/* Saved carousels */}
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <Loader2 className="w-6 h-6 animate-spin text-slate-500 dark:text-slate-400" />
             </div>
           ) : carousels.length > 0 ? (
             <>
-              <div className="text-sm font-medium text-muted-foreground">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 Or select a saved carousel
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -231,12 +231,12 @@ onError?.(error instanceof Error ? error.message : "Failed to generate PDF from 
                       />
                     ) : (
                       <div className="w-full aspect-[4/5] rounded-md bg-muted flex items-center justify-center">
-                        <Layers className="w-8 h-8 text-muted-foreground" />
+                        <Layers className="w-8 h-8 text-slate-500 dark:text-slate-400" />
                       </div>
                     )}
                     <div className="mt-2">
                       <p className="text-sm font-medium truncate">{carousel.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {carousel.slideCount} slide{carousel.slideCount !== 1 ? "s" : ""}
                       </p>
                     </div>
@@ -253,7 +253,7 @@ onError?.(error instanceof Error ? error.message : "Failed to generate PDF from 
               </div>
             </>
           ) : (
-            <div className="text-center py-6 text-sm text-muted-foreground">
+            <div className="text-center py-6 text-sm text-slate-500 dark:text-slate-400">
               No saved carousels yet. Create one in the Carousel page.
             </div>
           )}

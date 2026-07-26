@@ -360,7 +360,7 @@ export default function TeamPage() {
           </div>
           <div className="flex items-center gap-3">
             <VideoModal videoId="-5PXrUUERJI" />
-            <Link href="/docs/business-features/team-collaboration" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
+            <Link href="/docs/business-features/team-collaboration" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 inline-flex items-center gap-1 transition-colors">
               <HelpCircle className="w-3.5 h-3.5" />
               Help?
             </Link>
@@ -389,7 +389,7 @@ export default function TeamPage() {
                     <Users className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No Team Found</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-slate-500 dark:text-slate-400">
                     You don&apos;t appear to be part of any team. Please contact your team owner.
                   </p>
                 </div>
@@ -473,12 +473,12 @@ export default function TeamPage() {
                     </div>
                     <div className="text-left">
                       <p className="font-medium">{selectedTeam?.team.name || "Select a team"}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {selectedTeam ? `${selectedTeam.members.length} member${selectedTeam.members.length !== 1 ? "s" : ""}` : ""}
                       </p>
                     </div>
                   </div>
-                  <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform", showTeamSelector && "rotate-180")} />
+                  <ChevronDown className={cn("w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform", showTeamSelector && "rotate-180")} />
                 </button>
 
                 {showTeamSelector && (
@@ -500,7 +500,7 @@ export default function TeamPage() {
                         </div>
                         <div className="text-left flex-1">
                           <p className="font-medium text-sm">{t.team.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {t.members.length} member{t.members.length !== 1 ? "s" : ""} - {t.userRole}
                           </p>
                         </div>
@@ -613,7 +613,7 @@ export default function TeamPage() {
                               </div>
                               <div>
                                 <p className="font-medium">{invite.email}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   Invited as {invite.role} - Expires {new Date(invite.expiresAt).toLocaleDateString()}
                                 </p>
                               </div>
@@ -675,10 +675,10 @@ export default function TeamPage() {
                                 <p className="font-medium">
                                   {member.name || member.email}
                                   {isCurrentUser && (
-                                    <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">(you)</span>
                                   )}
                                 </p>
-                                <p className="text-sm text-muted-foreground">{member.email}</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{member.email}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -735,7 +735,7 @@ export default function TeamPage() {
                           <Crown className="w-4 h-4 text-amber-500" />
                           <span className="font-medium">Owner</span>
                         </div>
-                        <ul className="text-muted-foreground space-y-1">
+                        <ul className="text-slate-500 dark:text-slate-400 space-y-1">
                           <li>- Full access to everything</li>
                           <li>- Manage all team members</li>
                           <li>- Create, rename, delete teams</li>
@@ -746,7 +746,7 @@ export default function TeamPage() {
                           <Shield className="w-4 h-4 text-blue-500" />
                           <span className="font-medium">Admin</span>
                         </div>
-                        <ul className="text-muted-foreground space-y-1">
+                        <ul className="text-slate-500 dark:text-slate-400 space-y-1">
                           <li>- Edit and delete all posts</li>
                           <li>- View team analytics</li>
                           <li>- Invite and remove members</li>
@@ -757,7 +757,7 @@ export default function TeamPage() {
                           <User className="w-4 h-4 text-slate-500" />
                           <span className="font-medium">Member</span>
                         </div>
-                        <ul className="text-muted-foreground space-y-1">
+                        <ul className="text-slate-500 dark:text-slate-400 space-y-1">
                           <li>- Create own content</li>
                           <li>- View team content</li>
                           <li>- No analytics access</li>
@@ -782,7 +782,7 @@ export default function TeamPage() {
                       <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                     </div>
                     <h2 className="text-lg font-semibold text-center mb-2">Remove Team Member</h2>
-                    <p className="text-muted-foreground text-center text-sm mb-2">
+                    <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-2">
                       Are you sure you want to remove this team member?
                     </p>
                     <p className="text-sm font-medium text-center mb-6 text-foreground">
@@ -834,7 +834,7 @@ export default function TeamPage() {
                       <Mail className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <h2 className="text-lg font-semibold text-center mb-2">Cancel Invitation</h2>
-                    <p className="text-muted-foreground text-center text-sm mb-2">
+                    <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-2">
                       Are you sure you want to cancel this invitation?
                     </p>
                     <p className="text-sm font-medium text-center mb-6 text-foreground">
@@ -923,7 +923,7 @@ export default function TeamPage() {
                           {/* Danger Zone */}
                           <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                             <h3 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h3>
-                            <p className="text-sm text-muted-foreground mb-3">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
                               Deleting your team will remove all members and pending invites. This action cannot be undone.
                             </p>
                             <Button
@@ -943,7 +943,7 @@ export default function TeamPage() {
                           <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                         </div>
                         <h3 className="font-semibold mb-2">Delete Team?</h3>
-                        <p className="text-sm text-muted-foreground mb-6">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
                           This will permanently delete <strong>{selectedTeam?.team.name}</strong> and remove all team members. This cannot be undone.
                         </p>
                         <div className="flex gap-3">

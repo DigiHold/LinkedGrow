@@ -763,7 +763,7 @@ export function ElementProperties({
 
               {/* Layer Order */}
               <div>
-                <Label className="text-xs text-muted-foreground">Layer Order</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Layer Order</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <Button
                     variant="outline"
@@ -806,7 +806,7 @@ export function ElementProperties({
 
               {/* Alignment */}
               <div>
-                <Label className="text-xs text-muted-foreground">Align on Canvas</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Align on Canvas</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <Button
                     variant="outline"
@@ -871,7 +871,7 @@ export function ElementProperties({
               {isTextElement && (
                 <>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Font Family</Label>
+                    <Label className="text-xs text-slate-500 dark:text-slate-400">Font Family</Label>
                     <div className="mt-2">
                       <GoogleFontPicker
                         value={elementProps.fontFamily || 'Inter'}
@@ -891,7 +891,7 @@ export function ElementProperties({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Font Size</Label>
+                    <Label className="text-xs text-slate-500 dark:text-slate-400">Font Size</Label>
                     <div className="flex items-center gap-1 mt-2">
                       <button
                         className="h-8 w-8 shrink-0 rounded-md border border-input bg-background flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -929,7 +929,7 @@ export function ElementProperties({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                    <Label className="text-xs text-slate-500 dark:text-slate-400">Font Weight</Label>
                     <Select
                       key={`${elementProps.fontFamily}-${fontsCacheReady}`}
                       value={String(elementProps.fontWeight === 'normal' ? 400 : elementProps.fontWeight === 'bold' ? 700 : elementProps.fontWeight)}
@@ -958,7 +958,7 @@ export function ElementProperties({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Text Style</Label>
+                    <Label className="text-xs text-slate-500 dark:text-slate-400">Text Style</Label>
                     <div className="flex gap-1 mt-2">
                       {(() => {
                         // When editing (cursor or selection), read per-character style at cursor position.
@@ -1025,7 +1025,7 @@ export function ElementProperties({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                    <Label className="text-xs text-slate-500 dark:text-slate-400">Text Alignment</Label>
                     <div className="flex gap-1 mt-2">
                       <Button
                         variant={elementProps.textAlign === 'left' ? 'default' : 'outline'}
@@ -1061,7 +1061,7 @@ export function ElementProperties({
               {/* Icon Color (for icon images only) */}
               {isIconElement && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Icon Color</Label>
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Icon Color</Label>
                   <div className="mt-2">
                     <div className="flex gap-2 items-center mb-2">
                       <input
@@ -1127,15 +1127,15 @@ export function ElementProperties({
               {/* Frame Controls */}
               {isFrameElement && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Frame</Label>
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Frame</Label>
                   {isEmptyFrame && (
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                       Drop an image on this frame to fill it
                     </p>
                   )}
                   {isFilledFrame && (
                     <div className="mt-2 space-y-2">
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
                         Double-click to reposition image inside frame
                       </p>
                       <Button
@@ -1158,7 +1158,7 @@ export function ElementProperties({
               {/* Fill (for text and shapes, not images, icons, or frames) */}
               {!isImageElement && !isIconElement && !isFrameElement && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">
                     {isTextElement ? 'Text Color' : 'Fill'}
                   </Label>
 
@@ -1281,7 +1281,7 @@ export function ElementProperties({
                     <div className="space-y-3">
                       {/* Start Color */}
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Start Color</Label>
+                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Start Color</Label>
                         <div className="flex gap-2 items-center mt-1">
                           <input
                             type="color"
@@ -1298,7 +1298,7 @@ export function ElementProperties({
                       </div>
                       {/* End Color */}
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">End Color</Label>
+                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">End Color</Label>
                         <div className="flex gap-2 items-center mt-1">
                           <input
                             type="color"
@@ -1315,7 +1315,7 @@ export function ElementProperties({
                       </div>
                       {/* Angle */}
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Angle</Label>
+                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Angle</Label>
                         <div className="flex items-center gap-2 mt-1">
                           <Slider
                             value={[gradientAngle]}
@@ -1324,7 +1324,7 @@ export function ElementProperties({
                             step={1}
                             className="flex-1"
                           />
-                          <span className="text-xs text-muted-foreground w-8">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 w-8">
                             {gradientAngle}°
                           </span>
                         </div>
@@ -1338,7 +1338,7 @@ export function ElementProperties({
                       />
                       {/* Preset gradients */}
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Presets</Label>
+                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Presets</Label>
                         <div className="grid grid-cols-3 gap-1 mt-1">
                           {GRADIENT_PRESETS.map((preset) => (
                             <button
@@ -1430,14 +1430,14 @@ export function ElementProperties({
                 return (
                   <div>
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Border</Label>
+                      <Label className="text-xs text-slate-500 dark:text-slate-400">Border</Label>
                       {selectedElement?.type === 'rect' && (
                         <button
                           className={cn(
                             "text-xs px-1.5 py-0.5 rounded transition-colors",
                             perSideStrokeMode
                               ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
-                              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                              : "text-slate-500 dark:text-slate-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
                           )}
                           onClick={perSideStrokeMode ? switchToUniform : switchToPerSide}
                           title={perSideStrokeMode ? "Switch to uniform border" : "Switch to per-side border"}
@@ -1463,7 +1463,7 @@ export function ElementProperties({
                             min={0}
                             max={20}
                           />
-                          <span className="text-xs text-muted-foreground">px</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">px</span>
                         </div>
                       ) : (
                         <>
@@ -1483,7 +1483,7 @@ export function ElementProperties({
                               ['_strokeLeft', 'L'] as const,
                             ]).map(([key, label]) => (
                               <div key={key} className="flex items-center gap-1">
-                                <span className="text-[10px] text-muted-foreground w-4">{label}</span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 w-4">{label}</span>
                                 <input
                                   type="number"
                                   value={elementProps[key] ?? 0}
@@ -1596,13 +1596,13 @@ export function ElementProperties({
                 return (
                   <div>
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                      <Label className="text-xs text-slate-500 dark:text-slate-400">Border Radius</Label>
                       <button
                         className={cn(
                           "text-xs px-1.5 py-0.5 rounded transition-colors",
                           perCornerMode
                             ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300"
-                            : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "text-slate-500 dark:text-slate-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
                         )}
                         onClick={perCornerMode ? switchToUniform : switchToPerCorner}
                         title={perCornerMode ? "Switch to uniform radius" : "Switch to per-corner radius"}
@@ -1638,7 +1638,7 @@ export function ElementProperties({
                           ['radiusBR', 'BR'] as const,
                         ]).map(([key, label]) => (
                           <div key={key} className="flex items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground w-5">{label}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 w-5">{label}</span>
                             <input
                               type="number"
                               value={elementProps[key] ?? 0}
@@ -1658,7 +1658,7 @@ export function ElementProperties({
               {/* Shadow */}
               <div>
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">Shadow</Label>
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Shadow</Label>
                   <button
                     className={cn(
                       "w-8 h-4 rounded-full transition-colors relative",
@@ -1706,10 +1706,10 @@ export function ElementProperties({
                         }}
                         className="w-6 h-6 rounded cursor-pointer border-0"
                       />
-                      <span className="text-[10px] text-muted-foreground">Color</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Color</span>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Blur</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Blur</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[shadowBlur]}
@@ -1725,11 +1725,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowBlur}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-6 text-right">{shadowBlur}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Offset X</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Offset X</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[shadowOffsetX]}
@@ -1746,11 +1746,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowOffsetX}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-6 text-right">{shadowOffsetX}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Offset Y</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Offset Y</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[shadowOffsetY]}
@@ -1767,7 +1767,7 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-6 text-right">{shadowOffsetY}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-6 text-right">{shadowOffsetY}</span>
                       </div>
                     </div>
                   </div>
@@ -1776,7 +1776,7 @@ export function ElementProperties({
 
               {/* Opacity */}
               <div>
-                <Label className="text-xs text-muted-foreground">Opacity</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Opacity</Label>
                 <div className="flex items-center gap-3 mt-2">
                   <Slider
                     value={[elementProps.opacity * 100]}
@@ -1785,7 +1785,7 @@ export function ElementProperties({
                     step={1}
                     className="flex-1"
                   />
-                  <span className="text-xs text-muted-foreground w-8">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 w-8">
                     {Math.round(elementProps.opacity * 100)}%
                   </span>
                 </div>
@@ -1794,10 +1794,10 @@ export function ElementProperties({
               {/* Image Filters */}
               {isImageElement && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Filters</Label>
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Filters</Label>
                   <div className="mt-2 space-y-2">
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Blur</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Blur</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[Math.round(filterBlur * 100)]}
@@ -1810,11 +1810,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterBlur * 100)}%</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">{Math.round(filterBlur * 100)}%</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Brightness</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Brightness</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[Math.round(filterBrightness * 100)]}
@@ -1828,11 +1828,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterBrightness * 100)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">{Math.round(filterBrightness * 100)}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Contrast</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Contrast</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[Math.round(filterContrast * 100)]}
@@ -1846,11 +1846,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterContrast * 100)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">{Math.round(filterContrast * 100)}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Saturation</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Saturation</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[Math.round(filterSaturation * 100)]}
@@ -1864,11 +1864,11 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterSaturation * 100)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">{Math.round(filterSaturation * 100)}</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Hue Rotation</Label>
+                      <Label className="text-[10px] text-slate-500 dark:text-slate-400">Hue Rotation</Label>
                       <div className="flex items-center gap-2">
                         <Slider
                           value={[Math.round(filterHueRotation * 100)]}
@@ -1882,7 +1882,7 @@ export function ElementProperties({
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(filterHueRotation * 100)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 w-8 text-right">{Math.round(filterHueRotation * 100)}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 pt-1">
@@ -1903,7 +1903,7 @@ export function ElementProperties({
                             filterGrayscale ? "translate-x-4" : "translate-x-0.5"
                           )} />
                         </button>
-                        <span className="text-[10px] text-muted-foreground">Grayscale</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">Grayscale</span>
                       </label>
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <button
@@ -1922,7 +1922,7 @@ export function ElementProperties({
                             filterInvert ? "translate-x-4" : "translate-x-0.5"
                           )} />
                         </button>
-                        <span className="text-[10px] text-muted-foreground">Invert</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">Invert</span>
                       </label>
                     </div>
                     {(filterBlur > 0 || filterBrightness !== 0 || filterContrast !== 0 || filterSaturation !== 0 || filterHueRotation !== 0 || filterGrayscale || filterInvert) && (
@@ -1952,10 +1952,10 @@ export function ElementProperties({
 
               {/* Position & Size */}
               <div>
-                <Label className="text-xs text-muted-foreground">Position</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Position</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">X</Label>
+                    <Label className="text-[10px] text-slate-500 dark:text-slate-400">X</Label>
                     <Input
                       type="number"
                       value={elementProps.left}
@@ -1964,7 +1964,7 @@ export function ElementProperties({
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Y</Label>
+                    <Label className="text-[10px] text-slate-500 dark:text-slate-400">Y</Label>
                     <Input
                       type="number"
                       value={elementProps.top}
@@ -1976,10 +1976,10 @@ export function ElementProperties({
               </div>
 
               <div>
-                <Label className="text-xs text-muted-foreground">Size</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Size</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Width</Label>
+                    <Label className="text-[10px] text-slate-500 dark:text-slate-400">Width</Label>
                     <Input
                       type="number"
                       value={elementProps.width}
@@ -1988,7 +1988,7 @@ export function ElementProperties({
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Height</Label>
+                    <Label className="text-[10px] text-slate-500 dark:text-slate-400">Height</Label>
                     <Input
                       type="number"
                       value={elementProps.height}
@@ -2000,7 +2000,7 @@ export function ElementProperties({
               </div>
 
               <div>
-                <Label className="text-xs text-muted-foreground">Rotation</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Rotation</Label>
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     type="number"
@@ -2010,7 +2010,7 @@ export function ElementProperties({
                     min={-360}
                     max={360}
                   />
-                  <span className="text-xs text-muted-foreground">°</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">°</span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -2026,7 +2026,7 @@ export function ElementProperties({
             <>
               {/* Canvas Background Settings */}
               <div>
-                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Background Color</Label>
                 <div className="mt-2">
                   <div className="flex gap-2 items-center mb-2">
                     <input
@@ -2103,7 +2103,7 @@ export function ElementProperties({
               <Separator />
 
               <div>
-                <Label className="text-xs text-muted-foreground">Gradient Presets</Label>
+                <Label className="text-xs text-slate-500 dark:text-slate-400">Gradient Presets</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   {GRADIENT_PRESETS.map((gradient) => (
                     <button
@@ -2120,7 +2120,7 @@ export function ElementProperties({
               <Separator />
 
               <div className="text-center py-4">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Click an element on the canvas to edit its properties
                 </p>
               </div>
