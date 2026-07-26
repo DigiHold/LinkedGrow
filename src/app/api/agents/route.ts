@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   agents,
+  agentSources,
   agentLeads,
   agentMessages,
   linkedinAccounts,
@@ -218,6 +219,35 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const id = crypto.randomUUID();
 
+    // Everything below comes off the five-step wizard. Each value is checked
+    // against the column's own enum rather than trusted, because the client
+    // can send anything and a bad enum would be written straight through.
+    const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
+      typeof value === "string" && (allowed as readonly string[]).includes(value)
+        ? (value as T)
+        : fallback;
+
+    const text = (value: unknown, max: number): string | null => {
+      if (typeof value !== "string") return null;
+      const trimmed = value.trim();
+      return trimmed ? trimmed.slice(0, max) : null;
+    };
+
+    // Stored as JSON in a text column, so cap the count as well as the length.
+    const list = (value: unknown, max: number): string | null => {
+      if (!Array.isArray(value)) return null;
+      const items = value
+        .filter((v): v is string => typeof v === "string")
+        .map((v) => v.trim())
+        .filter(Boolean)
+        .slice(0, max)
+        .map((v) => v.slice(0, 80));
+      return items.length ? JSON.stringify(items) : null;
+    };
+
+    const bool = (value: unknown, fallback: boolean) =>
+      typeof value === "boolean" ? value : fallback;
+
     try {
       await db.insert(agents).values({
         id,
@@ -225,12 +255,48 @@ export async function POST(request: NextRequest) {
         createdBy: session.user.id,
         linkedinAccountId,
         name,
+        icpSummary: text(body?.icpSummary, 2000),
+        jobRoles: list(body?.jobRoles, 20),
+        industries: list(body?.industries, 20),
+        locations: list(body?.locations, 20),
+        companySizes: list(body?.companySizes, 10),
+        matchLevel: pick(body?.matchLevel, ["precision", "balanced", "volume"] as const, "balanced"),
+        goal: pick(body?.goal, ["conversations", "meetings"] as const, "conversations"),
+        tone: pick(body?.tone, ["professional", "conversational", "direct"] as const, "conversational"),
+        companyInfo: text(body?.companyInfo, 4000),
+        skipConnected: bool(body?.skipConnected, true),
+        reviewMode: bool(body?.reviewMode, false),
+        smartLeadFinder: bool(body?.smartLeadFinder, true),
         // Agents are always created paused. Activating is a separate,
         // deliberate action, per section 7b.
         status: "paused",
         createdAt: now,
         updatedAt: now,
       });
+
+      const SOURCE_TYPES = [
+        "keyword", "market", "competitor", "brand",
+        "buying_event", "linkedin_search", "csv",
+      ] as const;
+      const sources = Array.isArray(body?.sources) ? body.sources.slice(0, 15) : [];
+      const rows = sources
+        .filter((r: unknown): r is { type: string; label: string; config?: unknown } =>
+          !!r && typeof r === "object" &&
+          SOURCE_TYPES.includes((r as { type?: string }).type as (typeof SOURCE_TYPES)[number]) &&
+          typeof (r as { label?: unknown }).label === "string")
+        .map((r: { type: string; label: string; config?: unknown }) => ({
+          id: crypto.randomUUID(),
+          workspaceId: workspace.workspaceId,
+          agentId: id,
+          type: r.type as (typeof SOURCE_TYPES)[number],
+          label: r.label.trim().slice(0, 120),
+          config: r.config ? JSON.stringify(r.config).slice(0, 4000) : null,
+          createdAt: now,
+          updatedAt: now,
+        }))
+        .filter((r: { label: string }) => r.label);
+
+      if (rows.length) await db.insert(agentSources).values(rows);
     } catch {
       // uq_agents_linkedin_account: one agent per connected account, enforced
       // by the database rather than by a read-then-write that can race.

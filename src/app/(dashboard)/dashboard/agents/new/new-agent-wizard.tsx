@@ -1,0 +1,650 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check, Loader2, Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { StepRail } from "@/components/dashboard/step-rail";
+import {
+  PageShell,
+  PageHeader,
+  Panel,
+  PanelTitle,
+  Field,
+} from "@/components/dashboard/ui/page";
+import { cn } from "@/lib/utils";
+
+const STEPS = [
+  { num: 1, label: "Sources" },
+  { num: 2, label: "Target" },
+  { num: 3, label: "Preview" },
+  { num: 4, label: "Outreach" },
+  { num: 5, label: "Review" },
+];
+
+/** Section 7b, step 1. One to start with; more can be added later. */
+const LEAD_SOURCES: {
+  id: string;
+  label: string;
+  hint: string;
+  recommended?: boolean;
+}[] = [
+  {
+    id: "buying_event",
+    label: "High-intent signals",
+    hint: "People showing buying signals right now. The best place to start.",
+    recommended: true,
+  },
+  {
+    id: "market",
+    label: "Lookalike audience",
+    hint: "People who resemble the customers you already have.",
+  },
+  {
+    id: "competitor",
+    label: "Competitor engagement",
+    hint: "People interacting with the companies you compete against.",
+  },
+  {
+    id: "linkedin_search",
+    label: "A LinkedIn search",
+    hint: "Paste a LinkedIn or Sales Navigator search and work through it.",
+  },
+];
+
+/** Section 7b, step 2: at least 4 signals, at most 15. */
+const MIN_SIGNALS = 4;
+const MAX_SIGNALS = 15;
+
+const MATCH_LEVELS = [
+  { id: "precision", label: "Precision", hint: "Fewer leads, closer fit" },
+  { id: "balanced", label: "Balanced", hint: "The default" },
+  { id: "volume", label: "Volume", hint: "More leads, looser fit" },
+] as const;
+
+const GOALS = [
+  { id: "conversations", label: "Start conversations", hint: "Warm prospects, no pitch" },
+  { id: "meetings", label: "Book calls", hint: "Qualified demos and sales calls" },
+] as const;
+
+const TONES = [
+  { id: "professional", label: "Professional", hint: "Formal and polished" },
+  { id: "conversational", label: "Conversational", hint: "Friendly and casual" },
+  { id: "direct", label: "Direct", hint: "Bold and confident" },
+] as const;
+
+interface LinkedInAccount {
+  id: string;
+  fullName: string | null;
+  headline: string | null;
+  status: string | null;
+}
+
+export function NewAgentWizard() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [accounts, setAccounts] = useState<LinkedInAccount[]>([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
+
+  const [name, setName] = useState("");
+  const [source, setSource] = useState<string>("buying_event");
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordDraft, setKeywordDraft] = useState("");
+  const [jobRoles, setJobRoles] = useState("");
+  const [industries, setIndustries] = useState("");
+  const [locations, setLocations] = useState("");
+  const [matchLevel, setMatchLevel] = useState<string>("balanced");
+  const [smartLeadFinder, setSmartLeadFinder] = useState(true);
+  const [companyInfo, setCompanyInfo] = useState("");
+  const [goal, setGoal] = useState<string>("conversations");
+  const [tone, setTone] = useState<string>("conversational");
+  const [linkedinAccountId, setLinkedinAccountId] = useState("");
+  const [skipConnected, setSkipConnected] = useState(true);
+  const [reviewMode, setReviewMode] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/linkedin/accounts")
+      .then((r) => (r.ok ? r.json() : { accounts: [] }))
+      .then((d) => {
+        const list: LinkedInAccount[] = d.accounts ?? [];
+        setAccounts(list);
+        if (list.length === 1) setLinkedinAccountId(list[0].id);
+      })
+      .catch(() => setAccounts([]))
+      .finally(() => setAccountsLoaded(true));
+  }, []);
+
+  const addKeyword = useCallback(() => {
+    const value = keywordDraft.trim();
+    if (!value || keywords.length >= MAX_SIGNALS) return;
+    if (keywords.some((k) => k.toLowerCase() === value.toLowerCase())) return;
+    setKeywords((prev) => [...prev, value]);
+    setKeywordDraft("");
+  }, [keywordDraft, keywords]);
+
+  // What each step needs before it will let you move on. Kept in one place so
+  // the button and the hint under it can never disagree.
+  const blocker = (() => {
+    if (step === 1 && !name.trim()) return "Give the agent a name.";
+    if (step === 2 && keywords.length < MIN_SIGNALS)
+      return `Add at least ${MIN_SIGNALS} signals. You have ${keywords.length}.`;
+    if (step === 4 && !linkedinAccountId) return "Pick the account that sends.";
+    return null;
+  })();
+
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          linkedinAccountId,
+          icpSummary: companyInfo.trim() || null,
+          jobRoles: splitList(jobRoles),
+          industries: splitList(industries),
+          locations: splitList(locations),
+          matchLevel,
+          goal,
+          tone,
+          companyInfo: companyInfo.trim() || null,
+          skipConnected,
+          reviewMode,
+          smartLeadFinder,
+          sources: [
+            { type: source, label: labelForSource(source) },
+            ...keywords.map((k) => ({ type: "keyword", label: k })),
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not create the agent");
+      router.push(`/dashboard/agents/${data.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create the agent");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <PageShell className="space-y-6">
+      <PageHeader
+        title="New agent"
+        description="Five steps. Nothing is sent until you start it yourself."
+        actions={
+          <Link href="/dashboard/agents">
+            <Button variant="ghost">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              All agents
+            </Button>
+          </Link>
+        }
+      />
+
+      <StepRail steps={STEPS} current={step} onSelect={(n) => setStep(n)} />
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {step === 1 && (
+        <Panel className="p-6">
+          <PanelTitle>Where should it look for leads?</PanelTitle>
+          <div className="mt-5 space-y-5">
+            <Field label="Agent name" hint="Only you see this. Name it after who it targets.">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Founders in Switzerland"
+                maxLength={80}
+              />
+            </Field>
+
+            <Field
+              label="Lead source"
+              hint="One to start with. You can add more once it is running."
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                {LEAD_SOURCES.map((s) => (
+                  <SelectCard
+                    key={s.id}
+                    picked={source === s.id}
+                    onClick={() => setSource(s.id)}
+                    label={s.label}
+                    hint={s.hint}
+                    badge={s.recommended ? "Recommended" : undefined}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+        </Panel>
+      )}
+
+      {step === 2 && (
+        <Panel className="p-6">
+          <PanelTitle>What should it watch for?</PanelTitle>
+          <div className="mt-5 space-y-5">
+            <Field
+              label={`Signals (${keywords.length}/${MAX_SIGNALS})`}
+              hint={`Topics your buyers talk about. At least ${MIN_SIGNALS}, so the agent has enough to work with.`}
+            >
+              <div className="flex gap-2">
+                <Input
+                  value={keywordDraft}
+                  onChange={(e) => setKeywordDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addKeyword();
+                    }
+                  }}
+                  placeholder="gdpr cookie consent"
+                  maxLength={80}
+                />
+                <Button
+                  variant="outline"
+                  onClick={addKeyword}
+                  disabled={!keywordDraft.trim() || keywords.length >= MAX_SIGNALS}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
+              {keywords.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {keywords.map((k) => (
+                    <span
+                      key={k}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border py-1 pl-3 pr-1.5 text-sm text-slate-600 dark:text-slate-300"
+                    >
+                      {k}
+                      <button
+                        type="button"
+                        onClick={() => setKeywords((p) => p.filter((x) => x !== k))}
+                        className="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white"
+                        aria-label={`Remove ${k}`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Field>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Job titles" hint="Comma separated. Leave empty for any.">
+                <Input
+                  value={jobRoles}
+                  onChange={(e) => setJobRoles(e.target.value)}
+                  placeholder="Founder, Head of Growth"
+                />
+              </Field>
+              <Field label="Industries" hint="Comma separated.">
+                <Input
+                  value={industries}
+                  onChange={(e) => setIndustries(e.target.value)}
+                  placeholder="SaaS, Agencies"
+                />
+              </Field>
+            </div>
+
+            <Field label="Locations" hint="Comma separated. Countries or cities.">
+              <Input
+                value={locations}
+                onChange={(e) => setLocations(e.target.value)}
+                placeholder="Switzerland, France"
+              />
+            </Field>
+
+            <Field label="Match level" hint="How strictly a lead has to fit before the agent takes it.">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {MATCH_LEVELS.map((m) => (
+                  <SelectCard
+                    key={m.id}
+                    picked={matchLevel === m.id}
+                    onClick={() => setMatchLevel(m.id)}
+                    label={m.label}
+                    hint={m.hint}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Toggle
+              checked={smartLeadFinder}
+              onChange={setSmartLeadFinder}
+              label="Widen the search when signals run dry"
+              hint="An agent with nothing left to do looks broken. This keeps it fed."
+            />
+          </div>
+        </Panel>
+      )}
+
+      {step === 3 && (
+        <Panel className="p-6">
+          <PanelTitle>The first leads it found</PanelTitle>
+          <div className="mt-5">
+            {/* Honest placeholder: lead discovery is the outreach-agent port,
+                phase 2 of the plan. Showing invented people here would make
+                the ICP feel validated when nothing has run. */}
+            <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+              <p className="text-[15px] font-medium text-slate-900 dark:text-white">
+                Nothing to preview yet
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                Once the agent runs its first search, the five best matches
+                appear here and you reject the ones that do not fit. Every
+                rejection sharpens what it looks for next.
+              </p>
+            </div>
+          </div>
+        </Panel>
+      )}
+
+      {step === 4 && (
+        <Panel className="p-6">
+          <PanelTitle>How it reaches out</PanelTitle>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+            Nothing goes out without you. Everything below is prepared, and at
+            the end you decide whether to start it or leave it paused.
+          </p>
+          <div className="mt-5 space-y-5">
+            <Field
+              label="Sending account"
+              hint="This cannot change later: switching mid-sequence breaks the session and the IP it is pinned to."
+            >
+              {!accountsLoaded ? (
+                <div className="h-11 animate-pulse rounded-xl bg-slate-100 dark:bg-white/5" />
+              ) : accounts.length === 0 ? (
+                <div className="rounded-xl border border-border p-4">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    No LinkedIn account connected yet.
+                  </p>
+                  <Link href="/dashboard/linkedin-accounts" className="mt-3 inline-block">
+                    <Button size="sm" variant="outline">
+                      Connect one
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {accounts.map((a) => (
+                    <SelectCard
+                      key={a.id}
+                      picked={linkedinAccountId === a.id}
+                      onClick={() => setLinkedinAccountId(a.id)}
+                      label={a.fullName || "LinkedIn account"}
+                      hint={a.headline || a.status || ""}
+                    />
+                  ))}
+                </div>
+              )}
+            </Field>
+
+            <Field
+              label="What you sell"
+              hint="This is what the messages are built from. Be specific about who it helps."
+            >
+              <Textarea
+                value={companyInfo}
+                onChange={(e) => setCompanyInfo(e.target.value)}
+                placeholder="LinkedGrow finds leads on LinkedIn and writes the outreach, for founders who sell to other businesses."
+                className="min-h-24"
+                maxLength={4000}
+              />
+            </Field>
+
+            <Field label="Goal" hint="What a good outcome looks like for this agent.">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {GOALS.map((g) => (
+                  <SelectCard
+                    key={g.id}
+                    picked={goal === g.id}
+                    onClick={() => setGoal(g.id)}
+                    label={g.label}
+                    hint={g.hint}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Tone" hint="How the messages should sound.">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {TONES.map((t) => (
+                  <SelectCard
+                    key={t.id}
+                    picked={tone === t.id}
+                    onClick={() => setTone(t.id)}
+                    label={t.label}
+                    hint={t.hint}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Toggle
+              checked={skipConnected}
+              onChange={setSkipConnected}
+              label="Skip people I am already connected to"
+              hint="They cannot be invited, and a cold message to someone who knows you reads badly."
+            />
+            <Toggle
+              checked={reviewMode}
+              onChange={setReviewMode}
+              label="Review each contact before anything is sent"
+              hint="Slower, but nothing leaves without you seeing it."
+            />
+          </div>
+        </Panel>
+      )}
+
+      {step === 5 && (
+        <div className="space-y-4">
+          <Panel className="p-6">
+            <PanelTitle>Before you create it</PanelTitle>
+            <dl className="mt-5 divide-y divide-border">
+              <SummaryRow label="Name" value={name || "Not set"} />
+              <SummaryRow label="Lead source" value={labelForSource(source)} />
+              <SummaryRow label="Signals" value={keywords.join(", ") || "None"} />
+              <SummaryRow label="Job titles" value={jobRoles || "Any"} />
+              <SummaryRow label="Industries" value={industries || "Any"} />
+              <SummaryRow label="Locations" value={locations || "Anywhere"} />
+              <SummaryRow
+                label="Match level"
+                value={MATCH_LEVELS.find((m) => m.id === matchLevel)?.label ?? ""}
+              />
+              <SummaryRow
+                label="Sending account"
+                value={
+                  accounts.find((a) => a.id === linkedinAccountId)?.fullName ||
+                  "Not picked"
+                }
+              />
+              <SummaryRow label="Goal" value={GOALS.find((g) => g.id === goal)?.label ?? ""} />
+              <SummaryRow label="Tone" value={TONES.find((t) => t.id === tone)?.label ?? ""} />
+              <SummaryRow
+                label="Review each contact"
+                value={reviewMode ? "Yes" : "No"}
+              />
+            </dl>
+          </Panel>
+
+          <Panel className="p-6">
+            <PanelTitle>What happens next</PanelTitle>
+            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              <li>
+                The agent is created paused. It does nothing until you start it.
+              </li>
+              <li>
+                A new LinkedIn account warms up for a month before it works at
+                full pace, which is what keeps it safe.
+              </li>
+              <li>
+                Replies land in your inbox here, and you can pause or change
+                anything at any time.
+              </li>
+            </ul>
+          </Panel>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+        {step < 5 ? (
+          <Button onClick={() => setStep(step + 1)} disabled={!!blocker}>
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button onClick={submit} disabled={saving || !!blocker}>
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Create it, paused
+              </>
+            )}
+          </Button>
+        )}
+        {step > 1 && (
+          <Button variant="ghost" onClick={() => setStep(step - 1)}>
+            Back
+          </Button>
+        )}
+        {blocker && (
+          <p className="text-sm text-slate-500 dark:text-slate-400">{blocker}</p>
+        )}
+      </div>
+    </PageShell>
+  );
+}
+
+function labelForSource(id: string) {
+  return LEAD_SOURCES.find((s) => s.id === id)?.label ?? id;
+}
+
+function splitList(value: string) {
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+function SelectCard({
+  picked,
+  onClick,
+  label,
+  hint,
+  badge,
+}: {
+  picked: boolean;
+  onClick: () => void;
+  label: string;
+  hint?: string;
+  badge?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={picked}
+      className={cn(
+        "rounded-xl border p-4 text-left transition-colors",
+        picked
+          ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+          : "border-border hover:border-slate-300 dark:hover:border-white/20"
+      )}
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-[15px] font-medium text-slate-900 dark:text-white">
+          {label}
+        </span>
+        {picked ? (
+          <Check className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
+        ) : badge ? (
+          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
+            {badge}
+          </span>
+        ) : null}
+      </span>
+      {hint && (
+        <span className="mt-1 block text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          {hint}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-start gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:border-slate-300 dark:hover:border-white/20"
+    >
+      <span
+        className={cn(
+          "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors",
+          checked ? "bg-cyan-500" : "bg-slate-200 dark:bg-white/10"
+        )}
+      >
+        <span
+          className={cn(
+            "h-4 w-4 rounded-full bg-white transition-transform",
+            checked && "translate-x-4"
+          )}
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[15px] font-medium text-slate-900 dark:text-white">
+          {label}
+        </span>
+        <span className="mt-1 block text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          {hint}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-baseline sm:gap-4">
+      <dt className="w-44 shrink-0 text-[13px] text-slate-500 dark:text-slate-400">
+        {label}
+      </dt>
+      <dd className="min-w-0 text-[15px] text-slate-900 dark:text-white">
+        {value}
+      </dd>
+    </div>
+  );
+}
