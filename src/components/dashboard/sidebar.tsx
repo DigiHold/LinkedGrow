@@ -295,23 +295,33 @@ export function Sidebar() {
             <div className="space-y-1">
               {navLink({ name: "Home", href: "/dashboard", icon: HomeIcon })}
 
-              <button
-                onClick={() => setSection("agents")}
+              {/* These open the section AND land on its first page, so one
+                  click gets you somewhere instead of only unfolding a list. */}
+              <Link
+                href="/dashboard/agents"
+                onClick={() => {
+                  setSection("agents");
+                  closeMobile();
+                }}
                 className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
               >
                 <AgentIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
                 <span className="truncate">Agents</span>
                 <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-              </button>
+              </Link>
 
-              <button
-                onClick={() => setSection("content")}
+              <Link
+                href="/dashboard/generator"
+                onClick={() => {
+                  setSection("content");
+                  closeMobile();
+                }}
                 className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100"
               >
                 <EditorIcon className="h-[18px] w-[18px] shrink-0 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
                 <span className="truncate">Posts</span>
                 <ChevronRightIcon className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-              </button>
+              </Link>
             </div>
           )}
 

@@ -1073,7 +1073,8 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 {detectedSource && url.trim() && (
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const info = sourceLabels[detectedSource];
+                      const info =
+                        sourceLabels[detectedSource] ?? sourceLabels.webpage;
                       const Icon = info.icon;
                       return (
                         <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border", info.color)}>
@@ -1154,7 +1155,11 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               {contentData && (
                 <span className="ml-2">
                   {(() => {
-                    const info = sourceLabels[contentData.source];
+                    // A source the map does not know about used to throw on
+                    // .icon and white-screen the whole page, for a decorative
+                    // pill. It falls back to the generic web label instead.
+                    const info =
+                      sourceLabels[contentData.source] ?? sourceLabels.webpage;
                     const Icon = info.icon;
                     return (
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ml-1", info.color)}>
@@ -1169,42 +1174,45 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {hooks.map((hook, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedHook(index)}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    selectedHook === index
-                      ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/10"
-                      : "border-border hover:border-cyan-300"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
+              {/* Same treatment as the generator's idea list: a hover border
+                  alone was easy to read as a selection, especially next to a
+                  disabled primary button. */}
+              {hooks.map((hook, index) => {
+                const picked = selectedHook === index;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedHook(index)}
+                    aria-pressed={picked}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors",
+                      picked
+                        ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+                        : "border-border hover:border-slate-300 dark:hover:border-white/20"
+                    )}
+                  >
                     <span
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
-                        selectedHook === index
-                          ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white"
-                          : "bg-gray-100 dark:bg-gray-800"
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-medium",
+                        picked
+                          ? "bg-cyan-500 text-white"
+                          : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
                       )}
                     >
-                      {index + 1}
+                      {picked ? <Check className="h-3.5 w-3.5" /> : index + 1}
                     </span>
-                    <p className="font-medium whitespace-pre-line">{hook}</p>
-                  </div>
-                </button>
-              ))}
+                    <span className="whitespace-pre-line text-[15px] leading-relaxed text-slate-900 dark:text-white">
+                      {hook}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Back
-              </Button>
+            <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
               <Button
                 onClick={handleGeneratePosts}
                 disabled={selectedHook === null || isLoading}
-                className="flex-1 sm:flex-none"
               >
                 {isLoading ? (
                   <>
@@ -1213,11 +1221,19 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate 3 Posts
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Write 3 posts
                   </>
                 )}
               </Button>
+              <Button variant="ghost" onClick={() => setStep(1)}>
+                Back
+              </Button>
+              {selectedHook === null && !isLoading && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Pick a hook to carry on.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1230,42 +1246,50 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <CardHeader>
               <CardTitle>Pick a post</CardTitle>
               <CardDescription>
-                Select the version that resonates with your audience
+                Two drafts from the same hook. Pick the one that sounds like you.
               </CardDescription>
             </CardHeader>
           </Card>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {posts.map((post, index) => (
-              <Card
-                key={index}
-                className={cn(
-                  "cursor-pointer transition-all hover:-translate-y-1",
-                  selectedPost === index
-                    ? "border-cyan-500 shadow-lg"
-                    : "hover:border-cyan-300"
-                )}
-                onClick={() => setSelectedPost(index)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-cyan-600 dark:text-cyan-400">
-                      Version {index + 1}
-                    </span>
-                    {selectedPost === index && (
-                      <Check className="w-5 h-5 text-cyan-500" />
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400 whitespace-pre-wrap max-h-100 overflow-y-auto">
-                    {post}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Equal heights: the two drafts are rarely the same length, so
+                the cards ended at different points and the shorter one read
+                as unfinished. */}
+            {posts.map((post, index) => {
+              const picked = selectedPost === index;
+              return (
+                <Card
+                  key={index}
+                  onClick={() => setSelectedPost(index)}
+                  className={cn(
+                    "flex cursor-pointer flex-col transition-colors",
+                    picked
+                      ? "border-cyan-500 bg-cyan-50/40 dark:border-cyan-400/60 dark:bg-cyan-400/5"
+                      : "hover:border-slate-300 dark:hover:border-white/20"
+                  )}
+                >
+                  <CardContent className="flex flex-1 flex-col p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                        Version {index + 1}
+                      </span>
+                      {picked && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500">
+                          <Check className="h-3 w-3 text-white" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="max-h-100 flex-1 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                      {post}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" onClick={() => setStep(2)}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button variant="ghost" onClick={() => setStep(2)}>
               Back
             </Button>
             <Button
@@ -1273,7 +1297,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               onClick={() => setStep(4)}
               className="flex-1 sm:flex-none"
             >
-              Continue to Edit
+              Edit this one
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -1289,7 +1313,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle>
-                    {isEditing ? "Edit Your Post" : "Final Post"}
+                    {isEditing ? "Editing your post" : "Your post"}
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" onClick={handleCopy}>
@@ -1412,7 +1436,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             )}
 
             {/* AI Edit Options */}
-            <Card className="border-cyan-200 bg-cyan-50/50 dark:border-cyan-800 dark:bg-cyan-950/20">
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wand2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
@@ -1422,22 +1446,29 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  {["Make Shorter", "Add Emojis", "Stronger Hook", "Add CTA", "More Casual"].map((action) => (
+                  {/* value is the string /api/ai/edit-post's instructionMap
+                      matches on, so it stays; only the label is ours. */}
+                  {[
+                    { value: "Make Shorter", label: "Shorter" },
+                    { value: "Add Emojis", label: "Add emojis" },
+                    { value: "Stronger Hook", label: "Stronger hook" },
+                    { value: "Add CTA", label: "Better ending" },
+                    { value: "More Casual", label: "More casual" },
+                  ].map((action) => (
                     <Button
-                      key={action}
+                      key={action.value}
                       variant="outline"
                       size="sm"
-                      className="bg-white dark:bg-gray-900 hover:bg-cyan-100 hover:border-cyan-300"
-                      onClick={() => handleAiEdit(action)}
+                      onClick={() => handleAiEdit(action.value)}
                       disabled={isAiEditing}
                     >
-                      {action}
+                      {action.label}
                     </Button>
                   ))}
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Custom instruction (e.g., 'Make it more professional')"
+                    placeholder="Tell it what to change"
                     value={customAiInstruction}
                     onChange={(e) => setCustomAiInstruction(e.target.value)}
                     onKeyDown={(e) => {
@@ -1494,7 +1525,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   disabled={isVideoMedia(attachedImage)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  Schedule for Later
+                  Schedule it
                 </Button>
                 {showScheduler && (
                   <div className="p-3 rounded-lg bg-accent/50 space-y-2">
@@ -1545,7 +1576,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             {/* Add Media */}
             <Card>
               <CardHeader className="pb-2 bg-muted/30 rounded-t-xl">
-                <CardTitle className="text-base">Add Media</CardTitle>
+                <CardTitle className="text-base">Add media</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {hasImageApiKey && (
@@ -1584,7 +1615,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Image className="w-4 h-4 mr-2" />
-                  Upload Image
+                  Upload an image
                 </Button>
               </CardContent>
             </Card>
@@ -1593,24 +1624,24 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
             <Card>
               <CardContent className="p-4 space-y-3">
                 <Button variant="outline" className="w-full" onClick={() => setStep(3)}>
-                  Back to Post Selection
+                  Pick another version
                 </Button>
                 <Button variant="outline" className="w-full" onClick={() => setStep(1)}>
-                  Start Over
+                  Start again
                 </Button>
               </CardContent>
             </Card>
 
             {/* Tips */}
-            <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
+            <Card>
               <CardContent className="p-4">
-                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
-                  Pro Tips
+                <h4 className="mb-2.5 text-[13px] font-medium text-slate-900 dark:text-white">
+                  What tends to work
                 </h4>
-                <ul className="text-sm text-green-700 dark:text-green-300 space-y-1.5">
-                  <li>- Posts with images get 2x more engagement</li>
-                  <li>- Best time to post: 8-10 AM or 5-6 PM</li>
-                  <li>- Add a question at the end for comments</li>
+                <ul className="space-y-1.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li>An image roughly doubles engagement</li>
+                  <li>Post between 8-10 AM or 5-6 PM</li>
+                  <li>A question at the end gets you comments</li>
                 </ul>
               </CardContent>
             </Card>
