@@ -1463,7 +1463,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   ) : (
                     <Save className="w-4 h-4 mr-2" />
                   )}
-                  {isSaving ? "Saving..." : "Save as Draft"}
+                  {isSaving ? "Saving..." : "Save as draft"}
                 </Button>
               </CardContent>
             </Card>
