@@ -7,33 +7,34 @@ import { eq } from "drizzle-orm";
  * For owners or standalone users, returns their own settings.
  */
 export async function getAISettingsUser(userId: string) {
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-  });
+  // This runs on nearly every authenticated request, and Turso is SQLite over
+  // HTTP: every await here is a network round trip, not a local read. It used
+  // to chain four of them (user, membership, team, owner) even for a solo user
+  // who has no team at all.
+  //
+  // The user lookup and the membership lookup are independent, so they go
+  // together. That alone makes the common case one round trip instead of two.
+  const [user, membership] = await Promise.all([
+    db.query.users.findFirst({ where: eq(users.id, userId) }),
+    db.query.teamMembers.findFirst({ where: eq(teamMembers.userId, userId) }),
+  ]);
 
   if (!user) {
     return null;
   }
 
-  // Check if user is a team member (not owner)
-  const membership = await db.query.teamMembers.findFirst({
-    where: eq(teamMembers.userId, user.id),
-  });
-
   if (membership && membership.role !== "owner") {
-    // Get team to find owner
-    const team = await db.query.teams.findFirst({
-      where: eq(teams.id, membership.teamId),
-    });
+    // The team exists only to name its owner, so join through it rather than
+    // fetching the team and then the owner as two more trips.
+    const [row] = await db
+      .select({ owner: users })
+      .from(teams)
+      .innerJoin(users, eq(users.id, teams.ownerId))
+      .where(eq(teams.id, membership.teamId))
+      .limit(1);
 
-    if (team) {
-      const owner = await db.query.users.findFirst({
-        where: eq(users.id, team.ownerId),
-      });
-
-      if (owner) {
-        return { user, aiSettingsUser: owner, isTeamMember: true };
-      }
+    if (row?.owner) {
+      return { user, aiSettingsUser: row.owner, isTeamMember: true };
     }
   }
 
@@ -65,33 +66,27 @@ export async function hasPendingTeamInvite(email: string): Promise<boolean> {
  * For owners or standalone users, returns their own credentials.
  */
 export async function getLinkedInUser(userId: string) {
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-  });
+  // Same shape and the same reasoning as getAISettingsUser above: two
+  // independent lookups in parallel, then one join instead of two more trips.
+  const [user, membership] = await Promise.all([
+    db.query.users.findFirst({ where: eq(users.id, userId) }),
+    db.query.teamMembers.findFirst({ where: eq(teamMembers.userId, userId) }),
+  ]);
 
   if (!user) {
     return null;
   }
 
-  // Check if user is a team member (not owner)
-  const membership = await db.query.teamMembers.findFirst({
-    where: eq(teamMembers.userId, user.id),
-  });
-
   if (membership && membership.role !== "owner") {
-    // Get team to find owner
-    const team = await db.query.teams.findFirst({
-      where: eq(teams.id, membership.teamId),
-    });
+    const [row] = await db
+      .select({ owner: users })
+      .from(teams)
+      .innerJoin(users, eq(users.id, teams.ownerId))
+      .where(eq(teams.id, membership.teamId))
+      .limit(1);
 
-    if (team) {
-      const owner = await db.query.users.findFirst({
-        where: eq(users.id, team.ownerId),
-      });
-
-      if (owner) {
-        return { user, linkedInUser: owner, isTeamMember: true };
-      }
+    if (row?.owner) {
+      return { user, linkedInUser: row.owner, isTeamMember: true };
     }
   }
 

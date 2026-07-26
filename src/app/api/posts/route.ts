@@ -19,12 +19,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, session.user.email))
-      .limit(1);
+    // Turso is SQLite over HTTP, so each await below is a network round trip.
+    // The user row, the team they own and the team they belong to are three
+    // independent lookups keyed off the session, so they go together instead
+    // of one after another.
+    const [[user], ownedTeam, ownMembership] = await Promise.all([
+      db
+        .select()
+        .from(users)
+        .where(eq(users.email, session.user.email))
+        .limit(1),
+      db.query.teams.findFirst({
+        where: eq(teams.ownerId, session.user.id),
+      }),
+      db.query.teamMembers.findFirst({
+        where: eq(teamMembers.userId, session.user.id),
+      }),
+    ]);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -35,11 +46,6 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status"); // draft, scheduled, published, failed
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
-
-    // Check if user is a team owner - if so, fetch posts from all team members
-    const ownedTeam = await db.query.teams.findFirst({
-      where: eq(teams.ownerId, user.id),
-    });
 
     let userIdsToFetch = [user.id];
     let isTeamOwner = false;
@@ -59,10 +65,8 @@ export async function GET(request: NextRequest) {
         userIdsToFetch.push(user.id);
       }
     } else {
-      // Check if user is a team admin - if so, fetch posts from members (not admins)
-      const membership = await db.query.teamMembers.findFirst({
-        where: eq(teamMembers.userId, user.id),
-      });
+      // Already fetched above alongside the user row.
+      const membership = ownMembership;
 
       if (membership && membership.role === "admin") {
         isTeamAdmin = true;
