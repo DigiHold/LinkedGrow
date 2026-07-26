@@ -1,5 +1,6 @@
-import { db, users, teamMembers, teams, teamInvites } from "@/lib/db";
+import { db, teamInvites } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { loadSessionUser } from "@/lib/auth-user";
 
 /**
  * Get the user whose AI settings should be used.
@@ -7,38 +8,29 @@ import { eq } from "drizzle-orm";
  * For owners or standalone users, returns their own settings.
  */
 export async function getAISettingsUser(userId: string) {
-  // This runs on nearly every authenticated request, and Turso is SQLite over
-  // HTTP: every await here is a network round trip, not a local read. It used
-  // to chain four of them (user, membership, team, owner) even for a solo user
-  // who has no team at all.
-  //
-  // The user lookup and the membership lookup are independent, so they go
-  // together. That alone makes the common case one round trip instead of two.
-  const [user, membership] = await Promise.all([
-    db.query.users.findFirst({ where: eq(users.id, userId) }),
-    db.query.teamMembers.findFirst({ where: eq(teamMembers.userId, userId) }),
-  ]);
+  // Delegates to the same cached, single-query read auth() just performed for
+  // this request, so in practice this costs zero additional round trips.
+  const data = await loadSessionUser(userId);
+  if (!data) return null;
+  return {
+    user: data.user,
+    aiSettingsUser: data.owner ?? data.user,
+    isTeamMember: data.isTeamMember,
+  };
+}
 
-  if (!user) {
-    return null;
-  }
-
-  if (membership && membership.role !== "owner") {
-    // The team exists only to name its owner, so join through it rather than
-    // fetching the team and then the owner as two more trips.
-    const [row] = await db
-      .select({ owner: users })
-      .from(teams)
-      .innerJoin(users, eq(users.id, teams.ownerId))
-      .where(eq(teams.id, membership.teamId))
-      .limit(1);
-
-    if (row?.owner) {
-      return { user, aiSettingsUser: row.owner, isTeamMember: true };
-    }
-  }
-
-  return { user, aiSettingsUser: user, isTeamMember: false };
+/**
+ * Get the user whose LinkedIn connection should be used.
+ * Team members post through the owner's connected account.
+ */
+export async function getLinkedInUser(userId: string) {
+  const data = await loadSessionUser(userId);
+  if (!data) return null;
+  return {
+    user: data.user,
+    linkedInUser: data.owner ?? data.user,
+    isTeamMember: data.isTeamMember,
+  };
 }
 
 /**
@@ -60,35 +52,3 @@ export async function hasPendingTeamInvite(email: string): Promise<boolean> {
   return false;
 }
 
-/**
- * Get the user whose LinkedIn credentials should be used.
- * For team members (admin/member), returns the team owner's credentials.
- * For owners or standalone users, returns their own credentials.
- */
-export async function getLinkedInUser(userId: string) {
-  // Same shape and the same reasoning as getAISettingsUser above: two
-  // independent lookups in parallel, then one join instead of two more trips.
-  const [user, membership] = await Promise.all([
-    db.query.users.findFirst({ where: eq(users.id, userId) }),
-    db.query.teamMembers.findFirst({ where: eq(teamMembers.userId, userId) }),
-  ]);
-
-  if (!user) {
-    return null;
-  }
-
-  if (membership && membership.role !== "owner") {
-    const [row] = await db
-      .select({ owner: users })
-      .from(teams)
-      .innerJoin(users, eq(users.id, teams.ownerId))
-      .where(eq(teams.id, membership.teamId))
-      .limit(1);
-
-    if (row?.owner) {
-      return { user, linkedInUser: row.owner, isTeamMember: true };
-    }
-  }
-
-  return { user, linkedInUser: user, isTeamMember: false };
-}

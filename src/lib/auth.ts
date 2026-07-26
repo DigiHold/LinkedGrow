@@ -157,8 +157,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.teamRole = data.teamRole;
           token.teamOwnerId = data.teamOwnerId;
           // Team members inherit the owner's plan so they keep feature access.
-          if (data.isTeamMember && data.ownerPlan) {
-            token.plan = data.ownerPlan;
+          if (data.isTeamMember && data.owner?.plan) {
+            token.plan = data.owner.plan;
           }
         }
       }

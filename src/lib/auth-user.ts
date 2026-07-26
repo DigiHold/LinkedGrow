@@ -34,8 +34,12 @@ export type SessionUser = {
   teamId: string | null;
   teamRole: string | null;
   teamOwnerId: string | null;
-  /** Team members inherit the owner's plan. Null when there is no owner. */
-  ownerPlan: string | null;
+  /**
+   * The full owner row for team members, null otherwise. Carried here rather
+   * than fetched again by getAISettingsUser and getLinkedInUser, which both
+   * need the owner's own settings and used to re-query for them.
+   */
+  owner: typeof users.$inferSelect | null;
 };
 
 const TTL_MS = 2_000;
@@ -71,7 +75,7 @@ export async function loadSessionUser(
       teamId: teamMembers.teamId,
       teamRole: teamMembers.role,
       teamOwnerId: teams.ownerId,
-      ownerPlan: owner.plan,
+      owner: owner,
     })
     .from(users)
     .leftJoin(teamMembers, eq(teamMembers.userId, users.id))
@@ -90,8 +94,7 @@ export async function loadSessionUser(
         teamRole: row.teamRole && row.teamRole !== "owner" ? row.teamRole : null,
         teamOwnerId:
           row.teamRole && row.teamRole !== "owner" ? row.teamOwnerId : null,
-        ownerPlan:
-          row.teamRole && row.teamRole !== "owner" ? row.ownerPlan : null,
+        owner: row.teamRole && row.teamRole !== "owner" ? row.owner : null,
       }
     : null;
 
