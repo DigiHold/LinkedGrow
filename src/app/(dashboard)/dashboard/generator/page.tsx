@@ -143,56 +143,25 @@ function UsageLimitBanner({
 function LimitReachedOverlay() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
 
-      {/* Modal Card */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-xl">
-          <Lock className="w-10 h-10 text-white" />
+      <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500">
+          <Lock className="h-5 w-5" />
         </div>
-        <h2 className="text-2xl font-bold mb-3">Trial Expired</h2>
-        <p className="text-slate-500 dark:text-slate-400 mb-2">
-          Your <span className="font-semibold">7-day Pro trial</span> has ended.
-        </p>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          Pick Starter or higher to keep generating posts with <span className="font-semibold text-foreground">your own AI API key</span>.
+        <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+          Your trial has ended
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          Pick a plan to keep your agents running and go back to writing. Your
+          drafts and settings are exactly where you left them.
         </p>
 
-        <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 mb-6 text-left">
-          <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center gap-2 text-sm">
-            <Check className="w-4 h-4" />
-            What you&apos;ll unlock with Starter:
-          </h3>
-          <ul className="text-sm text-green-700 dark:text-green-400 space-y-1.5">
-            <li className="flex items-center gap-2">
-              <Check className="w-3 h-3" /> Unlimited post generation
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="w-3 h-3" /> Advanced editor with AI assist
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="w-3 h-3" /> Content calendar & scheduling
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="w-3 h-3" /> Reddit ideas finder
-            </li>
-          </ul>
-        </div>
-
-        <a href="/dashboard/upgrade" className="block w-full">
-          <Button
-            variant="linkedin"
-            size="lg"
-            className="shadow-lg w-full text-white"
-          >
-            <Crown className="w-5 h-5 mr-2" />
-            Upgrade to Unlock
+        <a href="/dashboard/upgrade" className="mt-6 block w-full">
+          <Button size="lg" className="w-full">
+            See the plans
           </Button>
         </a>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">
-          Use your own AI API key • Only pay for what you use
-        </p>
       </div>
     </div>
   );
@@ -287,8 +256,8 @@ export default function GeneratorPage() {
 
   const canGenerate = isWithinLimit(userPlan, "postsPerMonth", postsUsedThisMonth);
   const isLimitReached = !canGenerate;
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
-  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
+  const hasImageAccess = true;
+  const hasCarouselAccess = true;
 
   // Overlay only fires when the user actively tries to start a new cycle after
   // hitting the monthly limit. Reaching the counter (even at 3/3) does not show
@@ -1284,7 +1253,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                 onChange={setFirstComment}
                 postContent={currentPost}
                 onError={showToast}
-                hasAccess={canAccessFeature(userPlan, "firstComment")}
+                hasAccess={true}
               />
             )}
 
@@ -1435,7 +1404,7 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
-                {canAccessFeature(userPlan, "scheduling") && (
+                {(
                   <>
                     <Button
                       variant="outline"

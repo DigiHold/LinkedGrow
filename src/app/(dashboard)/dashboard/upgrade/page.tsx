@@ -28,64 +28,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PLANS, type PlanId, type PlanFeatures, FEATURE_INFO } from "@/lib/plans";
-import { LtdPlanCard } from "@/components/marketing/ltd-plan-card";
 
 // Only show paid plans - 7-day Pro trial is shown via "Current plan" badge
-const PLAN_ORDER: PlanId[] = ["starter", "pro", "business"];
+const PLAN_ORDER: PlanId[] = ["pro", "business"];
 
-const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
-  postGeneration: Sparkles,
-  ideas: Lightbulb,
-  imageGeneration: ImageIcon,
-  carouselGenerator: Layers,
-  hooksGenerator: Anchor,
-  advancedEditor: Sparkles,
-  calendar: Calendar,
-  scheduling: Clock,
-  analytics: BarChart3,
-  contentRepurposing: Lightbulb,
-  firstComment: MessageSquare,
-  algorithmOptimizer: Zap,
-  networkNotifications: Bell,
-  teamNotifications: UsersRound,
-  abTesting: GitBranch,
-  apiAccess: Code,
-  prioritySupport: Headphones,
-  teamCollaboration: UsersRound,
-  advancedAnalytics: TrendingUp,
-};
-
-// Features to display for each plan (curated list)
+// What each plan actually gets you, in the order someone reads it.
 const planHighlights: Record<PlanId, string[]> = {
-  free: [
-    "Read-only access",
-    "Pick a plan to keep posting",
-  ],
-  starter: [
-    "Unlimited posts",
-    "Ideas generator",
-    "Advanced editor",
-    "10 scheduled posts",
-    "Content calendar",
-    "Content repurposing",
-  ],
+  free: ["Nothing until you pick a plan"],
   pro: [
-    "Everything in Starter",
-    "Unlimited scheduling",
-    "AI image generation",
-    "Analytics dashboard",
-    "Hooks generator",
-    "Algorithm optimizer",
-    "Network Notifications",
-    "API access and MCP server",
+    "2 LinkedIn agents, each with its own IP",
+    "Lead finding, invites and follow-ups on autopilot",
+    "Replies land in your inbox, never sent without you",
+    "Every content feature: posts, images, carousels, calendar",
+    "API access and the MCP server",
   ],
   business: [
-    "Everything in Pro",
-    "Carousel generator",
+    "Everything in Pro, with 3 agents",
+    "Your whole team on one workspace",
     "A/B testing",
-    "Team collaboration",
-    "Team Notifications",
-    "Advanced analytics",
+    "Advanced analytics and exportable reports",
     "Priority support",
   ],
 };
@@ -107,7 +68,7 @@ export default function UpgradePage() {
   };
 
   // Full plan hierarchy for comparison (including free)
-  const FULL_PLAN_HIERARCHY: PlanId[] = ["free", "starter", "pro", "business"];
+  const FULL_PLAN_HIERARCHY: PlanId[] = ["free", "pro", "business"];
   const currentPlanIndex = FULL_PLAN_HIERARCHY.indexOf(userPlan);
   const isOnHighestPlan = userPlan === "business";
 
@@ -246,14 +207,14 @@ showError("Something went wrong. Please try again.");
                 ? "bg-white/20 text-white"
                 : "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400"
             )}>
-              Save 30%
+              2 months free
             </span>
           </button>
         </div>
       </div>
 
       {/* Plans Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10 max-w-7xl mx-auto">
+      <div className="mx-auto mb-10 grid max-w-3xl gap-4 md:grid-cols-2 lg:gap-6">
         {PLAN_ORDER.map((planId) => {
           const plan = PLANS[planId];
           const action = getPlanAction(planId);
@@ -446,7 +407,6 @@ showError("Something went wrong. Please try again.");
         })}
 
         {/* Lifetime Deal card - 4th slot, dynamically priced by tier. Hidden for LTD owners. */}
-        {!isLtd && <LtdPlanCard variant="dashboard" animate={false} />}
       </div>
 
       {/* Manage Subscription Link */}

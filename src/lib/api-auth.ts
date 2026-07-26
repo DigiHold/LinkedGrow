@@ -208,14 +208,6 @@ export async function authenticateApiRequest(
     };
   }
 
-  if (!canAccessFeature(user.plan as PlanId, "apiAccess")) {
-    await logApiRequest(keyRecord.id, keyRecord.userId, endpoint, method, 403, Date.now() - startTime);
-    return {
-      success: false,
-      error: "API access requires Business plan",
-      statusCode: 403,
-    };
-  }
 
   // Update last used timestamp
   await db.update(apiKeys)

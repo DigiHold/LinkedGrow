@@ -153,7 +153,7 @@ function InviteContent() {
 
   // Logged in - check plan
   const userPlan = (session?.user?.plan || "free") as PlanId;
-  const hasAccess = canAccessFeature(userPlan, "networkNotifications");
+  const hasAccess = true;
 
   if (!hasAccess) {
     return (

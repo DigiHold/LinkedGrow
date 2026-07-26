@@ -62,7 +62,6 @@ export default function ApiKeysPage() {
   // Team members cannot access API keys - owner only
   if (isTeamMember) {
     return (
-      <FeatureGate feature="apiAccess">
         <PageShell>
           <Card >
             <CardContent className="py-12 px-8">
@@ -78,7 +77,6 @@ export default function ApiKeysPage() {
             </CardContent>
           </Card>
         </PageShell>
-      </FeatureGate>
     );
   }
   const [isCreating, setIsCreating] = useState(false);
@@ -185,7 +183,6 @@ showError("Failed to delete API key");
   };
 
   return (
-    <FeatureGate feature="apiAccess">
       <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -523,6 +520,5 @@ showError("Failed to delete API key");
           </div>
         )}
       </div>
-    </FeatureGate>
   );
 }

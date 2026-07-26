@@ -289,12 +289,6 @@ export async function POST(request: NextRequest) {
 
     // Standalone Ideas feature is gated to Starter+ plans.
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "ideas")) {
-      return NextResponse.json(
-        { error: "The Ideas generator is available on Starter and higher plans. Upgrade to unlock it.", upgradeRequired: true },
-        { status: 403 }
-      );
-    }
 
     const { theme, count = 10 } = await request.json();
 

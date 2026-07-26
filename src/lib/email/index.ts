@@ -27,10 +27,6 @@ export {
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
 export {
-  ltdWelcomeEmailTemplate,
-  ltdWelcomeEmailText,
-} from "./templates/ltd-welcome-email";
-export {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
 } from "./templates/network-notification-invite-email";
@@ -65,10 +61,6 @@ import {
   subscriptionWelcomeEmailTemplate,
   subscriptionWelcomeEmailText,
 } from "./templates/subscription-welcome-email";
-import {
-  ltdWelcomeEmailTemplate,
-  ltdWelcomeEmailText,
-} from "./templates/ltd-welcome-email";
 import {
   networkNotificationInviteEmailTemplate,
   networkNotificationInviteEmailText,
@@ -193,20 +185,6 @@ export async function sendSubscriptionWelcomeEmail({
   });
 }
 
-export async function sendLtdWelcomeEmail({
-  to,
-  name,
-}: {
-  to: string;
-  name?: string;
-}) {
-  return sendEmail({
-    to,
-    subject: "You're in for life - Welcome to LinkedGrow Business",
-    html: ltdWelcomeEmailTemplate({ name }),
-    text: ltdWelcomeEmailText({ name }),
-  });
-}
 
 interface SendNetworkNotificationInviteEmailParams {
   to: string;

@@ -18,7 +18,7 @@ export const users = sqliteTable("users", {
   isAdmin: integer("is_admin", { mode: "boolean" }).default(false),
 
   // Subscription fields
-  plan: text("plan", { enum: ["free", "starter", "pro", "business"] }).default("free"),
+  plan: text("plan", { enum: ["free", "pro", "business"] }).default("free"),
   isLifetimeDeal: integer("is_lifetime_deal", { mode: "boolean" }).default(false),
   // 7-day Pro trial lifecycle
   trialStartedAt: integer("trial_started_at", { mode: "timestamp" }),
@@ -467,6 +467,8 @@ export const abandonedCheckouts = sqliteTable("abandoned_checkouts", {
   name: text("name"),
   // Stripe info
   stripeSessionId: text("stripe_session_id").notNull().unique(),
+  // "starter" is historical: the tier is gone, but rows created while it
+  // existed still have to be readable in the admin view.
   planId: text("plan_id", { enum: ["starter", "pro", "business"] }).notNull(),
   recoveryUrl: text("recovery_url"), // Stripe recovery URL (valid for 30 days)
   recoveryUrlExpiresAt: integer("recovery_url_expires_at", { mode: "timestamp" }),

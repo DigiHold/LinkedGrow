@@ -467,8 +467,6 @@ function IdeasContent() {
 
 export default function IdeasPage() {
   return (
-    <FeatureGate feature="ideas">
       <IdeasContent />
-    </FeatureGate>
   );
 }

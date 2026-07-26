@@ -338,7 +338,7 @@ function describeNetworkError(action: string): string {
 export default function AIAPISettingsPage() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasImageAccess = true;
   const isTeamMember = session?.user?.isTeamMember === true;
 
   // Team members cannot access this page - they use owner's API keys

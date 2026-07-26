@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
 
       if (postCount.count >= postsPerMonthLimit) {
         return apiErrorResponse(
-          `Monthly post limit reached (${postsPerMonthLimit}). Upgrade to Starter for unlimited posts.`,
+          `Monthly post limit reached (${postsPerMonthLimit}). Pick a plan for unlimited posts.`,
           403
         );
       }

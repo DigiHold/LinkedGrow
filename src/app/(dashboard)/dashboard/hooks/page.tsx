@@ -137,7 +137,6 @@ export default function HooksPage() {
   // No API key configured - show setup prompt
   if (!hasApiKey) {
     return (
-      <FeatureGate feature="hooksGenerator">
         <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -179,12 +178,10 @@ export default function HooksPage() {
             </CardContent>
           </Card>
         </div>
-      </FeatureGate>
     );
   }
 
   return (
-    <FeatureGate feature="hooksGenerator">
       <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -374,6 +371,5 @@ export default function HooksPage() {
           </>
         )}
       </div>
-    </FeatureGate>
   );
 }

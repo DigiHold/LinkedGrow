@@ -23,12 +23,6 @@ export async function GET(
     }
 
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "networkNotifications")) {
-      return NextResponse.json(
-        { error: "Network Notifications requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     const { id } = await params;
 
@@ -203,12 +197,6 @@ export async function DELETE(
     }
 
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "networkNotifications")) {
-      return NextResponse.json(
-        { error: "Network Notifications requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     const { id } = await params;
 

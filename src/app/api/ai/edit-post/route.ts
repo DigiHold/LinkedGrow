@@ -306,12 +306,6 @@ export async function POST(request: NextRequest) {
 
     // Check plan access - advancedEditor requires Starter+
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "advancedEditor")) {
-      return NextResponse.json(
-        { error: "Advanced editor requires a Starter plan or higher. Please upgrade to access this feature." },
-        { status: 403 }
-      );
-    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

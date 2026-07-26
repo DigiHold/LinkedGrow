@@ -70,12 +70,6 @@ export async function POST(request: NextRequest) {
 
     // Check plan access - imageGeneration requires Pro+
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "imageGeneration")) {
-      return NextResponse.json(
-        { error: "Image generation requires a Pro plan or higher. Please upgrade to access this feature." },
-        { status: 403 }
-      );
-    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

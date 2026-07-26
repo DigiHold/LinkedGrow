@@ -35,25 +35,9 @@ import { useSession } from "next-auth/react";
 import { UpgradeButton } from "./upgrade-button";
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
-  postGeneration: Sparkles,
-  ideas: Lightbulb,
-  imageGeneration: ImageIcon,
-  carouselGenerator: Layers,
-  hooksGenerator: Anchor,
-  advancedEditor: PenLine,
-  calendar: Calendar,
-  scheduling: Calendar,
-  analytics: BarChart3,
-  contentRepurposing: Sparkles,
-  firstComment: MessageSquare,
-  algorithmOptimizer: Zap,
-  networkNotifications: Bell,
-  teamNotifications: UsersRound,
   abTesting: GitBranch,
   teamCollaboration: UsersRound,
   advancedAnalytics: TrendingUp,
-  apiAccess: Code,
-  prioritySupport: Headphones,
 };
 
 interface FeatureGateProps {

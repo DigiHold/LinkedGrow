@@ -434,8 +434,8 @@ function ContentRepurposingContent() {
   };
 
   // Check if user has access to image generation
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
-  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
+  const hasImageAccess = true;
+  const hasCarouselAccess = true;
 
   // Get current post content
   const getCurrentPost = () => {
@@ -1435,7 +1435,7 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
                 onChange={setFirstComment}
                 postContent={getCurrentPost()}
                 onError={showToast}
-                hasAccess={canAccessFeature(userPlan, "firstComment")}
+                hasAccess={true}
               />
             )}
 
@@ -1682,8 +1682,6 @@ showToast(error instanceof Error ? error.message : "Failed to publish");
 
 export default function ContentRepurposingPage() {
   return (
-    <FeatureGate feature="contentRepurposing">
       <ContentRepurposingContent />
-    </FeatureGate>
   );
 }

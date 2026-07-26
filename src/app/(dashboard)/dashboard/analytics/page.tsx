@@ -184,7 +184,6 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <FeatureGate feature="analytics">
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -357,6 +356,5 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
-    </FeatureGate>
   );
 }

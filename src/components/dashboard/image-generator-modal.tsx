@@ -52,7 +52,7 @@ export function ImageGeneratorModal({
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   // Check if user has access to image generation
-  const hasAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasAccess = true;
 
   // Track if we already initialized for the current modal open
   const initializedRef = useRef(false);

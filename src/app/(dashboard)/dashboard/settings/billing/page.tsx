@@ -66,16 +66,14 @@ interface BillingData {
 }
 
 const planNames: Record<string, string> = {
-  free: "Free",
-  starter: "Starter",
+  free: "No plan",
   pro: "Pro",
   business: "Business",
 };
 
 const planPrices: Record<string, number> = {
-  starter: 19,
-  pro: 39,
-  business: 79,
+  pro: 99,
+  business: 179,
 };
 
 function formatCurrency(amount: number, currency: string) {

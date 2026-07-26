@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff, Sparkles } from "lucide-react";
-import { redirectToCheckout, redirectToLtdCheckout } from "@/lib/checkout";
+import { redirectToCheckout } from "@/lib/checkout";
 import { sanitizeCallbackUrl } from "@/lib/url";
 import { trackSignup } from "@/lib/insight";
 
@@ -95,12 +95,6 @@ function SignUpContent() {
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
         const userEmail = session?.user?.email;
-        // If user came from LTD page, redirect to LTD checkout
-        const ltd = searchParams.get("ltd");
-        if (ltd && userEmail) {
-          const redirected = await redirectToLtdCheckout(ltd, userEmail);
-          if (redirected) return;
-        }
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
         if (plan && userEmail) {

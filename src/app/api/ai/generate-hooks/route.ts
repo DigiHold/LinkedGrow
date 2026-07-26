@@ -371,12 +371,6 @@ export async function POST(request: NextRequest) {
 
     // Check plan access - hooksGenerator requires Pro+
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "hooksGenerator")) {
-      return NextResponse.json(
-        { error: "Hooks Generator requires a Pro plan or higher. Please upgrade to access this feature." },
-        { status: 403 }
-      );
-    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

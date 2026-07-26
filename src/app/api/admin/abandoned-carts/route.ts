@@ -6,7 +6,6 @@ import { eq, sql, desc } from "drizzle-orm";
 import { PLANS } from "@/lib/plans";
 
 const PLAN_PRICES: Record<string, number> = {
-  starter: PLANS.starter.price,
   pro: PLANS.pro.price,
   business: PLANS.business.price,
 };

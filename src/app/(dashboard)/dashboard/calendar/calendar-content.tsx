@@ -91,7 +91,7 @@ type DrawerView = "post-detail" | "create-post" | "schedule-post" | "schedule-po
 export function CalendarContent() {
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
-  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
+  const hasCarouselAccess = true;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [posts, setPosts] = useState<Post[]>([]);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
@@ -169,7 +169,7 @@ export function CalendarContent() {
   const [hasTextApiKey, setHasTextApiKey] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showEditImageModal, setShowEditImageModal] = useState(false);
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasImageAccess = true;
 
   const showError = (message: string) => {
     setErrorMessage(message);
@@ -1609,7 +1609,7 @@ Tips for viral posts:
                         onChange={setNewPostFirstComment}
                         postContent={newPostContent}
                         onError={showError}
-                        hasAccess={canAccessFeature(userPlan, "firstComment")}
+                        hasAccess={true}
                       />
                       <div className="flex justify-end gap-2">
                         {hasImageApiKey && (
@@ -2257,7 +2257,7 @@ Tips for viral posts:
                           onChange={setEditPostFirstComment}
                           postContent={editPostContent}
                           onError={showError}
-                          hasAccess={canAccessFeature(userPlan, "firstComment")}
+                          hasAccess={true}
                         />
                       </div>
                       {hasImageApiKey && (

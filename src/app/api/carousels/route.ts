@@ -48,12 +48,6 @@ export async function POST(request: NextRequest) {
     // Check plan access - carouselGenerator requires Business
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
     const userPlan = (user?.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "carouselGenerator")) {
-      return NextResponse.json(
-        { error: "Carousel Generator requires a Business plan. Please upgrade to access this feature." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { name, description, thumbnail, slidesJson, slideCount } = body;

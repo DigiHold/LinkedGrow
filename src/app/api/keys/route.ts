@@ -23,10 +23,6 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check Business plan
-    if (!canAccessFeature(user.plan as PlanId, "apiAccess")) {
-      return NextResponse.json({ error: "API access requires Business plan" }, { status: 403 });
-    }
 
     // Fetch API keys (without the hash for security)
     const keys = await db.query.apiKeys.findMany({
@@ -66,10 +62,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check Business plan
-    if (!canAccessFeature(user.plan as PlanId, "apiAccess")) {
-      return NextResponse.json({ error: "API access requires Business plan" }, { status: 403 });
-    }
 
     const body = await request.json();
     const { name, scopes } = body;

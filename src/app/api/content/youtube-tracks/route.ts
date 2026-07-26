@@ -174,9 +174,6 @@ export async function POST(request: NextRequest) {
 
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
     const userPlan = (user?.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "contentRepurposing")) {
-      return NextResponse.json({ error: "Content repurposing requires a Starter plan or higher." }, { status: 403 });
-    }
 
     const { url } = await request.json();
     if (!url) return NextResponse.json({ error: "YouTube URL is required" }, { status: 400 });

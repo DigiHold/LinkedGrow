@@ -26,10 +26,6 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check Business plan
-    if (!canAccessFeature(user.plan as PlanId, "apiAccess")) {
-      return NextResponse.json({ error: "API access requires Business plan" }, { status: 403 });
-    }
 
     // Find and delete the key (only if it belongs to this user)
     const key = await db.query.apiKeys.findFirst({

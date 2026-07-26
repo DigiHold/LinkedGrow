@@ -1216,7 +1216,6 @@ showToast("Failed to export images");
   // Missing Text API key
   if (!hasTextApiKey) {
     return (
-      <FeatureGate feature="carouselGenerator">
         <div className="max-w-3xl mx-auto p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -1238,12 +1237,10 @@ showToast("Failed to export images");
 
           <AiKeyGate what="write the slides for a carousel" />
         </div>
-      </FeatureGate>
     );
   }
 
   return (
-    <FeatureGate feature="carouselGenerator">
       <div className="h-screen flex flex-col overflow-hidden">
         {/* Top Toolbar - horizontally scrollable on small screens, full height always */}
         <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
@@ -1756,6 +1753,5 @@ showToast("Failed to export images");
           </div>
         )}
       </div>
-    </FeatureGate>
   );
 }

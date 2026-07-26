@@ -17,12 +17,6 @@ export async function POST(request: NextRequest) {
     // Check plan access - contentRepurposing requires Starter+
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
     const userPlan = (user?.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "contentRepurposing")) {
-      return NextResponse.json(
-        { error: "Content repurposing requires a Starter plan or higher. Please upgrade to access this feature." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { url } = body;

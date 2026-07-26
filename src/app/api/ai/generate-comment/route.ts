@@ -362,12 +362,6 @@ export async function POST(request: NextRequest) {
 
     // Check plan access - firstComment requires Pro+
     const userPlan = (aiSettingsUser.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "firstComment")) {
-      return NextResponse.json(
-        { error: "First Comment requires a Pro plan or higher." },
-        { status: 403 }
-      );
-    }
 
     const provider = aiSettingsUser.aiProvider || "openai";
 

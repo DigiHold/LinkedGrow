@@ -24,6 +24,19 @@ const PAYWALL_ALLOWED_PREFIXES = [
   "/dashboard/affiliate",
 ];
 
+// The API side of the same allowlist. A paywalled account must still be able
+// to pay, read its own account, and sign out; anything that spends money or
+// touches LinkedIn on its behalf is off.
+const PAYWALL_ALLOWED_API_PREFIXES = [
+  "/api/auth",
+  "/api/stripe",
+  "/api/user",
+  "/api/affiliate",
+  "/api/consent",
+  "/api/support",
+  "/api/chat",
+];
+
 // Wrapper: intercept signout BEFORE auth() touches the request
 const authProxy = auth(async (req) => {
   const { nextUrl } = req;
@@ -90,6 +103,7 @@ const authProxy = auth(async (req) => {
   const isProtectedRoute = protectedRoutes.some((route) =>
     nextUrl.pathname.startsWith(route)
   );
+  const isApiRoute = nextUrl.pathname.startsWith("/api/");
   const isAuthRoute = authRoutes.some((route) =>
     nextUrl.pathname.startsWith(route)
   );
@@ -106,29 +120,43 @@ const authProxy = auth(async (req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Trial-expired paywall: users on the free plan who have already used
-  // their trial and have no Stripe sub get bounced to /dashboard/upgrade
-  // for every dashboard page except billing/settings/upgrade itself.
-  if (isProtectedRoute && isLoggedIn) {
+  // The paywall: an account on the free plan that has used its trial and is
+  // not paying gets nothing. v2 has no lesser tier to fall back to, so this
+  // single check replaces the per-feature gates the routes used to carry.
+  //
+  // It covers the API as well as the pages. Guarding only /dashboard would
+  // leave every AI endpoint callable directly by a cancelled account, and in
+  // v2 the AI is billed to us rather than to the user's own key.
+  if ((isProtectedRoute || isApiRoute) && isLoggedIn) {
     const user = req.auth?.user;
     const isPaywalled =
       user?.plan === "free" &&
       user?.hasUsedTrial === true &&
       !user?.stripeSubscriptionId &&
+      // Lifetime holders bought the content half before agents existed and
+      // keep it permanently. See section 9a of the v2 plan.
       !user?.isLifetimeDeal;
 
     if (isPaywalled) {
-      const isAllowed = PAYWALL_ALLOWED_PREFIXES.some((p) =>
+      const allowed = isApiRoute
+        ? PAYWALL_ALLOWED_API_PREFIXES
+        : PAYWALL_ALLOWED_PREFIXES;
+      const isAllowed = allowed.some((p) =>
         nextUrl.pathname === p || nextUrl.pathname.startsWith(`${p}/`)
       );
       if (!isAllowed) {
-        return NextResponse.redirect(new URL("/dashboard/upgrade", nextUrl));
+        return isApiRoute
+          ? NextResponse.json(
+              { error: "Your plan does not include this. Pick a plan to continue." },
+              { status: 402 }
+            )
+          : NextResponse.redirect(new URL("/dashboard/upgrade", nextUrl));
       }
     }
   }
 
   // Protect non-public API routes
-  if (nextUrl.pathname.startsWith("/api/") && !isLoggedIn) {
+  if (isApiRoute && !isLoggedIn) {
     const publicApiPrefixes = [
       "/api/auth/", "/api/waitlist", "/api/stripe/",
       "/api/blog/", "/api/docs/", "/api/geo", "/api/indexnow",

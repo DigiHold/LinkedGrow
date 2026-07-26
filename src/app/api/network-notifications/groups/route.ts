@@ -21,12 +21,6 @@ export async function GET() {
     }
 
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "networkNotifications")) {
-      return NextResponse.json(
-        { error: "Network Notifications requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     // Find all groups where user is a member with status "accepted"
     const memberships = await db
@@ -148,12 +142,6 @@ export async function POST(request: NextRequest) {
     }
 
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "networkNotifications")) {
-      return NextResponse.json(
-        { error: "Network Notifications requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { name } = body;

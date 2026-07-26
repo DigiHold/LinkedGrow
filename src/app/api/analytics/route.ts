@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     log(`Fetching fresh data (target: ${user.linkedinPostingTarget || 'profile'})`);
 
     const userPlan = (user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "analytics")) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
+    if (!true) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
     if (advanced && !canAccessFeature(userPlan, "advancedAnalytics")) return NextResponse.json({ error: "Business plan required" }, { status: 403 });
 
     const startDate = new Date();

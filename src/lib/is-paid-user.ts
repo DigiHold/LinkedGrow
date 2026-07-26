@@ -5,7 +5,7 @@
 // Paid means ANY of:
 //   1. Active Stripe subscription
 //   2. Lifetime deal
-//   3. Plan is starter/pro/business AND not currently in an active trial
+//   3. Plan is pro/business AND not currently in an active trial
 //      (covers manually granted accounts like internal/team/comp accounts
 //      where there's no Stripe row but the user IS a real customer)
 //
@@ -27,7 +27,7 @@ export function isPaidUser(user: PaidUserShape | null | undefined): boolean {
   if (user.isLifetimeDeal) return true;
   if (!user.plan || user.plan === "free") return false;
 
-  // Plan is starter/pro/business with no Stripe + no LTD. Could be a manually
+  // Plan is pro/business with no Stripe + no LTD. Could be a manually
   // granted account OR an active trial. Trial = plan=='pro' with a future
   // trialEndedAt. Anything else with a non-free plan is treated as paid.
   if (user.plan === "pro" && user.trialEndedAt) {

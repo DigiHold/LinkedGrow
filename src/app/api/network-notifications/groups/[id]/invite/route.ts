@@ -24,12 +24,6 @@ export async function POST(
     }
 
     const userPlan = (session.user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "networkNotifications")) {
-      return NextResponse.json(
-        { error: "Network Notifications requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     const { id } = await params;
 

@@ -41,23 +41,7 @@ interface UpgradePromptProps {
 }
 
 const featureIcons: Record<keyof PlanFeatures, React.ElementType> = {
-  postGeneration: Sparkles,
-  ideas: Lightbulb,
-  imageGeneration: ImageIcon,
-  carouselGenerator: Layers,
-  hooksGenerator: Anchor,
-  advancedEditor: Edit3,
-  calendar: Calendar,
-  scheduling: Clock,
-  analytics: BarChart3,
-  contentRepurposing: Lightbulb,
-  firstComment: MessageSquare,
-  algorithmOptimizer: Zap,
-  networkNotifications: Bell,
-  teamNotifications: UsersRound,
   abTesting: GitBranch,
-  apiAccess: Code,
-  prioritySupport: Headphones,
   teamCollaboration: UsersRound,
   advancedAnalytics: TrendingUp,
 };
@@ -68,7 +52,7 @@ export function UpgradePrompt({
   variant = "card",
 }: UpgradePromptProps) {
   const nextPlan = getUpgradePath(currentPlan);
-  const requiredPlan = feature ? getRequiredPlanForFeature(feature) : nextPlan || "starter";
+  const requiredPlan = feature ? getRequiredPlanForFeature(feature) : nextPlan || "pro";
   const featureInfo = feature ? FEATURE_INFO[feature] : null;
   const planInfo = PLANS[requiredPlan];
 

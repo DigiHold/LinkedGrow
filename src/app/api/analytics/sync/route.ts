@@ -26,12 +26,6 @@ export async function POST() {
     }
 
     const userPlan = (user.plan || "free") as PlanId;
-    if (!canAccessFeature(userPlan, "analytics")) {
-      return NextResponse.json(
-        { error: "Post sync requires Pro plan or higher" },
-        { status: 403 }
-      );
-    }
 
     if (!user.linkedinAccessToken || !user.linkedinProfileId) {
       return NextResponse.json(

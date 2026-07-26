@@ -147,7 +147,7 @@ function EditorContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const userPlan = (session?.user?.plan as PlanId) || "free";
-  const hasCarouselAccess = canAccessFeature(userPlan, "carouselGenerator");
+  const hasCarouselAccess = true;
   const editPostId = searchParams.get("edit");
   const duplicatePostId = searchParams.get("duplicate");
   const initialContent = searchParams.get("content");
@@ -186,7 +186,7 @@ function EditorContent() {
   const [hasImageApiKey, setHasImageApiKey] = useState(false);
   const [hasTextApiKey, setHasTextApiKey] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const hasImageAccess = canAccessFeature(userPlan, "imageGeneration");
+  const hasImageAccess = true;
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore>({
     total: 0,
     hookStrength: 0,
@@ -651,7 +651,6 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
   }
 
   return (
-    <FeatureGate feature="advancedEditor">
       <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -728,7 +727,7 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
               onChange={setFirstComment}
               postContent={content}
               onError={showError}
-              hasAccess={canAccessFeature(userPlan, "firstComment")}
+              hasAccess={true}
             />
 
             {/* AI Panel */}
@@ -1092,6 +1091,5 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
           </div>
         )}
       </div>
-    </FeatureGate>
   );
 }
