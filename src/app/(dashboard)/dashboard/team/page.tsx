@@ -364,11 +364,12 @@ export default function TeamPage() {
               <HelpCircle className="w-3.5 h-3.5" />
               Docs
             </Link>
-            {/* Only owners can create new teams */}
-            {!isTeamMember && (
+            {/* Only owners can create new teams, and only once one exists:
+                the empty state below already asks for a name. */}
+            {!isTeamMember && teams.length > 0 && (
               <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Team
+                <Plus className="mr-2 h-4 w-4" />
+                New team
               </Button>
             )}
           </div>
@@ -399,15 +400,15 @@ export default function TeamPage() {
             /* Owner - create first team */
             <Card>
               <CardHeader>
-                <CardTitle>Create Your First Team</CardTitle>
+                <CardTitle>Create your first team</CardTitle>
                 <CardDescription>
-                  Set up a team to collaborate with colleagues on LinkedIn content
+                  Name it, then invite the people who should see and publish here.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCreateTeam} className="flex gap-3">
                   <Input
-                    placeholder="Team name (e.g., Marketing Team)"
+                    placeholder="Marketing, Sales, Client work..."
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     className="flex-1"
@@ -417,7 +418,7 @@ export default function TeamPage() {
                     {isCreating ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      "Create Team"
+                      "Create team"
                     )}
                   </Button>
                 </form>

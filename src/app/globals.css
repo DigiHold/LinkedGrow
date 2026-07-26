@@ -580,24 +580,15 @@ html[style] {
 }
 
 /* Calendar past day stripes */
+/* Past days used to be hatched with 4px diagonal stripes, which covered most
+   of a month and turned the grid into a texture. A flat recessed tint says
+   "gone" without competing with the posts sitting on top of it. */
 .calendar-past-stripes {
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 4px,
-    rgba(156, 163, 175, 0.08) 4px,
-    rgba(156, 163, 175, 0.08) 8px
-  );
+  background: rgba(148, 163, 184, 0.06);
 }
 
 .dark .calendar-past-stripes {
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 4px,
-    rgba(75, 85, 99, 0.15) 4px,
-    rgba(75, 85, 99, 0.15) 8px
-  );
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* Responsive table - stacks rows as cards on mobile/tablet */

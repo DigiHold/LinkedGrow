@@ -1277,7 +1277,32 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
               );
             })}
           </div>
+
+          {/* An empty grid says nothing. This says what the page is for and
+              where to start, and disappears the moment anything is scheduled. */}
+          {!loading && posts.length === 0 && (
+            <div className="border-t border-border px-6 py-8 text-center">
+              <p className="text-[15px] font-medium text-slate-900 dark:text-white">
+                Nothing scheduled this month
+              </p>
+              <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                Click any day to write a post for it, or schedule something you
+                have already drafted.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <Link href="/dashboard/generator">
+                  <Button size="sm">Write a post</Button>
+                </Link>
+                <Link href="/dashboard/posts">
+                  <Button size="sm" variant="outline">
+                    Schedule a draft
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
     </div>
 
