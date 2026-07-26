@@ -179,65 +179,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let base64Image: string;
+    // Same resolver and same dispatch the MCP server uses, so an assistant
+    // and the dashboard generate identically on one account.
+    const imageSettings = resolveImageSettings(imageProvider, aiSettingsUser);
 
-    // Get per-provider image settings with defaults (from owner if team member)
-    const getProviderSettings = (): ImageSettings => {
-      switch (imageProvider) {
-        case "google":
-          return {
-            model: aiSettingsUser.googleImageModel || "gemini-3-pro-image",
-            resolution: aiSettingsUser.googleImageResolution || "1K",
-            aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
-            quality: "high",
-          };
-        case "openai":
-          return {
-            model: aiSettingsUser.openaiImageModel || "gpt-image-1.5",
-            resolution: aiSettingsUser.openaiImageResolution || "1792x1024",
-            aspectRatio: "16:9",
-            quality: aiSettingsUser.openaiImageQuality || "high",
-          };
-        case "replicate":
-          return {
-            model: aiSettingsUser.replicateImageModel || "flux-2-pro",
-            resolution: aiSettingsUser.replicateImageResolution || "1536x1024",
-            aspectRatio: aiSettingsUser.replicateImageAspectRatio || "16:9",
-            quality: "high",
-          };
-        default:
-          return {
-            model: aiSettingsUser.googleImageModel || "gemini-3-pro-image",
-            resolution: aiSettingsUser.googleImageResolution || "1K",
-            aspectRatio: aiSettingsUser.googleImageAspectRatio || "16:9",
-            quality: "high",
-          };
-      }
-    };
-
-    const imageSettings = getProviderSettings();
-
-    // Generate image based on provider
-    switch (imageProvider) {
-      case "google":
-        base64Image = await generateWithGoogle(apiKey, prompt, imageSettings);
-        break;
-      case "openai":
-        base64Image = await generateWithOpenAI(apiKey, prompt, imageSettings);
-        break;
-      case "replicate":
-        base64Image = await generateWithReplicate(apiKey, prompt, imageSettings);
-        break;
-      default:
-        return NextResponse.json(
-          { error: `Image generation not supported for provider: ${imageProvider}. Please select a provider in Settings.` },
-          { status: 400 }
-        );
+    let optimized: { base64: string; sizeKB: number };
+    try {
+      optimized = await generateImageWebP(apiKey, imageProvider, prompt, imageSettings);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to generate image" },
+        { status: 400 }
+      );
     }
-
-    // Convert to optimized WebP format (strips ALL metadata, smaller file size)
-    // Sharp removes EXIF, XMP, IPTC, ICC - LinkedIn won't detect it as AI-generated
-    const optimized = await optimizeImageToWebP(base64Image);
 
     // Generate unique filename based on post content (looks like real photo)
     const keywords = extractKeywordsFromContent(postContent || prompt);
@@ -260,11 +214,89 @@ export async function POST(request: NextRequest) {
 }
 
 // Image settings type
-interface ImageSettings {
+export interface ImageSettings {
   model: string;
   resolution: string;
   aspectRatio: string;
   quality: string;
+}
+
+/** The per-provider fields the settings below are read from. */
+export interface ImageSettingsSource {
+  googleImageModel?: string | null;
+  googleImageResolution?: string | null;
+  googleImageAspectRatio?: string | null;
+  openaiImageModel?: string | null;
+  openaiImageResolution?: string | null;
+  openaiImageQuality?: string | null;
+  replicateImageModel?: string | null;
+  replicateImageResolution?: string | null;
+  replicateImageAspectRatio?: string | null;
+}
+
+/**
+ * The user's own image settings, resolved the same way for every caller.
+ *
+ * The route above reads them from a closure over the session user. The MCP
+ * server needs the identical defaults, and two copies of a default list is how
+ * an assistant quietly ends up generating at a different model than the
+ * dashboard on the same account.
+ */
+export function resolveImageSettings(
+  provider: string,
+  u: ImageSettingsSource
+): ImageSettings {
+  switch (provider) {
+    case "openai":
+      return {
+        model: u.openaiImageModel || "gpt-image-1.5",
+        resolution: u.openaiImageResolution || "1792x1024",
+        aspectRatio: "16:9",
+        quality: u.openaiImageQuality || "high",
+      };
+    case "replicate":
+      return {
+        model: u.replicateImageModel || "flux-2-pro",
+        resolution: u.replicateImageResolution || "1536x1024",
+        aspectRatio: u.replicateImageAspectRatio || "16:9",
+        quality: "high",
+      };
+    default:
+      return {
+        model: u.googleImageModel || "gemini-3-pro-image",
+        resolution: u.googleImageResolution || "1K",
+        aspectRatio: u.googleImageAspectRatio || "16:9",
+        quality: "high",
+      };
+  }
+}
+
+/**
+ * Provider dispatch plus the WebP pass, exported so the MCP server generates
+ * through this file rather than a second implementation. Auth, plan checks and
+ * rate limiting stay with the caller.
+ */
+export async function generateImageWebP(
+  apiKey: string,
+  provider: string,
+  prompt: string,
+  settings: ImageSettings
+): Promise<{ base64: string; sizeKB: number }> {
+  let raw: string;
+  switch (provider) {
+    case "google":
+      raw = await generateWithGoogle(apiKey, prompt, settings);
+      break;
+    case "openai":
+      raw = await generateWithOpenAI(apiKey, prompt, settings);
+      break;
+    case "replicate":
+      raw = await generateWithReplicate(apiKey, prompt, settings);
+      break;
+    default:
+      throw new Error(`Image generation is not supported for ${provider}.`);
+  }
+  return optimizeImageToWebP(raw);
 }
 
 /**
