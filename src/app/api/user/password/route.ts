@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { invalidateSessionUser } from "@/lib/auth-user";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -83,6 +84,10 @@ export async function PUT(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
+
+    // The session cache must not serve the pre-change row for even a
+    // moment: invalidation has to be immediate, not eventually consistent.
+    invalidateSessionUser(user.id);
 
     return NextResponse.json({
       success: true,

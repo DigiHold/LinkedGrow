@@ -1,5 +1,6 @@
 // Reset password API - validates token and updates password
 import { NextRequest, NextResponse } from "next/server";
+import { invalidateSessionUser } from "@/lib/auth-user";
 import { db } from "@/lib/db";
 import { users, passwordResetTokens } from "@/lib/db/schema";
 import { eq, and, gt } from "drizzle-orm";
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(users.id, resetToken.userId));
+
+    // The session cache must not serve the pre-change row for even a
+    // moment: invalidation has to be immediate, not eventually consistent.
+    invalidateSessionUser(resetToken.userId);
 
     // Mark token as used
     await db

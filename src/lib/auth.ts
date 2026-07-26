@@ -1,7 +1,8 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { db, users, teamMembers, teams } from "./db";
+import { db, users } from "./db";
+import { loadSessionUser, invalidateSessionUser } from "./auth-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { verifyTOTP } from "./totp";
@@ -113,14 +114,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.issuedAt = Date.now();
       }
 
-      // Fetch latest user data from database on sign in or update
-      if (token.id) {
-        const dbUser = await db.query.users.findFirst({
-          where: eq(users.id, token.id as string),
-        });
+      // A sign-in or an explicit session update must see the database, never a
+      // cached row from a moment ago.
+      if ((trigger === "signIn" || trigger === "update") && token.id) {
+        invalidateSessionUser(token.id as string);
+      }
 
-        if (dbUser) {
-          // Invalidate session if password was changed after token was issued
+      // One joined, briefly cached read instead of four chained queries.
+      // See src/lib/auth-user.ts for why.
+      if (token.id) {
+        const data = await loadSessionUser(token.id as string);
+
+        if (data) {
+          const { user: dbUser } = data;
+
+          // Invalidate the session if the password changed after this token
+          // was issued. Still checked on every call.
           if (dbUser.passwordChangedAt && token.issuedAt) {
             const changedAt = new Date(dbUser.passwordChangedAt as string).getTime();
             if (changedAt > (token.issuedAt as number)) {
@@ -143,37 +152,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             : null;
           token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
 
-          // Check if user is a team member (not owner)
-          const membership = await db.query.teamMembers.findFirst({
-            where: eq(teamMembers.userId, dbUser.id),
-          });
-
-          if (membership && membership.role !== "owner") {
-            // User is a team member, get team owner's info
-            const team = await db.query.teams.findFirst({
-              where: eq(teams.id, membership.teamId),
-            });
-
-            if (team) {
-              // Fetch owner to get their plan - team members inherit owner's plan
-              const owner = await db.query.users.findFirst({
-                where: eq(users.id, team.ownerId),
-              });
-
-              if (owner) {
-                token.isTeamMember = true;
-                token.teamId = membership.teamId;
-                token.teamRole = membership.role;
-                token.teamOwnerId = team.ownerId;
-                // Team members inherit owner's plan so they have access to all features
-                token.plan = owner.plan;
-              }
-            }
-          } else {
-            token.isTeamMember = false;
-            token.teamId = null;
-            token.teamRole = null;
-            token.teamOwnerId = null;
+          token.isTeamMember = data.isTeamMember;
+          token.teamId = data.teamId;
+          token.teamRole = data.teamRole;
+          token.teamOwnerId = data.teamOwnerId;
+          // Team members inherit the owner's plan so they keep feature access.
+          if (data.isTeamMember && data.ownerPlan) {
+            token.plan = data.ownerPlan;
           }
         }
       }
