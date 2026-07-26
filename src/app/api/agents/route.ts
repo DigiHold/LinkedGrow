@@ -53,7 +53,7 @@ export async function GET() {
         pausedReason: agents.pausedReason,
         icpSummary: agents.icpSummary,
         dailyInviteCap: agents.dailyInviteCap,
-        warmupStartedAt: agents.warmupStartedAt,
+        warmupStartedAt: linkedinAccounts.warmupStartedAt,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
         accountId: linkedinAccounts.id,

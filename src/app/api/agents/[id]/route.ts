@@ -54,7 +54,7 @@ export async function GET(
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,
         workdayEnd: agents.workdayEnd,
-        warmupStartedAt: agents.warmupStartedAt,
+        warmupStartedAt: linkedinAccounts.warmupStartedAt,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
         accountName: linkedinAccounts.fullName,
@@ -175,16 +175,29 @@ export async function PATCH(
       }
       patch.status = body.status;
       patch.pausedReason = body.status === "paused" ? "Paused by you" : null;
-      // The warm-up ramp starts the first time an agent is switched on and
-      // never restarts, otherwise pausing would be a way to reset the caps.
+      // Warm-up is a property of the LinkedIn ACCOUNT, not of the agent.
+      // LinkedIn watches the account, so an account that already served its
+      // month keeps the pace it earned even if you delete the agent and make
+      // a new one. Only a freshly connected account starts the ramp.
       if (body.status === "active") {
         const [current] = await db
-          .select({ warmupStartedAt: agents.warmupStartedAt })
+          .select({
+            accountId: agents.linkedinAccountId,
+            warmupStartedAt: linkedinAccounts.warmupStartedAt,
+          })
           .from(agents)
+          .innerJoin(
+            linkedinAccounts,
+            eq(linkedinAccounts.id, agents.linkedinAccountId)
+          )
           .where(and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)))
           .limit(1);
+
         if (current && !current.warmupStartedAt) {
-          patch.warmupStartedAt = new Date();
+          await db
+            .update(linkedinAccounts)
+            .set({ warmupStartedAt: new Date(), updatedAt: new Date() })
+            .where(eq(linkedinAccounts.id, current.accountId));
           patch.status = "warming";
         }
       }

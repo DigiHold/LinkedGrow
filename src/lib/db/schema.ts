@@ -834,6 +834,10 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   proxyAllocationId: text("proxy_allocation_id"),
   // R2 key for the archived Chrome profile. The blob never lives in Turso.
   sessionRef: text("session_ref"),
+  // Warm-up belongs to the ACCOUNT, not the agent: LinkedIn watches the
+  // account, so an aged account that gets a new agent must keep its earned
+  // pace, and only a freshly connected account starts the ramp over.
+  warmupStartedAt: integer("warmup_started_at", { mode: "timestamp" }),
   status: text("status", {
     enum: ["pending", "connected", "checkpoint", "restricted", "disconnected"],
   })
@@ -919,7 +923,6 @@ export const agents = sqliteTable("agents", {
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),
-  warmupStartedAt: integer("warmup_started_at", { mode: "timestamp" }),
   dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
   timezone: text("timezone").notNull().default("Europe/Zurich"),
   // Minutes from midnight, so the envelope survives a timezone change.
