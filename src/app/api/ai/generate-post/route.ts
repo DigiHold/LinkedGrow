@@ -68,7 +68,10 @@ interface CarouselSlide {
   imagePrompt: string;
 }
 
-async function generatePost(
+// Exported so the MCP server can produce a draft through exactly the same
+// path as the dashboard, rather than a second copy of the provider logic
+// that would drift.
+export async function generatePost(
   idea: string,
   apiKey: string,
   provider: string,

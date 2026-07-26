@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Users table
 export const users = sqliteTable("users", {
@@ -1022,7 +1022,17 @@ export const agentLeads = sqliteTable("agent_leads", {
   excludedReason: text("excluded_reason"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-});
+}, (table) => [
+  // Section 9c: a prospect is never contacted twice by the same customer,
+  // however many agents they run. The database enforces the claim, because a
+  // read-then-write check races and two agents mining the same overlapping ICP
+  // would both win it. Already applied to the live databases; declared here so
+  // a fresh one gets it too.
+  uniqueIndex("uq_agent_leads_workspace_profile").on(
+    table.workspaceId,
+    table.profileId
+  ),
+]);
 
 // Today's queue. The message body is stored rather than generated at send time,
 // because section 7b requires the user to read and edit it beforehand.
