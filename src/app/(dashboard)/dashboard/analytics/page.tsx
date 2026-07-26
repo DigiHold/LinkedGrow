@@ -172,7 +172,7 @@ export default function AnalyticsPage() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <ShieldX className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Access Restricted</h3>
+              <h3 className="text-xl font-semibold mb-2">Access restricted</h3>
               <p className="text-slate-500 dark:text-slate-400">
                 This page contains the team owner&apos;s private LinkedIn analytics data and is not accessible to team members.
               </p>

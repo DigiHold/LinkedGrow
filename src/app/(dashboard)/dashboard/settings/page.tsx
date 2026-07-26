@@ -1126,7 +1126,7 @@ function SettingsContent() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none z-10" />
                 <Input
@@ -1164,7 +1164,7 @@ function SettingsContent() {
             </h4>
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">Current password</Label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -1175,7 +1175,7 @@ function SettingsContent() {
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword">New password</Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -1185,7 +1185,7 @@ function SettingsContent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">Confirm password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -1236,7 +1236,7 @@ function SettingsContent() {
           )}
 
           <div className="max-w-sm space-y-2">
-            <Label htmlFor="timezone">Your Timezone</Label>
+            <Label htmlFor="timezone">Your timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
               <SelectTrigger id="timezone" className="w-full text-left">
                 <div className="flex items-center gap-2">
@@ -1332,7 +1332,7 @@ function SettingsContent() {
                 <Smartphone className={cn("w-5 h-5", twoFactorEnabled ? "text-green-600" : "text-slate-500 dark:text-slate-400")} />
               </div>
               <div>
-                <p className="font-medium">Two-Factor Authentication</p>
+                <p className="font-medium">Two-factor authentication</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {twoFactorEnabled ? "Protected with authenticator app" : "Add an extra layer of security"}
                 </p>
@@ -1628,7 +1628,7 @@ function SettingsContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="mb-3 block">Theme Preference</Label>
+            <Label className="mb-3 block">Theme preference</Label>
             {mounted && (
               <div className="flex flex-wrap gap-3">
                 <button
@@ -1730,7 +1730,7 @@ function SettingsContent() {
             {/* Sample Posts */}
             <div className="space-y-3">
               <div>
-                <Label className="text-base font-medium">Sample Posts</Label>
+                <Label className="text-base font-medium">Sample posts</Label>
                 <p className="mt-2 text-[15px] text-slate-500 dark:text-slate-400">
                   Paste 3-5 of your best LinkedIn posts so the AI can learn your writing style
                 </p>
@@ -1783,7 +1783,7 @@ function SettingsContent() {
 
             {/* Writing Tone */}
             <div className="space-y-2">
-              <Label>Writing Tone</Label>
+              <Label>Writing tone</Label>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Describe how you want your posts to sound
               </p>
@@ -1799,7 +1799,7 @@ function SettingsContent() {
 
             {/* Content Language */}
             <div className="space-y-2">
-              <Label>Content Language</Label>
+              <Label>Content language</Label>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Language for all generated content (posts, ideas, hooks, comments). Overrides the language of your sample posts and business context.
               </p>
@@ -1829,7 +1829,7 @@ function SettingsContent() {
 
             {/* Never Mention */}
             <div className="space-y-2">
-              <Label>Never Mention</Label>
+              <Label>Never mention</Label>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Topics, competitors, or words the AI should avoid
               </p>

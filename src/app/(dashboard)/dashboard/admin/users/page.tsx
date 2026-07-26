@@ -575,7 +575,7 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-password">New Password</Label>
+              <Label htmlFor="edit-password">New password</Label>
               <div className="relative">
                 <Input
                   id="edit-password"

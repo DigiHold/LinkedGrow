@@ -316,7 +316,7 @@ export default function PostsPage() {
           </div>
           <h3 className="font-semibold text-lg mb-2">Failed to load posts</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
         </div>
       </div>
     );
@@ -697,7 +697,7 @@ export default function PostsPage() {
               <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-lg font-semibold text-center mb-2">Schedule Post</h2>
+              <h2 className="text-lg font-semibold text-center mb-2">Schedule post</h2>
               <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-6">
                 Choose when you want this post to be published.
               </p>
@@ -926,7 +926,7 @@ export default function PostsPage() {
                 <div className="mt-4 bg-gray-50 dark:bg-gray-800/50 border border-border rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                    <span className="text-sm font-medium">First Comment</span>
+                    <span className="text-sm font-medium">First comment</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">- auto-posted 1-5 min after publication</span>
                   </div>
                   <div className="flex items-start gap-3">

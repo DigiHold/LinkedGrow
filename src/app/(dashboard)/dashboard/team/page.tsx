@@ -922,7 +922,7 @@ export default function TeamPage() {
 
                           {/* Danger Zone */}
                           <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                            <h3 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h3>
+                            <h3 className="text-sm font-medium text-red-600 mb-2">Danger zone</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
                               Deleting your team will remove all members and pending invites. This action cannot be undone.
                             </p>

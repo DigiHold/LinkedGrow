@@ -1504,7 +1504,7 @@ showError(error instanceof Error ? error.message : "Failed to edit post");
                           <div className="w-full max-w-lg m-auto mb-10">
                             <div className="flex items-center gap-2 mb-2">
                               <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                              <span className="text-sm font-medium">First Comment</span>
+                              <span className="text-sm font-medium">First comment</span>
                             </div>
                             <div className="bg-card rounded-xl border border-border p-4">
                               <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedPost.firstComment}</p>
@@ -1790,7 +1790,7 @@ Tips for viral posts:
                       </Button>
                       <Button variant="linkedin" className="w-full" onClick={() => handleCreatePost(true)} disabled={!newPostContent.trim() || isSaving}>
                         <Send className="w-4 h-4 mr-2" />
-                        {isSaving ? "Publishing..." : "Publish Now"}
+                        {isSaving ? "Publishing..." : "Publish now"}
                       </Button>
                     </div>
                   </div>

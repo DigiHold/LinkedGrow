@@ -59,7 +59,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
               <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium mb-1">Boost engagement with First Comment</p>
+              <p className="text-sm font-medium mb-1">First comment</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 Automatically post a comment 1-5 min after publication to drive early interactions and boost your post in the algorithm. Available on Pro plan.
               </p>
@@ -82,7 +82,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
         <CardTitle className="text-base flex items-center justify-between">
           <span className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            First Comment
+            First comment
             {COMING_SOON && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                 Coming Soon
@@ -100,7 +100,7 @@ export function FirstComment({ value, onChange, postContent, onError, hasAccess 
             ) : (
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             )}
-            {isGenerating ? "Generating..." : "AI Generate"}
+            {isGenerating ? "Generating..." : "Generate"}
           </Button>
         </CardTitle>
       </CardHeader>

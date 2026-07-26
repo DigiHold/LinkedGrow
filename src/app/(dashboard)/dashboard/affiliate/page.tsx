@@ -206,12 +206,12 @@ export default function AffiliateDashboardPage() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                 <Users className="w-10 h-10 text-slate-500 dark:text-slate-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Sign In Required</h3>
+              <h3 className="text-xl font-semibold mb-2">Sign in required</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-6">
                 You need to be logged in to access the affiliate dashboard.
               </p>
               <Link href="/sign-in">
-                <Button>Sign In</Button>
+                <Button>Sign in</Button>
               </Link>
             </div>
           </CardContent>
@@ -264,7 +264,7 @@ export default function AffiliateDashboardPage() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                 <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Something Went Wrong</h3>
+              <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
               <Button onClick={() => { setError(null); setIsLoading(true); fetchAffiliateData(); }}>
                 Try Again
@@ -317,7 +317,7 @@ export default function AffiliateDashboardPage() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <Clock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Application Under Review</h3>
+              <h3 className="text-xl font-semibold mb-2">Application under review</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-4">
                 Your affiliate application is being reviewed. We typically process applications within 1 - 2 business days. You&apos;ll receive an email once your application is approved.
               </p>

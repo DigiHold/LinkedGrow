@@ -269,16 +269,16 @@ export function ImageGeneratorModal({
             <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
               <AlertCircle className="w-8 h-8 text-amber-600" />
             </div>
-            <h3 className="font-semibold mb-2">AI Image API Key Required</h3>
+            <h3 className="font-semibold mb-2">Add your image key first</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              To generate AI images, you need to add an Image AI API key. Go to Settings &gt; AI API and scroll down to the &quot;AI Image Generation&quot; section.
+              Images run on a separate key from the text models. Add one under Settings, AI keys.
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Supported providers: Google AI (Gemini), OpenAI (DALL-E 3), Replicate (FLUX)
+              Works with Google (Nano Banana), OpenAI (GPT Image) and Replicate (FLUX).
             </p>
             <Button onClick={() => window.location.href = "/dashboard/settings/ai-api"}>
               <Sparkles className="w-4 h-4 mr-2" />
-              Configure AI Image API Key
+              Connect a key
             </Button>
           </div>
         </DialogContent>

@@ -709,13 +709,10 @@ showError(error instanceof Error ? error.message : "Failed to schedule post");
             <PostEditor
               value={content}
               onChange={setContent}
-              placeholder="Start writing your LinkedIn post...
-
-Tips for viral posts:
-- Start with a strong hook (first 2 lines are crucial)
-- Use short paragraphs and line breaks
-- Add bullet points for readability
-- End with a question or CTA"
+              // The placeholder used to repeat the whole tips panel that sits
+              // in the right column, which meant the empty editor opened on
+              // two copies of the same advice.
+              placeholder="Start writing..."
               minHeight="min-h-[400px] sm:min-h-[500px]"
               showImageButton
               showVideoButton
@@ -845,10 +842,20 @@ Tips for viral posts:
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Gauge className="w-4 h-4" />
-                  Algorithm Score
+                  Algorithm score
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* A ring reading 0 over four 0% bars looks like a failed post
+                    rather than an empty one, so the panel rests until there is
+                    something to score. */}
+                {!content.trim() ? (
+                  <p className="py-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                    Start writing and this scores your hook, length, formatting
+                    and how likely the post is to get replies.
+                  </p>
+                ) : (
+                  <>
                 <div className="flex items-center justify-center mb-4">
                   <div
                     className={cn(
@@ -896,6 +903,8 @@ Tips for viral posts:
                     </div>
                   ))}
                 </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -934,7 +943,7 @@ Tips for viral posts:
                   ) : (
                     <Save className="w-4 h-4 mr-2" />
                   )}
-                  {savingAction === "draft" ? "Saving..." : "Save as Draft"}
+                  {savingAction === "draft" ? "Saving..." : "Save as draft"}
                 </Button>
                 <Button
                   variant="outline"
@@ -943,7 +952,7 @@ Tips for viral posts:
                   disabled={isSaving || !content.trim() || isVideoMedia(attachedImage)}
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Post
+                  Schedule post
                 </Button>
                 <Button
                   variant="linkedin"
@@ -956,22 +965,23 @@ Tips for viral posts:
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  {savingAction === "publish" ? "Publishing..." : "Publish Now"}
+                  {savingAction === "publish" ? "Publishing..." : "Publish now"}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Tips */}
-            <Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
+            {/* Reference, not an alert: yellow made a permanent tips list read
+                as a warning that never went away. */}
+            <Card>
               <CardContent className="p-4">
-                <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  Quick Tips
+                <h4 className="mb-2.5 text-[13px] font-medium text-slate-900 dark:text-white">
+                  What tends to work
                 </h4>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1.5">
-                  <li>- First 2 lines = your hook (most important!)</li>
-                  <li>- 800-1500 characters = sweet spot</li>
-                  <li>- End with a question for comments</li>
-                  <li>- Post between 8-10 AM or 5-6 PM</li>
+                <ul className="space-y-1.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li>Your first 2 lines are the hook, everything else is read only if they land</li>
+                  <li>800 to 1,500 characters</li>
+                  <li>A question at the end gets you comments</li>
+                  <li>Post between 8-10 AM or 5-6 PM</li>
                 </ul>
               </CardContent>
             </Card>
@@ -1004,7 +1014,7 @@ Tips for viral posts:
                   <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <h2 className="text-lg font-semibold text-center mb-2">
-                  Schedule Post
+                  Schedule post
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-6">
                   Choose when you want this post to be published.
