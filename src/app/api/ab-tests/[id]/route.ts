@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { abTests, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { canAccessFeature } from "@/lib/plans";
+import { canAccessFeature, effectivePlan } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 
 // GET /api/ab-tests/:id - Get single A/B test
@@ -29,7 +29,7 @@ export async function GET(
     }
 
     // Check if user has access to A/B testing
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user);
     if (!canAccessFeature(userPlan, "abTesting")) {
       return NextResponse.json(
         { error: "A/B Testing requires Business plan" },
@@ -122,7 +122,7 @@ export async function PATCH(
     }
 
     // Check if user has access to A/B testing
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user);
     if (!canAccessFeature(userPlan, "abTesting")) {
       return NextResponse.json(
         { error: "A/B Testing requires Business plan" },
@@ -265,7 +265,7 @@ export async function DELETE(
     }
 
     // Check if user has access to A/B testing
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user);
     if (!canAccessFeature(userPlan, "abTesting")) {
       return NextResponse.json(
         { error: "A/B Testing requires Business plan" },

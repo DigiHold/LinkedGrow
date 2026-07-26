@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { savedCarousels, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { canAccessFeature, effectivePlan, type PlanId } from "@/lib/plans";
 
 // GET - List user's saved carousels
 export async function GET() {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Check plan access - carouselGenerator requires Business
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
-    const userPlan = (user?.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user ?? {});
 
     const body = await request.json();
     const { name, description, thumbnail, slidesJson, slideCount } = body;

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { canAccessFeature, effectivePlan, type PlanId } from "@/lib/plans";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 
 function extractVideoId(url: string): string | null {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       .select({ plan: users.plan })
       .from(users)
       .where(eq(users.id, session.user.id));
-    const userPlan = (user?.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user ?? {});
 
     const { url } = await request.json();
 

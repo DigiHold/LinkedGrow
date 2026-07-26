@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { syncLinkedInPosts } from "@/lib/post-sync";
-import { canAccessFeature } from "@/lib/plans";
+import { canAccessFeature, effectivePlan } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -25,7 +25,7 @@ export async function POST() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user);
 
     if (!user.linkedinAccessToken || !user.linkedinProfileId) {
       return NextResponse.json(

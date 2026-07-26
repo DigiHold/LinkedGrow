@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { savedCarousels, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { canAccessFeature, type PlanId } from "@/lib/plans";
+import { canAccessFeature, effectivePlan, type PlanId } from "@/lib/plans";
 import {
   extractR2KeysFromSlidesJson,
   cleanupR2Keys,
@@ -59,7 +59,7 @@ export async function PUT(
 
     // Check plan access - carouselGenerator requires Business
     const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, session.user.id));
-    const userPlan = (user?.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user ?? {});
 
     const { id } = await params;
     const body = await request.json();

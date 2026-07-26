@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, users, media } from "@/lib/db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
-import { canAccessFeature } from "@/lib/plans";
+import { canAccessFeature, effectivePlan } from "@/lib/plans";
 import type { PlanId } from "@/lib/plans";
 import { isValidTimezone } from "@/lib/timezone";
 import {
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     analyticsCache.delete(cacheKey);
     log(`Fetching fresh data (target: ${user.linkedinPostingTarget || 'profile'})`);
 
-    const userPlan = (user.plan || "free") as PlanId;
+    const userPlan = effectivePlan(user);
     if (!true) return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
     if (advanced && !canAccessFeature(userPlan, "advancedAnalytics")) return NextResponse.json({ error: "Business plan required" }, { status: 403 });
 

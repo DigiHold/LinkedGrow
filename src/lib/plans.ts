@@ -116,6 +116,24 @@ export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; descriptio
   },
 };
 
+/**
+ * The plan a gate should actually be evaluated against.
+ *
+ * Admins run on the top plan so they can open every screen to support
+ * customers on it. That rule lives in the session (src/lib/auth.ts) and it has
+ * to hold on the server too: a route re-reading users.plan from the database
+ * would answer "pro" while the UI showed Business, which is how A/B testing
+ * 403'd for an admin on 2026-07-26.
+ */
+export function effectivePlan(user: {
+  plan?: string | null;
+  isAdmin?: boolean | null;
+}): PlanId {
+  if (user.isAdmin) return "business";
+  const plan = user.plan;
+  return plan === "pro" || plan === "business" ? plan : "free";
+}
+
 export function canAccessFeature(
   userPlan: PlanId,
   feature: keyof PlanFeatures
