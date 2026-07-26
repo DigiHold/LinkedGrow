@@ -35,11 +35,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // no password, so this provider is not optional. Added conditionally so a
     // deployment without the credentials still boots and still serves the
     // password form, rather than failing the whole auth config.
-    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
           Google({
-            clientId: process.env.AUTH_GOOGLE_ID,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
           }),
         ]
