@@ -1243,7 +1243,7 @@ showToast("Failed to export images");
   return (
       <div className="h-screen flex flex-col overflow-hidden">
         {/* Top Toolbar - horizontally scrollable on small screens, full height always */}
-        <div className="h-14 border-b border-border bg-background shrink-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        <div className="scroll-fade-x h-14 border-b border-border bg-background shrink-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <div className="h-full flex items-center justify-between gap-3 px-3 min-w-max">
           <div className="flex items-center gap-3">
             {/* Undo/Redo */}

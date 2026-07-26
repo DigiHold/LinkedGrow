@@ -858,7 +858,7 @@ function SettingsContent() {
           section at a time means the save button is always in view, and the
           hidden sections stay mounted so a half-filled form survives a tab
           switch. */}
-      <nav className="sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-slate-50/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:bg-background/90">
+      <nav className="scroll-fade-x sticky top-16 z-20 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         {SETTINGS_TABS.map(({ id, label }) => (
           <button
             key={id}

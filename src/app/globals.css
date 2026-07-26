@@ -591,6 +591,24 @@ html[style] {
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Fade cue for horizontal scrollers.
+   A background shadow does not work here: the buttons inside paint their own
+   surfaces over it. A mask fades the content itself, so the last control goes
+   translucent at the edge and it is obvious the row continues.
+   Only below 1280px, which is where these rows actually overflow: the carousel
+   toolbar hid 714px on a phone and the settings tabs 335px, with nothing at
+   all to say so. */
+@media (max-width: 1279px) {
+  .scroll-fade-x {
+    /* Right edge only: at rest nothing is hidden on the left. */
+    mask-image: linear-gradient(
+      to right,
+      black calc(100% - 32px),
+      transparent 100%
+    );
+  }
+}
+
 /* Responsive table - stacks rows as cards on mobile/tablet */
 @media (max-width: 1023px) {
   .responsive-table thead {
