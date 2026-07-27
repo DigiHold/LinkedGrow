@@ -64,6 +64,8 @@ const FUNNEL: Record<string, string> = {
   queued: "queued",
   connect_sent: "invited",
   connected: "accepted",
+  hello_sent: "messaged",
+  hello_answered: "replied",
   intro_sent: "messaged",
   conversing: "replied",
   ask_sent: "messaged",

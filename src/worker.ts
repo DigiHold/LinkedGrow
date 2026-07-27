@@ -12,6 +12,7 @@ import { runSequence } from "./linkedin/sequence.ts";
 import { browserActions } from "./linkedin/actions.ts";
 import {
   RELATIONSHIP_STEPS,
+  helloMessage,
   introMessage,
   converseMessage,
   askMessage,
@@ -105,7 +106,9 @@ async function runAgent(ctx: AgentContext): Promise<void> {
             signalText: prospect.context ?? undefined,
           };
           const body =
-            step === RELATIONSHIP_STEPS.intro
+            step === RELATIONSHIP_STEPS.hello
+              ? await helloMessage(ctx, ctx.sender, to)
+              : step === RELATIONSHIP_STEPS.intro
               ? await introMessage(ctx, ctx.sender, to)
               : step === RELATIONSHIP_STEPS.converse
                 ? await converseMessage(ctx, ctx.sender, to, thread)

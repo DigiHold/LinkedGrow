@@ -168,18 +168,74 @@ test("an open profile skips the wait and goes straight to the messaging track", 
   drop();
 });
 
-test("a connected prospect receives the intro once its own wait has passed", async () => {
+// The first message after an accept is the hello. Two lines, nothing asked for.
+test("a connected prospect receives the hello once its own wait has passed", async () => {
   const db = await freshDb();
   const id = await seed(db, STATUS.connected, daysAgo(3));
   await runSequence(baseCfg(), db, deps(fakeActions()));
-  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.helloSent), 1);
   const { rows } = await sharedDb().execute({
     sql: "SELECT step, sent_at FROM agent_messages WHERE lead_id = ?",
     args: [id],
   });
-  assert.equal(rows[0]?.step, "intro");
+  assert.equal(rows[0]?.step, "hello");
   assert.ok(rows[0]?.sent_at);
   assert.equal(await countActionsSince(db, "dm", epochIso()), 1);
+  drop();
+});
+
+// Answering a hello that asked for nothing is not a conversation yet. It is
+// permission for the message that actually has something in it.
+test("answering the hello earns the real message, not a conversation reply", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.helloSent, daysAgo(0.2));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [
+      { from: "us", body: "Good to be connected Jane." },
+      { from: "them", body: "You too, thanks." },
+    ],
+  });
+  await runSequence(baseCfg(), db, deps(actions));
+  assert.equal(await countProspectsByStatus(db, STATUS.helloAnswered), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 0);
+  drop();
+});
+
+test("the real message follows a few hours after they answer the hello", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.helloAnswered, daysAgo(1));
+  await runSequence(baseCfg(), db, deps(fakeActions()));
+  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 1);
+  const { rows } = await sharedDb().execute({
+    sql: "SELECT step FROM agent_messages WHERE lead_id = ? AND direction = 'out'",
+    args: [id],
+  });
+  assert.equal(rows[0]?.step, "intro");
+  drop();
+});
+
+// Silence is worth less than a reply and still worth more than nothing.
+test("a prospect who ignored the hello still gets the real message, later", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.helloSent, daysAgo(6));
+  await runSequence(baseCfg(), db, deps(fakeActions()));
+  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 1);
+  drop();
+});
+
+// The hello is two lines of nothing. It must never carry a question.
+test("the hello goes out before anything with substance in it", async () => {
+  const db = await freshDb();
+  const steps: string[] = [];
+  const d = deps(fakeActions());
+  d.writeMessage = async (_p, step) => {
+    steps.push(step);
+    return { body: "Good to be connected Jane. Maria", angle: step };
+  };
+  await seed(db, STATUS.connected, daysAgo(3));
+  await runSequence(baseCfg(), db, d);
+  assert.deepEqual(steps, ["hello"]);
   drop();
 });
 
@@ -325,7 +381,7 @@ test("the daily DM cap is respected", async () => {
   await seed(db, STATUS.connected, daysAgo(3));
   const cfg = baseCfg({ limits: { connectPerWeekMax: 100, dmPerDayMax: 2 } });
   await runSequence(cfg, db, deps(fakeActions()));
-  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 2);
+  assert.equal(await countProspectsByStatus(db, STATUS.helloSent), 2);
   assert.equal(await countProspectsByStatus(db, STATUS.connected), 1);
   drop();
 });
@@ -344,7 +400,7 @@ test("a stale unaccepted invite is withdrawn and stopped", async () => {
 test("a message that cannot be generated skips the prospect instead of sending", async () => {
   const db = await freshDb();
   let dmCalls = 0;
-  await seed(db, STATUS.connected, daysAgo(3));
+  await seed(db, STATUS.helloAnswered, daysAgo(1));
   const d = deps(fakeActions({ sendDm: async () => { dmCalls++; return true; } }));
   d.writeMessage = async () => {
     throw new Error("no clean message after 4 tries");

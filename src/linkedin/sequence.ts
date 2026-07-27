@@ -40,15 +40,25 @@ import { dayAgoIso, weekAgoIso, epochIso } from "../time.ts";
  * intro, at most PACING.maxConverseTurns answers, exactly one ask, then the
  * agent is done with that person for good.
  *
- * `conversing` is the state that makes this product different from every other
- * one. A reply used to end the sequence. It now moves the prospect into a
- * conversation the agent answers like a person, and the ask comes later,
- * whether or not they ever wrote back.
+ * Two things here are the product rather than plumbing.
+ *
+ * `hello_sent` exists because the first message after an accept asks for
+ * nothing at all. It is two lines and a real detail, and the message with
+ * substance in it waits until that one has been answered, so it lands in an
+ * open thread rather than as cold outreach. A prospect who never answers still
+ * gets it, a few days later, because the accept is worth more than the silence.
+ *
+ * `conversing` exists because a reply used to end the sequence. It now moves
+ * the prospect into a conversation the agent answers like a person, and the ask
+ * comes later, whether or not they ever wrote back.
  */
 export const STATUS = {
   queued: "queued",
   connectSent: "connect_sent",
   connected: "connected",
+  helloSent: "hello_sent",
+  /** They answered the hello. The real message is owed to them within hours. */
+  helloAnswered: "hello_answered",
   introSent: "intro_sent",
   conversing: "conversing",
   askSent: "ask_sent",
@@ -148,10 +158,25 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
   const repliers = await deps.actions.inboxRepliers();
   if (repliers.length === 0) return;
   const replied = new Set(repliers.map((n) => normalizeName(n)));
-  const active = [STATUS.connected, STATUS.introSent, STATUS.conversing, STATUS.askSent];
+  const active = [
+    STATUS.connected,
+    STATUS.helloSent,
+    STATUS.helloAnswered,
+    STATUS.introSent,
+    STATUS.conversing,
+    STATUS.askSent,
+  ];
 
+  // Read every state up front. Walking them one at a time re-selected a
+  // prospect the previous iteration had just advanced into a later state, and
+  // the second pass overwrote the decision the first one had made.
+  const candidates: { p: ProspectRow; status: string }[] = [];
   for (const status of active) {
-    for (const p of await getProspects(db, status)) {
+    for (const p of await getProspects(db, status)) candidates.push({ p, status });
+  }
+
+  {
+    for (const { p, status } of candidates) {
       const name = normalizeName(p.full_name ?? "");
       if (!name || !replied.has(name)) continue;
 
@@ -177,6 +202,11 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
       if (shouldHandOver(step, thread)) {
         await setProspectStatus(db, p.id, STATUS.handedOver);
         await deps.notify(`${label(p)} replied and it needs you. Over to you: ${p.profile_url}`);
+      } else if (status === STATUS.helloSent) {
+        // Answering a hello that asked nothing is not a conversation yet. What
+        // it buys is an open thread for the message that has something in it.
+        await setProspectStatus(db, p.id, STATUS.helloAnswered);
+        log(`${label(p)} answered the hello. The real message goes out in a few hours.`);
       } else {
         await setProspectStatus(db, p.id, STATUS.conversing);
         log(`${label(p)} replied. The agent will answer on the next pass.`);
@@ -249,15 +279,34 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
     await pause();
   }
 
-  // 2. The introduction, once they have accepted. Same day, never the same minute.
+  // 2. The hello, once they have accepted. Same day, never the same minute.
+  //    Two lines, no question, nothing asked for.
   for (const p of await getProspects(db, STATUS.connected)) {
     if (budget <= 0) break;
-    if (!isDue(p, PACING.acceptToIntroHours)) continue;
+    if (!isDue(p, PACING.acceptToHelloHours)) continue;
+    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.hello, STATUS.helloSent)) budget--;
+    await pause();
+  }
+
+  // 3. The real message. It goes to the people who answered the hello within
+  //    hours, and to the people who did not after a few days. Silence is worth
+  //    less than a reply, and it is still worth more than nothing.
+  const answered = (await getProspects(db, STATUS.helloAnswered)).filter((p) =>
+    isDue(p, PACING.helloReplyToIntroHours)
+  );
+  const quiet = (await getProspects(db, STATUS.helloSent)).filter((p) =>
+    isDue(p, [
+      PACING.helloSilenceToIntroDays[0] * 24,
+      PACING.helloSilenceToIntroDays[1] * 24,
+    ])
+  );
+  for (const p of [...answered, ...quiet]) {
+    if (budget <= 0) break;
     if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.intro, STATUS.introSent)) budget--;
     await pause();
   }
 
-  // 3. The one ask. It goes to two groups: people who talked, and people who
+  // 4. The one ask. It goes to two groups: people who talked, and people who
   //    never answered the intro. The second group is the one every other tool
   //    gives up on, and a silent prospect has still had a message land.
   const talked = (await getProspects(db, STATUS.conversing)).filter(
@@ -272,7 +321,7 @@ async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: (
     await pause();
   }
 
-  // 4. The ask was the last message. After a reply window the agent is done
+  // 5. The ask was the last message. After a reply window the agent is done
   //    with that person, and nothing re-opens them.
   for (const p of await getProspects(db, STATUS.askSent, { olderThan: daysAgoIso(cfg.sequence.waitBetweenDmsDays) })) {
     await setProspectStatus(db, p.id, STATUS.handedOver);

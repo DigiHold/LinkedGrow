@@ -109,7 +109,17 @@ export const RELATIONSHIP_STEPS = {
   warm: "warm",
   /** The invitation, with no note on it. */
   invite: "invite",
-  /** First message after the accept. Introduces a person, sells nothing. */
+  /**
+   * The first message after the accept. Two lines, warm, specific, and it asks
+   * for absolutely nothing. Not even a question mark. Its only job is to make
+   * the next message land inside an open conversation instead of a cold one.
+   */
+  hello: "hello",
+  /**
+   * The real message. A person, with a reason for being there, still selling
+   * nothing. Sent a few hours after they answer the hello, because a message
+   * that lands in a live conversation is not cold outreach any more.
+   */
   intro: "intro",
   /**
    * They answered. The agent answers back like a person: address what they
@@ -140,8 +150,12 @@ export type RelationshipStep =
 export const PACING = {
   /** Between the like and the invitation. Long enough not to look like one script. */
   likeToInviteHours: [20, 44] as const,
-  /** Between the accept and the intro. Same day, not the same minute. */
-  acceptToIntroHours: [3, 26] as const,
+  /** Between the accept and the hello. Same day, not the same minute. */
+  acceptToHelloHours: [3, 26] as const,
+  /** Between their answer to the hello and the real message. Same day. */
+  helloReplyToIntroHours: [2, 9] as const,
+  /** How long to wait for an answer to the hello before writing anyway. */
+  helloSilenceToIntroDays: [3, 5] as const,
   /** How fast to answer once they write. Fast, but never instant. */
   replyDelayMinutes: [12, 190] as const,
   /** From the last exchange to the ask, when they did reply. */
@@ -229,6 +243,56 @@ function failureNote(failures: string[]): string {
 }
 
 /**
+ * Step 3: the hello.
+ *
+ * Two lines that ask for nothing at all. Nicolas's design, and the evidence
+ * backs it over the version this file used to have.
+ *
+ * The rule that makes it work, and the one I had wrong: NO QUERY. Practitioner
+ * guidance for the message straight after an accept converges on 2 to 3
+ * sentences, under 400 characters, tied to a real detail, and explicitly "no
+ * question marks, no would-you-be-open-to". The reasoning is that people accept
+ * out of curiosity and reciprocity, and a first message that asks for anything
+ * breaks that unspoken contract on the spot.
+ *
+ * That is also what separates this from the bare "thanks for connecting" that
+ * sales communities mock. The mocked version is generic AND fishing for a
+ * reply. This one is specific and fishing for nothing. Personalised requests
+ * are reported at roughly 45% acceptance against 15% generic, so the specific
+ * detail is the part that is doing the work.
+ *
+ * It is not trying to earn a reply. It is making the next message land inside
+ * an open thread rather than a cold one.
+ */
+export function helloMessage(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect
+): Promise<string> {
+  return write(
+    ctx,
+    sender,
+    prospect,
+    `You are ${sender.firstName}. ${prospect.firstName} just accepted your connection request on LinkedIn. This is the very first thing you say to them.
+
+${prospect.signalText ? `The specific thing of theirs you actually saw:\n"${prospect.signalText}"` : "You have nothing specific of theirs. Do not invent one."}
+${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
+
+Write it.
+
+- TWO LINES. Never three. Under 300 characters.
+- ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at."}
+- Then a plain human close. "Good to be connected", "nice to meet you", something a person types without thinking about it.
+- ABSOLUTELY NO QUESTION. No question mark anywhere in this message. Not one.
+- Ask for nothing. Offer nothing. Propose nothing. Mention no product, no company, no work of yours, no link.
+- Do not say what you do for a living. That comes later and saying it here turns a hello into a pitch.
+- Never write "thanks for connecting" on its own with nothing else. That is the message everyone deletes.
+- It should read like something typed on a phone in ten seconds, because that is what it is.`,
+    "hello"
+  );
+}
+
+/**
  * Step 3: the introduction.
  *
  * It sells nothing. It is also not a bare greeting, and that distinction cost
@@ -260,7 +324,7 @@ export function introMessage(
     ctx,
     sender,
     prospect,
-    `You are ${sender.firstName}. ${prospect.firstName} just accepted your connection request on LinkedIn. This is your first message.
+    `You are ${sender.firstName}. You said hello to ${prospect.firstName} on LinkedIn after they accepted your invitation. This is your second message, and the first one with any substance in it.
 
 ${prospect.signalText ? `What they actually wrote, which is why you found them:\n"${prospect.signalText}"` : "You have nothing specific they wrote. Do not invent one."}
 ${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
@@ -359,7 +423,8 @@ Write the message where you finally say why you are around, as a person would.
 
 - ${talked ? "Refer to something they actually said, in one short clause, then get to it." : "Do not pretend you have spoken. Go straight to it, lightly."}
 - Say what you do in one plain sentence, the way you would to someone at a bar who asked. No product name unless it is unavoidable, no features, no numbers, no results, no case studies.
-- End with a small concrete offer they can accept or ignore in one word, rather than a question about their interest. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
+- End with a small concrete offer they can accept or ignore in one word. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
+- Frame the close so that "no" is the easy answer. "Would it be a bad idea if I sent it over", "are you against me sending it", "tell me to forget it and I will". Voss's point is that a person who can safely say no feels in control and answers instead of going quiet, where a question fishing for yes reads as a trap. Say plainly that a no is fine, and mean it.
 - Make it easy to say no in a word. Someone who feels cornered does not answer at all.
 - Three lines at most.`,
     "ask"
