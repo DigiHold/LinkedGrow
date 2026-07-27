@@ -46,38 +46,42 @@ export function V3PricingIncluded() {
             </div>
           </div>
 
-          <div className="cells rv">
-            <div className="cl">
-              <b>A dedicated IP</b>
-              <span>
+          <div className="vgrid rv">
+            <div className="vcard">
+              <div className="k">01</div>
+              <h3>A dedicated IP</h3>
+              <p>
                 A residential address in your country, reserved for your account
                 for its whole life and never rotated. Bought separately this is
                 its own monthly invoice, per account.
-              </span>
+              </p>
             </div>
-            <div className="cl">
-              <b>The agent&apos;s AI</b>
-              <span>
+            <div className="vcard">
+              <div className="k">02</div>
+              <h3>The agent&apos;s AI</h3>
+              <p>
                 Every message it writes, scored and rewritten until it passes the
                 anti-slop gate, is on us. Your own posts are the one thing that
                 runs on your key.
-              </span>
+              </p>
             </div>
-            <div className="cl">
-              <b>The leads themselves</b>
-              <span>
+            <div className="vcard">
+              <div className="k">03</div>
+              <h3>The leads themselves</h3>
+              <p>
                 Found by watching who engages with your competitors and who is
                 talking about the problem you solve. No list to buy and no
                 credits to run out of mid-month.
-              </span>
+              </p>
             </div>
-            <div className="cl">
-              <b>Four weeks of warm-up</b>
-              <span>
+            <div className="vcard">
+              <div className="k">04</div>
+              <h3>Four weeks of warm-up</h3>
+              <p>
                 On every new account, included and not skippable. It is the
                 cheapest insurance there is against losing the account the whole
                 thing runs on.
-              </span>
+              </p>
             </div>
           </div>
         </div>
@@ -104,28 +108,31 @@ export function V3PricingCompare() {
             </div>
           </div>
 
-          <div className="cells rv">
-            <div className="cl">
-              <b>Hire a junior rep</b>
-              <span>
+          <div className="vgrid rv">
+            <div className="vcard">
+              <div className="k">Around $4,000 a month</div>
+              <h3>Hire a junior rep</h3>
+              <p>
                 Around $4,000 a month before tools, plus a list, a script, a
                 manager and the months before they pay for themselves.
-              </span>
+              </p>
             </div>
-            <div className="cl">
-              <b>Assemble it yourself</b>
-              <span>
+            <div className="vcard">
+              <div className="k">Four separate invoices</div>
+              <h3>Assemble it yourself</h3>
+              <p>
                 An outreach tool, a proxy per account, an AI subscription and an
                 enrichment balance. Four invoices, four dashboards, and the
                 message quality is still yours to solve.
-              </span>
+              </p>
             </div>
-            <div className="cl">
-              <b>LinkedGrow Pro</b>
-              <span>
+            <div className="vcard hi">
+              <div className="k">$99 a month, one invoice</div>
+              <h3>LinkedGrow Pro</h3>
+              <p>
                 $99 a month, everything above included, two agents working every
                 working day inside limits they cannot break.
-              </span>
+              </p>
             </div>
           </div>
 

@@ -358,3 +358,39 @@
   .v3 .hvideo { width: calc(100% + 110px); margin-inline: -55px; }
 }
 .v3 .hvideo > * { display: block; width: 100%; }
+
+/* ── value grid ──
+   A card with a heading and a paragraph, 2 to 4 across. The kit had no such
+   thing: .cells is a six-up row of centred one-liners, .pstat carries the warm
+   problem palette and .sc only works on the dark section. Written here rather
+   than bending one of those into a shape it was not drawn for. */
+.v3 .vgrid {
+  display: grid; gap: 18px; margin-top: 44px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.v3 .vcard {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 26px 24px;
+  box-shadow: 0 22px 44px -40px rgba(9, 17, 33, .32);
+  transition: transform .32s var(--e), box-shadow .32s;
+}
+.v3 .vcard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 34px 60px -38px rgba(9, 17, 33, .38);
+}
+.v3 .vcard .k {
+  font-family: var(--m); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint);
+}
+.v3 .vcard h3 {
+  font-family: var(--d); font-weight: 600; font-size: 19px;
+  letter-spacing: -.032em; color: var(--ink); margin-top: 12px;
+}
+.v3 .vcard p {
+  font-size: 14.5px; line-height: 1.58; color: var(--mut); margin-top: 10px;
+}
+.v3 .vcard.hi { border-color: var(--b); box-shadow: 0 26px 54px -34px rgba(21, 93, 252, .42); }
+.v3 .vcard.hi h3 { color: var(--b); }
+.dark .v3 .vcard { background: var(--bg2); border-color: var(--line); box-shadow: 0 22px 44px -40px rgba(0,0,0,.7); }
+.dark .v3 .vcard.hi { border-color: var(--c); }
+.dark .v3 .vcard.hi h3 { color: #8ce4f5; }
