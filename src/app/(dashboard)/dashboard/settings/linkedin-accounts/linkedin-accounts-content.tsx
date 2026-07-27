@@ -290,7 +290,7 @@ export function LinkedInAccountsContent() {
 
               <Field
                 label="Country"
-                hint="Pick where you actually are, not where your audience is. The address has to match the account's own history, and it cannot be changed casually afterwards."
+                hint="Pick where you actually are, not where your audience is. The address has to match the account's own history."
               >
                 <Select value={country} onValueChange={setCountry}>
                   <SelectTrigger>
@@ -304,6 +304,18 @@ export function LinkedInAccountsContent() {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* The one thing a customer will get wrong here, said before
+                    they choose rather than after. */}
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200">
+                  <span className="font-semibold">If your country is not on the list,
+                  choose the closest one to you.</span>{" "}
+                  LinkedIn compares where your account signs in from against
+                  where it has always signed in from. A neighbouring country
+                  looks like a trip. A different continent looks like somebody
+                  else using your account, and that is what gets it restricted.
+                  The address stays with this account for as long as it exists,
+                  so changing it later is a real move rather than a setting.
+                </p>
               </Field>
 
               <Field

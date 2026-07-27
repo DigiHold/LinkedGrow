@@ -845,6 +845,11 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   // this one budget; a per-agent cap cannot see its siblings, so two agents at
   // 25 each would send 50 a day from one profile and lose it.
   dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
+  // Moving an account to another country reallocates its address and resets
+  // the trust that address had built, so section 5b bounds how often it can
+  // happen. Counted here rather than in the interface alone.
+  countryChanges: integer("country_changes").notNull().default(0),
+  lastCountryChangeAt: integer("last_country_change_at", { mode: "timestamp" }),
   status: text("status", {
     enum: ["pending", "connected", "checkpoint", "restricted", "disconnected"],
   })
