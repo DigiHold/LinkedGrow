@@ -17,8 +17,12 @@ import {
 import {
   AgentIcon,
   ChevronLeftIcon,
-  ReplyIcon,
 } from "@/components/dashboard/nav-icons";
+import { LeadsTab } from "@/components/dashboard/agents/leads-tab";
+import { QueueTab } from "@/components/dashboard/agents/queue-tab";
+import { MessagesTab } from "@/components/dashboard/agents/messages-tab";
+import { ActivityTab } from "@/components/dashboard/agents/activity-tab";
+import { SettingsTab } from "@/components/dashboard/agents/settings-tab";
 
 type Agent = {
   id: string;
@@ -394,20 +398,29 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         </div>
       )}
 
-      {(tab === "Leads" ||
-        tab === "Today's queue" ||
-        tab === "Messages" ||
-        tab === "Activity" ||
-        tab === "Settings") && (
-        <div className="mt-6">
-          <Panel padded={false}>
-            <EmptyState
-              icon={<ReplyIcon className="h-6 w-6" />}
-              title={`${tab} is next`}
-              description="The data model behind this tab exists and the agent writes to it. The screen itself lands with the engine port."
-            />
-          </Panel>
-        </div>
+      {tab === "Leads" && <LeadsTab agentId={agentId} />}
+      {tab === "Today's queue" && <QueueTab agentId={agentId} />}
+      {tab === "Messages" && <MessagesTab agentId={agentId} />}
+      {tab === "Activity" && <ActivityTab agentId={agentId} />}
+      {tab === "Settings" && (
+        <SettingsTab
+          agentId={agentId}
+          settings={{
+            name: agent.name,
+            icpSummary: agent.icpSummary,
+            goal: agent.goal,
+            tone: agent.tone,
+            matchLevel: agent.matchLevel,
+            skipConnected: agent.skipConnected,
+            reviewMode: agent.reviewMode,
+            smartLeadFinder: agent.smartLeadFinder,
+            dailyInviteCap: agent.dailyInviteCap,
+            accountAgentCount: agent.accountAgentCount,
+            accountName: agent.accountName,
+            accountCountry: agent.accountCountry,
+          }}
+          onSaved={load}
+        />
       )}
 
       <div className="mt-8 border-t border-border pt-6">

@@ -1061,8 +1061,18 @@ export const agentQueue = sqliteTable("agent_queue", {
   leadId: text("lead_id")
     .notNull()
     .references(() => agentLeads.id, { onDelete: "cascade" }),
+  // The relationship sequence, in the worker's own vocabulary. dm1/dm2 were the
+  // old two-message flow and are gone rather than mapped.
   action: text("action", {
-    enum: ["visit", "like", "invite", "dm1", "dm2", "withdraw"],
+    enum: [
+      "visit",
+      "like",
+      "invite",
+      "intro",
+      "converse",
+      "ask",
+      "withdraw",
+    ],
   }).notNull(),
   scheduledAt: integer("scheduled_at", { mode: "timestamp" }).notNull(),
   messageBody: text("message_body"),
