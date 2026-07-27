@@ -1068,6 +1068,7 @@ export const agentQueue = sqliteTable("agent_queue", {
       "visit",
       "like",
       "invite",
+      "hello",
       "intro",
       "converse",
       "ask",

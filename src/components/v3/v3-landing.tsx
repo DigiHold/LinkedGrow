@@ -96,7 +96,7 @@ export function V3Landing() {
       {/*═══ 3. PROBLÈME ═══*/}
       <section className="sec problem" id="problem" style={{ marginTop: "clamp(46px,5.5vw,74px)" }}>
         <div className="wrap">
-          <div className="sh rv" style={{ maxWidth: "920px" }}><span className="bul" style={{ background: "#f7e7e0", borderColor: "#eed3c8" }}></span>
+          <div className="sh rv" style={{ maxWidth: "920px" }}><span className="bul warm"></span>
             <div><h2>Outbound is broken, and everybody selling you a fix already knows it.</h2>
               <p className="lead" style={{ marginTop: "18px" }}>You are not short of tools. You are short of a system that finds the right person at the right moment and then says something worth answering.</p></div></div>
           <div className="pstats stag">
@@ -488,8 +488,8 @@ export function V3Landing() {
       <section className="sec" id="pricing" style={{ background: "var(--bg2)", borderTop: "1px solid var(--line)" }}>
         <div className="wrap">
           <div className="center rv" style={{ marginBottom: "40px" }}>
-            <h2>One price, and nothing else to buy.</h2>
-            <p className="lead" style={{ marginTop: "18px" }}>No credits to run out of, no API key to hunt down, no proxy invoice arriving separately at the end of the month.</p>
+            <h2>One price, and the agent needs nothing else.</h2>
+            <p className="lead" style={{ marginTop: "18px" }}>No credits to run out of, no proxy invoice arriving separately at the end of the month, and no AI bill for anything your agent does. Writing your own posts is the one part that runs on your own AI key, which is what keeps it unlimited for a few dollars a month.</p>
             <div style={{ marginTop: "28px", display: "flex", justifyContent: "center" }}>
               <div className="tgwrap">
                 <div className="toggle" id="tg"><span className="pip" id="pip"></span>

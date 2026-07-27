@@ -282,3 +282,28 @@
    dark card. */
 .dark .v3 .plan .btn { background: var(--bg3); color: var(--ink); border-color: var(--line2); }
 .dark .v3 .plan .btn:hover { border-color: var(--mut); }
+
+
+/* ── dark: the problem section ──
+   Built on literal warm colours (#f0e6da borders, #7b2419 text) rather than
+   tokens, so none of it followed the flip. It stays warm in dark, just warm
+   against near-black instead of against cream. */
+.dark .v3 .problem { border-top-color: #2a1d18; border-bottom-color: #2a1d18; }
+.dark .v3 .problem h2 { color: #ffb9a4; }
+.dark .v3 .problem h2 em { -webkit-text-fill-color: #ff8f70; color: #ff8f70; }
+.dark .v3 .problem .lead { color: #b8a396; }
+.dark .v3 .bul.warm { background: #2a1d18; border-color: #3d2b23; }
+.dark .v3 .pstat { border-color: #2a1d18; box-shadow: 0 22px 44px -38px rgba(0,0,0,.7); }
+.dark .v3 .pstat:hover { box-shadow: 0 34px 60px -36px rgba(0,0,0,.8); }
+.dark .v3 .pstat .ix { color: #8a6250; }
+.dark .v3 .pstat .n { color: #ffb9a4; }
+.dark .v3 .pstat p { color: #a89386; }
+.dark .v3 .pstat .ic { color: #a3654d; }
+
+/* ── dark: alternating section grounds ──
+   Light alternates plain / cream / plain down the page. In dark every section
+   fell back to the same near-black, so the rhythm disappeared and the capability
+   cards floated with nothing behind them. */
+.dark .v3 #agent { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.dark .v3 #agent .caps,
+.dark .v3 #agent .cap .txt { background: var(--bg); }

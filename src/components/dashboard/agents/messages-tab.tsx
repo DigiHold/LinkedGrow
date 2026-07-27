@@ -35,10 +35,16 @@ const SEQUENCE: Step[] = [
     pacing: "Within the daily cap for the account",
   },
   {
-    key: "intro",
-    title: "The first message introduces a person, and sells nothing",
-    body: "It names the specific thing they wrote, says who you are and what you do in one plain clause, asks one question they can answer in a line, and closes so that ignoring it costs them nothing. It discloses on purpose. A first message built to look non-commercial when it is commercial is a bait and switch, and the reveal later costs more than saying it now.",
+    key: "hello",
+    title: "It says hello, and asks for nothing at all",
+    body: "Two lines. One real thing you saw of theirs, then a plain human close. No question mark anywhere, no offer, no mention of what you do. People accept a connection out of curiosity, and a first message that asks for something breaks that on the spot. This one is not trying to earn a reply, it is making the next message land in an open conversation.",
     pacing: "A few hours after they accept, never the same minute",
+  },
+  {
+    key: "intro",
+    title: "The real message introduces a person, and sells nothing",
+    body: "It names what they wrote, says who you are and what you do in one plain clause, asks one thing they can answer in a line, and closes so that ignoring it costs nothing. It discloses on purpose: a message built to look non-commercial when it is commercial is a bait and switch. Sent within hours if they answered the hello, after a few days if they did not.",
+    pacing: "Hours after they reply, or 3 to 5 days of silence",
   },
   {
     key: "converse",
@@ -75,7 +81,7 @@ export function MessagesTab({ agentId }: { agentId: string }) {
   return (
     <div className="mt-6 space-y-4">
       <Panel>
-        <PanelTitle description="Six steps, then it stops. Any reply moves it forward, and a reply that needs a human stops it immediately.">
+        <PanelTitle description="Seven steps, then it stops. Any reply moves it forward, and a reply that needs a human stops it immediately.">
           What your agent does
         </PanelTitle>
         <ol className="-mx-2 divide-y divide-border">
