@@ -48,12 +48,46 @@ import { validateMessage } from "./validate.ts";
  * pattern-matches on the structure, not on the wording, so no amount of better
  * writing gets around it.
  *
+ * A fifth pass went looking for the opposite case, that a warm opener with no
+ * stated reason is read as a threat rather than as friendliness, and it found
+ * the argument stated by the people who train professionals to spot it.
+ *
+ * The joint FBI, NSA and State Department advisory on DPRK social engineering
+ * (CSA-20230601-1, 1 June 2023) tells recipients that "more often, the initial
+ * spearphishing email does not contain any malicious links or attachments and
+ * is instead intended to gain the trust of the victim", and lists as its first
+ * red flag: "Initial communications are often seemingly innocuous with no
+ * malicious links/attachments". A government agency instructing people to treat
+ * a warm, no-ask opener as the higher-probability threat signature.
+ *
+ * LinkedIn says a narrower version of it themselves. Their own published list
+ * of scam warning signs, in the help centre, includes "Messages that aren't
+ * addressed to you personally". By the platform's own criteria a generic "hi,
+ * nice to connect" is a scam indicator, which is the second reason step 3 has
+ * to name the actual thing the person wrote.
+ *
+ * And Langer, Blank and Chanowitz (JPSP 1978, N=120) put a number on the cost
+ * of withholding the reason. When the favour was small, compliance ran .60 with
+ * no reason and .94 with a real one. When the favour cost the person something,
+ * no reason and an empty reason both collapsed to .24 while a real reason held
+ * at .42. A reply from a stranger is the second condition, not the first.
+ *
  * SO THE RULE THIS FILE ENFORCES: the intro sells nothing and hides nothing.
  * It says who the sender is and what they do, in one plain clause, with no
  * offer and no ask attached. That is the difference between a warm opening and
  * a bait and switch, and it is the whole ethical load of the product. An agent
  * that reaches step 5 having concealed why it was ever there has earned every
  * bad reaction it gets.
+ *
+ * TWO FINDINGS THAT CUT THE OTHER WAY, kept here so nobody has to rediscover
+ * them in an argument. Gong's 90,380 cold calls scored "How have you been?" at
+ * 6.6x the baseline booking rate, the best opener in the set, though that is a
+ * synchronous voice channel where the person cannot walk away mid-sentence.
+ * And Dabbish et al. (CHI 2005) found purely social email content got 23% more
+ * replies than other messages, while being rated less important. The defensible
+ * claim is narrower than "warm openers fail". It is that on asynchronous text,
+ * a message which costs a reply before disclosing why you wrote is both the
+ * documented opening move of confidence fraud and the weakest message shape.
  *
  * WHAT THE EVIDENCE DOES NOT SAY, so nobody quotes a number we do not have:
  *
@@ -238,7 +272,7 @@ Write it.
 - Ask one question they can answer in a single line, about them or about what they said.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
-- Three lines.`,
+- Three lines. LinkedIn's own InMail data puts the shortest messages 22% above the average response rate and the longest 11% below it, and one question beats none by 50% across Boomerang's 40M emails. More than one question, or a fourth line, spends that.`,
     "intro"
   );
 }
