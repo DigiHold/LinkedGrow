@@ -5,9 +5,9 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { formatInTimezone, resolveTimezone } from "@/lib/timezone";
+import { HomeLeads } from "@/components/dashboard/home-leads";
 import {
   PageShell,
-  PageHeader,
   Panel,
   PanelTitle,
   Pill,
@@ -211,22 +211,18 @@ export function HomeContent() {
 
   return (
     <PageShell>
-      <PageHeader
-        title={`Good to see you, ${firstName}`}
-        description="Everything you have in flight, and the quickest way to add to it."
-        meta={
-          settings ? (
-            <>
-              <Pill tone={settings.hasApiKey ? "good" : "warn"}>
-                {settings.hasApiKey ? "AI key connected" : "No AI key"}
-              </Pill>
-              <Pill tone={settings.linkedinConnected ? "good" : "neutral"}>
-                {settings.linkedinConnected ? "LinkedIn connected" : "LinkedIn not connected"}
-              </Pill>
-            </>
-          ) : null
-        }
-      />
+      {/* Leads first. This page used to open with a post count, which stopped
+          being the reason anyone signs in. */}
+      <HomeLeads firstName={firstName} />
+
+      <div className="mt-10 border-t border-border pt-8">
+        <h2 className="text-[17px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+          Posting
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Your own content, on your own AI key. Your agent does not need it.
+        </p>
+      </div>
 
       {setupSteps.length > 0 && (
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
