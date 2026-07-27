@@ -12,6 +12,7 @@
 
 export function initV3Chrome() {
   const listeners = [];
+  const observers = [];
   const on = (target, type, handler, opts) => {
     if (!target) return;
     target.addEventListener(type, handler, opts);
@@ -38,9 +39,19 @@ export function initV3Chrome() {
      p.style.width=(m>0?scrollY/m*100:0)+'%';}
    on(window,'scroll',u,{passive:true}); u();})();
 
+/* ── révélations au scroll ── */
+  (function(){
+    var io=new IntersectionObserver(function(en){en.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('seen');io.unobserve(e.target);}});},
+      {threshold:.12,rootMargin:'0px 0px -5% 0px'});
+    observers.push(io);
+    document.querySelectorAll('.rv,.stag,.wsplit,.crop,.dkc,.step,.circled').forEach(function(el){io.observe(el);});
+  })();
+
   return () => {
     for (const [target, type, handler] of listeners) {
       target.removeEventListener(type, handler);
     }
+    for (const o of observers) o.disconnect();
   };
 }
