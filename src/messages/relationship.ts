@@ -32,6 +32,29 @@ import { validateMessage } from "./validate.ts";
  *   delay: 7% compliance against a 27% control (Chartrand, Pinckert & Burger
  *   1999, N = 181). The soft ask waits.
  *
+ * THE OBJECTION, which is stronger than the usual one and shapes the design:
+ *
+ * Almost nobody credible argues "pitch on message one". What they argue is
+ * narrower and harder to dismiss: concealing intent is the offence. Josh Braun,
+ * on being run through exactly this flow: "People can handle a pitch. What they
+ * don't like is feeling tricked into one." A CIO, more bluntly: "Don't assume a
+ * relationship with me before we really have one."
+ *
+ * Two findings make it worse than a matter of taste. Grayson (Journal of
+ * Marketing 2007, 685 agents) found the friendly-then-commercial direction is
+ * the more damaging of the two, worse than a business relationship that becomes
+ * friendly. And the FBI's own definition of a confidence scam is "develop a
+ * relationship before introducing" the ask. A security-aware prospect
+ * pattern-matches on the structure, not on the wording, so no amount of better
+ * writing gets around it.
+ *
+ * SO THE RULE THIS FILE ENFORCES: the intro sells nothing and hides nothing.
+ * It says who the sender is and what they do, in one plain clause, with no
+ * offer and no ask attached. That is the difference between a warm opening and
+ * a bait and switch, and it is the whole ethical load of the product. An agent
+ * that reaches step 5 having concealed why it was ever there has earned every
+ * bad reaction it gets.
+ *
  * WHAT THE EVIDENCE DOES NOT SAY, so nobody quotes a number we do not have:
  *
  * - There is no published A/B test of a no-pitch intro against a pitch on
@@ -211,7 +234,7 @@ ${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
 Write it.
 
 - ${prospect.signalText ? "Open by naming the specific thing they said, in your own words, in a way that shows you read it. Never quote it back at them." : "Open with hello and their first name. Do not pretend to have read anything."}
-- Say who you are in one short clause. Not what you sell, not your company, not your title as a pitch.
+- Say who you are AND what you do, in one plain clause. Not a pitch, not a benefit, not an offer, just the honest frame: "I build X for Y" or "I run a small Z". This line is not optional. A message that hides why you are around is a bait and switch, and the reveal three messages later costs more trust than saying it now ever would.
 - Ask one question they can answer in a single line, about them or about what they said.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
@@ -266,10 +289,16 @@ Write your next message.
  * intro and said nothing has still seen the name; the ask is what the sequence
  * was for, and skipping it wastes the accept.
  *
- * It asks whether they are interested, never for a slot in their calendar.
- * Gong's 304,174 emails: the interest CTA won at cold stage, and asking for
- * time reads as asking for a resource. No ROI language either, which cost 15%
- * in the same dataset.
+ * Never a slot in their calendar. Gong's 304,174 emails put the interest ask
+ * ahead at cold stage, because asking for time reads as asking for a resource,
+ * and Textio measures a 25% drop when a message pushes for a specific date.
+ *
+ * The larger dataset disagrees about what beats it, and the disagreement is
+ * worth knowing. Gong with 30MPC, across 85M+ cold emails, scored the effect on
+ * reply rate: asking for a meeting -44%, asking about a problem -29%, asking
+ * for interest +7%, and MAKING AN OFFER +28%. So the strongest version of this
+ * message is not "are you interested", it is a concrete, small, free thing they
+ * can accept or ignore. Buzzwords cost 57% in the same data.
  */
 export function askMessage(
   ctx: AgentContext,
@@ -296,7 +325,7 @@ Write the message where you finally say why you are around, as a person would.
 
 - ${talked ? "Refer to something they actually said, in one short clause, then get to it." : "Do not pretend you have spoken. Go straight to it, lightly."}
 - Say what you do in one plain sentence, the way you would to someone at a bar who asked. No product name unless it is unavoidable, no features, no numbers, no results, no case studies.
-- End by asking whether it is something they care about, or whether it is worth them hearing more. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
+- End with a small concrete offer they can accept or ignore in one word, rather than a question about their interest. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
 - Make it easy to say no in a word. Someone who feels cornered does not answer at all.
 - Three lines at most.`,
     "ask"
