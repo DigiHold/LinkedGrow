@@ -242,7 +242,7 @@ const PLAN_LI_I =
 
 /* ── the FAQ: a sticky side panel beside the accordion ── */
 const FAQWRAP =
-  "grid grid-cols-[.82fr_1.18fr] items-start gap-[clamp(30px,5vw,70px)] max-[940px]:[grid-template-columns:1fr]";
+  "grid grid-cols-[.82fr_1.18fr] items-start gap-[clamp(30px,5vw,70px)] max-[940px]:[grid-template-columns:minmax(0,1fr)]";
 const FAQSIDE = "sticky top-[112px] max-[940px]:static";
 const ASKCARD =
   "mt-[30px] rounded-[18px] border border-v3-line2 bg-v3-bg2 p-6 dark:border-v3-line-d dark:bg-v3-bg2-d " +
@@ -449,7 +449,7 @@ const RULE_ON2 = RULE.replace("after:bg-v3-bg ", "after:bg-v3-bg2 ").replace(
 const CAPS =
   "overflow-hidden rounded-[24px] border border-v3-line bg-white dark:border-v3-line-d dark:bg-v3-bg-d";
 const CAP =
-  "grid grid-cols-[1fr_1.12fr] items-center gap-[clamp(26px,4vw,58px)] border-b border-v3-line p-[clamp(30px,4vw,52px)] last:border-b-0 dark:border-v3-line-d max-[940px]:[grid-template-columns:1fr]";
+  "grid grid-cols-[1fr_1.12fr] items-center gap-[clamp(26px,4vw,58px)] border-b border-v3-line p-[clamp(30px,4vw,52px)] last:border-b-0 dark:border-v3-line-d max-[940px]:[grid-template-columns:minmax(0,1fr)]";
 const CAP_ALT = CAP + " bg-v3-bg2 dark:bg-v3-bg2-d";
 const CAP_TXT = "dark:bg-v3-bg2-d";
 const CAP_TXT_ALT = "[order:2] dark:bg-v3-bg2-d max-[940px]:[order:0]";
@@ -459,9 +459,9 @@ const CAP_P = "mt-[13px] max-w-[46ch] text-[16px] text-v3-mut dark:text-v3-mut-d
 
 /* The setup section: a sticky index beside a dotted spine of steps. */
 const RAILWRAP =
-  "grid grid-cols-[250px_1fr] items-start gap-[clamp(28px,5vw,72px)] max-[940px]:[grid-template-columns:1fr]";
+  "grid grid-cols-[250px_1fr] items-start gap-[clamp(28px,5vw,72px)] max-[940px]:[grid-template-columns:minmax(0,1fr)]";
 const RAIL =
-  "sticky top-[112px] grid gap-0.5 " +
+  "sticky top-[112px] grid gap-0.5 max-[940px]:hidden " +
   "[&>a]:border-b [&>a]:border-v3-line [&>a]:pb-3 [&>a]:pt-[14px] [&>a]:font-v3-display [&>a]:text-[23px] [&>a]:font-semibold [&>a]:tracking-[-.035em] [&>a]:text-v3-line2 " +
   "[&>a]:[transition:color_.45s_var(--ease-v3),border-color_.45s_var(--ease-v3)]! dark:[&>a]:border-v3-line-d dark:[&>a]:text-v3-line2-d " +
   "[&>a.on]:border-b-v3-blue [&>a.on]:text-v3-ink dark:[&>a.on]:text-v3-ink-d " +
@@ -469,7 +469,7 @@ const RAIL =
   "[&_small]:[transition:opacity_.45s_var(--ease-v3),max-height_.45s_var(--ease-v3)] dark:[&_small]:text-v3-faint-d " +
   "[&>a.on_small]:max-h-[44px] [&>a.on_small]:opacity-100";
 const STEPS =
-  "relative grid gap-[clamp(34px,4.5vw,60px)] pl-[34px] max-[600px]:pl-6 " +
+  "relative grid [grid-template-columns:minmax(0,1fr)] gap-[clamp(34px,4.5vw,60px)] pl-[34px] max-[600px]:pl-6 " +
   "before:absolute before:bottom-[14px] before:left-[5px] before:top-[14px] before:w-px before:content-[''] " +
   "before:[background:repeating-linear-gradient(180deg,var(--color-v3-line2)_0_5px,transparent_5px_11px)] " +
   "dark:before:[background:repeating-linear-gradient(180deg,var(--color-v3-line2-d)_0_5px,transparent_5px_11px)]";
