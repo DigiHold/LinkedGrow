@@ -167,6 +167,12 @@ export function V3PricingIncluded() {
               </span>
               <span className="tot">$174</span>
             </div>
+            <div className="slegend" aria-hidden="true">
+              <span className="a">Outreach tool $99</span>
+              <span className="b">Proxies $30</span>
+              <span className="c">AI $20</span>
+              <span className="d">Enrichment $25</span>
+            </div>
 
             <div className="srow win">
               <span className="lab">

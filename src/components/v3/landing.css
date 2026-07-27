@@ -502,3 +502,25 @@
 .v3 .tstrip { background: #060c18; border-radius: 26px; padding: clamp(38px,4.6vw,60px) clamp(24px,3.4vw,48px); margin-top: 46px; }
 .v3 .tstrip h3 { color: #fff; font-size: clamp(23px,2.7vw,31px); letter-spacing: -.04em; max-width: 22ch; }
 .v3 .tstrip p.sub { color: rgba(255,255,255,.62); margin-top: 13px; max-width: 62ch; font-size: 15.5px; line-height: 1.6; }
+
+/* Narrow screens: the four segment labels cannot fit inside their own segments,
+   so they spill out of the bar. The bar keeps doing its job as a proportion,
+   and the amounts move to a legend under it. */
+.v3 .slegend { display: none; flex-wrap: wrap; gap: 7px 14px; margin-top: 10px; }
+.v3 .slegend span {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--m); font-size: 11px; color: var(--mut);
+}
+.v3 .slegend span::before {
+  content: ""; width: 9px; height: 9px; border-radius: 3px; background: currentColor;
+}
+.v3 .slegend .a::before { color: #6a7f9c; }
+.v3 .slegend .b::before { color: #8090ab; }
+.v3 .slegend .c::before { color: #9aa7bd; }
+.v3 .slegend .d::before { color: #b3bccd; }
+@media (max-width: 760px) {
+  .v3 .bar { height: 34px; }
+  .v3 .bar i { font-size: 0; }
+  .v3 .srow > .lab small { margin-top: 2px; }
+  .v3 .slegend { display: flex; }
+}
