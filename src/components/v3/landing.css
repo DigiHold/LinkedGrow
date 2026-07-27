@@ -430,12 +430,69 @@
    has no video, so the plan cards do the same job: the field stops behind them
    with a rounded edge and the cards carry on over the section below. */
 .v3 .hero.pricing { padding-bottom: 0; border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
-.v3 .hero.pricing .prhero { margin-bottom: clamp(-190px, -14vw, -110px); }
+/* Half the card, not a corner of it. The cards run about 880px at desktop, so
+   the field has to stop roughly 430px up from their bottom edge for the split
+   to land where the home's video lands. */
+.v3 .hero.pricing .prhero { margin-bottom: clamp(-470px, -30vw, -260px); }
 .v3 .hero.pricing + * ,
 .v3 .hero.pricing ~ .sec:first-of-type { padding-top: 0; }
 /* The section that follows has to make room for the half that hangs over it. */
-.v3 .pricing-next { padding-top: clamp(150px, 17vw, 240px) !important; }
+.v3 .pricing-next { padding-top: clamp(310px, 33vw, 520px) !important; }
 @media (max-width: 820px) {
-  .v3 .hero.pricing .prhero { margin-bottom: -60px; }
-  .v3 .pricing-next { padding-top: 100px !important; }
+  .v3 .hero.pricing .prhero { margin-bottom: -240px; }
+  .v3 .pricing-next { padding-top: 290px !important; }
 }
+
+/* ══ pricing page, the sections under the plans ══
+   Research says what converts below a plan table is a real comparison and a
+   trust block, not another grid of cards. None of these are cards. */
+
+/* A stacked bar: what the same job costs assembled, against one bar for us. */
+.v3 .stack { display: grid; gap: 26px; margin-top: 46px; }
+.v3 .srow { display: grid; grid-template-columns: 186px 1fr auto; gap: 20px; align-items: center; }
+.v3 .srow > .lab { font-family: var(--d); font-weight: 600; font-size: 16px; letter-spacing: -.03em; color: var(--ink); }
+.v3 .srow > .lab small { display: block; font-family: var(--s); font-weight: 400; font-size: 13px; color: var(--faint); margin-top: 3px; }
+.v3 .bar { display: flex; height: 46px; border-radius: 11px; overflow: hidden; background: var(--bg3); }
+.v3 .bar i {
+  display: grid; place-items: center; font-family: var(--m); font-size: 10.5px;
+  letter-spacing: .04em; color: #fff; white-space: nowrap; overflow: hidden; font-style: normal;
+}
+.v3 .bar i.a { background: #6a7f9c; }
+.v3 .bar i.b { background: #8090ab; }
+.v3 .bar i.c { background: #9aa7bd; }
+.v3 .bar i.d { background: #b3bccd; }
+.v3 .bar.us i { background: linear-gradient(96deg, var(--c), var(--b)); }
+.v3 .srow > .tot { font-family: var(--d); font-weight: 600; font-size: 25px; letter-spacing: -.045em; color: var(--ink); white-space: nowrap; }
+.v3 .srow.win > .tot { color: var(--b); }
+@media (max-width: 780px) {
+  .v3 .srow { grid-template-columns: 1fr; gap: 9px; }
+  .v3 .srow > .tot { font-size: 21px; }
+}
+.dark .v3 .bar { background: var(--bg3); }
+.dark .v3 .bar i.a { background: #46586f; }
+.dark .v3 .bar i.b { background: #3a4a5e; }
+.dark .v3 .bar i.c { background: #31404f; }
+.dark .v3 .bar i.d { background: #293440; }
+
+/* A real comparison table. Rows, not tiles. */
+.v3 .ctab { width: 100%; border-collapse: collapse; margin-top: 42px; font-family: var(--s); }
+.v3 .ctab th, .v3 .ctab td { padding: 17px 18px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14.8px; }
+.v3 .ctab thead th {
+  font-family: var(--m); font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--faint); border-bottom: 1px solid var(--line2); padding-bottom: 13px;
+}
+.v3 .ctab tbody th { font-family: var(--d); font-weight: 600; font-size: 15.5px; letter-spacing: -.03em; color: var(--ink); width: 30%; }
+.v3 .ctab td { color: var(--mut); vertical-align: top; }
+.v3 .ctab .own { background: var(--wash); color: var(--ink); font-weight: 500; }
+.v3 .ctab thead .own { color: var(--b); background: var(--wash); border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.v3 .ctab tr:last-child .own { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.v3 .ctab .no { color: var(--faint); }
+@media (max-width: 860px) {
+  .v3 .ctabwrap { overflow-x: auto; }
+  .v3 .ctab { min-width: 660px; }
+}
+
+/* The trust strip, on the dark ground, borrowed from the home's hard limits. */
+.v3 .tstrip { background: #060c18; border-radius: 26px; padding: clamp(38px,4.6vw,60px) clamp(24px,3.4vw,48px); margin-top: 46px; }
+.v3 .tstrip h3 { color: #fff; font-size: clamp(23px,2.7vw,31px); letter-spacing: -.04em; max-width: 22ch; }
+.v3 .tstrip p.sub { color: rgba(255,255,255,.62); margin-top: 13px; max-width: 62ch; font-size: 15.5px; line-height: 1.6; }

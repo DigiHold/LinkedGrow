@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { initV3Pricing } from "./pricing-effects";
+import { initV3Chrome } from "./chrome-effects";
 import "./landing.css";
 
 /**
@@ -30,7 +31,14 @@ import "./landing.css";
  * pricing block so the two can never disagree.
  */
 export function V3PricingHero() {
-  useEffect(() => initV3Pricing(), []);
+  useEffect(() => {
+    const stopChrome = initV3Chrome();
+    const stopPricing = initV3Pricing();
+    return () => {
+      stopChrome?.();
+      stopPricing?.();
+    };
+  }, []);
 
   return (
     <div className="v3">
