@@ -73,7 +73,7 @@
   border:2px solid rgba(255,255,255,.85);background:#0b3499;transition:transform .3s var(--e)}.v3 .avs img:first-child{margin-left:0}.v3 .avs:hover img{transform:translateY(-3px)}.v3 .avs img:hover{transform:translateY(-6px) scale(1.08);z-index:2;position:relative}.v3 .hstage{position:relative;z-index:4;margin-top:clamp(44px,5.5vw,72px)}.v3 .ann{position:absolute;display:none;z-index:5}@media(min-width:1500px){.v3 .ann{display:block}}.v3 .ann .note{color:#8ce4f5}.v3 .ann svg{color:#8ce4f5;opacity:.7}.v3 .ann.a{left:-166px;top:13%}.v3 .ann.b{right:-164px;top:52%}.v3 .screen{margin:0;border-radius:16px;overflow:hidden;background:#0b1220;
   border:1px solid rgba(255,255,255,.1);box-shadow:0 60px 110px -46px rgba(0,10,40,.75)}.v3 .screen.lt{border-color:var(--line2);box-shadow:0 44px 90px -50px rgba(6,9,17,.5)}.v3 .chrome{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#131c2e;border-bottom:1px solid rgba(255,255,255,.07)}.v3 .screen.lt .chrome{background:var(--bg2);border-bottom-color:var(--line)}.v3 .chrome i{width:9px;height:9px;border-radius:999px;background:rgba(255,255,255,.16);display:block}.v3 .screen.lt .chrome i{background:var(--line2)}.v3 .chrome span{font-family:var(--m);font-size:10.5px;color:rgba(255,255,255,.42);margin-left:12px;
   background:rgba(255,255,255,.05);padding:4px 12px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3 .screen.lt .chrome span{color:var(--faint);background:#fff;border:1px solid var(--line)}.v3 .vid{position:relative;aspect-ratio:16/9;overflow:hidden;
-  background:radial-gradient(96% 96% at 50% -10%,#173663,#0a1120 70%)}.v3 .vid video{width:100%;height:100%;object-fit:cover}.v3 .vid video:not([src=""])~.ph,.v3 .vid video:not([src=""])~.wf{display:none}.v3 .wf{position:absolute;inset:0;pointer-events:none}.v3 .wf svg{width:100%;height:100%}.v3 .wf .lv{animation:lv 3.4s ease-in-out infinite}.v3 .wf .lv2{animation:lv 3.4s ease-in-out infinite .9s}.v3 .wf .lv3{animation:lv 3.4s ease-in-out infinite 1.8s}@keyframes lv{0%,100%{opacity:.28}50%{opacity:.75}}.v3 .ph{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;text-align:center;
+  background:radial-gradient(96% 96% at 50% -10%,#173663,#0a1120 70%)}.v3 .vid video{width:100%;height:100%;object-fit:cover}.v3 .vid video[src]:not([src=""])~.ph,.v3 .vid video[src]:not([src=""])~.wf{display:none}.v3 .wf{position:absolute;inset:0;pointer-events:none}.v3 .wf svg{width:100%;height:100%}.v3 .wf .lv{animation:lv 3.4s ease-in-out infinite}.v3 .wf .lv2{animation:lv 3.4s ease-in-out infinite .9s}.v3 .wf .lv3{animation:lv 3.4s ease-in-out infinite 1.8s}@keyframes lv{0%,100%{opacity:.28}50%{opacity:.75}}.v3 .ph{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;text-align:center;
   padding:20px;background:radial-gradient(62% 76% at 50% 50%,rgba(8,14,28,.94) 35%,rgba(8,14,28,.55) 100%)}.v3 .ph::after{content:"";position:absolute;left:0;right:0;height:34%;top:-34%;
   background:linear-gradient(180deg,transparent,rgba(140,228,245,.11),transparent);animation:scan 5.4s linear infinite}@keyframes scan{to{top:110%}}.v3 .ph .mk{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;position:relative;
   background:linear-gradient(135deg,var(--c),var(--b));box-shadow:0 16px 40px -14px rgba(0,184,219,.7)}.v3 .ph .mk svg{width:28px;height:28px;fill:#fff}.v3 .ph .mk::after{content:"";position:absolute;inset:-9px;border-radius:24px;border:1px solid rgba(140,228,245,.3);
@@ -159,3 +159,101 @@
   border-top:1px solid var(--line2);font-size:13.5px;color:var(--faint)}.v3 .founders a{opacity:.55;transition:opacity .2s,transform .2s;display:inline-flex;align-items:center}.v3 .founders a:hover{opacity:1;transform:translateY(-2px)}.v3 .fbot{margin-top:28px;padding-top:24px;border-top:1px solid var(--line2);display:flex;align-items:center;
   gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--mut)}.v3 .fbot a{color:var(--ink2);font-weight:500}.v3 .fbot a:hover{color:var(--b)}.v3 .soc{display:flex;gap:10px}.v3 .soc a{width:40px;height:40px;border-radius:12px;background:#fff;border:1px solid var(--line2);display:grid;
   place-items:center;color:var(--mut);transition:.24s var(--e)}.v3 .soc a:hover{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--c),var(--b));transform:translateY(-3px)}
+/* ============================================================
+   Dark mode
+   ============================================================
+   The prototype is a light document. The app already switches themes by
+   putting .dark on <html>, so the page only has to answer that: the tokens
+   flip, and every rule above keeps reading them. Nothing else is duplicated,
+   because a second copy of 467 rules is a second thing to keep in step.
+
+   The dark hero and the dark MCP panel are already dark by design and are
+   left alone.
+*/
+.dark .v3 {
+  --ink: #f4f7fb;
+  --ink2: #cbd6e6;
+  --mut: #93a2ba;
+  --faint: #6d7d95;
+  --bg: #070b14;
+  --bg2: #0d1420;
+  --bg3: #131c2b;
+  --cream: #0f1622;
+  --line: #1d2837;
+  --line2: #27374b;
+  --wash: #0f1e35;
+}
+
+/* The paper grain reads as dirt on a dark ground. */
+.dark .v3::after { opacity: 0.018; }
+
+/* Surfaces the prototype paints white by hand rather than through a token. */
+.dark .v3 .chrome,
+.dark .v3 .plan,
+.dark .v3 .mcard,
+.dark .v3 .askcard,
+.dark .v3 .quote,
+.dark .v3 .sc,
+.dark .v3 .pstat,
+.dark .v3 .cl,
+.dark .v3 .msg,
+.dark .v3 .step,
+.dark .v3 .cap .txt {
+  background: var(--bg2);
+  border-color: var(--line);
+}
+
+.dark .v3 .btn { background: var(--bg2); border-color: var(--line2); color: var(--ink); }
+.dark .v3 .btn:hover { border-color: var(--mut); }
+.dark .v3 .toggle { background: var(--bg2); border-color: var(--line); }
+.dark .v3 .navhold.fx .nav { background: rgba(13, 20, 32, 0.82); border-color: var(--line); }
+.dark .v3 .mob { background: var(--bg2); border-color: var(--line); }
+.dark .v3 .faq .q { color: var(--ink); }
+.dark .v3 footer { background: var(--bg); border-color: var(--line); }
+.dark .v3 .rvb { background: var(--bg2); border-color: var(--line); }
+.dark .v3 .aff { background: var(--bg2); border-color: var(--line); }
+
+/* The three founder wordmarks are drawn in near-black and vanish. */
+.dark .v3 .founders svg g[fill="#0a0b0e"] path,
+.dark .v3 .founders svg path[fill="#07070b"],
+.dark .v3 .founders svg g[fill="#1f3433"] path { fill: #e6ecf5; }
+
+/* ── appearance control, in the footer bar ── */
+.v3 .appearance { position: relative; }
+.v3 .appearance > button {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--s); font-size: 13px; font-weight: 500; color: var(--mut);
+  background: none; border: 1px solid var(--line); border-radius: 9px;
+  padding: 6px 11px; cursor: pointer; transition: all .2s var(--e);
+}
+.v3 .appearance > button:hover { color: var(--ink); border-color: var(--line2); }
+.v3 .appearance svg.flip { transform: rotate(180deg); }
+.v3 .appmenu {
+  position: absolute; bottom: calc(100% + 8px); right: 0; width: 196px; z-index: 20;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 13px;
+  box-shadow: 0 22px 44px -22px rgba(6,9,17,.4); overflow: hidden; padding: 5px;
+}
+.v3 .appmenu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: none; border: 0; cursor: pointer; padding: 8px 10px; border-radius: 9px;
+  color: var(--ink2); font-family: var(--s); transition: background .16s var(--e);
+}
+.v3 .appmenu button:hover { background: var(--bg2); }
+.v3 .appmenu button.on { color: var(--b); }
+.v3 .appmenu button span { flex: 1; display: block; }
+.v3 .appmenu button b { display: block; font-size: 13.5px; font-weight: 600; }
+.v3 .appmenu button small { display: block; font-size: 11.5px; color: var(--faint); }
+
+/* Social icons stay light: the footer sits on white and a dark tile there
+   reads as four black squares before it reads as four networks. */
+.v3 .soc a {
+  color: var(--mut);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+}
+.dark .v3 .soc a { color: var(--ink2); background: var(--bg3); border-color: var(--line); }
+
+.v3 .fbot .flag {
+  display: inline-block; vertical-align: middle;
+  width: 15px; height: 15px; border-radius: 50%;
+}

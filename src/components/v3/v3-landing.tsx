@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { initV3Landing } from "./landing-effects";
+import { V3Appearance } from "./appearance";
 import "./landing.css";
 
 /**
@@ -35,20 +36,20 @@ export function V3Landing() {
           <a className="brand" href="#"><span className="tile w" id="tl"><svg><use href="#mark" /></svg></span>
             <span className="wm ob" id="wm">Linked<i>Grow</i></span></a>
           <nav className="nl">
-            <a href="#problem">Problem</a><a href="#agent">The agent</a>
-            <a href="#setup">Setup</a><a href="#safety">Safety</a><a href="#pricing">Pricing</a>
+            <a href="/features">Features</a><a href="/compare">Compare</a>
+            <a href="/free-tools">Free Tools</a><a href="/blog">Blog</a><a href="/pricing">Pricing</a>
           </nav>
           <div className="sp"></div>
-          <a className="btn gh desk" style={{ padding: "9px 15px", fontSize: "14px" }} href="#">Sign in</a>
-          <a className="fill sm desk" href="#pricing">Start for free
+          <a className="btn gh desk" style={{ padding: "9px 15px", fontSize: "14px" }} href="/sign-in">Sign in</a>
+          <a className="fill sm desk" href="/sign-up">Start for free
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
           <button className="burger" id="burger" aria-label="Menu">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
         </div>
         <div className="mob" id="mob">
-          <a href="#problem">Problem</a><a href="#agent">The agent</a><a href="#setup">Setup</a>
-          <a href="#safety">Safety</a><a href="#pricing">Pricing</a>
-          <div className="bs"><a className="btn" href="#">Sign in</a><a className="btn grad" href="#pricing">Start free for 7 days</a></div>
+          <a href="/features">Features</a><a href="/compare">Compare</a><a href="/free-tools">Free Tools</a>
+          <a href="/blog">Blog</a><a href="/pricing">Pricing</a>
+          <div className="bs"><a className="btn" href="/sign-in">Sign in</a><a className="btn grad" href="/sign-up">Start free for 7 days</a></div>
         </div>
       </div>
 
@@ -94,7 +95,7 @@ export function V3Landing() {
               <figure className="screen">
                 <div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/saas-founders</span></div>
                 <div className="vid">
-                  <video src="" poster="" autoPlay muted loop></video>
+                  <video autoPlay muted loop playsInline></video>
                   <div className="ph">
                     <span className="mk"><svg><use href="#mark" /></svg></span>
                     <small>Video 01</small>
@@ -171,7 +172,7 @@ export function V3Landing() {
               </div>
               <div className="crop rv"><span className="cr"></span>
                 <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/new</span></div>
-                  <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                  <div className="vid"><video autoPlay muted loop playsInline></video>
                     <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 02</small>
                       <b>Wizard, website scan to ideal customer in twenty seconds</b>
                       <span className="chip">steps 1 and 2 of the creation wizard</span></div></div></figure></div>
@@ -189,7 +190,7 @@ export function V3Landing() {
               </div>
               <div className="crop rv"><span className="cr"></span>
                 <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/saas-founders/leads</span></div>
-                  <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                  <div className="vid"><video autoPlay muted loop playsInline></video>
                     <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 03</small>
                       <b>Leads tab, clicking through to the source post</b>
                       <span className="chip">show the hover state and the outbound link</span></div></div></figure></div>
@@ -207,7 +208,7 @@ export function V3Landing() {
               </div>
               <div className="crop rv"><span className="cr"></span>
                 <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/saas-founders/queue</span></div>
-                  <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                  <div className="vid"><video autoPlay muted loop playsInline></video>
                     <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 04</small>
                       <b>Today's queue, editing a message before it sends</b>
                       <span className="chip">type an edit then save, so it feels controllable</span></div></div></figure></div>
@@ -225,7 +226,7 @@ export function V3Landing() {
               </div>
               <div className="crop rv"><span className="cr"></span>
                 <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/replies</span></div>
-                  <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                  <div className="vid"><video autoPlay muted loop playsInline></video>
                     <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 05</small>
                       <b>Replies page, a new answer arriving live</b>
                       <span className="chip">open one thread to show the context</span></div></div></figure></div>
@@ -255,7 +256,7 @@ export function V3Landing() {
                 <p>Your credentials are encrypted the moment they arrive, decrypted only inside the browser session that uses them, and never written to a log. The agent gets a dedicated residential address in your own country, and it keeps that same address for as long as the agent lives.</p>
                 <div className="crop rv"><span className="cr"></span>
                   <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/settings/linkedin</span></div>
-                    <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                    <div className="vid"><video autoPlay muted loop playsInline></video>
                       <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 06</small>
                         <b>Connecting an account, profile and IP confirmed</b>
                         <span className="chip">end on the green connected state</span></div></div></figure></div>
@@ -266,7 +267,7 @@ export function V3Landing() {
                 <p>Competitor audiences, posts about the problem you solve, people who changed jobs in the last ninety days, or a search you write yourself. Pick as many sources as you like and the agent mines them every morning, deduplicating against everyone it has already contacted.</p>
                 <div className="crop rv"><span className="cr"></span>
                   <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/saas-founders/sources</span></div>
-                    <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                    <div className="vid"><video autoPlay muted loop playsInline></video>
                       <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 07</small>
                         <b>Sources tab, adding a competitor and mining it</b>
                         <span className="chip">the counter climbing as leads arrive</span></div></div></figure></div>
@@ -277,7 +278,7 @@ export function V3Landing() {
                 <p>Read the first messages it drafts, adjust the tone once, and switch the agent on. From there it holds working hours, raises its volume slowly across the first month, and emails you the moment somebody answers.</p>
                 <div className="crop rv"><span className="cr"></span>
                   <figure className="screen lt"><div className="chrome"><i></i><i></i><i></i><span>app.linkedgrow.ai/agents/saas-founders</span></div>
-                    <div className="vid"><video src="" poster="" autoPlay muted loop></video>
+                    <div className="vid"><video autoPlay muted loop playsInline></video>
                       <div className="ph"><span className="mk"><svg><use href="#mark" /></svg></span><small>Video 08</small>
                         <b>Switching the agent on, running indicator</b>
                         <span className="chip">the activity log filling underneath</span></div></div></figure></div>
@@ -694,8 +695,18 @@ export function V3Landing() {
           </div>
 
           <div className="fbot">
-            <span>© 2026 LinkedGrow. Made with care in Switzerland by <a href="#">Nicolas Lecocq</a>.</span>
-            <span className="sp"></span><a href="mailto:contact@linkedgrow.ai">contact@linkedgrow.ai</a>
+            <span>
+              © 2026 LinkedGrow - Made with love in{" "}
+              <svg className="flag" viewBox="0 0 512 512" aria-label="Switzerland">
+                <circle cx="256" cy="256" fill="#fff" r="256" />
+                <path d="m512 256c0-110.071-69.472-203.906-166.957-240.077v480.155c97.485-36.172 166.957-130.007 166.957-240.078z" fill="#d80027" />
+                <path d="m0 256c0 110.071 69.473 203.906 166.957 240.077v-480.154c-97.484 36.171-166.957 130.006-166.957 240.077z" fill="#0052b4" />
+              </svg>{" "}
+              by{" "}
+              <a href="https://nicolaslecocq.com/" target="_blank" rel="noopener noreferrer">Nicolas Lecocq</a>
+            </span>
+            <span className="sp"></span>
+            <V3Appearance />
           </div>
         </div>
       </footer>
