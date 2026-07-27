@@ -356,7 +356,7 @@ export function AnalyticsToolContent({
               Independent ranking - Updated July 2026
             </span>
           </div>
-          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
             Best LinkedIn Analytics Tools in 2026:{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
               Ranked &amp; Compared
@@ -412,7 +412,7 @@ export function AnalyticsToolContent({
       <section className="py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
               The 8 best LinkedIn analytics tools{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
                 at a glance
@@ -513,7 +513,7 @@ export function AnalyticsToolContent({
       <section className="py-16 sm:py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
               What makes a great LinkedIn analytics tool?
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
@@ -542,7 +542,7 @@ export function AnalyticsToolContent({
       {/* ===== WHEN LINKEDIN NATIVE ANALYTICS ARE ENOUGH ===== */}
       <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white text-center mb-6">
+          <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white text-center mb-6">
             When are LinkedIn native analytics enough?
           </h2>
           <div className="space-y-4 text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -580,7 +580,7 @@ export function AnalyticsToolContent({
       <section className="py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
               The 8 best LinkedIn analytics tools in 2026
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
@@ -597,11 +597,11 @@ export function AnalyticsToolContent({
               >
                 <div className="flex flex-wrap items-baseline gap-3 mb-3">
                   <span
-                    className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br ${tool.accent} text-white font-black text-lg shrink-0`}
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br ${tool.accent} text-white font-grotesk font-semibold tracking-[-0.038em] text-lg shrink-0`}
                   >
                     {tool.rank}
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-white">
+                  <h3 className="text-2xl sm:text-3xl font-grotesk font-semibold tracking-[-0.038em] font-display text-slate-900 dark:text-white">
                     {tool.name}
                   </h3>
                   <span className="text-sm text-slate-500 dark:text-slate-400">{tool.tagline}</span>
@@ -697,7 +697,7 @@ export function AnalyticsToolContent({
       {/* ===== WHICH METRICS ACTUALLY MATTER ===== */}
       <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white text-center mb-6">
+          <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white text-center mb-6">
             Which LinkedIn metrics actually matter?
           </h2>
           <p className="text-center text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
@@ -761,7 +761,7 @@ export function AnalyticsToolContent({
       <section className="py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
               How to choose the right LinkedIn analytics tool
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
@@ -837,7 +837,7 @@ export function AnalyticsToolContent({
       {/* ===== DISCONTINUED TOOLS ===== */}
       <section className="py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white text-center mb-6">
+          <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white text-center mb-6">
             Which LinkedIn analytics tools have been discontinued?
           </h2>
           <p className="text-center text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-3xl mx-auto">
@@ -886,7 +886,7 @@ export function AnalyticsToolContent({
       <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
               LinkedIn analytics tools FAQ
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
