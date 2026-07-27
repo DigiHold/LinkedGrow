@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { initV3Chrome } from "./chrome-effects";
@@ -36,8 +38,8 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
     {/*═══ NAV ═══*/}
     <div className="navhold" id="nh">
       <div className="nav">
-        <a className="brand" href="#"><span className="tile w" id="tl"><svg><use href="#mark" /></svg></span>
-          <span className="wm ob" id="wm">Linked<i>Grow</i></span></a>
+        <Link className="brand" href="/" aria-label="LinkedGrow home"><span className="tile w" id="tl"><svg><use href="#mark" /></svg></span>
+          <span className="wm ob" id="wm">Linked<i>Grow</i></span></Link>
         <nav className="nl">
           <a href="/features">Features</a><a href="/compare">Compare</a>
           <a href="/free-tools">Free Tools</a><a href="/blog">Blog</a><a href="/pricing">Pricing</a>
