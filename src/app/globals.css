@@ -6,6 +6,30 @@
 
 /* ===== Tailwind v4 Theme Configuration ===== */
 @theme {
+  /* ── v3 marketing palette, as real Tailwind tokens ──
+     These were CSS custom properties on a .v3 wrapper, which meant the design
+     lived outside Tailwind. Declared here they become utilities:
+     bg-v3-deep, text-v3-mut, border-v3-line2, ease-v3, font-display. */
+  --color-v3-ink: #060911;
+  --color-v3-ink2: #1e2a41;
+  --color-v3-mut: #586780;
+  --color-v3-faint: #8996ac;
+  --color-v3-bg2: #f6f9fd;
+  --color-v3-bg3: #eaf0f8;
+  --color-v3-cream: #faf6f1;
+  --color-v3-line: #e7edf5;
+  --color-v3-line2: #d3dde9;
+  --color-v3-cyan: #00b8db;
+  --color-v3-blue: #155dfc;
+  --color-v3-blue-dark: #0b3fc4;
+  --color-v3-deep: #07204f;
+  --color-v3-wash: #eff5ff;
+  --color-v3-sky: #8ce4f5;
+
+  --ease-v3: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@theme {
   /* Font sizes - Override text-5xl to be 5rem instead of default 3rem */
   --text-5xl: 5rem;
   --text-5xl--line-height: 1.1;
