@@ -263,3 +263,22 @@
    must not animate in from the transparent one on first paint. */
 .v3-chrome:not(.on-dark) .navhold { transition: none; }
 .v3-chrome:not(.on-dark) .prog { display: none; }
+
+/* Surfaces the prototype paints with a literal colour rather than a token, so
+   the flip above cannot reach them. Each one is a light card that stayed light
+   under a dark page. */
+.dark .v3 .caps { background: var(--bg2); }
+.dark .v3 .msg { background: var(--bg2); }
+.dark .v3 .msg.bad { background: #1b1114; border-color: #3a1f24; }
+.dark .v3 .msg.good { background: #0d1a16; border-color: #1d3a2f; }
+.dark .v3 .msg.bad .tg,
+.dark .v3 .rej span { background: #3a1f24; color: #f0b8ab; }
+.dark .v3 .split.solid { background: var(--bg2); color: var(--ink); }
+.dark .v3 .tile.w { background: var(--bg3); }
+.dark .v3 .navhold.fx .burger { background: var(--bg2); color: var(--ink); }
+.dark .v3 .screen.lt .chrome span { background: var(--bg2); border-color: var(--line); }
+
+/* The second plan's button is the plain .btn, which was white on white in the
+   dark card. */
+.dark .v3 .plan .btn { background: var(--bg3); color: var(--ink); border-color: var(--line2); }
+.dark .v3 .plan .btn:hover { border-color: var(--mut); }

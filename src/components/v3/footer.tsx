@@ -48,7 +48,7 @@ export function V3Footer() {
                 <svg className="lg" viewBox="0 0 24 24"><path fill="#00B67A" d="M12 .6l2.93 9.02H24l-7.54 5.48 2.88 9.02L12 18.63 4.66 24.12l2.88-9.02L0 9.62h9.07z" /></svg>
                 <span><span className="strs">★★★★★</span><small>Review us on Trustpilot</small></span></a>
               <a className="rvb" href="#" style={{ "--rc": "#FF492C" } as React.CSSProperties}>
-                <svg className="lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#FF492C" /><path fill="#fff" d="M12.05 6.3a5.72 5.72 0 100 11.44 5.72 5.72 0 000-11.44zm0 9.2a3.48 3.48 0 110-6.96 3.48 3.48 0 010 6.96z" /><path fill="#fff" d="M15.3 8.9l1.8-3.1 1.94 1.12-1.8 3.11z" /></svg>
+                <svg className="lg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FF492C" /><text x="12" y="16.4" textAnchor="middle" fill="#fff" fontFamily="Host Grotesk, Inter, system-ui, sans-serif" fontSize="11" fontWeight="700">G2</text></svg>
                 <span><span className="strs">★★★★★</span><small>Review us on G2</small></span></a>
             </div>
           </div>

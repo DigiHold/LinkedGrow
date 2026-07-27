@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { initV3Chrome } from "./chrome-effects";
 import "./landing.css";
 
@@ -16,6 +17,12 @@ import "./landing.css";
  * on. Every other page starts on white and gets the light treatment.
  */
 export function V3Header({ onDark = false }: { onDark?: boolean }) {
+  const { data: session, status } = useSession();
+  // Until the session resolves, neither state is shown: rendering "Sign in" to
+  // someone who is already signed in and then swapping it is worse than a beat
+  // of nothing.
+  const signedIn = status === "authenticated" && !!session?.user;
+
   useEffect(() => initV3Chrome(), []);
 
   return (
@@ -36,16 +43,32 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
           <a href="/free-tools">Free Tools</a><a href="/blog">Blog</a><a href="/pricing">Pricing</a>
         </nav>
         <div className="sp"></div>
+        {status === "loading" ? null : signedIn ? (
+          <a className="fill sm desk" href="/dashboard">Go to dashboard
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
+        ) : (
+        <>
         <a className="btn gh desk" style={{ padding: "9px 15px", fontSize: "14px" }} href="/sign-in">Sign in</a>
         <a className="fill sm desk" href="/sign-up">Start for free
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
+        </>
+        )}
         <button className="burger" id="burger" aria-label="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 7h16M4 12h16M4 17h16" /></svg></button>
       </div>
       <div className="mob" id="mob">
         <a href="/features">Features</a><a href="/compare">Compare</a><a href="/free-tools">Free Tools</a>
         <a href="/blog">Blog</a><a href="/pricing">Pricing</a>
-        <div className="bs"><a className="btn" href="/sign-in">Sign in</a><a className="btn grad" href="/sign-up">Start free for 7 days</a></div>
+        <div className="bs">
+            {signedIn ? (
+              <a className="btn grad" href="/dashboard">Go to dashboard</a>
+            ) : (
+              <>
+                <a className="btn" href="/sign-in">Sign in</a>
+                <a className="btn grad" href="/sign-up">Start free for 7 days</a>
+              </>
+            )}
+          </div>
       </div>
     </div>
     </div>
