@@ -37,7 +37,21 @@ const PRICE = {
 } as const;
 
 export const DAILY_CEILING_USD = 1.0;
-export const MONTHLY_CEILING_USD = 12.0;
+
+/**
+ * The monthly ceiling is a WORKSPACE pool, not a per-agent allowance.
+ *
+ * It used to be $12 flat per agent, and that punished success. Measured cost is
+ * $4.20 an agent a month at a normal 30% acceptance and 20% reply rate, but an
+ * agent that genuinely works, 60% accepting and 40% replying, reaches $8.86.
+ * A flat per-agent cap would throttle the best agent a customer has while the
+ * one still warming up leaves most of its allowance unspent.
+ *
+ * Pooling fixes that at identical worst-case exposure: the same $12 an agent,
+ * shared, so a hot agent borrows from a quiet one. That is what actually
+ * happens, because ICPs are not equally good.
+ */
+export const MONTHLY_CEILING_PER_AGENT_USD = 12.0;
 
 let client: Anthropic | null = null;
 
@@ -72,18 +86,43 @@ async function spentSince(agentId: string, sinceEpochSeconds: number): Promise<n
   return Number(rows[0]?.total ?? 0);
 }
 
+/** The whole workspace's spend, which is what the monthly pool is measured on. */
+async function workspaceSpentSince(
+  workspaceId: string,
+  sinceEpochSeconds: number
+): Promise<number> {
+  const { rows } = await db().execute({
+    sql: `SELECT COALESCE(SUM(cost_usd), 0) AS total
+          FROM agent_ai_usage
+          WHERE workspace_id = ? AND created_at >= ?`,
+    args: [workspaceId, sinceEpochSeconds],
+  });
+  return Number(rows[0]?.total ?? 0);
+}
+
 /**
  * Both windows, because they do different jobs: the daily figure bounds a
  * runaway to one day, the monthly one protects the margin.
  */
-export async function assertBudget(ctx: AgentContext): Promise<void> {
+export async function assertBudget(ctx: AgentContext, purpose = ""): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   const [day, month] = await Promise.all([
     spentSince(ctx.agentId, now - 86_400),
-    spentSince(ctx.agentId, now - 30 * 86_400),
+    workspaceSpentSince(ctx.workspaceId, now - 30 * 86_400),
   ]);
+
+  const pool = MONTHLY_CEILING_PER_AGENT_USD * Math.max(1, ctx.agentsOnAccount);
+
+  // Answering a person who wrote to you is not the same kind of spend as
+  // looking for more people. When the pool runs low, discovery stops first and
+  // the conversations already open keep running on the last 20%. Going silent
+  // on a warm lead costs the customer far more than a thin month of mining.
+  const conversation = purpose === "intro" || purpose === "converse" ||
+    purpose === "ask" || purpose === "hello";
+  const limit = conversation ? pool : pool * 0.8;
+
   if (day >= DAILY_CEILING_USD) throw new BudgetExceededError("day", day);
-  if (month >= MONTHLY_CEILING_USD) throw new BudgetExceededError("month", month);
+  if (month >= limit) throw new BudgetExceededError("month", month);
 }
 
 function costOf(model: string, inputTokens: number, outputTokens: number): number {
@@ -134,7 +173,7 @@ export async function generate(
   prompt: string,
   opts: GenerateOptions
 ): Promise<string> {
-  await assertBudget(ctx);
+  await assertBudget(ctx, opts.purpose);
   const model = opts.model ?? MODELS.writer;
 
   const message = await anthropic().messages.create({
