@@ -399,7 +399,7 @@
    on the dark ground instead of a screen below it. .plans is centred and capped
    already; this only widens it and stops the cards inheriting the hero's
    centred text. */
-.v3 .prhero { margin-top: 34px; text-align: left; }
+.v3 .prhero { text-align: left; }
 .v3 .prhero .plans { max-width: 1000px; }
 .v3 .hero.inner .prhero .plan { box-shadow: 0 50px 100px -46px rgba(0, 0, 0, .75); }
 @media (max-width: 820px) { .v3 .prhero .plans { grid-template-columns: 1fr; } }
@@ -429,18 +429,24 @@
    The home ends its hero on the product shot hanging past the ground. This page
    has no video, so the plan cards do the same job: the field stops behind them
    with a rounded edge and the cards carry on over the section below. */
-.v3 .hero.pricing { padding-bottom: 0; border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
-/* Half the card, not a corner of it. The cards run about 880px at desktop, so
-   the field has to stop roughly 430px up from their bottom edge for the split
-   to land where the home's video lands. */
-.v3 .hero.pricing .prhero { margin-bottom: clamp(-470px, -30vw, -260px); }
+.v3 .hero.pricing { padding-bottom: clamp(300px, 26vw, 430px); border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
+/* The cards are a sibling of the hero, not its last child. Inside it their
+   negative bottom margin collapsed through .wrap and out of the section, so the
+   hero kept its full height and the next section slid up underneath. Pulled up
+   from outside, the geometry is unambiguous: exactly half of the card sits on
+   the dark ground and half on the light one. */
+.v3 .prhero {
+  position: relative; z-index: 6;
+  margin-top: clamp(-470px, -31vw, -260px);
+  padding: 0 24px;
+}
 .v3 .hero.pricing + * ,
 .v3 .hero.pricing ~ .sec:first-of-type { padding-top: 0; }
 /* The section that follows has to make room for the half that hangs over it. */
-.v3 .pricing-next { padding-top: clamp(310px, 33vw, 520px) !important; }
+.v3 .pricing-next { padding-top: clamp(90px, 9vw, 130px) !important; }
 @media (max-width: 820px) {
-  .v3 .hero.pricing .prhero { margin-bottom: -240px; }
-  .v3 .pricing-next { padding-top: 290px !important; }
+  .v3 .prhero { margin-top: -170px; }
+  .v3 .pricing-next { padding-top: 80px !important; }
 }
 
 /* ══ pricing page, the sections under the plans ══

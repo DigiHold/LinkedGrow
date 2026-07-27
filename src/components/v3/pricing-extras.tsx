@@ -69,7 +69,10 @@ export function V3PricingHero() {
                   </div>
                 </div>
 
-          <div className="prhero rv" style={{ "--d0": ".22s" } as React.CSSProperties}>
+        </div>
+      </section>
+
+      <div className="prhero rv" style={{ "--d0": ".22s" } as React.CSSProperties}>
               <div className="plans">
                 <div className="plan best rv"><span className="tag">Where most founders start</span>
                   <div className="pn">Pro</div><div className="pd">Two agents working every day for you</div>
@@ -112,135 +115,177 @@ export function V3PricingHero() {
                 </div>
               </div>
           </div>
-        </div>
-      </section>
     </div>
   );
 }
 
 function Tick() {
   return (
-    <i>
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6">
-        <path d="M20 6L9 17l-5-5" />
-      </svg>
-    </i>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
   );
 }
 
-/** What every plan carries, which is the part competitors bill separately. */
+/**
+ * What the same job costs, drawn rather than listed.
+ *
+ * This was a four-card grid, then a three-card grid, and both were the thing
+ * every SaaS pricing page already looks like. What converts under a plan table
+ * is a comparison a person can read in one pass and a trust block, so the
+ * stack is a bar and the comparison is a table with rows.
+ */
 export function V3PricingIncluded() {
   return (
     <div className="v3">
       <section className="sec pricing-next">
         <div className="wrap">
-          <div className="sh rv" style={{ maxWidth: "900px", marginBottom: "44px" }}>
+          <div className="sh rv" style={{ maxWidth: "880px" }}>
             <span className="bul"></span>
             <div>
-              <h2>Four bills you are not going to get.</h2>
+              <h2>Four invoices, or one.</h2>
               <p className="lead" style={{ marginTop: "18px" }}>
-                Running outreach yourself means a tool, a proxy provider, an AI
-                subscription and an enrichment credit balance, each with its own
-                invoice and its own way of running out at the wrong moment. All
-                four are inside the price.
+                Running this yourself means a tool, a proxy provider, an AI
+                subscription and an enrichment balance. Four bills, four
+                dashboards, and each with its own way of running out at the
+                wrong moment.
               </p>
             </div>
           </div>
 
-          <div className="vgrid rv">
-            <div className="vcard">
-              <div className="k">01</div>
-              <h3>A dedicated IP</h3>
-              <p>
-                A residential address in your country, reserved for your account
-                for its whole life and never rotated. Bought separately this is
-                its own monthly invoice, per account.
-              </p>
+          <div className="stack rv">
+            <div className="srow">
+              <span className="lab">
+                Assembled yourself
+                <small>four vendors, four renewal dates</small>
+              </span>
+              <span className="bar">
+                <i className="a" style={{ flex: 99 }}>Outreach tool $99</i>
+                <i className="b" style={{ flex: 30 }}>Proxies $30</i>
+                <i className="c" style={{ flex: 20 }}>AI $20</i>
+                <i className="d" style={{ flex: 25 }}>Enrichment $25</i>
+              </span>
+              <span className="tot">$174</span>
             </div>
-            <div className="vcard">
-              <div className="k">02</div>
-              <h3>The agent&apos;s AI</h3>
-              <p>
-                Every message it writes, scored and rewritten until it passes the
-                anti-slop gate, is on us. Your own posts are the one thing that
-                runs on your key.
-              </p>
-            </div>
-            <div className="vcard">
-              <div className="k">03</div>
-              <h3>The leads themselves</h3>
-              <p>
-                Found by watching who engages with your competitors and who is
-                talking about the problem you solve. No list to buy and no
-                credits to run out of mid-month.
-              </p>
-            </div>
-            <div className="vcard">
-              <div className="k">04</div>
-              <h3>Four weeks of warm-up</h3>
-              <p>
-                On every new account, included and not skippable. It is the
-                cheapest insurance there is against losing the account the whole
-                thing runs on.
-              </p>
+
+            <div className="srow win">
+              <span className="lab">
+                LinkedGrow Pro
+                <small>one line on one card</small>
+              </span>
+              <span className="bar us">
+                <i style={{ flex: 99 }}>Everything above, included</i>
+                <i style={{ flex: 75, background: "transparent" }}></i>
+              </span>
+              <span className="tot">$99</span>
             </div>
           </div>
+
+          <p className="sfoot rv" style={{ marginTop: "26px" }}>
+            The four figures on the top bar are the sticker prices of the
+            category, not a quote for any one vendor. The only number we set is
+            the bottom one.
+          </p>
         </div>
       </section>
     </div>
   );
 }
 
-/** The comparison that actually decides it: this, or a person, or a stack. */
+/** The comparison, as rows. A table is not a card and reads in one pass. */
 export function V3PricingCompare() {
   return (
     <div className="v3">
       <section className="sec" style={{ background: "var(--bg2)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
         <div className="wrap">
-          <div className="sh rv" style={{ maxWidth: "880px", marginBottom: "40px" }}>
+          <div className="sh rv" style={{ maxWidth: "860px" }}>
             <span className="bul"></span>
             <div>
-              <h2>The same job, priced three ways.</h2>
+              <h2>The same job, done three ways.</h2>
               <p className="lead" style={{ marginTop: "18px" }}>
-                Finding buyers on LinkedIn and opening a conversation with them
-                every working day. Here is what that costs depending on who does
-                it.
+                Finding your buyers on LinkedIn and opening a conversation with
+                them every working day.
               </p>
             </div>
           </div>
 
-          <div className="vgrid rv">
-            <div className="vcard">
-              <div className="k">Around $4,000 a month</div>
-              <h3>Hire a junior rep</h3>
-              <p>
-                Around $4,000 a month before tools, plus a list, a script, a
-                manager and the months before they pay for themselves.
-              </p>
-            </div>
-            <div className="vcard">
-              <div className="k">Four separate invoices</div>
-              <h3>Assemble it yourself</h3>
-              <p>
-                An outreach tool, a proxy per account, an AI subscription and an
-                enrichment balance. Four invoices, four dashboards, and the
-                message quality is still yours to solve.
-              </p>
-            </div>
-            <div className="vcard hi">
-              <div className="k">$99 a month, one invoice</div>
-              <h3>LinkedGrow Pro</h3>
-              <p>
-                $99 a month, everything above included, two agents working every
-                working day inside limits they cannot break.
-              </p>
-            </div>
+          <div className="ctabwrap rv">
+            <table className="ctab">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>A junior rep</th>
+                  <th>A stack you assemble</th>
+                  <th className="own">LinkedGrow Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Monthly cost</th>
+                  <td>Around $4,000 before tools</td>
+                  <td>$174 across four vendors</td>
+                  <td className="own">$99, one invoice</td>
+                </tr>
+                <tr>
+                  <th>Time to first conversation</th>
+                  <td>Weeks of hiring, then ramp</td>
+                  <td>Days of setup and wiring</td>
+                  <td className="own">Same day, warm-up starts at once</td>
+                </tr>
+                <tr>
+                  <th>Who finds the people</th>
+                  <td>They do, from a list you buy</td>
+                  <td>You do, from credits you top up</td>
+                  <td className="own">The agent, from live signals</td>
+                </tr>
+                <tr>
+                  <th>Why each lead was picked</th>
+                  <td className="no">Ask them</td>
+                  <td className="no">A score with no reason</td>
+                  <td className="own">A score, its reason, and a link to the post</td>
+                </tr>
+                <tr>
+                  <th>Message quality</th>
+                  <td>As good as the person</td>
+                  <td className="no">Yours to solve</td>
+                  <td className="own">Anti-slop gate before anything sends</td>
+                </tr>
+                <tr>
+                  <th>Account safety</th>
+                  <td>Human pace by definition</td>
+                  <td className="no">Your problem, per tool</td>
+                  <td className="own">Hard limits it cannot break</td>
+                </tr>
+                <tr>
+                  <th>When they reply</th>
+                  <td>They handle it</td>
+                  <td className="no">Nothing happens</td>
+                  <td className="own">The agent answers, then hands you the ones that matter</td>
+                </tr>
+                <tr>
+                  <th>If it is not working</th>
+                  <td>A conversation nobody enjoys</td>
+                  <td>Four cancellations</td>
+                  <td className="own">One click, and your leads export</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <p className="sfoot rv">
-            The rep figure is a market rate rather than a quote, and it is the
-            only number here we did not set ourselves.
-          </p>
+          <div className="tstrip rv">
+            <h3>The one thing worth more than the price: the account it runs on.</h3>
+            <p className="sub">
+              Speed is what gets LinkedIn accounts restricted, so the agent is
+              built around restraint you can watch working. These are not
+              settings. They are limits the agent cannot exceed on any plan.
+            </p>
+            <div className="hard">
+              <div className="rv"><b>6</b><p>messages per person, maximum, then it stops for good</p></div>
+              <div className="rv" style={{ "--d0": ".07s" } as React.CSSProperties}><b>1</b><p>dedicated residential IP per LinkedIn account</p></div>
+              <div className="rv" style={{ "--d0": ".14s" } as React.CSSProperties}><b>40-120<em>s</em></b><p>enforced gap between any two actions</p></div>
+              <div className="rv" style={{ "--d0": ".21s" } as React.CSSProperties}><b>0</b><p>actions on weekends, public holidays included</p></div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
