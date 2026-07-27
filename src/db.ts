@@ -65,6 +65,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.workday_end       AS workday_end,
       a.review_mode       AS review_mode,
       a.status            AS status,
+      l.full_name         AS account_full_name,
       l.country           AS country,
       l.daily_invite_cap  AS account_cap,
       l.warmup_started_at AS warmup_started_at,
@@ -123,6 +124,13 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       agentsOnAccount: Math.max(1, Number(r.agents_on_account ?? 1)),
       warmupStartedAt: r.warmup_started_at ? new Date(Number(r.warmup_started_at) * 1000) : null,
       reviewMode: Number(r.review_mode ?? 0) === 1,
+      sender: {
+        // The account's own first name. LinkedIn shows it beside every message,
+        // so signing with anything else would read as a different person.
+        firstName: String(r.account_full_name ?? "").trim().split(/\s+/)[0] ?? "",
+        companyInfo: String(r.company_info ?? ""),
+        location: String(r.locations ?? r.country ?? ""),
+      },
       cfg,
     };
   });

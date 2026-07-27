@@ -2,13 +2,23 @@ import type { Config } from "../config.ts";
 import { log } from "../logger.ts";
 import { sleep } from "../browser/human.ts";
 import type { LinkedInActions } from "./actions.ts";
-import type { GeneratedMessage, Step } from "../messages/generate.ts";
+import type { GeneratedMessage } from "../messages/generate.ts";
+import {
+  PACING,
+  RELATIONSHIP_STEPS,
+  shouldHandOver,
+  type RelationshipStep,
+  type Turn,
+} from "../messages/relationship.ts";
 import {
   type DB,
   type ProspectRow,
   getProspects,
   setProspectStatus,
   recordMessage,
+  recordInbound,
+  getThread,
+  countOutboundStep,
   recordAction,
   countActionsSince,
   countProspectsByStatus,
@@ -23,25 +33,68 @@ import {
 } from "../safety/envelope.ts";
 import { dayAgoIso, weekAgoIso, epochIso } from "../time.ts";
 
-/** The prospect lifecycle. Transitions only ever move forward, which caps DMs at two by construction. */
+/**
+ * The prospect lifecycle.
+ *
+ * Forward-only, which is what caps the sequence by construction: exactly one
+ * intro, at most PACING.maxConverseTurns answers, exactly one ask, then the
+ * agent is done with that person for good.
+ *
+ * `conversing` is the state that makes this product different from every other
+ * one. A reply used to end the sequence. It now moves the prospect into a
+ * conversation the agent answers like a person, and the ask comes later,
+ * whether or not they ever wrote back.
+ */
 export const STATUS = {
   queued: "queued",
   connectSent: "connect_sent",
   connected: "connected",
-  dm1Sent: "dm1_sent",
-  dm2Sent: "dm2_sent",
-  replied: "replied",
+  introSent: "intro_sent",
+  conversing: "conversing",
+  askSent: "ask_sent",
+  handedOver: "handed_over",
   stopped: "stopped",
   skipped: "skipped",
 } as const;
+
+/**
+ * Where in the range a given prospect sits, from its id.
+ *
+ * Every message going out at exactly the minimum wait is a rhythm, and rhythm
+ * is what an automation detector reads most easily. This spreads them across
+ * the window while staying deterministic, so a prospect does not become due,
+ * then not due, between two passes.
+ */
+function dueAfterHours(id: number, range: readonly [number, number]): number {
+  const [min, max] = range;
+  const spread = ((id * 2654435761) >>> 0) / 4294967296;
+  return min + spread * (max - min);
+}
+
+function hoursAgoIso(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString();
+}
+
+/** True once this prospect's own wait, inside the range, has elapsed. */
+function isDue(p: ProspectRow, range: readonly [number, number]): boolean {
+  return p.updated_at <= hoursAgoIso(dueAfterHours(p.id, range));
+}
 
 /** Invites still unaccepted after this many days are given up on (stale-invite handling). */
 const STALE_CONNECT_DAYS = 21;
 
 export interface SequenceDeps {
   actions: LinkedInActions;
-  /** Writes a validated message for a prospect and step (wired to the generator; faked in tests). */
-  writeMessage: (p: ProspectRow, step: Step) => Promise<GeneratedMessage>;
+  /**
+   * Writes a validated message for a prospect and step. The thread is passed
+   * because the converse and ask steps answer what was actually said, and a
+   * step that writes without reading is how an agent replies beside the point.
+   */
+  writeMessage: (
+    p: ProspectRow,
+    step: RelationshipStep,
+    thread: Turn[]
+  ) => Promise<GeneratedMessage>;
   /** Alerts Nicolas (Telegram in production, a log line until then). */
   notify: (message: string) => Promise<void> | void;
   /** Pause between actions. Defaults to the human envelope delay; tests pass 0. */
@@ -57,9 +110,9 @@ function label(p: ProspectRow): string {
 }
 
 /**
- * One bounded work pass: detect replies first, advance accepted invites to DMs, then send new
- * connects within the day's allowance. Every state change is forward-only, so a prospect can never
- * receive more than two DMs and any reply hands the thread to Nicolas and stops the sequence.
+ * One bounded work pass: read replies first, promote accepted invites, move everyone who is due to
+ * their next step, then send new invitations within the day's allowance. Every state change is
+ * forward-only, so a prospect receives one intro, at most a few answers, and exactly one ask.
  */
 export async function runSequence(cfg: Config, db: DB, deps: SequenceDeps): Promise<void> {
   const pause = () => sleep(deps.pauseMs ? deps.pauseMs(cfg) : actionDelayMs(cfg));
@@ -75,29 +128,60 @@ export async function runSequence(cfg: Config, db: DB, deps: SequenceDeps): Prom
   // earlier point anyway, and the pause between actions keeps the pace human.
   await detectReplies(db, deps, pause);
   await sweepAcceptances(cfg, db, deps, pause);
-  await advanceDms(cfg, db, deps, pause);
+  await advanceSequence(cfg, db, deps, pause);
   await sendNewConnects(cfg, db, deps, week, pause);
 }
 
 /**
- * Any inbound reply stops the sequence for that prospect and alerts Nicolas. Runs first, always.
- * Reads the messaging inbox once and matches the repliers against active prospects by name, rather
- * than visiting each prospect's profile.
+ * Reads what came back and decides who answers it.
+ *
+ * A reply used to end the sequence. It no longer does, because the whole point
+ * of the product is that the agent keeps talking like a person and only asks
+ * later. Two things still end it immediately: a reply that needs a human, which
+ * covers buying signals and refusals alike, and a reply that arrives after the
+ * ask, because the ask is the last thing the agent ever sends.
+ *
+ * The inbox scan names the repliers in one page load. Only those threads are
+ * opened, so the cost stays proportional to the number of people who wrote.
  */
 async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<void>): Promise<void> {
   const repliers = await deps.actions.inboxRepliers();
   if (repliers.length === 0) return;
-  const replied = new Set(repliers.map((n) => n.trim().toLowerCase()));
-  const active = [STATUS.connected, STATUS.dm1Sent, STATUS.dm2Sent];
+  const replied = new Set(repliers.map((n) => normalizeName(n)));
+  const active = [STATUS.connected, STATUS.introSent, STATUS.conversing, STATUS.askSent];
+
   for (const status of active) {
     for (const p of await getProspects(db, status)) {
-      const name = (p.full_name ?? "").trim().toLowerCase();
-      if (name && replied.has(name)) {
-        await setProspectStatus(db, p.id, STATUS.replied);
-        await recordAction(db, p.id, "reply", p.profile_url);
-        await deps.notify(`${label(p)} replied. Over to you: ${p.profile_url}`);
+      const name = normalizeName(p.full_name ?? "");
+      if (!name || !replied.has(name)) continue;
+
+      const thread = await deps.actions.readThread(p);
+      const theirs = thread.filter((t) => t.from === "them");
+      if (theirs.length === 0) {
+        // The inbox said they wrote, the thread does not show it. Trusting the
+        // inbox here would have the agent answer a message it never read.
+        log(`${label(p)} shows as a replier but the thread read empty, leaving them alone this pass.`);
         await pause();
+        continue;
       }
+
+      // Store only what is new, so a re-read does not duplicate the thread.
+      const known = await getThread(db, p.id);
+      const knownInbound = known.filter((t) => t.from === "them").length;
+      for (const turn of theirs.slice(knownInbound)) {
+        await recordInbound(db, p.id, turn.body);
+      }
+      await recordAction(db, p.id, "reply", p.profile_url);
+
+      const step = status === STATUS.askSent ? RELATIONSHIP_STEPS.ask : RELATIONSHIP_STEPS.converse;
+      if (shouldHandOver(step, thread)) {
+        await setProspectStatus(db, p.id, STATUS.handedOver);
+        await deps.notify(`${label(p)} replied and it needs you. Over to you: ${p.profile_url}`);
+      } else {
+        await setProspectStatus(db, p.id, STATUS.conversing);
+        log(`${label(p)} replied. The agent will answer on the next pass.`);
+      }
+      await pause();
     }
   }
 }
@@ -141,35 +225,72 @@ function normalizeName(name: string): string {
     .trim();
 }
 
-/** DM1 for freshly connected prospects, then DM2 for those who never replied, within the daily DM cap. */
-async function advanceDms(cfg: Config, db: DB, deps: SequenceDeps, pause: () => Promise<void>): Promise<void> {
+/**
+ * Moves everyone who is due to their next step, inside the day's message cap.
+ *
+ * Order is deliberate. Answering someone who wrote to you comes before opening
+ * a new conversation, and both come before the ask, because a queue that spends
+ * its budget on asks leaves real replies waiting.
+ */
+async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: () => Promise<void>): Promise<void> {
   let budget = cfg.limits.dmPerDayMax - await countActionsSince(db, "dm", dayAgoIso());
   if (budget <= 0) return;
 
+  // 1. Answer the people who wrote back, up to the cap on how many times the
+  //    agent will answer before it has to come to the point.
+  for (const p of await getProspects(db, STATUS.conversing)) {
+    if (budget <= 0) break;
+    if (!isDue(p, [PACING.replyDelayMinutes[0] / 60, PACING.replyDelayMinutes[1] / 60])) continue;
+
+    const turns = await countOutboundStep(db, p.id, RELATIONSHIP_STEPS.converse);
+    if (turns >= PACING.maxConverseTurns) continue; // the ask picks them up below
+
+    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.converse, STATUS.conversing)) budget--;
+    await pause();
+  }
+
+  // 2. The introduction, once they have accepted. Same day, never the same minute.
   for (const p of await getProspects(db, STATUS.connected)) {
     if (budget <= 0) break;
-    if (await sendStep(db, deps, p, "dm1", STATUS.dm1Sent)) budget--;
+    if (!isDue(p, PACING.acceptToIntroHours)) continue;
+    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.intro, STATUS.introSent)) budget--;
     await pause();
   }
 
-  const due = await getProspects(db, STATUS.dm1Sent, { olderThan: daysAgoIso(cfg.sequence.waitBetweenDmsDays) });
-  for (const p of due) {
+  // 3. The one ask. It goes to two groups: people who talked, and people who
+  //    never answered the intro. The second group is the one every other tool
+  //    gives up on, and a silent prospect has still had a message land.
+  const talked = (await getProspects(db, STATUS.conversing)).filter(
+    (p) => isDue(p, [PACING.conversationToAskDays[0] * 24, PACING.conversationToAskDays[1] * 24])
+  );
+  const silent = (await getProspects(db, STATUS.introSent)).filter(
+    (p) => isDue(p, [PACING.silenceToAskDays[0] * 24, PACING.silenceToAskDays[1] * 24])
+  );
+  for (const p of [...talked, ...silent]) {
     if (budget <= 0) break;
-    if (await sendStep(db, deps, p, "dm2", STATUS.dm2Sent)) budget--;
+    if (await sendStep(db, deps, p, RELATIONSHIP_STEPS.ask, STATUS.askSent)) budget--;
     await pause();
   }
 
-  // After DM2 and a reply window, the sequence is complete with no reply.
-  for (const p of await getProspects(db, STATUS.dm2Sent, { olderThan: daysAgoIso(cfg.sequence.waitBetweenDmsDays) })) {
-    await setProspectStatus(db, p.id, STATUS.stopped);
+  // 4. The ask was the last message. After a reply window the agent is done
+  //    with that person, and nothing re-opens them.
+  for (const p of await getProspects(db, STATUS.askSent, { olderThan: daysAgoIso(cfg.sequence.waitBetweenDmsDays) })) {
+    await setProspectStatus(db, p.id, STATUS.handedOver);
   }
 }
 
 /** Writes, validates and sends one message step; records it and advances the status. */
-async function sendStep(db: DB, deps: SequenceDeps, p: ProspectRow, step: Step, nextStatus: string): Promise<boolean> {
+async function sendStep(
+  db: DB,
+  deps: SequenceDeps,
+  p: ProspectRow,
+  step: RelationshipStep,
+  nextStatus: string
+): Promise<boolean> {
+  const thread = await getThread(db, p.id);
   let message: GeneratedMessage;
   try {
-    message = await deps.writeMessage(p, step);
+    message = await deps.writeMessage(p, step, thread);
   } catch (err) {
     await setProspectStatus(db, p.id, STATUS.skipped);
     log(`Skipping ${label(p)}: ${err instanceof Error ? err.message : String(err)}`);
@@ -182,6 +303,8 @@ async function sendStep(db: DB, deps: SequenceDeps, p: ProspectRow, step: Step, 
   }
   await recordMessage(db, p.id, step, message.body, message.angle, true);
   await recordAction(db, p.id, "dm", step);
+  // A converse turn stays in the same state on purpose: the status says where
+  // the relationship is, and the turn count in agent_messages is what bounds it.
   await setProspectStatus(db, p.id, nextStatus, message.angle);
   return true;
 }

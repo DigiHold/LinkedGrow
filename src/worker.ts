@@ -10,7 +10,12 @@ import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { isWithinBusinessHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { browserActions } from "./linkedin/actions.ts";
-import { generateMessage } from "./messages/generate.ts";
+import {
+  RELATIONSHIP_STEPS,
+  introMessage,
+  converseMessage,
+  askMessage,
+} from "./messages/relationship.ts";
 import { getStyleSamples } from "./linkedin/style.ts";
 import { sleep, randInt } from "./browser/human.ts";
 
@@ -89,21 +94,24 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       },
       // Every action waits out the gap on the SHARED address, not on the agent.
       pauseMs: () => 0,
-      writeMessage: async (prospect, step) =>
-        withAddress(key, async () =>
-          generateMessage(
-            ctx,
-            {
-              firstName: prospect.first_name ?? "",
-              fullName: prospect.full_name ?? "",
-              headline: prospect.headline ?? "",
-              source: prospect.source ?? "",
-              context: prospect.context ?? undefined,
-            },
-            step,
-            await getStyleSamples(ctx)
-          )
-        ),
+      // Each step of the relationship sequence writes differently, and the
+      // differences are the product. Routing them through one generic
+      // "write a DM" call is how they would quietly become the same message.
+      writeMessage: async (prospect, step, thread) =>
+        withAddress(key, async () => {
+          const to = {
+            firstName: prospect.first_name ?? "",
+            headline: prospect.headline ?? undefined,
+            signalText: prospect.context ?? undefined,
+          };
+          const body =
+            step === RELATIONSHIP_STEPS.intro
+              ? await introMessage(ctx, ctx.sender, to)
+              : step === RELATIONSHIP_STEPS.converse
+                ? await converseMessage(ctx, ctx.sender, to, thread)
+                : await askMessage(ctx, ctx.sender, to, thread);
+          return { body, angle: step };
+        }),
     });
 
     await touchRun(ctx);

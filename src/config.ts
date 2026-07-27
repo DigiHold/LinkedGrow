@@ -53,6 +53,18 @@ export interface AgentContext {
   agentsOnAccount: number;
   warmupStartedAt: Date | null;
   reviewMode: boolean;
+  /**
+   * Who the messages are from. The relationship steps write as a named person
+   * rather than as a company, so the first name is not optional: a message
+   * signed with nothing reads as software.
+   */
+  sender: {
+    firstName: string;
+    /** Only used at the ask step. */
+    companyInfo: string;
+    /** So small talk can be answered honestly rather than dodged. */
+    location: string;
+  };
   cfg: Config;
 }
 

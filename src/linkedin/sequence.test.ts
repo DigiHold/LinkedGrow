@@ -55,6 +55,7 @@ async function freshDb(): Promise<DB> {
     agentsOnAccount: 1,
     warmupStartedAt: null,
     reviewMode: false,
+    sender: { firstName: "Maria", companyInfo: "website security scans", location: "Montreux" },
     cfg: baseCfg(),
   } as AgentContext;
 }
@@ -110,6 +111,7 @@ function fakeActions(over: Partial<LinkedInActions> = {}): LinkedInActions {
     canMessageNow: async () => false,
     recentConnections: async () => [],
     inboxRepliers: async () => [],
+    readThread: async () => [],
     sendDm: async () => true,
     withdrawInvite: async () => true,
     ...over,
@@ -121,7 +123,7 @@ function deps(actions: LinkedInActions, notify: (m: string) => void = () => {}):
     actions,
     notify,
     pauseMs: () => 0,
-    writeMessage: async (_p, step) => ({ body: `Quick question for you about your work. Maria Lecocq (${step})`, angle: "website security scan" }),
+    writeMessage: async (_p, step) => ({ body: `Quick question for you about your work. Maria (${step})`, angle: step }),
   };
 }
 
@@ -139,15 +141,20 @@ test("queued prospects get a warm-up and a connection request", async () => {
   drop();
 });
 
-// Acceptances are read from the connections list, and are picked up on the very next pass rather
-// than after a fixed wait: the first message is only worth sending while the invite is still fresh.
-test("an accepted invite is detected and messaged in the same pass", async () => {
+// The acceptance is noticed on the very next pass, and the introduction does NOT follow in the same
+// minute. A message that lands seconds after an accept is the clearest automation tell there is.
+test("an accepted invite is picked up, and the intro waits", async () => {
   const db = await freshDb();
+  let dmCalls = 0;
   await seed(db, STATUS.connectSent, daysAgo(0));
-  await runSequence(baseCfg(), db, deps(fakeActions({ recentConnections: async () => ["Jane Doe"] })));
+  const actions = fakeActions({
+    recentConnections: async () => ["Jane Doe"],
+    sendDm: async () => { dmCalls++; return true; },
+  });
+  await runSequence(baseCfg(), db, deps(actions));
   assert.equal(await countProspectsByStatus(db, STATUS.connectSent), 0);
-  // Holding the message for the next pass meant a Saturday acceptance waited until Monday.
-  assert.equal(await countProspectsByStatus(db, STATUS.dm1Sent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.connected), 1);
+  assert.equal(dmCalls, 0);
   drop();
 });
 
@@ -161,61 +168,164 @@ test("an open profile skips the wait and goes straight to the messaging track", 
   drop();
 });
 
-test("a connected prospect receives DM1", async () => {
+test("a connected prospect receives the intro once its own wait has passed", async () => {
   const db = await freshDb();
-  const id = await seed(db, STATUS.connected, daysAgo(0));
+  const id = await seed(db, STATUS.connected, daysAgo(3));
   await runSequence(baseCfg(), db, deps(fakeActions()));
-  assert.equal(await countProspectsByStatus(db, STATUS.dm1Sent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 1);
   const { rows } = await sharedDb().execute({
     sql: "SELECT step, sent_at FROM agent_messages WHERE lead_id = ?",
     args: [id],
   });
-  assert.equal(rows[0]?.step, "dm1");
+  assert.equal(rows[0]?.step, "intro");
   assert.ok(rows[0]?.sent_at);
   assert.equal(await countActionsSince(db, "dm", epochIso()), 1);
   drop();
 });
 
-test("a dm1 prospect with no reply gets DM2 after the wait", async () => {
+// The differentiator, and the thing Nicolas asked for explicitly: silence is not a stop.
+test("a prospect who never answered the intro still gets the ask", async () => {
   const db = await freshDb();
-  await seed(db, STATUS.dm1Sent, daysAgo(10));
+  await seed(db, STATUS.introSent, daysAgo(10));
   await runSequence(baseCfg(), db, deps(fakeActions()));
-  assert.equal(await countProspectsByStatus(db, STATUS.dm2Sent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.askSent), 1);
   drop();
 });
 
-test("any inbound reply stops the sequence and alerts, sending no DM", async () => {
+// The other half of it: a reply used to end the sequence, and must not any more.
+test("a reply moves the prospect into a conversation instead of stopping", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [
+      { from: "us", body: "Hi Jane, good to be connected." },
+      { from: "them", body: "Thanks, likewise. What made you reach out?" },
+    ],
+  });
+  await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
+  // Nothing is escalated for an ordinary reply. The agent handles it.
+  assert.equal(alerts.length, 0);
+  const { rows } = await sharedDb().execute("SELECT direction, body FROM agent_messages WHERE direction = 'in'");
+  assert.equal(rows.length, 1);
+  drop();
+});
+
+test("the same reply is not stored twice across two passes", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Sure, tell me more." }],
+  });
+  await runSequence(baseCfg(), db, deps(actions));
+  await runSequence(baseCfg(), db, deps(actions));
+  const { rows } = await sharedDb().execute("SELECT id FROM agent_messages WHERE direction = 'in'");
+  assert.equal(rows.length, 1);
+  drop();
+});
+
+// Buying signals and refusals both go to the customer immediately. An agent must never negotiate,
+// and continuing after a no is the behaviour that earns the category its reputation.
+test("a reply that needs a human is handed over and alerts", async () => {
   const db = await freshDb();
   const alerts: string[] = [];
   let dmCalls = 0;
-  await seed(db, STATUS.dm1Sent, daysAgo(10));
-  const actions = fakeActions({ inboxRepliers: async () => ["Jane Doe"], sendDm: async () => { dmCalls++; return true; } });
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Interesting, what is your pricing?" }],
+    sendDm: async () => { dmCalls++; return true; },
+  });
   await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
-  assert.equal(await countProspectsByStatus(db, STATUS.replied), 1);
-  assert.equal(await countProspectsByStatus(db, STATUS.dm2Sent), 0);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 0);
   assert.equal(dmCalls, 0);
   assert.equal(alerts.length, 1);
   drop();
 });
 
-test("never sends a third message: dm2 prospects stop, never get another DM", async () => {
+test("a conversation gets an answer, and the answer is not the ask", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.conversing, daysAgo(1));
+  await runSequence(baseCfg(), db, deps(fakeActions()));
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
+  const { rows } = await sharedDb().execute({
+    sql: "SELECT step FROM agent_messages WHERE lead_id = ? AND direction = 'out'",
+    args: [id],
+  });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.step, "converse");
+  drop();
+});
+
+// The converse loop is bounded, so an agent can never talk forever without coming to the point.
+test("after the maximum number of answers the conversation moves to the ask", async () => {
+  const db = await freshDb();
+  const id = await seed(db, STATUS.conversing, daysAgo(5));
+  const now = Math.floor(Date.now() / 1000);
+  for (let i = 0; i < 3; i++) {
+    await sharedDb().execute({
+      sql: `INSERT INTO agent_messages (id, workspace_id, agent_id, lead_id, direction, step, body, sent_at, created_at)
+            VALUES (?, ?, ?, ?, 'out', 'converse', 'earlier answer', ?, ?)`,
+      args: [crypto.randomUUID(), db.workspaceId, db.agentId, id, now, now],
+    });
+  }
+  await runSequence(baseCfg(), db, deps(fakeActions()));
+  assert.equal(await countProspectsByStatus(db, STATUS.askSent), 1);
+  drop();
+});
+
+test("the ask is the last message: nothing follows it", async () => {
   const db = await freshDb();
   let dmCalls = 0;
-  await seed(db, STATUS.dm2Sent, daysAgo(10));
+  await seed(db, STATUS.askSent, daysAgo(10));
   await runSequence(baseCfg(), db, deps(fakeActions({ sendDm: async () => { dmCalls++; return true; } })));
-  assert.equal(await countProspectsByStatus(db, STATUS.stopped), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
   assert.equal(dmCalls, 0);
+  drop();
+});
+
+// A reply that lands after the ask goes to the customer, whatever it says. The agent is done.
+test("a reply after the ask is always handed over", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  await seed(db, STATUS.askSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "sounds good" }],
+  });
+  await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
+  assert.equal(alerts.length, 1);
+  drop();
+});
+
+// The inbox naming someone whose thread reads empty must not make the agent answer nothing.
+test("a replier whose thread reads empty is left alone", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [],
+  });
+  await runSequence(baseCfg(), db, deps(actions));
+  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 0);
   drop();
 });
 
 test("the daily DM cap is respected", async () => {
   const db = await freshDb();
-  await seed(db, STATUS.connected, daysAgo(0));
-  await seed(db, STATUS.connected, daysAgo(0));
-  await seed(db, STATUS.connected, daysAgo(0));
+  await seed(db, STATUS.connected, daysAgo(3));
+  await seed(db, STATUS.connected, daysAgo(3));
+  await seed(db, STATUS.connected, daysAgo(3));
   const cfg = baseCfg({ limits: { connectPerWeekMax: 100, dmPerDayMax: 2 } });
   await runSequence(cfg, db, deps(fakeActions()));
-  assert.equal(await countProspectsByStatus(db, STATUS.dm1Sent), 2);
+  assert.equal(await countProspectsByStatus(db, STATUS.introSent), 2);
   assert.equal(await countProspectsByStatus(db, STATUS.connected), 1);
   drop();
 });
@@ -234,7 +344,7 @@ test("a stale unaccepted invite is withdrawn and stopped", async () => {
 test("a message that cannot be generated skips the prospect instead of sending", async () => {
   const db = await freshDb();
   let dmCalls = 0;
-  await seed(db, STATUS.connected, daysAgo(0));
+  await seed(db, STATUS.connected, daysAgo(3));
   const d = deps(fakeActions({ sendDm: async () => { dmCalls++; return true; } }));
   d.writeMessage = async () => {
     throw new Error("no clean message after 4 tries");

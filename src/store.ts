@@ -64,9 +64,10 @@ const FUNNEL: Record<string, string> = {
   queued: "queued",
   connect_sent: "invited",
   connected: "accepted",
-  dm1_sent: "messaged",
-  dm2_sent: "messaged",
-  replied: "replied",
+  intro_sent: "messaged",
+  conversing: "replied",
+  ask_sent: "messaged",
+  handed_over: "replied",
   stopped: "finished",
   skipped: "skipped",
 };
@@ -162,6 +163,62 @@ export async function recordMessage(
       step, body, now, now,
     ],
   });
+}
+
+/**
+ * What they wrote back.
+ *
+ * The converse step cannot answer a message it has not read, so an inbound
+ * reply is stored the same way an outbound one is. Nothing else in the system
+ * writes direction 'in'.
+ */
+export async function recordInbound(
+  ctx: DB,
+  prospectId: number,
+  body: string
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `INSERT INTO agent_messages
+            (id, workspace_id, agent_id, lead_id, direction, step, body, sent_at, created_at)
+          VALUES (?, ?, ?, ?, 'in', NULL, ?, ?, ?)`,
+    args: [
+      crypto.randomUUID(), ctx.workspaceId, ctx.agentId, uuidFor(prospectId),
+      body, now, now,
+    ],
+  });
+}
+
+/** The conversation so far, oldest first, which is the order it is read in. */
+export async function getThread(
+  ctx: DB,
+  prospectId: number
+): Promise<{ from: "us" | "them"; body: string }[]> {
+  const res = await db().execute({
+    sql: `SELECT direction, body FROM agent_messages
+          WHERE workspace_id = ? AND agent_id = ? AND lead_id = ?
+          ORDER BY sent_at ASC, created_at ASC`,
+    args: [ctx.workspaceId, ctx.agentId, uuidFor(prospectId)],
+  });
+  return res.rows.map((r) => ({
+    from: String(r.direction) === "in" ? ("them" as const) : ("us" as const),
+    body: String(r.body),
+  }));
+}
+
+/** How many times the agent has already answered. Caps the converse loop. */
+export async function countOutboundStep(
+  ctx: DB,
+  prospectId: number,
+  step: string
+): Promise<number> {
+  const res = await db().execute({
+    sql: `SELECT COUNT(*) AS n FROM agent_messages
+          WHERE workspace_id = ? AND agent_id = ? AND lead_id = ?
+            AND direction = 'out' AND step = ?`,
+    args: [ctx.workspaceId, ctx.agentId, uuidFor(prospectId), step],
+  });
+  return Number(res.rows[0]?.n ?? 0);
 }
 
 /**

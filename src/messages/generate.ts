@@ -3,9 +3,6 @@ import { log } from "../logger.ts";
 import { generate, MODELS } from "../ai.ts";
 import { validateMessage, validateComment } from "./validate.ts";
 
-/** The two message steps in the bounded sequence. dm1 has no pitch; dm2 is a soft pitch plus a demo ask. */
-export type Step = "dm1" | "dm2";
-
 /** The prospect fields a message is written from. Matches the miner's Engager shape. */
 export interface MessageProspect {
   firstName: string;
@@ -17,50 +14,14 @@ export interface MessageProspect {
   context?: string;
 }
 
+/** What a written message hands back to the sequence. */
 export interface GeneratedMessage {
   body: string;
   angle: string;
 }
 
-const BOUNDS: Record<Step, { minWords: number; maxWords: number }> = {
-  dm1: { minWords: 12, maxWords: 32 }, // short opener, no pitch, roughly under 200 characters
-  dm2: { minWords: 30, maxWords: 85 }, // soft pitch plus a low-commitment demo ask
-};
-
 const MAX_ATTEMPTS = 4;
 
-/**
- * Writes one message for a prospect and step, then runs it through the no-slop validator and
- * regenerates until it passes. One angle per prospect, tied to a real signal (their role or what
- * they engaged with). Throws after MAX_ATTEMPTS so the sequence can skip a prospect rather than
- * send something that fails the gate.
- */
-export async function generateMessage(
-  ctx: AgentContext,
-  prospect: MessageProspect,
-  step: Step,
-  styleSamples: string[] = [],
-): Promise<GeneratedMessage> {
-  const angle = pickAngle(ctx, prospect);
-  const bounds = BOUNDS[step];
-  let failures: string[] = [];
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const prompt = buildPrompt(ctx, prospect, step, angle, styleSamples, failures);
-    const raw = await generate(ctx, prompt, { maxTokens: 320, purpose: "message" });
-    const body = cleanOutput(raw);
-    const result = validateMessage(body, {
-      senderName: ctx.cfg.product.senderName,
-      headline: prospect.headline,
-      minWords: bounds.minWords,
-      maxWords: bounds.maxWords,
-    });
-    if (result.ok) return { body, angle };
-    failures = result.reasons;
-    log(`${step} attempt ${attempt}/${MAX_ATTEMPTS} for ${prospect.firstName} rejected: ${failures.join("; ")}`);
-  }
-  throw new Error(`Could not write a clean ${step} for ${prospect.firstName} after ${MAX_ATTEMPTS} tries: ${failures.join("; ")}`);
-}
 
 /**
  * Matches free text to one core Amabrik angle (security / AI visibility / GDPR), or null when none
@@ -100,69 +61,6 @@ export function matchProduct(products: RedditProduct[], text: string): { name: s
     }
   }
   return null;
-}
-
-function buildPrompt(
-  ctx: AgentContext,
-  prospect: MessageProspect,
-  step: Step,
-  angle: string,
-  styleSamples: string[],
-  failures: string[],
-): string {
-  const bounds = BOUNDS[step];
-  const sender = ctx.cfg.product.senderName;
-  const observation = describeSignal(prospect);
-  const style = styleSamples.length
-    ? `\nWrite in this person's real voice. Here are messages ${sender} has sent before, match their tone:\n${styleSamples
-        .slice(0, 3)
-        .map((s) => `- ${s}`)
-        .join("\n")}\n`
-    : "";
-  const retry = failures.length ? `\nThe previous attempt was rejected for: ${failures.join("; ")}. Fix all of these.\n` : "";
-
-  const common = [
-    `You are ${sender}, sending a LinkedIn direct message to ${prospect.firstName}.`,
-    `They ${prospect.headline ? `describe themselves as: ${prospect.headline}.` : "work in this space."}`,
-    `You noticed them because ${observation}.`,
-    `The relevant angle for them is: ${angle}.`,
-    style,
-    "Hard rules:",
-    "- Plain, human, casual English, like texting someone you respect but do not know yet.",
-    "- No em dashes or en dashes. No exclamation-mark overload.",
-    "- Do not quote or paste their headline back at them.",
-    '- Do not open with "I saw", "I noticed", "I came across", "I love your", "hope you".',
-    "- No corporate or AI words (leverage, seamless, excited, thrilled, amazing, game-changer, etc.).",
-    "- Every sentence at least 6 words.",
-    `- End with a final line that is exactly: ${sender}`,
-    "- Output ONLY the message text, no preamble, no quotes, no subject line.",
-  ];
-
-  const perStep =
-    step === "dm1"
-      ? [
-          "This is the first message after they accepted the connection.",
-          "Do NOT pitch. Do NOT name any product. Do NOT include any link.",
-          ...(prospect.context
-            ? [
-                `They recently posted this, in their own words: "${prospect.context.slice(0, 300)}"`,
-                "Open by being useful about that specific thing: give one concrete, practical pointer someone experienced would give.",
-                "Never say you saw their post. Do not repeat their wording. Then ask one short question about how they are handling it.",
-              ]
-            : [
-                "Reference the shared problem space of the angle in a natural way tied to their role, then ask one short genuine question they can answer in a line.",
-              ]),
-          `Length: ${bounds.minWords} to ${bounds.maxWords} words, keep it short.`,
-        ]
-      : [
-          "This is a short follow-up after no reply to the first message.",
-          `Softly introduce ${ctx.cfg.product.name} in one sentence, describing the outcome of the angle in plain words (what it finds or fixes), not a feature list.`,
-          "Then make one low-commitment ask, like a quick look or a short demo. No links.",
-          "Keep it light and zero pressure. Do not repeat the first message.",
-          `Length: ${bounds.minWords} to ${bounds.maxWords} words.`,
-        ];
-
-  return [...common, "", ...perStep, retry].filter(Boolean).join("\n");
 }
 
 /** Turns the raw engagement signal into a natural clause for the prompt, never a creepy "I watched you". */

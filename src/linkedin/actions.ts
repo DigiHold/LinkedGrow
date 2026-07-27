@@ -26,9 +26,17 @@ export interface LinkedInActions {
   recentConnections(): Promise<string[]>;
   /**
    * Names of conversation participants whose latest message is inbound (a reply), read from the
-   * messaging inbox in one pass. The sequence matches these against active prospects to stop on any reply.
+   * messaging inbox in one pass. The sequence matches these against active prospects.
    */
   inboxRepliers(): Promise<string[]>;
+  /**
+   * The messages in one prospect's thread, oldest first.
+   *
+   * The inbox scan says who wrote back; this says what they wrote, which the
+   * converse step needs before it can answer anything. It costs a page load per
+   * replier, so it is only ever called for the handful the inbox scan named.
+   */
+  readThread(p: ProspectRow): Promise<{ from: "us" | "them"; body: string }[]>;
   /** Send a direct message. */
   sendDm(p: ProspectRow, body: string): Promise<boolean>;
   /** Withdraw a stale, still-unaccepted connection request. */
@@ -432,6 +440,39 @@ export function browserActions(page: Page): LinkedInActions {
         }
         return out;
       });
+    },
+
+    async readThread(p) {
+      // Reuses the same scoped-bubble opener as sendDm. Reading the first
+      // message list on the page returned another prospect's conversation
+      // during testing, which is the same bug openThread already exists to
+      // prevent, so it is not solved a second way here.
+      const bubble = await openThread(p);
+      if (!bubble) return [];
+      await dwell(1200, 2200);
+      const turns = await bubble
+        .locator(".msg-s-event-listitem")
+        .evaluateAll((nodes) => {
+          const out: { from: "us" | "them"; body: string }[] = [];
+          for (const node of nodes) {
+            const el = node as HTMLElement;
+            const body = (
+              el.querySelector(".msg-s-event-listitem__body") as HTMLElement | null
+            )?.innerText?.trim();
+            if (!body) continue;
+            // LinkedIn marks the OTHER person's messages with this modifier.
+            // Unverified against the live DOM, so the default is "ours":
+            // mislabelling one of our messages as theirs would have the agent
+            // answering itself, which is the worse of the two failures.
+            const mine = el.className.includes("msg-s-event-listitem--other")
+              ? false
+              : true;
+            out.push({ from: mine ? "us" : "them", body });
+          }
+          return out;
+        })
+        .catch(() => [] as { from: "us" | "them"; body: string }[]);
+      return turns;
     },
 
     async sendDm(p, body) {
