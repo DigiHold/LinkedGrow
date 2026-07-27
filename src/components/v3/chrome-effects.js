@@ -61,6 +61,12 @@ export function initV3Chrome() {
       }});
   }
   document.querySelectorAll('.wsplit').forEach(function(el){
+    /* Idempotent on purpose. React runs effects twice in development, and
+       splitWords clones element nodes rather than rebuilding them, so a second
+       pass carried the first pass's inline blur into the middle of the line and
+       left two words permanently smeared. */
+    if(el.dataset.split==='1') return;
+    el.dataset.split='1';
     var blur=+(el.dataset.blur||0), out=[];
     splitWords(el,out);
     el.textContent=''; out.forEach(function(o){el.appendChild(o);});
@@ -74,11 +80,18 @@ export function initV3Chrome() {
         w.style.transition='opacity .7s var(--e), transform .7s var(--e), filter .95s var(--e)';
       }
       var last=[].slice.call(ws).slice(-blur);
-      track(new IntersectionObserver(function(en,o){ if(!en[0].isIntersecting) return;
+      var cleared=false;
+      var clear=function(){ if(cleared) return; cleared=true;
         last.forEach(function(w,j){ setTimeout(function(){ w.style.filter='blur(0px)'; },
-          (L-blur+j)*42+340); });
-        o.disconnect();
+          (L-blur+j)*42+340); }); };
+      track(new IntersectionObserver(function(en,o){ if(!en[0].isIntersecting) return;
+        clear(); o.disconnect();
       },{threshold:.2})).observe(el);
+      /* A hero h1 is above the fold, so the observer above should fire at once.
+         When it does not, the last words stay permanently blurred and the
+         headline is unreadable, which is worse than losing the effect. This is
+         the floor under it. */
+      setTimeout(clear, 1600);
     }
   });
 

@@ -429,7 +429,10 @@
    The home ends its hero on the product shot hanging past the ground. This page
    has no video, so the plan cards do the same job: the field stops behind them
    with a rounded edge and the cards carry on over the section below. */
-.v3 .hero.pricing { padding-bottom: clamp(300px, 26vw, 430px); border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
+/* Matched to the home, which was measured rather than guessed: radius 0, and
+   the ground ending exactly where the stage does. The pull below is always
+   SMALLER than this padding, so the cards can never ride up over the toggle. */
+.v3 .hero.pricing { padding-bottom: clamp(330px, 29vw, 470px); }
 /* The cards are a sibling of the hero, not its last child. Inside it their
    negative bottom margin collapsed through .wrap and out of the section, so the
    hero kept its full height and the next section slid up underneath. Pulled up
@@ -437,7 +440,7 @@
    the dark ground and half on the light one. */
 .v3 .prhero {
   position: relative; z-index: 6;
-  margin-top: clamp(-470px, -31vw, -260px);
+  margin-top: clamp(-410px, -25vw, -215px);
   padding: 0 24px;
 }
 .v3 .hero.pricing + * ,
@@ -493,9 +496,18 @@
 .v3 .ctab thead .own { color: var(--b); background: var(--wash); border-top-left-radius: 12px; border-top-right-radius: 12px; }
 .v3 .ctab tr:last-child .own { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 .v3 .ctab .no { color: var(--faint); }
-@media (max-width: 860px) {
-  .v3 .ctabwrap { overflow-x: auto; }
-  .v3 .ctab { min-width: 660px; }
+/* No horizontal scroll on a phone: .responsive-table turns every row into a
+   card, and these only restate the v3 palette on top of it. */
+@media (max-width: 1023px) {
+  .v3 .ctab thead { display: none; }
+  .v3 .ctab tbody tr { background: var(--bg); border-color: var(--line); }
+  .v3 .ctab tbody th {
+    display: block; width: auto; background: var(--bg3);
+    border-bottom: 1px solid var(--line); font-size: 14.5px;
+  }
+  .v3 .ctab tbody td { border-color: var(--line); gap: 18px; }
+  .v3 .ctab tbody td::before { color: var(--faint); font-family: var(--m); letter-spacing: .1em; }
+  .v3 .ctab .own { background: var(--wash); border-radius: 0; }
 }
 
 /* The trust strip, on the dark ground, borrowed from the home's hard limits. */

@@ -215,8 +215,8 @@ export function V3PricingCompare() {
             </div>
           </div>
 
-          <div className="ctabwrap rv">
-            <table className="ctab">
+          <div className="rv">
+            <table className="ctab responsive-table">
               <thead>
                 <tr>
                   <th></th>
@@ -228,51 +228,51 @@ export function V3PricingCompare() {
               <tbody>
                 <tr>
                   <th>Monthly cost</th>
-                  <td>Around $4,000 before tools</td>
-                  <td>$174 across four vendors</td>
-                  <td className="own">$99, one invoice</td>
+                  <td data-label="A junior rep">Around $4,000 before tools</td>
+                  <td data-label="A stack you assemble">$174 across four vendors</td>
+                  <td className="own" data-label="LinkedGrow Pro">$99, one invoice</td>
                 </tr>
                 <tr>
                   <th>Time to first conversation</th>
-                  <td>Weeks of hiring, then ramp</td>
-                  <td>Days of setup and wiring</td>
-                  <td className="own">Same day, warm-up starts at once</td>
+                  <td data-label="A junior rep">Weeks of hiring, then ramp</td>
+                  <td data-label="A stack you assemble">Days of setup and wiring</td>
+                  <td className="own" data-label="LinkedGrow Pro">Same day, warm-up starts at once</td>
                 </tr>
                 <tr>
                   <th>Who finds the people</th>
-                  <td>They do, from a list you buy</td>
-                  <td>You do, from credits you top up</td>
-                  <td className="own">The agent, from live signals</td>
+                  <td data-label="A junior rep">They do, from a list you buy</td>
+                  <td data-label="A stack you assemble">You do, from credits you top up</td>
+                  <td className="own" data-label="LinkedGrow Pro">The agent, from live signals</td>
                 </tr>
                 <tr>
                   <th>Why each lead was picked</th>
-                  <td className="no">Ask them</td>
-                  <td className="no">A score with no reason</td>
-                  <td className="own">A score, its reason, and a link to the post</td>
+                  <td className="no" data-label="A junior rep">Ask them</td>
+                  <td className="no" data-label="A stack you assemble">A score with no reason</td>
+                  <td className="own" data-label="LinkedGrow Pro">A score, its reason, and a link to the post</td>
                 </tr>
                 <tr>
                   <th>Message quality</th>
-                  <td>As good as the person</td>
-                  <td className="no">Yours to solve</td>
-                  <td className="own">Anti-slop gate before anything sends</td>
+                  <td data-label="A junior rep">As good as the person</td>
+                  <td className="no" data-label="A stack you assemble">Yours to solve</td>
+                  <td className="own" data-label="LinkedGrow Pro">Anti-slop gate before anything sends</td>
                 </tr>
                 <tr>
                   <th>Account safety</th>
-                  <td>Human pace by definition</td>
-                  <td className="no">Your problem, per tool</td>
-                  <td className="own">Hard limits it cannot break</td>
+                  <td data-label="A junior rep">Human pace by definition</td>
+                  <td className="no" data-label="A stack you assemble">Your problem, per tool</td>
+                  <td className="own" data-label="LinkedGrow Pro">Hard limits it cannot break</td>
                 </tr>
                 <tr>
                   <th>When they reply</th>
-                  <td>They handle it</td>
-                  <td className="no">Nothing happens</td>
-                  <td className="own">The agent answers, then hands you the ones that matter</td>
+                  <td data-label="A junior rep">They handle it</td>
+                  <td className="no" data-label="A stack you assemble">Nothing happens</td>
+                  <td className="own" data-label="LinkedGrow Pro">The agent answers, then hands you the ones that matter</td>
                 </tr>
                 <tr>
                   <th>If it is not working</th>
-                  <td>A conversation nobody enjoys</td>
-                  <td>Four cancellations</td>
-                  <td className="own">One click, and your leads export</td>
+                  <td data-label="A junior rep">A conversation nobody enjoys</td>
+                  <td data-label="A stack you assemble">Four cancellations</td>
+                  <td className="own" data-label="LinkedGrow Pro">One click, and your leads export</td>
                 </tr>
               </tbody>
             </table>
