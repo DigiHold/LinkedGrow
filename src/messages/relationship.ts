@@ -1,0 +1,330 @@
+import type { AgentContext } from "../config.ts";
+import { generate, MODELS } from "../ai.ts";
+import { validateMessage } from "./validate.ts";
+
+/**
+ * The relationship sequence. This is the product's differentiator, so the
+ * reasoning behind every choice is written down here rather than living in
+ * somebody's head.
+ *
+ * Every competitor opens with a pitch. LinkedGrow opens with a person, earns a
+ * reply, answers it like a human, and only then raises the reason it is there.
+ *
+ * WHAT THE EVIDENCE SAYS, because most of this market runs on folklore:
+ *
+ * - A note on the connection request does not lift acceptance and slightly
+ *   lowers it. Four independent datasets agree, including two vendors whose
+ *   main feature is personalised notes at scale (Belkins 14,077 contacts,
+ *   Expandi 15.1M touchpoints, Waalaxy 10,000+ invitations, sbl.so 47
+ *   campaigns). So the invitation goes out bare.
+ * - The message after the accept replies at roughly 3x a connection note,
+ *   10.4% against 3.0% across 13.2 million requests, and the note's reply rate
+ *   fell 37% over twelve months. The conversation belongs after the accept.
+ * - Short wins. LinkedIn's own analysis of tens of millions of InMails: under
+ *   400 characters responds 22% above average, over 1,200 responds 11% below.
+ *   Every message here is a few lines.
+ * - Follow-up questions increase liking (Huang et al., JPSP 2017, d = 0.27 to
+ *   0.38 across two dyadic studies). Answering a question and asking one back
+ *   is the single best-supported behaviour in the whole sequence.
+ * - Asking for interest beats asking for time at the cold stage: Gong, 304,174
+ *   emails. ROI language lowered success 15% in the same dataset.
+ * - Foot-in-the-door backfires when the same requester asks again with no
+ *   delay: 7% compliance against a 27% control (Chartrand, Pinckert & Burger
+ *   1999, N = 181). The soft ask waits.
+ *
+ * WHAT THE EVIDENCE DOES NOT SAY, so nobody quotes a number we do not have:
+ *
+ * - There is no published A/B test of a no-pitch intro against a pitch on
+ *   LinkedIn. Our architecture follows from the accept-versus-reply split, not
+ *   from a trial of this exact idea.
+ * - There is no clean evidence that liking a post before connecting lifts
+ *   acceptance. Waalaxy states outright that profile views do nothing, and the
+ *   famous 74% figure counts inbound requests in its denominator. We keep the
+ *   like because it makes the invitation non-anonymous, and we never claim a
+ *   number for it.
+ * - Nobody has published how long to wait after an accept. Every figure below
+ *   is a judgement, marked as one.
+ */
+
+/** The lifecycle, which is what makes the sequence different. */
+export const RELATIONSHIP_STEPS = {
+  /** Like their most recent post. Non-anonymous, no claim attached. */
+  warm: "warm",
+  /** The invitation, with no note on it. */
+  invite: "invite",
+  /** First message after the accept. Introduces a person, sells nothing. */
+  intro: "intro",
+  /**
+   * They answered. The agent answers back like a person: address what they
+   * actually said, then one question. It does NOT pivot here, and this can
+   * happen more than once.
+   */
+  converse: "converse",
+  /**
+   * The one soft ask. Sent whether or not they ever replied to the intro,
+   * because a silent prospect has still had a message land and read.
+   */
+  ask: "ask",
+  /** Done. Whatever happens next belongs to the customer. */
+  handover: "handover",
+} as const;
+
+export type RelationshipStep =
+  (typeof RELATIONSHIP_STEPS)[keyof typeof RELATIONSHIP_STEPS];
+
+/**
+ * Pacing, in days. Judgement rather than evidence: nobody has published this.
+ *
+ * The lower bounds come from the two findings that do exist. Chartrand showed
+ * a same-requester follow-up with no delay backfiring, so nothing follows
+ * immediately. Burger showed reciprocity gone by a week, so nothing waits
+ * long enough to be forgotten either.
+ */
+export const PACING = {
+  /** Between the like and the invitation. Long enough not to look like one script. */
+  likeToInviteHours: [20, 44] as const,
+  /** Between the accept and the intro. Same day, not the same minute. */
+  acceptToIntroHours: [3, 26] as const,
+  /** How fast to answer once they write. Fast, but never instant. */
+  replyDelayMinutes: [12, 190] as const,
+  /** From the last exchange to the ask, when they did reply. */
+  conversationToAskDays: [2, 4] as const,
+  /** From the intro to the ask, when they never replied. */
+  silenceToAskDays: [4, 7] as const,
+  /** How many times the agent will answer before it must move to the ask. */
+  maxConverseTurns: 3,
+} as const;
+
+const VOICE = `You are writing a LinkedIn direct message as a real person, not as a company and not as an assistant.
+
+Hard rules, all of them:
+- Two to four short lines. Never more. Under 400 characters.
+- Write the way someone types on a phone: plain words, contractions, no formatting, no bullet points, no line of dashes.
+- Never use an em dash or an en dash.
+- No greeting formulas beyond a simple hello and their first name.
+- Never mention a product name, a link, a price, a metric or a case study unless the step explicitly asks for it.
+- Never say "I saw your post about", "I came across your profile", "I hope this finds you well", "just reaching out", "quick question", "resonated", "leverage", "synergies", "circle back", "touch base".
+- Never compliment something generic. If you cannot name the actual thing they said, say nothing about them at all.
+- Never claim to have read something you were not given.
+- Sign with the sender's first name on its own line, nothing after it.`;
+
+export interface Sender {
+  firstName: string;
+  /** What they sell, only used at the ask step. */
+  companyInfo: string;
+  /** Where they are, so small talk can be answered honestly. */
+  location?: string;
+}
+
+export interface Prospect {
+  firstName: string;
+  headline?: string;
+  company?: string;
+  /** The thing they actually wrote that surfaced them, if there is one. */
+  signalText?: string;
+}
+
+export interface Turn {
+  from: "us" | "them";
+  body: string;
+}
+
+async function write(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect,
+  prompt: string,
+  purpose: string
+): Promise<string> {
+  // The no-slop gate is the reason these do not read as AI, so a draft that
+  // fails it is rewritten rather than sent. Bounded, because a pathological
+  // prompt can fail forever.
+  let failures: string[] = [];
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const body = (
+      await generate(ctx, prompt + failureNote(failures), {
+        purpose,
+        maxTokens: 220,
+        model: MODELS.writer,
+        systemPrompt: VOICE,
+      })
+    )
+      .replace(/^["']|["']$/g, "")
+      .trim();
+
+    // The ported gate, unchanged. It is the reason these do not read as AI,
+    // and 70 words is roughly the 400-character band LinkedIn's own InMail
+    // data puts 22% above average.
+    const result = validateMessage(body, {
+      senderName: sender.firstName,
+      ...(prospect.headline ? { headline: prospect.headline } : {}),
+      maxWords: 70,
+    });
+    if (result.ok) return body;
+    failures = result.reasons;
+  }
+  throw new Error("Could not write a message that passes the gate");
+}
+
+function failureNote(failures: string[]): string {
+  if (!failures.length) return "";
+  return `\n\nYour last attempt was rejected for: ${failures.join("; ")}. Fix those and keep everything else.`;
+}
+
+/**
+ * Step 3: the introduction.
+ *
+ * It sells nothing. It is also not a bare greeting, and that distinction cost
+ * a research pass to establish.
+ *
+ * A pure "thanks for connecting, nice to meet you" is the message sales
+ * communities openly mock: the highest-scoring reactions to it on r/sales are
+ * all rejections, and the one person who measured it reported a 3% response
+ * rate. Nobody has ever published a denominatored reply rate for it. What does
+ * get answered is a message that has a reason for existing which is not a
+ * pitch, and closes with nothing being asked for.
+ *
+ * The two documented shapes:
+ *  - Justin Welsh's passive DM, reported above 10% reply: one specific true
+ *    thing about them, one line of who you are, and no ask at all.
+ *  - The DM Josh Braun publicly said made him reply: a specific observation,
+ *    one genuine question, and "either way, thanks for the great content".
+ *
+ * So: name the actual thing they wrote, say who you are in one clause, ask one
+ * question they can answer in a line, and close so that ignoring it costs them
+ * nothing. The zero-ask close is the load-bearing part.
+ */
+export function introMessage(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect
+): Promise<string> {
+  return write(
+    ctx,
+    sender,
+    prospect,
+    `You are ${sender.firstName}. ${prospect.firstName} just accepted your connection request on LinkedIn. This is your first message.
+
+${prospect.signalText ? `What they actually wrote, which is why you found them:\n"${prospect.signalText}"` : "You have nothing specific they wrote. Do not invent one."}
+${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
+
+Write it.
+
+- ${prospect.signalText ? "Open by naming the specific thing they said, in your own words, in a way that shows you read it. Never quote it back at them." : "Open with hello and their first name. Do not pretend to have read anything."}
+- Say who you are in one short clause. Not what you sell, not your company, not your title as a pitch.
+- Ask one question they can answer in a single line, about them or about what they said.
+- Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
+- Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
+- Three lines.`,
+    "intro"
+  );
+}
+
+/**
+ * Step 4: answering what they said.
+ *
+ * The rule that matters: answer their actual question first, in their own
+ * terms, before anything else. If they asked where you are from, say where you
+ * are from. Then one question back, because follow-up questions are the
+ * best-evidenced behaviour available to us here.
+ *
+ * This step never mentions the product. Not once, not as a hint.
+ */
+export function converseMessage(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect,
+  thread: Turn[]
+): Promise<string> {
+  const transcript = thread
+    .map((t) => `${t.from === "us" ? sender.firstName : prospect.firstName}: ${t.body}`)
+    .join("\n");
+
+  return write(
+    ctx,
+    sender,
+    prospect,
+    `You are ${sender.firstName}${sender.location ? `, based in ${sender.location}` : ""}. You are messaging ${prospect.firstName} on LinkedIn.
+
+The conversation so far:
+${transcript}
+
+Write your next message.
+
+- Answer what they actually said or asked, directly and specifically, in the first line. If they asked you a question, answer it honestly before anything else.
+- Then ask them one question back, about them, that follows from what they just said.
+- Say nothing at all about what you do, what you sell, or why you connected. That comes later and mentioning it here ruins it.
+- Two or three lines.`,
+    "converse"
+  );
+}
+
+/**
+ * Step 5: the one ask.
+ *
+ * Sent whether or not they ever answered the intro. A prospect who read the
+ * intro and said nothing has still seen the name; the ask is what the sequence
+ * was for, and skipping it wastes the accept.
+ *
+ * It asks whether they are interested, never for a slot in their calendar.
+ * Gong's 304,174 emails: the interest CTA won at cold stage, and asking for
+ * time reads as asking for a resource. No ROI language either, which cost 15%
+ * in the same dataset.
+ */
+export function askMessage(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect,
+  thread: Turn[]
+): Promise<string> {
+  const talked = thread.some((t) => t.from === "them");
+  const transcript = thread
+    .map((t) => `${t.from === "us" ? sender.firstName : prospect.firstName}: ${t.body}`)
+    .join("\n");
+
+  return write(
+    ctx,
+    sender,
+    prospect,
+    `You are ${sender.firstName}. You are messaging ${prospect.firstName} on LinkedIn${prospect.company ? ` at ${prospect.company}` : ""}.
+
+${talked ? `The conversation so far:\n${transcript}` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
+
+What you do, in your own words: ${sender.companyInfo}
+
+Write the message where you finally say why you are around, as a person would.
+
+- ${talked ? "Refer to something they actually said, in one short clause, then get to it." : "Do not pretend you have spoken. Go straight to it, lightly."}
+- Say what you do in one plain sentence, the way you would to someone at a bar who asked. No product name unless it is unavoidable, no features, no numbers, no results, no case studies.
+- End by asking whether it is something they care about, or whether it is worth them hearing more. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
+- Make it easy to say no in a word. Someone who feels cornered does not answer at all.
+- Three lines at most.`,
+    "ask"
+  );
+}
+
+/**
+ * When a reply means the agent must stop.
+ *
+ * The old rule was that any reply stops everything. That is what makes every
+ * other tool a broadcast: the moment a human engages, the machine goes quiet
+ * and the thread dies. Here a reply to the intro is the point, so the agent
+ * keeps talking. It only hands over once the ask has gone out, or once the
+ * prospect says something that a person would not automate through.
+ */
+export function shouldHandOver(step: RelationshipStep, thread: Turn[]): boolean {
+  if (step === RELATIONSHIP_STEPS.ask) return true;
+  const last = [...thread].reverse().find((t) => t.from === "them");
+  if (!last) return false;
+  return NEEDS_A_HUMAN.test(last.body);
+}
+
+/**
+ * Anything here goes to the customer immediately, whatever step it arrives at.
+ *
+ * Buying signals, because an agent must never negotiate. Refusals, because
+ * continuing after one is the behaviour that earns the whole category its
+ * reputation. And anything that sounds like a person rather than a prospect.
+ */
+const NEEDS_A_HUMAN =
+  /\b(price|pricing|cost|quote|budget|contract|demo|call|meeting|proposal|invoice|discount|not interested|no thanks|stop|unsubscribe|remove me|leave me alone|who are you|is this a bot|are you a bot|automated)\b/i;
