@@ -133,6 +133,12 @@ export function initV3Landing() {
       }});
   }
   document.querySelectorAll('.wsplit').forEach(function(el){
+    /* Splitting an already-split heading wraps every span.w in another span.w,
+       so the second pass doubles the word count and the blur the first pass put
+       on the tail lands in the middle of the list, where nothing clears it. The
+       effect has run twice; the guard is what stops the damage. */
+    if(el.dataset.split==='1') return;
+    el.dataset.split='1';
     var blur=+(el.dataset.blur||0), out=[];
     splitWords(el,out);
     el.textContent=''; out.forEach(function(o){el.appendChild(o);});
@@ -151,6 +157,9 @@ export function initV3Landing() {
           (L-blur+j)*42+340); });
         o.disconnect();
       },{threshold:.2})).observe(el);
+      /* A headline nobody can read is the worst thing on the page, so it clears
+         itself after 1.6s whatever else went wrong. */
+      setTimeout(function(){ ws.forEach(function(w){ w.style.filter='blur(0px)'; }); },1600);
     }
   });
 
