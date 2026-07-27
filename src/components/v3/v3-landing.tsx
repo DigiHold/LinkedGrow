@@ -448,7 +448,7 @@ export function V3Landing() {
             </div>
           </div>
           <div className="hard">
-            <div className="rv"><b>2</b><p>messages per person, maximum, on every sequence</p></div>
+            <div className="rv"><b>6</b><p>messages per person, maximum, then the agent stops for good</p></div>
             <div className="rv" style={{ "--d0": ".07s" } as React.CSSProperties}><b>1</b><p>dedicated residential IP per LinkedIn account</p></div>
             <div className="rv" style={{ "--d0": ".14s" } as React.CSSProperties}><b>40-120<em>s</em></b><p>enforced gap between any two actions</p></div>
             <div className="rv" style={{ "--d0": ".21s" } as React.CSSProperties}><b>0</b><p>actions on weekends, public holidays included</p></div>

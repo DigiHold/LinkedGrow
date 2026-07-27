@@ -307,3 +307,54 @@
 .dark .v3 #agent { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .dark .v3 #agent .caps,
 .dark .v3 #agent .cap .txt { background: var(--bg); }
+
+/* ── inner-page hero ──
+   The home's hero carries the URL bar and the live network canvas. Inner pages
+   carry a badge row, two buttons and sometimes a video, and these are the five
+   class names that variant needs. They shipped in the markup without ever being
+   written, which is why the inner heroes rendered as unstyled text. */
+.v3 .hero.inner { padding-bottom: clamp(48px, 6vw, 86px); }
+.v3 .hero.inner h1 { max-width: 22ch; }
+
+.v3 .vprops {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 9px; margin-top: 26px;
+}
+.v3 .vprop {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .13);
+  color: rgba(255, 255, 255, .82);
+  font-family: var(--s); font-size: 13.5px; font-weight: 500;
+  backdrop-filter: blur(6px);
+}
+.v3 .vprop svg { color: #8ce4f5; flex: none; }
+
+.v3 .hctas {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 12px; margin-top: 32px;
+}
+.v3 .hctas .btn {
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(255, 255, 255, .16);
+  color: #fff;
+}
+.v3 .hctas .btn:hover { border-color: rgba(255, 255, 255, .34); }
+
+/* The video sits on the same stage the home gives its product shot: wider than
+   the reading column, lifted off the ground, and allowed past the container on
+   a wide screen so it reads as a stage rather than as an embed. */
+.v3 .hvideo {
+  position: relative; z-index: 4;
+  width: min(1080px, 100%);
+  margin: clamp(44px, 5.5vw, 72px) auto 0;
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 60px 120px -50px rgba(0, 0, 0, .8),
+              0 0 0 1px rgba(255, 255, 255, .04) inset;
+}
+@media (min-width: 1180px) {
+  .v3 .hvideo { width: calc(100% + 110px); margin-inline: -55px; }
+}
+.v3 .hvideo > * { display: block; width: 100%; }
