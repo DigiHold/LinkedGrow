@@ -581,7 +581,7 @@ export function V3Landing() {
         <div className="wrap"><div className="finale rv">
           <div className="rings fin"><i></i><i></i><i></i></div>
           <div className="fininner">
-            <span className="eb lt"><i></i>Twenty seconds, no card asked</span>
+            <span className="eb lt"><i></i>Twenty seconds, cancel any time</span>
             <h2 style={{ marginTop: "22px" }}>See your buyers before<br />you spend anything.</h2>
             <p>Type your website. LinkedGrow comes back with your ideal customer, the competitors who share your audience, and the first real people worth talking to.</p>
             <form className="urlwrap" onSubmit={(e) => e.preventDefault()} style={{ marginTop: "32px" }}>

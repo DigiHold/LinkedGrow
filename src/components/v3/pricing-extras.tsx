@@ -56,8 +56,8 @@ export function V3PricingHero() {
           </h1>
           <p className="lead rv" style={{ "--d0": ".1s" } as React.CSSProperties}>
             The dedicated IP, the agent&apos;s AI, the leads and the four-week
-            warm-up are all in the price. Free for 7 days, no card, and nothing
-            to cancel if you walk away.
+            warm-up are all in the price. Free for 7 days, then it renews at the
+            plan price unless you cancel, which takes one click.
           </p>
                 <div style={{ marginTop: "28px", display: "flex", justifyContent: "center" }}>
                   <div className="tgwrap">
@@ -311,7 +311,7 @@ export function V3PricingGuarantee() {
                 Seven days, and nothing to cancel if you walk away.
               </h2>
               <p className="lead" style={{ marginTop: "18px" }}>
-                No card to start. Your agent is fully live for the trial, on the
+                Your card is taken at signup and charged on day 8. Your agent is fully live for the trial, on the
                 Pro plan, with a real dedicated address and a real warm-up
                 already running. If you do nothing at the end of it, it stops.
                 There is no invoice and nothing to remember to cancel.
