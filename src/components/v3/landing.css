@@ -305,8 +305,7 @@
    fell back to the same near-black, so the rhythm disappeared and the capability
    cards floated with nothing behind them. */
 .dark .v3 #agent { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.dark .v3 #agent .caps,
-.dark .v3 #agent .cap .txt { background: var(--bg); }
+.dark .v3 #agent .caps { background: var(--bg); }
 
 /* ── inner-page hero ──
    The home's hero carries the URL bar and the live network canvas. Inner pages
@@ -411,3 +410,32 @@
 .v3 .hero.inner .toggle { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .18); }
 .v3 .hero.inner .toggle button { color: rgba(255, 255, 255, .7); }
 .v3 .hero.inner .toggle button.on { color: #060911; }
+
+/* ── dark: the FAQ ──
+   .q is background:#fff and .q.open paints a white padding-box gradient, both
+   literal rather than tokens, so every question stayed a white card on a dark
+   page. */
+.dark .v3 .q { background: var(--bg2); border-color: var(--line); }
+.dark .v3 .q:hover { border-color: var(--line2); box-shadow: 0 20px 40px -32px rgba(0,0,0,.75); }
+.dark .v3 .q.open {
+  border-color: transparent;
+  background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
+              linear-gradient(140deg, var(--c), var(--b)) border-box;
+  box-shadow: 0 28px 54px -38px rgba(21,93,252,.55);
+}
+.dark .v3 .q button span.pm { background: var(--bg3); color: var(--ink2); }
+
+/* ── the pricing hero, with the plans breaking out of it ──
+   The home ends its hero on the product shot hanging past the ground. This page
+   has no video, so the plan cards do the same job: the field stops behind them
+   with a rounded edge and the cards carry on over the section below. */
+.v3 .hero.pricing { padding-bottom: 0; border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
+.v3 .hero.pricing .prhero { margin-bottom: clamp(-190px, -14vw, -110px); }
+.v3 .hero.pricing + * ,
+.v3 .hero.pricing ~ .sec:first-of-type { padding-top: 0; }
+/* The section that follows has to make room for the half that hangs over it. */
+.v3 .pricing-next { padding-top: clamp(150px, 17vw, 240px) !important; }
+@media (max-width: 820px) {
+  .v3 .hero.pricing .prhero { margin-bottom: -60px; }
+  .v3 .pricing-next { padding-top: 100px !important; }
+}

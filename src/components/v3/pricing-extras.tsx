@@ -34,7 +34,7 @@ export function V3PricingHero() {
 
   return (
     <div className="v3">
-      <section className="hero inner" style={{ paddingBottom: "clamp(56px,7vw,96px)" }}>
+      <section className="hero inner pricing">
         <div className="herobg">
           <span className="orb a"></span>
           <span className="orb b"></span>
@@ -124,7 +124,7 @@ function Tick() {
 export function V3PricingIncluded() {
   return (
     <div className="v3">
-      <section className="sec">
+      <section className="sec pricing-next">
         <div className="wrap">
           <div className="sh rv" style={{ maxWidth: "900px", marginBottom: "44px" }}>
             <span className="bul"></span>
