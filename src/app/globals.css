@@ -25,8 +25,94 @@
   --color-v3-deep: #07204f;
   --color-v3-wash: #eff5ff;
   --color-v3-sky: #8ce4f5;
+  --color-v3-bg: #ffffff;
+
+  /* The same palette under .dark. The wrapper used to reassign the custom
+     properties; as tokens they need a second name so `dark:` can reach them,
+     which is what makes every dark rule an ordinary variant. */
+  --color-v3-ink-d: #f4f7fb;
+  --color-v3-ink2-d: #cbd6e6;
+  --color-v3-mut-d: #93a2ba;
+  --color-v3-faint-d: #6d7d95;
+  --color-v3-bg-d: #070b14;
+  --color-v3-bg2-d: #0d1420;
+  --color-v3-bg3-d: #131c2b;
+  --color-v3-cream-d: #0f1622;
+  --color-v3-line-d: #1d2837;
+  --color-v3-line2-d: #27374b;
+  --color-v3-wash-d: #0f1e35;
+
+  /* The prototype's four faces, spelled exactly as the stylesheet spelled them
+     so the conversion cannot change which one a browser picks. */
+  --font-v3-display: "Host Grotesk", sans-serif;
+  --font-v3-sans: "Instrument Sans", sans-serif;
+  --font-v3-mono: "Geist Mono", monospace;
+  --font-v3-hand: "Caveat", cursive;
 
   --ease-v3: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* The paper grain the v3 pages lay over everything. It lives here because a
+     Tailwind arbitrary value cannot carry a url() with spaces and quotes in it,
+     and a token reads better on the element than 300 characters of data URI. */
+  --v3-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Keyframes the prototype declared inline. As theme animations they are
+     `animate-v3-*` utilities. */
+  --animate-v3-float: v3-float 19s ease-in-out infinite;
+  --animate-v3-scan: v3-scan 5.4s linear infinite;
+  --animate-v3-pulse-ring: v3-pulse-ring 2.6s ease-out infinite;
+  --animate-v3-breathe: v3-breathe 2.2s ease-in-out infinite;
+  --animate-v3-live: v3-live 3.4s ease-in-out infinite;
+  --animate-v3-ripple: v3-ripple 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes v3-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(46px, -38px);
+  }
+}
+@keyframes v3-scan {
+  to {
+    top: 110%;
+  }
+}
+@keyframes v3-pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
+@keyframes v3-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes v3-live {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+@keyframes v3-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
 }
 
 @theme {

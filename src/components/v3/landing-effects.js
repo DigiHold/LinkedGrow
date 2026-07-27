@@ -76,7 +76,7 @@ export function initV3Landing() {
   on(document,'pointerdown',function(e){
     var el=e.target.closest('.fill'); if(!el) return;
     var r=el.getBoundingClientRect(), s=Math.max(r.width,r.height)*2.2, n=document.createElement('span');
-    n.className='rip'; n.style.width=n.style.height=s+'px';
+    n.className='pointer-events-none absolute rounded-[99px] bg-[rgba(255,255,255,0.5)] animate-v3-ripple [transform:translate(-50%,-50%)_scale(0)]'; n.style.width=n.style.height=s+'px';
     n.style.left=(e.clientX-r.left)+'px'; n.style.top=(e.clientY-r.top)+'px';
     el.appendChild(n); setTimeout(function(){n.remove();},560);
   });
@@ -84,7 +84,8 @@ export function initV3Landing() {
   /* ── squelette de dashboard derrière chaque cadre vidéo vide ──
      Repère visuel uniquement : il disparaît dès qu'un <video src> est renseigné. */
   (function(){
-    var W='<div class="wf" aria-hidden="true"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">'+
+    var W='<div class="wf pointer-events-none absolute inset-0 [&>svg]:h-full [&>svg]:w-full" aria-hidden="true">'+
+     '<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">'+
      '<g fill="#fff"><rect width="286" height="900" opacity=".045"/>'+
      '<rect x="286" width="1314" height="74" opacity=".03"/>'+
      '<rect x="26" y="26" width="34" height="34" rx="11" fill="#2ec8ea" opacity=".55"/>'+
@@ -100,7 +101,7 @@ export function initV3Landing() {
          '<rect x="'+(x+22)+'" y="138" width="72" height="9" rx="4.5" opacity=".12"/>'+
          '<rect x="'+(x+22)+'" y="162" width="'+(64+s*15)+'" height="26" rx="7" opacity=".2"/>'+
          '<rect x="'+(x+22)+'" y="200" width="242" height="6" rx="3" opacity=".07"/>'+
-         '<rect class="'+(s===1?'lv':s===2?'lv2':'')+'" x="'+(x+22)+'" y="200" width="'+(60+s*52)+'" height="6" rx="3" fill="#2ec8ea" opacity=".45"/>'; }
+         '<rect class="'+(s===1?'animate-v3-live':s===2?'animate-v3-live [animation-delay:.9s]':'')+'" x="'+(x+22)+'" y="200" width="'+(60+s*52)+'" height="6" rx="3" fill="#2ec8ea" opacity=".45"/>'; }
     W+='<rect x="322" y="262" width="1250" height="42" rx="10" opacity=".03"/>'+
        '<rect x="346" y="278" width="90" height="10" rx="5" opacity=".1"/>'+
        '<rect x="700" y="278" width="128" height="10" rx="5" opacity=".07"/>'+
@@ -110,7 +111,7 @@ export function initV3Landing() {
          '<rect x="404" y="'+(ry+12)+'" width="'+(122+(r*23)%86)+'" height="12" rx="6" opacity=".13"/>'+
          '<rect x="404" y="'+(ry+34)+'" width="'+(216+(r*41)%172)+'" height="9" rx="4.5" opacity=".06"/>'+
          '<rect x="1160" y="'+(ry+20)+'" width="180" height="7" rx="3.5" opacity=".05"/>'+
-         '<rect class="'+(r===0?'lv3':'')+'" x="1160" y="'+(ry+20)+'" width="'+(52+(r*37)%126)+'" height="7" rx="3.5" fill="#2ec8ea" opacity=".38"/>'+
+         '<rect class="'+(r===0?'animate-v3-live [animation-delay:1.8s]':'')+'" x="1160" y="'+(ry+20)+'" width="'+(52+(r*37)%126)+'" height="7" rx="3.5" fill="#2ec8ea" opacity=".38"/>'+
          '<rect x="1400" y="'+(ry+16)+'" width="76" height="26" rx="13" opacity=".05"/>'; }
     W+='</g></svg></div>';
     document.querySelectorAll('.vid').forEach(function(v){ v.insertAdjacentHTML('afterbegin',W); });
@@ -191,7 +192,7 @@ export function initV3Landing() {
   }
 
   /* ── halo suivant le curseur, section sombre ── */
-  (function(){var s=document.querySelector('.dark'),g=document.getElementById('spot');
+  (function(){var s=document.querySelector('.v3-night'),g=document.getElementById('spot');
    if(!s||!g||matchMedia('(pointer:coarse)').matches) return;
    s.addEventListener('mousemove',function(e){var r=s.getBoundingClientRect();
      g.style.left=(e.clientX-r.left-260)+'px'; g.style.top=(e.clientY-r.top-260)+'px'; g.style.opacity='1';});
