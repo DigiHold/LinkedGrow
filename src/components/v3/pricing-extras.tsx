@@ -70,6 +70,7 @@ export function V3PricingHero() {
                 </div>
 
         </div>
+        <div className="carve"></div>
       </section>
 
       <div className="prhero rv" style={{ "--d0": ".22s" } as React.CSSProperties}>
