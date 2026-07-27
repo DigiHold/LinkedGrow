@@ -257,3 +257,9 @@
   display: inline-block; vertical-align: middle;
   width: 15px; height: 15px; border-radius: 50%;
 }
+
+
+/* An inner page starts with the nav already in its light, formed state, so it
+   must not animate in from the transparent one on first paint. */
+.v3-chrome:not(.on-dark) .navhold { transition: none; }
+.v3-chrome:not(.on-dark) .prog { display: none; }

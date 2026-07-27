@@ -36,11 +36,6 @@ export function initV3Landing() {
   };
 
 
-  /* ── menu mobile ── */
-  (function(){var b=document.getElementById('burger'),m=document.getElementById('mob');
-   b.onclick=function(){m.classList.toggle('on');};
-   m.querySelectorAll('a').forEach(function(a){a.onclick=function(){m.classList.remove('on');};});})();
-
   /* ── réseau de points du héros : les acheteurs qui se relient ── */
   (function(){
     var cv=document.getElementById('net'); if(!cv) return;
@@ -85,15 +80,6 @@ export function initV3Landing() {
     n.style.left=(e.clientX-r.left)+'px'; n.style.top=(e.clientY-r.top)+'px';
     el.appendChild(n); setTimeout(function(){n.remove();},560);
   });
-
-  /* ── état de la nav + barre de progression ── */
-  (function(){var h=document.getElementById('nh'),wm=document.getElementById('wm'),
-   t=document.getElementById('tl'),p=document.getElementById('prog');
-   function u(){var on=scrollY>120;
-     h.classList.toggle('fx',on); wm.classList.toggle('ob',!on); t.classList.toggle('w',!on);
-     var m=document.documentElement.scrollHeight-innerHeight;
-     p.style.width=(m>0?scrollY/m*100:0)+'%';}
-   on(window,'scroll',u,{passive:true}); u();})();
 
   /* ── squelette de dashboard derrière chaque cadre vidéo vide ──
      Repère visuel uniquement : il disparaît dès qu'un <video src> est renseigné. */
