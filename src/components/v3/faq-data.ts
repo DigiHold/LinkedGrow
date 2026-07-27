@@ -16,7 +16,7 @@ export const V3_FAQS = [
   },
   {
     q: "What actually happens when somebody replies?",
-    a: "The agent goes permanently silent for that person and emails you within the minute, with their reply, who they are, and the messages you had already sent, so the conversation makes sense without scrolling anywhere. From that point it is yours and the automation never speaks over you.",
+    a: "A reply does not stop the agent. It keeps the thread going in your voice for up to 3 turns, then makes one ask and stops for good. Someone who says no thanks is closed quietly and never written to again, and nothing reaches your inbox, because there is nothing for you to do about it. When the conversation turns into real interest, the agent hands it over and emails you the person, what they said and the messages that led there, so you pick it up already knowing the story.",
   },
   {
     q: "How is this different from every other outreach tool?",
