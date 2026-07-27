@@ -536,3 +536,11 @@
   .v3 .srow > .lab small { margin-top: 2px; }
   .v3 .slegend { display: flex; }
 }
+
+/* .hard was drawn for the dark safety section: white-on-transparent borders and
+   a light gradient numeral. On a light ground it disappears. */
+.v3 .hard.lt > div { border-color: var(--line); background: #fff; }
+.v3 .hard.lt > div:hover { border-color: var(--line2); }
+.v3 .hard.lt b { background: linear-gradient(96deg, var(--c), var(--b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.v3 .hard.lt p { color: var(--mut); }
+.dark .v3 .hard.lt > div { background: var(--bg2); border-color: var(--line); }
