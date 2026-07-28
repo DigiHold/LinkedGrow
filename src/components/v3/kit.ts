@@ -24,11 +24,11 @@ export const SEC = "py-[clamp(70px,8.5vw,126px)]";
 
 /* ── the type scale ── */
 export const H1 =
-  "m-0 font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98] tracking-[-.048em]!";
+  "m-0 font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98]! tracking-[-.048em]!";
 export const H2 =
-  "m-0 font-v3-display! text-[clamp(32px,4.6vw,55px)] font-semibold! leading-[1.03] tracking-[-.042em]!";
+  "m-0 font-v3-display! text-[clamp(32px,4.6vw,55px)] font-semibold! leading-[1.03]! tracking-[-.042em]!";
 export const H3 =
-  "m-0 font-v3-display! text-[21px] font-semibold! leading-[1.2] tracking-[-.032em]!";
+  "m-0 font-v3-display! text-[21px] font-semibold! leading-[1.2]! tracking-[-.032em]!";
 /* LEAD carries no colour: three grounds override it, and two utilities fighting
    for the same property inside one class attribute is decided by the generated
    sheet rather than by the order written here. */
