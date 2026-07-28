@@ -223,7 +223,7 @@ export function PhotoGeneratorContent() {
         description="Stock photo subscriptions charge monthly fees for generic content everyone uses. LinkedGrow's BYOK model lets you create unlimited unique AI photos at a fraction of the cost."
         competitor={{
           name: "Stock Photo Subscriptions",
-          price: "$13-30/month",
+          price: "$99-30/month",
           issues: [
             { text: "Same stock photos used by thousands of LinkedIn creators" },
             { text: "Limited downloads per month on most subscription tiers" },

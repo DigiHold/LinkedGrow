@@ -5,11 +5,11 @@ import { LeadGenerationToolsContent } from "./lead-generation-tools-content";
 export const metadata: Metadata = {
   title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
   description:
-    "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
+    "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $99/mo.",
   openGraph: {
     title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
     description:
-      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
+      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $99/mo.",
     url: "https://linkedgrow.ai/linkedin-lead-generation-tools",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
     description:
-      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $19/mo.",
+      "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $99/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
@@ -38,7 +38,7 @@ const leadGenFAQs = [
   {
     question: "What are the best LinkedIn lead generation tools in 2026?",
     answer:
-      "The best LinkedIn lead generation tools depend on your approach. For content-driven lead generation, LinkedGrow combines AI post writing, carousel creation, scheduling, and analytics in one platform with BYOK pricing starting at $19 per month. For outreach automation, tools like Expandi and Dripify handle connection sequences. For prospecting data, LinkedIn Sales Navigator provides advanced search filters. Content tools generate inbound leads over time, while outreach tools target specific prospects directly.",
+      "The best LinkedIn lead generation tools depend on your approach. For content-driven lead generation, LinkedGrow combines AI post writing, carousel creation, scheduling, and analytics in one platform with BYOK pricing starting at $99 per month. For outreach automation, tools like Expandi and Dripify handle connection sequences. For prospecting data, LinkedIn Sales Navigator provides advanced search filters. Content tools generate inbound leads over time, while outreach tools target specific prospects directly.",
   },
   {
     question: "How do LinkedIn lead generation tools actually generate leads?",
@@ -53,7 +53,7 @@ const leadGenFAQs = [
   {
     question: "How much do LinkedIn lead generation tools cost?",
     answer:
-      "LinkedIn lead generation tools range from $19 per month (LinkedGrow Starter) to $99 per month (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
+      "LinkedIn lead generation tools range from $99 per month (LinkedGrow Pro) to $99 per month (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
   },
   {
     question: "Can LinkedGrow replace my current LinkedIn lead generation stack?",

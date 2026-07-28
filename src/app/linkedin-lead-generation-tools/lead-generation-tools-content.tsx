@@ -46,7 +46,7 @@ export function LeadGenerationToolsContent() {
         descriptionBold="LinkedGrow is a LinkedIn lead generation tool that turns your expertise into inbound leads through AI-powered content creation, scheduling, and analytics."
         description="Most LinkedIn lead generation tools focus on outreach automation, connection bots, and mass messaging. That approach risks your account and annoys prospects. LinkedGrow takes the opposite approach: help you publish content that positions you as the expert your ideal clients already want to hire. AI trained on your writing voice generates posts, hooks, carousels, and images that attract leads to you instead of chasing them. Schedule from a visual calendar, publish from your own account, and track which content drives the most profile views and connection requests."
         valuePropBadges={[
-          { icon: PenTool, text: "26+ AI models" },
+          { icon: PenTool, text: "43 AI models" },
           { icon: Calendar, text: "Content calendar" },
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
@@ -120,8 +120,8 @@ export function LeadGenerationToolsContent() {
             icon: PenTool,
             title: "AI Content Generation with Voice Training",
             description:
-              "Generate LinkedIn posts that sound like you wrote them, not like a chatbot. The voice training system analyzes up to 5 of your best posts and matches your sentence structure, word choices, and tone across every generated post. Choose from 26+ AI models (OpenAI, Anthropic, Google, xAI, Perplexity, Kimi) and generate unlimited posts with the BYOK model.",
-            highlights: ["Voice training", "26+ AI models", "Unlimited via BYOK"],
+              "Generate LinkedIn posts that sound like you wrote them, not like a chatbot. The voice training system analyzes up to 5 of your best posts and matches your sentence structure, word choices, and tone across every generated post. Choose from 43 AI models (OpenAI, Anthropic, Google, xAI, Perplexity, Kimi) and generate unlimited posts with the BYOK model.",
+            highlights: ["Voice training", "43 AI models", "Unlimited via BYOK"],
             badge: "LinkedGrow",
             color: "from-cyan-500 to-blue-600",
           },
@@ -149,7 +149,7 @@ export function LeadGenerationToolsContent() {
             description:
               "Consistent posting is the single biggest factor in LinkedIn lead generation through content. The visual content calendar shows your week and month at a glance, so you can spot gaps before they happen. Schedule posts at optimal times and publish through LinkedIn's official Share API, which means your content is treated identically to manual posts.",
             highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
-            badge: "From Starter",
+            badge: "From Pro",
             color: "from-amber-500 to-yellow-600",
           },
           {
@@ -228,7 +228,7 @@ export function LeadGenerationToolsContent() {
           text: "LinkedIn lead generation that costs less than",
           gradient: "one outreach tool",
         }}
-        description="Outreach automation tools charge $59 to $99 per seat per month and put your account at risk. LinkedGrow starts at $19 per month with unlimited AI generation through the BYOK model."
+        description="Outreach automation tools charge $59 to $99 per seat per month and put your account at risk. LinkedGrow starts at $99 per month with unlimited AI generation through the BYOK model."
         competitor={{
           name: "Typical Outreach Stack",
           price: "$150-300+/month",
@@ -299,7 +299,7 @@ export function LeadGenerationToolsContent() {
           {
             question: "What are the best LinkedIn lead generation tools in 2026?",
             answer:
-              "The best LinkedIn lead generation tools depend on your approach. For content-driven lead generation, LinkedGrow combines AI post writing, carousel creation, scheduling, and analytics in one platform with BYOK pricing starting at $19 per month. For outreach automation, tools like Expandi and Dripify handle connection sequences. For prospecting data, LinkedIn Sales Navigator provides advanced search filters. Content tools generate inbound leads over time, while outreach tools target specific prospects directly.",
+              "The best LinkedIn lead generation tools depend on your approach. For content-driven lead generation, LinkedGrow combines AI post writing, carousel creation, scheduling, and analytics in one platform with BYOK pricing starting at $99 per month. For outreach automation, tools like Expandi and Dripify handle connection sequences. For prospecting data, LinkedIn Sales Navigator provides advanced search filters. Content tools generate inbound leads over time, while outreach tools target specific prospects directly.",
           },
           {
             question: "How do LinkedIn lead generation tools actually generate leads?",
@@ -314,7 +314,7 @@ export function LeadGenerationToolsContent() {
           {
             question: "How much do LinkedIn lead generation tools cost?",
             answer:
-              "LinkedIn lead generation tools range from $19 per month (LinkedGrow Starter) to $99 per month (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
+              "LinkedIn lead generation tools range from $19 per month (LinkedGrow Pro) to $99 per month (Expandi, Dripify) for individual plans. LinkedIn Sales Navigator starts at $99 per month. Enterprise tools like ZoomInfo and 6sense use custom pricing that often exceeds $1,000 per month. LinkedGrow's BYOK model keeps total costs low because AI API usage averages $2 to $4 per month on top of the subscription, with no credit caps or generation limits.",
           },
           {
             question: "Can LinkedGrow replace my current LinkedIn lead generation stack?",
@@ -346,7 +346,7 @@ export function LeadGenerationToolsContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "26+ AI models via BYOK",
+          "43 AI models via BYOK",
           "Your own AI key",
           "Agent working your own account",
         ]}

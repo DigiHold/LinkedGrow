@@ -40,7 +40,7 @@ const bestGenFAQs = [
   {
     question: "What is the best LinkedIn post generator in 2026?",
     answer:
-      "LinkedGrow is the best LinkedIn post generator in 2026 for most creators thanks to its 26+ AI model choice via BYOK, voice training, unlimited generations, and total cost of $13 to $55 per month. Taplio is the strongest pick if you need a viral hooks library plus outreach automation. AuthoredUp is best for pure writers who already have ideas and want a polished in-LinkedIn editor.",
+      "LinkedGrow is the best LinkedIn post generator in 2026 for most creators thanks to its 26+ AI model choice via BYOK, voice training, unlimited generations, and total cost of $99 to $179 per month. Taplio is the strongest pick if you need a viral hooks library plus outreach automation. AuthoredUp is best for pure writers who already have ideas and want a polished in-LinkedIn editor.",
   },
   {
     question: "What is a LinkedIn post generator?",
@@ -55,12 +55,12 @@ const bestGenFAQs = [
   {
     question: "Which LinkedIn AI tool lets you bring your own API key?",
     answer:
-      "LinkedGrow is the only LinkedIn post generator with full BYOK support across 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key and pay the AI provider directly at wholesale rates - typically $2 to $4 per month - instead of being capped by bundled AI credits.",
+      "LinkedGrow is the only LinkedIn post generator with full BYOK support across 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key and pay the AI provider directly at wholesale rates - typically $2 to $4 per month - instead of being capped by bundled AI credits.",
   },
   {
     question: "Is there a free LinkedIn post generator?",
     answer:
-      "Yes. LinkedGrow offers a free single-post generator at /free-linkedin-post-generator-ai with no signup required. For ongoing use, every LinkedGrow account starts with a 7-day Pro trial - full Pro features, everything included. After the trial, paid plans start at $13 per month (billed yearly).",
+      "Yes. LinkedGrow offers a free single-post generator at /free-linkedin-post-generator-ai with no signup required. For ongoing use, every LinkedGrow account starts with a 7-day Pro trial - full Pro features, everything included. After the trial, paid plans start at $99 per month (billed yearly).",
   },
   {
     question: "How does voice training work in a LinkedIn post generator?",
@@ -80,7 +80,7 @@ const bestGenFAQs = [
 ];
 
 const rankedGenerators = [
-  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall for authentic voice and lowest total cost. 26+ AI models via BYOK, voice training, unlimited generations from $13/mo plus $2-4/mo in AI costs." },
+  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall for authentic voice and lowest total cost. 43 AI models via BYOK, voice training, unlimited generations from $13/mo plus $2-4/mo in AI costs." },
   { name: "Taplio", url: "https://taplio.com", description: "Best for outreach + viral hooks library. Strong on automated DMs and lead database, bundled AI starts at $52/mo Standard." },
   { name: "AuthoredUp", url: "https://authoredup.com", description: "Best post editor and formatter. Chrome extension that lives inside LinkedIn with deep analytics. $19.95/mo, no AI generation or scheduling." },
   { name: "Supergrow", url: "https://supergrow.ai", description: "Best budget all-in-one. AI writing, scheduling, carousels, and voice-to-post from $19/mo Starter." },

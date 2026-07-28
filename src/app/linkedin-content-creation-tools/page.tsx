@@ -73,7 +73,7 @@ const toolsFAQs = [
   {
     question: "Can I schedule LinkedIn posts with these tools?",
     answer:
-      "Yes. The Starter plan includes scheduling up to 10 posts. The Pro and Business plans include unlimited scheduling. You can schedule posts through the content calendar with a visual timeline view, set custom publish times in your timezone, and LinkedGrow publishes directly to your LinkedIn profile or company page.",
+      "Yes. The Pro and Business plans both include unlimited scheduling. You can schedule posts through the content calendar with a visual timeline view, set custom publish times in your timezone, and LinkedGrow publishes directly to your LinkedIn profile or company page.",
   },
 ];
 

@@ -135,7 +135,7 @@ export function BestPracticesContent() {
             description:
               "The best practice for LinkedIn posting frequency is 3 to 5 times per week during peak engagement hours. LinkedGrow's scheduler and content calendar make this effortless. Batch-create posts on Monday, schedule them for optimal times, and your LinkedIn presence runs itself all week without daily effort.",
             highlights: ["Visual content calendar", "Optimal time suggestions", "Batch creation workflow"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-emerald-500 to-green-600",
           },
           {

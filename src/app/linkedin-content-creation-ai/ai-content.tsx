@@ -38,7 +38,7 @@ export function ContentCreationAiContent() {
         badge={{ icon: Brain, text: "26 Models, One Voice" }}
         headline={{
           line1: "LinkedIn content creation AI",
-          gradient: "with 26 models + voice training",
+          gradient: "with 43 AI models + voice training",
         }}
         descriptionBold="The AI engine behind LinkedGrow: 26 text models, voice training, BYOK pricing."
         description="Most LinkedIn AI tools lock you into one model with one writing style. LinkedGrow connects you to 26 frontier models from OpenAI, Anthropic, Google, Grok, Perplexity, and Kimi, then trains a voice fingerprint from your own posts so every model writes in your cadence - not the generic default."
@@ -49,7 +49,7 @@ export function ContentCreationAiContent() {
         ]}
         primaryCta={{ text: "Try the AI free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial", "Everything included", "All 26 models on trial"]}
+        trustIndicators={["7-day Pro trial", "Everything included", "All 43 AI models on trial"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",

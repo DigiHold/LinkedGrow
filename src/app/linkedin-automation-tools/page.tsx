@@ -53,7 +53,7 @@ const automationFAQs = [
   {
     question: "How much do LinkedIn automation tools cost?",
     answer:
-      "Content automation tools range from free (Buffer's basic plan) to $299 per month (Sprout Social). LinkedGrow starts at $19 per month with unlimited AI post generation via the BYOK model, where your AI costs average $2 to $4 per month. Outreach automation tools typically cost $30 to $100 per seat per month, plus the risk of account restrictions or bans.",
+      "Content automation tools range from free (Buffer's basic plan) to $299 per month (Sprout Social). LinkedGrow starts at $99 per month with unlimited AI post generation via the BYOK model, where your AI costs average $2 to $4 per month. Outreach automation tools typically cost $30 to $100 per seat per month, plus the risk of account restrictions or bans.",
   },
   {
     question: "What does LinkedIn's Terms of Service say about automation?",

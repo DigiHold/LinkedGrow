@@ -48,7 +48,7 @@ export function FreePostGeneratorContent() {
         ]}
         primaryCta={{ text: "Start writing free", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial", "Everything included", "All 26 models included"]}
+        trustIndicators={["7-day Pro trial", "Everything included", "All 43 AI models included"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -269,7 +269,7 @@ export function FreePostGeneratorContent() {
           },
           {
             quote:
-              "As a student, I could not afford $49 per month for a LinkedIn tool. LinkedGrow's 7-day Pro trial let me start building my professional presence with AI-generated posts. When I got my first job, I upgraded to Starter at $19. Best LinkedIn investment I have made.",
+              "As a student, I could not afford $49 per month for a LinkedIn tool. LinkedGrow's 7-day Pro trial let me start building my professional presence with AI-generated posts. When I got my first job, I upgraded to Starter at $99. Best LinkedIn investment I have made.",
             author: "Jessica L.",
             role: "Recent Graduate, 2K Followers",
           },
@@ -316,7 +316,7 @@ export function FreePostGeneratorContent() {
           {
             question: "What is BYOK and why does the writer use it?",
             answer:
-              "BYOK means Bring Your Own Key. You connect your API key from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and LinkedGrow uses it to write your posts. You pay the provider directly at their rates with zero markup. This is why the writer can offer unlimited drafts at $19/mo instead of $49 to $199 with caps.",
+              "BYOK means Bring Your Own Key. You connect your API key from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and LinkedGrow uses it to write your posts. You pay the provider directly at their rates with zero markup. This is why the writer can offer unlimited drafts at $99/mo instead of $49 to $199 with caps.",
           },
           {
             question: "Can the AI writer publish directly to LinkedIn?",
@@ -341,7 +341,7 @@ export function FreePostGeneratorContent() {
           line1: "Ready to write LinkedIn posts",
           gradient: "that sound like you?",
         }}
-        description="Paste 3 sample posts, brief the writer, and get your first draft in your voice in under 5 minutes. 7-day Pro trial, everything included, all 26 models included."
+        description="Paste 3 sample posts, brief the writer, and get your first draft in your voice in under 5 minutes. 7-day Pro trial, everything included, all 43 AI models included."
         primaryCta={{ text: "Train your voice free", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[

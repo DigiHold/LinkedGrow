@@ -53,18 +53,18 @@ const tools: ToolReview[] = [
     tagline: "Best overall - authentic voice + lowest total cost",
     href: "https://linkedgrow.ai",
     internalHref: "/",
-    pricing: "$13/mo Starter, $27/mo Pro, $55/mo Business (yearly)",
+    pricing: "$99/mo Pro, $179/mo Business",
     freeTrial: "7-day Pro trial, no card required",
     bestFor: "Founders, coaches, and consultants who post 2 to 5 times a week and care about sounding like themselves.",
     imageSlug: "linkedgrow-card",
     imageAlt: "LinkedGrow dashboard with BYOK API key setup and 26 model selector covering GPT, Claude, Gemini, Grok, Perplexity, and Kimi",
     overview: [
-      "LinkedGrow is the only LinkedIn post generator built around BYOK (bring your own key) across 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key once and pay the AI provider directly at wholesale rates - typically $2 to $4 per month for regular posting.",
+      "LinkedGrow is the only LinkedIn post generator built around BYOK (bring your own key) across 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. You connect your own API key once and pay the AI provider directly at wholesale rates - typically $2 to $4 per month for regular posting.",
       "Voice training is the core differentiator. You paste 3 to 5 of your best posts, LinkedGrow builds a style profile, and every generation matches your sentence structure and tone. The hook generator, carousel builder, AI image generation, scheduling, content calendar, A/B testing, and analytics all sit in one dashboard.",
       "Publishing goes directly to personal profiles and company pages you manage. Reddit URLs can be turned into post drafts, scheduled posts fire at exact times via QStash, and the editor previews exactly how the post will look on LinkedIn before you publish.",
     ],
     pros: [
-      "26+ AI models with model freedom (use Claude for thought leadership, ChatGPT for storytelling, Gemini for speed)",
+      "43 AI models with model freedom (use Claude for thought leadership, ChatGPT for storytelling, Gemini for speed)",
       "Voice training that audiences cannot distinguish from manual writing",
       "Unlimited generations on every paid plan (no credits, no caps, no overage)",
       "Total cost stays at $15 to $30/mo all-in including AI fees",
@@ -164,7 +164,7 @@ const tools: ToolReview[] = [
     cons: [
       "Single bundled AI model, no BYOK option",
       "Voice training less mature than LinkedGrow's",
-      "Carousel maker locked behind the $39 Pro plan",
+      "Carousel maker locked behind the $99 Pro plan",
     ],
     accent: "from-emerald-500 to-green-600",
     ctaLabel: "See LinkedGrow vs Supergrow",
@@ -295,7 +295,7 @@ const glanceTools: GlanceRow[] = [
   {
     tool: "LinkedGrow",
     bestFor: "Best overall - voice + cost",
-    pricing: "$13/mo (BYOK +$2-4)",
+    pricing: "$99/mo (BYOK +$2-4)",
     freeTrial: "7-day Pro trial",
     modelChoice: "26+ models",
     voiceTraining: true,
@@ -802,7 +802,7 @@ export function BestPostGeneratorContent({
           line1: "Start free with the best",
           gradient: "LinkedIn post generator in 2026",
         }}
-        description="26+ AI models via BYOK, voice training, unlimited generations. Total monthly cost $15 to $30 all-in. Join 179+ founders."
+        description="43 AI models via BYOK, voice training, unlimited generations. Total monthly cost $15 to $30 all-in. Join 179+ founders."
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[

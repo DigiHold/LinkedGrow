@@ -47,7 +47,7 @@ export function AutomationToolsContent() {
         description="LinkedIn automation tools fall into two categories: content tools that use your own account (safe) and outreach bots that simulate browser actions (risky). This breakdown covers both categories, what LinkedIn actually allows, and why content automation is the only approach that scales without putting your account at risk. LinkedGrow is a content automation platform built on your own account."
         valuePropBadges={[
           { icon: ShieldCheck, text: "Agent on your account only" },
-          { icon: PenTool, text: "26+ AI models" },
+          { icon: PenTool, text: "43 AI models" },
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
         primaryCta={{ text: "Try safe automation free", href: "/sign-up" }}
@@ -120,8 +120,8 @@ export function AutomationToolsContent() {
             icon: PenTool,
             title: "AI Post Generation",
             description:
-              "LinkedGrow uses 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi to generate LinkedIn posts that match your writing voice. Content creation happens entirely outside LinkedIn. Only the final post touches the platform the way a person does.",
-            highlights: ["26+ AI models", "Voice training", "Unlimited via BYOK"],
+              "LinkedGrow uses 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi to generate LinkedIn posts that match your writing voice. Content creation happens entirely outside LinkedIn. Only the final post touches the platform the way a person does.",
+            highlights: ["43 AI models", "Voice training", "Unlimited via BYOK"],
             badge: "LinkedGrow",
             color: "from-cyan-500 to-blue-600",
           },
@@ -314,7 +314,7 @@ export function AutomationToolsContent() {
           {
             question: "How much do LinkedIn automation tools cost?",
             answer:
-              "Content automation tools range from free (Buffer's basic plan) to $299 per seat per month (Sprout Social). LinkedGrow starts at $19 per month with unlimited AI generation via BYOK, where AI costs average $2 to $4 per month. Outreach automation tools typically cost $30 to $100 per seat per month.",
+              "Content automation tools range from free (Buffer's basic plan) to $299 per seat per month (Sprout Social). LinkedGrow starts at $99 per month with unlimited AI generation via BYOK, where AI costs average $2 to $4 per month. Outreach automation tools typically cost $30 to $100 per seat per month.",
           },
           {
             question: "What does LinkedIn's Terms of Service say about automation?",

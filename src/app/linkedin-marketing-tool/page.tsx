@@ -5,11 +5,11 @@ import { MarketingToolContent } from "./marketing-tool-content";
 export const metadata: Metadata = {
   title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
   description:
-    "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
+    "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 43 AI models, BYOK, from $99/mo.",
   openGraph: {
     title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
     description:
-      "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
+      "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 43 AI models, BYOK, from $99/mo.",
     url: "https://linkedgrow.ai/linkedin-marketing-tool",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LinkedIn Marketing Tool for Content, Scheduling, Analytics",
     description:
-      "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 26+ AI models, BYOK, from $19/mo.",
+      "LinkedGrow is a LinkedIn marketing tool with AI content creation, post scheduling, carousel generation, and analytics. 43 AI models, BYOK, from $99/mo.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
@@ -43,7 +43,7 @@ const marketingToolFAQs = [
   {
     question: "How much does a LinkedIn marketing tool cost?",
     answer:
-      "LinkedIn marketing tools range from $19 per month (LinkedGrow Starter) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps or credit systems.",
+      "LinkedIn marketing tools range from $99 per month (LinkedGrow Pro) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps or credit systems.",
   },
   {
     question: "Is LinkedGrow better than using LinkedIn natively?",

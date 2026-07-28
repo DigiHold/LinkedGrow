@@ -144,7 +144,7 @@ export function CompanyPageOptimizationContent() {
             description:
               "Posting frequency directly impacts how LinkedIn distributes your company page content. The algorithm rewards pages that publish 2 to 5 times per week with significantly better reach. LinkedGrow's visual content calendar lets you plan, batch, and schedule your entire week of content in one session. Spot gaps before they happen and maintain the consistency that drives steady follower growth.",
             highlights: ["Weekly batch planning", "Gap detection", "Optimal frequency"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-amber-500 to-yellow-600",
           },
           {

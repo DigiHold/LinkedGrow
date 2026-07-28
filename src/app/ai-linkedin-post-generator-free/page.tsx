@@ -38,7 +38,7 @@ const postGenFreeFAQs = [
   {
     question: "Is the AI LinkedIn post generator really free?",
     answer:
-      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 models, and voice training - everything included. After the trial, paid plans start at $13/mo (billed yearly). With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
+      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models, and voice training - everything included. After the trial, paid plans start at $13/mo (billed yearly). With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
   },
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",

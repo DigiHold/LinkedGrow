@@ -126,7 +126,7 @@ export function CompanyPageGuideContent() {
             description:
               "See your entire company page content schedule at a glance. The visual calendar shows what is going out, when, and on which days you have gaps. Drag and drop to rearrange posts, spot empty days before they become missed opportunities, and maintain the posting frequency that LinkedIn's algorithm rewards with better distribution.",
             highlights: ["Drag and drop scheduling", "Gap detection", "Weekly overview"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-emerald-500 to-green-600",
           },
           {
@@ -144,7 +144,7 @@ export function CompanyPageGuideContent() {
             description:
               "Schedule company page posts to go live at the exact times when your audience is most active on LinkedIn. Batch-create a week of content in one sitting and let LinkedGrow handle the publishing automatically. No more logging into LinkedIn every morning to manually post. Your content calendar runs itself.",
             highlights: ["Optimal time suggestions", "Auto-publishing", "Batch scheduling"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-amber-500 to-yellow-600",
           },
           {
@@ -268,7 +268,7 @@ export function CompanyPageGuideContent() {
           },
           {
             quote:
-              "The BYOK model is what sold me. I was paying $149 per month for another tool just to schedule posts to our company page. LinkedGrow gives me AI content, scheduling, and team features for $19 plus a few dollars in API costs. The content quality is actually better because the voice training matches our brand.",
+              "The BYOK model is what sold me. I was paying $149 per month for another tool just to schedule posts to our company page. LinkedGrow gives me AI content, scheduling, and team features for $99 plus a few dollars in API costs. The content quality is actually better because the voice training matches our brand.",
             author: "Tom R.",
             role: "Startup Founder, B2B Tech",
           },
@@ -320,7 +320,7 @@ export function CompanyPageGuideContent() {
           {
             question: "Can LinkedGrow help manage my LinkedIn company page?",
             answer:
-              "Yes. LinkedGrow lets you create AI-generated content in your brand voice, schedule posts at optimal times, manage a visual content calendar, create carousels, and collaborate with your team. Everything from one dashboard for $13 per month plus your own AI key costs.",
+              "Yes. LinkedGrow lets you create AI-generated content in your brand voice, schedule posts at optimal times, manage a visual content calendar, create carousels, and collaborate with your team. Everything from one dashboard for $99 per month plus your own AI key costs.",
           },
         ]}
       />

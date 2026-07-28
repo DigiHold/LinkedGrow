@@ -64,7 +64,7 @@ const analyticsFAQs = [
   {
     question: "Which LinkedIn analytics tool is best for agencies?",
     answer:
-      "LinkedGrow Business at $55/mo is the best pick for agencies that manage LinkedIn accounts for clients. It ships team collaboration, per-client calendars, a public API, and BYOK so AI costs stay on the client side. Hootsuite Team at $249/mo is the alternative if the agency also manages non-LinkedIn channels for the same clients. Shield at $50/user/mo is a strong mid-tier option for agency teams that only need analytics without AI generation.",
+      "LinkedGrow Business at $179/mo is the best pick for agencies that manage LinkedIn accounts for clients. It ships team collaboration, per-client calendars, a public API, and BYOK so AI costs stay on the client side. Hootsuite Team at $249/mo is the alternative if the agency also manages non-LinkedIn channels for the same clients. Shield at $50/user/mo is a strong mid-tier option for agency teams that only need analytics without AI generation.",
   },
   {
     question: "What LinkedIn metrics should I track?",
@@ -79,7 +79,7 @@ const analyticsFAQs = [
   {
     question: "Is there a free LinkedIn analytics tool?",
     answer:
-      "LinkedIn native analytics are free for every account. Buffer's free plan includes basic post-level analytics for up to 3 channels. LinkedGrow offers a 7-day Pro trial with full analytics access - everything included. After the trial, paid plans start at $13/mo (billed yearly).",
+      "LinkedIn native analytics are free for every account. Buffer's free plan includes basic post-level analytics for up to 3 channels. LinkedGrow offers a 7-day Pro trial with full analytics access - everything included. After the trial, paid plans start at $99/mo (billed yearly).",
   },
   {
     question: "What is a good engagement rate on LinkedIn?",
@@ -93,7 +93,7 @@ const rankedTools = [
     name: "LinkedGrow",
     url: "https://linkedgrow.ai",
     description:
-      "Best overall LinkedIn analytics tool. AI content generation + post analytics + BYOK pricing from $13/mo plus $2-4/mo in AI fees.",
+      "Best overall LinkedIn analytics tool. AI content generation + post analytics + BYOK pricing from $99/mo plus $2-4/mo in AI fees.",
   },
   {
     name: "AuthoredUp",

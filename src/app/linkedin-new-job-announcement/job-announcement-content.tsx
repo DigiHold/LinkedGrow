@@ -398,7 +398,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI generations with your own key" },
-            { text: "26 models from 6 providers, pick per draft" },
+            { text: "43 AI models from 7 providers, pick per draft" },
             { text: "Voice training from your past LinkedIn posts" },
             { text: "Built-in scheduling at optimal posting times" },
             { text: "AI image generation included on Pro" },

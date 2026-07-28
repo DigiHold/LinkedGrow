@@ -45,7 +45,7 @@ const schedulerFAQs = [
   {
     question: "Is there a free LinkedIn post scheduler?",
     answer:
-      "Buffer's free plan schedules up to 10 posts per channel across 3 channels. Supergrow includes 3 posts per month on its free plan. LinkedGrow ships a 7-day Pro trial with unlimited scheduling - everything included. After the trial, paid plans start at $13/mo (billed yearly) with 10 scheduled posts on Starter and unlimited on Pro and Business.",
+      "Buffer's free plan schedules up to 10 posts per channel across 3 channels. Supergrow includes 3 posts per month on its free plan. LinkedGrow ships a 7-day Pro trial with unlimited scheduling - everything included. After the trial, paid plans start at $99/mo (billed yearly) with 10 scheduled posts on Starter and unlimited on Pro and Business.",
   },
   {
     question: "Which LinkedIn scheduler supports company pages?",
@@ -70,7 +70,7 @@ const schedulerFAQs = [
   {
     question: "Can I schedule AI-generated LinkedIn posts?",
     answer:
-      "Yes. Tools like LinkedGrow, Taplio, Supergrow, and Buffer all let you generate a post with AI then schedule it from the same editor - no copy-paste between tools. LinkedGrow goes further with BYOK across 26+ AI models, so you can pick the model best suited to each post type before scheduling.",
+      "Yes. Tools like LinkedGrow, Taplio, Supergrow, and Buffer all let you generate a post with AI then schedule it from the same editor - no copy-paste between tools. LinkedGrow goes further with BYOK across 43 AI models, so you can pick the model best suited to each post type before scheduling.",
   },
   {
     question: "What happens if I am offline when a scheduled LinkedIn post publishes?",
@@ -80,7 +80,7 @@ const schedulerFAQs = [
 ];
 
 const rankedSchedulers = [
-  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall LinkedIn scheduling tool. AI generation + BYOK + auto-publish to profiles and company pages from $13/mo plus $2-4/mo in AI fees." },
+  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall LinkedIn scheduling tool. AI generation + BYOK + auto-publish to profiles and company pages from $99/mo plus $2-4/mo in AI fees." },
   { name: "Taplio", url: "https://taplio.com", description: "Best LinkedIn scheduler with built-in outreach automation. Pairs scheduling with viral hooks library and 3M+ lead database. From $39/mo." },
   { name: "Buffer", url: "https://buffer.com", description: "Best multi-platform scheduler if LinkedIn is one of several channels you manage. Free plan plus paid from $20/mo for 4 channels." },
   { name: "Supergrow", url: "https://supergrow.ai", description: "Best budget LinkedIn scheduler with AI generation included on the Starter plan. From $19/mo with free plan." },

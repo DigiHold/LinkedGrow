@@ -148,7 +148,7 @@ export function CarouselGeneratorContent() {
             title: "AI picks the model that writes best",
             description:
               "Carousels lean narrative. The maker defaults to models that handle pacing well - Claude Opus 4.7, Gemini 3 Pro - but you can switch to any of the 26 supported models if you want a different voice across slides.",
-            highlights: ["Narrative-tuned default", "26 models switchable", "Per-slide override"],
+            highlights: ["Narrative-tuned default", "43 AI models switchable", "Per-slide override"],
             badge: "Model choice",
             color: "from-amber-500 to-yellow-600",
           },

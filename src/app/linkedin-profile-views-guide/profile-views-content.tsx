@@ -146,7 +146,7 @@ export function ProfileViewsContent() {
             description:
               "Posting once a month does nothing for profile views. Consistency is what drives sustained visibility on LinkedIn. LinkedGrow's content calendar and scheduler let you batch-create posts and schedule them at the times when your audience is most active. Your profile stays visible all week without daily effort.",
             highlights: ["Visual content calendar", "Optimal time suggestions", "Batch creation workflow"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-amber-500 to-yellow-600",
           },
           {

@@ -44,9 +44,9 @@ export function ContentCreationToolsContent() {
           gradient: "in one platform",
         }}
         descriptionBold="Stop paying for 5 different tools to manage your LinkedIn presence."
-        description="LinkedGrow combines AI post generation, photo creation, carousel building, scheduling, analytics, and network notifications into a single platform. Write, design, schedule, and track - all from one dashboard. Powered by 26+ AI models with BYOK pricing."
+        description="LinkedGrow combines AI post generation, photo creation, carousel building, scheduling, analytics, and network notifications into a single platform. Write, design, schedule, and track - all from one dashboard. Powered by 43 AI models with BYOK pricing."
         valuePropBadges={[
-          { icon: Sparkles, text: "26+ AI models" },
+          { icon: Sparkles, text: "43 AI models" },
           { icon: Layers, text: "6 tools in one" },
           { icon: CircleDollarSign, text: "From $13/month" },
         ]}
@@ -120,8 +120,8 @@ export function ContentCreationToolsContent() {
             icon: PenTool,
             title: "AI Post Generator",
             description:
-              "Generate complete LinkedIn posts with 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
-            highlights: ["26+ AI models", "Voice training", "Unlimited generations"],
+              "Generate complete LinkedIn posts with 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. Voice training matches your writing style. 4-step wizard guides you from topic to finished post in under 2 minutes.",
+            highlights: ["43 AI models", "Voice training", "Unlimited generations"],
             badge: "Core",
             color: "from-cyan-500 to-blue-600",
           },
@@ -149,7 +149,7 @@ export function ContentCreationToolsContent() {
             description:
               "Schedule posts to publish at the optimal time for your audience. Visual content calendar shows your week and month at a glance. Publish directly to your LinkedIn profile or company page automatically.",
             highlights: ["Visual calendar", "Optimal time suggestions", "Auto-publish"],
-            badge: "Starter+",
+            badge: "Pro+",
             color: "from-violet-500 to-purple-600",
           },
           {
@@ -304,7 +304,7 @@ export function ContentCreationToolsContent() {
           {
             question: "How much do LinkedIn content creation tools typically cost?",
             answer:
-              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow Pro costs $99/month per month for Starter with unlimited post generation, or $27 per month for Pro which adds image generation, analytics, and network notifications. The Business plan at $55 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
+              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow Pro costs $99/month per month for Starter with unlimited post generation, or $99 per month for Pro which adds image generation, analytics, and network notifications. The Business plan at $179 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
           },
           {
             question: "Can I generate unlimited LinkedIn posts?",
@@ -334,7 +334,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Can I schedule posts to LinkedIn?",
             answer:
-              "Yes. Starter includes 10 scheduled posts, Pro and Business include unlimited scheduling. Schedule through the content calendar with a visual timeline, set custom publish times in your timezone, and LinkedGrow publishes to your LinkedIn profile or company page automatically.",
+              "Yes. The Pro and Business plans both include unlimited scheduling. Schedule through the content calendar with a visual timeline, set custom publish times in your timezone, and LinkedGrow publishes to your LinkedIn profile or company page automatically.",
           },
         ]}
       />

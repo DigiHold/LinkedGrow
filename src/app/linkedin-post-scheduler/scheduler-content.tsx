@@ -49,7 +49,7 @@ const tools: ToolReview[] = [
     rank: 1,
     name: "LinkedGrow",
     tagline: "Best for AI-powered scheduling with BYOK",
-    pricing: "$13/mo Starter, $27/mo Pro, $55/mo Business (yearly)",
+    pricing: "$99/mo Pro, $179/mo Business",
     freeTrial: "7-day Pro trial, no card required",
     bestFor:
       "Founders and creators who want to write with AI and schedule from the same dashboard at the lowest total cost.",
@@ -63,7 +63,7 @@ const tools: ToolReview[] = [
     ],
     pros: [
       "AI post generation + scheduling in one dashboard, no copy-paste between tools",
-      "BYOK across 26+ AI models keeps total cost at $15 to $30/mo all-in",
+      "BYOK across 43 AI models keeps total cost at $15 to $30/mo all-in",
       "Direct publishing to personal profiles AND company pages on every plan",
       "Visual content calendar with drag-and-drop rescheduling",
       "Exact-time delivery via QStash, fires even if you are offline",
@@ -294,7 +294,7 @@ type GlanceRow = {
 };
 
 const glanceTools: GlanceRow[] = [
-  { rank: 1, tool: "LinkedGrow", bestFor: "AI scheduling with BYOK", pricing: "$13/mo (+$2-4 AI)", freeTrial: "7-day Pro", companyPages: true, aiBuiltIn: true, highlight: true },
+  { rank: 1, tool: "LinkedGrow", bestFor: "AI scheduling with BYOK", pricing: "$99/mo (+$2-4 AI)", freeTrial: "7-day Pro", companyPages: true, aiBuiltIn: true, highlight: true },
   { rank: 2, tool: "Taplio", bestFor: "Scheduling + outreach", pricing: "$39-$149/mo", freeTrial: "7-day", companyPages: true, aiBuiltIn: true },
   { rank: 3, tool: "Buffer", bestFor: "Multi-platform scheduling", pricing: "Free, $20/mo", freeTrial: "Free plan", companyPages: true, aiBuiltIn: true },
   { rank: 4, tool: "Supergrow", bestFor: "Budget all-in-one", pricing: "$19-$39/mo", freeTrial: "Free plan", companyPages: true, aiBuiltIn: true },
@@ -506,7 +506,7 @@ export function PostSchedulerContent({
           </div>
 
           <p className="mt-6 text-center text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            Total monthly cost matters more than sticker price. LinkedGrow Starter at $13/mo plus $2-4 in AI
+            Total monthly cost matters more than sticker price. LinkedGrow Pro at $99/mo plus $2-4 in AI
             fees beats $52-$249 bundled tools on capability per dollar.
           </p>
         </div>
@@ -679,7 +679,7 @@ export function PostSchedulerContent({
               </h3>
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
                 Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
-                You get AI generation + scheduling in one dashboard for $13/mo (Starter) plus $2-4/mo in BYOK AI fees.
+                You get AI generation + scheduling in one dashboard for $99/mo (Starter) plus $2-4/mo in BYOK AI fees.
                 The 10-post Starter cap covers most solo cadences; upgrade to Pro at $27/mo for unlimited if you batch-schedule a month ahead.
                 Pair it with a consistent <Link href="/blog/linkedin-posting-frequency-guide" className="text-cyan-600 dark:text-cyan-400 hover:underline">posting frequency</Link> for compound growth.
                 Runner-up: Supergrow at $19/mo if you prefer bundled AI with no API key setup.
@@ -691,7 +691,7 @@ export function PostSchedulerContent({
                 For agencies and ghostwriters managing multiple LinkedIn accounts
               </h3>
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
-                Pick LinkedGrow Business at $55/mo - it ships team workflows, per-client content calendars, BYOK per client
+                Pick LinkedGrow Business at $179/mo - it ships team workflows, per-client content calendars, BYOK per client
                 (so AI costs stay on the client side), and a public API. Hootsuite Team at $249/mo is the alternative if you also
                 manage non-LinkedIn channels for the same clients. Sprout Social only makes sense at 5+ seats with cross-network listening needs.
               </p>
@@ -702,7 +702,7 @@ export function PostSchedulerContent({
                 For teams and B2B companies posting from a company page
               </h3>
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
-                Pick LinkedGrow Business at $55/mo if LinkedIn is your primary B2B channel - you get unlimited company-page scheduling,
+                Pick LinkedGrow Business at $179/mo if LinkedIn is your primary B2B channel - you get unlimited company-page scheduling,
                 team collaboration with role-based access, and AI generation tuned to your brand voice via voice training. Hootsuite Professional
                 at $99/mo if your team manages 5+ social profiles across networks. Buffer Team at $40/mo if you cross-post heavily and just need clean scheduling.
               </p>

@@ -46,7 +46,7 @@ export function MarketingToolContent() {
         descriptionBold="LinkedGrow is a LinkedIn marketing tool that combines AI content creation, scheduling, carousel design, and analytics in one platform."
         description="Most LinkedIn marketing tools make you choose between writing quality and publishing speed. LinkedGrow trains AI on your actual writing voice, then generates posts, hooks, carousels, and images that sound like you wrote them. Schedule everything from a visual content calendar, publish from your own account, and track what performs. Your AI keys, your models, your cost control."
         valuePropBadges={[
-          { icon: PenTool, text: "26+ AI models" },
+          { icon: PenTool, text: "43 AI models" },
           { icon: Calendar, text: "Visual calendar" },
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
@@ -120,8 +120,8 @@ export function MarketingToolContent() {
             icon: PenTool,
             title: "AI Content Generation",
             description:
-              "Generate LinkedIn posts using 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. The voice training system analyzes up to 5 of your best posts to match your personal writing style. Every generated post sounds like you, not like a chatbot.",
-            highlights: ["26+ AI models", "Voice training", "Unlimited via BYOK"],
+              "Generate LinkedIn posts using 43 AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi. The voice training system analyzes up to 5 of your best posts to match your personal writing style. Every generated post sounds like you, not like a chatbot.",
+            highlights: ["43 AI models", "Voice training", "Unlimited via BYOK"],
             badge: "LinkedGrow",
             color: "from-cyan-500 to-blue-600",
           },
@@ -131,7 +131,7 @@ export function MarketingToolContent() {
             description:
               "Schedule posts for optimal publishing times with a visual content calendar that shows your week and month at a glance. Drag posts, adjust timing, and plan weeks ahead. Publishing goes through LinkedIn's official Share API, so your posts are treated identically to manual ones.",
             highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
-            badge: "From Starter",
+            badge: "From Pro",
             color: "from-emerald-500 to-green-600",
           },
           {
@@ -270,7 +270,7 @@ export function MarketingToolContent() {
         testimonials={[
           {
             quote:
-              "I was paying for ChatGPT, Canva, and Buffer separately. Switched to LinkedGrow and now I spend $39 plus about $3 in API costs. The voice training alone is worth the switch because my posts actually sound like me instead of generic AI.",
+              "I was paying for ChatGPT, Canva, and Buffer separately. Switched to LinkedGrow and now I spend $99 plus about $3 in API costs. The voice training alone is worth the switch because my posts actually sound like me instead of generic AI.",
             author: "Rachel T.",
             role: "Marketing Consultant, 14K Followers",
           },
@@ -304,7 +304,7 @@ export function MarketingToolContent() {
           {
             question: "How much does a LinkedIn marketing tool cost?",
             answer:
-              "LinkedIn marketing tools range from $19 per month (LinkedGrow Starter) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps.",
+              "LinkedIn marketing tools range from $19 per month (LinkedGrow Pro) to $299 per seat per month (Sprout Social). Most content-focused tools charge $30 to $80 per month. LinkedGrow uses the BYOK model where your AI API costs average $2 to $4 per month on top of the subscription, giving you unlimited AI generation without monthly caps.",
           },
           {
             question: "Is LinkedGrow better than using LinkedIn natively?",
@@ -362,7 +362,7 @@ export function MarketingToolContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "26+ AI models via BYOK",
+          "43 AI models via BYOK",
           "Your own AI key",
           "Agent working your own account",
         ]}

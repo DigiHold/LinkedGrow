@@ -51,7 +51,7 @@ const tools: ToolReview[] = [
     rank: 1,
     name: "LinkedGrow",
     tagline: "Best for AI content + analytics with BYOK",
-    pricing: "$13/mo Starter, $27/mo Pro, $55/mo Business (yearly)",
+    pricing: "$99/mo Pro, $179/mo Business",
     freeTrial: "7-day Pro trial, no card required",
     bestFor:
       "Creators and founders who want AI post generation, scheduling, and analytics in one dashboard at the lowest total cost.",
@@ -190,7 +190,7 @@ const tools: ToolReview[] = [
     cons: [
       "Analytics depth is shallow compared to AuthoredUp or LinkedGrow Pro",
       "Single bundled AI model, no BYOK",
-      "Carousel analytics locked behind the $39 Pro plan",
+      "Carousel analytics locked behind the $99 Pro plan",
     ],
     accent: "from-emerald-500 to-green-600",
     ctaLabel: "See LinkedGrow vs Supergrow",
@@ -297,7 +297,7 @@ type GlanceRow = {
 };
 
 const glanceTools: GlanceRow[] = [
-  { rank: 1, tool: "LinkedGrow", bestFor: "AI content + analytics", pricing: "$13/mo (+$2-4 AI)", freeTrial: "7-day Pro", postAnalytics: true, growthTracking: true, highlight: true },
+  { rank: 1, tool: "LinkedGrow", bestFor: "AI content + analytics", pricing: "$99/mo (+$2-4 AI)", freeTrial: "7-day Pro", postAnalytics: true, growthTracking: true, highlight: true },
   { rank: 2, tool: "AuthoredUp", bestFor: "Per-post analytics", pricing: "$19.95/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: false },
   { rank: 3, tool: "Taplio", bestFor: "Growth + lead tracking", pricing: "$39-$149/mo", freeTrial: "7-day", postAnalytics: true, growthTracking: true },
   { rank: 4, tool: "Shield", bestFor: "LinkedIn-only analytics", pricing: "$25-$50/user/mo", freeTrial: "14-day", postAnalytics: true, growthTracking: true },
@@ -330,7 +330,7 @@ const criteria = [
     icon: CircleDollarSign,
     title: "Total cost of ownership",
     description:
-      "Sticker price is one number. Total cost includes AI generation, scheduling, and analytics together. BYOK pricing (LinkedGrow) strips AI markup so your total stays at $15 to $30/mo. Bundled tools charge $39 to $249/mo for the same workflow.",
+      "Sticker price is one number. Total cost includes AI generation, scheduling, and analytics together. BYOK pricing (LinkedGrow) strips AI markup so your total stays at $15 to $30/mo. Bundled tools charge $99 to $249/mo for the same workflow.",
   },
   {
     icon: FileBarChart,
@@ -519,7 +519,7 @@ export function AnalyticsToolContent({
           </div>
 
           <p className="mt-6 text-center text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            Total monthly cost matters more than sticker price. LinkedGrow at $13/mo plus $2-4 in AI
+            Total monthly cost matters more than sticker price. LinkedGrow at $99/mo plus $2-4 in AI
             fees gives you analytics, content generation, and scheduling together for less than most
             analytics-only subscriptions.
           </p>
@@ -810,7 +810,7 @@ export function AnalyticsToolContent({
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
                 Pick{" "}
                 <Link href="/for/agencies" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
-                  LinkedGrow Business at $55/mo
+                  LinkedGrow Business at $179/mo
                 </Link>
                 . It ships{" "}
                 <Link href="/features/team-collaboration" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
@@ -928,7 +928,7 @@ export function AnalyticsToolContent({
         trustIndicators={[
           "Everything included",
           "Full analytics on Pro+",
-          "26+ AI models via BYOK",
+          "43 AI models via BYOK",
           "Your own AI key",
         ]}
       />
