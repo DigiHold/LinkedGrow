@@ -22,19 +22,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { StepRail } from "@/components/dashboard/step-rail";
 import {
-  PageShell,
-  PageHeader,
   Field,
 } from "@/components/dashboard/ui/page";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
   { num: 1, label: "Your site" },
-  { num: 2, label: "Sources" },
-  { num: 3, label: "Target" },
-  { num: 4, label: "Preview" },
-  { num: 5, label: "Outreach" },
-  { num: 6, label: "Review" },
+  { num: 2, label: "Where to look" },
+  { num: 3, label: "Who to reach" },
+  { num: 4, label: "Who sends" },
+  { num: 5, label: "Check it" },
 ];
 
 /** Section 7b, step 1. One to start with; more can be added later. */
@@ -220,7 +217,7 @@ export function NewAgentWizard() {
     if (step === 2 && !name.trim()) return "Give the agent a name.";
     if (step === 3 && keywords.length < MIN_SIGNALS)
       return `Add at least ${MIN_SIGNALS} signals. You have ${keywords.length}.`;
-    if (step === 5 && !linkedinAccountId) return "Pick the account that sends.";
+    if (step === 4 && !linkedinAccountId) return "Pick the account that sends.";
     return null;
   })();
 
@@ -262,21 +259,26 @@ export function NewAgentWizard() {
   };
 
   return (
-    <PageShell className="space-y-6">
-      <PageHeader
-        title="New agent"
-        description="Five steps. Nothing is sent until you start it yourself."
-        actions={
+    // Creating the first agent is the one screen that earns a room of its own:
+    // no sidebar, no topbar, nothing to click that is not the next step. The
+    // surface sits above the dashboard chrome rather than fighting the layout.
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-white dark:bg-background">
+      <div className="mx-auto w-full max-w-[620px] px-6 pb-24 pt-8 sm:pt-12">
+        <div className="flex justify-end">
           <Link href="/dashboard/agents">
-            <Button variant="ghost">
+            <Button variant="ghost" size="sm" className="text-muted-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              All agents
+              Leave
             </Button>
           </Link>
-        }
-      />
+        </div>
 
-      <StepRail steps={STEPS} current={step} onSelect={(n) => setStep(n)} />
+        <StepRail
+          steps={STEPS}
+          current={step}
+          onSelect={(n) => setStep(n)}
+          className="mt-2 justify-center"
+        />
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
@@ -488,51 +490,6 @@ export function NewAgentWizard() {
 
       {step === 4 && (
         <StepBody
-          title="The first leads it finds"
-          lead="You reject the ones that do not fit, and every rejection sharpens what it looks for next."
-        >
-          <div>
-            {/* The five rows below are the shape of a result, built from what
-                you just entered. They carry no names on purpose: nothing has
-                searched yet, and inventing people here would make the targeting
-                feel proven when it is not. */}
-            <div className="rounded-xl border border-dashed border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                Nothing has searched yet. This is what a match will look like,
-                using the criteria you just set.
-              </p>
-            </div>
-
-            <ul className="mt-4 space-y-2">
-              {previewRows.map((row, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl border border-border p-3"
-                >
-                  <span className="h-9 w-9 flex-none rounded-full bg-slate-100 dark:bg-white/10" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block h-3 w-32 rounded bg-slate-100 dark:bg-white/10" />
-                    <span className="mt-2 block truncate text-sm text-muted-foreground">
-                      {row}
-                    </span>
-                  </span>
-                  <span className="flex-none text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Match
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              When the agent runs, these fill with real people and you reject the
-              ones that do not fit. Every rejection sharpens what it looks for next.
-            </p>
-          </div>
-        </StepBody>
-      )}
-
-      {step === 5 && (
-        <StepBody
           title="How it reaches out"
           lead="Nothing goes out without you. This is prepared now, and at the end you decide whether to start it or leave it paused."
         >
@@ -631,11 +588,49 @@ export function NewAgentWizard() {
         </StepBody>
       )}
 
-      {step === 6 && (
+      {step === 5 && (
         <StepBody
           title="Check it over"
           lead="Nothing here is final. Everything can be changed after the agent exists."
         >
+          <div>
+            {/* The five rows below are the shape of a result, built from what
+                you just entered. They carry no names on purpose: nothing has
+                searched yet, and inventing people here would make the targeting
+                feel proven when it is not. */}
+            <div className="rounded-xl border border-dashed border-border p-4">
+              <p className="text-sm text-muted-foreground">
+                Nothing has searched yet. This is what a match will look like,
+                using the criteria you just set.
+              </p>
+            </div>
+
+            <ul className="mt-4 space-y-2">
+              {previewRows.map((row, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-border p-3"
+                >
+                  <span className="h-9 w-9 flex-none rounded-full bg-slate-100 dark:bg-white/10" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block h-3 w-32 rounded bg-slate-100 dark:bg-white/10" />
+                    <span className="mt-2 block truncate text-sm text-muted-foreground">
+                      {row}
+                    </span>
+                  </span>
+                  <span className="flex-none text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Match
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-4 text-sm text-muted-foreground">
+              When the agent runs, these fill with real people and you reject the
+              ones that do not fit. Every rejection sharpens what it looks for next.
+            </p>
+          </div>
+        
           <dl className="divide-y divide-border">
               <SummaryRow label="Name" value={name || "Not set"} />
               <SummaryRow label="Lead source" value={labelForSource(source)} />
@@ -684,7 +679,7 @@ export function NewAgentWizard() {
       )}
 
       <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-        {step < 6 ? (
+        {step < 5 ? (
           <Button onClick={() => setStep(step + 1)} disabled={!!blocker}>
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -712,8 +707,9 @@ export function NewAgentWizard() {
         {blocker && (
           <p className="text-sm text-slate-500 dark:text-slate-400">{blocker}</p>
         )}
+        </div>
       </div>
-    </PageShell>
+    </div>
   );
 }
 
@@ -799,18 +795,16 @@ function StepBody({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+    <div className="mt-10">
+      <h2 className="text-center text-[26px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
         {title}
       </h2>
       {lead && (
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+        <p className="mx-auto mt-3 max-w-[46ch] text-center text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
           {lead}
         </p>
       )}
-      <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-        {children}
-      </div>
+      <div className="mt-8 space-y-6">{children}</div>
     </div>
   );
 }
