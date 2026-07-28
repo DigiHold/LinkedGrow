@@ -42,6 +42,60 @@ function readableText(html: string): string {
     .slice(0, MAX_TEXT);
 }
 
+/**
+ * The shape the answer has to take.
+ *
+ * Asking for JSON in the system prompt is a request; this is a constraint. The
+ * model is decoded against the schema, so the reply cannot arrive wrapped in a
+ * sentence or a code fence, which is what used to break the parse.
+ */
+const SCHEMA = {
+  type: "object",
+  properties: {
+    icpSummary: { type: "string" },
+    jobRoles: { type: "array", items: { type: "string" } },
+    industries: { type: "array", items: { type: "string" } },
+    companySizes: {
+      type: "array",
+      items: {
+        type: "string",
+        enum: ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"],
+      },
+    },
+    signals: { type: "array", items: { type: "string" } },
+    companyInfo: { type: "string" },
+  },
+  required: [
+    "icpSummary",
+    "jobRoles",
+    "industries",
+    "companySizes",
+    "signals",
+    "companyInfo",
+  ],
+  additionalProperties: false,
+} as const;
+
+/**
+ * Reads the object out of the answer even if something wraps it.
+ *
+ * The schema above should make this unnecessary. It stays because a whole
+ * signup stalls on one stray character, and the cost of being wrong here is a
+ * customer staring at a form we promised to fill for them.
+ */
+function extractJson(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    const value: unknown = JSON.parse(trimmed.slice(start, end + 1));
+    return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Keeps only strings, trims them, and caps both the count and each item. */
 function list(value: unknown, max: number): string[] {
   if (!Array.isArray(value)) return [];
@@ -138,17 +192,17 @@ export async function POST(request: NextRequest) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 1200,
+          model: "claude-haiku-4-5",
+          max_tokens: 1500,
+          output_config: { format: { type: "json_schema", schema: SCHEMA } },
           system:
-            "You read a company's website and work out who buys from them. " +
-            "Answer with a single JSON object and nothing else, using these keys: " +
-            "icpSummary (a sentence naming the buyer and the problem the company solves for them), " +
-            "jobRoles (array of job titles), industries (array), " +
-            "companySizes (array from: 1-10, 11-50, 51-200, 201-500, 501-1000, 1000+), " +
-            "signals (array of 6 short topics those buyers post about or search for, two or three " +
-            "words each, no hashtags), " +
-            "companyInfo (two sentences a stranger could read to understand what the company sells). " +
+            "You read a company's website and work out who buys from them. Fill each field: " +
+            "icpSummary, a sentence naming the buyer and the problem the company solves for them; " +
+            "jobRoles, the job titles that buy; industries, the sectors they work in; " +
+            "companySizes, the headcount bands that fit; " +
+            "signals, 6 short topics those buyers post about or search for, two or three words " +
+            "each, no hashtags; " +
+            "companyInfo, two sentences a stranger could read to understand what the company sells. " +
             "Leave an array empty rather than guessing. Never invent a location.",
           messages: [
             { role: "user", content: `Website: ${target.hostname}\n\n${text}` },
@@ -174,10 +228,15 @@ export async function POST(request: NextRequest) {
     const content = Array.isArray(payload?.content)
       ? payload.content.find((b: { type?: string }) => b?.type === "text")?.text
       : undefined;
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(typeof content === "string" ? content : "{}");
-    } catch {
+    // A cut answer is cut JSON, so say what happened instead of blaming the model.
+    if (payload?.stop_reason === "max_tokens") {
+      return NextResponse.json(
+        { error: "That page was too long to read in one go. Fill the fields by hand and carry on." },
+        { status: 502 },
+      );
+    }
+    const parsed = typeof content === "string" ? extractJson(content) : null;
+    if (!parsed) {
       return NextResponse.json(
         { error: "The answer came back unreadable. Fill the fields by hand and carry on." },
         { status: 502 },
