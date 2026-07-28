@@ -16,6 +16,11 @@ import {
 import { getAllCategories, getAllArticleMetas } from "@/lib/docs";
 import { DocsHeader } from "@/components/docs/docs-header";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { V3Effects } from "@/components/v3/effects";
+import {
+  ASKCARD, CARVE_BASE, EB_DOT_LT, EB_LT, EM_SKY, FILL_SM, FROW, FROW_GO, FROW_H3, FROW_P,
+  H1, HERO_FIELD, HERO_ORB_A, HERO_ORB_B, HERO_RINGS, LEAD, RV, SEC, WRAP, WSPLIT,
+} from "@/components/v3/kit";
 
 export const metadata: Metadata = {
   title: "Documentation - LinkedGrow Help Center",
@@ -57,20 +62,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   faq: <HelpCircle className="w-6 h-6" />,
 };
 
-const categoryColors: Record<string, string> = {
-  "getting-started": "from-emerald-500 to-teal-600",
-  "content-creation": "from-violet-500 to-purple-600",
-  carousel: "from-pink-500 to-rose-600",
-  scheduling: "from-blue-500 to-indigo-600",
-  "linkedin-integration": "from-sky-500 to-blue-600",
-  byok: "from-amber-500 to-orange-600",
-  settings: "from-slate-500 to-slate-600",
-  billing: "from-green-500 to-emerald-600",
-  "account-security": "from-red-500 to-rose-600",
-  "business-features": "from-cyan-500 to-blue-600",
-  faq: "from-indigo-500 to-violet-600",
-};
-
 export default function DocsPage() {
   const categories = getAllCategories();
   const allArticles = getAllArticleMetas();
@@ -92,64 +83,78 @@ export default function DocsPage() {
         ]}
       />
       <DocsHeader searchIndex={searchIndex} />
+      <V3Effects />
 
       <main className="flex-1">
         {/* Hero */}
-        <div className="relative overflow-hidden border-b border-slate-200 dark:border-slate-800">
-          <div className="absolute inset-0 bg-linear-to-br from-cyan-50 via-blue-50 to-violet-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900" />
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-              How can we help?
+        <section className={`${HERO_FIELD} pb-[clamp(124px,13.5vw,190px)]`}>
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+            <span className={HERO_ORB_A}></span>
+            <span className={HERO_ORB_B}></span>
+            <div className={HERO_RINGS}><i></i><i></i><i></i></div>
+          </div>
+          <canvas
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+            id="net"
+          ></canvas>
+          <div className={`${WRAP} relative z-[3] text-center`}>
+            <span className={`${EB_LT} ${RV}`}>
+              <i className={EB_DOT_LT}></i>Documentation
+            </span>
+            <h1
+              className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[16ch] text-balance text-white`}
+              data-blur="3"
+            >
+              How can we <em className={EM_SKY}>help?</em>
             </h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`}>
               Everything you need to know about using LinkedGrow to create, schedule, and grow your LinkedIn presence.
             </p>
           </div>
-        </div>
+          <div className={`${CARVE_BASE} bg-v3-bg dark:bg-v3-bg-d`}></div>
+        </section>
 
-        {/* Categories grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/docs/${category.slug}`}
-                className="group relative p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 transition-all"
-              >
-                <div className={`w-12 h-12 rounded-xl bg-linear-to-br ${categoryColors[category.slug] || "from-slate-500 to-slate-600"} flex items-center justify-center text-white mb-4`}>
-                  {categoryIcons[category.slug] || <HelpCircle className="w-6 h-6" />}
-                </div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                  {category.title}
-                </h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
-                  {category.description}
-                </p>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-500">
-                  {category.articleCount} {category.articleCount === 1 ? "article" : "articles"}
-                </span>
-              </Link>
-            ))}
+        {/* the categories, one per line on a rule rather than a wall of cards */}
+        <section className={SEC}>
+          <div className={WRAP}>
+            <div className="grid grid-cols-2 gap-x-[clamp(30px,4vw,64px)] max-[860px]:grid-cols-1">
+              {categories.map((category) => (
+                <Link className={FROW} href={`/docs/${category.slug}`} key={category.slug}>
+                  <span className="flex min-w-0 items-start gap-[13px]">
+                    <span className="mt-[3px] grid h-9 w-9 flex-none place-items-center rounded-[11px] border border-v3-line bg-v3-wash text-v3-blue [transition:border-color_.3s,background_.3s,color_.3s] group-hover:border-transparent group-hover:bg-[linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))] group-hover:text-white dark:border-v3-line-d dark:bg-v3-wash-d">
+                      {categoryIcons[category.slug] || <HelpCircle className="h-[17px] w-[17px]" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`${FROW_H3} block`}>{category.title}</span>
+                      <span className={`${FROW_P} block`}>{category.description}</span>
+                      <span className="mt-1.5 block font-v3-mono text-[11.5px] uppercase tracking-[.12em] text-v3-faint dark:text-v3-faint-d">
+                        {category.articleCount} {category.articleCount === 1 ? "article" : "articles"}
+                      </span>
+                    </span>
+                  </span>
+                  <span aria-hidden="true" className={FROW_GO}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* Contact CTA */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="text-center p-8 sm:p-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-              Can&apos;t find what you&apos;re looking for?
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Our team is here to help. Reach out and we&apos;ll get back to you quickly.
-            </p>
-            <a
-              href="mailto:contact@linkedgrow.ai"
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg transition-all"
-            >
-              Contact support
-            </a>
+        <section className="pb-[clamp(70px,8.5vw,126px)]">
+          <div className={WRAP}>
+            <div className={`${ASKCARD} mx-auto max-w-[640px] text-center`}>
+              <b>Can&apos;t find what you&apos;re looking for?</b>
+              <p>Our team is here to help. Reach out and we&apos;ll get back to you quickly.</p>
+              <a className={FILL_SM} href="mailto:contact@linkedgrow.ai">
+                Contact support
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+              </a>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
     </>
   );
