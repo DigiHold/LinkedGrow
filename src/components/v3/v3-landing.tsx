@@ -201,9 +201,9 @@ export function V3Landing() {
           <canvas id="net" aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] h-full w-full"></canvas>
         </div>
         <div className={`${WRAP} relative z-[3] text-center`}>
-          <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>The LinkedIn agent for founders and sales teams</span>
-          <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[19ch] text-white`} data-blur="3">Your agent finds your buyers<br /><em className={EM_SKY}>and starts the conversation.</em></h1>
-          <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>Enter your website. LinkedGrow works out who actually buys from you, finds those exact people on LinkedIn, and opens a real conversation every working day. You show up when somebody answers.</p>
+          <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>The LinkedIn AI agent for founders and sales teams</span>
+          <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[21ch] text-balance text-white`} data-blur="3">Your agent finds your LinkedIn leads <em className={EM_SKY}>and starts the conversation.</em></h1>
+          <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>Enter your website. LinkedGrow works out who actually buys from you, finds those exact people on LinkedIn, and opens a real conversation every working day. Lead generation on LinkedIn without the prospecting, the copy and paste, or the follow-up you forget. You show up when somebody answers.</p>
           <form className={`group ${URLWRAP} ${RV} mt-9`} style={{ "--d0": ".2s" } as React.CSSProperties} onSubmit={(e) => e.preventDefault()}>
             <div className={URLBAR}>
               <input type="text" placeholder="yourcompany.com" aria-label="Your website" className={URLBAR_INPUT} />
@@ -296,7 +296,7 @@ export function V3Landing() {
         <div className={WRAP}>
           <div className={`${SH} ${RV} mb-[46px] max-w-[900px]`}><span className={SH_BUL}></span>
             <div><h2 className={H2}>Four jobs it does every day, <em className={EM_SH}>without being asked.</em></h2>
-              <p className={`${LEAD_MUT} mt-[18px]`}>Set it up in four minutes, then it runs by itself inside working hours, at the pace of a careful person who genuinely wants the reply.</p></div></div>
+              <p className={`${LEAD_MUT} mt-[18px]`}>LinkedIn outreach automation that behaves: set it up in four minutes, then it runs by itself inside working hours, at the pace of a careful person who genuinely wants the reply.</p></div></div>
 
           <div className={`${CAPS} ${RV}`}>
             <div className={CAP}>
@@ -381,7 +381,7 @@ export function V3Landing() {
         <div className={WRAP}>
           <div className={`${SH} ${RV} mb-[52px] max-w-[900px]`}><span className={SH_BUL}></span>
             <div><h2 className={H2}>Four minutes to set up. <em className={EM_SH}>First leads today.</em></h2>
-              <p className={`${LEAD_MUT} mt-[18px]`}>Type your website. The agent takes it from there, and you get to watch every step of it happening.</p></div></div>
+              <p className={`${LEAD_MUT} mt-[18px]`}>Type your website. The agent takes it from there, from prospecting to the auto connect request, and you watch every step of it happening.</p></div></div>
           <div className={RAILWRAP}>
             <nav className={RAIL} id="rail">
               <a href="#s1" className="on">Connect<small>Your site and your account</small></a>

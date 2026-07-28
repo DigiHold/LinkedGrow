@@ -56,14 +56,14 @@ const caveat = Caveat({
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Post Generator AI: LinkedGrow",
+  title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
   description:
-    "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month. No credit card required.",
+    "Lead generation on LinkedIn, run by an agent that finds your leads, sends the invitation and opens the conversation, inside limits that keep your account safe.",
   authors: [{ name: "LinkedGrow" }],
   openGraph: {
-    title: "LinkedIn Post Generator AI: LinkedGrow",
+    title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
     description:
-      "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month.",
+      "Lead generation on LinkedIn, run by an agent that finds your leads and opens the conversation, inside limits that keep your account safe.",
     url: "https://linkedgrow.ai",
     siteName: "LinkedGrow",
     type: "website",
@@ -72,15 +72,15 @@ export const metadata: Metadata = {
         url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
         width: 1200,
         height: 630,
-        alt: "LinkedGrow - AI LinkedIn Post Generator",
+        alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Post Generator AI: LinkedGrow",
+    title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
     description:
-      "The AI LinkedIn post generator that writes in your voice. Bring your own API key - unlimited posts for under $4/month.",
+      "Lead generation on LinkedIn, run by an agent that finds your leads and opens the conversation, inside limits that keep your account safe.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
