@@ -33,35 +33,24 @@ export function QuickAnswer({ question, answer, className = "" }: QuickAnswerPro
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableJsonLd) }}
       />
+      {/* The answer a search engine lifts, so it stays one block with its own
+          ground: a gradient rule down the side, the question in the display
+          face, the answer at reading size. The two class names are load-bearing,
+          the speakable schema above points at them. */}
       <aside
         aria-label="Quick answer"
-        className={`my-6 rounded-2xl border border-cyan-200 bg-linear-to-br from-cyan-50 to-blue-50 p-5 sm:p-6 dark:border-cyan-900/50 dark:from-cyan-950/30 dark:to-blue-950/30 ${className}`}
+        className={`relative my-[clamp(26px,3vw,38px)] overflow-hidden rounded-[18px] border border-v3-line bg-v3-wash py-[clamp(22px,2.6vw,30px)] pl-[clamp(24px,3vw,34px)] pr-[clamp(20px,2.6vw,30px)] dark:border-v3-line-d dark:bg-v3-wash-d ${className}`}
       >
-        <div className="flex items-start gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="quick-answer-question text-sm font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-400">
-              Quick Answer: {question}
-            </p>
-            <p className="quick-answer-text mt-2 text-base leading-relaxed text-slate-800 dark:text-slate-200">
-              {answer}
-            </p>
-          </div>
-        </div>
+        <span className="absolute bottom-0 left-0 top-0 w-[3px] [background:linear-gradient(180deg,var(--color-v3-cyan),var(--color-v3-blue))]"></span>
+        <p className="quick-answer-question m-0 font-v3-display text-[clamp(17px,1.8vw,20px)] font-semibold leading-[1.3] tracking-[-.03em] text-v3-ink dark:text-v3-ink-d">
+          <span className="mb-[9px] block font-v3-mono text-[10.5px] font-medium uppercase tracking-[.15em] text-v3-blue">
+            Quick answer
+          </span>
+          {question}
+        </p>
+        <p className="quick-answer-text mt-[13px] max-w-[68ch] text-[16px] leading-[1.66]! text-v3-ink2 dark:text-v3-ink2-d">
+          {answer}
+        </p>
       </aside>
     </>
   );
