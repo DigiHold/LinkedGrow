@@ -17,6 +17,7 @@ import { getAllCategories, getAllArticleMetas } from "@/lib/docs";
 import { DocsHeader } from "@/components/docs/docs-header";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { V3Effects } from "@/components/v3/effects";
+import { V3_ROOT } from "@/components/v3/root";
 import {
   ASKCARD, CARVE_BASE, EB_DOT_LT, EB_LT, EM_SKY, FILL_SM, FROW, FROW_GO, FROW_H3, FROW_P,
   H1, HERO_FIELD, HERO_ORB_A, HERO_ORB_B, HERO_RINGS, LEAD, RV, SEC, WRAP, WSPLIT,
@@ -85,7 +86,7 @@ export default function DocsPage() {
       <DocsHeader searchIndex={searchIndex} />
       <V3Effects />
 
-      <main className="flex-1">
+      <main className={`${V3_ROOT} flex-1`}>
         {/* Hero */}
         <section className={`${HERO_FIELD} pb-[clamp(124px,13.5vw,190px)]`}>
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
