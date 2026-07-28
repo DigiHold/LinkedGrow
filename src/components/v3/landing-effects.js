@@ -135,6 +135,10 @@ export function initV3Landing() {
         if((cs.webkitBackgroundClip||cs.backgroundClip)==='text'){
           var whole=document.createElement('span');
           whole.className='w'; whole.appendChild(nd.cloneNode(true));
+          /* Inline et pas inline-block : un bloc ne se coupe pas, la clause
+             partirait entière à la ligne et se lirait comme un retour forcé au
+             milieu de la phrase. */
+          whole.style.display='inline';
           out.push(whole); return;
         }
         var shell=nd.cloneNode(false), inner=[];

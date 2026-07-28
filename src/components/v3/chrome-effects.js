@@ -13,10 +13,16 @@
 export function initV3Chrome() {
   const listeners = [];
   const observers = [];
+  const frames = [];
   const on = (target, type, handler, opts) => {
     if (!target) return;
     target.addEventListener(type, handler, opts);
     listeners.push([target, type, handler]);
+  };
+  const raf = (fn) => {
+    const id = requestAnimationFrame(fn);
+    frames.push(id);
+    return id;
   };
   // The lifted word-splitter registers its own observer through this, exactly
   // as it did in the landing script it came from.
@@ -46,6 +52,46 @@ export function initV3Chrome() {
      p.style.width=(m>0?scrollY/m*100:0)+'%';}
    on(window,'scroll',u,{passive:true}); u();})();
 
+/* ── réseau de points du héros ──
+   The same field the home draws, lifted here so an inner hero is the same
+   surface rather than a flat copy of it. It costs nothing on a page without
+   the canvas, and it does not run at all when the visitor asked for less
+   motion. */
+  (function(){
+    var cv=document.getElementById('net'); if(!cv) return;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ctx=cv.getContext('2d'),W,H,pts=[],dpr=Math.min(devicePixelRatio||1,2);
+    function size(){
+      var r=cv.parentElement.getBoundingClientRect();
+      W=cv.width=r.width*dpr; H=cv.height=r.height*dpr;
+      cv.style.width=r.width+'px'; cv.style.height=r.height+'px';
+      var n=Math.min(52,Math.floor(r.width/28));
+      pts=Array.from({length:n},function(){return{
+        x:Math.random()*W, y:Math.random()*H*.8,
+        vx:(Math.random()-.5)*.13*dpr, vy:(Math.random()-.5)*.13*dpr,
+        r:(Math.random()*1.5+.8)*dpr, p:Math.random()*6.28 };});
+    }
+    var t=0;
+    function draw(){
+      ctx.clearRect(0,0,W,H); t+=.012;
+      var range=132*dpr;
+      for(var i=0;i<pts.length;i++){ var p=pts[i];
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>W) p.vx*=-1;
+        if(p.y<0||p.y>H*.84) p.vy*=-1; }
+      ctx.lineWidth=.75*dpr;
+      for(var a=0;a<pts.length;a++) for(var b=a+1;b<pts.length;b++){
+        var A=pts[a],B=pts[b],dx=A.x-B.x,dy=A.y-B.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<range){ ctx.strokeStyle='rgba(174,232,255,'+(0.2*(1-d/range)).toFixed(3)+')';
+          ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); } }
+      for(var k=0;k<pts.length;k++){ var q=pts[k];
+        ctx.fillStyle='rgba(198,240,255,'+(0.4+0.32*Math.sin(t+q.p)).toFixed(3)+')';
+        ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,6.2832); ctx.fill(); }
+      raf(draw);
+    }
+    size(); on(window,'resize',size); raf(draw);
+  })();
+
 /* ── révélations au scroll ── */
   function splitWords(node,out){
     [].slice.call(node.childNodes).forEach(function(nd){
@@ -65,6 +111,12 @@ export function initV3Chrome() {
         if((cs.webkitBackgroundClip||cs.backgroundClip)==='text'){
           var whole=document.createElement('span');
           whole.className='w'; whole.appendChild(nd.cloneNode(true));
+          /* Inline, not inline-block: an inline-block run cannot break, so a
+             clause of eight words would be pushed whole onto a line of its own
+             and read as a hard break in the middle of the sentence. Inline
+             boxes ignore transform, so this run fades and unblurs where the
+             others also rise, which nobody sees. */
+          whole.style.display='inline';
           out.push(whole); return;
         }
         var shell=nd.cloneNode(false), inner=[];
@@ -121,5 +173,6 @@ export function initV3Chrome() {
       target.removeEventListener(type, handler);
     }
     for (const o of observers) o.disconnect();
+    for (const id of frames) cancelAnimationFrame(id);
   };
 }

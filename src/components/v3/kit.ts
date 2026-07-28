@@ -609,8 +609,15 @@ export const HERO_RINGS =
   "[&>i]:absolute [&>i]:inset-0 [&>i]:rounded-full [&>i]:border [&>i]:border-[rgba(140,228,245,.13)] " +
   "[&>i:nth-child(2)]:inset-[130px] [&>i:nth-child(2)]:border-[rgba(140,228,245,.1)] " +
   "[&>i:nth-child(3)]:inset-[260px] [&>i:nth-child(3)]:border-[rgba(140,228,245,.07)]";
-export const CARVE =
-  "absolute bottom-[-2px] left-[-8%] right-[-8%] z-[2] h-[clamp(50px,7.5vw,120px)] bg-v3-bg [border-radius:50%_50%_0_0/100%_100%_0_0] dark:bg-v3-bg-d";
+/* The curve the hero sits in is the top edge of whatever comes next, drawn
+   early. It therefore has to be painted in that section's ground, not in the
+   page's: on a page whose next section is a tinted strip, a white carve leaves
+   a lens-shaped seam right under the hero. CARVE keeps the default ground for
+   the pages that go straight to it; CARVE_BASE is the shape on its own, for a
+   page to paint. */
+export const CARVE_BASE =
+  "absolute bottom-[-2px] left-[-8%] right-[-8%] z-[2] h-[clamp(50px,7.5vw,120px)] [border-radius:50%_50%_0_0/100%_100%_0_0]";
+export const CARVE = CARVE_BASE + " bg-v3-bg dark:bg-v3-bg-d";
 
 /** A frosted pill in the hero, one per value proposition. */
 export const VPROP =
@@ -618,9 +625,12 @@ export const VPROP =
   "font-v3-sans text-[13.5px] font-medium text-[rgba(255,255,255,.82)] [backdrop-filter:blur(6px)] [&>svg]:flex-none [&>svg]:text-v3-sky";
 
 /** The secondary button beside the hero's primary one, on the dark field. */
+/* Its padding and type size match FILL_LG exactly, because the two sit side by
+   side in every hero and a secondary button four pixels shorter than the
+   primary one reads as a mistake rather than as a hierarchy. */
 export const HERO_BTN =
-  "relative inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden rounded-[12px] " +
-  "border border-[rgba(255,255,255,.16)] bg-[rgba(255,255,255,.06)] px-[21px] py-[13px] font-v3-sans text-[15px] font-semibold text-white " +
+  "relative inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden rounded-[14px] " +
+  "border border-[rgba(255,255,255,.16)] bg-[rgba(255,255,255,.06)] px-[26px] py-4 font-v3-sans text-[16.5px] font-semibold text-white " +
   "[transition:transform_.2s_var(--ease-v3),box-shadow_.22s,border-color_.22s,background_.22s]! " +
   "hover:border-[rgba(255,255,255,.34)] active:[transform:scale(.978)]";
 
