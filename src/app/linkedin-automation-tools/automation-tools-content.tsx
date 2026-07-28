@@ -53,7 +53,7 @@ export function AutomationToolsContent() {
         ]}
         primaryCta={{ text: "Try safe automation free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Zero ban risk"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Zero ban risk"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -242,7 +242,7 @@ export function AutomationToolsContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-79/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Uses LinkedIn's official API - zero ban risk, full compliance" },
@@ -359,7 +359,7 @@ export function AutomationToolsContent() {
           gradient: "without the risk?",
         }}
         description="Stop gambling your professional network on outreach bots. LinkedGrow gives you complete content automation through LinkedIn's official API, with AI-powered writing, scheduling, and analytics."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",

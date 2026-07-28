@@ -61,7 +61,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
         ]}
         primaryCta={{ text: "Generate your announcement", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Cancel anytime"]}
       />
 
       <LandingPainPoints
@@ -395,7 +395,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
           ],
         }}
         linkedgrow={{
-          price: "$19/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI generations with your own key" },
@@ -440,7 +440,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "No credit card required",
+          "Cancel before day 8",
           "26 AI models",
           "Cancel anytime",
         ]}

@@ -43,7 +43,7 @@ export function PostGeneratorFreeContent() {
           line1: "Free LinkedIn Post Generator:",
           gradient: "7-Day Pro Trial With Full Access",
         }}
-        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. No credit card required to start."
+        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. Cancel before day 8 to start."
         description="The 7-day Pro trial includes unlimited AI generation across 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK, plus voice training, AI image generation, scheduling, and analytics. Test the full product before paying anything."
         valuePropBadges={[
           { icon: Gift, text: "7-day Pro trial" },
@@ -52,7 +52,7 @@ export function PostGeneratorFreeContent() {
         ]}
         primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["No credit card required", "Full Pro access", "Cancel anytime"]}
+        trustIndicators={["Cancel before day 8", "Full Pro access", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -232,7 +232,7 @@ export function PostGeneratorFreeContent() {
           ],
         }}
         linkedgrow={{
-          price: "Free - $13/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "7-day Pro trial with full Pro access - no card required" },
@@ -290,7 +290,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "Is the AI LinkedIn post generator really free?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 26 models via BYOK, voice training, and scheduling - no credit card required to start. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 26 models via BYOK, voice training, and scheduling - cancel before day 8 to start. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
           },
           {
             question: "What AI models are available?",
@@ -336,12 +336,12 @@ export function PostGeneratorFreeContent() {
           line1: "Ready to create LinkedIn posts",
           gradient: "in seconds instead of hours?",
         }}
-        description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. No credit card needed, no commitment."
-        primaryCta={{ text: "Start 7-day Pro trial - no card needed", href: "/sign-up" }}
+        description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. Cancel any time needed, no commitment."
+        primaryCta={{ text: "Start 7-day Pro trial - cancel before day 8", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
-          "No credit card",
+          "Cancel any time",
           "Voice training included",
           "Upgrade anytime",
         ]}

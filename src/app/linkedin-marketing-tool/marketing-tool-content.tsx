@@ -53,7 +53,7 @@ export function MarketingToolContent() {
         ]}
         primaryCta={{ text: "Try free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Official LinkedIn API"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Official LinkedIn API"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -242,7 +242,7 @@ export function MarketingToolContent() {
           ],
         }}
         linkedgrow={{
-          price: "$19-79/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "One platform for writing, images, carousels, scheduling, and analytics" },
@@ -359,7 +359,7 @@ export function MarketingToolContent() {
           gradient: "LinkedIn marketing?",
         }}
         description="Stop juggling 5 tools for one workflow. LinkedGrow gives you AI content creation, scheduling, carousels, images, and analytics in one platform, with voice training that keeps every post sounding like you."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",

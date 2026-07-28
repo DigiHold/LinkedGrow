@@ -233,7 +233,7 @@ export function CarouselGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$55/month (Business)",
+          price: "$99/month",
           apiCost: "$2 to $4/month BYOK",
           benefits: [
             { text: "AI drafts the entire carousel before you open the editor" },

@@ -53,7 +53,7 @@ export function ContentCreationToolsContent() {
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -242,7 +242,7 @@ export function ContentCreationToolsContent() {
           ],
         }}
         linkedgrow={{
-          price: "$13-55/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "All 6 content tools in one platform with shared workflow" },
@@ -325,7 +325,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. No credit card required to start. After the trial, paid plans start at $13/mo (billed yearly).",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. Cancel before day 8 to start. After the trial, paid plans start at $13/mo (billed yearly).",
           },
           {
             question: "How does the BYOK model work?",
@@ -359,7 +359,7 @@ export function ContentCreationToolsContent() {
           gradient: "one powerful platform?",
         }}
         description="Stop paying for 5 different tools and switching between apps all day. Get every LinkedIn content creation tool you need in one place at a fraction of the cost."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",

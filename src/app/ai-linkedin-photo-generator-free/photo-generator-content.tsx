@@ -53,7 +53,7 @@ export function PhotoGeneratorContent() {
         ]}
         primaryCta={{ text: "Start generating photos free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["Free to sign up", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["Free to sign up", "Cancel before day 8", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -234,7 +234,7 @@ export function PhotoGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$27/month",
+          price: "$99/month",
           apiCost: "$0.50-1.50/month",
           benefits: [
             { text: "Unique AI photos tailored to every single post topic" },
@@ -347,7 +347,7 @@ export function PhotoGeneratorContent() {
           gradient: "impossible to scroll past?",
         }}
         description="Stop using generic stock photos that blend into the feed. Start generating unique AI photos that grab attention and drive engagement on every post you publish."
-        primaryCta={{ text: "Start free - no card needed", href: "/sign-up" }}
+        primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Free to sign up",

@@ -41,7 +41,7 @@ export function FreePostGeneratorContent() {
           gradient: "trained on your voice",
         }}
         descriptionBold="An AI writer that captures your sentence rhythm, vocabulary, and tone."
-        description="LinkedGrow is not just a post generator. It is an AI writer that studies how you write before it writes for you. Paste 3 to 5 of your best posts, pick one of 26 AI models from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and the writer produces drafts your audience cannot tell apart from your manual ones. 7-day Pro trial, no credit card."
+        description="LinkedGrow is not just a post generator. It is an AI writer that studies how you write before it writes for you. Paste 3 to 5 of your best posts, pick one of 26 AI models from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and the writer produces drafts your audience cannot tell apart from your manual ones. 7-day Pro trial, cancel any time."
         valuePropBadges={[
           { icon: Mic, text: "Voice-matched writing" },
           { icon: Brain, text: "26 AI models" },
@@ -49,7 +49,7 @@ export function FreePostGeneratorContent() {
         ]}
         primaryCta={{ text: "Start writing free", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial", "No credit card", "All 26 models included"]}
+        trustIndicators={["7-day Pro trial", "Cancel any time", "All 26 models included"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -229,7 +229,7 @@ export function FreePostGeneratorContent() {
           ],
         }}
         linkedgrow={{
-          price: "$13/mo billed yearly",
+          price: "$99/month",
           apiCost: "$2 to $4/month BYOK",
           benefits: [
             { text: "7-day Pro trial with full Pro access - no card required" },
@@ -342,12 +342,12 @@ export function FreePostGeneratorContent() {
           line1: "Ready to write LinkedIn posts",
           gradient: "that sound like you?",
         }}
-        description="Paste 3 sample posts, brief the writer, and get your first draft in your voice in under 5 minutes. 7-day Pro trial, no credit card, all 26 models included."
+        description="Paste 3 sample posts, brief the writer, and get your first draft in your voice in under 5 minutes. 7-day Pro trial, cancel any time, all 26 models included."
         primaryCta={{ text: "Train your voice free", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
-          "No credit card",
+          "Cancel any time",
           "All 26 AI models",
           "Voice training included",
         ]}

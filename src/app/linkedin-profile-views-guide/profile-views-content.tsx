@@ -59,7 +59,7 @@ export function ProfileViewsContent() {
         ]}
         primaryCta={{ text: "Start growing your visibility", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -239,7 +239,7 @@ export function ProfileViewsContent() {
           ],
         }}
         linkedgrow={{
-          price: "$13/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI generations with your own API key" },
@@ -357,7 +357,7 @@ export function ProfileViewsContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "No credit card required",
+          "Cancel before day 8",
           "24+ AI models",
           "Cancel anytime",
         ]}

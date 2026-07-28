@@ -55,7 +55,7 @@ export function CompanyPageOptimizationContent() {
         ]}
         primaryCta={{ text: "Try LinkedGrow free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "No credit card required", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Cancel anytime"]}
       />
 
       <LandingPainPoints
@@ -228,7 +228,7 @@ export function CompanyPageOptimizationContent() {
           ],
         }}
         linkedgrow={{
-          price: "$13/month",
+          price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
             { text: "Unlimited AI content generation with your own API key" },
@@ -349,7 +349,7 @@ export function CompanyPageOptimizationContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "No credit card required",
+          "Cancel before day 8",
           "24+ AI models",
           "Cancel anytime",
         ]}
