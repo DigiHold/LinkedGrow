@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { initV3Landing } from "./landing-effects";
 import { V3FaqAside, V3FaqList } from "./faq-section";
+import { V3Plans } from "./pricing-section";
 import { V3_ROOT } from "./root";
 import {
   ALERT,
@@ -54,7 +55,12 @@ import {
   FILL_PRI,
   FILL_WIDE,
   FINALE,
+  CARVE,
   H1,
+  HERO_FIELD,
+  HERO_ORB_A,
+  HERO_ORB_B,
+  HERO_RINGS,
   H2,
   H3,
   HARD,
@@ -188,10 +194,10 @@ export function V3Landing() {
 
 
       {/*═══ 1. HÉROS ═══*/}
-      <section className="relative isolate overflow-visible pt-[clamp(146px,17vw,204px)] [background:radial-gradient(48%_40%_at_12%_-6%,#7fd4f0_0%,transparent_62%),radial-gradient(56%_46%_at_88%_-8%,#00c5e8_0%,transparent_58%),radial-gradient(70%_52%_at_50%_22%,#2a6ff5_0%,transparent_70%),radial-gradient(90%_74%_at_50%_108%,#04143a_0%,transparent_72%),linear-gradient(168deg,#1a5df0_0%,#0a3096_44%,#061a45_100%)] before:absolute before:inset-0 before:z-[-1] before:opacity-[.22] before:content-[''] before:[background-image:linear-gradient(rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.55)_1px,transparent_1px)] before:[background-size:80px_80px] before:[-webkit-mask-image:radial-gradient(78%_62%_at_50%_16%,#000,transparent_82%)] before:[mask-image:radial-gradient(78%_62%_at_50%_16%,#000,transparent_82%)]">
+      <section className={HERO_FIELD}>
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <span className="pointer-events-none absolute left-[-180px] top-[-140px] z-0 h-[640px] w-[640px] animate-v3-float rounded-full bg-[rgba(0,197,232,.3)] [filter:blur(90px)]"></span><span className="pointer-events-none absolute right-[-160px] top-[60px] z-0 h-[560px] w-[560px] rounded-full bg-[rgba(94,150,255,.32)] [animation:v3-float_23s_ease-in-out_infinite_reverse] [filter:blur(90px)]"></span>
-          <div className="pointer-events-none absolute left-1/2 top-[34%] z-0 h-[1440px] w-[1440px] [transform:translateX(-50%)] [&>i]:absolute [&>i]:inset-0 [&>i]:rounded-full [&>i]:border [&>i]:border-[rgba(140,228,245,.13)] [&>i:nth-child(2)]:inset-[130px] [&>i:nth-child(2)]:border-[rgba(140,228,245,.1)] [&>i:nth-child(3)]:inset-[260px] [&>i:nth-child(3)]:border-[rgba(140,228,245,.07)]"><i></i><i></i><i></i></div>
+          <span className={HERO_ORB_A}></span><span className={HERO_ORB_B}></span>
+          <div className={HERO_RINGS}><i></i><i></i><i></i></div>
           <canvas id="net" aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] h-full w-full"></canvas>
         </div>
         <div className={`${WRAP} relative z-[3] text-center`}>
@@ -240,7 +246,7 @@ export function V3Landing() {
             </div>
           </div>
         </div>
-        <div className="absolute bottom-[-2px] left-[-8%] right-[-8%] z-[2] h-[clamp(50px,7.5vw,120px)] bg-v3-bg [border-radius:50%_50%_0_0/100%_100%_0_0] dark:bg-v3-bg-d"></div>
+        <div className={CARVE}></div>
       </section>
 
       {/*═══ 2. LOGOS ═══*/}
@@ -648,64 +654,7 @@ export function V3Landing() {
       </section>
 
       {/*═══ 11. TARIFS ═══*/}
-      <section className={`${SEC} border-t border-v3-line bg-v3-bg2 dark:border-v3-line-d dark:bg-v3-bg2-d`} id="pricing">
-        <div className={WRAP}>
-          <div className={`${RV} mb-10 text-center`}>
-            <h2 className={H2}>One price, and the agent needs nothing else.</h2>
-            <p className={`${LEAD_MUT} mx-auto mt-[18px]`}>No credits to run out of, no proxy invoice arriving separately at the end of the month, and no AI bill for anything your agent does. Writing your own posts is the one part that runs on your own AI key, which is what keeps it unlimited for a few dollars a month.</p>
-            <div className="mt-7 flex justify-center">
-              <div className="relative inline-flex">
-                <div className={TOGGLE} id="tg"><span className={PIP} id="pip"></span>
-                  <button className="on" data-p="m">Monthly</button><button data-p="y">Yearly</button></div>
-                <span className={TGNOTE} aria-hidden="true">
-                  <svg width="54" height="40" viewBox="0 0 54 40" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M50 37C39 35 20 28 9 9" /><path d="M6 20l1.5-13.5 12.5 4" /></svg>
-                  <b>2 months free</b></span>
-              </div>
-            </div>
-          </div>
-          <div className={PLANS}>
-            <div className={`${PLAN} ${PLAN_BEST} ${RV_STATE}`}><span className={PLAN_TAG}>Where most founders start</span>
-              <div className={PN}>Pro</div><div className={PD}>Two agents working every day for you</div>
-              <div className={PR}><span data-m="$99" data-y="$990">$99</span><small data-m="/ month" data-y="/ year">/ month</small></div>
-              <div className={YR} data-m="or $990 a year, two months free" data-y="works out at $82.50 a month">or $990 a year, two months free</div>
-              <div className={WORTH}>A rep costs around $4,000 a month, an outreach tool $99, an AI subscription $20, two proxies $30. You are paying for one of those four.</div>
-              <div className={INC}>What's included</div>
-              <ul className={PLAN_UL}>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>2 AI agents</b> prospecting every working day</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>2 LinkedIn accounts, 2 audiences, 2 dedicated IPs</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,000 buyers contacted a month, warm-up included</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Leads mined from competitor audiences and live signals</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Every lead linked to the post it came from</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Anti-slop gate on every message before it sends</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Unified reply inbox with instant email alerts</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>CRM, API and <b>MCP</b> integrations (HubSpot, Pipedrive, Claude...)</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Posts, carousels and scheduling on your own AI key</span></li>
-              </ul>
-              <a className={`${FILL} ${FILL_LG} ${FILL_PRI} ${FILL_WIDE}`} href="#">Start free for 7 days
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
-            </div>
-            <div className={`${PLAN} ${PLAN_PLAIN} ${RV_STATE}`}>
-              <div className={PN}>Business</div><div className={PD}>Three agents and the team around them</div>
-              <div className={PR}><span data-m="$179" data-y="$1,790">$179</span><small data-m="/ month" data-y="/ year">/ month</small></div>
-              <div className={YR} data-m="or $1,790 a year, two months free" data-y="works out at $149 a month">or $1,790 a year, two months free</div>
-              <div className={WORTH}>A lead that never reaches the CRM does not exist. This tier puts every one of them there automatically and gives each reply an owner.</div>
-              <div className={INC}>Everything in Pro, plus</div>
-              <ul className={PLAN_UL}>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span><b>3 AI agents</b>, 3 LinkedIn accounts, 3 dedicated IPs</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Up to 1,500 buyers contacted a month</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Unlimited seats inside one shared workspace</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Shared inbox with an owner on every reply</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Lead scoring you can weight yourself</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Salesforce, webhooks and a private MCP endpoint</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Client workspaces and white-label reporting</span></li>
-                <li className={PLAN_LI}><i className={PLAN_LI_I}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6"><path d="M20 6L9 17l-5-5" /></svg></i><span>Priority support with a named contact</span></li>
-              </ul>
-              <a className={`${FILL} ${FILL_LIGHT} ${FILL_LG} ${FILL_WIDE}`} href="#">Start free for 7 days
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <V3Plans />
 
       {/*═══ 12. FAQ ═══*/}
       <section className={SEC}>

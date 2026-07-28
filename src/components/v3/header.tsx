@@ -46,16 +46,16 @@ const WORDMARK =
   "font-v3-display text-[22px] font-bold tracking-[-.05em] text-white [&>i]:not-italic [&>i]:text-v3-sky";
 
 /* The two chrome buttons. The ghost one reads on the dark field and on white. */
-const BTN_BASE =
-  "relative inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden rounded-[12px] border border-v3-line2 " +
-  "font-v3-sans text-[15px] font-semibold text-v3-ink " +
-  "[transition:transform_.2s_var(--ease-v3),box-shadow_.22s,border-color_.22s,background_.22s]! " +
-  "hover:border-v3-ink2 hover:shadow-[0_12px_26px_-16px_rgba(6,9,17,.55)] active:[transform:scale(.978)]";
+/* The ghost button, written out rather than derived: taking a base and
+   overriding its colour, size and border from a variant is decided by the
+   generated sheet, and here the base was winning. */
 const BTN_GHOST =
-  BTN_BASE +
-  " border-transparent bg-transparent px-[15px] py-[9px] text-[14px] text-[rgba(255,255,255,.85)] shadow-none " +
-  "hover:border-transparent hover:bg-[rgba(255,255,255,.13)] hover:shadow-none " +
+  "relative inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden rounded-[12px] " +
+  "border border-transparent bg-transparent px-[15px] py-[9px] font-v3-sans text-[14px] font-semibold text-[rgba(255,255,255,.85)] " +
+  "[transition:transform_.2s_var(--ease-v3),box-shadow_.22s,border-color_.22s,background_.22s]! " +
+  "hover:bg-[rgba(255,255,255,.13)] active:[transform:scale(.978)] " +
   "[.fx_&]:text-v3-ink2 dark:[.fx_&]:text-v3-ink2-d [.fx_&]:hover:bg-v3-bg2 dark:[.fx_&]:hover:bg-v3-bg2-d";
+
 const FILL_SM =
   "fill relative isolate inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden whitespace-nowrap " +
   "rounded-[11px] border border-transparent bg-white px-[17px] py-[9px] font-v3-sans text-[14px] font-semibold text-v3-deep " +

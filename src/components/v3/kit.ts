@@ -198,7 +198,7 @@ export const PSTAT_IC = "mt-5 text-[#cd8a70] dark:text-[#a3654d]";
 
 /* ── the monthly / yearly switch and the two plans ── */
 export const TOGGLE =
-  "relative inline-flex items-center gap-[3px] rounded-full bg-v3-bg3 p-[5px] dark:bg-v3-bg2-d " +
+  "toggle relative inline-flex items-center gap-[3px] rounded-full bg-v3-bg3 p-[5px] dark:bg-v3-bg2-d " +
   "[&>button]:relative [&>button]:z-[1] [&>button]:cursor-pointer [&>button]:rounded-full [&>button]:border-0 [&>button]:bg-none " +
   "[&>button]:px-[22px] [&>button]:py-[9px] [&>button]:font-v3-sans [&>button]:text-[14.5px] [&>button]:font-semibold [&>button]:text-v3-mut " +
   "[&>button]:[transition:color_.24s]! dark:[&>button]:text-v3-mut-d " +
@@ -207,10 +207,10 @@ export const PIP =
   "absolute left-[5px] top-[5px] h-[calc(100%-10px)] rounded-full bg-white shadow-[0_3px_12px_-4px_rgba(6,9,17,.35)] " +
   "[transition:transform_.34s_var(--ease-v3),width_.34s_var(--ease-v3)]";
 export const TGNOTE =
-  "pointer-events-none absolute left-[calc(100%+10px)] top-[calc(100%-14px)] flex items-start gap-0.5 whitespace-nowrap max-[820px]:hidden " +
+  "tgnote pointer-events-none absolute left-[calc(100%+10px)] top-[calc(100%-14px)] flex items-start gap-0.5 whitespace-nowrap max-[820px]:hidden " +
   "[&>svg]:mt-0.5 [&>svg]:flex-none [&>svg]:text-v3-blue [&>svg]:opacity-75 " +
   "[&>b]:mt-[22px] [&>b]:font-v3-hand [&>b]:text-[22px] [&>b]:font-semibold [&>b]:leading-none [&>b]:text-v3-blue [&>b]:[transform:rotate(-4deg)]";
-export const PLANS = "mx-auto grid max-w-[960px] [grid-template-columns:repeat(2,1fr)] gap-[22px] max-[860px]:[grid-template-columns:1fr]";
+export const PLANS = "plans mx-auto grid max-w-[960px] [grid-template-columns:repeat(2,1fr)] gap-[22px] max-[860px]:[grid-template-columns:1fr]";
 export const PLAN =
   "relative flex flex-col rounded-[24px] bg-white p-[34px] dark:bg-v3-bg2-d " +
   "[transition:transform_.32s_var(--ease-v3),box-shadow_.32s] hover:[transform:translateY(-6px)] hover:shadow-[0_44px_80px_-48px_rgba(6,9,17,.45)]";
@@ -483,3 +483,170 @@ export const URLBAR_INPUT =
   "min-w-0 flex-1 border-0 bg-none px-1.5 py-[13px] font-v3-sans text-[16.5px] text-white outline-0 placeholder:text-[rgba(255,255,255,.45)] " +
   "max-[600px]:[flex:1_0_100%] max-[600px]:px-1 max-[600px]:pb-3 max-[600px]:pt-1.5";
 
+
+
+/* ── the FAQ accordion, shared by the home, /pricing and every landing FAQ ── */
+export const FAQSIDE = "sticky top-[112px] max-[940px]:static";
+export const ASKCARD =
+  "mt-[30px] rounded-[18px] border border-v3-line2 bg-v3-bg2 p-6 dark:border-v3-line-d dark:bg-v3-bg2-d " +
+  "[&>b]:block [&>b]:font-v3-display [&>b]:text-[17px] [&>b]:font-semibold [&>b]:tracking-[-.032em] " +
+  "[&>p]:mt-2 [&>p]:text-[14.5px] [&>p]:text-v3-mut dark:[&>p]:text-v3-mut-d";
+export const FILL_SM =
+  "fill relative isolate mt-[18px] inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden whitespace-nowrap " +
+  "rounded-[11px] border border-transparent bg-white px-[17px] py-[9px] font-v3-sans text-[14px] font-semibold text-v3-deep " +
+  "shadow-[0_2px_6px_-2px_rgba(6,9,17,.16),0_10px_26px_-14px_rgba(6,9,17,.4)] " +
+  "[transition-property:transform,box-shadow,color]! [transition-duration:240ms,280ms,340ms]! [transition-timing-function:var(--ease-v3),ease,var(--ease-v3)]! " +
+  "before:absolute before:inset-0 before:z-[-1] before:rounded-[inherit] before:content-[''] " +
+  "before:[background:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))] " +
+  "before:[transform:translateY(102%)] before:[transition:transform_.46s_var(--ease-v3)] " +
+  "hover:text-white hover:[transform:translateY(-2px)] hover:shadow-[0_16px_34px_-14px_rgba(21,93,252,.62)] hover:before:[transform:translateY(0)] " +
+  "[&_svg]:[transition:transform_.26s_var(--ease-v3)] hover:[&_svg]:[transform:translateX(4px)]";
+export const Q =
+  "q relative rounded-[16px] border border-v3-line bg-white dark:border-v3-line-d dark:bg-v3-bg2-d " +
+  "[transition:border-color_.3s_var(--ease-v3),box-shadow_.3s_var(--ease-v3),transform_.3s_var(--ease-v3)] " +
+  "hover:border-v3-line2 hover:[transform:translateY(-2px)] hover:shadow-[0_20px_40px_-32px_rgba(6,9,17,.55)] " +
+  "dark:hover:border-v3-line2-d dark:hover:shadow-[0_20px_40px_-32px_rgba(0,0,0,.75)] " +
+  "[&.open]:border-transparent [&.open]:shadow-[0_28px_54px_-38px_rgba(21,93,252,.5)] [&.open]:[transform:none] " +
+  "[&.open]:[background:linear-gradient(#fff,#fff)_padding-box,linear-gradient(140deg,var(--color-v3-cyan),var(--color-v3-blue))_border-box] " +
+  "dark:[&.open]:shadow-[0_28px_54px_-38px_rgba(21,93,252,.55)] " +
+  "dark:[&.open]:[background:linear-gradient(var(--color-v3-bg2-d),var(--color-v3-bg2-d))_padding-box,linear-gradient(140deg,var(--color-v3-cyan),var(--color-v3-blue))_border-box]";
+export const Q_BTN =
+  "flex w-full cursor-pointer items-center gap-[15px] border-0 bg-none px-6 py-[22px] text-left font-v3-display text-[17.5px] font-semibold leading-[1.3] tracking-[-.032em] text-v3-ink dark:text-v3-ink-d";
+export const Q_IX =
+  "flex-none font-v3-mono text-[11px] text-v3-faint [transition:color_.3s] dark:text-v3-faint-d [.open_&]:text-v3-blue";
+export const Q_PM =
+  "ml-auto grid h-7 w-7 flex-none place-items-center rounded-full bg-v3-bg3 dark:bg-v3-bg3-d dark:text-v3-ink2-d " +
+  "[transition:transform_.36s_var(--ease-v3),background_.26s,color_.26s] " +
+  "[.open_&]:text-white [.open_&]:[transform:rotate(135deg)] [.open_&]:[background:linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+export const Q_A_P =
+  "max-w-[70ch] pb-6 pl-[58px] pr-6 pt-0 text-[15.5px] text-v3-mut dark:text-v3-mut-d max-[560px]:pl-6";
+
+/* `.hard` was drawn for the dark safety panel; on a light ground it needs its
+   own border, ground and numeral. */
+export const HARD_LT_CELL =
+  "rounded-[18px] border border-v3-line bg-white px-[22px] py-[26px] text-center " +
+  "[transition:transform_.3s_var(--ease-v3),border-color_.3s] hover:border-v3-line2 hover:[transform:translateY(-4px)] " +
+  "dark:border-v3-line-d dark:bg-v3-bg2-d";
+export const HARD_LT_B =
+  "block font-v3-display text-[clamp(37px,4.3vw,49px)] font-semibold leading-none tracking-[-.055em] text-transparent bg-clip-text " +
+  "[background-image:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+export const HARD_LT_P = "mt-[14px] text-[14px] text-v3-mut dark:text-v3-mut-d";
+
+/* ── the hero field, shared by the home and by every inner page ──
+   The inner pages get the same dark ground rather than a light variant of it,
+   because a page that is not the home should still look like the same product. */
+export const HERO_FIELD =
+  "relative isolate overflow-visible pt-[clamp(146px,17vw,204px)] " +
+  "[background:radial-gradient(48%_40%_at_12%_-6%,#7fd4f0_0%,transparent_62%),radial-gradient(56%_46%_at_88%_-8%,#00c5e8_0%,transparent_58%),radial-gradient(70%_52%_at_50%_22%,#2a6ff5_0%,transparent_70%),radial-gradient(90%_74%_at_50%_108%,#04143a_0%,transparent_72%),linear-gradient(168deg,#1a5df0_0%,#0a3096_44%,#061a45_100%)] " +
+  "before:absolute before:inset-0 before:z-[-1] before:opacity-[.22] before:content-[''] " +
+  "before:[background-image:linear-gradient(rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.55)_1px,transparent_1px)] " +
+  "before:[background-size:80px_80px] " +
+  "before:[-webkit-mask-image:radial-gradient(78%_62%_at_50%_16%,#000,transparent_82%)] " +
+  "before:[mask-image:radial-gradient(78%_62%_at_50%_16%,#000,transparent_82%)]";
+export const HERO_ORB_A =
+  "pointer-events-none absolute left-[-180px] top-[-140px] z-0 h-[640px] w-[640px] animate-v3-float rounded-full bg-[rgba(0,197,232,.3)] [filter:blur(90px)]";
+export const HERO_ORB_B =
+  "pointer-events-none absolute right-[-160px] top-[60px] z-0 h-[560px] w-[560px] rounded-full bg-[rgba(94,150,255,.32)] [animation:v3-float_23s_ease-in-out_infinite_reverse] [filter:blur(90px)]";
+export const HERO_RINGS =
+  "pointer-events-none absolute left-1/2 top-[34%] z-0 h-[1440px] w-[1440px] [transform:translateX(-50%)] " +
+  "[&>i]:absolute [&>i]:inset-0 [&>i]:rounded-full [&>i]:border [&>i]:border-[rgba(140,228,245,.13)] " +
+  "[&>i:nth-child(2)]:inset-[130px] [&>i:nth-child(2)]:border-[rgba(140,228,245,.1)] " +
+  "[&>i:nth-child(3)]:inset-[260px] [&>i:nth-child(3)]:border-[rgba(140,228,245,.07)]";
+export const CARVE =
+  "absolute bottom-[-2px] left-[-8%] right-[-8%] z-[2] h-[clamp(50px,7.5vw,120px)] bg-v3-bg [border-radius:50%_50%_0_0/100%_100%_0_0] dark:bg-v3-bg-d";
+
+/** A frosted pill in the hero, one per value proposition. */
+export const VPROP =
+  "inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,.13)] bg-[rgba(255,255,255,.07)] px-[14px] py-[7px] " +
+  "font-v3-sans text-[13.5px] font-medium text-[rgba(255,255,255,.82)] [backdrop-filter:blur(6px)] [&>svg]:flex-none [&>svg]:text-v3-sky";
+
+/** The secondary button beside the hero's primary one, on the dark field. */
+export const HERO_BTN =
+  "relative inline-flex cursor-pointer items-center justify-center gap-[9px] overflow-hidden rounded-[12px] " +
+  "border border-[rgba(255,255,255,.16)] bg-[rgba(255,255,255,.06)] px-[21px] py-[13px] font-v3-sans text-[15px] font-semibold text-white " +
+  "[transition:transform_.2s_var(--ease-v3),box-shadow_.22s,border-color_.22s,background_.22s]! " +
+  "hover:border-[rgba(255,255,255,.34)] active:[transform:scale(.978)]";
+
+/** The product shot under an inner hero: wider than the reading column. */
+export const HVIDEO =
+  "relative z-[4] mx-auto mt-[clamp(44px,5.5vw,72px)] w-[min(1080px,100%)] overflow-hidden rounded-[20px] " +
+  "border border-[rgba(255,255,255,.12)] shadow-[0_60px_120px_-50px_rgba(0,0,0,.8),0_0_0_1px_rgba(255,255,255,.04)_inset] " +
+  "min-[1180px]:w-[calc(100%+110px)] min-[1180px]:[margin-inline:-55px] [&>*]:block [&>*]:w-full";
+
+/* ── the pricing page ──
+   The plans sit half on the hero's dark ground and half on the section below.
+   The pull is always smaller than the hero's bottom padding, so the cards can
+   never ride up over the switch, and it is applied from outside the hero
+   because inside it a negative bottom margin collapsed through the container
+   and took the whole section with it. */
+export const HERO_PRICING = HERO_FIELD + " pb-[clamp(330px,29vw,470px)]";
+export const PRHERO =
+  "relative z-[6] mx-auto mt-[clamp(-410px,-25vw,-215px)] px-6 text-left max-[820px]:mt-[-170px] " +
+  "[&_.plans]:max-w-[1000px] max-[820px]:[&_.plans]:[grid-template-columns:1fr]";
+export const PRICING_NEXT = "pt-[clamp(90px,9vw,130px)] max-[820px]:pt-20";
+/* The switch sits on the dark field here, and its track and note were drawn
+   for a light one. */
+export const TOGGLE_ON_DARK =
+  "[&_.toggle]:border-[rgba(255,255,255,.18)] [&_.toggle]:bg-[rgba(255,255,255,.1)] " +
+  "[&_.toggle>button]:text-[rgba(255,255,255,.7)] [&_.toggle>button.on]:text-v3-ink " +
+  "[&_.tgnote]:text-[rgba(255,255,255,.62)] [&_.tgnote>b]:text-v3-sky";
+
+/* What the same job costs assembled, as one bar per row rather than a grid of
+   cards. What converts under a plan table is a comparison a person reads in one
+   pass, not another card wall. */
+export const STACK = "mt-[46px] grid gap-[26px]";
+export const SROW =
+  "grid grid-cols-[186px_1fr_auto] items-center gap-5 max-[780px]:[grid-template-columns:1fr] max-[780px]:gap-[9px]";
+export const SROW_LAB =
+  "font-v3-display text-[16px] font-semibold tracking-[-.03em] text-v3-ink dark:text-v3-ink-d " +
+  "[&_small]:mt-[3px] [&_small]:block [&_small]:font-v3-sans [&_small]:text-[13px] [&_small]:font-normal [&_small]:text-v3-faint dark:[&_small]:text-v3-faint-d " +
+  "max-[760px]:[&_small]:mt-0.5";
+export const SROW_TOT =
+  "whitespace-nowrap font-v3-display text-[25px] font-semibold tracking-[-.045em] text-v3-ink dark:text-v3-ink-d max-[780px]:text-[21px]";
+export const SROW_TOT_WIN =
+  "whitespace-nowrap font-v3-display text-[25px] font-semibold tracking-[-.045em] text-v3-blue max-[780px]:text-[21px]";
+export const BAR =
+  "flex h-[46px] overflow-hidden rounded-[11px] bg-v3-bg3 dark:bg-v3-bg3-d max-[760px]:h-[34px] " +
+  "[&>i]:grid [&>i]:place-items-center [&>i]:overflow-hidden [&>i]:whitespace-nowrap [&>i]:not-italic " +
+  "[&>i]:font-v3-mono [&>i]:text-[10.5px] [&>i]:tracking-[.04em] [&>i]:text-white max-[760px]:[&>i]:text-[0px]";
+export const BAR_US =
+  BAR + " [&>i]:[background:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+export const BAR_A = "bg-[#6a7f9c] dark:bg-[#46586f]";
+export const BAR_B = "bg-[#8090ab] dark:bg-[#3a4a5e]";
+export const BAR_C = "bg-[#9aa7bd] dark:bg-[#31404f]";
+export const BAR_D = "bg-[#b3bccd] dark:bg-[#293440]";
+/* Under about 760px the segment labels cannot fit inside their own segments, so
+   the amounts move to a legend and the bar keeps doing its job as a proportion. */
+export const SLEGEND =
+  "mt-2.5 hidden flex-wrap gap-x-[14px] gap-y-[7px] max-[760px]:flex " +
+  "[&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:font-v3-mono [&>span]:text-[11px] [&>span]:text-v3-mut dark:[&>span]:text-v3-mut-d " +
+  "[&>span]:before:h-[9px] [&>span]:before:w-[9px] [&>span]:before:rounded-[3px] [&>span]:before:bg-current [&>span]:before:content-['']";
+
+/* A real comparison table: rows, not tiles. Below 1023px .responsive-table turns
+   every row into a card, and these only restate the v3 palette on top of it. */
+export const CTAB =
+  "mt-[42px] w-full border-collapse font-v3-sans " +
+  "[&_th]:border-b [&_th]:border-v3-line [&_th]:px-[18px] [&_th]:py-[17px] [&_th]:text-left [&_th]:text-[14.8px] " +
+  "[&_td]:border-b [&_td]:border-v3-line [&_td]:px-[18px] [&_td]:py-[17px] [&_td]:text-left [&_td]:align-top [&_td]:text-[14.8px] [&_td]:text-v3-mut " +
+  "dark:[&_th]:border-v3-line-d dark:[&_td]:border-v3-line-d dark:[&_td]:text-v3-mut-d " +
+  "[&_thead_th]:border-b [&_thead_th]:border-v3-line2 [&_thead_th]:pb-[13px] [&_thead_th]:font-v3-mono [&_thead_th]:text-[10.5px] " +
+  "[&_thead_th]:uppercase [&_thead_th]:tracking-[.13em] [&_thead_th]:text-v3-faint dark:[&_thead_th]:border-v3-line2-d dark:[&_thead_th]:text-v3-faint-d " +
+  "[&_tbody_th]:w-[30%] [&_tbody_th]:font-v3-display [&_tbody_th]:text-[15.5px] [&_tbody_th]:font-semibold [&_tbody_th]:tracking-[-.03em] [&_tbody_th]:text-v3-ink dark:[&_tbody_th]:text-v3-ink-d " +
+  "[&_.own]:bg-v3-wash [&_.own]:font-medium [&_.own]:text-v3-ink dark:[&_.own]:bg-v3-wash-d dark:[&_.own]:text-v3-ink-d " +
+  "[&_thead_.own]:rounded-t-[12px] [&_thead_.own]:text-v3-blue [&_tr:last-child_.own]:rounded-b-[12px] " +
+  "[&_.no]:text-v3-faint dark:[&_.no]:text-v3-faint-d " +
+  "max-[1023px]:[&_thead]:hidden max-[1023px]:[&_tbody_tr]:bg-v3-bg max-[1023px]:[&_tbody_tr]:border-v3-line " +
+  "max-[1023px]:[&_tbody_th]:block max-[1023px]:[&_tbody_th]:w-auto max-[1023px]:[&_tbody_th]:bg-v3-bg3 max-[1023px]:[&_tbody_th]:text-[14.5px] " +
+  "max-[1023px]:[&_tbody_td]:gap-[18px] max-[1023px]:[&_.own]:rounded-none " +
+  "dark:max-[1023px]:[&_tbody_tr]:bg-v3-bg-d dark:max-[1023px]:[&_tbody_th]:bg-v3-bg3-d";
+
+/* The trust strip, on the dark ground, borrowed from the home's hard limits. */
+export const TSTRIP =
+  "mt-[46px] rounded-[26px] bg-[#060c18] px-[clamp(24px,3.4vw,48px)] py-[clamp(38px,4.6vw,60px)] " +
+  "[&_h3]:max-w-[22ch] [&_h3]:font-v3-display! [&_h3]:text-[clamp(23px,2.7vw,31px)] [&_h3]:font-semibold! [&_h3]:leading-[1.2]! [&_h3]:tracking-[-.04em]! [&_h3]:text-white " +
+  "[&_p.sub]:mt-[13px] [&_p.sub]:max-w-[62ch] [&_p.sub]:text-[15.5px] [&_p.sub]:leading-[1.6]! [&_p.sub]:text-[rgba(255,255,255,.62)]";
+
+/* The guarantee block. It was styled with the split-button class, which gave a
+   block of prose a pointer cursor and a button's radius; kept as it renders. */
+export const GUARANTEE =
+  "relative inline-flex items-stretch overflow-hidden rounded-[13px] border border-transparent bg-white text-v3-deep dark:bg-v3-bg2-d dark:text-v3-ink-d";
