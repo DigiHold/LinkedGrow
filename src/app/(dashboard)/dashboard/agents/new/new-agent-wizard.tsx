@@ -276,7 +276,7 @@ export function NewAgentWizard() {
     // no sidebar, no topbar, nothing to click that is not the next step. The
     // surface sits above the dashboard chrome rather than fighting the layout.
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white dark:bg-background">
-      <div className="mx-auto w-full max-w-[620px] px-6 pb-24 pt-8 sm:pt-12">
+      <div className="mx-auto w-full max-w-[960px] px-6 pb-24 pt-8 sm:pt-12">
         <div className="flex justify-end">
           <Link href="/dashboard/agents">
             <Button variant="ghost" size="sm" className="text-muted-foreground">
@@ -286,12 +286,16 @@ export function NewAgentWizard() {
           </Link>
         </div>
 
+        {/* The rail gets the full width so all five steps stay readable; the
+            form below stays narrow, which is what makes it easy to fill. */}
         <StepRail
           steps={STEPS}
           current={step}
           onSelect={(n) => setStep(n)}
           className="mt-2 justify-center"
         />
+
+        <div className="mx-auto w-full max-w-[620px]">
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
@@ -743,6 +747,7 @@ export function NewAgentWizard() {
         {blocker && (
           <p className="text-sm text-slate-500 dark:text-slate-400">{blocker}</p>
         )}
+          </div>
         </div>
       </div>
     </div>

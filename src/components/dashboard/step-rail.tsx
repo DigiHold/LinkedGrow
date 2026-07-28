@@ -24,7 +24,9 @@ export function StepRail({
 }) {
   return (
     <ol
-      className={cn("flex items-center gap-1 overflow-x-auto pb-1", className)}
+      // Wraps rather than scrolls: a rail you have to drag sideways hides the
+      // steps it is meant to show, and nothing on this site scrolls horizontally.
+      className={cn("flex flex-wrap items-center gap-y-2 gap-x-1 pb-1", className)}
       aria-label="Progress"
     >
       {steps.map((s, i) => {
