@@ -50,7 +50,7 @@ const bestGenFAQs = [
   {
     question: "What is a cheaper alternative to Taplio?",
     answer:
-      "LinkedGrow is the cheapest functional alternative to Taplio. LinkedGrow Starter is $13 per month (billed yearly) plus $2 to $4 per month in AI costs via BYOK, against Taplio Standard at $52 per month. Supergrow at $19 per month is a second affordable option. AuthoredUp at $19.95 per month is cheaper too but covers writing and formatting only - no scheduling or AI generation.",
+      "LinkedGrow is the cheapest functional alternative to Taplio. LinkedGrow Pro costs $99/month per month (billed yearly) plus $2 to $4 per month in AI costs via BYOK, against Taplio Standard at $52 per month. Supergrow at $19 per month is a second affordable option. AuthoredUp at $19.95 per month is cheaper too but covers writing and formatting only - no scheduling or AI generation.",
   },
   {
     question: "Which LinkedIn AI tool lets you bring your own API key?",

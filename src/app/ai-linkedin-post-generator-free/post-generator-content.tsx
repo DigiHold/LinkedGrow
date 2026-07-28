@@ -43,7 +43,7 @@ export function PostGeneratorFreeContent() {
           line1: "Free LinkedIn Post Generator:",
           gradient: "7-Day Pro Trial With Full Access",
         }}
-        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. Cancel before day 8 to start."
+        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. The card is taken at signup and charged on day 8, so cancelling before then costs nothing."
         description="The 7-day Pro trial includes unlimited AI generation across 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK, plus voice training, AI image generation, scheduling, and analytics. Test the full product before paying anything."
         valuePropBadges={[
           { icon: Gift, text: "7-day Pro trial" },
@@ -290,7 +290,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "Is the AI LinkedIn post generator really free?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 26 models via BYOK, voice training, and scheduling - cancel before day 8 to start. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 26 models via BYOK, voice training, and scheduling - with the card charged on day 8 unless you cancel. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
           },
           {
             question: "What AI models are available?",

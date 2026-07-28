@@ -305,7 +305,7 @@ export function ContentCreationToolsContent() {
           {
             question: "How much do LinkedIn content creation tools typically cost?",
             answer:
-              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow starts at $13 per month for Starter with unlimited post generation, or $27 per month for Pro which adds image generation, analytics, and network notifications. The Business plan at $55 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
+              "Most LinkedIn content tools charge $49 to $199 per month and cap your generations. LinkedGrow Pro costs $99/month per month for Starter with unlimited post generation, or $27 per month for Pro which adds image generation, analytics, and network notifications. The Business plan at $55 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, your AI costs are $2 to $4 per month on average.",
           },
           {
             question: "Can I generate unlimited LinkedIn posts?",
@@ -325,7 +325,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. Cancel before day 8 to start. After the trial, paid plans start at $13/mo (billed yearly).",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and charged on day 8, so cancelling before then costs nothing. After the trial, paid plans start at $13/mo (billed yearly).",
           },
           {
             question: "How does the BYOK model work?",
