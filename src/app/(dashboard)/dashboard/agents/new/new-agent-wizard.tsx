@@ -24,6 +24,11 @@ import { StepRail } from "@/components/dashboard/step-rail";
 import {
   Field,
 } from "@/components/dashboard/ui/page";
+import {
+  LinkedInAccountsPanel,
+  accountLabel,
+  type LinkedInAccount as PanelAccount,
+} from "@/components/dashboard/linkedin/accounts-panel";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -90,14 +95,7 @@ const TONES = [
   { id: "direct", label: "Direct", hint: "Bold and confident" },
 ] as const;
 
-interface LinkedInAccount {
-  id: string;
-  fullName: string | null;
-  headline: string | null;
-  status: string | null;
-  dailyInviteCap: number;
-  agentCount: number;
-}
+type LinkedInAccount = PanelAccount;
 
 export function NewAgentWizard() {
   const router = useRouter();
@@ -106,7 +104,6 @@ export function NewAgentWizard() {
   const [error, setError] = useState<string | null>(null);
 
   const [accounts, setAccounts] = useState<LinkedInAccount[]>([]);
-  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   const [website, setWebsite] = useState("");
   const [reading, setReading] = useState(false);
@@ -185,17 +182,26 @@ export function NewAgentWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  // The panel below owns the list it shows. The wizard keeps its own copy for
+  // one job, naming the picked account on the summary step, and refreshes it
+  // whenever the panel connects or disconnects one.
+  const loadAccounts = useCallback(() => {
     fetch("/api/linkedin/accounts")
       .then((r) => (r.ok ? r.json() : { accounts: [] }))
       .then((d) => {
         const list: LinkedInAccount[] = d.accounts ?? [];
         setAccounts(list);
-        if (list.length === 1) setLinkedinAccountId(list[0].id);
+        setLinkedinAccountId((current) => {
+          if (current && list.some((a) => a.id === current)) return current;
+          return list.length === 1 ? list[0].id : "";
+        });
       })
-      .catch(() => setAccounts([]))
-      .finally(() => setAccountsLoaded(true));
+      .catch(() => setAccounts([]));
   }, []);
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]);
 
   const addKeyword = useCallback(() => {
     const value = keywordDraft.trim();
@@ -563,41 +569,18 @@ export function NewAgentWizard() {
             <Group title="Who sends">
             <Field
               label="Sending account"
-              hint="This one cannot be changed later, so pick the account you want it to send from."
+              hint="The profile this agent works from. You can point it at another one later, from the agent's own settings."
             >
-              {!accountsLoaded ? (
-                <div className="h-11 animate-pulse rounded-xl bg-slate-100 dark:bg-white/5" />
-              ) : accounts.length === 0 ? (
-                <div className="rounded-xl border border-border p-4">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    No LinkedIn account connected yet.
-                  </p>
-                  <Link href="/dashboard/settings/linkedin-accounts" className="mt-3 inline-block">
-                    <Button size="sm" variant="outline">
-                      Connect one
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {accounts.map((a) => (
-                    <SelectCard
-                      key={a.id}
-                      picked={linkedinAccountId === a.id}
-                      onClick={() => setLinkedinAccountId(a.id)}
-                      label={a.fullName || "LinkedIn account"}
-                      // An account can send for several agents, and they share
-                      // its daily budget. Saying so here is the only place the
-                      // user can still change their mind cheaply.
-                      hint={
-                        a.agentCount > 0
-                          ? `Already sending for ${a.agentCount} agent${a.agentCount === 1 ? "" : "s"}, sharing ${a.dailyInviteCap} invitations a day`
-                          : a.headline || a.status || ""
-                      }
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Connecting happens here rather than on a settings page, so
+                  nobody has to leave the wizard halfway through and find
+                  their way back. */}
+              <LinkedInAccountsPanel
+                emptyHint="No LinkedIn account connected yet. Connect the profile you want this agent to work from."
+                mode="pick"
+                onChanged={loadAccounts}
+                onSelect={setLinkedinAccountId}
+                selectedId={linkedinAccountId}
+              />
             </Field>
 
             </Group>
@@ -722,10 +705,10 @@ export function NewAgentWizard() {
               />
               <SummaryRow
                 label="Sending account"
-                value={
-                  accounts.find((a) => a.id === linkedinAccountId)?.fullName ||
-                  "Not picked"
-                }
+                value={(() => {
+                  const picked = accounts.find((a) => a.id === linkedinAccountId);
+                  return picked ? accountLabel(picked) : "Not picked";
+                })()}
               />
               <SummaryRow label="Goal" value={GOALS.find((g) => g.id === goal)?.label ?? ""} />
               <SummaryRow label="Tone" value={TONES.find((t) => t.id === tone)?.label ?? ""} />

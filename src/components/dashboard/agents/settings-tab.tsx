@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -10,15 +9,20 @@ import {
   FieldActions,
   Pill,
 } from "@/components/dashboard/ui/page";
+import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 
 /**
  * Agent settings.
  *
- * Two things are deliberately not editable here. The LinkedIn account is fixed
- * at creation, because switching it would move the agent onto a different
- * session and a different address, which is the shape that gets a profile
- * restricted. And the daily cap belongs to the account rather than the agent,
- * since every agent on an account divides one budget.
+ * The sending account is editable here. It used to be frozen at creation, on
+ * the grounds that moving an agent between sessions is the shape that gets a
+ * profile restricted, but freezing it did not stop anyone: it pushed them to
+ * delete the agent and rebuild it, which loses every lead it had found to
+ * change one field. Moving it is the same operation with the history kept, and
+ * the account's own warm-up still governs the pace.
+ *
+ * The daily cap stays read-only, because it belongs to the account rather than
+ * the agent, and every agent on an account divides one budget.
  */
 
 export type AgentSettings = {
@@ -32,8 +36,8 @@ export type AgentSettings = {
   smartLeadFinder: boolean;
   dailyInviteCap: number;
   accountAgentCount: number;
-  accountName: string | null;
   accountCountry: string;
+  linkedinAccountId: string;
 };
 
 const GOALS = [
@@ -95,6 +99,7 @@ export function SettingsTab({
         skipConnected: form.skipConnected,
         reviewMode: form.reviewMode,
         smartLeadFinder: form.smartLeadFinder,
+        linkedinAccountId: form.linkedinAccountId,
       }),
     });
     if (!res.ok) {
@@ -221,31 +226,25 @@ export function SettingsTab({
       </Panel>
 
       <Panel>
-        <PanelTitle description="Fixed once the agent exists, because changing either one mid-run is what gets a profile restricted.">
+        <PanelTitle description="Pick the profile this agent works from. Moving it to another account keeps every lead it has already found, and the new account's own warm-up sets the pace from there.">
           The account it sends from
         </PanelTitle>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">
-              {form.accountName ?? "Not connected"}
-            </p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Dedicated address in {form.accountCountry}
-              {form.accountAgentCount > 1
-                ? `, shared with ${form.accountAgentCount - 1} other agent${form.accountAgentCount > 2 ? "s" : ""}`
-                : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Pill>{form.dailyInviteCap} invitations a day</Pill>
-            <Link
-              href="/dashboard/settings/linkedin-accounts"
-              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
-            >
-              Manage accounts
-            </Link>
-          </div>
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Dedicated address in {form.accountCountry}
+            {form.accountAgentCount > 1
+              ? `, shared with ${form.accountAgentCount - 1} other agent${form.accountAgentCount > 2 ? "s" : ""}`
+              : ""}
+          </p>
+          <Pill>{form.dailyInviteCap} invitations a day</Pill>
         </div>
+
+        <LinkedInAccountsPanel
+          mode="pick"
+          onSelect={(id) => set("linkedinAccountId", id)}
+          selectedId={form.linkedinAccountId}
+        />
       </Panel>
 
       {error && (

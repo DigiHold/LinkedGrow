@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { FieldActions } from "@/components/dashboard/ui/page";
+import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 import { CONTENT_LANGUAGES } from "@/lib/content-languages";
 
 // Common timezones grouped by region with abbreviations and UTC offsets
@@ -896,8 +897,14 @@ function SettingsContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/dashboard/settings/linkedin-accounts">
-              <Button variant="outline">Manage LinkedIn accounts</Button>
+            {/* The accounts themselves, rather than a button that sends the
+                person to another page to do the one thing this tab is for. */}
+            <LinkedInAccountsPanel />
+            <Link
+              className="mt-4 inline-block text-[13px] font-medium text-slate-500 underline-offset-4 hover:underline dark:text-slate-400"
+              href="/dashboard/settings/linkedin-accounts"
+            >
+              Open the full accounts page
             </Link>
           </CardContent>
         </Card>

@@ -41,6 +41,11 @@ export async function GET() {
     const rows = await db
       .select({
         id: linkedinAccounts.id,
+        // A freshly connected account has no name until the session layer
+        // signs in, so the pickers would show two rows both reading "LinkedIn
+        // account". The address the workspace owner typed is what tells them
+        // apart. It is their own account, inside their own workspace.
+        email: linkedinAccounts.email,
         fullName: linkedinAccounts.fullName,
         headline: linkedinAccounts.headline,
         avatarUrl: linkedinAccounts.avatarUrl,

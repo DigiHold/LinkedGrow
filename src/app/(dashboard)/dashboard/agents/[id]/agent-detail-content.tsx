@@ -43,6 +43,7 @@ type Agent = {
   workdayEnd: number;
   warmupStartedAt: string | null;
   lastRunAt: string | null;
+  accountId: string;
   accountName: string | null;
   accountAvatar: string | null;
   accountHeadline: string | null;
@@ -500,8 +501,8 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
             smartLeadFinder: agent.smartLeadFinder,
             dailyInviteCap: agent.dailyInviteCap,
             accountAgentCount: agent.accountAgentCount,
-            accountName: agent.accountName,
             accountCountry: agent.accountCountry,
+            linkedinAccountId: agent.accountId,
           }}
           onSaved={load}
         />

@@ -215,6 +215,60 @@ export async function PATCH(
       }
     }
 
+    // The sending account can be swapped after creation. Freezing it only
+    // pushed people to delete the agent and build a new one, which threw away
+    // its leads and its earned pace to change one field.
+    if (typeof body.linkedinAccountId === "string" && body.linkedinAccountId) {
+      if (body.linkedinAccountId.length > 64) {
+        return NextResponse.json({ error: "Invalid account" }, { status: 400 });
+      }
+      const [account] = await db
+        .select({
+          id: linkedinAccounts.id,
+          warmupStartedAt: linkedinAccounts.warmupStartedAt,
+        })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.id, body.linkedinAccountId),
+            // Ownership sits in the WHERE: an id posted by a client must never
+            // reach another workspace's account.
+            eq(linkedinAccounts.workspaceId, workspaceId)
+          )
+        )
+        .limit(1);
+      if (!account) {
+        return NextResponse.json(
+          { error: "That account is not one of yours" },
+          { status: 404 }
+        );
+      }
+      patch.linkedinAccountId = account.id;
+
+      // Warm-up belongs to the account, so an agent moved onto an account that
+      // has never run starts that account's ramp now instead of inheriting the
+      // pace the previous one had earned.
+      const [existing] = await db
+        .select({ status: agents.status })
+        .from(agents)
+        .where(and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)))
+        .limit(1);
+      if (!existing) {
+        return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+      }
+      const nextStatus = (patch.status as string | undefined) ?? existing.status;
+      if (
+        (nextStatus === "active" || nextStatus === "warming") &&
+        !account.warmupStartedAt
+      ) {
+        await db
+          .update(linkedinAccounts)
+          .set({ warmupStartedAt: new Date(), updatedAt: new Date() })
+          .where(eq(linkedinAccounts.id, account.id));
+        patch.status = "warming";
+      }
+    }
+
     const result = await db
       .update(agents)
       .set(patch)
