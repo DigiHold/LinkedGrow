@@ -430,6 +430,63 @@ export const CAP_H3 =
   "mt-[18px] font-v3-display! text-[clamp(23px,2.7vw,31px)] font-semibold! leading-[1.2] tracking-[-.04em]!";
 export const CAP_P = "mt-[13px] max-w-[46ch] text-[16px] text-v3-mut dark:text-v3-mut-d";
 
+/* ── the hub band: an editorial split whose figure changes side ──
+   A hub page lists things, and the shape every hub reaches for is a grid of
+   tiles, which is the shape you get when nobody decided what the section was
+   for. These bands decide: each one is a stage of the same job, its items are
+   rows on a hairline rather than boxes, and the figure beside them shows that
+   stage happening. /features, /industries, /for and /use-cases all have the
+   same problem, so the vocabulary is shared rather than drawn again. */
+export const BAND =
+  "grid grid-cols-[1.02fr_.98fr] items-center gap-[clamp(30px,5vw,74px)] max-[940px]:[grid-template-columns:minmax(0,1fr)]";
+/* The figure leads on the even bands. On a phone the text always leads, because
+   a picture of a thing you have not been told about yet explains nothing. */
+export const BAND_FIG_FIRST = "[order:-1] max-[940px]:[order:0]";
+
+/* The contents rail under a hub hero: vertical hairlines, no boxes. */
+export const FINDEX =
+  "grid [grid-template-columns:repeat(6,1fr)] gap-y-7 max-[900px]:[grid-template-columns:repeat(3,1fr)] max-[560px]:[grid-template-columns:repeat(2,1fr)]";
+export const FIX =
+  "group flex flex-col gap-2 border-l border-v3-line pl-[18px] pr-3 dark:border-v3-line-d " +
+  "max-[900px]:[&:nth-child(3n+1)]:border-l-0 max-[900px]:[&:nth-child(3n+1)]:pl-0 " +
+  "max-[560px]:[&:nth-child(2n+1)]:border-l-0 max-[560px]:[&:nth-child(2n+1)]:pl-0 " +
+  "min-[901px]:first:border-l-0 min-[901px]:first:pl-0";
+export const FIX_N =
+  "font-v3-mono text-[10.5px] tracking-[.14em] text-v3-faint [transition:color_.3s]! group-hover:text-v3-blue dark:text-v3-faint-d";
+export const FIX_T =
+  "font-v3-display text-[15.5px] font-semibold leading-[1.25] tracking-[-.032em] text-v3-ink [transition:color_.3s]! group-hover:text-v3-blue dark:text-v3-ink-d";
+export const FIX_C = "font-v3-sans text-[13px] font-normal text-v3-faint dark:text-v3-faint-d";
+
+/* One item inside a band: a row on a hairline that grows a gradient edge and
+   pushes right under the cursor.
+   The reveal is built into the row rather than staggered from the parent.
+   globals.css sets `transition: all .2s ease` on every `a` outside any cascade
+   layer, so it beats any utility whatever the specificity, and the marked
+   shorthand here is the only way to keep both the hover and the reveal. That
+   also means the stagger delay has to travel inside the shorthand, as --d0,
+   rather than as a transition-delay utility it would reset. */
+export const FROW =
+  "rv group relative grid grid-cols-[1fr_auto] items-center gap-5 border-t border-v3-line py-[19px] last:border-b " +
+  "opacity-0 [transform:translateY(18px)] [filter:blur(5px)] dark:border-v3-line-d " +
+  "[transition:padding_.34s_var(--ease-v3),opacity_.72s_var(--ease-v3)_var(--d0,0s),transform_.72s_var(--ease-v3)_var(--d0,0s),filter_.72s_var(--ease-v3)_var(--d0,0s)]! " +
+  "[&.seen]:opacity-100 [&.seen]:[transform:none] [&.seen]:[filter:none] hover:pl-[15px] " +
+  "before:absolute before:bottom-[13px] before:left-0 before:top-[13px] before:w-[2px] before:rounded-full before:opacity-0 before:content-[''] " +
+  "before:[background:linear-gradient(180deg,var(--color-v3-cyan),var(--color-v3-blue))] before:[transition:opacity_.34s_var(--ease-v3)] " +
+  "hover:before:opacity-100";
+export const FROW_H3 =
+  "font-v3-display! text-[17.5px] font-semibold! leading-[1.25] tracking-[-.032em]! text-v3-ink [transition:color_.3s] group-hover:text-v3-blue dark:text-v3-ink-d";
+export const FROW_P =
+  "mt-[7px] max-w-[52ch] text-[14.5px] leading-[1.55]! text-v3-mut dark:text-v3-mut-d";
+export const FROW_GO =
+  "grid h-9 w-9 flex-none place-items-center rounded-full border border-v3-line text-v3-faint dark:border-v3-line-d dark:text-v3-faint-d " +
+  "[transition:transform_.3s_var(--ease-v3),border-color_.3s,color_.3s,background_.3s] " +
+  "group-hover:border-transparent group-hover:text-white group-hover:[transform:translateX(3px)] " +
+  "group-hover:[background:linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+
+/* The mock frame again, holding a light interface instead of a video. */
+export const SCREEN_UI =
+  "m-0 overflow-hidden rounded-[16px] border border-v3-line2 bg-white shadow-[0_44px_90px_-50px_rgba(6,9,17,.5)] dark:border-v3-line-d dark:bg-v3-bg2-d";
+
 /* The setup section: a sticky index beside a dotted spine of steps. */
 export const RAILWRAP =
   "grid grid-cols-[250px_1fr] items-start gap-[clamp(28px,5vw,72px)] max-[940px]:[grid-template-columns:minmax(0,1fr)]";
