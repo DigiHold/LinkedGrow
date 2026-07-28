@@ -110,6 +110,9 @@ export function NewAgentWizard() {
   const [accounts, setAccounts] = useState<LinkedInAccount[]>([]);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
 
+  const [website, setWebsite] = useState("");
+  const [reading, setReading] = useState(false);
+  const [readNote, setReadNote] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [source, setSource] = useState<string>("buying_event");
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -125,6 +128,45 @@ export function NewAgentWizard() {
   const [linkedinAccountId, setLinkedinAccountId] = useState("");
   const [skipConnected, setSkipConnected] = useState(true);
   const [reviewMode, setReviewMode] = useState(false);
+
+  // Reads the customer's own site and proposes the targeting, so the first
+  // agent starts from what the business actually sells rather than a blank field.
+  const readWebsite = async (value: string) => {
+    const address = value.trim();
+    if (!address || reading) return;
+    setReading(true);
+    setReadNote(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/agents/analyze-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website: address }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not read that site");
+      if (data.companyInfo) setCompanyInfo(data.companyInfo);
+      else if (data.icpSummary) setCompanyInfo(data.icpSummary);
+      if (data.jobRoles?.length) setJobRoles(data.jobRoles.join(", "));
+      if (data.industries?.length) setIndustries(data.industries.join(", "));
+      if (!name.trim() && data.jobRoles?.length) setName(data.jobRoles[0]);
+      setReadNote("Read. Check what it proposed and edit anything that is off.");
+    } catch (e) {
+      setReadNote(e instanceof Error ? e.message : "Could not read that site");
+    } finally {
+      setReading(false);
+    }
+  };
+
+  // A visitor who typed their site on the home lands here with it in the URL,
+  // so the reading starts on its own and the first screen is already filled.
+  useEffect(() => {
+    const fromHome = new URLSearchParams(window.location.search).get("website");
+    if (!fromHome) return;
+    setWebsite(fromHome);
+    void readWebsite(fromHome);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetch("/api/linkedin/accounts")
@@ -165,6 +207,7 @@ export function NewAgentWizard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          website: website.trim() || null,
           linkedinAccountId,
           icpSummary: companyInfo.trim() || null,
           jobRoles: splitList(jobRoles),
@@ -236,13 +279,47 @@ export function NewAgentWizard() {
 
           <div className="mt-8 border-t border-border pt-6">
             <Field
+              label="Your website"
+              hint="The agent reads it once and proposes who buys from you. You can edit everything it proposes."
+            >
+              <div className="flex items-center gap-2">
+                <Input
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void readWebsite(website);
+                    }
+                  }}
+                  placeholder="yourcompany.com"
+                  maxLength={300}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={reading || !website.trim()}
+                  onClick={() => void readWebsite(website)}
+                  className="flex-none"
+                >
+                  {reading ? "Reading..." : "Read my site"}
+                </Button>
+              </div>
+              {readNote && (
+                <p className="mt-2 text-sm text-muted-foreground">{readNote}</p>
+              )}
+            </Field>
+          </div>
+
+          <div className="mt-8 border-t border-border pt-6">
+            <Field
               label="Name it"
               hint="Only you see this. Naming it after who it targets makes a list of agents readable."
             >
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Founders in Switzerland"
+                placeholder="SaaS founders"
                 maxLength={80}
               />
             </Field>

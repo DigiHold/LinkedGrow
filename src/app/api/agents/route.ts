@@ -253,6 +253,7 @@ export async function POST(request: NextRequest) {
       createdBy: session.user.id,
       linkedinAccountId,
       name,
+      website: text(body?.website, 300),
       icpSummary: text(body?.icpSummary, 2000),
       jobRoles: list(body?.jobRoles, 20),
       industries: list(body?.industries, 20),

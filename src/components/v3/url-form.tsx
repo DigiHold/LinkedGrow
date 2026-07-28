@@ -33,7 +33,15 @@ export function V3UrlForm({
       onSubmit={(event) => {
         event.preventDefault();
         const value = website.trim();
-        router.push(value ? `/sign-up?website=${encodeURIComponent(value)}` : "/sign-up");
+        if (!value) {
+          router.push("/sign-up");
+          return;
+        }
+        // The signup flow already carries a sanitised callbackUrl through
+        // sign-in, so the site lands on the agent wizard, which reads it and
+        // proposes the targeting before the customer types anything.
+        const target = `/dashboard/agents/new?website=${encodeURIComponent(value)}`;
+        router.push(`/sign-up?callbackUrl=${encodeURIComponent(target)}`);
       }}
     >
       <div className={URLBAR}>

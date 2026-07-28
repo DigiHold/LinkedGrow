@@ -908,6 +908,8 @@ export const agents = sqliteTable("agents", {
     .notNull()
     .default("paused"),
   pausedReason: text("paused_reason"),
+  // The client's site, read once to pre-fill the ICP so the agent knows the business.
+  website: text("website"),
   icpSummary: text("icp_summary"),
   jobRoles: text("job_roles"),
   industries: text("industries"),
