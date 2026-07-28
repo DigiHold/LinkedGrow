@@ -365,7 +365,7 @@ export function PostSchedulerContent({
               Independent ranking · Updated July 2026
             </span>
           </div>
-          <h1 className="m-0 text-center font-v3-display! text-[clamp(36px,5.2vw,62px)] font-semibold! leading-[1.05]! tracking-[-.045em]! text-white">
+          <h1 className="m-0 text-center font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98]! tracking-[-.048em]! text-white">
             8 Best LinkedIn Scheduling Tools in 2026:{" "}
             <span className="text-v3-sky">
               Ranked by Use Case

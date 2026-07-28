@@ -317,9 +317,11 @@ h1, h2, h3, h4, h5, h6,
    next to the 1.5 nav set in components/dashboard/nav-icons.tsx. stroke-width
    is a presentation attribute, so CSS wins over it: this one rule brings every
    lucide icon inside the v2 dashboard onto the same weight, instead of
-   redrawing a hundred glyphs. Scoped to .lg-v2 so the marketing pages keep
-   their current look until their own rebuild. */
-.lg-v2 svg.lucide {
+   redrawing a hundred glyphs. The marketing pages joined on 2026-07-29, when
+   their rebuild shipped: .lg-v3 is the same hook on the v3 page shell, so both
+   halves of the product draw at one weight. */
+.lg-v2 svg.lucide,
+.lg-v3 svg.lucide {
   stroke-width: 1.5;
 }
 /* Under about 14px a 1.5 stroke starts to disappear, so the smallest icons
@@ -327,7 +329,11 @@ h1, h2, h3, h4, h5, h6,
 .lg-v2 svg.lucide.h-3,
 .lg-v2 svg.lucide.w-3,
 .lg-v2 svg.lucide.h-3\.5,
-.lg-v2 svg.lucide.w-3\.5 {
+.lg-v2 svg.lucide.w-3\.5,
+.lg-v3 svg.lucide.h-3,
+.lg-v3 svg.lucide.w-3,
+.lg-v3 svg.lucide.h-3\.5,
+.lg-v3 svg.lucide.w-3\.5 {
   stroke-width: 1.9;
 }
 
