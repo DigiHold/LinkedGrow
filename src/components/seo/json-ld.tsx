@@ -527,7 +527,7 @@ export const linkedGrowFAQs = [
   },
   {
     question: "Can I create LinkedIn posts for free?",
-    answer: "Yes - you can create LinkedIn posts with LinkedGrow on a free trial, cancel before day 8. It's the fastest way to test the voice training and see a draft that actually sounds like you before spending a cent.",
+    answer: "Yes - you can create LinkedIn posts with LinkedGrow on a free trial, everything included. It's the fastest way to test the voice training and see a draft that actually sounds like you before spending a cent.",
   },
   {
     question: "What is BYOK (Bring Your Own Key)?",

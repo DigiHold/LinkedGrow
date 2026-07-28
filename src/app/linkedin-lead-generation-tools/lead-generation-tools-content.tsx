@@ -52,7 +52,7 @@ export function LeadGenerationToolsContent() {
         ]}
         primaryCta={{ text: "Try free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Official LinkedIn API"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Agent working your own account"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -148,7 +148,7 @@ export function LeadGenerationToolsContent() {
             title: "Content Calendar and Post Scheduling",
             description:
               "Consistent posting is the single biggest factor in LinkedIn lead generation through content. The visual content calendar shows your week and month at a glance, so you can spot gaps before they happen. Schedule posts at optimal times and publish through LinkedIn's official Share API, which means your content is treated identically to manual posts.",
-            highlights: ["Visual calendar", "Optimal timing", "Official API"],
+            highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
             badge: "From Starter",
             color: "from-amber-500 to-yellow-600",
           },
@@ -348,7 +348,7 @@ export function LeadGenerationToolsContent() {
           "7-day Pro trial included",
           "26+ AI models via BYOK",
           "Cancel anytime",
-          "Official LinkedIn API",
+          "Agent working your own account",
         ]}
       />
 

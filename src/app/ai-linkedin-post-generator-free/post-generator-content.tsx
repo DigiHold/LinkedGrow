@@ -42,7 +42,7 @@ export function PostGeneratorFreeContent() {
           line1: "Free LinkedIn Post Generator:",
           gradient: "7-Day Pro Trial With Full Access",
         }}
-        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. The card is taken at signup and charged on day 8, so cancelling before then costs nothing."
+        descriptionBold="Generate LinkedIn posts free for 7 days with full Pro access. The card is taken at signup and the plan starts on day 8."
         description="The 7-day Pro trial includes unlimited AI generation across 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK, plus voice training, AI image generation, scheduling, and analytics. Test the full product before paying anything."
         valuePropBadges={[
           { icon: Gift, text: "7-day Pro trial" },
@@ -51,7 +51,7 @@ export function PostGeneratorFreeContent() {
         ]}
         primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["Cancel before day 8", "Full Pro access", "Cancel anytime"]}
+        trustIndicators={["Everything included", "Full Pro access", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -335,12 +335,12 @@ export function PostGeneratorFreeContent() {
           line1: "Ready to create LinkedIn posts",
           gradient: "in seconds instead of hours?",
         }}
-        description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. Cancel any time needed, no commitment."
-        primaryCta={{ text: "Start 7-day Pro trial - cancel before day 8", href: "/sign-up" }}
+        description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. Everything included needed, no commitment."
+        primaryCta={{ text: "Start 7-day Pro trial - everything included", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
-          "Cancel any time",
+          "Everything included",
           "Voice training included",
           "Upgrade anytime",
         ]}

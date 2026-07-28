@@ -52,7 +52,7 @@ export function ContentCreationToolsContent() {
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Cancel anytime"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -324,7 +324,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and charged on day 8, so cancelling before then costs nothing. After the trial, paid plans start at $13/mo (billed yearly).",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and the plan starts on day 8. After the trial, paid plans start at $13/mo (billed yearly).",
           },
           {
             question: "How does the BYOK model work?",

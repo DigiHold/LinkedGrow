@@ -797,7 +797,7 @@ export function BestPostGeneratorContent({
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Cancel before day 8",
+          "Everything included",
           "Unlimited generations",
           "Voice training included",
           "Cancel anytime",

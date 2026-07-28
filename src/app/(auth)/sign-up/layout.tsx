@@ -3,7 +3,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Sign Up - Create Your LinkedGrow Account",
   description:
-    "Create your LinkedGrow account and start a 7-day Pro trial. Bring your own API key for unlimited AI post generation. Cancel before day 8.",
+    "Create your LinkedGrow account and start a 7-day Pro trial. Bring your own API key for unlimited AI post generation. Everything included.",
   openGraph: {
     title: "Sign Up - Create Your LinkedGrow Account",
     description:

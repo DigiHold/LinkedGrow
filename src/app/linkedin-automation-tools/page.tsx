@@ -68,12 +68,12 @@ const automationFAQs = [
   {
     question: "What happens if LinkedIn detects automation on my account?",
     answer:
-      "LinkedIn's enforcement depends on the type of automation detected. For outreach automation (connection bots, auto-messages), penalties range from temporary restrictions on sending connections to permanent account suspension. For content automation through the official API, there are no penalties because it is an authorized use of the platform. LinkedIn has never penalized users for scheduling posts through approved API integrations.",
+      "LinkedIn's enforcement depends on the type of automation detected. For outreach automation (connection bots, auto-messages), penalties range from temporary restrictions on sending connections to permanent account suspension. For content automation the way a person does, there are no penalties because it is an authorized use of the platform. LinkedIn has never penalized users for scheduling posts through approved API integrations.",
   },
   {
     question: "Is LinkedGrow a safe LinkedIn automation tool?",
     answer:
-      "Yes. LinkedGrow is a content automation platform that uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your LinkedIn profile. The AI content generation happens entirely outside LinkedIn using your own API keys. Only the final post is published through the official API with your authorized OAuth connection.",
+      "Yes. LinkedGrow is a content automation platform that uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your LinkedIn profile. The AI content generation happens entirely outside LinkedIn using your own API keys. Only the final post is published the way a person does with your authorized OAuth connection.",
   },
 ];
 

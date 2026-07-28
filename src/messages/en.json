@@ -12,7 +12,7 @@
     "valueProp3": "Save $400+/year",
     "emailPlaceholder": "Enter your email",
     "cta": "Get Early Access + 30% Off",
-    "noCreditCard": "cancel before day 8 required",
+    "noCreditCard": "everything included required",
     "lockedIn": "14-day money-back",
     "cancelAnytime": "Cancel anytime",
     "trustedBy": "Trusted by {count}+ founders"
@@ -129,7 +129,7 @@
     },
     "q4": {
       "question": "Can I try before committing?",
-      "answer": "Yes. Every new account gets a 7-day Pro trial with full access to every Pro feature - AI image generation, hooks generator, unlimited scheduling, content repurposing, analytics. cancel before day 8 required."
+      "answer": "Yes. Every new account gets a 7-day Pro trial with full access to every Pro feature - AI image generation, hooks generator, unlimited scheduling, content repurposing, analytics. everything included required."
     },
     "q5": {
       "question": "What's the 30% early access discount?",

@@ -211,7 +211,7 @@ export function V3Landing() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
             </div>
           </form>
-          <p className={`${RV} mt-[15px] text-[13.5px] text-[rgba(255,255,255,.55)] [&_b]:font-semibold [&_b]:text-[rgba(255,255,255,.85)]`} style={{ "--d0": ".28s" } as React.CSSProperties}><b>7-day free trial</b> on the Pro plan · Cancel any time · The AI is in the price</p>
+          <p className={`${RV} mt-[15px] text-[13.5px] text-[rgba(255,255,255,.55)] [&_b]:font-semibold [&_b]:text-[rgba(255,255,255,.85)]`} style={{ "--d0": ".28s" } as React.CSSProperties}><b>7-day free trial</b> on the Pro plan · Everything included · The AI is in the price</p>
           <div className={`${TR} ${RV} mt-[38px]`} style={{ "--d0": ".35s" } as React.CSSProperties}>
             <span className={AVS} aria-hidden="true">
               <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person1.avif" alt="" loading="lazy" />
@@ -671,7 +671,7 @@ export function V3Landing() {
         <div className={WRAP}><div className={`${FINALE} ${RV}`}>
           <div className={RINGS_FIN}><i></i><i></i><i></i></div>
           <div className="relative z-[2] flex flex-col items-center">
-            <span className={EB_LT}><i className={EB_DOT_LT}></i>Twenty seconds, cancel any time</span>
+            <span className={EB_LT}><i className={EB_DOT_LT}></i>Twenty seconds, everything included</span>
             <h2 className={`${H2} mt-[22px] text-white`}>See your buyers before<br />you spend anything.</h2>
             <p className="mx-auto mt-[18px] max-w-[52ch] text-[rgba(255,255,255,.74)]">Type your website. LinkedGrow comes back with your ideal customer, the competitors who share your audience, and the first real people worth talking to.</p>
             <form className={`group ${URLWRAP} mt-8 w-full`} onSubmit={(e) => e.preventDefault()}>

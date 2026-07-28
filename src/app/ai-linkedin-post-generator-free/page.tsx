@@ -5,11 +5,11 @@ import { PostGeneratorFreeContent } from "./post-generator-content";
 export const metadata: Metadata = {
   title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
   description:
-    "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: cancel any time needed.",
+    "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
   openGraph: {
     title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
     description:
-      "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: cancel any time needed.",
+      "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
     url: "https://linkedgrow.ai/ai-linkedin-post-generator-free",
     siteName: "LinkedGrow",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free LinkedIn Post Generator: 7-Day Pro Trial, No Card",
     description:
-      "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: cancel any time needed.",
+      "7-day Pro trial with full access to 43 AI models, voice training, scheduling, and unlimited generation. The free LinkedIn post generator: everything included needed.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {
@@ -38,7 +38,7 @@ const postGenFreeFAQs = [
   {
     question: "Is the AI LinkedIn post generator really free?",
     answer:
-      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 models, and voice training - cancel before day 8. After the trial, paid plans start at $13/mo (billed yearly). With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
+      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 26 models, and voice training - everything included. After the trial, paid plans start at $13/mo (billed yearly). With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
   },
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
@@ -93,7 +93,7 @@ export default function AiLinkedinPostGeneratorFreePage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow AI LinkedIn Post Generator"
         url="https://linkedgrow.ai/ai-linkedin-post-generator-free"
-        description="Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. 7-day Pro trial with cancel before day 8."
+        description="Generate LinkedIn posts for free with AI. 26+ models including ChatGPT, Claude, Gemini. Voice training matches your writing style. 7-day Pro trial with everything included."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <PostGeneratorFreeContent />

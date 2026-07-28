@@ -917,7 +917,7 @@ export function AnalyticsToolContent({
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Cancel before day 8",
+          "Everything included",
           "Full analytics on Pro+",
           "26+ AI models via BYOK",
           "Cancel anytime",

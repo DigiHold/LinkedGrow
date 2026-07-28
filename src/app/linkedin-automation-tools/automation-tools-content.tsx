@@ -44,15 +44,15 @@ export function AutomationToolsContent() {
           gradient: "safe vs risky",
         }}
         descriptionBold="Not all LinkedIn automation is created equal. Some tools grow your presence safely, others get your account banned."
-        description="LinkedIn automation tools fall into two categories: content tools that use the official API (safe) and outreach bots that simulate browser actions (risky). This breakdown covers both categories, what LinkedIn actually allows, and why content automation is the only approach that scales without putting your account at risk. LinkedGrow is a content automation platform built on LinkedIn's official API."
+        description="LinkedIn automation tools fall into two categories: content tools that use your own account (safe) and outreach bots that simulate browser actions (risky). This breakdown covers both categories, what LinkedIn actually allows, and why content automation is the only approach that scales without putting your account at risk. LinkedGrow is a content automation platform built on LinkedIn's official API."
         valuePropBadges={[
-          { icon: ShieldCheck, text: "Official API only" },
+          { icon: ShieldCheck, text: "Agent on your account only" },
           { icon: PenTool, text: "26+ AI models" },
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
         primaryCta={{ text: "Try safe automation free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Zero ban risk"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Zero ban risk"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -120,7 +120,7 @@ export function AutomationToolsContent() {
             icon: PenTool,
             title: "AI Post Generation",
             description:
-              "LinkedGrow uses 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi to generate LinkedIn posts that match your writing voice. Content creation happens entirely outside LinkedIn. Only the final post touches the platform through the official API.",
+              "LinkedGrow uses 26+ AI models from OpenAI, Anthropic, Google, xAI, Perplexity, and Kimi to generate LinkedIn posts that match your writing voice. Content creation happens entirely outside LinkedIn. Only the final post touches the platform the way a person does.",
             highlights: ["26+ AI models", "Voice training", "Unlimited via BYOK"],
             badge: "LinkedGrow",
             color: "from-cyan-500 to-blue-600",
@@ -130,7 +130,7 @@ export function AutomationToolsContent() {
             title: "Post Scheduling",
             description:
               "Schedule posts to publish at optimal times through LinkedIn's official Share API. Visual content calendar shows your upcoming week and month. LinkedGrow, Buffer, and Hootsuite all use this same authorized API endpoint for scheduled publishing.",
-            highlights: ["Official API", "Content calendar", "Timezone support"],
+            highlights: ["Agent on your account", "Content calendar", "Timezone support"],
             badge: "Safe",
             color: "from-emerald-500 to-green-600",
           },
@@ -186,7 +186,7 @@ export function AutomationToolsContent() {
             number: "01",
             title: "Connect with LinkedIn OAuth",
             description:
-              "You authorize LinkedGrow through LinkedIn's official OAuth flow, the same authentication system LinkedIn provides for all approved apps. LinkedIn issues a secure access token that lets the tool publish on your behalf. No browser extensions, no password sharing, no scraping.",
+              "You authorize LinkedGrow through LinkedIn's agent on your account flow, the same authentication system LinkedIn provides for all approved apps. LinkedIn issues a secure access token that lets the tool publish on your behalf. No browser extensions, no password sharing, no scraping.",
             icon: Shield,
             color: "from-cyan-500 to-blue-500",
             time: "30 sec",
@@ -329,12 +329,12 @@ export function AutomationToolsContent() {
           {
             question: "What happens if LinkedIn detects automation on my account?",
             answer:
-              "For outreach automation (connection bots, auto-messages), penalties range from temporary restrictions to permanent suspension. For content automation through the official API, there are no penalties because it is authorized use. LinkedIn has never penalized users for scheduling posts through approved API integrations.",
+              "For outreach automation (connection bots, auto-messages), penalties range from temporary restrictions to permanent suspension. For content automation the way a person does, there are no penalties because it is authorized use. LinkedIn has never penalized users for scheduling posts through approved API integrations.",
           },
           {
             question: "Is LinkedGrow a safe LinkedIn automation tool?",
             answer:
-              "Yes. LinkedGrow uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your profile. AI content generation happens outside LinkedIn using your own API keys, and only the final post is published through the official API.",
+              "Yes. LinkedGrow uses LinkedIn's official Share API to publish posts. It never sends connection requests, automated messages, or performs any interaction on your profile. AI content generation happens outside LinkedIn using your own API keys, and only the final post is published the way a person does.",
           },
         ]}
       />
@@ -362,7 +362,7 @@ export function AutomationToolsContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
-          "Official API - zero ban risk",
+          "Agent on your account - zero ban risk",
           "Cancel anytime",
           "BYOK - unlimited generations",
         ]}

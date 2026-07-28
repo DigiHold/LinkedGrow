@@ -52,7 +52,7 @@ export function MarketingToolContent() {
         ]}
         primaryCta={{ text: "Try free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Cancel before day 8", "Official LinkedIn API"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Agent working your own account"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -130,7 +130,7 @@ export function MarketingToolContent() {
             title: "Scheduling and Content Calendar",
             description:
               "Schedule posts for optimal publishing times with a visual content calendar that shows your week and month at a glance. Drag posts, adjust timing, and plan weeks ahead. Publishing goes through LinkedIn's official Share API, so your posts are treated identically to manual ones.",
-            highlights: ["Visual calendar", "Optimal timing", "Official API"],
+            highlights: ["Visual calendar", "Optimal timing", "Agent on your account"],
             badge: "From Starter",
             color: "from-emerald-500 to-green-600",
           },
@@ -364,7 +364,7 @@ export function MarketingToolContent() {
           "7-day Pro trial included",
           "26+ AI models via BYOK",
           "Cancel anytime",
-          "Official LinkedIn API",
+          "Agent working your own account",
         ]}
       />
 

@@ -38,12 +38,12 @@ const freeGenFAQs = [
   {
     question: "Is this LinkedIn post generator AI really free?",
     answer:
-      "Yes. LinkedGrow's 7-day Pro trial gives you full Pro access - unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and charged on day 8, so cancelling before then costs nothing. After the trial, paid plans start at $13/mo (billed yearly) for unlimited generation.",
+      "Yes. LinkedGrow's 7-day Pro trial gives you full Pro access - unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and the plan starts on day 8. After the trial, paid plans start at $13/mo (billed yearly) for unlimited generation.",
   },
   {
     question: "Do I need to sign up to use the free AI post generator?",
     answer:
-      "You need to create a free account to access the post generator, which takes about 30 seconds. This is because the generator uses your voice training data and connected API key to produce personalized results. Cancel any time is required for the 7-day Pro trial.",
+      "You need to create a free account to access the post generator, which takes about 30 seconds. This is because the generator uses your voice training data and connected API key to produce personalized results. Everything included is required for the 7-day Pro trial.",
   },
   {
     question: "What AI models can I use on the 7-day Pro trial?",
@@ -93,7 +93,7 @@ export default function FreeLinkedinPostGeneratorAiPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow Free AI LinkedIn Post Writer"
         url="https://linkedgrow.ai/free-linkedin-post-generator-ai"
-        description="Free AI LinkedIn post writer with 26+ models and voice training that matches your writing style. 7-day Pro trial with full Pro access, cancel before day 8."
+        description="Free AI LinkedIn post writer with 26+ models and voice training that matches your writing style. 7-day Pro trial with full Pro access, everything included."
         offers={{ price: "0", priceCurrency: "USD" }}
       />
       <FreePostGeneratorContent />

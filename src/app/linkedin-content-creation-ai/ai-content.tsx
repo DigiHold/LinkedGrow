@@ -49,7 +49,7 @@ export function ContentCreationAiContent() {
         ]}
         primaryCta={{ text: "Try the AI free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial", "Cancel any time", "All 26 models on trial"]}
+        trustIndicators={["7-day Pro trial", "Everything included", "All 26 models on trial"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -347,7 +347,7 @@ export function ContentCreationAiContent() {
           line1: "Ready to pick the AI model",
           gradient: "that fits your voice?",
         }}
-        description="Train your voice fingerprint, switch between 26 frontier models per draft, and pay providers directly with zero markup. 7-day Pro trial, cancel any time."
+        description="Train your voice fingerprint, switch between 26 frontier models per draft, and pay providers directly with zero markup. 7-day Pro trial, everything included."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[

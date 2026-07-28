@@ -220,7 +220,7 @@ function SignUpContent() {
             </p>
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-xs font-medium text-cyan-700 dark:text-cyan-300">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Includes 7-day Pro trial - cancel any time</span>
+              <span>Includes 7-day Pro trial - everything included</span>
             </div>
           </div>
 

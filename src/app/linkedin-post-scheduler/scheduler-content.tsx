@@ -740,7 +740,7 @@ export function PostSchedulerContent({
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
-          "Cancel before day 8",
+          "Everything included",
           "Unlimited generations on Pro+",
           "Auto-publish to profiles and pages",
           "Cancel anytime",
