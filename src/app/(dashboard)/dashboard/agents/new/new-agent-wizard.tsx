@@ -112,6 +112,7 @@ export function NewAgentWizard() {
   const [reading, setReading] = useState(false);
   const [readNote, setReadNote] = useState<string | null>(null);
   const [readFailed, setReadFailed] = useState(false);
+  const [readStage, setReadStage] = useState(0);
   const [name, setName] = useState("");
   const [source, setSource] = useState<string>("buying_event");
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -136,7 +137,14 @@ export function NewAgentWizard() {
     setReading(true);
     setReadNote(null);
     setReadFailed(false);
+    setReadStage(0);
     setError(null);
+    // The request takes a handful of seconds and a bare spinner reads as a
+    // freeze. These three lines are what the route actually does, in order.
+    const stages = [
+      setTimeout(() => setReadStage(1), 1200),
+      setTimeout(() => setReadStage(2), 4000),
+    ];
     try {
       const res = await fetch("/api/agents/analyze-website", {
         method: "POST",
@@ -161,7 +169,9 @@ export function NewAgentWizard() {
       setReadFailed(true);
       setReadNote(e instanceof Error ? e.message : "Could not read that site");
     } finally {
+      stages.forEach(clearTimeout);
       setReading(false);
+      setReadStage(0);
     }
   };
 
@@ -345,9 +355,34 @@ export function NewAgentWizard() {
           </Field>
 
           {reading && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Reading your home page and working out who buys from you. This takes a few seconds.
-            </p>
+            <ol className="mt-5 space-y-3">
+              {[
+                `Opening ${website.trim().replace(/^https?:\/\//i, "").split("/")[0]}`,
+                "Reading the page",
+                "Working out who buys from you",
+              ].map((line, i) => (
+                <li key={line} className="flex items-center gap-3">
+                  <span className="flex h-5 w-5 flex-none items-center justify-center">
+                    {i < readStage ? (
+                      <Check className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    ) : i === readStage ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-cyan-600 dark:text-cyan-400" />
+                    ) : (
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-white/20" />
+                    )}
+                  </span>
+                  <span
+                    className={
+                      i <= readStage
+                        ? "text-sm text-slate-900 dark:text-white"
+                        : "text-sm text-slate-400 dark:text-slate-500"
+                    }
+                  >
+                    {line}
+                  </span>
+                </li>
+              ))}
+            </ol>
           )}
 
           {readNote && !reading && (
