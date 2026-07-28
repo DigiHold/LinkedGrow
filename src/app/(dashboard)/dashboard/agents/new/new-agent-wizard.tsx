@@ -288,12 +288,12 @@ export function NewAgentWizard() {
 
       {step === 1 && (
         <StepBody
-          title="What do you sell, and to whom?"
-          lead="Give us your address and we read your home page once. Everything after this arrives filled in, and you change whatever is off."
+          title="Start with your website"
+          lead="We read your home page once and fill the next steps for you. You change anything that is wrong."
         >
           <Field
             label="Your website"
-            hint="Only the home page, once. We never publish anything from it."
+            hint="The home page only. Nothing from it is ever published."
           >
             <div className="flex items-center gap-2">
               <Input
@@ -352,8 +352,8 @@ export function NewAgentWizard() {
 
       {step === 2 && (
         <StepBody
-          title="Where should it find people?"
-          lead="Pick one to start with. You can add more sources once the agent is running."
+          title="Where should it look for people?"
+          lead="Pick one. You can add more later."
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {LEAD_SOURCES.map((s) => (
@@ -372,7 +372,7 @@ export function NewAgentWizard() {
           <div className="mt-8 border-t border-border pt-6">
             <Field
               label="Name it"
-              hint="Only you see this. Naming it after who it targets makes a list of agents readable."
+              hint="Only you see this. Name it after who it targets."
             >
               <Input
                 value={name}
@@ -387,13 +387,13 @@ export function NewAgentWizard() {
 
       {step === 3 && (
         <StepBody
-          title="Who should it go after?"
-          lead="The signals tell it what to watch. The filters narrow who counts."
+          title="Who should it contact?"
+          lead="Topics tell it what to watch for. Filters narrow down who counts."
         >
           <div className="space-y-8">
             <Group
-              title={`Signals ${keywords.length}/${MAX_SIGNALS}`}
-              hint={`Topics your buyers talk about. At least ${MIN_SIGNALS}, so the agent has enough to work with.`}
+              title={`Topics ${keywords.length}/${MAX_SIGNALS}`}
+              hint={`What your buyers post about. Add at least ${MIN_SIGNALS} so it has enough to watch.`}
             >
             <div>
               <div className="flex gap-2">
@@ -441,7 +441,7 @@ export function NewAgentWizard() {
             </div>
             </Group>
 
-            <Group title="Filters" hint="Leave any of these empty to allow everything.">
+            <Group title="Filters" hint="Leave a field empty to accept everyone.">
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Job titles" hint="Comma separated. Leave empty for any.">
                 <Input
@@ -480,8 +480,8 @@ export function NewAgentWizard() {
               <Toggle
                 checked={smartLeadFinder}
                 onChange={setSmartLeadFinder}
-                label="Widen the search when signals run dry"
-                hint="An agent with nothing left to do looks broken. This keeps it fed."
+                label="Keep looking when the topics run dry"
+                hint="Without this the agent runs out of people and looks broken."
               />
             </Group>
           </div>
@@ -490,14 +490,14 @@ export function NewAgentWizard() {
 
       {step === 4 && (
         <StepBody
-          title="How it reaches out"
-          lead="Nothing goes out without you. This is prepared now, and at the end you decide whether to start it or leave it paused."
+          title="Who sends, and what it says"
+          lead="Nothing is sent yet. You decide at the end whether to start it."
         >
           <div className="space-y-8">
             <Group title="Who sends">
             <Field
               label="Sending account"
-              hint="This cannot change later: switching mid-sequence breaks the session and the IP it is pinned to."
+              hint="This one cannot be changed later, so pick the account you want it to send from."
             >
               {!accountsLoaded ? (
                 <div className="h-11 animate-pulse rounded-xl bg-slate-100 dark:bg-white/5" />
@@ -539,7 +539,7 @@ export function NewAgentWizard() {
             <Group title="What the messages say">
             <Field
               label="What you sell"
-              hint="This is what the messages are built from. Be specific about who it helps."
+              hint="The messages are written from this. Say who you help and with what."
             >
               <Textarea
                 value={companyInfo}
@@ -575,13 +575,13 @@ export function NewAgentWizard() {
               checked={skipConnected}
               onChange={setSkipConnected}
               label="Skip people I am already connected to"
-              hint="They cannot be invited, and a cold message to someone who knows you reads badly."
+              hint="A cold message to someone who already knows you reads badly."
             />
             <Toggle
               checked={reviewMode}
               onChange={setReviewMode}
               label="Review each contact before anything is sent"
-              hint="Slower, but nothing leaves without you seeing it."
+              hint="Slower, but you see every message before it goes."
             />
             </Group>
           </div>
@@ -590,8 +590,8 @@ export function NewAgentWizard() {
 
       {step === 5 && (
         <StepBody
-          title="Check it over"
-          lead="Nothing here is final. Everything can be changed after the agent exists."
+          title="Check it, then create it"
+          lead="Everything here can be changed afterwards."
         >
           <div>
             {/* The five rows below are the shape of a result, built from what
@@ -634,7 +634,7 @@ export function NewAgentWizard() {
           <dl className="divide-y divide-border">
               <SummaryRow label="Name" value={name || "Not set"} />
               <SummaryRow label="Lead source" value={labelForSource(source)} />
-              <SummaryRow label="Signals" value={keywords.join(", ") || "None"} />
+              <SummaryRow label="Topics" value={keywords.join(", ") || "None"} />
               <SummaryRow label="Job titles" value={jobRoles || "Any"} />
               <SummaryRow label="Industries" value={industries || "Any"} />
               <SummaryRow label="Locations" value={locations || "Anywhere"} />
