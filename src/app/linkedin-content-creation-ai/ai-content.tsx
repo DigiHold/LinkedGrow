@@ -236,7 +236,7 @@ export function ContentCreationAiContent() {
             { text: "Unlimited drafts on every paid plan" },
             { text: "Zero markup on tokens - you pay providers directly at list rates" },
             { text: "Voice fingerprint runs on every draft you generate" },
-            { text: "Cancel anytime - keys stay yours" },
+            { text: "Your keys stay yours" },
           ],
         }}
         savingsText="Most users spend $2 to $4 per month on BYOK costs even when writing daily"

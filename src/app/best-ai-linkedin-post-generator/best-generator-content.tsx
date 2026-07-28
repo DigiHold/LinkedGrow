@@ -73,7 +73,7 @@ const tools: ToolReview[] = [
     cons: [
       "BYOK setup adds 2 minutes (creating an API key with OpenAI or Anthropic)",
       "Smaller community than legacy tools like Taplio",
-      "Native analytics still rolling out (LinkedIn API limitation, affects every tool)",
+      "Native analytics still rolling out (affects every tool)",
     ],
     accent: "from-cyan-500 to-blue-600",
     ctaLabel: "Start free 7-day Pro trial",
@@ -809,7 +809,7 @@ export function BestPostGeneratorContent({
           "Everything included",
           "Unlimited generations",
           "Voice training included",
-          "Cancel anytime",
+          "Your own AI key",
         ]}
       />
 

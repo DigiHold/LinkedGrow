@@ -162,7 +162,7 @@ export function FreePostGeneratorContent() {
             title: "BYOK keeps writing affordable",
             description:
               "You bring your own API key from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi. LinkedGrow takes zero markup. Most users spend $2 to $4 per month on AI costs, even with daily writing.",
-            highlights: ["Zero markup", "$2 to $4 typical", "Cancel anytime"],
+            highlights: ["Zero markup", "$2 to $4 typical", "Your own AI key"],
             badge: "Pricing",
             color: "from-teal-500 to-cyan-600",
           },

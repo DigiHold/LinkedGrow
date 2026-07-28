@@ -752,7 +752,7 @@ export function PostSchedulerContent({
           "Everything included",
           "Unlimited generations on Pro+",
           "Auto-publish to profiles and pages",
-          "Cancel anytime",
+          "Your own AI key",
         ]}
       />
 

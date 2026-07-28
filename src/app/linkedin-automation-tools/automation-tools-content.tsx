@@ -156,7 +156,7 @@ export function AutomationToolsContent() {
             icon: BarChart3,
             title: "Analytics and Tracking",
             description:
-              "Track post performance, identify what content works best with your audience, and find your optimal posting times. Analytics tools read engagement data through LinkedIn's API without performing any actions on your account.",
+              "Track post performance, identify what content works best with your audience, and find your optimal posting times. Analytics tools read engagement data without performing any actions on your account.",
             highlights: ["Engagement metrics", "Trend analysis", "Best time insights"],
             badge: "Safe",
             color: "from-pink-500 to-rose-500",
@@ -363,7 +363,7 @@ export function AutomationToolsContent() {
         trustIndicators={[
           "7-day Pro trial included",
           "Agent on your account - zero ban risk",
-          "Cancel anytime",
+          "Your own AI key",
           "BYOK - unlimited generations",
         ]}
       />

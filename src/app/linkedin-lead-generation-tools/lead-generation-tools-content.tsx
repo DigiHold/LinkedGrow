@@ -347,7 +347,7 @@ export function LeadGenerationToolsContent() {
         trustIndicators={[
           "7-day Pro trial included",
           "26+ AI models via BYOK",
-          "Cancel anytime",
+          "Your own AI key",
           "Agent working your own account",
         ]}
       />

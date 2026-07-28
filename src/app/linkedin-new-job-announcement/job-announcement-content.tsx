@@ -60,7 +60,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
         ]}
         primaryCta={{ text: "Generate your announcement", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Everything included", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
       />
 
       <LandingPainPoints
@@ -441,7 +441,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
           "7-day Pro trial included",
           "Everything included",
           "43 AI models",
-          "Cancel anytime",
+          "Your own AI key",
         ]}
       />
 

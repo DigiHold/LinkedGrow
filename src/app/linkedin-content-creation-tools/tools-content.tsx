@@ -52,7 +52,7 @@ export function ContentCreationToolsContent() {
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
-        trustIndicators={["7-day Pro trial included", "Everything included", "Cancel anytime"]}
+        trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",
@@ -363,7 +363,7 @@ export function ContentCreationToolsContent() {
         trustIndicators={[
           "7-day Pro trial included",
           "6 tools in one",
-          "Cancel anytime",
+          "Your own AI key",
           "BYOK - unlimited generations",
         ]}
       />

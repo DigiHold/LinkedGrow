@@ -51,7 +51,7 @@ export function PostGeneratorFreeContent() {
         ]}
         primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}
         secondaryCta={{ text: "See all plans", href: "/pricing" }}
-        trustIndicators={["Everything included", "Full Pro access", "Cancel anytime"]}
+        trustIndicators={["Everything included", "Full Pro access", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
           thumbnailUrl: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/video-thumbnail-promo.avif",

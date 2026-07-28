@@ -929,7 +929,7 @@ export function AnalyticsToolContent({
           "Everything included",
           "Full analytics on Pro+",
           "26+ AI models via BYOK",
-          "Cancel anytime",
+          "Your own AI key",
         ]}
       />
 
