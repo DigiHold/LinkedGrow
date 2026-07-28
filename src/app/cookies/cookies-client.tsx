@@ -54,7 +54,7 @@ export default function CookiesClient({ translations }: { translations: CookiesT
 
       <LegalHero eyebrow="Legal" meta={translations.lastUpdated} title={translations.title} />
 
-      <div className="relative z-[3] -mt-[clamp(30px,5vw,84px)] pb-16 pt-0 md:pb-24">
+      <div className="relative z-[3] pb-16 pt-0 md:pb-24">
         <div className="mx-auto max-w-4xl px-6">
 
           <div className="prose prose-gray  max-w-none">
