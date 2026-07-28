@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { V3Appearance } from "./appearance";
-import { V3_ROOT } from "./root";
+import { V3_BLOCK } from "./root";
 
 /**
  * The prototype's footer, for every marketing page.
@@ -84,7 +84,7 @@ const FILL_SM =
   "[&_svg]:[transition:transform_.26s_var(--ease-v3)] hover:[&_svg]:[transform:translateX(4px)]";
 export function V3Footer() {
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
     <footer className={FOOTER}>
       <div className={WRAP}>
         <div className={FG}>

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { initV3Faq } from "./faq-effects";
 import { V3_FAQS } from "./faq-data";
-import { V3_ROOT } from "./root";
+import { V3_BLOCK } from "./root";
 import {
   ASKCARD, EB, EB_DOT, FAQSIDE, FAQWRAP, FILL_SM, H2, Q, Q_A_P, Q_BTN, Q_IX, Q_PM, RV, SEC, WRAP,
 } from "./kit";
@@ -65,7 +65,7 @@ export function V3FaqAside() {
 export function V3FaqSection() {
   useEffect(() => initV3Faq(), []);
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <section className={SEC}>
         <div className={WRAP}>
           <div className={FAQWRAP}>

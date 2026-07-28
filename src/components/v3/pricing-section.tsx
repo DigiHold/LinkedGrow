@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { initV3Pricing } from "./pricing-effects";
-import { V3_ROOT } from "./root";
+import { V3_BLOCK } from "./root";
 import {
   FILL, FILL_LG, FILL_LIGHT, FILL_PRI, FILL_WIDE, H2, INC, LEAD_MUT, PD, PIP,
   PLAN, PLAN_BEST, PLAN_LI, PLAN_LI_I, PLAN_PLAIN, PLAN_TAG, PLAN_UL, PLANS, PN,
@@ -101,7 +101,7 @@ export function V3Plans() {
 /** The same block wrapped in its own v3 root, for a page that has no other. */
 export function V3PricingSection() {
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <V3Plans />
     </div>
   );
