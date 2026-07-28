@@ -62,14 +62,15 @@ export function V3PricingHero() {
         ></canvas>
 
         <div className={`${WRAP} ${TOGGLE_ON_DARK} relative z-[3] text-center`}>
-          <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>Two plans, and no second invoice</span>
+          <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>One plan, the whole pipeline</span>
           <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[17ch] text-white`} data-blur="3">
-            $99 a month, <em className={EM_SKY}>everything included.</em>
+            Your agent starts work <em className={EM_SKY}>on day one.</em>
           </h1>
           <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>
-            The dedicated IP, the agent&apos;s AI, the leads and the four-week
-            warm-up are all in the price. Free for 7 days, then it renews at the
-            plan price unless you cancel, which takes one click.
+            The dedicated address, the agent&apos;s own AI, the leads it finds and
+            the four-week warm-up are all inside the price. No second invoice,
+            no credit allowance to ration, no per-seat maths. Free for the first
+            7 days, and the agent is running the whole time.
           </p>
           <V3PriceToggle />
         </div>
