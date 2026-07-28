@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { useEffect } from "react";
 import { initV3Faq } from "./faq-effects";
 import { V3_FAQS } from "./faq-data";
@@ -74,6 +76,53 @@ export function V3FaqSection() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * The same accordion, for any list of questions.
+ *
+ * The home's list is driven by the landing script, which only exists on the
+ * home. Every other page rolled its own accordion and every one of them looked
+ * different. This carries the v3 classes and owns its open state, so a question
+ * on an article, a comparison or the affiliate page opens exactly like a
+ * question on the home.
+ */
+export function V3FaqItems({
+  items,
+  id = "faq",
+}: {
+  items: { question: string; answer: string }[];
+  id?: string;
+}) {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <div className="grid gap-3" id={id}>
+      {items.map((item, i) => {
+        const isOpen = open === i;
+        return (
+          <div className={`${Q} ${isOpen ? "open" : ""}`} key={item.question}>
+            <button
+              aria-expanded={isOpen}
+              className={Q_BTN}
+              onClick={() => setOpen(isOpen ? null : i)}
+              type="button"
+            >
+              <span className={Q_IX}>{String(i + 1).padStart(2, "0")}</span>
+              {item.question}
+              <span className={Q_PM}>+</span>
+            </button>
+            <div
+              className="overflow-hidden [transition:max-height_.44s_var(--ease-v3)]"
+              style={{ maxHeight: isOpen ? "40rem" : 0 }}
+            >
+              <p className={Q_A_P}>{item.answer}</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
