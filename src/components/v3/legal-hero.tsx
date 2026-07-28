@@ -33,7 +33,7 @@ export function LegalHero({
         id="net"
       ></canvas>
       <V3Effects />
-      <div className={`${WRAP} relative z-[3] max-w-[900px]! pb-[clamp(60px,7.4vw,118px)]`}>
+      <div className={`${WRAP} relative z-[3] max-w-[900px]! pb-[clamp(112px,12.5vw,166px)]`}>
         <span className={EB_LT}>
           <i className={EB_DOT_LT}></i>
           {eyebrow}
