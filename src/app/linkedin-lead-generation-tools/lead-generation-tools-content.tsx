@@ -44,7 +44,7 @@ export function LeadGenerationToolsContent() {
           gradient: "that start with content",
         }}
         descriptionBold="LinkedGrow is a LinkedIn lead generation tool that turns your expertise into inbound leads through AI-powered content creation, scheduling, and analytics."
-        description="Most LinkedIn lead generation tools focus on outreach automation, connection bots, and mass messaging. That approach risks your account and annoys prospects. LinkedGrow takes the opposite approach: help you publish content that positions you as the expert your ideal clients already want to hire. AI trained on your writing voice generates posts, hooks, carousels, and images that attract leads to you instead of chasing them. Schedule from a visual calendar, publish through LinkedIn's official API, and track which content drives the most profile views and connection requests."
+        description="Most LinkedIn lead generation tools focus on outreach automation, connection bots, and mass messaging. That approach risks your account and annoys prospects. LinkedGrow takes the opposite approach: help you publish content that positions you as the expert your ideal clients already want to hire. AI trained on your writing voice generates posts, hooks, carousels, and images that attract leads to you instead of chasing them. Schedule from a visual calendar, publish from your own account, and track which content drives the most profile views and connection requests."
         valuePropBadges={[
           { icon: PenTool, text: "26+ AI models" },
           { icon: Calendar, text: "Content calendar" },
@@ -204,7 +204,7 @@ export function LeadGenerationToolsContent() {
             number: "03",
             title: "Schedule and publish consistently",
             description:
-              "Load your content calendar for the week. Fill gaps, set optimal posting times, and let the scheduler handle publishing through LinkedIn's official API. Consistency is what separates accounts that generate leads from accounts that don't. Aim for 3 to 5 posts per week, and the calendar makes that cadence visible and manageable.",
+              "Load your content calendar for the week. Fill gaps, set optimal posting times, and let the scheduler handle publishing from your own account. Consistency is what separates accounts that generate leads from accounts that don't. Aim for 3 to 5 posts per week, and the calendar makes that cadence visible and manageable.",
             icon: Calendar,
             color: "from-emerald-500 to-green-500",
             time: "15 sec",
@@ -248,7 +248,7 @@ export function LeadGenerationToolsContent() {
             { text: "Voice-trained AI creates posts that sound like you, not like a template" },
             { text: "Unlimited AI generation with BYOK, no credits or monthly caps" },
             { text: "AI costs average $2 to $4 per month at direct provider rates" },
-            { text: "Publishing through LinkedIn's official API, treated like manual posting" },
+            { text: "Publishing through your own account, treated like manual posting" },
           ],
         }}
         savingsText="Replace outreach automation with content-driven lead generation and cut costs by 70-90%"
@@ -304,7 +304,7 @@ export function LeadGenerationToolsContent() {
           {
             question: "How do LinkedIn lead generation tools actually generate leads?",
             answer:
-              "LinkedIn lead generation tools work through two main approaches. Content tools like LinkedGrow help you publish consistently so prospects come to you through your posts, carousels, and articles. Outreach tools automate connection requests and follow-up messages to specific prospects. Content-driven lead generation is safer because it uses LinkedIn's official API and doesn't risk account restrictions, while automation tools that send mass connection requests or messages can trigger LinkedIn's abuse detection.",
+              "LinkedIn lead generation tools work through two main approaches. Content tools like LinkedGrow help you publish consistently so prospects come to you through your posts, carousels, and articles. Outreach tools automate connection requests and follow-up messages to specific prospects. Content-driven lead generation is safer because it works your own account at a human pace and stays inside the limits you set, while automation tools that send mass connection requests or messages can trigger LinkedIn's abuse detection.",
           },
           {
             question: "Is content marketing or outreach automation better for LinkedIn leads?",

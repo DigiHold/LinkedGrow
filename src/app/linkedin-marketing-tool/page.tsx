@@ -53,7 +53,7 @@ const marketingToolFAQs = [
   {
     question: "Can I use LinkedGrow as my only LinkedIn marketing tool?",
     answer:
-      "Yes. LinkedGrow covers the full LinkedIn content marketing workflow: AI-powered post writing, image generation, carousel creation, scheduling with content calendar, direct publishing through LinkedIn's official API, and performance analytics. You don't need separate tools for writing, designing, scheduling, and tracking.",
+      "Yes. LinkedGrow covers the full LinkedIn content marketing workflow: AI-powered post writing, image generation, carousel creation, scheduling with content calendar, publishing straight from your own account, and performance analytics. You don't need separate tools for writing, designing, scheduling, and tracking.",
   },
   {
     question: "What AI models does LinkedGrow support for content creation?",

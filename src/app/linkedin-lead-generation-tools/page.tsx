@@ -43,7 +43,7 @@ const leadGenFAQs = [
   {
     question: "How do LinkedIn lead generation tools actually generate leads?",
     answer:
-      "LinkedIn lead generation tools work through two main approaches. Content tools like LinkedGrow help you publish consistently so prospects come to you through your posts, carousels, and articles. Outreach tools automate connection requests and follow-up messages to specific prospects. Content-driven lead generation is safer because it uses LinkedIn's official API and doesn't risk account restrictions, while automation tools that send mass connection requests or messages can trigger LinkedIn's abuse detection.",
+      "LinkedIn lead generation tools work through two main approaches. Content tools like LinkedGrow help you publish consistently so prospects come to you through your posts, carousels, and articles. Outreach tools automate connection requests and follow-up messages to specific prospects. Content-driven lead generation is safer because it works your own account at a human pace and stays inside the limits you set, while automation tools that send mass connection requests or messages can trigger LinkedIn's abuse detection.",
   },
   {
     question: "Is content marketing or outreach automation better for LinkedIn leads?",

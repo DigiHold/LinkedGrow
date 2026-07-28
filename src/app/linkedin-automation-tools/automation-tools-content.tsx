@@ -44,7 +44,7 @@ export function AutomationToolsContent() {
           gradient: "safe vs risky",
         }}
         descriptionBold="Not all LinkedIn automation is created equal. Some tools grow your presence safely, others get your account banned."
-        description="LinkedIn automation tools fall into two categories: content tools that use your own account (safe) and outreach bots that simulate browser actions (risky). This breakdown covers both categories, what LinkedIn actually allows, and why content automation is the only approach that scales without putting your account at risk. LinkedGrow is a content automation platform built on LinkedIn's official API."
+        description="LinkedIn automation tools fall into two categories: content tools that use your own account (safe) and outreach bots that simulate browser actions (risky). This breakdown covers both categories, what LinkedIn actually allows, and why content automation is the only approach that scales without putting your account at risk. LinkedGrow is a content automation platform built on your own account."
         valuePropBadges={[
           { icon: ShieldCheck, text: "Agent on your account only" },
           { icon: PenTool, text: "26+ AI models" },
@@ -114,7 +114,7 @@ export function AutomationToolsContent() {
           text: "Content automation tools that LinkedIn",
           gradient: "actually supports",
         }}
-        description="These tools use LinkedIn's official API to create and publish content. They don't interact with LinkedIn's interface, send messages, or automate connections. LinkedIn treats API-published posts identically to posts you publish manually."
+        description="These tools use your own account to create and publish content. They don't interact with LinkedIn's interface, send messages, or automate connections. LinkedIn treats API-published posts identically to posts you publish manually."
         features={[
           {
             icon: PenTool,
@@ -244,7 +244,7 @@ export function AutomationToolsContent() {
           price: "$99/month",
           apiCost: "$2-4/month",
           benefits: [
-            { text: "Uses LinkedIn's official API - zero ban risk, full compliance" },
+            { text: "Uses your own account - zero ban risk, full compliance" },
             { text: "Unlimited AI post generation with BYOK (no caps, no credits)" },
             { text: "Complete content stack: write, design, schedule, analyze" },
             { text: "AI costs average $2 to $4 per month at provider rates, zero markup" },
@@ -304,12 +304,12 @@ export function AutomationToolsContent() {
           {
             question: "Will LinkedIn ban me for using automation tools?",
             answer:
-              "It depends on the type of tool. LinkedIn bans tools that automate connection requests, profile visits, message sending, or any direct interaction with the platform's interface. Content scheduling and AI writing tools that publish through LinkedIn's official API are allowed and carry no ban risk.",
+              "It depends on the type of tool. LinkedIn bans tools that automate connection requests, profile visits, message sending, or any direct interaction with the platform's interface. Content scheduling and AI writing tools that publish from your own account are allowed and carry no ban risk.",
           },
           {
             question: "What is the difference between content automation and outreach automation?",
             answer:
-              "Content automation tools help you write, schedule, and publish posts through LinkedIn's official API. Outreach automation tools send connection requests, automated messages, and profile visits by simulating browser actions. LinkedIn actively detects and penalizes outreach automation while supporting content tools through its API.",
+              "Content automation tools help you write, schedule, and publish posts through your own account. Outreach automation tools send connection requests, automated messages, and profile visits by simulating browser actions. LinkedIn actively detects and penalizes outreach automation while supporting content tools through its API.",
           },
           {
             question: "How much do LinkedIn automation tools cost?",
@@ -319,12 +319,12 @@ export function AutomationToolsContent() {
           {
             question: "What does LinkedIn's Terms of Service say about automation?",
             answer:
-              "LinkedIn's Professional Community Policies prohibit bots, crawlers, scrapers, or automated means to access or interact with the platform without authorization. Publishing through LinkedIn's official API with user-authorized OAuth tokens is permitted. The key distinction is authorized API access versus unauthorized platform manipulation.",
+              "LinkedIn's Professional Community Policies prohibit bots, crawlers, scrapers, or automated means to access or interact with the platform without authorization. Publishing through your own account with user-authorized OAuth tokens is permitted. The key distinction is authorized API access versus unauthorized platform manipulation.",
           },
           {
             question: "Can I automate LinkedIn posts without getting banned?",
             answer:
-              "Yes. Scheduling posts through tools that use LinkedIn's official API is fully supported. LinkedGrow, Buffer, and Hootsuite all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes at scheduled times. LinkedIn treats this identically to manual posts.",
+              "Yes. Scheduling posts through tools that use your own account is fully supported. LinkedGrow, Buffer, and Hootsuite all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes at scheduled times. LinkedIn treats this identically to manual posts.",
           },
           {
             question: "What happens if LinkedIn detects automation on my account?",
@@ -357,7 +357,7 @@ export function AutomationToolsContent() {
           line1: "Ready to automate LinkedIn",
           gradient: "without the risk?",
         }}
-        description="Stop gambling your professional network on outreach bots. LinkedGrow gives you complete content automation through LinkedIn's official API, with AI-powered writing, scheduling, and analytics."
+        description="Stop gambling your professional network on outreach bots. LinkedGrow gives you complete content automation through your own account, with AI-powered writing, scheduling, and analytics."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[

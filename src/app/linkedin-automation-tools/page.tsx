@@ -43,12 +43,12 @@ const automationFAQs = [
   {
     question: "Will LinkedIn ban me for using automation tools?",
     answer:
-      "It depends on the type of tool. LinkedIn bans tools that automate connection requests, profile visits, message sending, endorsements, or any direct interaction with the platform's interface. Content scheduling and AI writing tools that only publish through LinkedIn's official API are allowed and carry no ban risk. The distinction is between tools that automate your behavior on LinkedIn versus tools that help you create content outside of LinkedIn.",
+      "It depends on the type of tool. LinkedIn bans tools that automate connection requests, profile visits, message sending, endorsements, or any direct interaction with the platform's interface. Content scheduling and AI writing tools that only publish from your own account are allowed and carry no ban risk. The distinction is between tools that automate your behavior on LinkedIn versus tools that help you create content outside of LinkedIn.",
   },
   {
     question: "What is the difference between content automation and outreach automation?",
     answer:
-      "Content automation tools help you write, schedule, and publish LinkedIn posts. They generate text with AI, schedule publishing times, and post through LinkedIn's official API. Outreach automation tools send connection requests, automated messages, and profile visits on your behalf by simulating browser actions. LinkedIn actively detects and penalizes outreach automation while supporting content publishing tools through its API.",
+      "Content automation tools help you write, schedule, and publish LinkedIn posts. They generate text with AI, schedule publishing times, and post through your own account. Outreach automation tools send connection requests, automated messages, and profile visits on your behalf by simulating browser actions. LinkedIn actively detects and penalizes outreach automation while supporting content publishing tools through its API.",
   },
   {
     question: "How much do LinkedIn automation tools cost?",
@@ -58,12 +58,12 @@ const automationFAQs = [
   {
     question: "What does LinkedIn's Terms of Service say about automation?",
     answer:
-      "LinkedIn's Professional Community Policies prohibit using bots, crawlers, scrapers, or other automated means to access, collect data from, or interact with the platform without authorization. Publishing through LinkedIn's official API with user-authorized OAuth tokens is explicitly permitted. The key distinction is between authorized API access and unauthorized platform manipulation.",
+      "LinkedIn's Professional Community Policies prohibit using bots, crawlers, scrapers, or other automated means to access, collect data from, or interact with the platform without authorization. Publishing through your own account with user-authorized OAuth tokens is explicitly permitted. The key distinction is between authorized API access and unauthorized platform manipulation.",
   },
   {
     question: "Can I automate LinkedIn posts without getting banned?",
     answer:
-      "Yes. Scheduling posts through tools that use LinkedIn's official API is fully supported and carries zero ban risk. LinkedGrow, Buffer, Hootsuite, and similar content tools all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes on your behalf at scheduled times. LinkedIn treats this identically to publishing directly from the LinkedIn app.",
+      "Yes. Scheduling posts through tools that use your own account is fully supported and carries zero ban risk. LinkedGrow, Buffer, Hootsuite, and similar content tools all publish through authorized API connections. You connect your LinkedIn account via OAuth, and the tool publishes on your behalf at scheduled times. LinkedIn treats this identically to publishing directly from the LinkedIn app.",
   },
   {
     question: "What happens if LinkedIn detects automation on my account?",
@@ -93,7 +93,7 @@ export default function LinkedinAutomationToolsPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - Safe LinkedIn Automation"
         url="https://linkedgrow.ai/linkedin-automation-tools"
-        description="Safe LinkedIn content automation platform with AI post generation, scheduling, carousel creation, and analytics. Uses LinkedIn's official API - zero ban risk."
+        description="Safe LinkedIn content automation platform with AI post generation, scheduling, carousel creation, and analytics. Uses your own account - zero ban risk."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <AutomationToolsContent />

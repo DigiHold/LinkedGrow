@@ -44,7 +44,7 @@ export function MarketingToolContent() {
           gradient: "that writes like you",
         }}
         descriptionBold="LinkedGrow is a LinkedIn marketing tool that combines AI content creation, scheduling, carousel design, and analytics in one platform."
-        description="Most LinkedIn marketing tools make you choose between writing quality and publishing speed. LinkedGrow trains AI on your actual writing voice, then generates posts, hooks, carousels, and images that sound like you wrote them. Schedule everything from a visual content calendar, publish through LinkedIn's official API, and track what performs. Your AI keys, your models, your cost control."
+        description="Most LinkedIn marketing tools make you choose between writing quality and publishing speed. LinkedGrow trains AI on your actual writing voice, then generates posts, hooks, carousels, and images that sound like you wrote them. Schedule everything from a visual content calendar, publish from your own account, and track what performs. Your AI keys, your models, your cost control."
         valuePropBadges={[
           { icon: PenTool, text: "26+ AI models" },
           { icon: Calendar, text: "Visual calendar" },
@@ -204,7 +204,7 @@ export function MarketingToolContent() {
             number: "03",
             title: "Schedule from the content calendar",
             description:
-              "Pick the optimal date and time, or let LinkedGrow suggest the best posting window. View your upcoming week and month in the visual calendar, spot gaps, and balance your content mix. Posts publish through LinkedIn's official API at the exact scheduled time.",
+              "Pick the optimal date and time, or let LinkedGrow suggest the best posting window. View your upcoming week and month in the visual calendar, spot gaps, and balance your content mix. Posts publish from your own account at the exact scheduled time.",
             icon: Calendar,
             color: "from-emerald-500 to-green-500",
             time: "15 sec",
@@ -314,7 +314,7 @@ export function MarketingToolContent() {
           {
             question: "Can I use LinkedGrow as my only LinkedIn marketing tool?",
             answer:
-              "Yes. LinkedGrow covers the full LinkedIn content marketing workflow: AI-powered post writing, image generation, carousel creation, scheduling with content calendar, direct publishing through LinkedIn's official API, and performance analytics.",
+              "Yes. LinkedGrow covers the full LinkedIn content marketing workflow: AI-powered post writing, image generation, carousel creation, scheduling with content calendar, publishing straight from your own account, and performance analytics.",
           },
           {
             question: "What AI models does LinkedGrow support?",
