@@ -15,9 +15,16 @@ export const V3_GRAIN =
   "after:pointer-events-none after:fixed after:inset-0 after:z-[998] after:opacity-[.032] after:content-[''] dark:after:opacity-[.018] " +
   "after:[background-image:var(--v3-grain)]";
 
-export const V3_ROOT =
+/* The grain is a fixed, full-viewport layer. Every wrapper that carried V3_ROOT
+   contributed one, so a page built from five shared blocks and four pricing
+   sections stacked nine of them and read as sandpaper. V3_BLOCK is the same
+   base without it: the page shell keeps V3_ROOT, everything inside uses
+   V3_BLOCK, and the grain lands exactly once. */
+const V3_BASE =
   "m-0 max-w-full scroll-smooth overflow-x-clip bg-v3-bg font-v3-sans text-[16.5px] leading-[1.6] tabular-nums text-pretty " +
   "text-v3-ink antialiased dark:bg-v3-bg-d dark:text-v3-ink-d " +
   "[--e:cubic-bezier(.2,.7,.3,1)] [&_svg]:max-w-full " +
-  V3_GRAIN + " " +
   "motion-reduce:[&_*]:[animation-duration:.01s!important] motion-reduce:[&_*]:[animation-iteration-count:1!important]";
+
+export const V3_BLOCK = V3_BASE;
+export const V3_ROOT = V3_BASE + " " + V3_GRAIN;

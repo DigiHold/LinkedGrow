@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { initV3Pricing } from "./pricing-effects";
 import { initV3Chrome } from "./chrome-effects";
-import { V3_ROOT } from "./root";
+import { V3_BLOCK } from "./root";
 import { V3PlanCards, V3PriceToggle } from "./pricing-section";
 import {
   BAR, BAR_A, BAR_B, BAR_C, BAR_D, BAR_US, CTAB, EB_DOT_LT, EB_LT, EM_SKY, FILL, FILL_LG, FILL_LIGHT,
@@ -48,13 +48,18 @@ export function V3PricingHero() {
   }, []);
 
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <section className={HERO_PRICING}>
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
           <span className={HERO_ORB_A}></span>
           <span className={HERO_ORB_B}></span>
           <div className={HERO_RINGS}><i></i><i></i><i></i></div>
         </div>
+        <canvas
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+          id="net"
+        ></canvas>
 
         <div className={`${WRAP} ${TOGGLE_ON_DARK} relative z-[3] text-center`}>
           <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>Two plans, and no second invoice</span>
@@ -96,7 +101,7 @@ function Tick() {
  */
 export function V3PricingIncluded() {
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <section className={`${SEC} ${PRICING_NEXT}`}>
         <div className={WRAP}>
           <div className={`${SH} ${RV} max-w-[880px]`}>
@@ -160,7 +165,7 @@ export function V3PricingIncluded() {
 /** The comparison, as rows. A table is not a card and reads in one pass. */
 export function V3PricingCompare() {
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <section className={`${SEC} border-y border-v3-line bg-v3-bg2 dark:border-v3-line-d dark:bg-v3-bg2-d`}>
         <div className={WRAP}>
           <div className={`${SH} ${RV} max-w-[860px]`}>
@@ -260,7 +265,7 @@ export function V3PricingCompare() {
 /** What happens on day 8, said plainly, because that is the real objection. */
 export function V3PricingGuarantee() {
   return (
-    <div className={V3_ROOT}>
+    <div className={V3_BLOCK}>
       <section className={SEC}>
         <div className={WRAP}>
           <div className={`${GUARANTEE} ${RV}`}>
