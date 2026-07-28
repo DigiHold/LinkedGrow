@@ -753,7 +753,7 @@ export function NewAgentWizard() {
         </StepBody>
       )}
 
-      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+      <div className="mt-8 flex flex-col items-center gap-3 border-t border-border pt-6 sm:flex-row sm:justify-center">
         {step < 5 ? (
           <Button onClick={() => setStep(step + 1)} disabled={!!blocker}>
             Continue
@@ -780,7 +780,7 @@ export function NewAgentWizard() {
           </Button>
         )}
         {blocker && (
-          <p className="text-sm text-slate-500 dark:text-slate-400">{blocker}</p>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">{blocker}</p>
         )}
           </div>
         </div>
