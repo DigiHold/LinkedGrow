@@ -523,7 +523,7 @@ export const linkedGrowFAQs = [
   },
   {
     question: "How is LinkedGrow different from other LinkedIn post generators?",
-    answer: "Most tools using AI for LinkedIn posts charge $50/month or more. LinkedGrow uses a Bring Your Own API Key model: you pay under $4/month for unlimited content. That's not a typo. On top of the price, LinkedGrow is the only LinkedIn AI generator that trains on your existing posts, so every draft matches your real voice - not a generic style. It's cheaper, smarter, and built for volume creators.",
+    answer: "Most tools using AI for LinkedIn posts charge $50/month or more. LinkedGrow uses a Bring Your Own API Key model: you pay under $4/month for unlimited content. That's not a typo. On top of the price, LinkedGrow is the only LinkedIn AI generator that trains on your existing posts, so every draft matches your real voice - not a generic style. It is built for volume creators who want their own voice, not a generic style.",
   },
   {
     question: "Can I create LinkedIn posts for free?",
