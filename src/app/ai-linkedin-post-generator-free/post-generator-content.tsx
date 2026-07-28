@@ -266,7 +266,7 @@ export function PostGeneratorFreeContent() {
           },
           {
             quote:
-              "The 7-day Pro trial was enough to convince me this is different from every other AI tool I have tried. The voice training actually works. I upgraded and now my total cost is $19 plus about $3 in AI fees. I was paying $79 for a competitor that gave me worse output.",
+              "The 7-day Pro trial was enough to convince me this is different from every other AI tool I have tried. The voice training actually works. I upgraded and now my total cost is $99 plus about $3 in AI fees. I was paying $79 for a competitor that gave me worse output.",
             author: "Ryan H.",
             role: "Startup Founder, 8K Followers",
           },
