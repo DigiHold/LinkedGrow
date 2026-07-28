@@ -1,12 +1,19 @@
+import Image from "next/image";
 import Script from "next/script";
+import { V3_BLOCK } from "@/components/v3/root";
+import {
+  CHROME_DOT_LT, CHROME_LT, CHROME_URL_LT, EB, EB_DOT, H2, SCREEN_UI, WRAP,
+} from "@/components/v3/kit";
 
 interface QuickAnswerProps {
   question: string;
   answer: string;
   className?: string;
+  /** A screen from the product, shown beside the answer rather than under it. */
+  shot?: { src: string; darkSrc?: string; alt: string; width: number; height: number; url?: string };
 }
 
-export function QuickAnswer({ question, answer, className = "" }: QuickAnswerProps) {
+export function QuickAnswer({ question, answer, className = "", shot }: QuickAnswerProps) {
   const wordCount = answer.trim().split(/\s+/).length;
 
   if (process.env.NODE_ENV !== "production") {
@@ -33,25 +40,65 @@ export function QuickAnswer({ question, answer, className = "" }: QuickAnswerPro
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableJsonLd) }}
       />
-      {/* The answer a search engine lifts, so it stays one block with its own
-          ground: a gradient rule down the side, the question in the display
-          face, the answer at reading size. The two class names are load-bearing,
-          the speakable schema above points at them. */}
-      <aside
+      {/* The first thing under the hero, so it is a section rather than a notice:
+          the question as the heading, the answer at reading size, and the screen
+          it is describing beside it. The two class names are load-bearing, the
+          speakable schema above points at them. */}
+      <section
         aria-label="Quick answer"
-        className={`relative my-[clamp(26px,3vw,38px)] overflow-hidden rounded-[18px] border border-v3-line bg-v3-wash py-[clamp(22px,2.6vw,30px)] pl-[clamp(24px,3vw,34px)] pr-[clamp(20px,2.6vw,30px)] dark:border-v3-line-d dark:bg-v3-wash-d ${className}`}
+        className={`${V3_BLOCK} border-b border-v3-line bg-v3-bg2 py-[clamp(48px,6vw,84px)] dark:border-v3-line-d dark:bg-v3-bg2-d ${className}`}
       >
-        <span className="absolute bottom-0 left-0 top-0 w-[3px] [background:linear-gradient(180deg,var(--color-v3-cyan),var(--color-v3-blue))]"></span>
-        <p className="quick-answer-question m-0 font-v3-display text-[clamp(17px,1.8vw,20px)] font-semibold leading-[1.3] tracking-[-.03em] text-v3-ink dark:text-v3-ink-d">
-          <span className="mb-[9px] block font-v3-mono text-[10.5px] font-medium uppercase tracking-[.15em] text-v3-blue">
-            Quick answer
-          </span>
-          {question}
-        </p>
-        <p className="quick-answer-text mt-[13px] max-w-[68ch] text-[16px] leading-[1.66]! text-v3-ink2 dark:text-v3-ink2-d">
-          {answer}
-        </p>
-      </aside>
+        <div className={WRAP}>
+          <div
+            className={
+              shot
+                ? "grid grid-cols-[1.02fr_.98fr] items-center gap-[clamp(30px,5vw,68px)] max-[940px]:[grid-template-columns:minmax(0,1fr)]"
+                : "max-w-[76ch]"
+            }
+          >
+            <div>
+              <span className={EB}>
+                <i className={EB_DOT}></i>Quick answer
+              </span>
+              <p className={`quick-answer-question ${H2} mt-[18px] text-[clamp(26px,3.2vw,38px)]`}>
+                {question}
+              </p>
+              <p className="quick-answer-text mt-[18px] max-w-[68ch] text-[16.5px] leading-[1.68]! text-v3-mut dark:text-v3-mut-d">
+                {answer}
+              </p>
+            </div>
+            {shot ? (
+              <figure className={`${SCREEN_UI} m-0`}>
+                <div className={CHROME_LT}>
+                  <i className={CHROME_DOT_LT}></i>
+                  <i className={CHROME_DOT_LT}></i>
+                  <i className={CHROME_DOT_LT}></i>
+                  {shot.url ? <span className={CHROME_URL_LT}>{shot.url}</span> : null}
+                </div>
+                <Image
+                  alt={shot.alt}
+                  className={shot.darkSrc ? "block h-auto w-full dark:hidden" : "block h-auto w-full"}
+                  height={shot.height}
+                  sizes="(max-width: 940px) 100vw, 600px"
+                  src={shot.src}
+                  width={shot.width}
+                />
+                {shot.darkSrc ? (
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="hidden h-auto w-full dark:block"
+                    height={shot.height}
+                    sizes="(max-width: 940px) 100vw, 600px"
+                    src={shot.darkSrc}
+                    width={shot.width}
+                  />
+                ) : null}
+              </figure>
+            ) : null}
+          </div>
+        </div>
+      </section>
     </>
   );
 }
