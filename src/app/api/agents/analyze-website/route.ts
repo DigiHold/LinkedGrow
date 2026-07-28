@@ -13,12 +13,15 @@ import { checkAIRateLimit } from "@/lib/rate-limit";
  *
  * The AI runs on the platform Anthropic key, not the customer's: on v2 the
  * agent's AI is in the price and a new account has no key of its own yet.
- * Sonnet 5 rather than Haiku because the plan routes anything a human reads to
- * Sonnet, and this runs once per agent, so volume is not the cost driver here.
+ * Haiku, not Sonnet: pulling roles and topics out of a page is extraction, which
+ * is what the plan's routing table sends to Haiku. The customer edits the result
+ * anyway, so paying five times more for the same list buys nothing.
  */
 
 const MAX_HTML = 400_000;
-const MAX_TEXT = 12_000;
+// Enough of a home page to know what is sold and to whom. Everything past this
+// is footer, cookie notice and nav, which cost tokens and add nothing.
+const MAX_TEXT = 8_000;
 
 /** Hosts that must never be fetched from the server: SSRF. */
 const BLOCKED = [
@@ -135,8 +138,8 @@ export async function POST(request: NextRequest) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-5",
-          max_tokens: 2000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1200,
           system:
             "You read a company's website and work out who buys from them. " +
             "Answer with a single JSON object and nothing else, using these keys: " +
