@@ -11,8 +11,10 @@ import { checkAIRateLimit } from "@/lib/rate-limit";
  * proposes the ICP, the roles, the industries and the company sizes. The
  * customer edits rather than invents.
  *
- * The AI runs on the platform key, not the customer's: on v2 the agent's AI is
- * in the price, and a new account has no key of its own yet.
+ * The AI runs on the platform Anthropic key, not the customer's: on v2 the
+ * agent's AI is in the price and a new account has no key of its own yet.
+ * Sonnet 5 rather than Haiku because the plan routes anything a human reads to
+ * Sonnet, and this runs once per agent, so volume is not the cost driver here.
  */
 
 const MAX_HTML = 400_000;
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "That address is not allowed." }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
         { error: "Site reading is unavailable right now. Fill the fields by hand and carry on." },
@@ -125,28 +127,27 @@ export async function POST(request: NextRequest) {
 
     let completion: Response;
     try {
-      completion = await fetch("https://api.openai.com/v1/chat/completions", {
+      completion = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "gpt-5.4-mini",
-          response_format: { type: "json_object" },
+          model: "claude-sonnet-5",
+          max_tokens: 2000,
+          system:
+            "You read a company's website and work out who buys from them. " +
+            "Answer with a single JSON object and nothing else, using these keys: " +
+            "icpSummary (a sentence naming the buyer and the problem the company solves for them), " +
+            "jobRoles (array of job titles), industries (array), " +
+            "companySizes (array from: 1-10, 11-50, 51-200, 201-500, 501-1000, 1000+), " +
+            "signals (array of 6 short topics those buyers post about or search for, two or three " +
+            "words each, no hashtags), " +
+            "companyInfo (two sentences a stranger could read to understand what the company sells). " +
+            "Leave an array empty rather than guessing. Never invent a location.",
           messages: [
-            {
-              role: "system",
-              content:
-                "You read a company's website and work out who buys from them. " +
-                "Answer with JSON only, using these keys: icpSummary (a sentence naming the buyer and " +
-                "the problem the company solves for them), jobRoles (array of job titles), industries " +
-                "(array), companySizes (array from: 1-10, 11-50, 51-200, 201-500, 501-1000, 1000+), " +
-                "signals (array of 6 short topics those buyers post about or search for, two or three " +
-                "words each, no hashtags), " +
-                "companyInfo (two sentences a stranger could read to understand what the company sells). " +
-                "Leave an array empty rather than guessing. Never invent a location.",
-            },
             { role: "user", content: `Website: ${target.hostname}\n\n${text}` },
           ],
         }),
@@ -166,7 +167,10 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = await completion.json();
-    const content = payload?.choices?.[0]?.message?.content;
+    // Anthropic returns an array of blocks; the answer is the first text one.
+    const content = Array.isArray(payload?.content)
+      ? payload.content.find((b: { type?: string }) => b?.type === "text")?.text
+      : undefined;
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(typeof content === "string" ? content : "{}");

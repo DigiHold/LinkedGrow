@@ -133,7 +133,7 @@ export function NewAgentWizard() {
 
   // Reads the customer's own site and proposes the targeting, so the first
   // agent starts from what the business actually sells rather than a blank field.
-  const readWebsite = async (value: string, andContinue = false) => {
+  const readWebsite = async (value: string) => {
     const address = value.trim();
     if (!address || reading) return;
     setReading(true);
@@ -157,9 +157,9 @@ export function NewAgentWizard() {
       setReadNote(
         "Read. The next steps are filled in from your site. Change anything that is off.",
       );
-      // A visitor who arrived with their site already typed should not have to
-      // click again: the wizard moves them on as soon as it has something.
-      if (andContinue) setStep(2);
+      // A successful read means the next steps are already filled, so the
+      // wizard moves on by itself rather than asking for another click.
+      setStep(2);
     } catch (e) {
       setReadFailed(true);
       setReadNote(e instanceof Error ? e.message : "Could not read that site");
@@ -174,7 +174,7 @@ export function NewAgentWizard() {
     const fromHome = new URLSearchParams(window.location.search).get("website");
     if (!fromHome) return;
     setWebsite(fromHome);
-    void readWebsite(fromHome, true);
+    void readWebsite(fromHome);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
