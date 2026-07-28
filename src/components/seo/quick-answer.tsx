@@ -46,7 +46,7 @@ export function QuickAnswer({ question, answer, className = "", shot }: QuickAns
           speakable schema above points at them. */}
       <section
         aria-label="Quick answer"
-        className={`${V3_BLOCK} border-b border-v3-line bg-v3-bg py-[clamp(40px,5vw,68px)] dark:border-v3-line-d dark:bg-v3-bg-d ${className}`}
+        className={`${V3_BLOCK} -mt-[clamp(30px,5vw,84px)] relative z-[3] border-b border-v3-line bg-v3-bg py-[clamp(34px,4.2vw,58px)] dark:border-v3-line-d dark:bg-v3-bg-d ${className}`}
       >
         <div className={WRAP}>
           <div

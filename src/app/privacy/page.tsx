@@ -54,7 +54,7 @@ export default async function PrivacyPage() {
 
       <LegalHero eyebrow="Legal" meta={t("lastUpdated")} title={t("title")} />
 
-      <div className="pb-16 pt-[clamp(4px,0.8vw,12px)] md:pb-24">
+      <div className="relative z-[3] -mt-[clamp(30px,5vw,84px)] pb-16 pt-0 md:pb-24">
         <div className="mx-auto max-w-4xl px-6">
 
           <div className="prose prose-gray dark:prose-invert max-w-none">
