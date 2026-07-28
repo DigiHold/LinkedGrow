@@ -522,7 +522,10 @@ export function NewAgentWizard() {
               </Field>
             </div>
 
-            <Field label="Locations" hint="Comma separated. Countries or cities.">
+            <Field
+              label="Locations"
+              hint="Comma separated. Countries or cities. Leave empty to target any country."
+            >
               <Input
                 value={locations}
                 onChange={(e) => setLocations(e.target.value)}
