@@ -342,7 +342,7 @@ export function ContentCreationAiContent() {
       />
 
       <LandingCTA
-        badge="Test 26 AI Models on Your LinkedIn Content"
+        badge="Test 43 AI models on Your LinkedIn Content"
         headline={{
           line1: "Ready to pick the AI model",
           gradient: "that fits your voice?",
@@ -352,7 +352,7 @@ export function ContentCreationAiContent() {
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
-          "26 AI models",
+          "43 AI models",
           "Voice training included",
           "BYOK, zero markup",
         ]}

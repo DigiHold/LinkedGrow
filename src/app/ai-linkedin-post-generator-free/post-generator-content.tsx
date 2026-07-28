@@ -46,7 +46,7 @@ export function PostGeneratorFreeContent() {
         description="The 7-day Pro trial includes unlimited AI generation across 26 models (GPT, Claude, Gemini, Grok, Perplexity, Kimi) via BYOK, plus voice training, AI image generation, scheduling, and analytics. Test the full product before paying anything."
         valuePropBadges={[
           { icon: Gift, text: "7-day Pro trial" },
-          { icon: Brain, text: "26 AI models" },
+          { icon: Brain, text: "43 AI models" },
           { icon: Mic, text: "Voice training" },
         ]}
         primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}

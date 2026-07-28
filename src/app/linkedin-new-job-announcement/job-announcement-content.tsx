@@ -440,7 +440,7 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
         trustIndicators={[
           "7-day Pro trial included",
           "Cancel before day 8",
-          "26 AI models",
+          "43 AI models",
           "Cancel anytime",
         ]}
       />

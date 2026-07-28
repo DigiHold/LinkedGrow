@@ -237,7 +237,7 @@ export function CarouselGeneratorContent() {
           benefits: [
             { text: "AI drafts the entire carousel before you open the editor" },
             { text: "Topic, Reddit URL, blog post - all valid inputs" },
-            { text: "26 AI models to switch between for different writing styles" },
+            { text: "43 AI models to switch between for different writing styles" },
             { text: "Brand colors and logo auto-applied on every slide" },
             { text: "Schedule and publish to LinkedIn from the same dashboard" },
           ],
@@ -361,7 +361,7 @@ export function CarouselGeneratorContent() {
         trustIndicators={[
           "Business plan feature",
           "AI writes every slide",
-          "26 AI models",
+          "43 AI models",
           "Cancel anytime",
         ]}
       />

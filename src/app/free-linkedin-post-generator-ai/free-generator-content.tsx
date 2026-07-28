@@ -40,10 +40,10 @@ export function FreePostGeneratorContent() {
           gradient: "trained on your voice",
         }}
         descriptionBold="An AI writer that captures your sentence rhythm, vocabulary, and tone."
-        description="LinkedGrow is not just a post generator. It is an AI writer that studies how you write before it writes for you. Paste 3 to 5 of your best posts, pick one of 26 AI models from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and the writer produces drafts your audience cannot tell apart from your manual ones. 7-day Pro trial, cancel any time."
+        description="LinkedGrow is not just a post generator. It is an AI writer that studies how you write before it writes for you. Paste 3 to 5 of your best posts, pick one of 43 AI models from OpenAI, Anthropic, Google, Grok, Perplexity, or Kimi, and the writer produces drafts your audience cannot tell apart from your manual ones. 7-day Pro trial, cancel any time."
         valuePropBadges={[
           { icon: Mic, text: "Voice-matched writing" },
-          { icon: Brain, text: "26 AI models" },
+          { icon: Brain, text: "43 AI models" },
           { icon: Key, text: "BYOK pricing" },
         ]}
         primaryCta={{ text: "Start writing free", href: "/sign-up" }}
@@ -123,7 +123,7 @@ export function FreePostGeneratorContent() {
           },
           {
             icon: Brain,
-            title: "26 AI models to write with",
+            title: "43 AI models to write with",
             description:
               "Switch the writer's underlying model on every draft. GPT 5.2 for analytical posts, Claude Opus 4.7 for narrative-heavy ones, Gemini 3 Pro for research-style takes. Different models write differently and you get to pick.",
             highlights: ["6 providers supported", "Switch per draft", "Always latest versions"],
@@ -232,7 +232,7 @@ export function FreePostGeneratorContent() {
           apiCost: "$2 to $4/month BYOK",
           benefits: [
             { text: "7-day Pro trial with full Pro access - no card required" },
-            { text: "26 AI models switchable on every draft" },
+            { text: "43 AI models switchable on every draft" },
             { text: "Voice training included on the trial" },
             { text: "Unlimited drafts on every paid plan after the trial" },
             { text: "BYOK with zero markup - pay providers directly" },
@@ -347,7 +347,7 @@ export function FreePostGeneratorContent() {
         trustIndicators={[
           "7-day Pro trial",
           "Cancel any time",
-          "All 26 AI models",
+          "All 43 AI models",
           "Voice training included",
         ]}
       />
