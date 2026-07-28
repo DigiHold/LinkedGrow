@@ -93,7 +93,7 @@ export default function LinkedinBestPracticesPage() {
       <SoftwareApplicationJsonLd
         name="LinkedGrow - LinkedIn Best Practices Tools"
         url="https://linkedgrow.ai/linkedin-best-practices"
-        description="Apply LinkedIn best practices for business profiles and posting with AI-powered content generation, scheduling, and voice training. From $13/month."
+        description="Apply LinkedIn best practices for business profiles and posting with AI-powered content generation, scheduling, and voice training. From $99/month."
         offers={{ price: "19", priceCurrency: "USD" }}
       />
       <BestPracticesContent />

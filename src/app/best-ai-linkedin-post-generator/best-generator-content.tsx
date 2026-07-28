@@ -565,7 +565,7 @@ export function BestPostGeneratorContent({
           </div>
 
           <p className="mt-6 text-center text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            Total cost matters more than sticker price. A $13/mo BYOK tool with $3 in AI fees beats a
+            Total cost matters more than sticker price. A $99/mo BYOK tool with $3 in AI fees beats a
             $52/mo bundled tool on capability per dollar.
           </p>
         </div>

@@ -79,7 +79,7 @@ const analyticsFAQs = [
   {
     question: "Is there a free LinkedIn analytics tool?",
     answer:
-      "LinkedIn native analytics are free for every account. Buffer's free plan includes basic post-level analytics for up to 3 channels. LinkedGrow offers a 7-day Pro trial with full analytics access - everything included. After the trial, paid plans start at $99/mo (billed yearly).",
+      "LinkedIn native analytics are free for every account. Buffer's free plan includes basic post-level analytics for up to 3 channels. LinkedGrow offers a 7-day Pro trial with full analytics access - everything included. After the trial, paid plans start at $99/mo.",
   },
   {
     question: "What is a good engagement rate on LinkedIn?",

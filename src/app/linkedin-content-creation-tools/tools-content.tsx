@@ -48,7 +48,7 @@ export function ContentCreationToolsContent() {
         valuePropBadges={[
           { icon: Sparkles, text: "43 AI models" },
           { icon: Layers, text: "6 tools in one" },
-          { icon: CircleDollarSign, text: "From $13/month" },
+          { icon: CircleDollarSign, text: "From $99/month" },
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
@@ -324,7 +324,7 @@ export function ContentCreationToolsContent() {
           {
             question: "Is there a 7-day Pro trial included?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and the plan starts on day 8. After the trial, paid plans start at $13/mo (billed yearly).",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models via BYOK, voice training, scheduling, and analytics. The card is taken at signup and the plan starts on day 8. After the trial, paid plans start at $99/mo.",
           },
           {
             question: "How does the BYOK model work?",

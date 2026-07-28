@@ -289,7 +289,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "Is the AI LinkedIn post generator really free?",
             answer:
-              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 43 AI models via BYOK, voice training, and scheduling - with the card charged on day 8 unless you cancel. After the trial, paid plans start at $13/mo (billed yearly) with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
+              "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, 43 AI models via BYOK, voice training, and scheduling - with the card charged on day 8 unless you cancel. After the trial, paid plans start at $99/mo with BYOK AI costs typically running $2 to $4 per month in direct provider charges.",
           },
           {
             question: "What AI models are available?",
@@ -324,7 +324,7 @@ export function PostGeneratorFreeContent() {
           {
             question: "How do I upgrade from free to paid?",
             answer:
-              "Upgrade anytime from your dashboard. Plans start at $13 per month for Starter with unlimited generations. Your voice training and content history carry over automatically.",
+              "Upgrade anytime from your dashboard. Plans start at $99 per month for Starter with unlimited generations. Your voice training and content history carry over automatically.",
           },
         ]}
       />

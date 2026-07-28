@@ -680,7 +680,7 @@ export function PostSchedulerContent({
               <p className="text-[1.0625rem] text-slate-700 dark:text-slate-300 leading-relaxed">
                 Pick <Link href="/" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">LinkedGrow</Link>.
                 You get AI generation + scheduling in one dashboard for $99/mo (Starter) plus $2-4/mo in BYOK AI fees.
-                The 10-post Starter cap covers most solo cadences; upgrade to Pro at $27/mo for unlimited if you batch-schedule a month ahead.
+                The 10-post Starter cap covers most solo cadences; upgrade to Pro at $99/mo for unlimited if you batch-schedule a month ahead.
                 Pair it with a consistent <Link href="/blog/linkedin-posting-frequency-guide" className="text-cyan-600 dark:text-cyan-400 hover:underline">posting frequency</Link> for compound growth.
                 Runner-up: Supergrow at $19/mo if you prefer bundled AI with no API key setup.
               </p>

@@ -38,7 +38,7 @@ const postGenFreeFAQs = [
   {
     question: "Is the AI LinkedIn post generator really free?",
     answer:
-      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models, and voice training - everything included. After the trial, paid plans start at $13/mo (billed yearly). With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
+      "Yes. The 7-day Pro trial gives you full Pro access with unlimited AI generation, all 43 AI models, and voice training - everything included. After the trial, paid plans start at $99/mo. With BYOK pricing, your AI costs are just a few cents per post since you pay the AI provider directly with zero markup from LinkedGrow.",
   },
   {
     question: "What AI models can I use to generate LinkedIn posts for free?",
@@ -63,7 +63,7 @@ const postGenFreeFAQs = [
   {
     question: "How much does it cost after the 7-day Pro trial?",
     answer:
-      "The Pro plan is $99 per month with unlimited post generation, unlimited scheduling, a content calendar, image generation, analytics, and network notifications. The Business plan at $55 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, most users spend $2 to $4 per month on AI API costs for regular posting.",
+      "The Pro plan is $99 per month with unlimited post generation, unlimited scheduling, a content calendar, image generation, analytics, and network notifications. The Business plan at $179 per month includes everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics, API access, and priority support. With BYOK, most users spend $2 to $4 per month on AI API costs for regular posting.",
   },
   {
     question: "What makes this better than ChatGPT for LinkedIn posts?",

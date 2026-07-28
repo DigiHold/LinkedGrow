@@ -45,7 +45,7 @@ const schedulerFAQs = [
   {
     question: "Is there a free LinkedIn post scheduler?",
     answer:
-      "Buffer's free plan schedules up to 10 posts per channel across 3 channels. Supergrow includes 3 posts per month on its free plan. LinkedGrow ships a 7-day Pro trial with unlimited scheduling - everything included. After the trial, paid plans start at $99/mo (billed yearly) with 10 scheduled posts on Starter and unlimited on Pro and Business.",
+      "Buffer's free plan schedules up to 10 posts per channel across 3 channels. Supergrow includes 3 posts per month on its free plan. LinkedGrow ships a 7-day Pro trial with unlimited scheduling - everything included. After the trial, paid plans start at $99/mo with 10 scheduled posts on Starter and unlimited on Pro and Business.",
   },
   {
     question: "Which LinkedIn scheduler supports company pages?",

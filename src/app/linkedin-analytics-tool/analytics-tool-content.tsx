@@ -71,7 +71,7 @@ const tools: ToolReview[] = [
       "Export to CSV and PDF on Business plan",
     ],
     cons: [
-      "Advanced analytics require Pro plan ($27/mo yearly)",
+      "Advanced analytics require Pro plan ($99/mo yearly)",
       "No competitive benchmarking against other LinkedIn accounts",
       "Smaller user base than legacy tools like Hootsuite or Buffer",
     ],
@@ -797,7 +797,7 @@ export function AnalyticsToolContent({
                 <Link href="/features/post-scheduling" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
                   post scheduling
                 </Link>{" "}
-                in one dashboard for $13/mo (Starter) plus $2-4/mo in BYOK AI fees.
+                in one dashboard for $99/mo (Starter) plus $2-4/mo in BYOK AI fees.
                 The closed loop between analytics and AI generation means your content improves as your data
                 grows. Runner-up: AuthoredUp at $19.95/mo if you only need analytics with no AI generation.
               </p>
@@ -831,7 +831,7 @@ export function AnalyticsToolContent({
                 <Link href="/features/ab-testing" className="text-cyan-600 dark:text-cyan-400 font-semibold hover:underline">
                   A/B testing
                 </Link>{" "}
-                and team workflows at $55/mo. Hootsuite Professional at $99/mo if the team also manages 5+ social
+                and team workflows at $179/mo. Hootsuite Professional at $99/mo if the team also manages 5+ social
                 profiles across networks. Sprout Social if you need social listening and CRM integration and have
                 the $249+/seat/mo budget.
               </p>

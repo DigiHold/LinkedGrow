@@ -12,9 +12,9 @@
     "valueProp3": "Save $400+/year",
     "emailPlaceholder": "Enter your email",
     "cta": "Get Early Access + 30% Off",
-    "noCreditCard": "everything included required",
+    "noCreditCard": "Everything included",
     "lockedIn": "14-day money-back",
-    "cancelAnytime": "Cancel anytime",
+    "cancelAnytime": "One flat price",
     "trustedBy": "Trusted by {count}+ founders"
   },
   "painPoints": {
@@ -43,7 +43,7 @@
     "byok": {
       "title": "Bring Your Own AI Key",
       "description": "Connect OpenAI, Claude, or Gemini directly. No markup fees - pay only what you use.",
-      "highlight": "96% cheaper"
+      "highlight": "Agents included"
     },
     "voice": {
       "title": "AI Learns Your Voice",
@@ -129,7 +129,7 @@
     },
     "q4": {
       "question": "Can I try before committing?",
-      "answer": "Yes. Every new account gets a 7-day Pro trial with full access to every Pro feature - AI image generation, hooks generator, unlimited scheduling, content repurposing, analytics. everything included required."
+      "answer": "Yes. Every new account gets a 7-day Pro trial with full access to every Pro feature - AI image generation, hooks generator, unlimited scheduling, content repurposing, analytics. Everything is included."
     },
     "q5": {
       "question": "What's the 30% early access discount?",
@@ -153,7 +153,7 @@
     },
     "q10": {
       "question": "What happens after the 30% discount period?",
-      "answer": "The 30% discount is locked in for your first year. After that, you'll be charged the regular price. You can cancel anytime before renewal - we'll send you a reminder email."
+      "answer": "The 30% discount is locked in for your first year. After that, you'll be charged the regular price. We send you a reminder email before the renewal date."
     },
     "q11": {
       "question": "Can I use LinkedGrow for multiple LinkedIn accounts?",

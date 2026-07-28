@@ -60,7 +60,7 @@ const bestGenFAQs = [
   {
     question: "Is there a free LinkedIn post generator?",
     answer:
-      "Yes. LinkedGrow offers a free single-post generator at /free-linkedin-post-generator-ai with no signup required. For ongoing use, every LinkedGrow account starts with a 7-day Pro trial - full Pro features, everything included. After the trial, paid plans start at $99 per month (billed yearly).",
+      "Yes. LinkedGrow offers a free single-post generator at /free-linkedin-post-generator-ai with no signup required. For ongoing use, every LinkedGrow account starts with a 7-day Pro trial - full Pro features, everything included. After the trial, paid plans start at $99 per month.",
   },
   {
     question: "How does voice training work in a LinkedIn post generator?",

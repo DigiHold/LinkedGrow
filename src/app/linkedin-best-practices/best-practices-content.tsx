@@ -243,7 +243,7 @@ export function BestPracticesContent() {
             { text: "Voice training that matches your authentic writing style" },
             { text: "Scheduling with visual calendar and optimal time suggestions" },
             { text: "Carousel generator, image creation, and hook generator" },
-            { text: "Everything in one platform from $13 per month" },
+            { text: "Everything in one platform from $99 per month" },
           ],
         }}
         savingsText="All the tools to follow every LinkedIn best practice for under $25 per month"
