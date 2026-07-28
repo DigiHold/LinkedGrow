@@ -504,8 +504,8 @@ export const STEPS =
   "before:[background:repeating-linear-gradient(180deg,var(--color-v3-line2)_0_5px,transparent_5px_11px)] " +
   "dark:before:[background:repeating-linear-gradient(180deg,var(--color-v3-line2-d)_0_5px,transparent_5px_11px)]";
 export const STEP =
-  "step relative dark:bg-v3-bg2-d [&_.crop]:mt-6 " +
-  "before:absolute before:left-[-34px] before:top-[9px] before:h-[11px] before:w-[11px] before:rounded-full before:border-[1.5px] before:border-v3-line2 before:bg-white before:content-[''] " +
+  "step relative [&_.crop]:mt-6 " +
+  "before:absolute before:left-[-34px] before:top-[9px] before:h-[11px] before:w-[11px] before:rounded-full before:border-[1.5px] before:border-v3-line2 before:bg-white dark:before:bg-v3-bg2-d before:content-[''] " +
   "before:[transition:.5s_var(--ease-v3)] dark:before:border-v3-line2-d max-[600px]:before:left-[-24px] " +
   "[&.seen]:before:border-v3-blue [&.seen]:before:[background:linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))] [&.seen]:before:shadow-[0_0_0_5px_rgba(21,93,252,.1)]";
 export const STEP_H3 =

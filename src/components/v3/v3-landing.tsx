@@ -5,6 +5,7 @@ import { initV3Landing } from "./landing-effects";
 import { V3FaqAside, V3FaqList } from "./faq-section";
 import { V3Plans } from "./pricing-section";
 import { V3_ROOT } from "./root";
+import { V3UrlForm } from "./url-form";
 import {
   ALERT,
   ANN,
@@ -204,13 +205,7 @@ export function V3Landing() {
           <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>The LinkedIn AI agent for founders and sales teams</span>
           <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[21ch] text-balance text-white`} data-blur="3">Your agent finds your LinkedIn leads <em className={EM_SKY}>and starts the conversation.</em></h1>
           <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>Enter your website. LinkedGrow works out who actually buys from you, finds those exact people on LinkedIn, and opens a real conversation every working day. Lead generation on LinkedIn without the prospecting, the copy and paste, or the follow-up you forget. You show up when somebody answers.</p>
-          <form className={`group ${URLWRAP} ${RV} mt-9`} style={{ "--d0": ".2s" } as React.CSSProperties} onSubmit={(e) => e.preventDefault()}>
-            <div className={URLBAR}>
-              <input type="text" placeholder="yourcompany.com" aria-label="Your website" className={URLBAR_INPUT} />
-              <button className={`${FILL} ${FILL_LIGHT} flex-none rounded-[13px] px-[22px] py-[14px] text-[15px] max-[600px]:w-full`} type="submit">Launch my agent for free
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
-            </div>
-          </form>
+          <V3UrlForm className={`${RV} mt-9`} />
           <p className={`${RV} mt-[15px] text-[13.5px] text-[rgba(255,255,255,.55)] [&_b]:font-semibold [&_b]:text-[rgba(255,255,255,.85)]`} style={{ "--d0": ".28s" } as React.CSSProperties}><b>7-day free trial</b> on the Pro plan · Everything included · The AI is in the price</p>
           <div className={`${TR} ${RV} mt-[38px]`} style={{ "--d0": ".35s" } as React.CSSProperties}>
             <span className={AVS} aria-hidden="true">
@@ -674,13 +669,7 @@ export function V3Landing() {
             <span className={EB_LT}><i className={EB_DOT_LT}></i>Twenty seconds, everything included</span>
             <h2 className={`${H2} mt-[22px] text-white`}>See your buyers before<br />you spend anything.</h2>
             <p className="mx-auto mt-[18px] max-w-[52ch] text-[rgba(255,255,255,.74)]">Type your website. LinkedGrow comes back with your ideal customer, the competitors who share your audience, and the first real people worth talking to.</p>
-            <form className={`group ${URLWRAP} mt-8 w-full`} onSubmit={(e) => e.preventDefault()}>
-              <div className={URLBAR}>
-                  <input type="text" placeholder="yourcompany.com" aria-label="Your website" className={URLBAR_INPUT} />
-                <button className={`${FILL} ${FILL_LIGHT} flex-none rounded-[13px] px-[22px] py-[14px] text-[15px] max-[600px]:w-full`} type="submit">Launch my agent for free
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
-              </div>
-            </form>
+            <V3UrlForm className="mt-8 w-full" />
             <div className={`${TR} mt-[30px]`}>
               <span className={AVS} aria-hidden="true">
                 <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person1.avif" alt="" loading="lazy" />
