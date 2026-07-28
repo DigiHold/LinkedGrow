@@ -195,6 +195,19 @@ export function NewAgentWizard() {
     setKeywordDraft("");
   }, [keywordDraft, keywords]);
 
+  // Suggestions for the one field a beginner can stall on. They come from what
+  // the customer already gave us, the sectors and the titles, so they are never
+  // invented: a blank field with a "four minimum" rule is where people leave.
+  const topicIdeas = (() => {
+    if (keywords.length >= MIN_SIGNALS) return [];
+    const taken = new Set(keywords.map((k) => k.toLowerCase()));
+    const pool = [...splitList(industries), ...splitList(jobRoles)];
+    return pool
+      .map((v) => v.trim())
+      .filter((v) => v && !taken.has(v.toLowerCase()))
+      .slice(0, 6);
+  })();
+
   // Five example rows, spun from the criteria the customer entered, so the step
   // shows the shape of a result without pretending anyone has been found.
   const previewRows = (() => {
@@ -214,7 +227,7 @@ export function NewAgentWizard() {
   // What each step needs before it will let you move on. Kept in one place so
   // the button and the hint under it can never disagree.
   const blocker = (() => {
-    if (step === 2 && !name.trim()) return "Give the agent a name.";
+    if (step === 5 && !name.trim()) return "Give the agent a name.";
     if (step === 3 && keywords.length < MIN_SIGNALS)
       return `Add at least ${MIN_SIGNALS} signals. You have ${keywords.length}.`;
     if (step === 4 && !linkedinAccountId) return "Pick the account that sends.";
@@ -369,19 +382,6 @@ export function NewAgentWizard() {
             ))}
           </div>
 
-          <div className="mt-8 border-t border-border pt-6">
-            <Field
-              label="Name it"
-              hint="Only you see this. Name it after who it targets."
-            >
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="SaaS founders"
-                maxLength={80}
-              />
-            </Field>
-          </div>
         </StepBody>
       )}
 
@@ -418,6 +418,30 @@ export function NewAgentWizard() {
                   Add
                 </Button>
               </div>
+              {topicIdeas.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400">
+                    From what you told us, tap to add:
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {topicIdeas.map((idea) => (
+                      <button
+                        key={idea}
+                        type="button"
+                        onClick={() =>
+                          setKeywords((prev) =>
+                            prev.length >= MAX_SIGNALS ? prev : [...prev, idea],
+                          )
+                        }
+                        className="rounded-full border border-border px-3 py-1.5 text-[13px] text-slate-600 transition-colors hover:border-blue-500 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
+                      >
+                        + {idea}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {keywords.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {keywords.map((k) => (
@@ -593,6 +617,18 @@ export function NewAgentWizard() {
           title="Check it, then create it"
           lead="Everything here can be changed afterwards."
         >
+            <Field
+              label="Name it"
+              hint="Only you see this. Name it after who it targets."
+            >
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="SaaS founders"
+                maxLength={80}
+              />
+            </Field>
+
           <div>
             {/* The five rows below are the shape of a result, built from what
                 you just entered. They carry no names on purpose: nothing has
