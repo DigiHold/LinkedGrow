@@ -1,8 +1,8 @@
 "use client";
 
+import { V3_ROOT } from "@/components/v3/root";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
-import { AnimatedBackground } from "@/components/marketing/animated-background";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingPainPoints } from "@/components/landing/landing-pain-points";
 import { LandingFeatures } from "@/components/landing/landing-features";
@@ -38,8 +38,7 @@ import {
 
 export function BestPracticesContent() {
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <AnimatedBackground />
+    <main className={V3_ROOT}>
       <Header />
 
       <LandingHero

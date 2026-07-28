@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { V3_ROOT } from "@/components/v3/root";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
-import { AnimatedBackground } from "@/components/marketing/animated-background";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
@@ -340,8 +340,7 @@ export function PostSchedulerContent({
   faqs: Array<{ question: string; answer: string }>;
 }) {
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <AnimatedBackground />
+    <main className={V3_ROOT}>
       <Header />
 
       {/* ===== HERO ===== */}
