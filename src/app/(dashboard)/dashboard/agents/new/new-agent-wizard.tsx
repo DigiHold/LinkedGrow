@@ -29,11 +29,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const STEPS = [
-  { num: 1, label: "Sources" },
-  { num: 2, label: "Target" },
-  { num: 3, label: "Preview" },
-  { num: 4, label: "Outreach" },
-  { num: 5, label: "Review" },
+  { num: 1, label: "Your site" },
+  { num: 2, label: "Sources" },
+  { num: 3, label: "Target" },
+  { num: 4, label: "Preview" },
+  { num: 5, label: "Outreach" },
+  { num: 6, label: "Review" },
 ];
 
 /** Section 7b, step 1. One to start with; more can be added later. */
@@ -113,6 +114,7 @@ export function NewAgentWizard() {
   const [website, setWebsite] = useState("");
   const [reading, setReading] = useState(false);
   const [readNote, setReadNote] = useState<string | null>(null);
+  const [readFailed, setReadFailed] = useState(false);
   const [name, setName] = useState("");
   const [source, setSource] = useState<string>("buying_event");
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -131,11 +133,12 @@ export function NewAgentWizard() {
 
   // Reads the customer's own site and proposes the targeting, so the first
   // agent starts from what the business actually sells rather than a blank field.
-  const readWebsite = async (value: string) => {
+  const readWebsite = async (value: string, andContinue = false) => {
     const address = value.trim();
     if (!address || reading) return;
     setReading(true);
     setReadNote(null);
+    setReadFailed(false);
     setError(null);
     try {
       const res = await fetch("/api/agents/analyze-website", {
@@ -149,9 +152,16 @@ export function NewAgentWizard() {
       else if (data.icpSummary) setCompanyInfo(data.icpSummary);
       if (data.jobRoles?.length) setJobRoles(data.jobRoles.join(", "));
       if (data.industries?.length) setIndustries(data.industries.join(", "));
+      if (data.signals?.length) setKeywords(data.signals.slice(0, 8));
       if (!name.trim() && data.jobRoles?.length) setName(data.jobRoles[0]);
-      setReadNote("Read. Check what it proposed and edit anything that is off.");
+      setReadNote(
+        "Read. The next steps are filled in from your site. Change anything that is off.",
+      );
+      // A visitor who arrived with their site already typed should not have to
+      // click again: the wizard moves them on as soon as it has something.
+      if (andContinue) setStep(2);
     } catch (e) {
+      setReadFailed(true);
       setReadNote(e instanceof Error ? e.message : "Could not read that site");
     } finally {
       setReading(false);
@@ -164,7 +174,7 @@ export function NewAgentWizard() {
     const fromHome = new URLSearchParams(window.location.search).get("website");
     if (!fromHome) return;
     setWebsite(fromHome);
-    void readWebsite(fromHome);
+    void readWebsite(fromHome, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -188,13 +198,29 @@ export function NewAgentWizard() {
     setKeywordDraft("");
   }, [keywordDraft, keywords]);
 
+  // Five example rows, spun from the criteria the customer entered, so the step
+  // shows the shape of a result without pretending anyone has been found.
+  const previewRows = (() => {
+    const roles = splitList(jobRoles);
+    const sectors = splitList(industries);
+    const places = splitList(locations);
+    return Array.from({ length: 5 }, (_, i) => {
+      const parts = [
+        roles.length ? roles[i % roles.length] : "Your buyer",
+        sectors.length ? sectors[i % sectors.length] : null,
+        places.length ? places[i % places.length] : null,
+      ].filter(Boolean);
+      return parts.join(" · ");
+    });
+  })();
+
   // What each step needs before it will let you move on. Kept in one place so
   // the button and the hint under it can never disagree.
   const blocker = (() => {
-    if (step === 1 && !name.trim()) return "Give the agent a name.";
-    if (step === 2 && keywords.length < MIN_SIGNALS)
+    if (step === 2 && !name.trim()) return "Give the agent a name.";
+    if (step === 3 && keywords.length < MIN_SIGNALS)
       return `Add at least ${MIN_SIGNALS} signals. You have ${keywords.length}.`;
-    if (step === 4 && !linkedinAccountId) return "Pick the account that sends.";
+    if (step === 5 && !linkedinAccountId) return "Pick the account that sends.";
     return null;
   })();
 
@@ -260,6 +286,70 @@ export function NewAgentWizard() {
 
       {step === 1 && (
         <StepBody
+          title="What do you sell, and to whom?"
+          lead="Give us your address and we read your home page once. Everything after this arrives filled in, and you change whatever is off."
+        >
+          <Field
+            label="Your website"
+            hint="Only the home page, once. We never publish anything from it."
+          >
+            <div className="flex items-center gap-2">
+              <Input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void readWebsite(website);
+                  }
+                }}
+                placeholder="yourcompany.com"
+                maxLength={300}
+                disabled={reading}
+              />
+              <Button
+                type="button"
+                disabled={reading || !website.trim()}
+                onClick={() => void readWebsite(website)}
+                className="flex-none"
+              >
+                {reading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reading...
+                  </>
+                ) : (
+                  "Read my site"
+                )}
+              </Button>
+            </div>
+          </Field>
+
+          {reading && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Reading your home page and working out who buys from you. This takes a few seconds.
+            </p>
+          )}
+
+          {readNote && !reading && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4">
+              <p className="text-sm text-foreground">{readNote}</p>
+              {readFailed && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You can still set everything up by hand. Continue and fill the next steps yourself.
+                </p>
+              )}
+            </div>
+          )}
+
+          <p className="mt-6 text-sm text-muted-foreground">
+            No site to hand? Continue and fill the steps yourself. Nothing here is locked.
+          </p>
+        </StepBody>
+      )}
+
+      {step === 2 && (
+        <StepBody
           title="Where should it find people?"
           lead="Pick one to start with. You can add more sources once the agent is running."
         >
@@ -279,40 +369,6 @@ export function NewAgentWizard() {
 
           <div className="mt-8 border-t border-border pt-6">
             <Field
-              label="Your website"
-              hint="The agent reads it once and proposes who buys from you. You can edit everything it proposes."
-            >
-              <div className="flex items-center gap-2">
-                <Input
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void readWebsite(website);
-                    }
-                  }}
-                  placeholder="yourcompany.com"
-                  maxLength={300}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={reading || !website.trim()}
-                  onClick={() => void readWebsite(website)}
-                  className="flex-none"
-                >
-                  {reading ? "Reading..." : "Read my site"}
-                </Button>
-              </div>
-              {readNote && (
-                <p className="mt-2 text-sm text-muted-foreground">{readNote}</p>
-              )}
-            </Field>
-          </div>
-
-          <div className="mt-8 border-t border-border pt-6">
-            <Field
               label="Name it"
               hint="Only you see this. Naming it after who it targets makes a list of agents readable."
             >
@@ -327,7 +383,7 @@ export function NewAgentWizard() {
         </StepBody>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <StepBody
           title="Who should it go after?"
           lead="The signals tell it what to watch. The filters narrow who counts."
@@ -430,30 +486,52 @@ export function NewAgentWizard() {
         </StepBody>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <StepBody
           title="The first leads it finds"
           lead="You reject the ones that do not fit, and every rejection sharpens what it looks for next."
         >
           <div>
-            {/* Honest placeholder: lead discovery is the outreach-agent port,
-                phase 2 of the plan. Showing invented people here would make
-                the ICP feel validated when nothing has run. */}
-            <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
-              <p className="text-[15px] font-medium text-slate-900 dark:text-white">
-                Nothing to preview yet
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                Once the agent runs its first search, the five best matches
-                appear here and you reject the ones that do not fit. Every
-                rejection sharpens what it looks for next.
+            {/* The five rows below are the shape of a result, built from what
+                you just entered. They carry no names on purpose: nothing has
+                searched yet, and inventing people here would make the targeting
+                feel proven when it is not. */}
+            <div className="rounded-xl border border-dashed border-border p-4">
+              <p className="text-sm text-muted-foreground">
+                Nothing has searched yet. This is what a match will look like,
+                using the criteria you just set.
               </p>
             </div>
+
+            <ul className="mt-4 space-y-2">
+              {previewRows.map((row, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-border p-3"
+                >
+                  <span className="h-9 w-9 flex-none rounded-full bg-slate-100 dark:bg-white/10" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block h-3 w-32 rounded bg-slate-100 dark:bg-white/10" />
+                    <span className="mt-2 block truncate text-sm text-muted-foreground">
+                      {row}
+                    </span>
+                  </span>
+                  <span className="flex-none text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Match
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-4 text-sm text-muted-foreground">
+              When the agent runs, these fill with real people and you reject the
+              ones that do not fit. Every rejection sharpens what it looks for next.
+            </p>
           </div>
         </StepBody>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <StepBody
           title="How it reaches out"
           lead="Nothing goes out without you. This is prepared now, and at the end you decide whether to start it or leave it paused."
@@ -553,7 +631,7 @@ export function NewAgentWizard() {
         </StepBody>
       )}
 
-      {step === 5 && (
+      {step === 6 && (
         <StepBody
           title="Check it over"
           lead="Nothing here is final. Everything can be changed after the agent exists."
@@ -606,7 +684,7 @@ export function NewAgentWizard() {
       )}
 
       <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-        {step < 5 ? (
+        {step < 6 ? (
           <Button onClick={() => setStep(step + 1)} disabled={!!blocker}>
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />

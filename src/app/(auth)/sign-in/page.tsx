@@ -25,7 +25,13 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { update: updateSession } = useSession();
-  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+  // Someone who just registered lands on the agent wizard rather than an empty
+  // dashboard: the first thing to do is set up the agent, and the wizard reads
+  // their site for them. An explicit callbackUrl still wins.
+  const callbackUrl = sanitizeCallbackUrl(
+    searchParams.get("callbackUrl"),
+    searchParams.get("registered") ? "/dashboard/agents/new" : "/dashboard",
+  );
   const error = searchParams.get("error");
   const registered = searchParams.get("registered");
 

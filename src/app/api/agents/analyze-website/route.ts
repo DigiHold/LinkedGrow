@@ -142,6 +142,8 @@ export async function POST(request: NextRequest) {
                 "Answer with JSON only, using these keys: icpSummary (a sentence naming the buyer and " +
                 "the problem the company solves for them), jobRoles (array of job titles), industries " +
                 "(array), companySizes (array from: 1-10, 11-50, 51-200, 201-500, 501-1000, 1000+), " +
+                "signals (array of 6 short topics those buyers post about or search for, two or three " +
+                "words each, no hashtags), " +
                 "companyInfo (two sentences a stranger could read to understand what the company sells). " +
                 "Leave an array empty rather than guessing. Never invent a location.",
             },
@@ -182,6 +184,7 @@ export async function POST(request: NextRequest) {
       jobRoles: list(parsed.jobRoles, 20),
       industries: list(parsed.industries, 20),
       companySizes: list(parsed.companySizes, 10),
+      signals: list(parsed.signals, 8),
       companyInfo:
         typeof parsed.companyInfo === "string" ? parsed.companyInfo.trim().slice(0, 4000) : "",
     });
