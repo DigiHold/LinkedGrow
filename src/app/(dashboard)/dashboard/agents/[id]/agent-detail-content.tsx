@@ -118,13 +118,14 @@ function nextRunLine(agent: {
   return { headline: `Next run ${when}`, detail: `It works ${window}, weekdays only.` };
 }
 
+// Five, not seven. "Today's queue" and "Activity" were the same object either
+// side of now, and "Messages" was the sequence template, which is configuration
+// and belongs under Settings rather than beside real messages.
 const TABS = [
   "Overview",
   "Leads",
-  "Today's queue",
-  "Sources",
   "Messages",
-  "Activity",
+  "Sources",
   "Settings",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -458,9 +459,33 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
       )}
 
       {tab === "Leads" && <LeadsTab agentId={agentId} />}
-      {tab === "Today's queue" && <QueueTab agentId={agentId} />}
-      {tab === "Messages" && <MessagesTab agentId={agentId} />}
-      {tab === "Activity" && <ActivityTab agentId={agentId} />}
+      {tab === "Messages" && (
+        <div className="mt-6 space-y-8">
+          <section>
+            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+              Coming up
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              What it plans to send next. Edit or remove anything before it goes.
+            </p>
+            <div className="mt-3">
+              <QueueTab agentId={agentId} />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+              Already done
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Everything it has sent, accepted or failed, newest first.
+            </p>
+            <div className="mt-3">
+              <ActivityTab agentId={agentId} />
+            </div>
+          </section>
+        </div>
+      )}
       {tab === "Settings" && (
         <SettingsTab
           agentId={agentId}
@@ -480,6 +505,20 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
           }}
           onSaved={load}
         />
+      )}
+
+      {tab === "Settings" && (
+        <div className="mt-8 border-t border-border pt-8">
+          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+            The message sequence
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            How it writes, and when it stops. This is the shape every contact follows.
+          </p>
+          <div className="mt-3">
+            <MessagesTab agentId={agentId} />
+          </div>
+        </div>
       )}
 
       <div className="mt-8 border-t border-border pt-6">
