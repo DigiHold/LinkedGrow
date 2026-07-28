@@ -296,7 +296,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
             )}
           >
             {t}
-            {t === "Today's queue" && queuedToday > 0 && (
+            {t === "Messages" && queuedToday > 0 && (
               <span className="ml-2 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400">
                 {queuedToday}
               </span>
