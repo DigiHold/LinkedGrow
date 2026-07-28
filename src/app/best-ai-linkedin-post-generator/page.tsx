@@ -80,7 +80,7 @@ const bestGenFAQs = [
 ];
 
 const rankedGenerators = [
-  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall for authentic voice, with two lead-finding agents included. 43 AI models via BYOK, voice training, unlimited generations from $13/mo plus $2-4/mo in AI costs." },
+  { name: "LinkedGrow", url: "https://linkedgrow.ai", description: "Best overall for authentic voice, with two lead-finding agents included. 43 AI models via BYOK, voice training, unlimited generations from $99/mo plus $2-4/mo in AI costs." },
   { name: "Taplio", url: "https://taplio.com", description: "Best for outreach + viral hooks library. Strong on automated DMs and lead database, bundled AI starts at $52/mo Standard." },
   { name: "AuthoredUp", url: "https://authoredup.com", description: "Best post editor and formatter. Chrome extension that lives inside LinkedIn with deep analytics. $19.95/mo, no AI generation or scheduling." },
   { name: "Supergrow", url: "https://supergrow.ai", description: "Best budget all-in-one. AI writing, scheduling, carousels, and voice-to-post from $19/mo Starter." },

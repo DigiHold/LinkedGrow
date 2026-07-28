@@ -38,7 +38,7 @@ const photoGenFAQs = [
   {
     question: "Is the AI LinkedIn photo generator really free?",
     answer:
-      "You can sign up for LinkedGrow for free and start generating LinkedIn posts immediately. AI photo generation is available on the Pro plan at $39 per month, but with the BYOK model you only pay the AI provider directly - most photos cost $0.02 to $0.08 each. That means generating 20 photos per month costs less than $1.50 total in AI fees with zero markup from LinkedGrow.",
+      "You can sign up for LinkedGrow for free and start generating LinkedIn posts immediately. AI photo generation is available on the Pro plan at $99 per month, but with the BYOK model you only pay the AI provider directly - most photos cost $0.02 to $0.08 each. That means generating 20 photos per month costs less than $1.50 total in AI fees with zero markup from LinkedGrow.",
   },
   {
     question: "What AI models can I use to generate LinkedIn photos?",
