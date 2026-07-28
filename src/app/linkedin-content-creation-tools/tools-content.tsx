@@ -270,7 +270,7 @@ export function ContentCreationToolsContent() {
         testimonials={[
           {
             quote:
-              "I was paying $140 per month across four different tools for my LinkedIn workflow. LinkedGrow replaced all of them for $39 plus a couple bucks in AI costs. The integrated workflow saves me at least an hour per week on top of the cost savings.",
+              "I was paying $140 per month across four different tools for my LinkedIn workflow. LinkedGrow replaced all of them for $99 plus a couple bucks in AI costs. The integrated workflow saves me at least an hour per week on top of the cost savings.",
             author: "Sarah K.",
             role: "Marketing Director, 35K Followers",
           },

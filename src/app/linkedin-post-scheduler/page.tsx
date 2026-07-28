@@ -55,7 +55,7 @@ const schedulerFAQs = [
   {
     question: "What is a cheaper alternative to Taplio or Hootsuite for LinkedIn scheduling?",
     answer:
-      "LinkedGrow at $13/mo (Starter, billed yearly) is the cheapest functional alternative. It ships scheduling, content calendar, AI generation, and company-page publishing at roughly 25% of Taplio Standard's $52/mo and 13% of Hootsuite Professional's $99/mo. Supergrow at $19/mo is the next-cheapest option without BYOK.",
+      "LinkedGrow at $99/mo ships scheduling, content calendar, AI generation, company-page publishing, and two agents that find your leads, against Taplio Standard at $52/mo and Hootsuite Professional at $99/mo. Supergrow at $19/mo is the next-cheapest option without BYOK.",
   },
   {
     question: "How does the LinkedIn post scheduler work?",

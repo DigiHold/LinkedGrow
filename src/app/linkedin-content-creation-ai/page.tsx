@@ -53,7 +53,7 @@ const aiContentFAQs = [
   {
     question: "How much does AI LinkedIn content creation cost?",
     answer:
-      "LinkedGrow plans start at $13 per month for Starter with unlimited post generation. The AI provider costs average $2 to $4 per month with the BYOK model - you bring your own API key and pay providers directly with zero markup. That is 60 to 80 percent less than typical LinkedIn tools that charge $49 to $199 per month with generation caps.",
+      "LinkedGrow Pro is $99 per month with unlimited post generation. The AI provider costs average $2 to $4 per month with the BYOK model - you bring your own API key and pay providers directly with zero markup. Typical LinkedIn tools charge $49 to $199 per month and still cap your generations.",
   },
   {
     question: "Can AI create LinkedIn carousels and images too?",

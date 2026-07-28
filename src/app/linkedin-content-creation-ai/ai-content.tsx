@@ -312,7 +312,7 @@ export function ContentCreationAiContent() {
           {
             question: "How much does the AI engine cost in total?",
             answer:
-              "LinkedGrow plans start at $13/mo for Starter with unlimited post generation. AI provider costs average $2 to $4/month with BYOK. That is 60 to 80 percent less than typical LinkedIn tools that charge $49 to $199/month with generation caps.",
+              "LinkedGrow Pro is $99/mo with unlimited post generation and two lead-finding agents. Your own key for posting averages $2 to $4/month. Typical LinkedIn tools that charge $49 to $199/month with generation caps.",
           },
           {
             question: "Can the AI engine also generate images and carousels?",

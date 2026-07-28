@@ -277,7 +277,7 @@ export function BestPracticesContent() {
           },
           {
             quote:
-              "I was spending $150 per month on a competitor just for scheduling and basic analytics. LinkedGrow gives me AI content, carousel creation, and scheduling for $19 plus about $3 in API costs. The savings alone made the switch obvious, but the results have been better too.",
+              "I was spending $150 per month on a competitor just for scheduling and basic analytics. LinkedGrow gives me AI content, carousel creation, and scheduling for $99 plus about $3 in API costs. The savings alone made the switch obvious, but the results have been better too.",
             author: "Lisa R.",
             role: "Business Coach, 12K Followers",
           },
