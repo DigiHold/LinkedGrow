@@ -3,12 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { V3_ROOT } from "@/components/v3/root";
+import {
+  CARVE_BASE, EB_DOT_LT, EB_LT, HERO_FIELD, HERO_ORB_A, HERO_ORB_B, HERO_RINGS, VPROP,
+} from "@/components/v3/kit";
+import { LandingFAQ } from "@/components/landing/landing-faq";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
-import { FAQAccordion } from "@/components/blog/faq-accordion";
 import { Award, Check, X, ArrowRight, Mic, Brain, CircleDollarSign, Sparkles, BarChart3 } from "lucide-react";
 
 const R2 =
@@ -399,37 +402,52 @@ export function BestPostGeneratorContent({
       <Header />
 
       {/* ===== HERO ===== */}
-      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <section className={`${HERO_FIELD} pb-[clamp(150px,17vw,240px)]`}>
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <span className={HERO_ORB_A}></span>
+          <span className={HERO_ORB_B}></span>
+          <div className={HERO_RINGS}><i></i><i></i><i></i></div>
+        </div>
+        <canvas
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+          id="net"
+        ></canvas>
+        <div className="relative z-[3] max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex justify-center mb-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-xs font-semibold text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-300">
-              <Award className="w-3.5 h-3.5" />
+            <span className={EB_LT}>
+              <i className={EB_DOT_LT}></i>
               Independent ranking · Updated May 2026
             </span>
           </div>
-          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
+          <h1 className="m-0 text-center font-v3-display! text-[clamp(36px,5.2vw,62px)] font-semibold! leading-[1.05]! tracking-[-.045em]! text-white">
             Best LinkedIn Post Generators in 2026:{" "}
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+            <span className="text-v3-sky">
               Ranked &amp; Reviewed
             </span>
           </h1>
-          <p className="mt-6 text-center text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p className="mx-auto mt-6 max-w-[62ch] text-center text-[clamp(16.5px,1.35vw,19px)] leading-[1.58]! text-[rgba(255,255,255,.76)]">
             We tested the 8 most popular LinkedIn post generators side by side on pricing, AI model choice,
             voice training, and integration depth. Here is the honest ranking, with pros and cons for each.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3 text-sm">
-            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            <span className={VPROP}>
               8 tools compared
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            <span className={VPROP}>
               No affiliate links
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            <span className={VPROP}>
               Real pricing breakdowns
             </span>
           </div>
+        </div>
+        <div className={`${CARVE_BASE} bg-v3-bg dark:bg-v3-bg-d`}></div>
+      </section>
 
-          <div className="relative aspect-video rounded-2xl overflow-hidden mt-12 bg-slate-100 dark:bg-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50">
+      <section className="relative z-[5] pb-16 sm:pb-20">
+        <div className="mx-auto -mt-[clamp(70px,9vw,130px)] max-w-4xl px-4 sm:px-6">
+          <div className="relative aspect-video overflow-hidden rounded-[22px] border border-v3-line bg-slate-100 shadow-[0_30px_80px_-40px_rgba(6,9,17,.5)] dark:border-v3-line-d dark:bg-slate-800">
             <Image
               src={`${R2}/best-linkedin-post-generators-ranked-2026-cover.avif`}
               alt="Best LinkedIn post generators 2026 - LinkedGrow, Taplio, AuthoredUp, Supergrow, EasyGen, MagicPost, ContentIn, Typefully"
@@ -762,20 +780,11 @@ export function BestPostGeneratorContent({
         </div>
       </section>
 
-      {/* ===== FAQ ===== */}
-      <section className="py-16 sm:py-20 bg-white dark:bg-slate-900/40">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-grotesk font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
-              LinkedIn post generator FAQ
-            </h2>
-            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-              The most common questions before picking a tool.
-            </p>
-          </div>
-          <FAQAccordion faqs={faqs} />
-        </div>
-      </section>
+      <LandingFAQ
+        headline={{ text: "LinkedIn post generator", gradient: "FAQ" }}
+        description="The most common questions before picking a tool."
+        faqs={faqs}
+      />
 
       <LandingRelatedContent
         headline="Related Resources"
