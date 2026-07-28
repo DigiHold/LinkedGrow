@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { V3_ROOT } from "@/components/v3/root";
+import { LegalHero } from "@/components/v3/legal-hero";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
@@ -41,7 +43,7 @@ export default async function PrivacyPage() {
   const t = await getTranslations("privacy");
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-900">
+    <main className={V3_ROOT}>
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: "https://linkedgrow.ai" },
@@ -50,12 +52,10 @@ export default async function PrivacyPage() {
       />
       <Header />
 
-      <div className="py-16 md:py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">{t("title")}</h1>
-          <p className="text-muted-foreground mb-8">
-            {t("lastUpdated")}
-          </p>
+      <LegalHero eyebrow="Legal" meta={t("lastUpdated")} title={t("title")} />
+
+      <div className="pb-16 pt-[clamp(40px,5vw,64px)] md:pb-24">
+        <div className="mx-auto max-w-4xl px-6">
 
           <div className="prose prose-gray dark:prose-invert max-w-none">
             <section className="mb-8">
