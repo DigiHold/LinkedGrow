@@ -37,13 +37,41 @@ const NL_A =
   "after:absolute after:bottom-[5px] after:left-[13px] after:right-[13px] after:h-[1.5px] after:origin-left after:rounded-[2px] after:bg-current after:content-[''] " +
   "after:[transform:scaleX(0)] after:[transition:transform_.32s_var(--ease-v3)] hover:after:[transform:scaleX(1)]";
 
-/* The brand mark, which inverts over the dark hero and back on scroll. */
 const BRAND = "group inline-flex items-center gap-2.5";
-const TILE =
+/* The brand mark, in both grounds.
+
+   The state is derived from `fx` on the navhold, not from a class toggled onto
+   the logo itself. chrome-effects.js used to add and remove `ob` here, and
+   React put it straight back on the next render when the session resolved,
+   which is why "Linked" stayed white on a white pill.
+
+   An inner page is always in the formed state, so it takes the light variant
+   outright and never flashes through the other one. */
+const TILE_LIGHT_GROUND =
+  "grid h-9 w-9 flex-none place-items-center rounded-[11px] " +
+  "[background:linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))] shadow-[0_9px_22px_-10px_rgba(0,184,219,.65)] " +
+  "[transition:transform_.24s_var(--ease-v3)] group-hover:[transform:rotate(-8deg)_scale(1.07)] " +
+  "[&>svg]:h-5 [&>svg]:w-5 [&>svg]:fill-white";
+/* Over a dark hero it starts as the white tile and becomes the gradient one
+   once the nav forms. `.fx .CLASS` is two classes against one, so it wins on
+   specificity rather than on the order Tailwind emits. */
+const TILE_ON_DARK =
   "grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-white shadow-[0_9px_24px_-12px_rgba(0,0,0,.4)] dark:bg-v3-bg3-d " +
-  "[transition:transform_.24s_var(--ease-v3)] group-hover:[transform:rotate(-8deg)_scale(1.07)] [&>svg]:h-5 [&>svg]:w-5 [&>svg]:[fill:url(#g2)]";
-const WORDMARK =
-  "font-v3-display text-[22px] font-bold tracking-[-.05em] text-white [&>i]:not-italic [&>i]:text-v3-sky";
+  "[transition:transform_.24s_var(--ease-v3)] group-hover:[transform:rotate(-8deg)_scale(1.07)] " +
+  "[&>svg]:h-5 [&>svg]:w-5 [&>svg]:[fill:url(#g2)] " +
+  "[.fx_&]:[background:linear-gradient(135deg,var(--color-v3-cyan),var(--color-v3-blue))] [.fx_&]:shadow-[0_9px_22px_-10px_rgba(0,184,219,.65)] " +
+  "[.fx_&>svg]:fill-white";
+
+const WM_BASE = "font-v3-display text-[22px] font-bold tracking-[-.05em] [&>i]:not-italic";
+const WM_LIGHT_GROUND =
+  WM_BASE +
+  " text-v3-ink dark:text-v3-ink-d [&>i]:bg-clip-text [&>i]:text-transparent " +
+  "[&>i]:[background-image:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
+const WM_ON_DARK =
+  WM_BASE +
+  " text-white [&>i]:text-v3-sky " +
+  "[.fx_&]:text-v3-ink dark:[.fx_&]:text-v3-ink-d [.fx_&>i]:bg-clip-text [.fx_&>i]:text-transparent " +
+  "[.fx_&>i]:[background-image:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
 
 /* The two chrome buttons. The ghost one reads on the dark field and on white. */
 /* The ghost button, written out rather than derived: taking a base and
@@ -120,8 +148,8 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
     {/*═══ NAV ═══*/}
     <div className={NAVHOLD} id="nh">
       <div className={NAV}>
-        <Link className={BRAND} href="/" aria-label="LinkedGrow home"><span className={TILE} id="tl"><svg><use href="#mark" /></svg></span>
-          <span className={WORDMARK} id="wm">Linked<i>Grow</i></span></Link>
+        <Link className={BRAND} href="/" aria-label="LinkedGrow home"><span className={onDark ? TILE_ON_DARK : TILE_LIGHT_GROUND} id="tl"><svg><use href="#mark" /></svg></span>
+          <span className={onDark ? WM_ON_DARK : WM_LIGHT_GROUND} id="wm">Linked<i>Grow</i></span></Link>
         <nav className={NL}>
           <a href="/features" className={NL_A}>Features</a><a href="/compare" className={NL_A}>Compare</a>
           <a href="/free-tools" className={NL_A}>Free Tools</a><a href="/blog" className={NL_A}>Blog</a><a href="/pricing" className={NL_A}>Pricing</a>

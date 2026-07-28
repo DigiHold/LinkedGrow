@@ -32,15 +32,16 @@ export function initV3Chrome() {
    m.querySelectorAll('a').forEach(function(a){a.onclick=function(){m.classList.remove('on');};});})();
 
 /* ── état de la nav + barre de progression ── */
-  (function(){var h=document.getElementById('nh'),wm=document.getElementById('wm'),
-   t=document.getElementById('tl'),p=document.getElementById('prog');
+  (function(){var h=document.getElementById('nh'),p=document.getElementById('prog');
  if(!h||!p) return;
    // The prototype only ever sat on a dark hero, so unscrolled meant "over
    // dark". An inner page starts on white, and there the light state is the
    // right one from the first pixel.
    var overDark=!!document.querySelector('.v3-chrome.on-dark');
+   /* Only `fx` is toggled. The logo used to get its own classes here and React
+      restored them on the next render, so both of its states hang off `fx`. */
    function u(){var on=overDark?scrollY>120:true;
-     h.classList.toggle('fx',on); if(wm) wm.classList.toggle('ob',!on); if(t) t.classList.toggle('w',!on);
+     h.classList.toggle('fx',on);
      var m=document.documentElement.scrollHeight-innerHeight;
      p.style.width=(m>0?scrollY/m*100:0)+'%';}
    on(window,'scroll',u,{passive:true}); u();})();
