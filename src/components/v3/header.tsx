@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { initV3Chrome } from "./chrome-effects";
-import { V3_ROOT } from "./root";
+import { V3_BLOCK } from "./root";
 
 /**
  * The prototype's header, for every marketing page.
@@ -133,7 +133,7 @@ export function V3Header({ onDark = false }: { onDark?: boolean }) {
     <div
       className={
         (onDark ? "v3-chrome on-dark " : "v3-chrome ") +
-        V3_ROOT +
+        V3_BLOCK +
         // An inner page opens with the nav already formed, so it must not
         // animate in from the transparent state on first paint.
         (onDark ? "" : " [&_.navhold]:[transition:none] [&_.prog]:hidden")
