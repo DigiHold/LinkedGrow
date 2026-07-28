@@ -56,6 +56,17 @@ export function initV3Chrome() {
           var s=document.createElement('span'); s.className='w'; s.textContent=t; out.push(s);});
       } else if(nd.nodeName==='BR'){ out.push(nd.cloneNode(false)); }
       else if(nd.nodeType===1){
+        /* A run that paints its text through its own background, which is how
+           the gradient emphasis is drawn, cannot be split: span.w is
+           inline-block, and background-clip:text stops clipping to glyphs that
+           sit in a box of their own, so the whole run renders transparent and
+           the sentence loses its ending. It reveals as a single word instead. */
+        var cs=window.getComputedStyle(nd);
+        if((cs.webkitBackgroundClip||cs.backgroundClip)==='text'){
+          var whole=document.createElement('span');
+          whole.className='w'; whole.appendChild(nd.cloneNode(true));
+          out.push(whole); return;
+        }
         var shell=nd.cloneNode(false), inner=[];
         splitWords(nd,inner); inner.forEach(function(x){shell.appendChild(x);});
         out.push(shell);

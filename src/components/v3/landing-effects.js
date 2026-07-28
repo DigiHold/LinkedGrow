@@ -127,6 +127,16 @@ export function initV3Landing() {
           var s=document.createElement('span'); s.className='w'; s.textContent=t; out.push(s);});
       } else if(nd.nodeName==='BR'){ out.push(nd.cloneNode(false)); }
       else if(nd.nodeType===1){
+        /* Une emphase peinte par son propre fond (background-clip:text) ne
+           survit pas au découpage : span.w est inline-block, le fond ne se
+           découpe plus sur les glyphes et la fin de la phrase devient
+           transparente. Elle se révèle donc d'un seul bloc. */
+        var cs=window.getComputedStyle(nd);
+        if((cs.webkitBackgroundClip||cs.backgroundClip)==='text'){
+          var whole=document.createElement('span');
+          whole.className='w'; whole.appendChild(nd.cloneNode(true));
+          out.push(whole); return;
+        }
         var shell=nd.cloneNode(false), inner=[];
         splitWords(nd,inner); inner.forEach(function(x){shell.appendChild(x);});
         out.push(shell);
