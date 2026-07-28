@@ -223,7 +223,7 @@ export function BestPracticesContent() {
           text: "Best practices tools should not cost",
           gradient: "a fortune every month",
         }}
-        description="Most LinkedIn tools charge $50 to $200 per month for features that help you follow best practices. LinkedGrow gives you AI content generation, scheduling, voice training, and analytics for a fraction of the price because you bring your own AI key."
+        description="Most LinkedIn tools charge $50 to $200 per month for features that help you follow best practices. LinkedGrow gives you AI content generation, scheduling, voice training, and analytics in one price because you bring your own AI key."
         competitor={{
           name: "Typical LinkedIn Tools",
           price: "$50-200/month",

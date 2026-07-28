@@ -214,7 +214,7 @@ export function CompanyPageGuideContent() {
           text: "Company page tools should not cost more",
           gradient: "than the results they deliver",
         }}
-        description="Managing a company page with traditional social media tools means paying $50 to $200 per month per brand. LinkedGrow gives you AI content generation, scheduling, team collaboration, and analytics for a fraction of the price because you bring your own AI key."
+        description="Managing a company page with traditional social media tools means paying $50 to $200 per month per brand. LinkedGrow gives you AI content generation, scheduling, team collaboration, and analytics in one price because you bring your own AI key."
         competitor={{
           name: "Typical Social Media Tools",
           price: "$50-200/month",

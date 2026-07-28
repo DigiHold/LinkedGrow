@@ -50,7 +50,7 @@ const tools: ToolReview[] = [
   {
     rank: 1,
     name: "LinkedGrow",
-    tagline: "Best overall - authentic voice + lowest total cost",
+    tagline: "Best overall - authentic voice and the agents included",
     href: "https://linkedgrow.ai",
     internalHref: "/",
     pricing: "$99/mo Pro, $179/mo Business",

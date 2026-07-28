@@ -228,7 +228,7 @@ export function ContentCreationToolsContent() {
           text: "Why pay for 5 tools when",
           gradient: "one does everything?",
         }}
-        description="Most LinkedIn creators piece together multiple tools at high monthly costs. LinkedGrow replaces them all with a single platform that costs a fraction of the total."
+        description="Most LinkedIn creators piece together multiple tools at high monthly costs. LinkedGrow replaces them all with a single platform that replaces them with one invoice."
         competitor={{
           name: "Typical Tool Stack",
           price: "$100-200/month",
@@ -260,7 +260,7 @@ export function ContentCreationToolsContent() {
           text: "One platform is transforming how creators",
           gradient: "grow on LinkedIn",
         }}
-        description="LinkedIn creators are replacing their scattered tool stacks with LinkedGrow and seeing better results at a fraction of the cost."
+        description="LinkedIn creators are replacing their scattered tool stacks with LinkedGrow and seeing better results on your own key, with no credit allowance to run out of."
         stats={[
           { value: "6", label: "Content tools in one platform", color: "text-cyan-600 dark:text-cyan-400" },
           { value: "26+", label: "AI models for text and images", color: "text-emerald-600 dark:text-emerald-400" },
@@ -357,7 +357,7 @@ export function ContentCreationToolsContent() {
           line1: "Ready to manage LinkedIn with",
           gradient: "one powerful platform?",
         }}
-        description="Stop paying for 5 different tools and switching between apps all day. Get every LinkedIn content creation tool you need in one place at a fraction of the cost."
+        description="Stop paying for 5 different tools and switching between apps all day. Get every LinkedIn content creation tool you need in one place on your own key, with no credit allowance to run out of."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
         secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[

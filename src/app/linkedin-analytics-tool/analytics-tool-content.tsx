@@ -54,7 +54,7 @@ const tools: ToolReview[] = [
     pricing: "$99/mo Pro, $179/mo Business",
     freeTrial: "7-day Pro trial, no card required",
     bestFor:
-      "Creators and founders who want AI post generation, scheduling, and analytics in one dashboard at the lowest total cost.",
+      "Creators and founders who want AI post generation, scheduling, and analytics in one dashboard in one price.",
     imageSrc: `${R2_TOOLS}/linkedgrow-card.avif`,
     imageAlt:
       "LinkedGrow analytics dashboard showing post performance metrics, engagement rate trends, and content calendar",

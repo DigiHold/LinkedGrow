@@ -52,7 +52,7 @@ const tools: ToolReview[] = [
     pricing: "$99/mo Pro, $179/mo Business",
     freeTrial: "7-day Pro trial, no card required",
     bestFor:
-      "Founders and creators who want to write with AI and schedule from the same dashboard at the lowest total cost.",
+      "Founders and creators who want to write with AI and schedule from the same dashboard in one price.",
     imageSlug: "linkedgrow-card",
     imageAlt:
       "LinkedGrow dashboard with content calendar, AI post composer, and direct publishing to LinkedIn profiles and company pages",

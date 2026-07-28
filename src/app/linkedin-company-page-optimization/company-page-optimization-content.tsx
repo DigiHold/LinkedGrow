@@ -212,9 +212,9 @@ export function CompanyPageOptimizationContent() {
         badge={{ icon: Key, text: "Smart Economics" }}
         headline={{
           text: "Company page optimization tools at",
-          gradient: "a fraction of the cost",
+          gradient: "one price, everything included",
         }}
-        description="Traditional social media management tools charge premium prices for company page features. LinkedGrow gives you everything you need to optimize and grow your page for a fraction of the price because you bring your own AI key."
+        description="Traditional social media management tools charge premium prices for company page features. LinkedGrow gives you everything you need to optimize and grow your page in one price because you bring your own AI key."
         competitor={{
           name: "Traditional Social Media Tools",
           price: "$50-200/month",

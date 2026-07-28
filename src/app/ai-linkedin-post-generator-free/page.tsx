@@ -73,7 +73,7 @@ const postGenFreeFAQs = [
   {
     question: "Do I need to provide my own AI API key?",
     answer:
-      "Yes, this is the BYOK (Bring Your Own Key) model that makes LinkedGrow dramatically cheaper than competitors. You get an API key from OpenAI, Anthropic, Google, or other providers, and connect it in your settings. You pay the AI provider directly - typically $2 to $4 per month for regular usage - with zero markup from LinkedGrow.",
+      "Yes, this is the BYOK (Bring Your Own Key) model, which is what keeps generation genuinely unlimited. You get an API key from OpenAI, Anthropic, Google, or other providers, and connect it in your settings. You pay the AI provider directly - typically $2 to $4 per month for regular usage - with zero markup from LinkedGrow.",
   },
 ];
 

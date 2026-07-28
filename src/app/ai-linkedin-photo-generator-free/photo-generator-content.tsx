@@ -220,7 +220,7 @@ export function PhotoGeneratorContent() {
           text: "Why pay for expensive stock photo",
           gradient: "subscriptions?",
         }}
-        description="Stock photo subscriptions charge monthly fees for generic content everyone uses. LinkedGrow's BYOK model lets you create unlimited unique AI photos at a fraction of the cost."
+        description="Stock photo subscriptions charge monthly fees for generic content everyone uses. LinkedGrow's BYOK model lets you create unlimited unique AI photos on your own key, with no credit allowance to run out of."
         competitor={{
           name: "Stock Photo Subscriptions",
           price: "$99-30/month",
