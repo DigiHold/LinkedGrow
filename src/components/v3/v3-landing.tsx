@@ -21,7 +21,6 @@ import {
   CAP_ALT,
   CAP_H3,
   CAP_P,
-  CAP_TXT,
   CAP_TXT_ALT,
   CELLS,
   CHAT,
@@ -295,7 +294,7 @@ export function V3Landing() {
 
           <div className={`${CAPS} ${RV}`}>
             <div className={CAP}>
-              <div className={CAP_TXT}>
+              <div>
                 <span className={NUMPILL}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M16.5 16.5L21 21" /></svg>01 / 04</span>
                 <h3 className={CAP_H3}>It works out who your buyers actually are</h3>
                 <p className={CAP_P}>It reads your website, names your ideal customer in plain language, lists the competitors who share your audience, and shows you the whole thing before it touches LinkedIn.</p>
@@ -331,7 +330,7 @@ export function V3Landing() {
             </div>
 
             <div className={CAP}>
-              <div className={CAP_TXT}>
+              <div>
                 <span className={NUMPILL}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5h16v11H8l-4 3z" /></svg>03 / 04</span>
                 <h3 className={CAP_H3}>It writes from what they said, never from their headline</h3>
                 <p className={CAP_P}>A profile visit and a genuine like first, so your name is not brand new when the invitation lands. Then one note built from their actual comment, one follow-up, and nothing at all after that.</p>

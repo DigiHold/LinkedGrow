@@ -424,8 +424,10 @@ export const CAPS =
 export const CAP =
   "grid grid-cols-[1fr_1.12fr] items-center gap-[clamp(26px,4vw,58px)] border-b border-v3-line p-[clamp(30px,4vw,52px)] last:border-b-0 dark:border-v3-line-d max-[940px]:[grid-template-columns:minmax(0,1fr)]";
 export const CAP_ALT = CAP + " bg-v3-bg2 dark:bg-v3-bg2-d";
-export const CAP_TXT = "dark:bg-v3-bg2-d";
-export const CAP_TXT_ALT = "[order:2] dark:bg-v3-bg2-d max-[940px]:[order:0]";
+// The text column carries no background of its own. The capability row it sits
+// in already paints one, so a second layer behind the words only drew a panel
+// edge that stopped short of the image.
+export const CAP_TXT_ALT = "[order:2] max-[940px]:[order:0]";
 export const CAP_H3 =
   "mt-[18px] font-v3-display! text-[clamp(23px,2.7vw,31px)] font-semibold! leading-[1.2] tracking-[-.04em]!";
 export const CAP_P = "mt-[13px] max-w-[46ch] text-[16px] text-v3-mut dark:text-v3-mut-d";
