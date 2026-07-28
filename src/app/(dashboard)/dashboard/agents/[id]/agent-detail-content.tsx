@@ -71,6 +71,53 @@ type Payload = {
   queuedToday: number;
 };
 
+
+/**
+ * When the agent next does something, said the way a person would say it.
+ *
+ * An agent that is running but outside office hours looks broken otherwise:
+ * the counters sit at zero and nothing explains why. The window and the
+ * timezone are the agent's own, so a customer in Paris reads Paris hours.
+ */
+function nextRunLine(agent: {
+  status: string;
+  timezone: string;
+  workdayStart: number;
+  workdayEnd: number;
+}): { headline: string; detail: string } {
+  const clock = (minutes: number) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  const window = `${clock(agent.workdayStart)} to ${clock(agent.workdayEnd)}, ${agent.timezone}`;
+
+  if (agent.status === "paused" || agent.status === "stopped") {
+    return {
+      headline: "Not running",
+      detail: `Start it and it works ${window}, weekdays only.`,
+    };
+  }
+  if (agent.status === "blocked") {
+    return {
+      headline: "Stopped on a problem",
+      detail: "Fix what it flags below and it picks up again on its own.",
+    };
+  }
+
+  const now = new Date();
+  const local = new Date(now.toLocaleString("en-US", { timeZone: agent.timezone }));
+  const minutes = local.getHours() * 60 + local.getMinutes();
+  const weekday = local.getDay() >= 1 && local.getDay() <= 5;
+  const working = weekday && minutes >= agent.workdayStart && minutes < agent.workdayEnd;
+
+  if (working) {
+    return { headline: "Working now", detail: `Office hours are ${window}.` };
+  }
+  const when =
+    weekday && minutes < agent.workdayStart
+      ? `today at ${clock(agent.workdayStart)}`
+      : `the next working day at ${clock(agent.workdayStart)}`;
+  return { headline: `Next run ${when}`, detail: `It works ${window}, weekdays only.` };
+}
+
 const TABS = [
   "Overview",
   "Leads",
@@ -259,6 +306,18 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
 
       {tab === "Overview" && (
         <div className="mt-6 space-y-4">
+          {(() => {
+            const run = nextRunLine(agent);
+            return (
+              <div className="rounded-2xl border border-border bg-card p-5">
+                <p className="text-[15px] font-semibold text-slate-900 dark:text-white">
+                  {run.headline}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{run.detail}</p>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard label="Leads found" value={found} />
             <StatCard label="Contacted" value={contacted} />
