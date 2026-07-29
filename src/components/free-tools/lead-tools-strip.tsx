@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Coins, Gauge, Library, MessageSquare, Target } from "lucide-react";
+import { ClipboardCheck, Coins, Gauge, Library, MessageSquare, Target } from "lucide-react";
 
 /**
  * The five lead tools, on every other free tool page.
@@ -42,6 +42,12 @@ const LEAD_TOOLS = [
     title: "Cost Per Lead Calculator",
     blurb: "What a qualified lead costs once your own hours are in the total.",
     href: "/free-tools/cost-per-lead-calculator",
+  },
+  {
+    icon: ClipboardCheck,
+    title: "LinkedIn Profile Checker",
+    blurb: "12 checks on what a stranger reads before accepting your invitation.",
+    href: "/free-tools/linkedin-profile-checker",
   },
 ];
 
