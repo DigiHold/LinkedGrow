@@ -63,16 +63,6 @@ export function matchProduct(products: RedditProduct[], text: string): { name: s
   return null;
 }
 
-/** Turns the raw engagement signal into a natural clause for the prompt, never a creepy "I watched you". */
-function describeSignal(prospect: MessageProspect): string {
-  const [kind, rest] = prospect.source.split(":");
-  if (kind === "intent") return "they posted publicly asking about exactly this problem";
-  if (kind === "question") return "they asked a question about this exact problem under someone else's post";
-  if (kind === "reaction" && rest) return `you engaged with content from ${rest} in the same space`;
-  if (kind === "comment" && rest) return `you commented on content from ${rest} in the same space`;
-  return "you are active in this space";
-}
-
 /** Strips code fences, wrapping quotes and stray preamble the model sometimes adds. */
 function cleanOutput(raw: string): string {
   let t = raw.trim();
