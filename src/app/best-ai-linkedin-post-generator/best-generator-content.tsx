@@ -804,7 +804,6 @@ export function BestPostGeneratorContent({
         }}
         description="43 AI models via BYOK, voice training, unlimited generations. Total monthly cost $15 to $30 all-in. Join 179+ founders."
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Everything included",
           "Unlimited generations",

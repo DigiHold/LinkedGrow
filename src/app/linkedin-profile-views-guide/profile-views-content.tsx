@@ -57,7 +57,6 @@ export function ProfileViewsContent() {
           { icon: TrendingUp, text: "Growth strategies" },
         ]}
         primaryCta={{ text: "Start growing your visibility", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -353,7 +352,6 @@ export function ProfileViewsContent() {
         }}
         description="Create content that puts your name in front of the right people every day. LinkedGrow handles the writing and scheduling so you can focus on building relationships with the people who actually visit your profile."
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Everything included",

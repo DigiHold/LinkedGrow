@@ -50,7 +50,6 @@ export function PostGeneratorFreeContent() {
           { icon: Mic, text: "Voice training" },
         ]}
         primaryCta={{ text: "Start 7-day free trial", href: "/sign-up" }}
-        secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={["Everything included", "Full Pro access", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -337,7 +336,6 @@ export function PostGeneratorFreeContent() {
         }}
         description="Start your 7-day Pro trial, generate posts with AI, and experience the difference voice training makes. Everything included needed, no commitment."
         primaryCta={{ text: "Start 7-day Pro trial - everything included", href: "/sign-up" }}
-        secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
           "Everything included",

@@ -53,7 +53,6 @@ export function CompanyPageGuideContent() {
           { icon: Users, text: "Team collaboration" },
         ]}
         primaryCta={{ text: "Try LinkedGrow free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
       />
 
@@ -344,7 +343,6 @@ export function CompanyPageGuideContent() {
         }}
         description="Generate brand-voice content with AI, schedule at optimal times, and keep your company page active every week. LinkedGrow handles the execution so your team can focus on the business."
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Everything included",

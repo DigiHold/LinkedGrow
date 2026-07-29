@@ -52,7 +52,6 @@ export function AutomationToolsContent() {
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
         primaryCta={{ text: "Try safe automation free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Zero ban risk"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -362,7 +361,6 @@ export function AutomationToolsContent() {
         }}
         description="Stop gambling your professional network on outreach bots. LinkedGrow gives you complete content automation through your own account, with AI-powered writing, scheduling, and analytics."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Agent on your account - zero ban risk",

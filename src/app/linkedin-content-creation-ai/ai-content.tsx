@@ -48,7 +48,6 @@ export function ContentCreationAiContent() {
           { icon: Key, text: "BYOK, zero markup" },
         ]}
         primaryCta={{ text: "Try the AI free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial", "Everything included", "All 43 AI models on trial"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -349,7 +348,6 @@ export function ContentCreationAiContent() {
         }}
         description="Train your voice fingerprint, switch between 26 frontier models per draft, and pay providers directly with zero markup. 7-day Pro trial, everything included."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
           "43 AI models",

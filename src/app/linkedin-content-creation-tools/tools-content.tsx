@@ -51,7 +51,6 @@ export function ContentCreationToolsContent() {
           { icon: CircleDollarSign, text: "From $99/month" },
         ]}
         primaryCta={{ text: "Try all tools free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -359,7 +358,6 @@ export function ContentCreationToolsContent() {
         }}
         description="Stop paying for 5 different tools and switching between apps all day. Get every LinkedIn content creation tool you need in one place on your own key, with no credit allowance to run out of."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "6 tools in one",

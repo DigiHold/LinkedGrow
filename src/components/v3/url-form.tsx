@@ -20,9 +20,12 @@ import { FILL, FILL_LIGHT, URLBAR, URLBAR_INPUT, URLWRAP } from "./kit";
 export function V3UrlForm({
   label = "Launch my agent for free",
   className = "",
+  style,
 }: {
   label?: string;
   className?: string;
+  /** Carries the reveal delay when the form sits in a staggered hero. */
+  style?: React.CSSProperties;
 }) {
   const router = useRouter();
   const [website, setWebsite] = useState("");
@@ -30,6 +33,7 @@ export function V3UrlForm({
   return (
     <form
       className={`group ${URLWRAP} ${className}`}
+      style={style}
       onSubmit={(event) => {
         event.preventDefault();
         const value = website.trim();

@@ -128,8 +128,12 @@ export function LpHero({
         <div className="relative z-[4] mt-[clamp(44px,5.5vw,72px)]">
           {annotations && (
             <>
-              <div className={`${ANN} right-full mr-7 top-[8%] text-right`}>
-                <div className={NOTE}>{annotations.left}</div>
+              {/* An absolutely positioned block offset by 100% has no room left
+                  to shrink into, so without a width it wraps one word per line.
+                  The width is fixed and the note keeps the line breaks it was
+                  written with. */}
+              <div className={`${ANN} right-full mr-7 top-[8%] w-[186px] text-right`}>
+                <div className={`${NOTE} whitespace-pre-line`}>{annotations.left}</div>
                 <svg
                   fill="none"
                   height="58"
@@ -143,7 +147,7 @@ export function LpHero({
                   <path d="M61 44l12 1-3-12" />
                 </svg>
               </div>
-              <div className={`${ANN} left-full ml-7 top-[55%]`}>
+              <div className={`${ANN} left-full ml-7 top-[55%] w-[186px]`}>
                 <svg
                   fill="none"
                   height="58"
@@ -156,7 +160,7 @@ export function LpHero({
                   <path d="M89 8C63 12 35 25 21 48" />
                   <path d="M32 46l-12 3 2-12" />
                 </svg>
-                <div className={`${NOTE} [transform:rotate(2.5deg)]`}>
+                <div className={`${NOTE} whitespace-pre-line [transform:rotate(2.5deg)]`}>
                   {annotations.right}
                 </div>
               </div>

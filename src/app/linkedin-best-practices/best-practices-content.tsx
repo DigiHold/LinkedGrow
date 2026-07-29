@@ -55,7 +55,6 @@ export function BestPracticesContent() {
           { icon: Calendar, text: "Consistent posting" },
         ]}
         primaryCta={{ text: "Start applying best practices", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -351,7 +350,6 @@ export function BestPracticesContent() {
         }}
         description="Generate expert content in your voice, schedule at optimal times, and post consistently every week. LinkedGrow handles the execution so you can focus on your business."
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Everything included",

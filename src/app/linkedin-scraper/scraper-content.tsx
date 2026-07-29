@@ -68,13 +68,11 @@ function Centrepiece() {
           </div>
         </header>
 
-        <div className="relative mt-12 grid items-stretch gap-6 lg:grid-cols-2">
-          {/* The connector says the two panels are one comparison rather than
-              two unrelated cards sitting next to each other. */}
-          <span className="pointer-events-none absolute left-1/2 top-1/2 z-[2] hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-v3-line bg-v3-bg px-4 py-2 font-v3-mono text-[10.5px] uppercase tracking-[.14em] text-v3-faint lg:block dark:border-v3-line-d dark:bg-v3-bg-d dark:text-v3-faint-d">
-            same person
-          </span>
-          {/* The export, drawn as what it really is: a file on a screen. */}
+        <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-2">
+          {/* Both panels end on the same widget, the box you have to type into.
+              Empty on one side and already written on the other is the whole
+              argument, so the two sides are deliberately built the same way:
+              a label, the material, the message box, one closing line. */}
           <figure className={`${SCREEN_UI} ${RV} m-0 flex h-full flex-col`}>
             <div className={CHROME_LT}>
               <span className={CHROME_DOT_LT} />
@@ -83,7 +81,11 @@ function Centrepiece() {
               <span className={CHROME_URL_LT}>linkedin-export-2026-07-29.csv</span>
             </div>
             <div className="flex flex-1 flex-col p-5">
-              <table className="w-full border-collapse text-left">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-dashed border-v3-line px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.12em] text-v3-faint dark:border-v3-line-d dark:text-v3-faint-d">
+                What a scraper hands you
+              </span>
+
+              <table className="mt-4 w-full border-collapse text-left">
                 <tbody>
                   {CSV_ROW.map((cell, i) => (
                     <tr
@@ -103,15 +105,27 @@ function Centrepiece() {
                   ))}
                 </tbody>
               </table>
-              <p className="mt-6 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
-                Five facts, all true, none of them a reason to write this week
-                rather than next year. Multiply by 800 rows and you have a
-                spreadsheet, an enrichment bill and a blank message box.
+
+              <div className="mt-auto pt-7">
+                <p className="m-0 font-v3-mono text-[10.5px] uppercase tracking-[.12em] text-v3-faint dark:text-v3-faint-d">
+                  Your first message to Sarah
+                </p>
+                <div className="mt-2.5 flex min-h-[104px] items-start rounded-[12px] border border-dashed border-v3-line bg-v3-wash/50 p-4 dark:border-v3-line-d dark:bg-v3-wash-d/40">
+                  <span className="mr-px inline-block h-[18px] w-px bg-v3-faint dark:bg-v3-faint-d" />
+                  <span className="text-[14.5px] leading-[1.6] text-v3-faint dark:text-v3-faint-d">
+                    Nothing in the row tells you where to start.
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+                Five true facts, and not one of them says why this week matters
+                rather than next year. Multiply the row by 800 and you have an
+                enrichment bill on top of the same empty box.
               </p>
             </div>
           </figure>
 
-          {/* The signal, drawn as what it really is: something a person wrote. */}
           <figure
             className={`${SCREEN_UI} ${RV} m-0 flex h-full flex-col border-[rgba(21,93,252,.28)] shadow-[0_44px_90px_-46px_rgba(21,93,252,.4)] dark:border-[rgba(140,228,245,.22)]`}
             style={{ "--d0": "110ms" } as React.CSSProperties}
@@ -123,11 +137,16 @@ function Centrepiece() {
               <span className={CHROME_URL_LT}>app.linkedgrow.ai/dashboard/agents</span>
             </div>
             <div className="flex flex-1 flex-col p-5">
-              <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-v3-wash font-v3-display text-[14px] font-semibold text-v3-blue dark:bg-v3-wash-d">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[rgba(21,93,252,.28)] bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.12em] text-v3-blue dark:border-[rgba(140,228,245,.24)] dark:bg-v3-wash-d dark:text-v3-sky">
+                <i className="size-1.5 rounded-full bg-v3-blue dark:bg-v3-sky" />
+                What the agent hands you
+              </span>
+
+              <div className="mt-4 flex items-start gap-3">
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-v3-wash font-v3-display text-[14px] font-semibold text-v3-blue dark:bg-v3-wash-d dark:text-v3-sky">
                   SW
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="m-0 text-[14.5px] font-semibold text-v3-ink dark:text-v3-ink-d">
                     Sarah Whitfield
                   </p>
@@ -135,30 +154,33 @@ function Centrepiece() {
                     Head of Talent at Northwind · posted 2 days ago
                   </p>
                 </div>
+                <span className="flex-none rounded-full bg-v3-wash px-2.5 py-1 font-v3-mono text-[10.5px] tracking-[.08em] text-v3-blue dark:bg-v3-wash-d dark:text-v3-sky">
+                  FIT 94
+                </span>
               </div>
 
-              <blockquote className="m-0 mt-4 border-l-2 border-v3-blue/40 pl-4 text-[15.5px] leading-[1.62] text-v3-ink2 dark:text-v3-ink2-d">
+              <blockquote className="m-0 mt-4 rounded-[12px] border-l-2 border-v3-blue bg-v3-wash/60 py-3.5 pl-4 pr-4 text-[15.5px] leading-[1.62] text-v3-ink2 dark:border-v3-sky dark:bg-v3-wash-d/50 dark:text-v3-ink2-d">
                 &ldquo;Third time this quarter we have lost a candidate between
                 the second interview and the offer. It is always the scheduling
                 gap. Anyone actually solved this?&rdquo;
               </blockquote>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
-                  Fit 94
-                </span>
-                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
-                  Problem stated
-                </span>
-                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
-                  This week
-                </span>
+              <div className="mt-auto pt-7">
+                <p className="m-0 font-v3-mono text-[10.5px] uppercase tracking-[.12em] text-v3-faint dark:text-v3-faint-d">
+                  Your first message to Sarah
+                </p>
+                <div className="mt-2.5 min-h-[104px] rounded-[12px] border border-[rgba(21,93,252,.3)] bg-v3-wash p-4 dark:border-[rgba(140,228,245,.26)] dark:bg-v3-wash-d">
+                  <p className="m-0 text-[14.5px] leading-[1.6] text-v3-ink2 dark:text-v3-ink2-d">
+                    Sarah, the gap between the second interview and the offer is
+                    where we lost people too. What have you already tried there?
+                  </p>
+                </div>
               </div>
 
-              <p className="mt-auto border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
-                The same person with the sentence that makes her worth writing to
-                attached. You know what to open on, and the note writes itself
-                from her own words.
+              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+                The same person, plus the sentence that makes her worth writing
+                to this week. The opening line comes out of her own words, so
+                nobody has to invent a reason to be in her inbox.
               </p>
             </div>
           </figure>

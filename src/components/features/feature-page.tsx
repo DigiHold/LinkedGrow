@@ -109,7 +109,6 @@ export function FeaturePage({
         descriptionBold={hero.descriptionBold}
         headline={{ line1: hero.line1, gradient: hero.gradient }}
         primaryCta={{ text: "Launch my agent", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={TRUST}
         valuePropBadges={hero.valueProps}
       />

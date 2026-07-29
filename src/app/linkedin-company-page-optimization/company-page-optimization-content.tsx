@@ -53,7 +53,6 @@ export function CompanyPageOptimizationContent() {
           { icon: Megaphone, text: "Employee advocacy" },
         ]}
         primaryCta={{ text: "Try LinkedGrow free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
       />
 
@@ -345,7 +344,6 @@ export function CompanyPageOptimizationContent() {
         }}
         description="Generate brand-voice content, create high-engagement carousels, schedule at optimal times, and activate employee advocacy. LinkedGrow gives you every tool to optimize your LinkedIn company page."
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Everything included",

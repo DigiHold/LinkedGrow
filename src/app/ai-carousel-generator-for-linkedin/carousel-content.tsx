@@ -51,7 +51,6 @@ export function CarouselGeneratorContent() {
           { icon: MousePointerClick, text: "2x more clicks" },
         ]}
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["Business plan feature", "AI writes every slide", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -357,7 +356,6 @@ export function CarouselGeneratorContent() {
         }}
         description="Paste your topic, watch the AI structure it into slides, and tweak the draft until you are happy. Most carousels are published in under 10 minutes."
         primaryCta={{ text: "Start creating carousels", href: "/sign-up" }}
-        secondaryCta={{ text: "LinkedIn post generator", href: "/" }}
         trustIndicators={[
           "Business plan feature",
           "AI writes every slide",

@@ -51,7 +51,6 @@ export function LeadGenerationToolsContent() {
           { icon: CircleDollarSign, text: "From $19/month" },
         ]}
         primaryCta={{ text: "Try free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Agent working your own account"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -343,7 +342,6 @@ export function LeadGenerationToolsContent() {
         }}
         description="Stop risking your LinkedIn account on automation bots. LinkedGrow gives you AI content creation, scheduling, carousels, images, and analytics in one platform, so your expertise does the selling."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "43 AI models via BYOK",

@@ -747,7 +747,6 @@ export function PostSchedulerContent({
         }}
         description="AI generation + auto-publishing + visual calendar in one dashboard. Total cost stays at $15 to $30/mo all-in. Join 179+ founders."
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Everything included",
           "Unlimited generations on Pro+",

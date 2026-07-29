@@ -51,7 +51,6 @@ export function PhotoGeneratorContent() {
           { icon: CircleDollarSign, text: "From $0.02 per photo" },
         ]}
         primaryCta={{ text: "Start generating photos free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["Free to sign up", "Everything included", "Your own AI key"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -347,7 +346,6 @@ export function PhotoGeneratorContent() {
         }}
         description="Stop using generic stock photos that blend into the feed. Start generating unique AI photos that grab attention and drive engagement on every post you publish."
         primaryCta={{ text: "Start free for 7 days", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Free to sign up",
           "10+ AI photo models",

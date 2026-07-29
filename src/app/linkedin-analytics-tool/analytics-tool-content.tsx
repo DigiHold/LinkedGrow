@@ -924,7 +924,6 @@ export function AnalyticsToolContent({
         }}
         description="AI content generation + post analytics + scheduling in one dashboard. Total cost stays at $15 to $30/mo all-in. Join 179+ founders."
         primaryCta={{ text: "Start free 7-day Pro trial", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "Everything included",
           "Full analytics on Pro+",

@@ -59,7 +59,6 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
           { icon: Clock, text: "Schedule at peak time" },
         ]}
         primaryCta={{ text: "Generate your announcement", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={["7-day Pro trial included", "Everything included", "Your own AI key"]}
       />
 
@@ -436,7 +435,6 @@ export function JobAnnouncementContent({ faqs }: JobAnnouncementContentProps) {
         }}
         description="Generate a LinkedIn new job announcement in your voice with LinkedGrow. Pick a template, customize it with AI, and schedule it at the perfect time."
         primaryCta={{ text: "Get started free", href: "/sign-up" }}
-        secondaryCta={{ text: "See pricing", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial included",
           "Everything included",

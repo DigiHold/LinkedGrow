@@ -47,7 +47,6 @@ export function FreePostGeneratorContent() {
           { icon: Key, text: "BYOK pricing" },
         ]}
         primaryCta={{ text: "Start writing free", href: "/sign-up" }}
-        secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={["7-day Pro trial", "Everything included", "All 43 AI models included"]}
         video={{
           videoId: "5cE1BRvxfiQ",
@@ -343,7 +342,6 @@ export function FreePostGeneratorContent() {
         }}
         description="Paste 3 sample posts, brief the writer, and get your first draft in your voice in under 5 minutes. 7-day Pro trial, everything included, all 43 AI models included."
         primaryCta={{ text: "Train your voice free", href: "/sign-up" }}
-        secondaryCta={{ text: "See all plans", href: "/pricing" }}
         trustIndicators={[
           "7-day Pro trial",
           "Everything included",
