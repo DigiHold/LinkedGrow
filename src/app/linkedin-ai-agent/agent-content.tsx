@@ -1,28 +1,20 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Brain, Handshake, PauseCircle } from "lucide-react";
 
 import { V3_ROOT } from "@/components/v3/root";
 import {
-  CARVE_BASE,
-  EB_DOT_LT,
-  EB_LT,
   EM_GRAD,
+  EM_SKY,
   H2,
   H3,
-  HERO_FIELD,
-  HERO_ORB_A,
-  HERO_ORB_B,
-  HERO_RINGS,
   LEAD_MUT,
   NARROW,
   RV,
   SEC,
   SH,
   SH_BUL,
-  VPROP,
 } from "@/components/v3/kit";
+import { LpHero, LpLogos } from "@/components/v3/lp-hero";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { LandingFAQ } from "@/components/landing/landing-faq";
@@ -30,7 +22,6 @@ import { LandingCTA } from "@/components/landing/landing-cta";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
 import { QuickAnswer } from "@/components/seo/quick-answer";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
-import { V3UrlForm } from "@/components/v3/url-form";
 
 /**
  * The agent page, for "linkedin ai agent" (110 / KD 1) and "ai agent for
@@ -168,82 +159,24 @@ export function LinkedinAiAgentContent({
     <main className={V3_ROOT}>
       <Header />
 
-      <section className={`${HERO_FIELD} pb-[clamp(124px,13.5vw,190px)]`}>
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <span className={HERO_ORB_A}></span>
-          <span className={HERO_ORB_B}></span>
-          <div className={HERO_RINGS}><i></i><i></i><i></i></div>
-        </div>
-        <canvas
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-          id="net"
-        ></canvas>
+      <LpHero
+        annotations={{
+          left: "it decides who,\nnot only when",
+          right: "every lead shows you\nthe post it came from",
+        }}
+        badge="One agent, one account, your own profile"
+        em={<em className={EM_SKY}>works your account all day.</em>}
+        formLabel="Show me my buyers"
+        headline="The LinkedIn AI agent that"
+        lead="It reads your website to learn who buys from you, watches LinkedIn every working day for those people, writes each note from what they actually posted, and hands you the conversation the moment somebody answers."
+        video={{
+          url: "app.linkedgrow.ai/dashboard/agents",
+          caption: "One agent's day, from the first signal to the first reply",
+          number: "Video 01",
+        }}
+      />
 
-        <div className="relative z-[3] mx-auto max-w-[1220px] px-6 text-center">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 ${EB_LT}`}
-            initial={{ opacity: 0, y: 20 }}
-          >
-            <i className={EB_DOT_LT} />
-            One agent, one account
-          </motion.div>
-
-          <motion.h1
-            animate={{ opacity: 1, y: 0 }}
-            className="m-0 mb-4 flex flex-col items-center font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98]! tracking-[-.048em]! text-white"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.05 }}
-          >
-            <span className="leading-[1.18]">LinkedIn AI Agent:</span>{" "}
-            <span className="leading-[1.18] text-v3-sky">
-              It Works Your Account All Day
-            </span>
-          </motion.h1>
-
-          <motion.p
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto mb-8 max-w-[62ch] text-[clamp(16.5px,1.35vw,19px)] leading-[1.58]! text-[rgba(255,255,255,.76)]"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.1 }}
-          >
-            It reads your website to learn who buys from you, watches LinkedIn
-            every working day for those people, writes each note from what they
-            actually posted, and hands you the conversation the moment somebody
-            answers.
-          </motion.p>
-
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto max-w-[620px]"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.15 }}
-          >
-            <V3UrlForm label="Show me my buyers" />
-          </motion.div>
-
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-9 flex flex-wrap items-center justify-center gap-3"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.2 }}
-          >
-            {[
-              { icon: Brain, text: "It chooses, not just repeats" },
-              { icon: Handshake, text: "From your own profile" },
-              { icon: PauseCircle, text: "Stops on the first reply" },
-            ].map((item) => (
-              <div className={VPROP} key={item.text}>
-                <item.icon className="h-[15px] w-[15px]" />
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        <div className={`${CARVE_BASE} bg-v3-bg dark:bg-v3-bg-d`}></div>
-      </section>
+      <LpLogos label="Founders who stopped doing outbound by hand" />
 
       <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
         <QuickAnswer

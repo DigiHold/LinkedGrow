@@ -1,23 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Quote, ShieldAlert, Table2 } from "lucide-react";
 
 import { V3_ROOT } from "@/components/v3/root";
 import {
-  CARVE_BASE,
   CHROME_DOT_LT,
   CHROME_LT,
   CHROME_URL_LT,
-  EB_DOT_LT,
-  EB_LT,
   EM_GRAD,
+  EM_SKY,
   H2,
-  HERO_FIELD,
-  HERO_ORB_A,
-  HERO_ORB_B,
-  HERO_RINGS,
   LEAD_MUT,
   NARROW,
   RV,
@@ -25,9 +17,9 @@ import {
   SEC,
   SH,
   SH_BUL,
-  VPROP,
   WRAP,
 } from "@/components/v3/kit";
+import { LpHero, LpLogos } from "@/components/v3/lp-hero";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { LandingFAQ } from "@/components/landing/landing-faq";
@@ -206,73 +198,24 @@ export function LinkedinScraperContent({
     <main className={V3_ROOT}>
       <Header />
 
-      <section className={`${HERO_FIELD} pb-[clamp(124px,13.5vw,190px)]`}>
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <span className={HERO_ORB_A}></span>
-          <span className={HERO_ORB_B}></span>
-          <div className={HERO_RINGS}><i></i><i></i><i></i></div>
-        </div>
-        <canvas
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-          id="net"
-        ></canvas>
+      <LpHero
+        annotations={{
+          left: "no export,\nno enrichment bill",
+          right: "every lead shows you\nthe post it came from",
+        }}
+        badge="An honest answer, from a tool that is not one"
+        em={<em className={EM_SKY}>except a reason to write.</em>}
+        formLabel="Show me my buyers"
+        headline="Everything a LinkedIn scraper gives you,"
+        lead="A spreadsheet is not a pipeline. LinkedGrow finds the same people from what they post in public, keeps the sentence that makes each one worth writing to, and opens the conversation from your own account. Nothing is exported and nothing is enriched."
+        video={{
+          url: "app.linkedgrow.ai/dashboard/agents",
+          caption: "A lead arriving with the post that produced it, not a CSV row",
+          number: "Video 01",
+        }}
+      />
 
-        <div className="relative z-[3] mx-auto max-w-[1220px] px-6 text-center">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 ${EB_LT}`}
-            initial={{ opacity: 0, y: 20 }}
-          >
-            <i className={EB_DOT_LT} />
-            An honest answer
-          </motion.div>
-
-          <motion.h1
-            animate={{ opacity: 1, y: 0 }}
-            className="m-0 mb-4 flex flex-col items-center font-v3-display! text-[clamp(43px,6.8vw,88px)] font-semibold! leading-[.98]! tracking-[-.048em]! text-white"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.05 }}
-          >
-            <span className="leading-[1.18]">LinkedIn Scraper:</span>{" "}
-            <span className="leading-[1.18] text-v3-sky">
-              What It Gets You, and What It Costs
-            </span>
-          </motion.h1>
-
-          <motion.p
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto mb-8 max-w-[62ch] text-[clamp(16.5px,1.35vw,19px)] leading-[1.58]! text-[rgba(255,255,255,.76)]"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.1 }}
-          >
-            LinkedGrow is not a scraper and this page is not going to pretend
-            otherwise. Here is what an export actually hands you, what it risks
-            on the account you cannot replace, and the route that gets the same
-            people with the reason to write already attached.
-          </motion.p>
-
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-9 flex flex-wrap items-center justify-center gap-3"
-            initial={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.15 }}
-          >
-            {[
-              { icon: Table2, text: "No export, no enrichment" },
-              { icon: ShieldAlert, text: "No bulk profile visiting" },
-              { icon: Quote, text: "The source post on every lead" },
-            ].map((item) => (
-              <div className={VPROP} key={item.text}>
-                <item.icon className="h-[15px] w-[15px]" />
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        <div className={`${CARVE_BASE} bg-v3-bg dark:bg-v3-bg-d`}></div>
-      </section>
+      <LpLogos label="Founders who stopped buying lists" />
 
       <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
         <QuickAnswer
