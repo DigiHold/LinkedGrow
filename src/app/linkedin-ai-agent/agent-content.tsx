@@ -1,17 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Brain, Handshake, PauseCircle } from "lucide-react";
+import { Brain, Handshake, PauseCircle } from "lucide-react";
 
 import { V3_ROOT } from "@/components/v3/root";
 import {
   CARVE_BASE,
   EB_DOT_LT,
   EB_LT,
+  EM_GRAD,
+  H2,
+  H3,
   HERO_FIELD,
   HERO_ORB_A,
   HERO_ORB_B,
   HERO_RINGS,
+  LEAD_MUT,
+  NARROW,
+  RV,
+  SEC,
+  SH,
+  SH_BUL,
   VPROP,
 } from "@/components/v3/kit";
 import { Header } from "@/components/marketing/header";
@@ -69,41 +78,47 @@ const DAY = [
 
 function WorkingDay() {
   return (
-    <section className="relative py-[clamp(56px,7vw,96px)]">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
-        <h2 className="m-0 max-w-[22ch] font-v3-display! text-[clamp(28px,3.6vw,44px)] font-semibold! leading-[1.08]! tracking-[-.042em]! text-slate-900 dark:text-white">
-          A day it works, while you do something else
-        </h2>
-        <p className="mt-4 max-w-[62ch] text-[16.5px] leading-[1.65] text-slate-600 dark:text-slate-300">
-          Office hours in your own timezone, at the pace your account has earned.
-          Nothing happens at 3am, because nothing a person does happens at 3am.
-        </p>
+    <section className={SEC}>
+      <div className={NARROW}>
+        <header className={`${SH} ${RV}`}>
+          <span className={SH_BUL} />
+          <div>
+            <h2 className={H2}>
+              A day it works, while you{" "}
+              <em className={EM_GRAD}>do something else.</em>
+            </h2>
+            <p className={`${LEAD_MUT} mt-[18px]`}>
+              Office hours in your own timezone, at the pace your account has
+              earned. Nothing happens at 3am, because nothing a person does
+              happens at 3am.
+            </p>
+          </div>
+        </header>
 
-        <ol className="mt-10 space-y-0">
+        {/* The rail is one line behind the chips, so a chip can never drift off
+            it the way an offset positioned against the text column did. */}
+        <ol className="relative mt-12 grid gap-0 pl-0">
+          <span
+            aria-hidden
+            className="absolute bottom-8 left-[19px] top-8 w-px bg-v3-line dark:bg-v3-line-d"
+          />
           {DAY.map((step, index) => (
             <li
-              className="relative grid grid-cols-[4.5rem_1fr] gap-x-5 pb-9 last:pb-0 sm:grid-cols-[6rem_1fr] sm:gap-x-8"
+              className={`${RV} relative grid grid-cols-[38px_1fr] items-start gap-x-6 pb-11 last:pb-0`}
               key={step.time}
+              style={{ "--d0": `${index * 70}ms` } as React.CSSProperties}
             >
-              {/* The rail, drawn between the markers rather than behind them. */}
-              {index < DAY.length - 1 && (
-                <span
-                  aria-hidden
-                  className="absolute left-[4.5rem] top-3 h-full w-px -translate-x-1/2 bg-slate-200 sm:left-[6rem] dark:bg-slate-800"
-                />
-              )}
-              <span className="relative text-right font-mono text-[13px] tabular-nums text-slate-400">
-                {step.time}
-                <span
-                  aria-hidden
-                  className="absolute -right-[calc(1.25rem+3px)] top-[6px] h-[7px] w-[7px] rounded-full bg-cyan-500 ring-4 ring-cyan-500/15 sm:-right-[calc(2rem+3px)]"
-                />
+              <span className="relative z-[1] grid h-[38px] w-[38px] place-items-center rounded-full border border-[rgba(21,93,252,.16)] bg-v3-wash font-v3-mono text-[11.5px] font-medium text-v3-blue dark:bg-v3-wash-d">
+                {step.time.slice(0, 2)}
               </span>
-              <div>
-                <h3 className="m-0 text-[16.5px] font-semibold text-slate-900 dark:text-white">
-                  {step.title}
-                </h3>
-                <p className="mt-2 max-w-[58ch] text-[15.5px] leading-[1.65] text-slate-600 dark:text-slate-300">
+              <div className="pt-[7px]">
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <h3 className={H3}>{step.title}</h3>
+                  <span className="font-v3-mono text-[11px] uppercase tracking-[.14em] text-v3-faint dark:text-v3-faint-d">
+                    {step.time}
+                  </span>
+                </div>
+                <p className="mt-[9px] max-w-[56ch] text-[15.5px] leading-[1.62] text-v3-mut dark:text-v3-mut-d">
                   {step.body}
                 </p>
               </div>
@@ -241,16 +256,23 @@ export function LinkedinAiAgentContent({
 
       {SECTIONS.map((block) => (
         <section
-          className={`relative py-[clamp(48px,6vw,84px)] ${block.tinted ? "bg-white dark:bg-slate-900/40" : ""}`}
+          className={`${SEC} ${block.tinted ? "bg-v3-bg2 dark:bg-v3-bg2-d" : ""}`}
           key={block.title}
         >
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <h2 className="m-0 font-v3-display! text-[clamp(26px,3.2vw,38px)] font-semibold! leading-[1.1]! tracking-[-.04em]! text-slate-900 dark:text-white">
-              {block.title}
-            </h2>
-            <div className="mt-5 space-y-5 text-[16px] leading-[1.7] text-slate-600 dark:text-slate-300">
-              {block.paragraphs.map((paragraph) => (
-                <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+          <div className={NARROW}>
+            <header className={`${SH} ${RV}`}>
+              <span className={SH_BUL} />
+              <h2 className={H2}>{block.title}</h2>
+            </header>
+            <div className="mt-8 grid gap-6 pl-[33px] max-[640px]:pl-0">
+              {block.paragraphs.map((paragraph, i) => (
+                <p
+                  className={`${RV} max-w-[62ch] text-[16.5px] leading-[1.68] text-v3-mut dark:text-v3-mut-d`}
+                  key={paragraph.slice(0, 40)}
+                  style={{ "--d0": `${i * 60}ms` } as React.CSSProperties}
+                >
+                  {paragraph}
+                </p>
               ))}
             </div>
           </div>

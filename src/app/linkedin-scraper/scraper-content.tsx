@@ -2,18 +2,31 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Quote, ShieldAlert, Table2 } from "lucide-react";
+import { Quote, ShieldAlert, Table2 } from "lucide-react";
 
 import { V3_ROOT } from "@/components/v3/root";
 import {
   CARVE_BASE,
+  CHROME_DOT_LT,
+  CHROME_LT,
+  CHROME_URL_LT,
   EB_DOT_LT,
   EB_LT,
+  EM_GRAD,
+  H2,
   HERO_FIELD,
   HERO_ORB_A,
   HERO_ORB_B,
   HERO_RINGS,
+  LEAD_MUT,
+  NARROW,
+  RV,
+  SCREEN_UI,
+  SEC,
+  SH,
+  SH_BUL,
   VPROP,
+  WRAP,
 } from "@/components/v3/kit";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
@@ -45,67 +58,111 @@ const CSV_ROW = [
 
 function Centrepiece() {
   return (
-    <section className="relative py-[clamp(56px,7vw,96px)]">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <h2 className="m-0 max-w-[20ch] font-v3-display! text-[clamp(28px,3.6vw,44px)] font-semibold! leading-[1.08]! tracking-[-.042em]! text-slate-900 dark:text-white">
-          Same person. One of these tells you what to say.
-        </h2>
-
-        <div className="mt-9 grid gap-5 lg:grid-cols-2">
-          {/* What a scrape hands you */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/50">
-            <p className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[.06em] text-slate-500 dark:text-slate-400">
-              <Table2 className="h-4 w-4" />
-              What the export gives you
-            </p>
-
-            <dl className="mt-5 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-              {CSV_ROW.map((cell) => (
-                <div
-                  className="grid grid-cols-[9ch_1fr] gap-3 border-b border-slate-200 px-4 py-2.5 last:border-b-0 dark:border-slate-800"
-                  key={cell.field}
-                >
-                  <dt className="font-mono text-[12px] uppercase tracking-[.04em] text-slate-400">
-                    {cell.field}
-                  </dt>
-                  <dd className="m-0 truncate font-mono text-[13px] text-slate-700 dark:text-slate-200">
-                    {cell.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-
-            <p className="mt-5 text-[15px] leading-[1.65] text-slate-600 dark:text-slate-300">
-              Five facts, all of them true, none of them a reason to write this
-              week rather than next year. Multiply by 800 rows and you have a
-              spreadsheet, an enrichment bill and a blank message box.
+    <section className={SEC}>
+      <div className={WRAP}>
+        <header className={`${SH} ${RV}`}>
+          <span className={SH_BUL} />
+          <div>
+            <h2 className={H2}>
+              Same person. One of these{" "}
+              <em className={EM_GRAD}>tells you what to say.</em>
+            </h2>
+            <p className={`${LEAD_MUT} mt-[18px]`}>
+              An export and a signal cost about the same to obtain. Only one of
+              them survives contact with a blank message box.
             </p>
           </div>
+        </header>
 
-          {/* What a signal hands you */}
-          <div className="rounded-3xl border border-cyan-500/40 bg-cyan-50/40 p-6 dark:border-cyan-400/30 dark:bg-cyan-400/5">
-            <p className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[.06em] text-cyan-700 dark:text-cyan-300">
-              <Quote className="h-4 w-4" />
-              What the agent gives you
-            </p>
+        <div className="mt-12 grid items-start gap-6 lg:grid-cols-2">
+          {/* The export, drawn as what it really is: a file on a screen. */}
+          <figure className={`${SCREEN_UI} ${RV} m-0`}>
+            <div className={CHROME_LT}>
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_URL_LT}>linkedin-export-2026-07-29.csv</span>
+            </div>
+            <div className="p-5">
+              <table className="w-full border-collapse text-left">
+                <tbody>
+                  {CSV_ROW.map((cell, i) => (
+                    <tr
+                      className="border-b border-v3-line last:border-b-0 dark:border-v3-line-d"
+                      key={cell.field}
+                    >
+                      <td className="w-[4ch] py-2.5 pr-3 text-right font-v3-mono text-[11px] text-v3-faint dark:text-v3-faint-d">
+                        {i + 1}
+                      </td>
+                      <td className="w-[10ch] py-2.5 pr-4 font-v3-mono text-[11px] uppercase tracking-[.04em] text-v3-faint dark:text-v3-faint-d">
+                        {cell.field}
+                      </td>
+                      <td className="truncate py-2.5 font-v3-mono text-[12.5px] text-v3-ink2 dark:text-v3-ink2-d">
+                        {cell.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+                Five facts, all true, none of them a reason to write this week
+                rather than next year. Multiply by 800 rows and you have a
+                spreadsheet, an enrichment bill and a blank message box.
+              </p>
+            </div>
+          </figure>
 
-            <figure className="mt-5 rounded-2xl border border-cyan-500/25 bg-white p-5 dark:border-cyan-400/20 dark:bg-slate-900/60">
-              <blockquote className="m-0 text-[15.5px] leading-[1.65] text-slate-800 dark:text-slate-100">
+          {/* The signal, drawn as what it really is: something a person wrote. */}
+          <figure
+            className={`${SCREEN_UI} ${RV} m-0 border-[rgba(21,93,252,.28)] dark:border-[rgba(140,228,245,.22)]`}
+            style={{ "--d0": "110ms" } as React.CSSProperties}
+          >
+            <div className={CHROME_LT}>
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_DOT_LT} />
+              <span className={CHROME_URL_LT}>app.linkedgrow.ai/dashboard/agents</span>
+            </div>
+            <div className="p-5">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-v3-wash font-v3-display text-[14px] font-semibold text-v3-blue dark:bg-v3-wash-d">
+                  SW
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-[14.5px] font-semibold text-v3-ink dark:text-v3-ink-d">
+                    Sarah Whitfield
+                  </p>
+                  <p className="m-0 text-[12.5px] text-v3-faint dark:text-v3-faint-d">
+                    Head of Talent at Northwind · posted 2 days ago
+                  </p>
+                </div>
+              </div>
+
+              <blockquote className="m-0 mt-4 border-l-2 border-v3-blue/40 pl-4 text-[15.5px] leading-[1.62] text-v3-ink2 dark:text-v3-ink2-d">
                 &ldquo;Third time this quarter we have lost a candidate between
                 the second interview and the offer. It is always the scheduling
                 gap. Anyone actually solved this?&rdquo;
               </blockquote>
-              <figcaption className="mt-4 text-[13px] text-slate-500 dark:text-slate-400">
-                Sarah Whitfield, Head of Talent at Northwind. Posted 2 days ago.
-              </figcaption>
-            </figure>
 
-            <p className="mt-5 text-[15px] leading-[1.65] text-slate-700 dark:text-slate-200">
-              The same person, with the sentence that makes her worth writing to
-              attached. You know what to open on, you know it is this month&apos;s
-              problem, and the note writes itself from her own words.
-            </p>
-          </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
+                  Fit 94
+                </span>
+                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
+                  Problem stated
+                </span>
+                <span className="rounded-full bg-v3-wash px-3 py-1 font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-blue dark:bg-v3-wash-d">
+                  This week
+                </span>
+              </div>
+
+              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+                The same person with the sentence that makes her worth writing to
+                attached. You know what to open on, and the note writes itself
+                from her own words.
+              </p>
+            </div>
+          </figure>
         </div>
       </div>
     </section>
@@ -228,16 +285,23 @@ export function LinkedinScraperContent({
 
       {SECTIONS.map((block, index) => (
         <section
-          className={`relative py-[clamp(48px,6vw,84px)] ${index === 1 ? "bg-white dark:bg-slate-900/40" : ""}`}
+          className={`${SEC} ${index === 1 ? "bg-v3-bg2 dark:bg-v3-bg2-d" : ""}`}
           key={block.title}
         >
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <h2 className="m-0 font-v3-display! text-[clamp(26px,3.2vw,38px)] font-semibold! leading-[1.1]! tracking-[-.04em]! text-slate-900 dark:text-white">
-              {block.title}
-            </h2>
-            <div className="mt-5 space-y-5 text-[16px] leading-[1.7] text-slate-600 dark:text-slate-300">
-              {block.paragraphs.map((paragraph) => (
-                <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+          <div className={NARROW}>
+            <header className={`${SH} ${RV}`}>
+              <span className={SH_BUL} />
+              <h2 className={H2}>{block.title}</h2>
+            </header>
+            <div className="mt-8 grid gap-6 pl-[33px] max-[640px]:pl-0">
+              {block.paragraphs.map((paragraph, i) => (
+                <p
+                  className={`${RV} max-w-[62ch] text-[16.5px] leading-[1.68] text-v3-mut dark:text-v3-mut-d`}
+                  key={paragraph.slice(0, 40)}
+                  style={{ "--d0": `${i * 60}ms` } as React.CSSProperties}
+                >
+                  {paragraph}
+                </p>
               ))}
             </div>
           </div>
