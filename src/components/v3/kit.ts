@@ -175,7 +175,7 @@ export const PH_CHIP =
 // The note and its arrow sit beside the product window, never on it. The
 // offsets have to clear half the 1220px wrap plus the note itself, so the
 // breakpoint is the width at which that clearance actually exists.
-export const ANN = "absolute z-[5] hidden min-[1760px]:block [&_svg]:text-v3-sky [&_svg]:opacity-70";
+export const ANN = "absolute z-[5] hidden min-[1900px]:block [&_svg]:text-v3-sky [&_svg]:opacity-70";
 export const NOTE =
   "font-v3-hand text-[22px] leading-[1.12] text-v3-sky [transform:rotate(-3deg)]";
 

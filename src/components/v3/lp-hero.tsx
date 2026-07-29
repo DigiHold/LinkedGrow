@@ -128,7 +128,7 @@ export function LpHero({
         <div className="relative z-[4] mt-[clamp(44px,5.5vw,72px)]">
           {annotations && (
             <>
-              <div className={`${ANN} left-[-250px] top-[10%]`}>
+              <div className={`${ANN} right-full mr-7 top-[8%] text-right`}>
                 <div className={NOTE}>{annotations.left}</div>
                 <svg
                   fill="none"
@@ -143,7 +143,7 @@ export function LpHero({
                   <path d="M61 44l12 1-3-12" />
                 </svg>
               </div>
-              <div className={`${ANN} right-[-250px] top-[55%]`}>
+              <div className={`${ANN} left-full ml-7 top-[55%]`}>
                 <svg
                   fill="none"
                   height="58"
