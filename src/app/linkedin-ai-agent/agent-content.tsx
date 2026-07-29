@@ -14,7 +14,7 @@ import {
   SH,
   SH_BUL,
 } from "@/components/v3/kit";
-import { LpHero, LpLogos } from "@/components/v3/lp-hero";
+import { LpHero } from "@/components/v3/lp-hero";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { LandingFAQ } from "@/components/landing/landing-faq";
@@ -176,7 +176,6 @@ export function LinkedinAiAgentContent({
         }}
       />
 
-      <LpLogos label="Founders who stopped doing outbound by hand" />
 
       <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
         <QuickAnswer

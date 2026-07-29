@@ -172,7 +172,10 @@ export const PH_CHIP =
   "relative inline-flex items-center gap-[7px] rounded-full border border-dashed border-[rgba(255,255,255,.16)] px-[13px] py-1.5 text-[12.5px] text-[#93a7c5] max-[660px]:hidden";
 
 /* The handwritten annotations flanking the hero shot, wide screens only. */
-export const ANN = "absolute z-[5] hidden min-[1500px]:block [&_svg]:text-v3-sky [&_svg]:opacity-70";
+// The note and its arrow sit beside the product window, never on it. The
+// offsets have to clear half the 1220px wrap plus the note itself, so the
+// breakpoint is the width at which that clearance actually exists.
+export const ANN = "absolute z-[5] hidden min-[1760px]:block [&_svg]:text-v3-sky [&_svg]:opacity-70";
 export const NOTE =
   "font-v3-hand text-[22px] leading-[1.12] text-v3-sky [transform:rotate(-3deg)]";
 

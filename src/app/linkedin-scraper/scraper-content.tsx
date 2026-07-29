@@ -15,11 +15,13 @@ import {
   RV,
   SCREEN_UI,
   SEC,
+  FINALE,
+  RINGS_FIN,
   SH,
   SH_BUL,
   WRAP,
 } from "@/components/v3/kit";
-import { LpHero, LpLogos } from "@/components/v3/lp-hero";
+import { LpHero } from "@/components/v3/lp-hero";
 import { Header } from "@/components/marketing/header";
 import { Footer } from "@/components/marketing/footer";
 import { LandingFAQ } from "@/components/landing/landing-faq";
@@ -215,7 +217,6 @@ export function LinkedinScraperContent({
         }}
       />
 
-      <LpLogos label="Founders who stopped buying lists" />
 
       <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6">
         <QuickAnswer
@@ -251,25 +252,34 @@ export function LinkedinScraperContent({
         </section>
       ))}
 
+      {/* Mid-page ask. On the dark panel, because the url form is built for
+          the hero's field: on a light card its input renders white on white
+          and only the button survives. */}
       <section className="relative pb-[clamp(48px,6vw,84px)]">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="rounded-3xl border border-slate-200 p-6 sm:p-8 dark:border-slate-800">
-            <h2 className="m-0 font-v3-display! text-[clamp(22px,2.6vw,30px)] font-semibold! leading-[1.12]! tracking-[-.04em]! text-slate-900 dark:text-white">
-              Try it on your own site
-            </h2>
-            <p className="mt-3 max-w-[58ch] text-[16px] leading-[1.65] text-slate-600 dark:text-slate-300">
-              Paste your address and the agent reads the page, works out who
-              buys from you, and shows you the profile it built before it
-              touches LinkedIn. If you would rather do that part by hand, the{" "}
-              <Link
-                className="font-medium text-cyan-700 underline-offset-4 hover:underline dark:text-cyan-300"
-                href="/free-tools/ideal-customer-profile-template"
-              >
-                ideal customer profile template
-              </Link>{" "}
-              is free and takes about 5 minutes.
-            </p>
-            <V3UrlForm className="mt-6 w-full" label="Show me my buyers" />
+        <div className={NARROW}>
+          <div className={`${FINALE} ${RV}`}>
+            <div className={RINGS_FIN}><i></i><i></i><i></i></div>
+            <div className="relative z-[2]">
+              <h2 className="m-0 mx-auto max-w-[20ch] font-v3-display! text-[clamp(24px,3vw,34px)] font-semibold! leading-[1.1]! tracking-[-.04em]! text-white">
+                Try it on your own site
+              </h2>
+              <p className="mx-auto mt-[14px] max-w-[52ch] text-[15.5px] leading-[1.6]! text-[rgba(255,255,255,.76)]">
+                Paste your address and the agent reads the page, works out who
+                buys from you, and shows you the profile it built before it
+                touches LinkedIn.
+              </p>
+              <V3UrlForm className="mt-7 w-full" label="Show me my buyers" />
+              <p className="mt-5 text-[13.5px] text-[rgba(255,255,255,.55)]">
+                Would rather do that part by hand? The{" "}
+                <Link
+                  className="font-medium text-v3-sky underline-offset-4 hover:underline"
+                  href="/free-tools/ideal-customer-profile-template"
+                >
+                  ideal customer profile template
+                </Link>{" "}
+                is free and takes about 5 minutes.
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -6,12 +6,9 @@ import {
   ANN,
   AVS,
   CARVE,
-  CELLS,
   CHROME_DK,
   CHROME_DOT_DK,
   CHROME_URL_DK,
-  CL,
-  CL_B,
   EB_DOT_LT,
   EB_LT,
   H1,
@@ -20,7 +17,6 @@ import {
   HERO_ORB_B,
   HERO_RINGS,
   LEAD,
-  MONO,
   NOTE,
   PH,
   PH_CHIP,
@@ -132,7 +128,7 @@ export function LpHero({
         <div className="relative z-[4] mt-[clamp(44px,5.5vw,72px)]">
           {annotations && (
             <>
-              <div className={`${ANN} left-[-166px] top-[13%]`}>
+              <div className={`${ANN} left-[-250px] top-[10%]`}>
                 <div className={NOTE}>{annotations.left}</div>
                 <svg
                   fill="none"
@@ -147,7 +143,7 @@ export function LpHero({
                   <path d="M61 44l12 1-3-12" />
                 </svg>
               </div>
-              <div className={`${ANN} right-[-164px] top-[52%]`}>
+              <div className={`${ANN} right-[-250px] top-[55%]`}>
                 <svg
                   fill="none"
                   height="58"
@@ -197,28 +193,6 @@ export function LpHero({
       </div>
 
       <div className={CARVE}></div>
-    </section>
-  );
-}
-
-/** The logo row the home puts directly under the hero. */
-export function LpLogos({ label }: { label: string }) {
-  return (
-    <section className="pt-[clamp(46px,5.5vw,74px)]">
-      <div className={WRAP}>
-        <p className={`${MONO} ${RV} mb-6 text-center text-v3-faint dark:text-v3-faint-d`}>
-          {label}
-        </p>
-        <div className={`${CELLS} ${RV}`}>
-          {["Northline", "Havre Studio", "Atelier Kea", "Velio", "Tidewell", "Disruptica"].map(
-            (name) => (
-              <div className={CL} key={name}>
-                <b className={CL_B}>{name}</b>
-              </div>
-            )
-          )}
-        </div>
-      </div>
     </section>
   );
 }
