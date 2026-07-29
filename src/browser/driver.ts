@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import type { AgentContext } from "../config.ts";
 import { optionalEnv } from "../config.ts";
 import { fingerprintFor, fingerprintInitScript } from "./fingerprint.ts";
+import { usePersona } from "./human.ts";
 import { log } from "../logger.ts";
 
 /**
@@ -57,6 +58,9 @@ export async function openSession(
   proxy: ProxyAllocation | null
 ): Promise<Session> {
   const fp = fingerprintFor(ctx.linkedinAccountId, ctx.country, ctx.cfg.account.timezone);
+  // The behaviour persona is derived the same way as the device, so this
+  // account types and moves like the same person on every run.
+  usePersona(ctx.linkedinAccountId);
   const userDataDir = resolve(PROFILE_ROOT, ctx.linkedinAccountId);
   mkdirSync(userDataDir, { recursive: true });
 
