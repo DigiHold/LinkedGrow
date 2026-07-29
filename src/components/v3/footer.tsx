@@ -109,8 +109,8 @@ export function V3Footer() {
                 <li><Link href="/privacy">Privacy</Link></li><li><Link href="/terms">Terms</Link></li><li><Link href="/cookies">Cookies</Link></li></ul>
             </div></div>
           <div><h4 className={H4}>Compare</h4><ul className={LINKS}>
-            <li><Link href="/compare/taplio-alternative">vs Taplio</Link></li><li><Link href="/compare/authoredup-alternative">vs AuthoredUp</Link></li><li><Link href="/compare/supergrow-alternative">vs SuperGrow</Link></li>
-            <li><Link href="/compare/kleo-alternative">vs Kleo</Link></li><li><Link href="/compare/contentin-alternative">vs ContentIn</Link></li><li><Link href="/compare">All comparisons</Link></li></ul></div>
+            <li><Link href="/compare/dripify-alternative">vs Dripify</Link></li><li><Link href="/compare/heyreach-alternative">vs HeyReach</Link></li><li><Link href="/compare/lemlist-alternative">vs Lemlist</Link></li>
+            <li><Link href="/compare/phantombuster-alternative">vs PhantomBuster</Link></li><li><Link href="/compare/linkedin-sales-navigator-alternative">vs Sales Navigator</Link></li><li><Link href="/compare">All comparisons</Link></li></ul></div>
           <div><h4 className={H4}>Leave us a review</h4>
             <div className="grid gap-[11px]">
               <a className={RVB} target="_blank" rel="noopener noreferrer" href="https://g.page/r/CchpLmmQPKcZEAI/review?utm_source=linkedgrow&utm_medium=website_footer" style={{ "--rc": "#4285F4" } as React.CSSProperties}>
