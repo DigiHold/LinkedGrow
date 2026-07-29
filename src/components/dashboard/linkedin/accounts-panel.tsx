@@ -457,10 +457,20 @@ export function ConnectLinkedInDialog({
                   <span className="font-semibold">
                     Pick where you actually are, not where your audience is.
                   </span>{" "}
-                  LinkedIn compares where the account signs in from against
-                  where it has always signed in from. A neighbouring country
-                  looks like a trip, and another continent looks like somebody
-                  else using the account.
+                  This country becomes a dedicated address reserved for this
+                  account alone, and it stays with the account for as long as the
+                  account exists. Choose it carefully, because it can only be
+                  moved once a month and every agent on the account pauses while
+                  it moves. LinkedIn compares where the account signs in from
+                  against where it has always signed in from, so a neighbouring
+                  country looks like a trip while another continent looks like
+                  somebody else using the account.{" "}
+                  <span className="font-semibold">
+                    If your own country is not in the list, choose the closest
+                    one.
+                  </span>{" "}
+                  LinkedIn may ask you to confirm it is you the first time, which
+                  takes a minute and then stops happening.
                 </p>
               </div>
 

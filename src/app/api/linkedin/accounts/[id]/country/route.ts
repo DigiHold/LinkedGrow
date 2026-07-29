@@ -22,7 +22,8 @@ import { isProxyCountry, countryName } from "@/lib/proxy-countries";
  */
 
 /** Section 5b. Two is enough for a genuine move and few enough to notice abuse. */
-const MAX_CHANGES_PER_MONTH = 2;
+// Nicolas, 2026-07-30: one move a month, and the connect screen says so.
+const MAX_CHANGES_PER_MONTH = 1;
 
 export async function PATCH(
   request: NextRequest,
