@@ -57,6 +57,59 @@ export interface ComparePageProps {
 
 const TRUST = ["7-day Pro trial", "No credit card required", "Everything included"];
 
+/** Column headings, so the unit is stated once instead of on every figure. */
+function PriceHead() {
+  return (
+    <div className="hidden grid-cols-[1fr_auto_auto] gap-x-8 border-b border-slate-200 px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.06em] text-slate-400 sm:grid dark:border-slate-800">
+      <span>Plan</span>
+      <span className="text-right">Monthly</span>
+      <span className="w-[7ch] text-right">Annual</span>
+    </div>
+  );
+}
+
+/**
+ * One price line.
+ *
+ * On a phone this collapses to a stacked card with the figures labelled, per
+ * the house rule that a table never scrolls sideways. An empty `annual` means
+ * the plan has a single price, so the column is left blank rather than filled
+ * with a word that reads as a number.
+ */
+function PriceRow({
+  row,
+}: {
+  row: { plan: string; monthly: string; annual: string; detail: string };
+}) {
+  const single = !row.annual || row.annual === row.monthly;
+  return (
+    <div className="border-b border-slate-200 px-5 py-4 last:border-b-0 dark:border-slate-800">
+      <div className="grid gap-x-8 gap-y-1 sm:grid-cols-[1fr_auto_auto] sm:items-baseline">
+        <span className="text-[15px] font-semibold text-slate-900 dark:text-white">
+          {row.plan}
+        </span>
+        <span className="text-[15px] tabular-nums text-slate-800 sm:text-right dark:text-slate-100">
+          <span className="text-slate-400 sm:hidden">Monthly </span>
+          {row.monthly}
+        </span>
+        <span className="w-[7ch] text-[15px] tabular-nums text-slate-500 sm:text-right dark:text-slate-400">
+          {single ? (
+            <span className="hidden sm:inline">&nbsp;</span>
+          ) : (
+            <>
+              <span className="text-slate-400 sm:hidden">Annual </span>
+              {row.annual}
+            </>
+          )}
+        </span>
+      </div>
+      <p className="mt-2 text-[13.5px] leading-[1.6] text-slate-500 dark:text-slate-400">
+        {row.detail}
+      </p>
+    </div>
+  );
+}
+
 export function ComparePage({
   competitor,
   hero,
@@ -96,47 +149,27 @@ export function ComparePage({
             on their own page before you decide anything.
           </p>
 
-          <div className="mt-7 space-y-3">
+          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+            <p className="border-b border-slate-200 bg-slate-50 px-5 py-3 text-[13px] font-semibold uppercase tracking-[.06em] text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+              {competitor}
+            </p>
+            <PriceHead />
             {pricing.rows.map((row) => (
-              <div
-                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-slate-200 pb-3 dark:border-slate-800"
-                key={row.plan}
-              >
-                <span className="min-w-[10ch] text-[15px] font-semibold text-slate-900 dark:text-white">
-                  {row.plan}
-                </span>
-                <span className="text-[15px] text-slate-700 dark:text-slate-200">
-                  {row.monthly} monthly
-                </span>
-                <span className="text-[15px] text-slate-500 dark:text-slate-400">
-                  {row.annual} annual
-                </span>
-                <span className="basis-full text-[13.5px] text-slate-500 dark:text-slate-400">
-                  {row.detail}
-                </span>
-              </div>
+              <PriceRow key={row.plan} row={row} />
             ))}
           </div>
 
-          <h3 className="m-0 mt-9 text-[15px] font-semibold text-slate-900 dark:text-white">
-            LinkedGrow
-          </h3>
-          <div className="mt-3 space-y-3">
+          {/* Ours sits in its own card with the accent, because the contrast is
+              the argument. Side by side in one grid it reads as another vendor. */}
+          <div className="mt-5 overflow-hidden rounded-2xl border border-cyan-500/40 bg-cyan-50/40 dark:border-cyan-400/30 dark:bg-cyan-400/5">
+            <p className="border-b border-cyan-500/20 px-5 py-3 text-[13px] font-semibold uppercase tracking-[.06em] text-cyan-700 dark:border-cyan-400/20 dark:text-cyan-300">
+              LinkedGrow
+            </p>
             {pricing.ours.map((row) => (
-              <div
-                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-slate-200 pb-3 dark:border-slate-800"
+              <PriceRow
                 key={row.plan}
-              >
-                <span className="min-w-[10ch] text-[15px] font-semibold text-slate-900 dark:text-white">
-                  {row.plan}
-                </span>
-                <span className="text-[15px] text-slate-700 dark:text-slate-200">
-                  {row.monthly}
-                </span>
-                <span className="basis-full text-[13.5px] text-slate-500 dark:text-slate-400">
-                  {row.detail}
-                </span>
-              </div>
+                row={{ plan: row.plan, monthly: row.monthly, annual: "", detail: row.detail }}
+              />
             ))}
           </div>
 
