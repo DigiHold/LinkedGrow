@@ -3,13 +3,13 @@ import { FAQJsonLd, BreadcrumbJsonLd, SoftwareApplicationJsonLd } from "@/compon
 import { AutomationToolsContent } from "./automation-tools-content";
 
 export const metadata: Metadata = {
-  title: "LinkedIn Automation Tools: Safe vs Risky (2026 Breakdown)",
+  title: "Best LinkedIn Automation Tools 2026: Safe vs Risky",
   description:
-    "LinkedIn automation tools compared: which are safe (content, scheduling) and which get you banned (bots, auto-DMs). Full 2026 breakdown with pricing.",
+    "The best LinkedIn automation tools compared with verified 2026 pricing: which are safe, which get accounts restricted, and which one fits the way you work.",
   openGraph: {
-    title: "LinkedIn Automation Tools: Safe vs Risky (2026 Breakdown)",
+    title: "Best LinkedIn Automation Tools 2026: Safe vs Risky",
     description:
-      "LinkedIn automation tools compared: which are safe (content, scheduling) and which get you banned (bots, auto-DMs). Full 2026 breakdown with pricing.",
+      "The best LinkedIn automation tools compared with verified 2026 pricing: which are safe, which get accounts restricted, and which one fits the way you work.",
     url: "https://linkedgrow.ai/linkedin-automation-tools",
     siteName: "LinkedGrow",
     type: "website",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Automation Tools: Safe vs Risky (2026 Breakdown)",
+    title: "Best LinkedIn Automation Tools 2026: Safe vs Risky",
     description:
-      "LinkedIn automation tools compared: which are safe (content, scheduling) and which get you banned (bots, auto-DMs). Full 2026 breakdown with pricing.",
+      "The best LinkedIn automation tools compared with verified 2026 pricing: which are safe, which get accounts restricted, and which one fits the way you work.",
     images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
   },
   alternates: {

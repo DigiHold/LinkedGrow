@@ -13,6 +13,7 @@ import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { MarketingExitIntentPopup } from "@/components/marketing/exit-intent-popup";
 import { LandingRelatedContent } from "@/components/landing/landing-related-content";
+import { ToolShortlist } from "@/components/compare/tool-shortlist";
 import {
   Shield,
   AlertTriangle,
@@ -288,6 +289,8 @@ export function AutomationToolsContent() {
           },
         ]}
       />
+
+      <ToolShortlist />
 
       <LandingFAQ
         headline={{
