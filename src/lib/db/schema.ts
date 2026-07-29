@@ -1142,6 +1142,12 @@ export const agentAiUsage = sqliteTable("agent_ai_usage", {
   agentId: text("agent_id")
     .notNull()
     .references(() => agents.id, { onDelete: "cascade" }),
+  /** The monthly ceiling is a pool shared by every agent driving one LinkedIn
+   *  account, so the spend has to be readable at that scope and not only per
+   *  agent or per workspace. */
+  linkedinAccountId: text("linkedin_account_id")
+    .notNull()
+    .references(() => linkedinAccounts.id, { onDelete: "cascade" }),
   model: text("model").notNull(),
   /** Which line of the bill this was: prefilter, score, note, dm1, dm2. */
   purpose: text("purpose").notNull(),
@@ -1151,6 +1157,7 @@ export const agentAiUsage = sqliteTable("agent_ai_usage", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 }, (table) => [
   index("idx_agent_ai_usage_agent_time").on(table.agentId, table.createdAt),
+  index("idx_agent_ai_usage_account_time").on(table.linkedinAccountId, table.createdAt),
 ]);
 
 // The switches the worker plane reads before every send.
