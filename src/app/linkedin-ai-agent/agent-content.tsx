@@ -108,16 +108,16 @@ function WorkingDay() {
               key={step.time}
               style={{ "--d0": `${index * 70}ms` } as React.CSSProperties}
             >
+              {/* The step number, not the hour: two of the hours share a digit
+                  and a chip reading 09 twice looks like a rendering fault. */}
               <span className="relative z-[1] grid h-[38px] w-[38px] place-items-center rounded-full border border-[rgba(21,93,252,.16)] bg-v3-wash font-v3-mono text-[11.5px] font-medium text-v3-blue dark:bg-v3-wash-d">
-                {step.time.slice(0, 2)}
+                {String(index + 1).padStart(2, "0")}
               </span>
-              <div className="pt-[7px]">
-                <div className="flex flex-wrap items-baseline gap-x-3">
-                  <h3 className={H3}>{step.title}</h3>
-                  <span className="font-v3-mono text-[11px] uppercase tracking-[.14em] text-v3-faint dark:text-v3-faint-d">
-                    {step.time}
-                  </span>
-                </div>
+              <div className="pt-[5px]">
+                <span className="block font-v3-mono text-[11px] uppercase tracking-[.16em] text-v3-blue">
+                  {step.time}
+                </span>
+                <h3 className={`${H3} mt-[7px]`}>{step.title}</h3>
                 <p className="mt-[9px] max-w-[56ch] text-[15.5px] leading-[1.62] text-v3-mut dark:text-v3-mut-d">
                   {step.body}
                 </p>
