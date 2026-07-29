@@ -165,6 +165,22 @@ function Centrepiece() {
                 gap. Anyone actually solved this?&rdquo;
               </blockquote>
 
+              {/* Why she surfaced, in the words the agent scored her on. It
+                  also fills the height the CSV rows take on the other side. */}
+              <dl className="mt-5 grid gap-2.5">
+                {[
+                  ["Signal", "She stated the problem out loud"],
+                  ["Timing", "Posted 2 days ago, still open"],
+                ].map(([term, value]) => (
+                  <div className="flex items-baseline gap-3" key={term}>
+                    <dt className="w-[4.5rem] flex-none font-v3-mono text-[10.5px] uppercase tracking-[.1em] text-v3-faint dark:text-v3-faint-d">
+                      {term}
+                    </dt>
+                    <dd className="m-0 text-[13.5px] text-v3-mut dark:text-v3-mut-d">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+
               <div className="mt-auto pt-7">
                 <p className="m-0 font-v3-mono text-[10.5px] uppercase tracking-[.12em] text-v3-faint dark:text-v3-faint-d">
                   Your first message to Sarah
