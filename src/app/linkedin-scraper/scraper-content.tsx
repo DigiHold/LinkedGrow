@@ -68,16 +68,21 @@ function Centrepiece() {
           </div>
         </header>
 
-        <div className="mt-12 grid items-start gap-6 lg:grid-cols-2">
+        <div className="relative mt-12 grid items-stretch gap-6 lg:grid-cols-2">
+          {/* The connector says the two panels are one comparison rather than
+              two unrelated cards sitting next to each other. */}
+          <span className="pointer-events-none absolute left-1/2 top-1/2 z-[2] hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-v3-line bg-v3-bg px-4 py-2 font-v3-mono text-[10.5px] uppercase tracking-[.14em] text-v3-faint lg:block dark:border-v3-line-d dark:bg-v3-bg-d dark:text-v3-faint-d">
+            same person
+          </span>
           {/* The export, drawn as what it really is: a file on a screen. */}
-          <figure className={`${SCREEN_UI} ${RV} m-0`}>
+          <figure className={`${SCREEN_UI} ${RV} m-0 flex h-full flex-col`}>
             <div className={CHROME_LT}>
               <span className={CHROME_DOT_LT} />
               <span className={CHROME_DOT_LT} />
               <span className={CHROME_DOT_LT} />
               <span className={CHROME_URL_LT}>linkedin-export-2026-07-29.csv</span>
             </div>
-            <div className="p-5">
+            <div className="flex flex-1 flex-col p-5">
               <table className="w-full border-collapse text-left">
                 <tbody>
                   {CSV_ROW.map((cell, i) => (
@@ -98,7 +103,7 @@ function Centrepiece() {
                   ))}
                 </tbody>
               </table>
-              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+              <p className="mt-6 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
                 Five facts, all true, none of them a reason to write this week
                 rather than next year. Multiply by 800 rows and you have a
                 spreadsheet, an enrichment bill and a blank message box.
@@ -108,7 +113,7 @@ function Centrepiece() {
 
           {/* The signal, drawn as what it really is: something a person wrote. */}
           <figure
-            className={`${SCREEN_UI} ${RV} m-0 border-[rgba(21,93,252,.28)] dark:border-[rgba(140,228,245,.22)]`}
+            className={`${SCREEN_UI} ${RV} m-0 flex h-full flex-col border-[rgba(21,93,252,.28)] shadow-[0_44px_90px_-46px_rgba(21,93,252,.4)] dark:border-[rgba(140,228,245,.22)]`}
             style={{ "--d0": "110ms" } as React.CSSProperties}
           >
             <div className={CHROME_LT}>
@@ -117,7 +122,7 @@ function Centrepiece() {
               <span className={CHROME_DOT_LT} />
               <span className={CHROME_URL_LT}>app.linkedgrow.ai/dashboard/agents</span>
             </div>
-            <div className="p-5">
+            <div className="flex flex-1 flex-col p-5">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-v3-wash font-v3-display text-[14px] font-semibold text-v3-blue dark:bg-v3-wash-d">
                   SW
@@ -150,7 +155,7 @@ function Centrepiece() {
                 </span>
               </div>
 
-              <p className="mt-5 border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
+              <p className="mt-auto border-t border-v3-line pt-4 text-[14.5px] leading-[1.6] text-v3-mut dark:border-v3-line-d dark:text-v3-mut-d">
                 The same person with the sentence that makes her worth writing to
                 attached. You know what to open on, and the note writes itself
                 from her own words.
