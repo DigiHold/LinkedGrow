@@ -86,16 +86,23 @@ async function spentSince(agentId: string, sinceEpochSeconds: number): Promise<n
   return Number(rows[0]?.total ?? 0);
 }
 
-/** The whole workspace's spend, which is what the monthly pool is measured on. */
-async function workspaceSpentSince(
-  workspaceId: string,
+/**
+ * Spend across every agent driving ONE LinkedIn account, which is the scope the
+ * monthly pool is sized for.
+ *
+ * It used to measure the whole workspace while the pool was sized from the
+ * agents on a single account, so a customer with two connected accounts was
+ * throttled at half of what they had paid for.
+ */
+async function accountSpentSince(
+  linkedinAccountId: string,
   sinceEpochSeconds: number
 ): Promise<number> {
   const { rows } = await db().execute({
     sql: `SELECT COALESCE(SUM(cost_usd), 0) AS total
           FROM agent_ai_usage
-          WHERE workspace_id = ? AND created_at >= ?`,
-    args: [workspaceId, sinceEpochSeconds],
+          WHERE linkedin_account_id = ? AND created_at >= ?`,
+    args: [linkedinAccountId, sinceEpochSeconds],
   });
   return Number(rows[0]?.total ?? 0);
 }
@@ -108,7 +115,7 @@ export async function assertBudget(ctx: AgentContext, purpose = ""): Promise<voi
   const now = Math.floor(Date.now() / 1000);
   const [day, month] = await Promise.all([
     spentSince(ctx.agentId, now - 86_400),
-    workspaceSpentSince(ctx.workspaceId, now - 30 * 86_400),
+    accountSpentSince(ctx.linkedinAccountId, now - 30 * 86_400),
   ]);
 
   const pool = MONTHLY_CEILING_PER_AGENT_USD * Math.max(1, ctx.agentsOnAccount);
@@ -139,12 +146,13 @@ async function meter(
 ): Promise<void> {
   await db().execute({
     sql: `INSERT INTO agent_ai_usage
-            (id, workspace_id, agent_id, model, purpose, input_tokens, output_tokens,
-             cost_usd, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (id, workspace_id, agent_id, linkedin_account_id, model, purpose,
+             input_tokens, output_tokens, cost_usd, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
-      crypto.randomUUID(), ctx.workspaceId, ctx.agentId, model, purpose,
-      inputTokens, outputTokens, costOf(model, inputTokens, outputTokens),
+      crypto.randomUUID(), ctx.workspaceId, ctx.agentId, ctx.linkedinAccountId,
+      model, purpose, inputTokens, outputTokens,
+      costOf(model, inputTokens, outputTokens),
       Math.floor(Date.now() / 1000),
     ],
   });

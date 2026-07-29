@@ -86,7 +86,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
     }
 
     const actions = browserActions(session.page);
-    const key = groupKey(ctx.workspaceId, ctx.country);
+    const key = groupKey(ctx.linkedinAccountId);
 
     await runSequence(ctx.cfg, ctx, {
       actions,
@@ -171,7 +171,7 @@ async function pass(): Promise<void> {
   // for each other.
   const byAddress = new Map<string, AgentContext[]>();
   for (const ctx of agents) {
-    const key = groupKey(ctx.workspaceId, ctx.country);
+    const key = groupKey(ctx.linkedinAccountId);
     const list = byAddress.get(key) ?? [];
     list.push(ctx);
     byAddress.set(key, list);
