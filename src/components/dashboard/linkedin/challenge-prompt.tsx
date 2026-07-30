@@ -23,6 +23,8 @@ interface ChallengeState {
   state: "none" | "awaiting_code" | "submitted" | "failed";
   kind: string | null;
   reason: string | null;
+  /** The account's own state, which is what says the sign-in finished. */
+  status: string;
 }
 
 export function ChallengePrompt({
@@ -46,7 +48,14 @@ export function ChallengePrompt({
       if (!res.ok) return;
       const data = (await res.json()) as ChallengeState;
       setInfo(data);
-      if (data.state === "none" && !resolved.current) {
+
+      // Resolved means the account is signed in, never merely that no code is being asked for.
+      //
+      // This used to fire on state === "none", which is the value the column carries from the
+      // moment the row is created. So the wizard closed itself on the first poll, about two
+      // seconds after it opened, before the worker had even picked the account up, and the person
+      // was never shown the code prompt they had been told to wait for.
+      if (data.status === "active" && !resolved.current) {
         resolved.current = true;
         onResolved?.();
       }

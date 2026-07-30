@@ -539,12 +539,16 @@ export function ConnectLinkedInDialog({
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
                 <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
                   <span className="font-semibold text-slate-900 dark:text-white">
-                    If LinkedIn asks for a code, we will ask you for it here.
+                    LinkedIn will almost certainly ask you to verify this
+                    sign-in, and we will ask you for the code here.
                   </span>{" "}
-                  Keep your phone within reach for the next minute. The sign-in
-                  pauses on that screen and waits for you, exactly as it would
-                  if you were doing it yourself, and once it is done LinkedIn
-                  remembers the device and stops asking.
+                  It happens whether or not you use two-factor: this is a
+                  browser and a location LinkedIn has not seen before, so it
+                  checks. The code arrives by email, by text or in your
+                  authenticator app, whichever you already use. Keep it within
+                  reach for the next minute. The sign-in waits on that screen
+                  for you, and once it is done LinkedIn remembers the device
+                  and stops asking.
                 </p>
               </div>
 
@@ -570,10 +574,10 @@ export function ConnectLinkedInDialog({
                   <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                     Only worth filling in if you kept the setup key your
                     authenticator app was given, the long string behind the QR
-                    code rather than the 6 digits that keep changing. With it,
-                    a sign-in months from now completes without asking you
-                    anything. Without it, we simply ask you for a code on the
-                    rare occasions LinkedIn wants one.
+                    code rather than the 6 digits that keep changing. Almost
+                    nobody still has it, and it changes nothing about this
+                    sign-in: it only means a re-login months from now finishes
+                    with nobody watching.
                   </p>
                 </div>
               </details>
