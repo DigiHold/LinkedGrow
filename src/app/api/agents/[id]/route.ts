@@ -51,6 +51,7 @@ export async function GET(
         reviewMode: agents.reviewMode,
         smartLeadFinder: agents.smartLeadFinder,
         observeOnly: agents.observeOnly,
+        testRecipients: agents.testRecipients,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,

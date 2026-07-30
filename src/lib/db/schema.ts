@@ -1012,6 +1012,14 @@ export const agents = sqliteTable("agents", {
    * that: reviewMode queues messages for approval and still sends the invitations.
    */
   observeOnly: integer("observe_only", { mode: "boolean" }).notNull().default(false),
+  /**
+   * JSON array of profiles this agent may contact, when it should only contact a few.
+   *
+   * Everything else runs normally and every other lead is queued and visible, simply never written
+   * to. It is how the messages get proven on a real account without a stranger receiving one.
+   * Null or empty means no restriction, which is the normal state.
+   */
+  testRecipients: text("test_recipients"),
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),

@@ -267,6 +267,15 @@ export async function POST(request: NextRequest) {
       reviewMode: bool(body?.reviewMode, false),
       smartLeadFinder: bool(body?.smartLeadFinder, true),
       observeOnly: bool(body?.observeOnly, false),
+      testRecipients: Array.isArray(body?.testRecipients)
+        ? JSON.stringify(
+            (body.testRecipients as unknown[])
+              .filter((v): v is string => typeof v === "string")
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .slice(0, 10)
+          )
+        : null,
       // Agents are always created paused. Activating is a separate,
       // deliberate action, per section 7b.
       status: "paused",
