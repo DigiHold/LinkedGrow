@@ -826,7 +826,38 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
     .references(() => users.id, { onDelete: "cascade" }),
   email: text("email").notNull(),
   passwordEncrypted: text("password_encrypted").notNull(),
+  /**
+   * Optional, and deliberately not asked for by default.
+   *
+   * Nicolas, 2026-07-30: asking a normal person for the TOTP *setup key*, the
+   * long string behind the QR code, is unusable. LinkedIn shows it once when
+   * two-factor is switched on and never again, so anybody who already has 2FA
+   * would have to turn it off and back on to find it. The default flow asks for
+   * the 6-digit code at the moment LinkedIn asks for it, which is what people
+   * already know how to do. This field stays for the few who want the session
+   * to re-authenticate with no human at all, and it is the only thing that
+   * makes a re-login months later fully unattended.
+   */
   totpSecretEncrypted: text("totp_secret_encrypted"),
+  /**
+   * The live handoff for a sign-in challenge.
+   *
+   * `awaiting_code` means a browser is sitting on LinkedIn's verification page
+   * right now with the customer's session half open, and the dashboard should
+   * be showing an input. The code is short-lived by nature, a TOTP one lasts 30
+   * seconds, so the worker polls every couple of seconds and clears the field
+   * the moment it is used.
+   */
+  challengeState: text("challenge_state", {
+    enum: ["none", "awaiting_code", "submitted", "failed"],
+  })
+    .notNull()
+    .default("none"),
+  /** What the page is asking for, so the dashboard can name it: an
+   *  authenticator app, a text message, or an email. */
+  challengeKind: text("challenge_kind"),
+  challengeCodeEncrypted: text("challenge_code_encrypted"),
+  challengeAskedAt: integer("challenge_asked_at", { mode: "timestamp" }),
   profileId: text("profile_id"),
   profileUrl: text("profile_url"),
   fullName: text("full_name"),

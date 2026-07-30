@@ -24,6 +24,7 @@ import {
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
 import { EXTRA_AGENT_PRICE } from "@/lib/plans";
 import { cn } from "@/lib/utils";
+import { ChallengePrompt } from "./challenge-prompt";
 
 /**
  * The LinkedIn accounts surface, written once and mounted in three places:
@@ -208,12 +209,13 @@ export function LinkedInAccountsPanel({
               <li
                 key={account.id}
                 className={cn(
-                  "flex items-center gap-4 rounded-xl border p-4 transition-colors",
+                  "flex flex-col gap-3 rounded-xl border p-4 transition-colors",
                   picked
                     ? "border-primary bg-primary/5"
                     : "border-border bg-transparent"
                 )}
               >
+                <div className="flex w-full items-center gap-4">
                 <Avatar account={account} />
 
                 <div className="min-w-0 flex-1">
@@ -259,6 +261,16 @@ export function LinkedInAccountsPanel({
                     <Trash2 className="h-4 w-4" />
                   )}
                 </button>
+                </div>
+
+                {/* Full width under the row rather than beside the buttons: it
+                    only appears while a browser is actually waiting, and when
+                    it does it is the most important thing on the page. */}
+                <ChallengePrompt
+                  accountId={account.id}
+                  label={accountLabel(account)}
+                  onResolved={reload}
+                />
               </li>
             );
           })}
@@ -322,7 +334,7 @@ export function ConnectLinkedInDialog({
   onOpenChange: (open: boolean) => void;
   onConnected: (id: string) => void;
 }) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
@@ -333,6 +345,8 @@ export function ConnectLinkedInDialog({
   const [proxyPort, setProxyPort] = useState("");
   const [proxyUser, setProxyUser] = useState("");
   const [proxyPass, setProxyPass] = useState("");
+  /** Set once the account row exists, which is what step 3 watches. */
+  const [connectedId, setConnectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -346,6 +360,7 @@ export function ConnectLinkedInDialog({
     setProxyPort("");
     setProxyUser("");
     setProxyPass("");
+    setConnectedId(null);
     setError("");
   };
 
@@ -405,8 +420,13 @@ export function ConnectLinkedInDialog({
         return;
       }
 
-      reset();
-      onOpenChange(false);
+      // Step 3 rather than closing. LinkedIn usually asks to verify a sign-in
+      // from somewhere it has not seen, and sending the customer away to find
+      // that prompt on another page is how people get stuck. The wizard stays
+      // open, watches the account, and asks for the code the moment it is
+      // wanted.
+      setConnectedId(id);
+      setStep(3);
       onConnected(id);
     } catch {
       setError("The account could not be connected. Try again in a moment.");
@@ -420,17 +440,23 @@ export function ConnectLinkedInDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>
-            {step === 1 ? "Connect a LinkedIn account" : "Two-factor, and where it signs in from"}
+            {step === 1
+              ? "Connect a LinkedIn account"
+              : step === 2
+                ? "Where it signs in from"
+                : "Confirm the connection"}
           </DialogTitle>
           <DialogDescription>
             {step === 1
               ? "LinkedGrow works from your own profile, so there is no LinkedIn app to authorise. Your password is encrypted the moment it arrives and is never shown again, to you or to us."
-              : "Two more things and the account is connected. Both of them are what keep it from being asked to prove itself again later."}
+              : step === 2
+                ? "One more thing and the account is connected. This is what keeps it from being asked to prove itself again later."
+                : "We are signing in now. Stay on this screen for a moment: LinkedIn often asks to verify a new sign-in, and if it does we will ask you for the code right here."}
           </DialogDescription>
         </DialogHeader>
 
         <form className="space-y-5" onSubmit={submit}>
-          {step === 1 ? (
+          {step === 3 ? null : step === 1 ? (
             <>
               <div className="space-y-2">
                 <label
@@ -510,34 +536,47 @@ export function ConnectLinkedInDialog({
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label
-                  className="block text-[13px] font-medium text-slate-900 dark:text-white"
-                  htmlFor="connect-li-totp"
-                >
-                  Two-factor setup key
-                </label>
-                <Input
-                  autoComplete="off"
-                  id="connect-li-totp"
-                  onChange={(e) => setTotpSecret(e.target.value)}
-                  placeholder="Leave empty if you do not use two-factor"
-                  type="password"
-                  value={totpSecret}
-                />
-                <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                  If your account uses an authenticator app, paste the setup key
-                  it gave you, the long one behind the QR code rather than the 6
-                  digits that keep changing. With it the session signs itself
-                  back in and never comes back to you for a code.
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
+                <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    If LinkedIn asks for a code, we will ask you for it here.
+                  </span>{" "}
+                  Keep your phone within reach for the next minute. The sign-in
+                  pauses on that screen and waits for you, exactly as it would
+                  if you were doing it yourself, and once it is done LinkedIn
+                  remembers the device and stops asking.
                 </p>
               </div>
 
-              <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                LinkedIn asks you to approve the first sign-in from somewhere
-                new. Approve it once from your phone or your inbox, and it stops
-                asking.
-              </p>
+              {/* The setup key used to be a required field on this screen. It
+                  is unusable as one: LinkedIn shows it once when 2FA is turned
+                  on and never again, so anybody who already has it would have
+                  to disable and re-enable two-factor to find it. It survives
+                  here as an option for people who want a re-login months from
+                  now to happen with nobody watching. */}
+              <details className="rounded-xl border border-slate-200 dark:border-slate-700">
+                <summary className="cursor-pointer select-none px-4 py-3 text-[13px] font-medium text-slate-900 dark:text-white">
+                  Advanced: never ask me for a code again
+                </summary>
+                <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-700">
+                  <Input
+                    autoComplete="off"
+                    id="connect-li-totp"
+                    onChange={(e) => setTotpSecret(e.target.value)}
+                    placeholder="Authenticator setup key, if you still have it"
+                    type="password"
+                    value={totpSecret}
+                  />
+                  <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                    Only worth filling in if you kept the setup key your
+                    authenticator app was given, the long string behind the QR
+                    code rather than the 6 digits that keep changing. With it,
+                    a sign-in months from now completes without asking you
+                    anything. Without it, we simply ask you for a code on the
+                    rare occasions LinkedIn wants one.
+                  </p>
+                </div>
+              </details>
 
               {/* Collapsed by default, because almost nobody needs it and an
                   open form invites people to fill it in. It exists for agencies
@@ -602,6 +641,40 @@ export function ConnectLinkedInDialog({
             </>
           )}
 
+          {step === 3 && connectedId && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
+                <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-primary" />
+                <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+                  Signing in as{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {email}
+                  </span>
+                  . This takes a minute, because the sign-in runs at a human
+                  pace on purpose rather than all at once.
+                </p>
+              </div>
+
+              {/* The same prompt as the accounts page, here where the person
+                  already is. It renders nothing until a browser is genuinely
+                  waiting, so the step stays quiet when no code is wanted. */}
+              <ChallengePrompt
+                accountId={connectedId}
+                label={email}
+                onResolved={() => {
+                  reset();
+                  onOpenChange(false);
+                }}
+              />
+
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                You can close this window at any time. The sign-in carries on
+                without you, and if a code is needed later it will be waiting
+                on the accounts page.
+              </p>
+            </div>
+          )}
+
           {error && (
             <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
               {error}
@@ -609,28 +682,43 @@ export function ConnectLinkedInDialog({
           )}
 
           <DialogFooter className="gap-2 sm:justify-between">
-            <Button
-              onClick={() => (step === 1 ? close(false) : setStep(1))}
-              type="button"
-              variant="ghost"
-            >
-              {step === 1 ? "Cancel" : "Back"}
-            </Button>
-            <Button
-              disabled={
-                saving ||
-                (step === 1 ? !email.trim() || !password : !country)
-              }
-              type="submit"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : step === 1 ? (
-                "Continue"
-              ) : (
-                "Connect"
-              )}
-            </Button>
+            {step < 3 && (
+              <Button
+                onClick={() => (step === 1 ? close(false) : setStep(1))}
+                type="button"
+                variant="ghost"
+              >
+                {step === 1 ? "Cancel" : "Back"}
+              </Button>
+            )}
+            {step === 3 ? (
+              <Button
+                className="ml-auto"
+                onClick={() => {
+                  reset();
+                  onOpenChange(false);
+                }}
+                type="button"
+              >
+                Done
+              </Button>
+            ) : (
+              <Button
+                disabled={
+                  saving ||
+                  (step === 1 ? !email.trim() || !password : !country)
+                }
+                type="submit"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : step === 1 ? (
+                  "Continue"
+                ) : (
+                  "Connect"
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

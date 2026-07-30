@@ -71,6 +71,12 @@ export function rateLimit(
 
 // Rate limit configurations for different endpoints
 export const AUTH_RATE_LIMITS = {
+  // Six digits is guessable at volume, so a verification code gets a tight
+  // window. A real person mistypes once or twice, never ten times a minute.
+  challengeCode: {
+    maxRequests: 6,
+    windowMs: 60 * 1000,
+  },
   // Allocating a dedicated address can place a paid order with the proxy
   // supplier, so this is money rather than compute. Ten an hour is far above
   // any real customer, who allocates once per LinkedIn account, and far below
