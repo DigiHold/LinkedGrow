@@ -75,12 +75,16 @@ interface AnalyticsData {
     hasLinkedInConnected: boolean;
     postingTarget: "profile" | "organization" | null;
   };
+  /** When the worker last read these numbers off LinkedIn. Null before the first read. */
+  lastReadAt?: string | null;
   advanced?: {
+    // Only ever computed from this person's own measured posts, so there is no
+    // "industry" source any more. Absent means there is not enough to say.
     bestPostingTimes?: {
       bestDay: string;
       bestHour: string;
       insight: string;
-      source: "industry" | "hybrid" | "personal";
+      source: "personal";
       postCount: number;
     };
   };
@@ -304,9 +308,14 @@ export default function AnalyticsPage() {
               <AnalyticsEmptyState type="no-data" />
             )}
 
-            {/* Disclaimer */}
+            {/* Where the numbers come from, and when they were last true. */}
             <p className="text-xs text-slate-500 dark:text-slate-400/70 text-center pt-4">
-              Overall statistics reflect all your LinkedIn activity. Per-post analytics are fully available for posts published through LinkedGrow. Posts published directly on LinkedIn may appear with limited or no individual metrics.
+              These numbers are read from your own LinkedIn posts every few hours, so they
+              follow LinkedIn rather than an estimate.{" "}
+              {data.lastReadAt
+                ? `Last read ${new Date(data.lastReadAt).toLocaleString()}.`
+                : "The first reading happens shortly after your first post goes out."}{" "}
+              Posts you published directly on LinkedIn are not tracked here.
             </p>
           </>
         )}
