@@ -327,6 +327,12 @@ export function ConnectLinkedInDialog({
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
+  // The advanced panel. Empty means we allocate, which is what almost everyone
+  // should leave it as.
+  const [proxyHost, setProxyHost] = useState("");
+  const [proxyPort, setProxyPort] = useState("");
+  const [proxyUser, setProxyUser] = useState("");
+  const [proxyPass, setProxyPass] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -336,6 +342,10 @@ export function ConnectLinkedInDialog({
     setPassword("");
     setCountry("");
     setTotpSecret("");
+    setProxyHost("");
+    setProxyPort("");
+    setProxyUser("");
+    setProxyPass("");
     setError("");
   };
 
@@ -369,6 +379,32 @@ export function ConnectLinkedInDialog({
         return;
       }
       const id = data.id as string;
+
+      // The address comes second, on purpose. The account exists either way,
+      // and an allocation that fails leaves something to retry rather than
+      // losing the credentials the person just typed.
+      const custom = proxyHost.trim()
+        ? {
+            host: proxyHost.trim(),
+            port: Number(proxyPort),
+            username: proxyUser.trim(),
+            password: proxyPass,
+          }
+        : undefined;
+      const alloc = await fetch(`/api/linkedin/accounts/${id}/proxy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(custom ? { custom } : {}),
+      });
+      if (!alloc.ok) {
+        const detail = await alloc.json().catch(() => null);
+        setError(
+          `${email} is connected, but its dedicated address could not be set up: ${detail?.error ?? "try again from the accounts page"}. Its agents stay paused until it is.`
+        );
+        await Promise.resolve(onConnected(id));
+        return;
+      }
+
       reset();
       onOpenChange(false);
       onConnected(id);
@@ -502,6 +538,67 @@ export function ConnectLinkedInDialog({
                 new. Approve it once from your phone or your inbox, and it stops
                 asking.
               </p>
+
+              {/* Collapsed by default, because almost nobody needs it and an
+                  open form invites people to fill it in. It exists for agencies
+                  who already own good infrastructure, and for the countries our
+                  suppliers do not carry, where it turns a refusal into a
+                  workaround. */}
+              <details className="rounded-xl border border-slate-200 dark:border-slate-700">
+                <summary className="cursor-pointer select-none px-4 py-3 text-[13px] font-medium text-slate-900 dark:text-white">
+                  Advanced: use my own proxy
+                </summary>
+                <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-700">
+                  <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                    Leave this closed and we allocate a dedicated address for
+                    you, which is what almost everyone should do. Fill it in and
+                    the agent uses yours instead, we allocate nothing, and the
+                    country above is ignored.{" "}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">
+                      The reputation of an address you supply is yours.
+                    </span>{" "}
+                    The warm-up, the pacing and the device fingerprint still
+                    apply, but if it turns out to be a shared datacentre IP your
+                    account can be restricted and our safety guarantee does not
+                    cover it.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+                    <Input
+                      autoComplete="off"
+                      onChange={(e) => setProxyHost(e.target.value)}
+                      placeholder="Host, for example 45.12.30.7"
+                      value={proxyHost}
+                    />
+                    <Input
+                      autoComplete="off"
+                      inputMode="numeric"
+                      onChange={(e) => setProxyPort(e.target.value)}
+                      placeholder="Port"
+                      value={proxyPort}
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      autoComplete="off"
+                      onChange={(e) => setProxyUser(e.target.value)}
+                      placeholder="Username"
+                      value={proxyUser}
+                    />
+                    <Input
+                      autoComplete="off"
+                      onChange={(e) => setProxyPass(e.target.value)}
+                      placeholder="Password"
+                      type="password"
+                      value={proxyPass}
+                    />
+                  </div>
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400">
+                    We route one request through it and read the address that
+                    comes out before saving, so a proxy that cannot answer is
+                    refused here rather than failing on your first session.
+                  </p>
+                </div>
+              </details>
             </>
           )}
 
