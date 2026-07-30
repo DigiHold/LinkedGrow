@@ -2,7 +2,7 @@ import type { Page } from "patchright";
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
 import { decryptSecret } from "../crypto.ts";
-import { clickHuman, dwell, sleep, typeHuman } from "../browser/human.ts";
+import { clickHuman, clickHumanLocator, dwell, sleep, typeHuman } from "../browser/human.ts";
 
 /**
  * Signing an account in for the first time, including the code LinkedIn asks for.
@@ -46,6 +46,17 @@ const SEL = {
   email: "#username, input[name='session_key'], input[type='email']:visible",
   password: "#password, input[name='session_password'], input[type='password']:visible",
   submit: "button[type='submit'], button[data-litms-control-urn='login-submit']",
+  /**
+   * The sign-in button, which is none of the above.
+   *
+   * Read off the live page on 2026-07-30: it is <button type="button">, there is no <form> element
+   * anywhere, and every class is a content hash. The only stable handle is the visible text, and
+   * that text is translated: the box in Nuremberg was served German. In production each account
+   * leaves through its own country's address, so the language follows the customer rather than us
+   * and an English-only matcher would fail for most of them.
+   */
+  submitByName:
+    /^(sign in|log in|einloggen|anmelden|se connecter|connexion|iniciar sesión|entrar|accedi|inloggen|logga in|zaloguj|giriş yap|войти|登录|ログイン|로그인)$/i,
   // LinkedIn uses several verification screens and the field is named
   // differently on each, so match the shape rather than one id.
   codeInput:
@@ -60,6 +71,27 @@ export class SignInFailed extends Error {
     super(message);
     this.name = "SignInFailed";
   }
+}
+
+/**
+ * Clicks whatever submits this login form, in whatever language it is being shown.
+ *
+ * Three attempts, cheapest first: the classic selector for an older layout, the button named after
+ * signing in, then Enter in the password field. Enter is last because with no <form> on the page it
+ * is the least certain of the three, not the most.
+ */
+async function submitLogin(page: Page): Promise<void> {
+  const classic = page.locator(SEL.submit).first();
+  if (await classic.isVisible().catch(() => false)) {
+    await clickHuman(page, SEL.submit);
+    return;
+  }
+  const named = page.getByRole("button", { name: SEL.submitByName }).first();
+  if (await named.isVisible().catch(() => false)) {
+    await clickHumanLocator(page, named);
+    return;
+  }
+  await page.locator(SEL.password).first().press("Enter").catch(() => {});
 }
 
 /**
@@ -217,7 +249,7 @@ export async function signIn(input: SignInInput): Promise<void> {
   await dwell(400, 1100);
   await typeHuman(page, SEL.password, input.password);
   await dwell(600, 1600);
-  await clickHuman(page, SEL.submit);
+  await submitLogin(page);
 
   await page.waitForLoadState("domcontentloaded").catch(() => {});
   await dwell(2500, 4500);
