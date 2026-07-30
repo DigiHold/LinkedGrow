@@ -50,6 +50,7 @@ import { canAccessFeature, PlanId } from "@/lib/plans";
 import { PdfCarouselPreview } from "@/components/dashboard/pdf-carousel-preview";
 import { AutoplayVideo } from "@/components/autoplay-video";
 import { localToUTC, utcToLocal, formatInTimezone, resolveTimezone } from "@/lib/timezone";
+import { queuePost } from "@/lib/publish-client";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = [
@@ -67,7 +68,7 @@ interface PostMedia {
 interface Post {
   id: string;
   content: string;
-  status: "draft" | "scheduled" | "published" | "failed";
+  status: "draft" | "scheduled" | "queued" | "publishing" | "published" | "failed";
   postType: "text" | "image" | "carousel" | "video";
   scheduledAt: string | null;
   publishedAt: string | null;
@@ -194,10 +195,15 @@ export function CalendarContent() {
   // Convert getDay() (0=Sun) to Monday-first (0=Mon)
   const startingDay = (firstDayOfMonth.getDay() + 6) % 7;
 
+  // queued and publishing are in the list because a post handed to the
+  // LinkedIn session is neither a draft nor published, and leaving them out
+  // made a post vanish from the board for the two minutes it took to go up.
+  const POSTS_QUERY = "/api/posts?status=draft,scheduled,queued,publishing,published&limit=100";
+
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/posts?status=draft,scheduled,published&limit=100");
+      const response = await fetch(POSTS_QUERY);
       if (!response.ok) throw new Error("Failed to fetch posts");
       const data = await response.json();
       setPosts(data.posts || []);
@@ -205,6 +211,18 @@ export function CalendarContent() {
       // Silent fail
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  /** The same read without the spinner, for the refresh that runs while a post goes up. */
+  const refreshPostsQuietly = useCallback(async () => {
+    try {
+      const response = await fetch(POSTS_QUERY, { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      setPosts(data.posts || []);
+    } catch {
+      // A missed refresh is not worth showing anybody.
     }
   }, []);
 
@@ -235,6 +253,20 @@ export function CalendarContent() {
     fetchAllPosts();
     fetchIdeas();
   }, [fetchPosts, fetchAllPosts, fetchIdeas]);
+
+  // While something is on its way to LinkedIn, keep the board honest. It stops
+  // on its own once nothing is in flight, so an idle calendar makes no requests.
+  const hasPostInFlight = posts.some(
+    (p) => p.status === "queued" || p.status === "publishing"
+  );
+  useEffect(() => {
+    if (!hasPostInFlight) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      refreshPostsQuietly();
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [hasPostInFlight, refreshPostsQuietly]);
 
   // Fetch LinkedIn profile for preview
   useEffect(() => {
@@ -472,6 +504,8 @@ export function CalendarContent() {
   const getStatusLabel = (status: Post["status"]) => {
     switch (status) {
       case "scheduled": return "Scheduled";
+      case "queued": return "Publishing";
+      case "publishing": return "Publishing";
       case "published": return "Published";
       case "failed": return "Failed";
       default: return "Draft";
@@ -481,6 +515,10 @@ export function CalendarContent() {
   const getStatusColor = (status: Post["status"]) => {
     switch (status) {
       case "scheduled": return "bg-blue-500";
+      // In flight, and deliberately its own colour: a post being written is
+      // neither waiting for a date nor finished.
+      case "queued": return "bg-cyan-500";
+      case "publishing": return "bg-cyan-500";
       case "published": return "bg-green-500";
       case "failed": return "bg-red-500";
       default: return "bg-yellow-500";
@@ -741,26 +779,23 @@ export function CalendarContent() {
         setPendingDraftPostId(postIdToPublish);
       }
 
-      // If publishing immediately, call the LinkedIn API
+      // Publishing now means handing it to the LinkedIn session, which takes a
+      // minute or two in a real browser. The calendar does not sit and wait for
+      // it the way the editor does: the card goes to Publishing and the board
+      // refreshes itself until it lands, which is what a calendar is for.
       if (publish) {
-        const publishResponse = await fetch("/api/linkedin/post", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            postId: postIdToPublish,
-            text: newPostContent,
-            // For videos, pass the R2 URL directly so the route doesn't have
-            // to look it up from the media table (we don't store one).
-            videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
-            videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
-            videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
-          }),
-        });
-
-        if (!publishResponse.ok) {
-          const error = await publishResponse.json().catch(() => null);
-          throw new Error(error?.error || "Failed to publish to LinkedIn");
+        if (!postIdToPublish) {
+          throw new Error("This post could not be saved, so nothing was published");
         }
+        await queuePost({
+          postId: postIdToPublish,
+          text: newPostContent,
+          // For videos, pass the R2 URL directly so the route doesn't have
+          // to look it up from the media table (we don't store one).
+          videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
+          videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
+          videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
+        });
       }
 
       await fetchPosts();

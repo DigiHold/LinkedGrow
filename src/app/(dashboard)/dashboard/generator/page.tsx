@@ -41,6 +41,12 @@ import { ImageGeneratorModal } from "@/components/dashboard/image-generator-moda
 import { PostEditor, isVideoMedia } from "@/components/dashboard/post-editor";
 import { FirstComment } from "@/components/dashboard/first-comment";
 import { localToUTC, resolveTimezone } from "@/lib/timezone";
+import {
+  publishAndWatch,
+  publishStageLabel,
+  PUBLISH_STILL_RUNNING,
+  type PublishStage,
+} from "@/lib/publish-client";
 
 const GENERATOR_STEPS = [
   { num: 1, label: "Type" },
@@ -298,6 +304,9 @@ export default function GeneratorPage() {
   const [firstComment, setFirstComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  // A browser types the post now, which takes a minute. Saying where it is up
+  // to is what stops the wait reading as a hang.
+  const [publishStage, setPublishStage] = useState<PublishStage | null>(null);
   const [linkPreviewUrl, setLinkPreviewUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
 
@@ -696,32 +705,33 @@ showToast(error instanceof Error ? error.message : "Failed to save draft");
 
       const { post } = await saveResponse.json();
 
-      // Publish to LinkedIn. Images/PDFs are looked up from the media table
-      // by postId; videos are passed inline because they aren't stored.
-      const publishResponse = await fetch("/api/linkedin/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Queue it for the LinkedIn session. Images and PDFs are looked up from
+      // the media table by postId; videos are passed inline because they aren't
+      // stored there. The worker publishes it, so this waits on the post's row.
+      const outcome = await publishAndWatch(
+        {
           postId: post.id,
           text: currentPost,
           videoUrl: isVideo ? attachedImage?.storageUrl : undefined,
           videoMimeType: isVideo ? attachedImage?.mimeType : undefined,
           videoStorageKey: isVideo ? attachedImage?.storageKey : undefined,
-        }),
-      });
+        },
+        setPublishStage
+      );
 
-      if (!publishResponse.ok) {
-        const error = await publishResponse.json().catch(() => null);
-        throw new Error(error?.error || "Failed to publish to LinkedIn");
-      }
+      if (outcome.state === "failed") throw new Error(outcome.message);
 
       clearDraft();
-      showToast("Post published to LinkedIn!", "success");
+      showToast(
+        outcome.state === "published" ? "Posted to LinkedIn." : PUBLISH_STILL_RUNNING,
+        "success"
+      );
       setTimeout(() => router.push("/dashboard/posts"), 1500);
     } catch (error) {
 showToast(error instanceof Error ? error.message : "Failed to publish");
     } finally {
       setIsPublishing(false);
+      setPublishStage(null);
     }
   };
 
@@ -1409,6 +1419,11 @@ showToast(error instanceof Error ? error.message : "Failed to schedule post");
                   )}
                   {isPublishing ? "Publishing..." : "Publish to LinkedIn"}
                 </Button>
+                {publishStage && (
+                  <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+                    {publishStageLabel(publishStage)}
+                  </p>
+                )}
                 {(
                   <>
                     <Button

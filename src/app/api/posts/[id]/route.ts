@@ -2,57 +2,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
+import { posts, media, users } from "@/lib/db/schema";
 import { eq, and, inArray, count, gte } from "drizzle-orm";
 import { deleteMultipleFromR2, uploadToR2, isR2Configured } from "@/lib/storage/r2";
 import sharp from "sharp";
 import { cancelScheduledPost } from "@/lib/qstash";
 import { nanoid } from "nanoid";
 import { PLANS, PlanId } from "@/lib/plans";
-
-// Helper function to check if user can access a post (owner, team owner, or team admin)
-async function canUserAccessPost(userId: string, postUserId: string): Promise<boolean> {
-  // User owns the post
-  if (userId === postUserId) return true;
-
-  // Check if user is a team owner and the post belongs to one of their team members
-  const ownedTeam = await db.query.teams.findFirst({
-    where: eq(teams.ownerId, userId),
-  });
-
-  if (ownedTeam) {
-    // Get all team member user IDs
-    const members = await db
-      .select({ userId: teamMembers.userId })
-      .from(teamMembers)
-      .where(eq(teamMembers.teamId, ownedTeam.id));
-
-    const teamMemberIds = members.map((m) => m.userId);
-    if (teamMemberIds.includes(postUserId)) return true;
-  }
-
-  // Check if user is a team admin and the post belongs to a member of the same team
-  const membership = await db.query.teamMembers.findFirst({
-    where: eq(teamMembers.userId, userId),
-  });
-
-  if (membership && membership.role === "admin") {
-    // Get all members in this team (admins can manage member posts, not other admin posts)
-    const teamMembersList = await db
-      .select({ userId: teamMembers.userId, role: teamMembers.role })
-      .from(teamMembers)
-      .where(eq(teamMembers.teamId, membership.teamId));
-
-    // Find the post owner in the team members
-    const postOwnerMembership = teamMembersList.find((m) => m.userId === postUserId);
-    // Admin can only edit member posts (not admin or owner posts)
-    if (postOwnerMembership && postOwnerMembership.role === "member") {
-      return true;
-    }
-  }
-
-  return false;
-}
+import { canUserAccessPost } from "@/lib/post-access";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

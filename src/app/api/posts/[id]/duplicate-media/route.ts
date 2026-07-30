@@ -5,40 +5,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { posts, media, users, teams, teamMembers } from "@/lib/db/schema";
+import { posts, media, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { copyR2Object, isR2Configured } from "@/lib/storage/r2";
+import { canUserAccessPost } from "@/lib/post-access";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
-}
-
-async function canUserAccessPost(userId: string, postUserId: string): Promise<boolean> {
-  if (userId === postUserId) return true;
-
-  const ownedTeam = await db.query.teams.findFirst({
-    where: eq(teams.ownerId, userId),
-  });
-  if (ownedTeam) {
-    const members = await db
-      .select({ userId: teamMembers.userId })
-      .from(teamMembers)
-      .where(eq(teamMembers.teamId, ownedTeam.id));
-    if (members.map((m) => m.userId).includes(postUserId)) return true;
-  }
-
-  const membership = await db.query.teamMembers.findFirst({
-    where: eq(teamMembers.userId, userId),
-  });
-  if (membership && membership.role === "admin") {
-    const teamMembersList = await db
-      .select({ userId: teamMembers.userId, role: teamMembers.role })
-      .from(teamMembers)
-      .where(eq(teamMembers.teamId, membership.teamId));
-    const postOwner = teamMembersList.find((m) => m.userId === postUserId);
-    if (postOwner && postOwner.role === "member") return true;
-  }
-  return false;
 }
 
 export async function POST(_request: NextRequest, { params }: RouteParams) {

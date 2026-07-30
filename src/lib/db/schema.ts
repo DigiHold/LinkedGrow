@@ -174,10 +174,51 @@ export const posts = sqliteTable("posts", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
-  status: text("status", { enum: ["draft", "scheduled", "published", "failed"] }).default("draft"),
+  /**
+   * This table is also the publish queue.
+   *
+   * v2 publishes through the browser, so the app cannot do it: it hands the
+   * work to the worker and the worker reads it back from here. A separate queue
+   * table would have carried a second copy of the status, the time, the URL and
+   * the error, and those two copies would disagree the first time a publish
+   * failed halfway.
+   *
+   * queued     the user pressed Publish and the worker has not picked it up yet
+   * scheduled  waiting for its slot, and due once scheduled_at has passed
+   * publishing claimed by a worker, browser open
+   */
+  status: text("status", {
+    enum: ["draft", "scheduled", "queued", "publishing", "published", "failed"],
+  }).default("draft"),
   postType: text("post_type", { enum: ["text", "image", "carousel", "video"] }).default("text"),
   scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
   publishedAt: integer("published_at", { mode: "timestamp" }),
+  /**
+   * Which LinkedIn account this went out from, written when the worker claims
+   * the post rather than when the user writes it. A workspace can hold several
+   * accounts and the answer to "where did this appear" has to survive somebody
+   * later disconnecting one of them.
+   */
+  linkedinAccountId: text("linkedin_account_id"),
+  /** Publish attempts so far. Three failures stop the retries and tell the user. */
+  publishAttempts: integer("publish_attempts").notNull().default(0),
+  /** When a worker claimed it. A claim older than the lease is a dead worker, and the post is freed. */
+  publishClaimedAt: integer("publish_claimed_at", { mode: "timestamp" }),
+  /** Set once the first comment lands, so a retried post never comments twice. */
+  firstCommentPostedAt: integer("first_comment_posted_at", { mode: "timestamp" }),
+  /**
+   * When this post was handed to LinkedIn's own scheduler.
+   *
+   * A scheduled post is not published by us at its minute. Hours earlier, in
+   * the account's evening, the session writes it into the composer and uses
+   * LinkedIn's Schedule control, exactly as a person planning tomorrow's post
+   * does. LinkedIn then publishes it itself. Nothing of ours is awake at 09:00,
+   * which is the whole point: a session that opens at the same minute every
+   * time is the pattern, not the post.
+   *
+   * Null on a scheduled post means it has not been handed over yet.
+   */
+  linkedinScheduledAt: integer("linkedin_scheduled_at", { mode: "timestamp" }),
   linkedinPostId: text("linkedin_post_id"),
   linkedinPostUrl: text("linkedin_post_url"),
   linkedinImageUrl: text("linkedin_image_url"), // R2 URL of the post's image (synced from LinkedIn)
@@ -192,7 +233,11 @@ export const posts = sqliteTable("posts", {
   errorMessage: text("error_message"),
   createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(new Date()),
-});
+}, (table) => [
+  // The worker asks "what is due" every minute, across every customer, so this
+  // one is the difference between an index scan and a full table read.
+  index("idx_posts_publish_due").on(table.status, table.scheduledAt),
+]);
 
 // Media table for images, carousels, videos
 export const media = sqliteTable("media", {
@@ -365,6 +410,33 @@ export const apiLogs = sqliteTable("api_logs", {
 });
 
 // Post analytics table (for advanced analytics)
+/**
+ * One follower count per account per day, read off the profile by the worker.
+ *
+ * There is no API to ask any more, so the number comes from the same place a
+ * person reads it: their own profile. One row a day is enough to draw the
+ * growth line and small enough to keep for ever.
+ */
+export const accountFollowers = sqliteTable(
+  "account_followers",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    linkedinAccountId: text("linkedin_account_id")
+      .notNull()
+      .references(() => linkedinAccounts.id, { onDelete: "cascade" }),
+    /** Days since the epoch, so one reading a day is enforced by the index. */
+    day: integer("day").notNull(),
+    count: integer("count").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("uq_account_followers_day").on(table.linkedinAccountId, table.day),
+  ]
+);
+
 export const postAnalytics = sqliteTable("post_analytics", {
   id: text("id").primaryKey(),
   postId: text("post_id")

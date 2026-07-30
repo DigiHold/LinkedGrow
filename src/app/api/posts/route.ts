@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     const conditions = [userCondition];
 
     if (status) {
-      const statuses = status.split(",") as ("draft" | "scheduled" | "published" | "failed")[];
+      const statuses = status.split(",") as (typeof posts.status.enumValues)[number][];
       if (statuses.length === 1) {
         conditions.push(eq(posts.status, statuses[0]));
       } else {
@@ -100,18 +100,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get posts with their media
+    // Get posts with their media. A post being published right now sits above
+    // everything else: it is the one the user is waiting on.
     const userPosts = await db
       .select()
       .from(posts)
       .where(and(...conditions))
       .orderBy(
-          sql`CASE ${posts.status} WHEN 'draft' THEN 0 WHEN 'scheduled' THEN 1 WHEN 'failed' THEN 2 WHEN 'published' THEN 3 END`,
+          sql`CASE ${posts.status}
+            WHEN 'queued' THEN 0 WHEN 'publishing' THEN 0
+            WHEN 'draft' THEN 1 WHEN 'scheduled' THEN 2
+            WHEN 'failed' THEN 3 WHEN 'published' THEN 4 END`,
           desc(sql`CASE ${posts.status}
             WHEN 'draft' THEN COALESCE(${posts.updatedAt}, ${posts.createdAt})
             WHEN 'scheduled' THEN ${posts.scheduledAt}
             WHEN 'published' THEN COALESCE(${posts.publishedAt}, ${posts.updatedAt})
-            WHEN 'failed' THEN COALESCE(${posts.updatedAt}, ${posts.createdAt})
+            ELSE COALESCE(${posts.updatedAt}, ${posts.createdAt})
           END`)
         )
       .limit(limit)

@@ -61,7 +61,7 @@ type PostStatus = "all" | "draft" | "scheduled" | "published";
 interface Post {
   id: string;
   content: string;
-  status: "draft" | "scheduled" | "published" | "failed";
+  status: "draft" | "scheduled" | "queued" | "publishing" | "published" | "failed";
   postType: "text" | "image" | "carousel" | "video";
   scheduledAt?: string | null;
   publishedAt?: string | null;
@@ -90,6 +90,37 @@ interface PostsResponse {
     total: number;
   };
   isTeamView?: boolean;
+}
+
+/**
+ * Queued and publishing are one thing to the person reading the page: their
+ * post is going up. The difference between waiting for the session and being
+ * typed into the composer belongs in the worker's logs, not in a badge.
+ */
+function statusLabel(status: Post["status"]): string {
+  if (status === "queued" || status === "publishing") return "Publishing";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function statusClasses(status: Post["status"]): string {
+  if (status === "published") {
+    return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+  }
+  if (status === "scheduled") {
+    return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+  }
+  if (status === "queued" || status === "publishing") {
+    return "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400";
+  }
+  if (status === "failed") {
+    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  }
+  return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+}
+
+/** True while the worker owns this post, which is when editing it must be off. */
+function isInFlight(status: Post["status"]): boolean {
+  return status === "queued" || status === "publishing";
 }
 
 export default function PostsPage() {
@@ -180,6 +211,28 @@ export default function PostsPage() {
 
     fetchPosts();
   }, []);
+
+  // A post handed to the LinkedIn session lands a minute or two later, and this
+  // page is where people wait for it. It refreshes only while something is
+  // actually in flight, so a page of finished posts asks for nothing.
+  const hasPostInFlight = posts.some(
+    (p) => p.status === "queued" || p.status === "publishing"
+  );
+  useEffect(() => {
+    if (!hasPostInFlight) return;
+    const timer = setInterval(async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const response = await fetch("/api/posts", { cache: "no-store" });
+        if (!response.ok) return;
+        const data: PostsResponse = await response.json();
+        setPosts(data.posts || []);
+      } catch {
+        // The next tick is eight seconds away.
+      }
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [hasPostInFlight]);
 
   // Calculate counts for tabs
   const counts = {
@@ -491,16 +544,10 @@ export default function PostsPage() {
                     <span
                       className={cn(
                         "px-2 py-0.5 rounded-full text-xs font-medium",
-                        post.status === "published"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : post.status === "scheduled"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          : post.status === "failed"
-                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                        statusClasses(post.status)
                       )}
                     >
-                      {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                      {statusLabel(post.status)}
                     </span>
 
                     {/* Post Type Badge */}
@@ -560,7 +607,9 @@ export default function PostsPage() {
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  {post.status !== "published" && (
+                  {/* Not while it is going up: the worker is already typing
+                      the version it has, so an edit now would be silently lost. */}
+                  {post.status !== "published" && !isInFlight(post.status) && (
                     <Link href={`/dashboard/editor?edit=${post.id}`}>
                       <Button variant="ghost" size="icon-sm" title="Edit">
                         <Pencil className="w-4 h-4" />
@@ -818,16 +867,10 @@ export default function PostsPage() {
                 <span
                   className={cn(
                     "px-2 py-0.5 rounded-full text-xs font-medium",
-                    previewPost.status === "published"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : previewPost.status === "scheduled"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                      : previewPost.status === "failed"
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    statusClasses(previewPost.status)
                   )}
                 >
-                  {previewPost.status.charAt(0).toUpperCase() + previewPost.status.slice(1)}
+                  {statusLabel(previewPost.status)}
                 </span>
               </div>
               <button
