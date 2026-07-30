@@ -111,7 +111,13 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       business: { url: "", description: String(r.company_info ?? "") },
       businessHours: { startHour, endHour, days: [...DEFAULTS.businessHours.days] },
       warmup: { ...DEFAULTS.warmup },
-      limits: { ...DEFAULTS.limits },
+      // An agent restricted to a handful of named people is somebody trying the product out, not
+      // running a campaign, so its ceilings come down to match. The allowlist is the guarantee and
+      // this is the second one: if a write ever escaped the wrapper, it could escape three times
+      // rather than twenty. Belt and braces, on somebody's real account.
+      limits: Number(r.observe_only ?? 0) === 1 || parseList(r.test_recipients).length > 0
+        ? { connectPerWeekMax: 3, dmPerDayMax: 3 }
+        : { ...DEFAULTS.limits },
       delaysMs: { ...DEFAULTS.delaysMs },
       sequence: { ...DEFAULTS.sequence },
       leads: {
