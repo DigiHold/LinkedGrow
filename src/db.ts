@@ -77,6 +77,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.workday_end       AS workday_end,
       a.review_mode       AS review_mode,
       a.observe_only      AS observe_only,
+      a.test_recipients   AS test_recipients,
       a.status            AS status,
       a.last_run_at       AS last_run_at,
       l.full_name         AS account_full_name,
@@ -145,6 +146,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       warmupStartedAt: r.warmup_started_at ? new Date(Number(r.warmup_started_at) * 1000) : null,
       reviewMode: Number(r.review_mode ?? 0) === 1,
       observeOnly: Number(r.observe_only ?? 0) === 1,
+      testRecipients: parseList(r.test_recipients),
       // The wizard offers two, and until now the worker read neither.
       goal: String(r.goal ?? "conversations") === "meetings" ? "meetings" : "conversations",
       website: String(r.website ?? ""),

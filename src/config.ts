@@ -67,6 +67,16 @@ export interface AgentContext {
    */
   observeOnly: boolean;
   /**
+   * When set, the only profiles this agent may like, invite or message.
+   *
+   * Everything else runs normally and every other lead is queued and visible, simply never
+   * contacted. It is how the messages get proven on a real account without a stranger receiving
+   * one, and it is the honest alternative to testing from a fabricated profile.
+   *
+   * Empty means no restriction, which is the normal state.
+   */
+  testRecipients: string[];
+  /**
    * Who the messages are from. The relationship steps write as a named person
    * rather than as a company, so the first name is not optional: a message
    * signed with nothing reads as software.

@@ -15,6 +15,7 @@ import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.
 import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
 import { browserActions } from "./linkedin/actions.ts";
+import { onlyContact } from "./safety/allowlist.ts";
 import {
   RELATIONSHIP_STEPS,
   helloMessage,
@@ -126,7 +127,12 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       return;
     }
 
-    const actions = browserActions(session.page);
+    // Every write funnels through here, so the test allowlist is applied once rather than checked
+    // at five call sites, any one of which could be forgotten.
+    const actions =
+      ctx.testRecipients.length > 0
+        ? onlyContact(browserActions(session.page), ctx.testRecipients)
+        : browserActions(session.page);
     const key = groupKey(ctx.linkedinAccountId);
 
     // Finding people comes before writing to them, for two reasons. The queue
