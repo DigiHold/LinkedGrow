@@ -1,12 +1,14 @@
 import "dotenv/config";
-import { loadRunnableAgents, touchRun, pauseAgent, flagAccount, recordEvent } from "./db.ts";
+import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, recordEvent } from "./db.ts";
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
 import { BudgetExceededError } from "./ai.ts";
 import { openSession, closeSession, ProxyMismatchError, isSignedIn } from "./browser/driver.ts";
 import type { ProxyAllocation } from "./browser/driver.ts";
+import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
+import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
 import { isWithinBusinessHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { browserActions } from "./linkedin/actions.ts";
@@ -46,13 +48,43 @@ const PASS_INTERVAL_MS = 5 * 60 * 1000;
 /**
  * Where an agent's address comes from.
  *
- * Not built: allocation needs a provider account, which is Nicolas's to open
- * (plan section 5b). Until then the worker runs without a proxy, which is safe
- * for a local test against one account and is refused in production by the
- * guard below.
+ * The dashboard orders the address the moment the customer picks a country and
+ * binds it to their LinkedIn account, so the worker only ever reads. It reads
+ * by **LinkedIn account**, never by agent and never by workspace, because the
+ * invariant in plan section 5c is one account and one address however many
+ * agents drive it.
+ *
+ * A missing or inactive row is not an error to route around. In production the
+ * agent pauses, because an account sending from the server's own address is an
+ * account seen from a datacentre.
  */
-async function allocationFor(_ctx: AgentContext): Promise<ProxyAllocation | null> {
-  return null;
+async function allocationFor(ctx: AgentContext): Promise<ProxyAllocation | null> {
+  const { rows } = await db().execute({
+    sql: `SELECT host, port, username_encrypted, password_encrypted, last_exit_ip
+            FROM proxy_allocations
+           WHERE linkedin_account_id = ? AND status = 'active'
+           LIMIT 1`,
+    args: [ctx.linkedinAccountId],
+  });
+  const row = rows[0];
+  if (!row) return null;
+
+  const username = decryptSecret(String(row.username_encrypted ?? ""));
+  const password = decryptSecret(String(row.password_encrypted ?? ""));
+  if (!username || !password) {
+    log(`account ${ctx.linkedinAccountId}: address stored without credentials`);
+    return null;
+  }
+
+  return {
+    server: `http://${String(row.host)}:${Number(row.port)}`,
+    username,
+    password,
+    // The driver asserts the observed exit against this before anything runs,
+    // so an address that silently changed stops the session rather than
+    // sending from somewhere the account has never been seen.
+    expectedIp: String(row.last_exit_ip ?? ""),
+  };
 }
 
 function isProduction(): boolean {
@@ -180,13 +212,40 @@ async function pass(): Promise<void> {
 
   await Promise.all(
     [...byAddress.values()].map(async (group) => {
-      for (const ctx of group) {
-        await safely(ctx);
-        // Even between two agents on one address, a pause.
-        if (group.length > 1) await sleep(randInt(20_000, 60_000));
+      // One slot for the whole group, because every agent in it drives the same
+      // LinkedIn account and therefore shares one browser and one address.
+      const first = group[0];
+      if (!first) return;
+      let lease;
+      try {
+        lease = takeSlot(first.linkedinAccountId);
+      } catch (error) {
+        if (error instanceof NoSlotError) {
+          // Not an error worth alarming about: the next pass is minutes away
+          // and an agent acting a few times an hour cannot tell the difference.
+          log("no slot free, deferring to the next pass", {
+            linkedinAccountId: first.linkedinAccountId,
+          });
+          return;
+        }
+        throw error;
+      }
+
+      try {
+        for (const ctx of group) {
+          await safely(ctx);
+          // Even between two agents on one address, a pause.
+          if (group.length > 1) await sleep(randInt(20_000, 60_000));
+        }
+      } finally {
+        // Released only here, after every agent on this account has finished
+        // and its browser is closed. Releasing earlier would let a second
+        // account open a browser while this one is still writing its profile.
+        lease.release();
       }
     })
   );
+  reportSlots();
 }
 
 async function main(): Promise<void> {
