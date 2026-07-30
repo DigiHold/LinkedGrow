@@ -112,6 +112,7 @@ export function NewAgentWizard() {
   const [readStage, setReadStage] = useState(0);
   const [name, setName] = useState("");
   const [source, setSource] = useState<string>("buying_event");
+  const [sourceTarget, setSourceTarget] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState("");
   const [jobRoles, setJobRoles] = useState("");
@@ -280,7 +281,15 @@ export function NewAgentWizard() {
             .filter(Boolean),
           smartLeadFinder,
           sources: [
-            { type: source, label: labelForSource(source) },
+            // One row per thing named, because "Gojiberry, Taplio" is two competitors
+            // rather than one company with a comma in its name.
+            ...(sourceTarget.trim()
+              ? sourceTarget
+                  .split(",")
+                  .map((v) => v.trim())
+                  .filter(Boolean)
+                  .map((target) => ({ type: source, label: target }))
+              : [{ type: source, label: labelForSource(source) }]),
             ...keywords.map((k) => ({ type: "keyword", label: k })),
           ],
         }),
@@ -433,6 +442,27 @@ export function NewAgentWizard() {
               />
             ))}
           </div>
+
+          {/*
+            The target for the source, which the wizard never used to ask for.
+            It sent the label of the button as the thing to look for, so picking
+            "Competitor engagement" made the agent search LinkedIn for a company
+            called Competitor engagement and find nobody.
+          */}
+          {SOURCE_TARGET[source] && (
+            <div className="mt-6">
+              <Field
+                label={SOURCE_TARGET[source]!.label}
+                hint={SOURCE_TARGET[source]!.hint}
+              >
+                <Input
+                  value={sourceTarget}
+                  onChange={(e) => setSourceTarget(e.target.value)}
+                  placeholder={SOURCE_TARGET[source]!.placeholder}
+                />
+              </Field>
+            </div>
+          )}
 
         </StepBody>
       )}
@@ -950,6 +980,30 @@ function OptionCard({
     </button>
   );
 }
+
+/**
+ * What each source has to be pointed at before it can find anybody.
+ *
+ * High-intent signals is absent on purpose: it watches for role changes and hiring posts among the
+ * roles and industries already given on the next step, so there is nothing extra to ask.
+ */
+const SOURCE_TARGET: Record<string, { label: string; hint: string; placeholder: string } | undefined> = {
+  competitor: {
+    label: "Which competitors?",
+    hint: "Company names or their LinkedIn page URLs, comma separated. The agent reads their recent posts and takes the people who commented or reacted, skipping anyone who works there.",
+    placeholder: "Gojiberry, Taplio",
+  },
+  market: {
+    label: "Describe the customers you already have",
+    hint: "In your own words. The agent turns this into searches and looks for people who talk like them.",
+    placeholder: "Small agencies building ecommerce sites for local brands on WordPress",
+  },
+  linkedin_search: {
+    label: "Paste the search",
+    hint: "A LinkedIn or Sales Navigator search URL, or simply the words you would type into the search box.",
+    placeholder: "https://www.linkedin.com/search/results/content/?keywords=...",
+  },
+};
 
 function labelForSource(id: string) {
   return LEAD_SOURCES.find((s) => s.id === id)?.label ?? id;
