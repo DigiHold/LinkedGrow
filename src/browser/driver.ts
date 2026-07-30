@@ -1,5 +1,5 @@
 import { chromium, type BrowserContext, type Page } from "patchright";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import type { AgentContext } from "../config.ts";
 import { optionalEnv } from "../config.ts";
@@ -63,6 +63,14 @@ export async function openSession(
   usePersona(ctx.linkedinAccountId);
   const userDataDir = resolve(PROFILE_ROOT, ctx.linkedinAccountId);
   mkdirSync(userDataDir, { recursive: true });
+
+  // A worker killed mid-session leaves Chrome's own lock behind, and the next launch on that
+  // profile either fails or quietly starts a second browser beside a process that no longer
+  // exists. Nothing else can be using this directory: the account's slot is held for the whole
+  // group and only one process ever holds it, so a lock found here is always stale.
+  for (const lock of ["SingletonLock", "SingletonSocket", "SingletonCookie"]) {
+    rmSync(resolve(userDataDir, lock), { force: true });
+  }
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: "chrome",

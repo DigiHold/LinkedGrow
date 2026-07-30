@@ -24,6 +24,16 @@ export interface RunState {
   persona: Persona | null;
   cursor: { x: number; y: number };
   heartbeat: { lastBeat: number; startedAt: number };
+  /**
+   * How to shut this run's browser, registered as soon as one is open.
+   *
+   * The watchdog abandons a stalled run by losing a race, which leaves that run still executing
+   * and its Chrome still open. The next agent on the same LinkedIn account would then open a
+   * second browser on the same profile directory, so one account would be signed in twice at once.
+   * That is the single easiest thing for LinkedIn to spot, so the watchdog closes the browser
+   * itself before anybody else is allowed to start.
+   */
+  closeBrowser?: () => Promise<void>;
 }
 
 const storage = new AsyncLocalStorage<RunState>();

@@ -10,7 +10,7 @@ import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
 import { startWatch, stopWatch, IDLE_LIMIT_MS, ABSOLUTE_LIMIT_MS, type Stall } from "./safety/heartbeat.ts";
-import { withRunState, type RunState } from "./safety/run-context.ts";
+import { withRunState, currentRun, type RunState } from "./safety/run-context.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
@@ -118,6 +118,16 @@ async function runAgent(ctx: AgentContext): Promise<void> {
   }
 
   const session = await openSession(ctx, proxy);
+  // Hand the browser to the watchdog. If this run stalls it is abandoned mid-flight, and the next
+  // agent on this same LinkedIn account must not be able to open a second Chrome on this profile.
+  const run = currentRun();
+  let closed = false;
+  const closeOnce = async () => {
+    if (closed) return;
+    closed = true;
+    await closeSession(session);
+  };
+  if (run) run.closeBrowser = closeOnce;
   try {
     if (!(await isSignedIn(session.context))) {
       await flagAccount(
@@ -210,7 +220,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
 
     await touchRun(ctx);
   } finally {
-    await closeSession(session);
+    await closeOnce();
   }
 }
 
@@ -268,6 +278,8 @@ function withWatchdog<T>(work: () => Promise<T>): Promise<T> {
     startWatch();
     return work();
   });
+  // A stalled run keeps executing after the race is lost, so its rejection has to land somewhere.
+  running.catch(() => {});
   let timer: NodeJS.Timeout;
   const watch = new Promise<never>((_, reject) => {
     timer = setInterval(() => {
@@ -278,10 +290,21 @@ function withWatchdog<T>(work: () => Promise<T>): Promise<T> {
       else if (ranMs >= ABSOLUTE_LIMIT_MS) reject(new RunStalled({ kind: "absolute", idleMs, ranMs }));
     }, 15_000);
   });
-  return Promise.race([running, watch]).finally(() => {
-    clearInterval(timer);
-    stopWatch();
-  }) as Promise<T>;
+  return Promise.race([running, watch])
+    .catch(async (error: unknown) => {
+      if (!(error instanceof RunStalled)) throw error;
+      // Close the abandoned browser before returning, or the next agent on this account opens a
+      // second one on the same profile and the account is signed in twice.
+      await Promise.race([
+        state.closeBrowser?.() ?? Promise.resolve(),
+        new Promise((r) => setTimeout(r, 30_000)),
+      ]).catch(() => {});
+      throw error;
+    })
+    .finally(() => {
+      clearInterval(timer);
+      stopWatch();
+    }) as Promise<T>;
 }
 
 async function safely(ctx: AgentContext): Promise<void> {
