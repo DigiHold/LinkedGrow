@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Page, Locator } from "patchright";
 
 import { beat } from "../safety/heartbeat.ts";
+import { currentRun } from "../safety/run-context.ts";
 
 /**
  * The behaviour layer: what makes the session look like a person rather than a
@@ -102,17 +103,42 @@ function anonymousPersona(): Persona {
   return personaFor(`anon-${Math.random()}`);
 }
 
+// Only used outside a run. Inside one, the persona and the cursor belong to that run: the worker
+// drives every account at once, and a single shared pair meant the last browser to open set the
+// motor habits and the cursor trail for every other account running beside it.
 let active: Persona = anonymousPersona();
 let cursor = { x: randInt(200, 900), y: randInt(150, 600) };
 
 /** Called once per session by the driver, before any action runs. */
 export function usePersona(accountId: string): void {
+  const run = currentRun();
+  if (run) {
+    run.persona = personaFor(accountId);
+    run.cursor = { x: randInt(200, 900), y: randInt(150, 600) };
+    return;
+  }
   active = personaFor(accountId);
   cursor = { x: randInt(200, 900), y: randInt(150, 600) };
 }
 
 export function currentPersona(): Persona {
+  const run = currentRun();
+  if (run?.persona) return run.persona;
   return active;
+}
+
+/** Where this account's cursor actually is, which is not where another account's cursor is. */
+function cursorNow(): { x: number; y: number } {
+  return currentRun()?.cursor ?? cursor;
+}
+
+function setCursor(x: number, y: number): void {
+  const run = currentRun();
+  if (run) {
+    run.cursor = { x, y };
+    return;
+  }
+  cursor = { x, y };
 }
 
 /* ── the mouse ─────────────────────────────────────────────────────────────*/
@@ -170,14 +196,15 @@ export async function moveMouseHuman(
   fromX?: number,
   fromY?: number
 ): Promise<void> {
-  const sx = fromX ?? cursor.x;
-  const sy = fromY ?? cursor.y;
+  const here = cursorNow();
+  const sx = fromX ?? here.x;
+  const sy = fromY ?? here.y;
   const distance = Math.hypot(toX - sx, toY - sy);
 
   // Short moves are single gestures. Longer ones overshoot and come back, which
   // is what a hand does when it is aiming rather than nudging.
   if (distance > 180 && Math.random() < 0.72) {
-    const over = active.overshoot * spreadRandom(0.6, 1.5);
+    const over = currentPersona().overshoot * spreadRandom(0.6, 1.5);
     const px = toX + (toX - sx) * over + randGauss(0, 3);
     const py = toY + (toY - sy) * over + randGauss(0, 3);
     await traverse(page, sx, sy, px, py);
@@ -187,7 +214,7 @@ export async function moveMouseHuman(
     await traverse(page, sx, sy, toX, toY);
   }
 
-  cursor = { x: toX, y: toY };
+  setCursor(toX, toY);
 }
 
 async function clickBox(page: Page, box: { x: number; y: number; width: number; height: number }): Promise<void> {
@@ -256,22 +283,22 @@ function neighbourOf(ch: string): string | null {
 export async function typeHuman(page: Page, selector: string, text: string): Promise<void> {
   await clickHuman(page, selector);
   // The long one: deciding how to open, before a single character exists.
-  await sleep(gaussAtLeast(active.openingThink, active.openingThink * 0.4, 300));
+  await sleep(gaussAtLeast(currentPersona().openingThink, currentPersona().openingThink * 0.4, 300));
 
   const chars = [...text];
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i] as string;
 
     // A typo, noticed one to three characters later and backspaced out.
-    if (Math.random() < active.typoRate) {
+    if (Math.random() < currentPersona().typoRate) {
       const wrong = neighbourOf(ch);
       if (wrong) {
         const overrun = randInt(0, 2);
         await page.keyboard.type(wrong);
-        await sleep(gaussAtLeast(active.keyMean, active.keySd, 45));
+        await sleep(gaussAtLeast(currentPersona().keyMean, currentPersona().keySd, 45));
         for (let k = 1; k <= overrun && i + k < chars.length; k++) {
           await page.keyboard.type(chars[i + k] as string);
-          await sleep(gaussAtLeast(active.keyMean, active.keySd, 45));
+          await sleep(gaussAtLeast(currentPersona().keyMean, currentPersona().keySd, 45));
         }
         // The moment of noticing.
         await sleep(gaussAtLeast(340, 150, 120));
@@ -285,7 +312,7 @@ export async function typeHuman(page: Page, selector: string, text: string): Pro
 
     await page.keyboard.type(ch);
 
-    let gap = gaussAtLeast(active.keyMean, active.keySd, 45);
+    let gap = gaussAtLeast(currentPersona().keyMean, currentPersona().keySd, 45);
     // Structural pauses: a breath between words, a longer one after a sentence.
     if (ch === " ") gap *= spreadRandom(1.15, 1.9);
     if (ch === "," || ch === ";") gap *= spreadRandom(1.4, 2.4);
@@ -300,7 +327,7 @@ export async function typeHuman(page: Page, selector: string, text: string): Pro
 
 /** A reading pause, scaled by how fast this particular person reads. */
 export async function dwell(minMs = 800, maxMs = 4000): Promise<void> {
-  await sleep(randInt(minMs, maxMs) * active.readingPace);
+  await sleep(randInt(minMs, maxMs) * currentPersona().readingPace);
 }
 
 /** A few variable scroll bursts, like someone skimming a feed. */
@@ -310,7 +337,7 @@ export async function scrollHuman(page: Page, times = randInt(2, 6)): Promise<vo
     // sometimes bounce back up to re-read something.
     const up = Math.random() < 0.14;
     await page.mouse.wheel(0, up ? -randInt(120, 380) : randInt(180, 760));
-    await sleep(randInt(400, 1500) * active.readingPace);
+    await sleep(randInt(400, 1500) * currentPersona().readingPace);
   }
 }
 
@@ -321,7 +348,7 @@ export async function scrollHuman(page: Page, times = randInt(2, 6)): Promise<vo
  * firing an action.
  */
 export async function idleHuman(page: Page, maxMs = 9000): Promise<void> {
-  const until = Date.now() + randInt(1200, maxMs) * active.readingPace;
+  const until = Date.now() + randInt(1200, maxMs) * currentPersona().readingPace;
   while (Date.now() < until) {
     const roll = Math.random();
     if (roll < 0.45) {

@@ -21,6 +21,11 @@ export const IDLE_LIMIT_MS = 5 * 60 * 1000;
 /** A last resort, hours away, for a run that beats steadily and still never finishes. */
 export const ABSOLUTE_LIMIT_MS = 90 * 60 * 1000;
 
+import { currentRun } from "./run-context.ts";
+
+// Only used outside a run, which is the tests and the one-off login command. Inside a run the
+// numbers live on that run, because the worker drives every account at once and the first agent to
+// finish used to switch the watchdog off for all the others.
 let lastBeat = 0;
 let startedAt = 0;
 let watching = false;
@@ -32,16 +37,30 @@ let watching = false;
  * real ones. Production never passes it.
  */
 export function beat(now = Date.now()): void {
+  const run = currentRun();
+  if (run) {
+    run.heartbeat.lastBeat = now;
+    return;
+  }
   if (watching) lastBeat = now;
 }
 
 export function startWatch(now = Date.now()): void {
+  const run = currentRun();
+  if (run) {
+    run.heartbeat.startedAt = now;
+    run.heartbeat.lastBeat = now;
+    return;
+  }
   watching = true;
   startedAt = now;
   lastBeat = now;
 }
 
 export function stopWatch(): void {
+  // Nothing to stop inside a run: the state dies with the run, so one agent finishing can no longer
+  // disarm another agent's watchdog.
+  if (currentRun()) return;
   watching = false;
 }
 
@@ -53,9 +72,11 @@ export interface Stall {
 
 /** Non-null when the run should be cut off, with which of the two limits was reached. */
 export function stalled(now = Date.now()): Stall | null {
-  if (!watching) return null;
-  const idleMs = now - lastBeat;
-  const ranMs = now - startedAt;
+  const run = currentRun();
+  if (!run && !watching) return null;
+  const from = run ? run.heartbeat : { lastBeat, startedAt };
+  const idleMs = now - from.lastBeat;
+  const ranMs = now - from.startedAt;
   if (idleMs >= IDLE_LIMIT_MS) return { kind: "idle", idleMs, ranMs };
   if (ranMs >= ABSOLUTE_LIMIT_MS) return { kind: "absolute", idleMs, ranMs };
   return null;

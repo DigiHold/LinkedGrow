@@ -9,7 +9,8 @@ import type { ProxyAllocation } from "./browser/driver.ts";
 import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
-import { startWatch, stopWatch, stalled, type Stall } from "./safety/heartbeat.ts";
+import { startWatch, stopWatch, IDLE_LIMIT_MS, ABSOLUTE_LIMIT_MS, type Stall } from "./safety/heartbeat.ts";
+import { withRunState, type RunState } from "./safety/run-context.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
@@ -253,16 +254,31 @@ class RunStalled extends Error {
 }
 
 /** Polls the heartbeat rather than counting down, so a working agent is never interrupted. */
-function withWatchdog<T>(work: Promise<T>): Promise<T> {
-  startWatch();
+function withWatchdog<T>(work: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  // Each agent gets its own persona, its own cursor and its own heartbeat. They used to be module
+  // globals, so with several accounts running at once the last browser to open decided how all of
+  // them moved, and the first agent to finish disarmed everybody else's watchdog.
+  const state: RunState = {
+    persona: null,
+    cursor: { x: 0, y: 0 },
+    heartbeat: { lastBeat: now, startedAt: now },
+  };
+  const running = withRunState(state, async () => {
+    startWatch();
+    return work();
+  });
   let timer: NodeJS.Timeout;
   const watch = new Promise<never>((_, reject) => {
     timer = setInterval(() => {
-      const stall = stalled();
-      if (stall) reject(new RunStalled(stall));
+      // Read this run's own numbers, not whichever run happens to be current on the timer's stack.
+      const idleMs = Date.now() - state.heartbeat.lastBeat;
+      const ranMs = Date.now() - state.heartbeat.startedAt;
+      if (idleMs >= IDLE_LIMIT_MS) reject(new RunStalled({ kind: "idle", idleMs, ranMs }));
+      else if (ranMs >= ABSOLUTE_LIMIT_MS) reject(new RunStalled({ kind: "absolute", idleMs, ranMs }));
     }, 15_000);
   });
-  return Promise.race([work, watch]).finally(() => {
+  return Promise.race([running, watch]).finally(() => {
     clearInterval(timer);
     stopWatch();
   }) as Promise<T>;
@@ -270,7 +286,7 @@ function withWatchdog<T>(work: Promise<T>): Promise<T> {
 
 async function safely(ctx: AgentContext): Promise<void> {
   try {
-    await withWatchdog(runAgent(ctx));
+    await withWatchdog(() => runAgent(ctx));
   } catch (error) {
     if (error instanceof RunStalled) {
       // The session's own finally still closes the browser; this only stops the pass waiting on it.
