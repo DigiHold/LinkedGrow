@@ -64,6 +64,11 @@ export async function GET() {
     return NextResponse.json({
       accounts: rows.map((r) => ({
         id: r.id,
+        // Selected above for a reason and then dropped here, which took the
+        // dashboard down the first time an account was ever connected: a
+        // freshly created row has no fullName, so the client had nothing at all
+        // to label it with and crashed on the empty value.
+        email: r.email,
         fullName: r.fullName,
         headline: r.headline,
         avatarUrl: r.avatarUrl,

@@ -145,8 +145,17 @@ export function useLinkedInAccounts() {
 }
 
 /** The name a person recognises, which is the address until LinkedIn answers. */
+/**
+ * Something to call this account, whatever the row is missing.
+ *
+ * The last fallback is not decoration. An account has no name until the session
+ * layer has signed in once, so between connecting and the first sign-in the
+ * only thing this can use is the address, and if that is missing too the page
+ * must still render. Returning an empty string here took the whole dashboard
+ * down with a TypeError on the first account anybody ever connected.
+ */
 export function accountLabel(account: LinkedInAccount): string {
-  return account.fullName || account.email;
+  return account.fullName || account.email || "LinkedIn account";
 }
 
 function Avatar({ account }: { account: LinkedInAccount }) {
