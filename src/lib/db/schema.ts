@@ -875,16 +875,52 @@ export const proxyAllocations = sqliteTable("proxy_allocations", {
   port: integer("port").notNull(),
   usernameEncrypted: text("username_encrypted").notNull(),
   passwordEncrypted: text("password_encrypted").notNull(),
+  /** The provider's own order identifier, needed to prolong or release. */
   providerRef: text("provider_ref"),
-  status: text("status", { enum: ["active", "cooling", "burned"] })
+  status: text("status", {
+    enum: ["ordering", "active", "cooling", "burned", "released"],
+  })
     .notNull()
-    .default("active"),
-  // Denormalised, capped at 3 per section 5c.
-  accountCount: integer("account_count").notNull().default(0),
+    .default("ordering"),
+  /** Managed by us, or supplied by the customer through the advanced panel.
+   *  A custom address is never ordered, never renewed and never released. */
+  source: text("source", { enum: ["managed", "custom"] })
+    .notNull()
+    .default("managed"),
+  /**
+   * The one LinkedIn account this address serves, and never a second one.
+   *
+   * Section 5c, corrected 2026-07-30: the earlier model allocated per
+   * (workspace, country) and let up to 3 accounts share an address. One
+   * account per address costs about $2.64 a month more and removes the only
+   * case where two accounts are seen from one place.
+   */
+  linkedinAccountId: text("linkedin_account_id").references(
+    () => linkedinAccounts.id,
+    { onDelete: "set null" }
+  ),
+  /** End of the paid term. Auto-renewal keeps the same address, so this moves
+   *  forward rather than the address changing. */
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  autoRenew: integer("auto_renew", { mode: "boolean" }).notNull().default(true),
+  /** The monthly exit check: an address that was residential when bought can
+   *  be reclassified later, and we want to move before LinkedIn notices. */
+  lastCheckedAt: integer("last_checked_at", { mode: "timestamp" }),
+  lastExitIp: text("last_exit_ip"),
+  lastAsn: text("last_asn"),
+  lastAsnOrg: text("last_asn_org"),
+  /** True when the last check said the exit looks like a hosting network
+   *  rather than a consumer ISP. Alerts, never auto-pauses. */
+  exitLooksHosted: integer("exit_looks_hosted", { mode: "boolean" })
+    .notNull()
+    .default(false),
   burnedAt: integer("burned_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-});
+}, (table) => [
+  index("idx_proxy_alloc_account").on(table.linkedinAccountId),
+  index("idx_proxy_alloc_free").on(table.status, table.country),
+]);
 
 // An agent is one ICP: its own sources, scoring, tone and sequence. Several
 // agents can send from one LinkedIn account and they divide that account's

@@ -71,6 +71,14 @@ export function rateLimit(
 
 // Rate limit configurations for different endpoints
 export const AUTH_RATE_LIMITS = {
+  // Allocating a dedicated address can place a paid order with the proxy
+  // supplier, so this is money rather than compute. Ten an hour is far above
+  // any real customer, who allocates once per LinkedIn account, and far below
+  // what a loop could spend.
+  proxyPurchase: {
+    maxRequests: 10,
+    windowMs: 60 * 60 * 1000,
+  },
   // Login: 5 attempts per 15 minutes per IP
   login: {
     maxRequests: 5,
