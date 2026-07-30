@@ -33,24 +33,71 @@ const PAY_FROM_BALANCE = 1;
 /** Their rate limit is 60 requests a minute, which we stay far below. */
 const TIMEOUT_MS = 30_000;
 
+/**
+ * Every call leaves over IPv4, deliberately.
+ *
+ * Their API is locked to an allowlist of at most 3 addresses. Node resolves
+ * dual-stack hosts to IPv6 first, so a box with both stacks calls out from an
+ * address nobody registered and every request comes back "IP not allowed",
+ * which is what happened on the first live attempt on 2026-07-30. Three slots
+ * is not enough to register both families for a fleet, so the family is pinned
+ * here rather than left to the resolver.
+ */
+let dispatcher: unknown;
+async function ipv4Dispatcher(): Promise<unknown> {
+  if (dispatcher !== undefined) return dispatcher;
+  try {
+    const { Agent } = await import("undici");
+    dispatcher = new Agent({ connect: { family: 4 } });
+  } catch {
+    // Older runtime without undici exposed: fall back rather than fail, and
+    // the allowlist error will say plainly what went wrong.
+    dispatcher = null;
+  }
+  return dispatcher;
+}
+
 interface Envelope<T> {
   status?: string;
   data?: T;
   errors?: Array<{ message?: string }>;
 }
 
-/** Their ISP reference list: the country and period identifiers an order needs. */
+/**
+ * Their ISP reference list, read from the live API on 2026-07-30 rather than
+ * assumed: `data.items` is an object with three arrays, countries are keyed by
+ * **alpha3** rather than the two-letter code the rest of the product uses, and
+ * periods are string ids like "1m" rather than a number of days.
+ */
 interface ReferenceList {
-  items?: Array<{
-    id?: number | string;
-    /** Two-letter code on most rows, occasionally absent. */
-    alpha3?: string;
-    code?: string;
-    name?: string;
-    available?: number;
-    periods?: Array<{ id?: number | string; period?: number; name?: string }>;
-  }>;
+  items?: {
+    country?: Array<{ id?: number; name?: string; alpha3?: string }>;
+    period?: Array<{ id?: string; name?: string }>;
+  };
 }
+
+/** Their alpha3 to the ISO 3166-1 alpha-2 the product speaks. Only the 24
+ *  countries they actually carry, so an unknown code is a catalogue change we
+ *  want to notice rather than paper over. */
+const ALPHA3_TO_ALPHA2: Record<string, string> = {
+  USA: "US", AUT: "AT", BRA: "BR", CAN: "CA", CZE: "CZ", GBR: "GB",
+  FRA: "FR", DEU: "DE", HKG: "HK", IND: "IN", ISR: "IL", ITA: "IT",
+  JPN: "JP", LVA: "LV", NLD: "NL", POL: "PL", ROU: "RO", SGP: "SG",
+  KOR: "KR", ESP: "ES", TWN: "TW", THA: "TH", TUR: "TR", UKR: "UA",
+};
+
+/** Their period ids, and roughly how many days each is worth, so a caller can
+ *  ask for a term in days without knowing their vocabulary. */
+const PERIOD_DAYS: Array<{ id: string; days: number }> = [
+  { id: "1w", days: 7 },
+  { id: "2w", days: 14 },
+  { id: "1m", days: 30 },
+  { id: "2m", days: 60 },
+  { id: "3m", days: 90 },
+  { id: "6m", days: 180 },
+  { id: "9m", days: 270 },
+  { id: "12m", days: 365 },
+];
 
 interface OrderResult {
   orderId?: number;
@@ -64,6 +111,11 @@ interface CalcResult {
   total?: number;
   quantity?: number;
   currency?: string;
+}
+
+/** `proxy/list/isp` answers with an object holding the rows, not a bare array. */
+interface ProxyList {
+  items?: ProxyRow[];
 }
 
 interface ProxyRow {
@@ -97,12 +149,14 @@ export class ProxySellerProvider implements ProxyProvider {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
+      const agent = await ipv4Dispatcher();
       const response = await fetch(`${BASE}/${this.apiKey}/${path}`, {
         method,
         headers: { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
-      });
+        ...(agent ? { dispatcher: agent } : {}),
+      } as RequestInit);
       const text = await response.text();
       let parsed: Envelope<T>;
       try {
@@ -147,13 +201,15 @@ export class ProxySellerProvider implements ProxyProvider {
   async countries(): Promise<ProviderCountry[]> {
     const list = await this.referenceList();
     const out: ProviderCountry[] = [];
-    for (const item of list.items ?? []) {
-      const code = (item.code ?? "").toUpperCase();
-      if (code.length !== 2) continue;
+    for (const row of list.items?.country ?? []) {
+      const code = ALPHA3_TO_ALPHA2[(row.alpha3 ?? "").toUpperCase()];
+      if (!code) continue;
       out.push({
         code,
-        label: item.name ?? code,
-        available: Number(item.available ?? 0),
+        label: row.name ?? code,
+        // Their reference list carries no stock figure, so availability is
+        // proven by `order/calc` rather than promised here.
+        available: 1,
       });
     }
     return out;
@@ -163,37 +219,30 @@ export class ProxySellerProvider implements ProxyProvider {
   private async ids(
     country: string,
     days: number
-  ): Promise<{ countryId: number; periodId: number }> {
+  ): Promise<{ countryId: number; periodId: string }> {
     const list = await this.referenceList();
     const wanted = country.toUpperCase();
-    const row = (list.items ?? []).find(
-      (i) => (i.code ?? "").toUpperCase() === wanted
+    const row = (list.items?.country ?? []).find(
+      (c) => ALPHA3_TO_ALPHA2[(c.alpha3 ?? "").toUpperCase()] === wanted
     );
     if (!row?.id) {
-      throw new ProxyProviderError(
-        `No ISP stock listed for ${wanted}`,
-        this.name
-      );
+      throw new ProxyProviderError(`No ISP stock listed for ${wanted}`, this.name);
     }
-    const periods = row.periods ?? [];
-    if (periods.length === 0) {
-      throw new ProxyProviderError(
-        `No rental periods listed for ${wanted}`,
-        this.name
-      );
-    }
-    // The closest period at or above what was asked for, so a 30-day request
-    // never silently buys 7 days and expires under a live account.
-    const sorted = [...periods].sort(
-      (a, b) => Number(a.period ?? 0) - Number(b.period ?? 0)
+    // The shortest term at or above what was asked for, so a 30-day request
+    // never quietly buys a week and expires under a live account.
+    const offered = new Set(
+      (list.items?.period ?? []).map((p) => String(p.id))
     );
     const chosen =
-      sorted.find((p) => Number(p.period ?? 0) >= days) ??
-      sorted[sorted.length - 1];
-    return { countryId: Number(row.id), periodId: Number(chosen?.id) };
+      PERIOD_DAYS.find((p) => p.days >= days && offered.has(p.id)) ??
+      [...PERIOD_DAYS].reverse().find((p) => offered.has(p.id));
+    if (!chosen) {
+      throw new ProxyProviderError("No rental period on offer", this.name);
+    }
+    return { countryId: Number(row.id), periodId: chosen.id };
   }
 
-  private payload(countryId: number, periodId: number, quantity: number) {
+  private payload(countryId: number, periodId: string, quantity: number) {
     return {
       paymentId: PAY_FROM_BALANCE,
       // Fresh credentials per order, so no two addresses share a login.
@@ -203,7 +252,10 @@ export class ProxySellerProvider implements ProxyProvider {
       quantity,
       authorization: "",
       coupon: "",
-      customTargetName: "",
+      // Their API rejects an empty one with "Set [customTargetName]", and the
+      // label shows up in their dashboard, so it may as well say what these
+      // addresses are for.
+      customTargetName: "LinkedIn",
     };
   }
 
@@ -249,8 +301,8 @@ export class ProxySellerProvider implements ProxyProvider {
 
     // The order does not carry the addresses, so read them back and keep only
     // the rows belonging to this order.
-    const rows = await this.call<ProxyRow[]>("GET", "proxy/list/isp");
-    const mine = (Array.isArray(rows) ? rows : []).filter(
+    const listed = await this.call<ProxyList>("GET", "proxy/list/isp");
+    const mine = (listed.items ?? []).filter(
       (r) => String(r.order_id) === String(order.orderId)
     );
     if (mine.length === 0) {
@@ -286,10 +338,8 @@ export class ProxySellerProvider implements ProxyProvider {
   }
 
   async prolong(ref: string, days: number): Promise<Date> {
-    const rows = await this.call<ProxyRow[]>("GET", "proxy/list/isp");
-    const row = (Array.isArray(rows) ? rows : []).find(
-      (r) => String(r.id) === String(ref)
-    );
+    const listed = await this.call<ProxyList>("GET", "proxy/list/isp");
+    const row = (listed.items ?? []).find((r) => String(r.id) === String(ref));
     if (!row) {
       throw new ProxyProviderError(`Address ${ref} is not in the account`, this.name);
     }
@@ -309,10 +359,8 @@ export class ProxySellerProvider implements ProxyProvider {
       coupon: "",
     });
 
-    const after = await this.call<ProxyRow[]>("GET", "proxy/list/isp");
-    const updated = (Array.isArray(after) ? after : []).find(
-      (r) => String(r.id) === String(ref)
-    );
+    const after = await this.call<ProxyList>("GET", "proxy/list/isp");
+    const updated = (after.items ?? []).find((r) => String(r.id) === String(ref));
     const end = updated?.date_end
       ? new Date(updated.date_end.replace(" ", "T"))
       : null;
@@ -322,15 +370,20 @@ export class ProxySellerProvider implements ProxyProvider {
   }
 
   async balanceUsd(): Promise<number> {
-    const result = await this.call<{ summ?: number | string }>("GET", "balance");
+    const result = await this.call<{ summ?: number | string }>("GET", "balance/get");
     return Number(result?.summ ?? 0);
   }
 
-  /** Cheap liveness check, used by the setup script rather than at runtime. */
+  /**
+   * Cheap liveness check for the setup script. There is no `ping` at this base,
+   * so the reference list stands in: it is a GET, it costs nothing, and it
+   * fails loudly when the calling IP is not on their allowlist, which is the
+   * failure worth catching early.
+   */
   async ping(): Promise<boolean> {
     try {
-      await this.call<unknown>("GET", "ping");
-      return true;
+      const list = await this.referenceList();
+      return (list.items?.country?.length ?? 0) > 0;
     } catch {
       return false;
     }

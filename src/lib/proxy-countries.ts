@@ -1,45 +1,50 @@
 /**
  * The countries a dedicated residential address can be allocated in.
  *
- * Dedicated ISP proxies are sold and geolocated by country, never by city, so
- * this is the whole of the choice a customer makes. The list is what the
- * providers in plan section 5b actually carry; adding one here without stock
- * behind it would promise an address that cannot be allocated.
+ * **This list is the supplier's catalogue, read from their API on 2026-07-30
+ * and not a wish.** Proxy-Seller carries dedicated ISP addresses in exactly
+ * these 24 countries, and offering a country with no stock behind it would
+ * promise an address that cannot be allocated, which fails in front of a
+ * customer halfway through connecting their account.
  *
- * The address must match where the person really is, not where their audience
- * is, because LinkedIn compares it against the account's own history.
+ * Thirteen countries were removed the day it was checked, Switzerland,
+ * Ireland, Belgium, the Nordics and Australia among them, because nobody sells
+ * static ISP there. That is the ceiling of the category rather than a weakness
+ * of one supplier: an ISP address is a block leased from a real operator, so
+ * coverage stops where the commercial agreements stop. Those customers take the
+ * nearest country, which is what the connect dialog tells them to do, or bring
+ * their own proxy through the advanced panel.
+ *
+ * Dedicated ISP proxies are sold and geolocated by country, never by city, so
+ * this is the whole of the choice a customer makes. The address must match
+ * where the person really is rather than where their audience is, because
+ * LinkedIn compares it against the account's own history.
  */
 export const PROXY_COUNTRIES = [
   { code: "US", name: "United States" },
   { code: "CA", name: "Canada" },
   { code: "GB", name: "United Kingdom" },
-  { code: "IE", name: "Ireland" },
   { code: "FR", name: "France" },
-  { code: "BE", name: "Belgium" },
   { code: "NL", name: "Netherlands" },
   { code: "DE", name: "Germany" },
   { code: "AT", name: "Austria" },
-  { code: "CH", name: "Switzerland" },
   { code: "ES", name: "Spain" },
-  { code: "PT", name: "Portugal" },
   { code: "IT", name: "Italy" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
-  { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
   { code: "PL", name: "Poland" },
-  { code: "CZ", name: "Czechia" },
+  { code: "CZ", name: "Czech Republic" },
   { code: "RO", name: "Romania" },
-  { code: "AU", name: "Australia" },
-  { code: "NZ", name: "New Zealand" },
-  { code: "SG", name: "Singapore" },
-  { code: "JP", name: "Japan" },
-  { code: "IN", name: "India" },
-  { code: "BR", name: "Brazil" },
-  { code: "MX", name: "Mexico" },
-  { code: "ZA", name: "South Africa" },
-  { code: "AE", name: "United Arab Emirates" },
+  { code: "LV", name: "Latvia" },
+  { code: "UA", name: "Ukraine" },
+  { code: "TR", name: "Turkey" },
   { code: "IL", name: "Israel" },
+  { code: "IN", name: "India" },
+  { code: "SG", name: "Singapore" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "TW", name: "Taiwan" },
+  { code: "TH", name: "Thailand" },
+  { code: "BR", name: "Brazil" },
 ] as const;
 
 export type ProxyCountry = (typeof PROXY_COUNTRIES)[number]["code"];
