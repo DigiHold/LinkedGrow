@@ -169,6 +169,24 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
 
   useEffect(load, [load]);
 
+  /**
+   * The agent's own state, kept current while somebody is watching it.
+   *
+   * The status and the counts on this page come from one fetch on mount, so an agent that started
+   * warming, found leads and began sending still read "paused, 0 leads" until the browser was
+   * reloaded. Somebody watching their first agent work is exactly the person who should not have
+   * to press refresh to find out whether it works.
+   *
+   * Fifteen seconds, and nothing at all while the tab is in the background.
+   */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      load();
+    }, 15_000);
+    return () => clearInterval(timer);
+  }, [load]);
+
   const setStatus = async (status: "active" | "paused") => {
     setBusy(true);
     try {

@@ -57,6 +57,25 @@ export function ActivityTab({ agentId }: { agentId: string }) {
     load().catch(() => {});
   }, [load]);
 
+  /**
+   * Keep the newest page live.
+   *
+   * The first thing anyone does after starting an agent is sit on this tab waiting to see it work,
+   * and until now nothing arrived without reloading the browser, so a working agent looked like a
+   * dead one. Only the first page of the most recent window refreshes: paging back through history
+   * should not move under the reader, and an old window has nothing new to show.
+   */
+  useEffect(() => {
+    if (page !== 0 || windowKey === "all") return;
+    const timer = setInterval(() => {
+      // Nothing to update while the tab is in the background, and a phone should not spend its
+      // battery polling a page nobody is looking at.
+      if (document.visibilityState !== "visible") return;
+      load().catch(() => {});
+    }, 10_000);
+    return () => clearInterval(timer);
+  }, [load, page, windowKey]);
+
   return (
     <div className="mt-6 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
