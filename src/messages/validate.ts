@@ -63,8 +63,17 @@ const BANNED_PHRASES = [
   "good to meet you", "great to meet you", "nice to meet you",
   "pleasure to meet you", "lovely to meet you",
   // Compliments that would fit anybody, which is what makes them worth nothing.
-  "impressed by your", "impressive profile", "love what you", "big fan of your",
-  "your profile stood out", "caught my eye", "your work is inspiring",
+  "impressed by your", "impressive profile", "impressive background", "love what you",
+  "big fan of your", "your profile stood out", "caught my eye", "your work is inspiring",
+  // Vague demonstratives standing in for a real noun. A person names the thing they mean; a model
+  // gestures at it. Caught live on "Months tracks, that part is never a weekend". The prompt bans
+  // these too, but a prompt is a suggestion and this is the gate.
+  "that part", "this part", "that piece", "that bit", "that side of things", "on that front",
+  "that whole", "the whole thing", "that aspect", "in that space", "that world",
+  // The rest of the cold-DM tells, from the 2026 write-ups on messages that read as automated
+  // (Kondo, Hiration, Origami) plus the phrasings Nicolas rejected in his own outbound.
+  "made me press connect", "explore synergies", "potential synergies", "mutually beneficial",
+  "have you in my network", "expand my network", "hope this message finds you",
 ];
 
 /** Banned words matched with their common inflections (foster/fostering, showcase/showcasing, seamless/seamlessly). */
@@ -83,6 +92,7 @@ const BANNED_OPENERS = [
   "i have been following", "hope you", "hope this", "just wanted to reach out", "i want to reach out",
   // A bare thank-you for connecting is the message sales communities openly mock.
   "thanks for connecting", "thank you for connecting", "thanks for accepting",
+  "thanks for the add",
 ];
 
 /** A short opening or closing pleasantry, which is allowed to be brief. */
@@ -92,17 +102,22 @@ function isGreeting(sentence: string): boolean {
   return GREETING.test(sentence.trim()) && words(sentence).length <= 8;
 }
 
-/** True when the last line is just the sender's name, which is the mail-merge tell. */
-function endsWithSignoff(text: string, senderName: string): boolean {
+/**
+ * True when the message closes on a signature: the sender's name alone on the last line, or a
+ * sign-off word followed by it. Nothing else is a sign-off, so "Glad we connected, Jonathan." with
+ * the recipient's name mid-sentence stays valid.
+ *
+ * The earlier version here only caught a bare name, so "Cheers," and "Best, Maria" walked through.
+ */
+function signsOff(text: string, senderName: string): boolean {
   const lines = text.trim().split("\n").map((l) => l.trim()).filter(Boolean);
-  const last = lines[lines.length - 1] ?? "";
+  const last = (lines[lines.length - 1] ?? "").toLowerCase().replace(/[.,!]+$/, "");
   if (!last) return false;
-  const first = senderName.trim().split(/\s+/)[0] ?? "";
-  if (!first) return false;
-  return (
-    words(last).length <= 3 &&
-    last.toLowerCase().includes(first.toLowerCase())
-  );
+  const first = senderName.split(/\s+/)[0]?.toLowerCase() ?? "";
+  const names = [senderName.toLowerCase(), first].filter(Boolean);
+  if (names.includes(last)) return true;
+  return /^(best|cheers|thanks|thank you|regards|kind regards|warmly|talk soon|speak soon)\b/.test(last)
+    && (names.some((n) => last.includes(n)) || words(last).length <= 4);
 }
 
 function words(text: string): string[] {
@@ -180,16 +195,26 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   if (ctx.contextText && echoesPost(text, ctx.contextText)) {
     reasons.push("restates their own words back at them instead of reacting to them");
   }
+  // A greeting with nobody's name in it is colder than no greeting at all, and it turned up as its
+  // own repeated pattern across the live preview ("Hey." opening three messages out of six).
+  if (/^\s*(hey|hi|hello|good morning|good afternoon)\s*[.,!]?\s*$/im.test(text)) {
+    reasons.push("bare greeting with no name (say their name or skip the greeting)");
+  }
+  // A DM is typed on a phone, so a greeting is allowed to be short: "Glad we connected, Sarah" is
+  // four words and forcing it to six produces exactly the stiffness this rule exists to prevent.
+  // Everything that is not a greeting still carries its weight, and a second short one is staccato.
+  const shortGreetings: string[] = [];
   for (const s of bodySentences(text, ctx.senderName)) {
-    // A greeting is allowed to be short, because that is how people greet.
-    // "Glad we connected, Sarah" is four words and forcing it to six is
-    // exactly the stiffness this whole rule exists to prevent. Everything
-    // that is not a greeting still has to carry its weight.
-    if (isGreeting(s)) continue;
-    if (words(s).length < 6) {
-      reasons.push(`sentence under 6 words: "${s}"`);
-      break;
+    if (words(s).length >= 6) continue;
+    if (isGreeting(s)) {
+      shortGreetings.push(s);
+      continue;
     }
+    reasons.push(`sentence under 6 words: "${s}"`);
+    break;
+  }
+  if (shortGreetings.length > 1) {
+    reasons.push(`more than one sentence under 6 words: "${shortGreetings[1]}"`);
   }
   const wc = words(text).length;
   if (wc < minWords) reasons.push(`too short: ${wc} words (min ${minWords})`);
@@ -197,8 +222,8 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   // No sign-off check. LinkedIn prints the sender's name beside every message,
   // so a name at the bottom is a mail-merge artefact rather than politeness.
   // This used to REQUIRE one, which is half of why these read as automated.
-  if (endsWithSignoff(text, ctx.senderName)) {
-    reasons.push("signs off with a name, which LinkedIn already shows");
+  if (signsOff(text, ctx.senderName)) {
+    reasons.push("signs off with a name or a sign-off line (LinkedIn already shows who is writing)");
   }
 
   return { ok: reasons.length === 0, reasons };

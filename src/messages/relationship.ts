@@ -182,6 +182,9 @@ Hard rules, all of them:
 - BANNED: the observation that flatters by generalising. "most people ship nothing", "nobody does that", "everyone gets this wrong". You do not know what most people do.
 - Never open a reply by evaluating what they said. Answer it.
 - Never claim to have read something you were not given.
+- Never state where you live, who you work with, how big anything is, or any other fact about
+  yourself that this prompt did not give you. If you were not told, say nothing rather than guess:
+  a prospect checks the profile in one click. A live run invented a city out of nothing.
 - NEVER sign your name, and never add a sign-off line of any kind. LinkedIn prints
   your name beside every message you send, so writing it again at the bottom is
   something only a mail merge does. This was a hard rule here and it was one of the
@@ -371,7 +374,7 @@ ${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
 Write it.
 
 - TWO LINES. Never three. Under 300 characters.
-- ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at."}
+- ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at. Do NOT invent a detail about their site, their company or their problems, and do NOT describe their situation in the language of a product."}
 - The greeting is plain and contains their first name. "Glad we connected, Sarah", "Good to be connected, Tom". Never "nice to meet you", because you have not met.
 - SHAPE FOR THIS ONE: ${pickHelloShape(prospect)}. Follow it exactly, so that two messages in a row never share an opening.
 - Ordinary spoken word order. Never a clause that opens on a gerund and lands on the point, because nobody says "Owning a site end to end is why I hit connect" out loud.
@@ -425,7 +428,7 @@ ${prospect.headline ? `Their headline: ${prospect.headline}` : ""}
 Write it.
 
 - ${prospect.signalText ? "Open by naming the specific thing they said, in your own words, in a way that shows you read it. Never quote it back at them." : "Open with hello and their first name. Do not pretend to have read anything."}
-- Say who you are AND what you do, in one plain clause. Not a pitch, not a benefit, not an offer, just the honest frame: "I build X for Y" or "I run a small Z". This line is not optional. A message that hides why you are around is a bait and switch, and the reveal three messages later costs more trust than saying it now ever would.
+- Say who you are AND what you do, in one plain clause, drawn from this and nothing else: ${sender.companyInfo}. Not a pitch, not a benefit, not an offer, just the honest frame: "I build X for Y" or "I run a small Z". This line is not optional. A message that hides why you are around is a bait and switch, and the reveal three messages later costs more trust than saying it now ever would.
 - STRUCTURE FOR THIS ONE: ${rotate(INTRO_OPENINGS, seedFor(prospect), 7)}. Never open two messages the same way, and never with the words "I spend my days".
 - Ask one question they can answer in a single line, about them or about what they said.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
