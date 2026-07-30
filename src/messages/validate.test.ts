@@ -48,8 +48,11 @@ const ctx: ValidateContext = {
   headline: "VP of Marketing at Cloudstack scaling B2B growth",
 };
 
+// No sign-off. LinkedIn prints the sender's name beside every message, so one
+// at the bottom is a mail-merge artefact and is now refused rather than
+// required (2026-07-31).
 const clean =
-  "Hey Alex,\nyou post a lot about AI search, and I keep wondering whether your own site actually gets cited by those tools yet. I built something that checks exactly that in a few seconds. Happy to show you if you are curious.\nBest,\nMaria Lecocq";
+  "Hey Alex,\nyou post a lot about AI search, and I keep wondering whether your own site actually gets cited by those tools yet. I built something that checks exactly that in a few seconds. Happy to show you if you are curious.";
 
 test("clean message passes", () => {
   const r = validateMessage(clean, ctx);
@@ -89,11 +92,14 @@ test("rejects headline dump", () => {
   assert.ok(r.reasons.some((x) => x.includes("headline")));
 });
 
-test("rejects missing sign-off", () => {
-  const msg = "Hey Alex, you post a lot about AI search, and I built something that checks whether your site gets cited by those tools. Happy to show you.";
-  const r = validateMessage(msg, ctx);
+test("rejects a sign-off, which is the mail-merge tell", () => {
+  // This assertion used to be the opposite: a message WITHOUT the sender's name
+  // was refused. That rule is half of why the first messages read as automated,
+  // so it was inverted rather than relaxed.
+  const signed = `${clean}\nMaria`;
+  const r = validateMessage(signed, ctx);
   assert.equal(r.ok, false);
-  assert.ok(r.reasons.some((x) => x.includes("sign-off")));
+  assert.ok(r.reasons.some((x) => x.includes("signs off")));
 });
 
 test("rejects too long", () => {

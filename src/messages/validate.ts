@@ -4,8 +4,17 @@
  */
 
 export interface ValidateContext {
-  /** Required sign-off name, e.g. "Maria Lecocq". */
+  /** The sender's first name, used to strip a stray sign-off before counting. */
   senderName: string;
+  /**
+   * Which step is being written.
+   *
+   * The first message after an acceptance is two sentences typed on a phone,
+   * and the later ones carry an idea. Holding both to one length and one
+   * sentence floor is what produced the stiff opener Nicolas rejected on
+   * 2026-07-31.
+   */
+  step?: "hello" | "intro" | "converse" | "ask";
   /** The prospect's headline, used to reject verbatim headline dumps. */
   headline?: string;
   minWords?: number;
@@ -42,6 +51,18 @@ const BANNED_PHRASES = [
   "indelible mark", "deeply rooted", "rich history", "natural beauty", "nestled in",
   "boasts a", "serves as a", "stands as a", "sends a strong message", "it remains to be seen",
   "despite its",
+  // The first-message tells, added 2026-07-31 after Nicolas received one that
+  // read as pure AI. The template that caused it lived in a prompt, so banning
+  // the output is what stops it returning through a prompt edit years from now
+  // that forgets why the rule existed.
+  "is why i hit connect", "why i hit connect", "made me hit connect",
+  "is why i connected", "is why i wanted to connect", "why i reached out",
+  // You have not met them.
+  "good to meet you", "great to meet you", "nice to meet you",
+  "pleasure to meet you", "lovely to meet you",
+  // Compliments that would fit anybody, which is what makes them worth nothing.
+  "impressed by your", "impressive profile", "love what you", "big fan of your",
+  "your profile stood out", "caught my eye", "your work is inspiring",
 ];
 
 /** Banned words matched with their common inflections (foster/fostering, showcase/showcasing, seamless/seamlessly). */
@@ -58,7 +79,29 @@ function bannedWordReasons(text: string): string[] {
 const BANNED_OPENERS = [
   "i saw your", "i came across", "i noticed you", "i love your content", "i've been following",
   "i have been following", "hope you", "hope this", "just wanted to reach out", "i want to reach out",
+  // A bare thank-you for connecting is the message sales communities openly mock.
+  "thanks for connecting", "thank you for connecting", "thanks for accepting",
 ];
+
+/** A short opening or closing pleasantry, which is allowed to be brief. */
+const GREETING = /^(hi|hey|hello|glad|good|great|happy|congrats|nice one)\b/i;
+
+function isGreeting(sentence: string): boolean {
+  return GREETING.test(sentence.trim()) && words(sentence).length <= 8;
+}
+
+/** True when the last line is just the sender's name, which is the mail-merge tell. */
+function endsWithSignoff(text: string, senderName: string): boolean {
+  const lines = text.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+  const last = lines[lines.length - 1] ?? "";
+  if (!last) return false;
+  const first = senderName.trim().split(/\s+/)[0] ?? "";
+  if (!first) return false;
+  return (
+    words(last).length <= 3 &&
+    last.toLowerCase().includes(first.toLowerCase())
+  );
+}
 
 function words(text: string): string[] {
   return text.split(/\s+/).map((w) => w.trim()).filter(Boolean);
@@ -102,7 +145,10 @@ function dumpsHeadline(text: string, headline: string): boolean {
 
 export function validateMessage(text: string, ctx: ValidateContext): ValidationResult {
   const reasons: string[] = [];
-  const minWords = ctx.minWords ?? 25;
+  // A hello is deliberately short. Anything longer than three sentences after
+  // an acceptance is a pitch wearing a greeting.
+  const isHello = ctx.step === "hello";
+  const minWords = ctx.minWords ?? (isHello ? 14 : 25);
   const maxWords = ctx.maxWords ?? 100;
   const lower = text.toLowerCase();
 
@@ -127,6 +173,11 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
     reasons.push("dumps the profile headline verbatim");
   }
   for (const s of bodySentences(text, ctx.senderName)) {
+    // A greeting is allowed to be short, because that is how people greet.
+    // "Glad we connected, Sarah" is four words and forcing it to six is
+    // exactly the stiffness this whole rule exists to prevent. Everything
+    // that is not a greeting still has to carry its weight.
+    if (isGreeting(s)) continue;
     if (words(s).length < 6) {
       reasons.push(`sentence under 6 words: "${s}"`);
       break;
@@ -135,8 +186,11 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   const wc = words(text).length;
   if (wc < minWords) reasons.push(`too short: ${wc} words (min ${minWords})`);
   if (wc > maxWords) reasons.push(`too long: ${wc} words (max ${maxWords})`);
-  if (!lower.includes(ctx.senderName.toLowerCase())) {
-    reasons.push(`missing sign-off: ${ctx.senderName}`);
+  // No sign-off check. LinkedIn prints the sender's name beside every message,
+  // so a name at the bottom is a mail-merge artefact rather than politeness.
+  // This used to REQUIRE one, which is half of why these read as automated.
+  if (endsWithSignoff(text, ctx.senderName)) {
+    reasons.push("signs off with a name, which LinkedIn already shows");
   }
 
   return { ok: reasons.length === 0, reasons };

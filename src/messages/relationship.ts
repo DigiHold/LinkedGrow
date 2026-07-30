@@ -181,7 +181,15 @@ Hard rules, all of them:
 - BANNED: the observation that flatters by generalising. "most people ship nothing", "nobody does that", "everyone gets this wrong". You do not know what most people do.
 - Never open a reply by evaluating what they said. Answer it.
 - Never claim to have read something you were not given.
-- Sign with the sender's first name on its own line, nothing after it.`;
+- NEVER sign your name, and never add a sign-off line of any kind. LinkedIn prints
+  your name beside every message you send, so writing it again at the bottom is
+  something only a mail merge does. This was a hard rule here and it was one of the
+  two things making these read as automated (Nicolas, 2026-07-31).
+- Never say "good to meet you", "nice to meet you" or any variant. You have not met.
+- Never explain why you connected. "That is why I hit connect" and everything like it
+  is a script justifying its own existence, and it is the single clearest tell.
+- No trade jargon and no acronyms. Say it the way you would to somebody outside the
+  industry, because a stranger reading an acronym knows a script wrote it.`;
 
 export interface Sender {
   firstName: string;
@@ -232,6 +240,8 @@ async function write(
     // data puts 22% above average.
     const result = validateMessage(body, {
       senderName: sender.firstName,
+      // The hello is two sentences on a phone; the later steps carry an idea.
+      step: purpose as "hello" | "intro" | "converse" | "ask",
       ...(prospect.headline ? { headline: prospect.headline } : {}),
       maxWords: 70,
     });
@@ -286,7 +296,10 @@ Write it.
 
 - TWO LINES. Never three. Under 300 characters.
 - ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at."}
-- Then a plain human close. "Good to be connected", "nice to meet you", something a person types without thinking about it.
+- The greeting is plain and contains their first name. "Glad we connected, Sarah", "Good to be connected, Tom". Never "nice to meet you", because you have not met.
+- VARY THE SHAPE between messages. Do not always lead with the greeting. All of these are right and none should be favoured: greeting then observation, observation then a short greeting, the observation alone with their name inside it, a congratulation when they have just changed role, plain empathy for something they described. Swapping only the first name inside one fixed shape is the pattern a reader spots after two messages and a classifier spots across a whole history.
+- Ordinary spoken word order. Never a clause that opens on a gerund and lands on the point, because nobody says "Owning a site end to end is why I hit connect" out loud.
+- No trade jargon, no acronyms, no product vocabulary of any kind.
 - ABSOLUTELY NO QUESTION. No question mark anywhere in this message. Not one.
 - Ask for nothing. Offer nothing. Propose nothing. Mention no product, no company, no work of yours, no link.
 - Do not say what you do for a living. That comes later and saying it here turns a hello into a pitch.
