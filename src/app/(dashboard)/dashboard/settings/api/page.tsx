@@ -316,8 +316,11 @@ showError("Failed to delete API key");
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Learn how to integrate LinkedGrow with your applications using our REST API.
               </p>
+              {/* /api/docs was never a route, so this link 404'd. The written
+                  page is the docs article, which is also what the support
+                  chatbot answers from. */}
               <a
-                href="/api/docs"
+                href="/docs/business-features/api-access"
                 target="_blank"
                 className="inline-flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700 mt-2"
               >

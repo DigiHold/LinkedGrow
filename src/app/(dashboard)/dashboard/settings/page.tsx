@@ -202,29 +202,8 @@ function SettingsContent() {
   const [isSavingVoice, setIsSavingVoice] = useState(false);
   const [voiceMessage, setVoiceMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // LinkedIn connection
-  const [linkedInConnected, setLinkedInConnected] = useState(false);
-  const [linkedInName, setLinkedInName] = useState("");
-  const [linkedInMessage, setLinkedInMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [isConnectingLinkedIn, setIsConnectingLinkedIn] = useState(false);
-  const [linkedInSettings, setLinkedInSettings] = useState<{
-    postingTarget: "profile" | "organization";
-    selectedOrgId?: string | null;
-    selectedOrgName?: string | null;
-    profileName?: string | null;
-    profileImage?: string | null;
-    organizations: Array<{ id: string; name: string; logoUrl?: string }>;
-    hasOrganizations: boolean;
-  } | null>(null);
-
   // Publishing preferences
   const [autoLikeAfterPublish, setAutoLikeAfterPublish] = useState(true);
-
-  // LinkedIn selection modal
-  const [showSelectionModal, setShowSelectionModal] = useState(false);
-  const [selectedType, setSelectedType] = useState<"profile" | "organization">("profile");
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-  const [isSavingSelection, setIsSavingSelection] = useState(false);
 
   // Danger zone - export + delete
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -322,89 +301,10 @@ function SettingsContent() {
       setBrowserTimezone("UTC");
     }
 
-    // Fetch LinkedIn settings from API
-    const fetchLinkedInSettings = async () => {
-      try {
-        // /api/linkedin/settings is gone with the LinkedIn API. Nothing
-        // to read until the browser session layer replaces it.
-        const response = { ok: false } as Response;
-        if (response.ok) {
-          const data = await response.json();
-          if (data.connected) {
-            setLinkedInConnected(true);
-            // Show organization name if posting to organization, otherwise profile name
-            if (data.postingTarget === "organization" && data.selectedOrgName) {
-              setLinkedInName(data.selectedOrgName);
-            } else {
-              setLinkedInName(data.profileName || "");
-            }
-            setLinkedInSettings({
-              postingTarget: data.postingTarget || "profile",
-              selectedOrgId: data.selectedOrgId,
-              selectedOrgName: data.selectedOrgName,
-              profileName: data.profileName,
-              profileImage: data.profileImage,
-              organizations: data.organizations || [],
-              hasOrganizations: data.hasOrganizations || false,
-            });
-          }
-        }
-      } catch (error) {
-// Fallback to cookie-based detection
-        const linkedInProfileName = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("linkedin_profile_name="))
-          ?.split("=")[1];
-        if (linkedInProfileName) {
-          setLinkedInConnected(true);
-          try {
-            setLinkedInName(decodeURIComponent(linkedInProfileName));
-          } catch {
-            setLinkedInName(linkedInProfileName);
-          }
-        }
-      }
-    };
-
-    fetchLinkedInSettings().then(() => {
-      // Read straight off the location rather than the hook: switching tabs
-      // rewrites the query string, and depending on the hook would refetch
-      // LinkedIn settings on every tab click.
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("showSelection") === "true") {
-        setShowSelectionModal(true);
-        // Clean up URL
-        window.history.replaceState({}, "", "/dashboard/settings?linkedin=connected");
-      }
-    });
-
-    // Listen for popup messages
-    const handleMessage = (event: MessageEvent) => {
-      const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || "https://linkedgrow.ai";
-      if (event.origin !== allowedOrigin) return;
-
-      if (event.data?.type === "linkedin-success") {
-        setLinkedInConnected(true);
-        setLinkedInName(event.data.name || "");
-        setIsConnectingLinkedIn(false);
-        // Refetch settings to get updated data
-        fetchLinkedInSettings().then(() => {
-          // Show selection modal if user has organizations and needs to choose
-          if (event.data.showSelection) {
-            setShowSelectionModal(true);
-          } else {
-            setLinkedInMessage({ type: "success", text: "LinkedIn connected successfully!" });
-          }
-        });
-      } else if (event.data?.type === "linkedin-error") {
-        setLinkedInMessage({ type: "error", text: event.data.error || "Failed to connect LinkedIn" });
-        setIsConnectingLinkedIn(false);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-    // Mount-time bootstrap: it reads the query string once and then listens.
+    // The OAuth popup listener that used to live here went with the OAuth
+    // flow. Connecting an account is now a form in LinkedInAccountsPanel, which
+    // keeps its own state and needs nothing from this page.
+    // Mount-time bootstrap only.
   }, []);
 
   // Load user data
@@ -732,113 +632,10 @@ function SettingsContent() {
     }
   };
 
-  const handleConnectLinkedIn = () => {
-    setIsConnectingLinkedIn(true);
-    setLinkedInMessage(null);
-
-    // Open centered popup window
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      "/api/linkedin/auth?popup=true",
-      "linkedin-auth",
-      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
-    );
-
-    // Check if popup was blocked
-    if (!popup) {
-      setLinkedInMessage({ type: "error", text: "Popup was blocked. Please allow popups and try again." });
-      setIsConnectingLinkedIn(false);
-      return;
-    }
-
-    // Monitor popup close (in case user closes it manually)
-    const checkPopup = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkPopup);
-        setIsConnectingLinkedIn(false);
-      }
-    }, 500);
-  };
-
-  const handleChangePostingTarget = () => {
-    // Initialize selection with current values
-    setSelectedType(linkedInSettings?.postingTarget || "profile");
-    setSelectedOrgId(linkedInSettings?.selectedOrgId || null);
-    setShowSelectionModal(true);
-  };
-
-  const handleSaveSelection = async () => {
-    if (selectedType === "organization" && !selectedOrgId) {
-      setLinkedInMessage({ type: "error", text: "Please select a company page" });
-      return;
-    }
-
-    setIsSavingSelection(true);
-
-    try {
-      const response = await fetch("/api/linkedin/select-target", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postingTarget: selectedType,
-          organizationId: selectedType === "organization" ? selectedOrgId : null,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save selection");
-      }
-
-      const result = await response.json();
-
-      // Update local state
-      const newName = selectedType === "organization" ? result.organizationName : result.profileName;
-      setLinkedInName(newName || "");
-      setLinkedInSettings((prev) => prev ? {
-        ...prev,
-        postingTarget: selectedType,
-        selectedOrgId: selectedType === "organization" ? selectedOrgId : null,
-        selectedOrgName: result.organizationName,
-      } : null);
-
-      setShowSelectionModal(false);
-      setLinkedInMessage({ type: "success", text: `Now posting to ${newName}` });
-      // Notify sidebar to update immediately
-      window.dispatchEvent(new Event("linkedin-target-changed"));
-    } catch (err) {
-      setLinkedInMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save selection" });
-    } finally {
-      setIsSavingSelection(false);
-    }
-  };
-
-  const handleDisconnectLinkedIn = async () => {
-    try {
-      const response = await fetch("/api/linkedin/disconnect", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to disconnect");
-      }
-
-      // Clear local state
-      setLinkedInConnected(false);
-      setLinkedInName("");
-      setLinkedInMessage({ type: "success", text: "LinkedIn disconnected successfully" });
-    } catch (error) {
-      setLinkedInMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to disconnect LinkedIn",
-      });
-    }
-  };
+  // The v1 LinkedIn handlers lived here: an OAuth popup, a company-page picker
+  // and a disconnect, all three calling routes that no longer exist. v2
+  // connects an account with its own email and password, and the whole of that
+  // now lives in LinkedInAccountsPanel below.
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4 pb-24 sm:p-6 lg:p-8 lg:pb-10 space-y-6">
@@ -1330,138 +1127,9 @@ function SettingsContent() {
         </DialogContent>
       </Dialog>
 
-      {/* LinkedIn Posting Target Selection Dialog */}
-      <Dialog open={showSelectionModal} onOpenChange={setShowSelectionModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Linkedin className="w-5 h-5 text-linkedin" />
-              Where do you want to post?
-            </DialogTitle>
-            <DialogDescription>
-              Choose whether to publish content to your personal profile or company page
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2">
-            {/* Personal Profile Option */}
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedType("profile");
-                setSelectedOrgId(null);
-              }}
-              className={cn(
-                "w-full p-3 rounded-xl border-2 transition-all text-left",
-                selectedType === "profile"
-                  ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
-                  : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {linkedInSettings?.profileImage ? (
-                  <Image
-                    src={linkedInSettings.profileImage}
-                    alt={linkedInSettings.profileName || "Profile"}
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-linkedin flex items-center justify-center text-white font-bold">
-                    <User className="w-5 h-5" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{linkedInSettings?.profileName || "Your Profile"}</span>
-                    {selectedType === "profile" && (
-                      <span className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-white" />
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Personal Profile</p>
-                </div>
-              </div>
-            </button>
-
-            {/* Company Pages */}
-            {linkedInSettings?.organizations && linkedInSettings.organizations.length > 0 && (
-              <>
-                <div className="relative py-1">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white dark:bg-slate-950 px-2 text-slate-500 dark:text-slate-400">
-                      Company pages
-                    </span>
-                  </div>
-                </div>
-
-                {linkedInSettings.organizations.map((org) => (
-                  <button
-                    key={org.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedType("organization");
-                      setSelectedOrgId(org.id);
-                    }}
-                    className={cn(
-                      "w-full p-3 rounded-xl border-2 transition-all text-left",
-                      selectedType === "organization" && selectedOrgId === org.id
-                        ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20"
-                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      {org.logoUrl ? (
-                        <Image
-                          src={org.logoUrl}
-                          alt={org.name}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-slate-500" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{org.name}</span>
-                          {selectedType === "organization" && selectedOrgId === org.id && (
-                            <span className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center">
-                              <Check className="w-2.5 h-2.5 text-white" />
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Company Page</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={() => setShowSelectionModal(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveSelection}
-              disabled={isSavingSelection}
-              className="flex-1"
-            >
-              {isSavingSelection ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-              Confirm
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* The company-page picker lived here. v2 posts from the connected
+          account itself, and choosing between a profile and a company page
+          needs the browser session rather than the API scope it used. */}
 
       <div className={tab === "appearance" ? "space-y-6" : "hidden"}>
       <div id="appearance" className="scroll-mt-24" />

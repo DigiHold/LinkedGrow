@@ -65,13 +65,28 @@ During your 7-day Pro trial you get unlimited scheduling (it is part of Pro). Af
 
 ## How scheduling works behind the scenes
 
-LinkedGrow uses QStash (by Upstash) to handle scheduled publishing. When you schedule a post, a job is created that triggers at the exact specified time. The job sends your post to LinkedIn's API using your connected account.
+A scheduled post is not published by LinkedGrow at its minute. Some hours
+earlier, during your day, LinkedGrow opens your connected session, writes the
+post into LinkedIn's own composer and uses LinkedIn's Schedule control, exactly
+as you would if you sat down the evening before and planned tomorrow. LinkedIn
+then publishes it itself, on time, to the second.
 
-This means your post will publish even if you are not logged into LinkedGrow at the scheduled time. As long as your LinkedIn connection is active, scheduled posts go live automatically.
+Two things follow from that. Your post goes out whether or not you are logged
+into LinkedGrow, and whether or not anything of ours is running at that moment.
+And it appears in your own LinkedIn scheduled-posts list before it goes out, so
+you can see it there and change your mind.
+
+If a post is scheduled for less than about ninety minutes from now, there is no
+time for that, so LinkedGrow publishes it directly at the slot instead. In that
+case it may land a few minutes after the time you picked, on purpose: a post
+that appears at 09:00:00 every single day is a pattern, and LinkedGrow avoids
+giving your account one.
 
 ## Video scheduling limitation
 
-Posts with video attachments cannot be scheduled. Videos are too large to be stored by LinkedGrow. Posts with videos must be published immediately and cannot be saved as drafts. Use the "Publish Now" button for video posts.
+Posts with video attachments cannot be scheduled. Videos are too large for
+LinkedGrow to keep, so the file is passed straight to LinkedIn and deleted,
+which only works while you are publishing. Use "Publish Now" for video posts.
 
 ## Best practices
 

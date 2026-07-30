@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Linkedin, BarChart3, Lock, Loader2 } from "lucide-react";
+import { Linkedin, BarChart3, Lock } from "lucide-react";
 import Link from "next/link";
 
 interface EmptyStateProps {
@@ -12,41 +11,6 @@ interface EmptyStateProps {
 }
 
 export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptyStateProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  const handleConnect = () => {
-    setIsConnecting(true);
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.innerWidth - width) / 2;
-    const top = window.screenY + (window.innerHeight - height) / 2;
-
-    const popup = window.open(
-      "/api/linkedin/auth?popup=true&mode=connect",
-      "linkedin-auth",
-      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
-    );
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === "linkedin-success" || event.data?.type === "linkedin-error") {
-        setIsConnecting(false);
-        window.removeEventListener("message", handleMessage);
-        if (event.data?.type === "linkedin-success") {
-          window.location.reload();
-        }
-      }
-    };
-    window.addEventListener("message", handleMessage);
-
-    const checkInterval = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(checkInterval);
-        setIsConnecting(false);
-        window.removeEventListener("message", handleMessage);
-      }
-    }, 1000);
-  };
-
   if (type === "no-linkedin") {
     return (
       <Card>
@@ -57,21 +21,18 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
             </div>
             <h3 className="text-lg font-semibold mb-2">Connect LinkedIn</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-              Connect your LinkedIn account to start tracking your analytics and performance metrics.
+              Your numbers are read from your own LinkedIn account, so connect one and the
+              first reading arrives shortly after your first post.
             </p>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleConnect}
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
+            {/* An OAuth popup used to live here. Connecting is an email and a
+                password now, and it belongs on the settings page with the rest
+                of the account rather than behind a button on a chart. */}
+            <Link href="/dashboard/settings?tab=linkedin">
+              <Button variant="primary" size="sm">
                 <Linkedin className="w-4 h-4 mr-2" />
-              )}
-              Connect LinkedIn
-            </Button>
+                Connect LinkedIn
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -88,7 +49,8 @@ export function AnalyticsEmptyState({ type, featureName = "Analytics" }: EmptySt
             </div>
             <h3 className="text-lg font-semibold mb-2">No Data Yet</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Start publishing posts to LinkedIn to see your analytics data here. Your performance metrics will appear after your first published post.
+              Publish a post and its numbers appear here. They are read from LinkedIn a few
+              hours after it goes out, and again as it keeps collecting views.
             </p>
           </div>
         </CardContent>

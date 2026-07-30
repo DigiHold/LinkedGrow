@@ -57,15 +57,24 @@ export function BrandingSettings({
         });
       }
 
-      // Fetch LinkedIn profile data
-      const linkedinResponse = await fetch("/api/linkedin/settings");
-      if (linkedinResponse.ok) {
-        const linkedinData = await linkedinResponse.json();
-        onBrandingChange({
-          ...branding,
-          avatarUrl: linkedinData.profileImage || undefined,
-          handle: linkedinData.profileName ? `@${linkedinData.profileName.toLowerCase().replace(/\s+/g, '')}` : undefined,
-        });
+      // The name and picture the carousel is signed with come from the
+      // connected LinkedIn account. v1 read them from /api/linkedin/settings,
+      // which went with the API; the account row carries the same two fields.
+      const accountsResponse = await fetch("/api/linkedin/accounts");
+      if (accountsResponse.ok) {
+        const accountsData = (await accountsResponse.json()) as {
+          accounts?: Array<{ fullName?: string | null; avatarUrl?: string | null }>;
+        };
+        const account = accountsData.accounts?.[0];
+        if (account) {
+          onBrandingChange({
+            ...branding,
+            avatarUrl: account.avatarUrl || undefined,
+            handle: account.fullName
+              ? `@${account.fullName.toLowerCase().replace(/\s+/g, "")}`
+              : undefined,
+          });
+        }
       }
 
       // Fetch user profile

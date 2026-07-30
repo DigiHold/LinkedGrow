@@ -65,11 +65,15 @@ LinkedGrow takes your data privacy seriously. Here is how we handle your informa
 - Your scheduling preferences and settings
 - Analytics data for your published posts
 - Voice training data (if you use the voice training feature)
+- **Your LinkedIn sign-in details, encrypted.** LinkedGrow signs a real browser
+  session in on your behalf rather than going through LinkedIn's API, so it
+  needs the email and password you gave it. They are encrypted before they are
+  written down, they are never shown back to you or to anyone else, and they are
+  used for nothing except keeping your own session signed in.
 
 ### What We Do Not Store
 
 - Your AI API keys are encrypted and never stored in plain text
-- Your LinkedIn password (we use OAuth tokens)
 - Payment card details (handled entirely by Stripe)
 
 ### Data Access

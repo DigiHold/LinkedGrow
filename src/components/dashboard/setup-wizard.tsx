@@ -414,18 +414,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
-  const connectLinkedIn = () => {
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    window.open(
-      "/api/linkedin/auth?popup=true",
-      "linkedin-auth",
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-  };
-
   const saveAISettings = async (): Promise<boolean> => {
     if (!selectedProvider || !apiKey) return true;
     const provider = aiProviders.find((p) => p.id === selectedProvider);
@@ -659,19 +647,27 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                       </motion.div>
                     ) : (
                       <div className="max-w-sm mx-auto">
-                        <Button
-                          size="lg"
-                          onClick={connectLinkedIn}
-                          className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white mb-5 h-12 text-base shadow-lg shadow-[#0A66C2]/20 hover:shadow-xl hover:shadow-[#0A66C2]/30 transition-all duration-300"
-                        >
-                          <Linkedin className="w-5 h-5 mr-2" />
-                          Connect with LinkedIn
-                        </Button>
+                        {/* An OAuth popup used to open here, and the line under
+                            it promised we never store the password. Neither is
+                            true any more: v2 signs a real browser session in on
+                            the customer's behalf, so the connection form lives
+                            in settings and the promise had to be corrected. */}
+                        <Link href="/dashboard/settings?tab=linkedin">
+                          <Button
+                            size="lg"
+                            className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white mb-5 h-12 text-base shadow-lg shadow-[#0A66C2]/20 hover:shadow-xl hover:shadow-[#0A66C2]/30 transition-all duration-300"
+                          >
+                            <Linkedin className="w-5 h-5 mr-2" />
+                            Connect your LinkedIn account
+                          </Button>
+                        </Link>
 
                         <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 text-left">
                           <Shield className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
                           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                            Your credentials are handled securely through OAuth. We never see or store your LinkedIn password.
+                            You sign in with your LinkedIn email and password. They are encrypted
+                            before they are stored and used only to keep your own session signed
+                            in, on an address reserved for your account.
                           </p>
                         </div>
                       </div>
