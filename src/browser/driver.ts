@@ -101,6 +101,11 @@ export async function openSession(
   await context.addInitScript(fingerprintInitScript(fp));
 
   const page = context.pages()[0] ?? (await context.newPage());
+  // Patchright defaults to 30 seconds per action. LinkedIn is slower than most sites and every
+  // call here goes through a residential address, so the default produces spurious failures on a
+  // healthy page. Long enough to be patient, short enough that a dead page is noticed.
+  page.setDefaultTimeout(45_000);
+  page.setDefaultNavigationTimeout(60_000);
 
   // The assertion, before anything else touches the network. Section 8a: if
   // the observed address is not the one allocated to this account, the session

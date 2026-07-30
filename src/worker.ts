@@ -9,6 +9,7 @@ import type { ProxyAllocation } from "./browser/driver.ts";
 import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
+import { startWatch, stopWatch, stalled, type Stall } from "./safety/heartbeat.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
@@ -200,10 +201,56 @@ async function runAgent(ctx: AgentContext): Promise<void> {
  * ceiling stops the agent for the day, a wrong address stops the session before
  * it touches LinkedIn.
  */
+/**
+ * Cutting off an agent that is stuck, and never one that is merely busy.
+ *
+ * The first version of this was a wall-clock deadline and it was wrong: an agent reading four
+ * posts at a human pace can legitimately take a long time, and a limit on duration punishes the
+ * work rather than the fault. What is watched instead is silence. Every browser interaction beats
+ * through the pacing layer, so an agent that is still clicking keeps running however long it
+ * takes, and one that has not touched the page in five minutes is waiting on something that is
+ * never coming.
+ *
+ * It matters because the slot belongs to the whole account and is released only when the group
+ * finishes. One hung browser would otherwise keep every agent on that address idle for good.
+ */
+class RunStalled extends Error {
+  constructor(readonly stall: Stall) {
+    super(
+      stall.kind === "idle"
+        ? `no browser activity for ${Math.round(stall.idleMs / 1000)}s`
+        : `still running after ${Math.round(stall.ranMs / 60_000)} minutes`
+    );
+    this.name = "RunStalled";
+  }
+}
+
+/** Polls the heartbeat rather than counting down, so a working agent is never interrupted. */
+function withWatchdog<T>(work: Promise<T>): Promise<T> {
+  startWatch();
+  let timer: NodeJS.Timeout;
+  const watch = new Promise<never>((_, reject) => {
+    timer = setInterval(() => {
+      const stall = stalled();
+      if (stall) reject(new RunStalled(stall));
+    }, 15_000);
+  });
+  return Promise.race([work, watch]).finally(() => {
+    clearInterval(timer);
+    stopWatch();
+  }) as Promise<T>;
+}
+
 async function safely(ctx: AgentContext): Promise<void> {
   try {
-    await runAgent(ctx);
+    await withWatchdog(runAgent(ctx));
   } catch (error) {
+    if (error instanceof RunStalled) {
+      // The session's own finally still closes the browser; this only stops the pass waiting on it.
+      log("agent stopped responding, cut off", { agentId: ctx.agentId, reason: error.message });
+      await recordEvent(ctx, "error", "The agent stopped responding and was restarted. It picks up on the next run.").catch(() => {});
+      return;
+    }
     if (error instanceof HaltedError) {
       log("agent skipped", { agentId: ctx.agentId, reason: error.message });
       return;

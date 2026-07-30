@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import type { Page, Locator } from "patchright";
 
+import { beat } from "../safety/heartbeat.ts";
+
 /**
  * The behaviour layer: what makes the session look like a person rather than a
  * script that happens to move a cursor.
@@ -44,6 +46,9 @@ function gaussAtLeast(mean: number, sd: number, floor: number): number {
 }
 
 export function sleep(ms: number): Promise<void> {
+  // Every pacing helper funnels through here, so this one line is what tells the watchdog the
+  // agent is still alive. A stuck page never reaches it.
+  beat();
   return new Promise((r) => setTimeout(r, Math.max(0, Math.round(ms))));
 }
 
