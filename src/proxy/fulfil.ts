@@ -53,7 +53,7 @@ async function ipv4(): Promise<unknown> {
   return dispatcher;
 }
 
-async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+export async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
   const key = requireEnv("PROXY_SELLER_API_KEY");
   const agent = await ipv4();
   const response = await fetch(`${BASE}/${key}/${path}`, {
@@ -107,7 +107,7 @@ function payload(id: number, quantity: number) {
   };
 }
 
-interface ProxyRow {
+export interface ProxyRow {
   id?: number | string;
   order_id?: number | string;
   ip?: string;
@@ -118,7 +118,7 @@ interface ProxyRow {
   date_end?: string;
 }
 
-async function encryptFor(value: string): Promise<string> {
+export async function encryptFor(value: string): Promise<string> {
   // The worker only ever decrypts elsewhere, but a bought credential has to be
   // written in the same shape the dashboard reads, so this is the one place it
   // encrypts. Same algorithm, same key, same iv:tag:data format.
@@ -132,7 +132,7 @@ async function encryptFor(value: string): Promise<string> {
   return `${iv.toString("hex")}:${cipher.getAuthTag().toString("hex")}:${out}`;
 }
 
-interface ExitCheck {
+export interface ExitCheck {
   ip: string;
   asn: string | null;
   asnOrg: string | null;
@@ -143,7 +143,7 @@ interface ExitCheck {
 
 const HOSTING = /hosting|datacent|data center|\bserver\b|cloud|\bvps\b|colocation|leaseweb|hostroyale|m247|choopa|quadranet|ovh|hetzner|contabo|digitalocean|linode|vultr|scaleway|amazon|azure/i;
 
-async function checkExit(host: string, port: number, user: string, pass: string): Promise<ExitCheck> {
+export async function checkExit(host: string, port: number, user: string, pass: string): Promise<ExitCheck> {
   const blank: ExitCheck = { ip: "", asn: null, asnOrg: null, country: null, looksHosted: false };
   try {
     const { ProxyAgent } = await import("undici");
@@ -169,30 +169,130 @@ async function checkExit(host: string, port: number, user: string, pass: string)
   }
 }
 
-/** Buys one address for one waiting row, or leaves it waiting. */
-async function fulfil(row: { id: string; country: string }): Promise<void> {
-  const id = await countryId(row.country);
 
-  // Dry run first, every time. It is the only way to see an insufficient
-  // balance before the money is gone rather than after.
-  const calc = await call<{ warning?: string; total?: number }>(
-    "POST",
-    "order/calc",
-    payload(id, 1)
-  );
-  if (calc.warning) throw new Error(calc.warning);
+/**
+ * Takes an address out of the buffer instead of buying one.
+ *
+ * The buffer is every active allocation in this country with nobody attached:
+ * one returned by a cancelled account, or one bought and never assigned. The
+ * UPDATE names the free row in its WHERE clause, so two passes racing for the
+ * same spare means exactly one of them gets it.
+ */
+async function claimFromPool(row: { id: string; country: string }): Promise<boolean> {
+  const { rows } = await db().execute({
+    sql: `SELECT id FROM proxy_allocations
+           WHERE status = 'active' AND linkedin_account_id IS NULL AND country = ?
+           ORDER BY created_at LIMIT 1`,
+    args: [row.country],
+  });
+  const spare = rows[0];
+  if (!spare) return false;
 
-  const order = await call<{ orderId?: number }>("POST", "order/make", payload(id, 1));
-  if (!order.orderId) throw new Error("Order returned no id");
+  const now = Math.floor(Date.now() / 1000);
+  const { rows: owner } = await db().execute({
+    sql: `SELECT linkedin_account_id, workspace_id FROM proxy_allocations WHERE id = ?`,
+    args: [row.id],
+  });
+  const accountId = owner[0]?.linkedin_account_id ?? null;
+  const workspaceId = owner[0]?.workspace_id ?? null;
 
-  // The order carries no addresses, so read them back.
-  const listed = await call<{ items?: ProxyRow[] }>("GET", "proxy/list/isp");
-  const mine = (listed.items ?? []).find(
-    (r) => String(r.order_id) === String(order.orderId)
-  );
+  const taken = await db().execute({
+    sql: `UPDATE proxy_allocations
+             SET linkedin_account_id = ?, workspace_id = COALESCE(?, workspace_id), updated_at = ?
+           WHERE id = ? AND status = 'active' AND linkedin_account_id IS NULL`,
+    args: [accountId, workspaceId, now, String(spare.id)],
+  });
+  if (Number(taken.rowsAffected ?? 0) !== 1) return false;
+
+  // The waiting row has served its purpose; the account now points at the spare.
+  await db().batch([
+    {
+      sql: `UPDATE linkedin_accounts SET proxy_allocation_id = ?, updated_at = ? WHERE id = ?`,
+      args: [String(spare.id), now, String(accountId ?? "")],
+    },
+    { sql: `DELETE FROM proxy_allocations WHERE id = ?`, args: [row.id] },
+  ]);
+
+  log("address taken from the buffer instead of bought", {
+    allocation: String(spare.id),
+    country: row.country,
+  });
+  return true;
+}
+
+/**
+ * The address belonging to an order, waited for rather than read once.
+ *
+ * The supplier pays the order first and provisions the address a moment later,
+ * so the listing is empty for a few seconds afterwards. Reading it once, two
+ * seconds after buying, is what turned a provisioning delay into a second
+ * purchase: the lookup found nothing, the row stayed waiting, and the next pass
+ * bought another one. Two French addresses, five minutes apart, on 2026-07-30.
+ */
+export async function addressForOrder(orderId: string | number): Promise<ProxyRow | null> {
+  const deadline = Date.now() + 90_000;
+  for (let attempt = 0; ; attempt++) {
+    const listed = await call<{ items?: ProxyRow[] }>("GET", "proxy/list/isp");
+    const mine = (listed.items ?? []).find(
+      (r) => String(r.order_id) === String(orderId)
+    );
+    if (mine?.ip) return mine;
+    if (Date.now() >= deadline) return null;
+    await new Promise((r) => setTimeout(r, Math.min(3_000 + attempt * 2_000, 15_000)));
+  }
+}
+
+/** Records that this row's money is spent, before anything else can fail. */
+async function recordOrder(rowId: string, orderId: string | number): Promise<void> {
+  await db().execute({
+    sql: `UPDATE proxy_allocations SET provider_ref = ?, updated_at = ? WHERE id = ?`,
+    args: [String(orderId), Math.floor(Date.now() / 1000), rowId],
+  });
+}
+
+/**
+ * Buys one address for one waiting row, or leaves it waiting.
+ *
+ * A row that already carries a provider_ref has already been paid for, and this
+ * will not buy it a second time under any circumstances. It goes looking for
+ * the address that order bought instead.
+ */
+async function fulfil(row: { id: string; country: string; providerRef: string }): Promise<void> {
+  let orderId = row.providerRef;
+
+  if (!orderId) {
+    // An address already paid for and not attached to anybody is worth more
+    // than a new one: same country, same term already running. Until now every
+    // account bought its own even when the buffer had one sitting free, which
+    // is the plan's own model (5c) not being implemented rather than a choice.
+    const reused = await claimFromPool(row);
+    if (reused) return;
+
+    const id = await countryId(row.country);
+
+    // Dry run first, every time. It is the only way to see an insufficient
+    // balance before the money is gone rather than after.
+    const calc = await call<{ warning?: string; total?: number }>(
+      "POST",
+      "order/calc",
+      payload(id, 1)
+    );
+    if (calc.warning) throw new Error(calc.warning);
+
+    const order = await call<{ orderId?: number }>("POST", "order/make", payload(id, 1));
+    if (!order.orderId) throw new Error("Order returned no id");
+
+    // Written down immediately, before the address lookup, the exit check or
+    // anything else that can throw. From this line on, no failure can cause
+    // this row to be bought again.
+    orderId = String(order.orderId);
+    await recordOrder(row.id, orderId);
+  }
+
+  const mine = await addressForOrder(orderId);
   if (!mine?.ip) {
     throw new Error(
-      `Order ${order.orderId} was paid for but no address came back. Check the supplier dashboard before retrying.`
+      `Order ${orderId} is paid and its address has not appeared yet. The next pass will look again without buying anything.`
     );
   }
 
@@ -231,7 +331,9 @@ async function fulfil(row: { id: string; country: string }): Promise<void> {
       port,
       await encryptFor(user),
       await encryptFor(pass),
-      String(mine.id ?? ""),
+      // The ORDER id, not the proxy row id. It is what says this row has been
+      // paid for, and overwriting it here would let a later failure buy again.
+      String(orderId),
       end && !Number.isNaN(end.getTime())
         ? Math.floor(end.getTime() / 1000)
         : Math.floor(Date.now() / 1000) + TERM_DAYS * 86_400,
@@ -263,21 +365,32 @@ export async function fulfilPendingAllocations(): Promise<void> {
   if (!optionalEnv("PROXY_SELLER_API_KEY")) return;
 
   const { rows } = await db().execute(
-    `SELECT id, country FROM proxy_allocations WHERE status = 'ordering' ORDER BY created_at LIMIT 5`
+    `SELECT id, country, COALESCE(provider_ref, '') AS provider_ref
+       FROM proxy_allocations
+      WHERE status = 'ordering'
+      ORDER BY created_at
+      LIMIT 5`
   );
   if (rows.length === 0) return;
 
-  log("addresses to buy", { waiting: rows.length });
+  const paid = rows.filter((r) => String(r.provider_ref ?? "")).length;
+  log("addresses to set up", { waiting: rows.length, alreadyPaid: paid });
 
   for (const row of rows) {
     const id = String(row.id);
     const country = String(row.country);
+    const providerRef = String(row.provider_ref ?? "");
     try {
-      await fulfil({ id, country });
+      await fulfil({ id, country, providerRef });
     } catch (error) {
       // Left as `ordering` on purpose: the customer sees an address being set
-      // up rather than nothing, and the next pass tries again.
-      logError("could not allocate an address", error, { allocation: id, country });
+      // up rather than nothing, and the next pass tries again. It cannot buy
+      // twice, because the order id is written down the moment it exists.
+      logError("could not finish setting up an address", error, {
+        allocation: id,
+        country,
+        order: providerRef || "none yet",
+      });
     }
   }
 
