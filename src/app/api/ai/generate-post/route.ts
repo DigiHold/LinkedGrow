@@ -6,11 +6,20 @@ import { checkAIRateLimit } from "@/lib/rate-limit";
 import { anthropicEffort, extractAnthropicText, stripReasoningTags , kimiReasoningEffort} from "@/lib/ai-fetch";
 import { buildLanguageInstruction } from "@/lib/content-languages";
 import { checkGenerationLimit, incrementGenerationUsage } from "@/lib/generation-usage";
+import { HOOK_RULES, POST_STYLE_RULES, stripSlop } from "@/lib/post-style";
 import type { PlanId } from "@/lib/plans";
 
 export const maxDuration = 120;
 
-// Sanitize AI output: remove wrapping quotes, em dashes, and separators
+/**
+ * What actually leaves this route, whatever the model returned.
+ *
+ * The prompt asks for a post with none of the machine-written markers on it and
+ * the model mostly complies, but "mostly" is not good enough when the cost of a
+ * miss is a customer's post being reported and buried. `stripSlop` removes the
+ * emoji, the Unicode bold, the bullet symbols, the separators and the closing
+ * engagement bait unconditionally.
+ */
 function sanitizeAIOutput(text: string): string {
   let cleaned = text.trim();
 
@@ -24,25 +33,16 @@ function sanitizeAIOutput(text: string): string {
     cleaned = cleaned.slice(1, -1).trim();
   }
 
-  // Replace em dashes with regular dashes
-  cleaned = cleaned.replace(/—/g, " - ");
-  cleaned = cleaned.replace(/–/g, " - ");
+  cleaned = stripSlop(cleaned);
 
-  // Remove horizontal separators (---, ===, ___, etc.)
-  cleaned = cleaned.replace(/\n-{3,}\n/g, "\n\n");
-  cleaned = cleaned.replace(/\n={3,}\n/g, "\n\n");
-  cleaned = cleaned.replace(/\n_{3,}\n/g, "\n\n");
-
-  // Fix hook spacing: ensure no empty line between first 2 lines (the hook)
-  // Match pattern: short line, empty line, another line that looks like hook continuation
+  // The opening two lines run together, with no blank line between them: that
+  // is how the hook renders before "See more".
   const lines = cleaned.split("\n");
   if (lines.length >= 3) {
-    // Check if first line is short (hook line 1) and second line is empty
-    if (lines[0].length > 0 && lines[0].length < 60 && lines[1].trim() === "") {
-      // Check if third line looks like hook line 2 (short, no bullet/emoji at start)
-      const thirdLine = lines[2];
-      if (thirdLine && thirdLine.length < 80 && !thirdLine.match(/^[✅→•\-📌♻️🔔✨]/)) {
-        // Remove the empty line between hook lines
+    const first = lines[0] ?? "";
+    const third = lines[2] ?? "";
+    if (first.length > 0 && first.length < 60 && (lines[1] ?? "").trim() === "") {
+      if (third && third.length < 80) {
         lines.splice(1, 1);
         cleaned = lines.join("\n");
       }
@@ -172,41 +172,18 @@ Topic/Idea: "${idea}"${typeInstructions}${categoryInstructions}${businessContext
 
 === CRITICAL RULES ===
 
-1. HOOK (First 2 lines - visible before "See more"):
-   - Line 1: A POWERFUL one-liner hook (under 100 characters) that stops scrolling
-   - Line 2: IMMEDIATELY follows Line 1 with NO EMPTY LINE between them
-   - Line 2 creates urgency to click "See more"
-   - After the 2-line hook, add ONE empty line, then continue with the body
-   - Examples of correct hook format:
-     "I mass applied for hundreds of jobs.
-Here's the strategy that actually got me hired.
+${HOOK_RULES}
 
-The rest of the post starts here..."
-   - NEVER put an empty line between Line 1 and Line 2 of the hook
-   - NEVER use --- or === or ___ separators anywhere in the post
+After the two opening lines, one blank line, then the body.
 
-2. FORMATTING (LinkedIn-native):
-   - NEVER use markdown formatting like **bold** or *italic* - LinkedIn doesn't support it
-   - USE Unicode bold characters for section headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
-   - USE emojis strategically: ✅ for list items, ✨ for highlights, 📌 for save CTA, ♻️ for repost CTA, 🔔 for follow CTA
-   - USE → arrows for bullet points when listing steps or features
-   - Write COMPLETE sentences on a single line. Do NOT split a sentence across multiple lines.
-   - Separate PARAGRAPHS with blank lines for readability, but keep each sentence intact on one line.
-   - NEVER use em dashes or en dashes. Use commas or " - " with spaces instead.
+${POST_STYLE_RULES}
 
-3. STRUCTURE:
-   - Start with strong 2-line hook
-   - Separate sections with blank lines for skimmability
-   - Include 1 clear takeaway + 1 framework (steps)
-   - End with a CTA like "📌 Save this for later" or "♻️ Repost if this helped"
-   - 800-1500 characters total
-   - NO hashtags
-
-4. CONTENT:
-   - No fluff, no generic advice
-   - Be specific and actionable
-   - Professional but conversational tone
-   - Focus on genuine value${voiceInstructions}${avoidInstructions}${buildLanguageInstruction(contentLanguage)}
+=== SHAPE ===
+- 800 to 1500 characters.
+- Paragraphs separated by blank lines, each paragraph two to four sentences.
+- One clear takeaway. If there are steps, write them as sentences in a
+  paragraph, not as a decorated list.
+- Stop when the point is made.${voiceInstructions}${avoidInstructions}${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the post text. No quotes, no explanations.`;
 
@@ -659,27 +636,13 @@ Instruction: "${instruction}"
 
 === EDITING RULES ===
 
-1. Apply the requested changes while keeping the core message
-2. Keep it professional and LinkedIn-appropriate
+1. Apply the requested change and leave everything else alone. The person asked
+   for one thing; rewriting the rest is not helping.
+2. Keep the core message and the author's own voice.
 
-3. FORMATTING:
-   - NEVER use markdown (**bold** or *italic*) - LinkedIn doesn't support it
-   - USE Unicode bold for headers (like 𝗧𝗵𝗶𝘀 𝗶𝘀 𝗯𝗼𝗹𝗱)
-   - USE emojis strategically: ✅ for lists, 📌 for save CTA, ♻️ for repost CTA
-   - USE → arrows for bullet points
-   - Write complete sentences on one line. Separate paragraphs with blank lines.
-   - NEVER use em dashes or en dashes. Use commas or " - " instead.
-   - NO hashtags
+${POST_STYLE_RULES}
 
-4. IF IMPROVING HOOK:
-   - Create TWO powerful hooks (first 2 lines)
-   - Line 1: Scroll-stopping statement (under 100 characters)
-   - Line 2: Teaser that compels clicking "See more"
-   - Example: "I failed 47 times before this worked." / "The pattern I finally discovered changes everything."
-
-5. STRUCTURE:
-   - End with a CTA like "📌 Save this" or "♻️ Repost if helpful"
-   - Keep whitespace for skimmability${buildLanguageInstruction(contentLanguage)}
+${HOOK_RULES}${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the edited post. No quotes, no explanations.`;
 

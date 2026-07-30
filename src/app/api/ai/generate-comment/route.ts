@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { stripSlop } from "@/lib/post-style";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
@@ -23,9 +24,9 @@ function sanitizeCommentOutput(text: string): string {
     cleaned = cleaned.slice(1, -1).trim();
   }
 
-  // Replace em dashes with regular dashes
-  cleaned = cleaned.replace(/—/g, " - ");
-  cleaned = cleaned.replace(/–/g, " - ");
+  // The same guarantee the post itself gets: no emoji, no Unicode bold, no
+  // bullet symbols, no closing bait, whatever the model returned.
+  cleaned = stripSlop(cleaned);
 
   // Trim to 300 characters max
   if (cleaned.length > 300) {
@@ -146,12 +147,16 @@ The first comment is a strategic self-reply posted by the author 1-5 minutes aft
 - NEVER ask yourself a question as if you're a stranger reading the post
 - No self-promotional language or links to your products
 - Write casually and naturally, like a real person
-- Short punchy sentences, no long compound sentences
-- Can start with an emoji but not required
+- Full sentences. Nothing under six words, and no fragment chains: clipped
+  one-liners stacked on each other are the most recognisable machine tell there is
+- No emoji anywhere, and no Unicode bold letters
+- No engagement bait: not "Agree?", not "Thoughts?", not "Comment below"
 
 === GOAL ===
 
-Get readers to reply. More replies = LinkedIn algorithm pushes the post to more people.${buildLanguageInstruction(contentLanguage)}
+Give a reader something worth answering: the detail that did not fit in the post,
+the link, the caveat, the number. A reply earned that way is worth more than one
+asked for, and LinkedIn now lets people report a post that reads as machine-made.${buildLanguageInstruction(contentLanguage)}
 
 Return ONLY the comment text. No quotes, no explanations, no labels.`;
 

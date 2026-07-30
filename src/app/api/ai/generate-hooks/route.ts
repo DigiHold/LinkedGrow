@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { stripSlop } from "@/lib/post-style";
 import { auth } from "@/lib/auth";
 import { decryptApiKey } from "@/lib/encryption";
 import { getAISettingsUser } from "@/lib/team-utils";
@@ -16,11 +17,7 @@ interface HookPair {
 
 // Sanitize AI output: remove em dashes and clean up formatting
 function sanitizeHookOutput(text: string): string {
-  let cleaned = text.trim();
-
-  // Replace em dashes with regular dashes
-  cleaned = cleaned.replace(/—/g, " - ");
-  cleaned = cleaned.replace(/–/g, " - ");
+  let cleaned = stripSlop(text.trim());
 
   // Remove wrapping quotes if present
   if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
@@ -109,6 +106,10 @@ The two lines should flow naturally together with NO empty line between them.
    - "Most people don't realize" / "What most people miss"
    - "Game-changer" / "Mind-blowing" / "Revolutionary"
 3. Write like a real person having a conversation, not a marketer
+3b. No emoji, no Unicode bold letters, no arrows. LinkedIn readers can now report
+    a post as AI slop, and those are the marks they recognise first
+3c. Never the "I did X for N days. Here's what I learned." shape, and never
+    "changed everything", "nobody talks about this", "the results shocked me"
 4. Line 1 must be under 80 characters (mobile visibility)
 5. Be specific - use real numbers, timeframes, outcomes
 6. Create genuine curiosity, not clickbait

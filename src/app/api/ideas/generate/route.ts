@@ -54,6 +54,9 @@ For each idea, provide:
 CRITICAL RULES:
 - NEVER use em dashes or en dashes. Use regular dashes with spaces " - " instead
 - NEVER sound like AI. No "game-changer", "elevate", "unlock", "landscape", "leverage", "delve", "tapestry"
+- NEVER an emoji, a Unicode bold letter or an arrow anywhere in a hook
+- NEVER the "I did X. Here's what I learned." shape, and never "changed
+  everything" or "nobody talks about this"
 - Write like a real human sharing raw, honest experiences
 - Line 1 of hook: max 8 words, punchy, stops the scroll
 - Line 2 of hook: max 15 words, builds curiosity
@@ -61,7 +64,7 @@ CRITICAL RULES:
 Example hooks that work:
 "3 seconds.\\nThat's all it takes to lose half your visitors."
 "Stop collecting compliments.\\nYour testimonials are useless. And I can prove it."
-"I mass-applied to 200 jobs.\\nHere's what actually got me interviews - it wasn't my resume."
+"We turned off our best-performing ad on a Friday.\\nRevenue went up the following week."
 
 Return ONLY a JSON array:
 [
