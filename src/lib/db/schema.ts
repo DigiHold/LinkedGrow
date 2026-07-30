@@ -1035,6 +1035,24 @@ export const agents = sqliteTable("agents", {
   // Minutes from midnight, so the envelope survives a timezone change.
   workdayStart: integer("workday_start").notNull().default(540),
   workdayEnd: integer("workday_end").notNull().default(1080),
+  /**
+   * Which days the agent works, as JSON day numbers where Sunday is 0.
+   *
+   * The worker applied Monday to Friday in code and there was nowhere to say otherwise. Saturday is
+   * in the default because plenty of the people this sells to work then, and an agent that sits
+   * idle two days out of seven looks broken to somebody paying by the month.
+   */
+  workdayDays: text("workday_days").notNull().default("[1,2,3,4,5,6]"),
+  /**
+   * Warm-up overrides. Null means the safe ramp, which is what almost everyone should keep.
+   *
+   * They exist because customers with an established account genuinely do not need four weeks of
+   * training wheels, and because a limit somebody cannot change is a limit they work around by
+   * running a second tool beside this one. Raising them is their decision and the screen says so.
+   */
+  warmupStartPerDay: integer("warmup_start_per_day"),
+  warmupIncrementPerWeek: integer("warmup_increment_per_week"),
+  warmupWeeks: integer("warmup_weeks"),
   lastRunAt: integer("last_run_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

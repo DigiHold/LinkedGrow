@@ -78,6 +78,12 @@ const LEAD_SOURCES: {
 const MIN_SIGNALS = 4;
 const MAX_SIGNALS = 15;
 
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HOURS = Array.from({ length: 24 }, (_, h) => ({
+  id: String(h),
+  label: `${String(h).padStart(2, "0")}:00`,
+}));
+
 const MATCH_LEVELS = [
   { id: "precision", label: "Precision", hint: "Fewer leads, closer fit" },
   { id: "balanced", label: "Balanced", hint: "The default" },
@@ -136,6 +142,23 @@ export function NewAgentWizard() {
   const [reviewMode, setReviewMode] = useState(false);
   const [observeOnly, setObserveOnly] = useState(false);
   const [testRecipients, setTestRecipients] = useState("");
+  // Monday to Saturday, nine to six, in the browser's own zone. All three were hardcoded in the
+  // worker with nowhere to say otherwise.
+  const [workdayDays, setWorkdayDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
+  const [workdayStart, setWorkdayStart] = useState(9);
+  const [workdayEnd, setWorkdayEnd] = useState(18);
+  const [timezone, setTimezone] = useState(
+    typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "Europe/Zurich"
+  );
+  const [customWarmup, setCustomWarmup] = useState(false);
+  const [warmupStartPerDay, setWarmupStartPerDay] = useState(5);
+  const [warmupIncrementPerWeek, setWarmupIncrementPerWeek] = useState(5);
+  const [warmupWeeks, setWarmupWeeks] = useState(4);
+
+  const toggleDay = (d: number) =>
+    setWorkdayDays((current) =>
+      current.includes(d) ? current.filter((x) => x !== d) : [...current, d].sort()
+    );
 
   // Reads the customer's own site and proposes the targeting, so the first
   // agent starts from what the business actually sells rather than a blank field.
@@ -288,6 +311,13 @@ export function NewAgentWizard() {
             .map((v) => v.trim())
             .filter(Boolean),
           smartLeadFinder,
+          timezone,
+          workdayDays,
+          workdayStart: workdayStart * 60,
+          workdayEnd: workdayEnd * 60,
+          ...(customWarmup
+            ? { warmupStartPerDay, warmupIncrementPerWeek, warmupWeeks }
+            : {}),
           sources: [
             // One row per thing named, because "Gojiberry, Taplio" is two competitors
             // rather than one company with a comma in its name.
@@ -596,6 +626,90 @@ export function NewAgentWizard() {
             </Field>
             </Group>
 
+            <Group title="When it works">
+              <Field
+                label="Days"
+                hint="Nothing goes out on the days you leave off. Weekends are quieter on LinkedIn but far from dead, so Saturday is on by default."
+              >
+                <div className="flex flex-wrap gap-2">
+                  {DAY_NAMES.map((label, day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      aria-pressed={workdayDays.includes(day)}
+                      onClick={() => toggleDay(day)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                        workdayDays.includes(day)
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                          : "border border-border text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field
+                label="Hours"
+                hint="An invitation at three in the morning is the kind of thing that gets an account looked at. Local to the timezone below."
+              >
+                <div className="flex items-center gap-3">
+                  <HourPicker value={workdayStart} onChange={setWorkdayStart} />
+                  <span className="text-[13px] text-slate-500 dark:text-slate-400">to</span>
+                  <HourPicker value={workdayEnd} onChange={setWorkdayEnd} />
+                </div>
+              </Field>
+
+              <Field label="Timezone" hint="Taken from this browser. Change it if the account belongs somewhere else.">
+                <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+              </Field>
+            </Group>
+
+            <Group title="Warm-up">
+              <Toggle
+                checked={customWarmup}
+                onChange={setCustomWarmup}
+                label="Set my own warm-up limits"
+                hint="Leave this off unless you know why you are turning it on. The default starts at 5 invitations a day and climbs by 5 each week for a month."
+              />
+              {customWarmup && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                    <p className="text-[13px] leading-relaxed text-amber-900 dark:text-amber-200">
+                      <span className="font-semibold">Read this before you raise them.</span>{" "}
+                      The ramp exists because LinkedIn restricts accounts that suddenly start
+                      sending far more than they used to, and a restriction can be permanent. If you
+                      raise these limits, you are choosing to skip that protection, and any
+                      restriction or ban that follows is on you rather than on us.
+                    </p>
+                  </div>
+                  <Field label="Invitations a day, to begin with" hint="The default is 5.">
+                    <Input
+                      inputMode="numeric"
+                      value={String(warmupStartPerDay)}
+                      onChange={(e) => setWarmupStartPerDay(Number(e.target.value.replace(/\D/g, "")) || 1)}
+                    />
+                  </Field>
+                  <Field label="Added each week" hint="The default is 5.">
+                    <Input
+                      inputMode="numeric"
+                      value={String(warmupIncrementPerWeek)}
+                      onChange={(e) => setWarmupIncrementPerWeek(Number(e.target.value.replace(/\D/g, "")) || 0)}
+                    />
+                  </Field>
+                  <Field label="Weeks of ramp" hint="The default is 4, after which it holds steady.">
+                    <Input
+                      inputMode="numeric"
+                      value={String(warmupWeeks)}
+                      onChange={(e) => setWarmupWeeks(Number(e.target.value.replace(/\D/g, "")) || 1)}
+                    />
+                  </Field>
+                </div>
+              )}
+            </Group>
+
             <Group title="Volume">
               <Toggle
                 checked={observeOnly}
@@ -877,6 +991,24 @@ function Group({
 }
 
 /** Three mutually exclusive choices do not need three cards. */
+/** Twenty-four options is too many for the segmented control, and a native select is what a phone
+ *  renders best anyway. */
+function HourPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="rounded-lg border border-border bg-white px-3 py-2 text-[13px] text-slate-900 dark:bg-slate-900 dark:text-white"
+    >
+      {HOURS.map((h) => (
+        <option key={h.id} value={h.id}>
+          {h.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function Segmented({
   options,
   value,

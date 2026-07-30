@@ -247,6 +247,18 @@ export async function POST(request: NextRequest) {
     const bool = (value: unknown, fallback: boolean) =>
       typeof value === "boolean" ? value : fallback;
 
+    /** Minutes from midnight, clamped to a real day. */
+    const minutes = (value: unknown, fallback: number): number => {
+      const n = Number(value);
+      return Number.isInteger(n) && n >= 0 && n <= 1440 ? n : fallback;
+    };
+
+    /** An optional override: a number inside the range, or null to keep the safe default. */
+    const bounded = (value: unknown, min: number, max: number): number | null => {
+      const n = Number(value);
+      return Number.isInteger(n) && n >= min && n <= max ? n : null;
+    };
+
     await db.insert(agents).values({
       id,
       workspaceId: workspace.workspaceId,
@@ -267,6 +279,24 @@ export async function POST(request: NextRequest) {
       reviewMode: bool(body?.reviewMode, false),
       smartLeadFinder: bool(body?.smartLeadFinder, true),
       observeOnly: bool(body?.observeOnly, false),
+      timezone: text(body?.timezone, 64) ?? "Europe/Zurich",
+      workdayStart: minutes(body?.workdayStart, 540),
+      workdayEnd: minutes(body?.workdayEnd, 1080),
+      workdayDays: JSON.stringify(
+        Array.isArray(body?.workdayDays)
+          ? [
+              ...new Set(
+                (body.workdayDays as unknown[])
+                  .map(Number)
+                  .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+              ),
+            ].sort()
+          : [1, 2, 3, 4, 5, 6]
+      ),
+      // Null keeps the safe ramp. A number here is somebody who read the warning and chose.
+      warmupStartPerDay: bounded(body?.warmupStartPerDay, 1, 50),
+      warmupIncrementPerWeek: bounded(body?.warmupIncrementPerWeek, 0, 50),
+      warmupWeeks: bounded(body?.warmupWeeks, 1, 12),
       testRecipients: Array.isArray(body?.testRecipients)
         ? JSON.stringify(
             (body.testRecipients as unknown[])
