@@ -500,6 +500,13 @@ Write your next message.
  * for interest +7%, and MAKING AN OFFER +28%. So the strongest version of this
  * message is not "are you interested", it is a concrete, small, free thing they
  * can accept or ignore. Buzzwords cost 57% in the same data.
+ *
+ * THIS IS THE ONLY STEP THE CUSTOMER'S GOAL CHANGES. Everything before it is
+ * identical for both, because the evidence says a cold meeting ask is the worst
+ * available move and no wording rescues it. An agent set to book calls proposes
+ * two concrete windows, but only to somebody who has actually written back; to
+ * a prospect who never replied it closes on interest like the other one, since
+ * that is the 47% branch rather than the 27% one.
  */
 export function askMessage(
   ctx: AgentContext,
@@ -507,16 +514,36 @@ export function askMessage(
   prospect: Prospect,
   thread: Turn[]
 ): Promise<string> {
+  return write(ctx, sender, prospect, askPrompt(ctx, sender, prospect, thread), "ask");
+}
+
+/**
+ * The ask's prompt, separated from the model call so the goal branch can be tested.
+ *
+ * What the customer picked is the one thing that changes here, and it changed nothing at all until
+ * now, so it is worth locking rather than trusting.
+ */
+export function askPrompt(
+  ctx: AgentContext,
+  sender: Sender,
+  prospect: Prospect,
+  thread: Turn[]
+): string {
   const talked = thread.some((t) => t.from === "them");
   const transcript = thread
     .map((t) => `${t.from === "us" ? sender.firstName : prospect.firstName}: ${t.body}`)
     .join("\n");
 
-  return write(
-    ctx,
-    sender,
-    prospect,
-    `You are ${sender.firstName}. You are messaging ${prospect.firstName} on LinkedIn${prospect.company ? ` at ${prospect.company}` : ""}.
+  // The whole difference between the two goals, and it is deliberately this narrow.
+  //
+  // Gong's 304,174 emails say a specific-time ask wins at 37% once somebody is engaged and loses
+  // at 27% while they are still cold, against 47% for an interest close. So "book calls" earns the
+  // reply exactly like "start conversations" does, and only then spends it on a slot. An agent
+  // that asked for a call before the prospect ever answered would be choosing the 27% branch on
+  // purpose, which is why silence keeps the interest close whatever the customer picked.
+  const wantsMeeting = ctx.goal === "meetings" && talked;
+
+  return `You are ${sender.firstName}. You are messaging ${prospect.firstName} on LinkedIn${prospect.company ? ` at ${prospect.company}` : ""}.
 
 ${talked ? `The conversation so far:\n${transcript}` : `You introduced yourself a few days ago and they have not replied. This is your last message to them.`}
 
@@ -526,13 +553,15 @@ Write the message where you finally say why you are around, as a person would.
 
 - ${talked ? "Refer to something they actually said, in one short clause, then get to it." : "Do not pretend you have spoken. Go straight to it, lightly."}
 - Say what you do in one plain sentence, the way you would to someone at a bar who asked. No product name unless it is unavoidable, no features, no numbers, no results, no case studies.
-- End with a small concrete offer they can accept or ignore in one word. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
-- CLOSE FOR THIS ONE: ${rotate(ASK_CLOSINGS, seedFor(prospect), 13)}. Do not reuse a closing you would send to everyone.
-- Frame the close so that "no" is the easy answer. Say plainly that a no is fine, and mean it. Gong Labs measured this across 304,174 cold emails: at the cold stage an interest-based close drew a 12% reply rate with 68% of those positive, against 7% and 41% for a close that asked for a meeting, so asking for time is 44% worse on replies. The same study found the ordering reverses once somebody is actively evaluating, which is why this wording belongs here and not in a later conversation. (An earlier version of this comment credited Voss's no-oriented question. The behaviour is right, but his published support is one anecdote in a book rather than a study, and Gong is the evidence.)
+${wantsMeeting
+  ? `- End by proposing a short call, and name two concrete windows rather than asking them to find time. Something like "Thursday afternoon or Friday morning, either works". No calendar link.
+- Say the call is short and say what it is for, in the same breath. Fifteen or twenty minutes, and the reason.
+- Make declining costless and say so plainly. "If the timing is wrong just say so" beats any nudge.`
+  : `- End with a small concrete offer they can accept or ignore in one word. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
+- CLOSE FOR THIS ONE: ${rotate(ASK_CLOSINGS, seedFor(prospect), 13)}. Do not reuse a closing you would send to everyone.`}
+- Frame the close so that "no" is the easy answer. Say plainly that a no is fine, and mean it. Gong Labs scored 304,174 emails on whether a meeting was booked within ten days: at the cold stage an interest close succeeded 47% of the time against 27% for a close naming a day and time, and 26% for an open-ended meeting ask. At deal stage the order reverses, 37% for the specific time against 25% for interest, which is why this wording belongs here and not in a later conversation. (Two earlier versions of this comment were wrong: one credited Voss's no-oriented question, whose published support is a single book anecdote, and one quoted reply-rate figures that appear in secondary write-ups but not in Gong's own post. These are Gong's published numbers. Gong does not state the denominator plainly, so treat them as relative rather than absolute.)
 - Make it easy to say no in a word. Someone who feels cornered does not answer at all.
-- Three lines at most.`,
-    "ask"
-  );
+- Three lines at most.`;
 }
 
 /**

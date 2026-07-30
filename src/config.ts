@@ -67,6 +67,18 @@ export interface AgentContext {
     /** So small talk can be answered honestly rather than dodged. */
     location: string;
   };
+  /**
+   * What the customer picked in the wizard, and the only thing that changes
+   * between the two: how the last message closes.
+   *
+   * Everything before the ask is identical on purpose. Gong scored 304,174
+   * emails on meetings booked within ten days, and at the cold stage an
+   * interest close won 47% against 27% for one naming a day and time. So an
+   * agent told to book calls must not ask for one earlier; it has to earn the
+   * reply first, exactly like the other one, and spend it differently at the
+   * end.
+   */
+  goal: "conversations" | "meetings";
   cfg: Config;
 }
 
