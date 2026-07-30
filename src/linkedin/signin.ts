@@ -67,8 +67,12 @@ const SEL = {
 export type ChallengeKind = "authenticator app" | "text message" | "email" | "verification";
 
 export class SignInFailed extends Error {
-  constructor(message: string, readonly permanent = false) {
+  /** Same reason as RunStalled in worker.ts: strip-only TypeScript cannot rewrite a parameter property. */
+  readonly permanent: boolean;
+
+  constructor(message: string, permanent = false) {
     super(message);
+    this.permanent = permanent;
     this.name = "SignInFailed";
   }
 }

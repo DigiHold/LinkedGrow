@@ -30,7 +30,10 @@ set -euo pipefail
 WORKER_USER="${WORKER_USER:-linkedgrow}"
 WORKER_HOME="/opt/linkedgrow"
 PROFILE_ROOT="${WORKER_HOME}/profiles"
-NODE_MAJOR=22
+# Matches what the code is developed and tested against. Node 22 and Node 24 disagree about
+# which TypeScript syntax --experimental-strip-types accepts, and the 22 box crashed on a
+# constructor parameter property that 24 had run happily for weeks.
+NODE_MAJOR=24
 
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 

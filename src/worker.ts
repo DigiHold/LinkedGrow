@@ -215,12 +215,19 @@ async function runAgent(ctx: AgentContext): Promise<void> {
  * finishes. One hung browser would otherwise keep every agent on that address idle for good.
  */
 class RunStalled extends Error {
-  constructor(readonly stall: Stall) {
+  // Written out rather than declared as a constructor parameter property: Node runs this file with
+  // --experimental-strip-types, which erases types without transpiling, and a parameter property
+  // would have to be rewritten rather than erased. Node 24 tolerated it locally and Node 22 on the
+  // box did not, so the crash only appeared after deploying.
+  readonly stall: Stall;
+
+  constructor(stall: Stall) {
     super(
       stall.kind === "idle"
         ? `no browser activity for ${Math.round(stall.idleMs / 1000)}s`
         : `still running after ${Math.round(stall.ranMs / 60_000)} minutes`
     );
+    this.stall = stall;
     this.name = "RunStalled";
   }
 }
