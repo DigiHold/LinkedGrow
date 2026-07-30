@@ -51,6 +51,8 @@ export interface AgentContext {
   accountDailyInviteCap: number;
   /** How many agents send from this account, so the split can be computed. */
   agentsOnAccount: number;
+  /** Null when the agent has never run, which is the pass the customer watches. */
+  lastRunAt: Date | null;
   warmupStartedAt: Date | null;
   reviewMode: boolean;
   /**

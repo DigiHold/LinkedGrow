@@ -10,8 +10,9 @@ import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
-import { isWithinBusinessHours } from "./safety/envelope.ts";
+import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
+import { sourcePass } from "./linkedin/sourcing.ts";
 import { browserActions } from "./linkedin/actions.ts";
 import {
   RELATIONSHIP_STEPS,
@@ -93,7 +94,13 @@ function isProduction(): boolean {
 }
 
 async function runAgent(ctx: AgentContext): Promise<void> {
-  if (!isWithinBusinessHours(ctx.cfg)) {
+  // Two windows, because the two halves carry different risk. Reading runs on
+  // an extended day so a customer who signs up in the evening sees their first
+  // leads the same evening; writing stays inside the account's own business
+  // hours, because a connection request at 3am is what gets accounts flagged.
+  const canSource = isWithinSourcingHours(ctx.cfg);
+  const canWrite = isWithinBusinessHours(ctx.cfg);
+  if (!canSource && !canWrite) {
     return;
   }
 
@@ -120,6 +127,31 @@ async function runAgent(ctx: AgentContext): Promise<void> {
 
     const actions = browserActions(session.page);
     const key = groupKey(ctx.linkedinAccountId);
+
+    // Finding people comes before writing to them, for two reasons. The queue
+    // has to be filled by something, and until this call existed nothing filled
+    // it. And sourcing is reading, so it is the safe half to do first while the
+    // session is fresh, leaving the writes for later in the window.
+    //
+    // A brand-new agent has never run, so its first pass is the one the
+    // customer is watching. It goes wider and it says so in the event feed.
+    const neverRan = ctx.lastRunAt === null;
+    if (canSource) {
+      try {
+        await sourcePass(ctx, session.page, { firstRun: neverRan });
+      } catch (error) {
+      // Sourcing failing must never stop the sequence: there may already be
+      // people in the queue who are owed a reply.
+        logError("sourcing pass failed", error, { agentId: ctx.agentId });
+      }
+    }
+
+    if (!canWrite) {
+      // Found people, wrote to nobody. They wait for the working day, which is
+      // the point of having two windows.
+      await touchRun(ctx);
+      return;
+    }
 
     await runSequence(ctx.cfg, ctx, {
       actions,

@@ -22,6 +22,27 @@ export function isWithinBusinessHours(cfg: Config, at: Date = new Date()): boole
   );
 }
 
+/**
+ * The wider window sourcing is allowed to run in.
+ *
+ * Plan section 6: sourcing and scoring are mostly reading, so they run on a
+ * wider window than outreach, which writes and must stay inside a human
+ * schedule. Wider is not unlimited: an account that reads LinkedIn at 3am when
+ * it never otherwise does is its own signal, so this is an extended day rather
+ * than the clock.
+ *
+ * It matters most on the first evening. A customer who finishes the wizard at
+ * 9pm should see their agent finding people within minutes, not the following
+ * morning, and reading is the half that can honestly deliver that.
+ */
+const SOURCING_START_HOUR = 7;
+const SOURCING_END_HOUR = 23;
+
+export function isWithinSourcingHours(cfg: Config, at: Date = new Date()): boolean {
+  const { hour } = tzClock(cfg.account.timezone, at);
+  return hour >= SOURCING_START_HOUR && hour < SOURCING_END_HOUR;
+}
+
 /** 0-based warm-up week since the first enabled run. */
 export function warmupWeekIndex(startedAt: Date, now: Date = new Date()): number {
   const days = Math.floor((now.getTime() - startedAt.getTime()) / 86_400_000);

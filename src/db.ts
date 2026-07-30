@@ -65,6 +65,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.workday_end       AS workday_end,
       a.review_mode       AS review_mode,
       a.status            AS status,
+      a.last_run_at       AS last_run_at,
       l.full_name         AS account_full_name,
       l.country           AS country,
       l.daily_invite_cap  AS account_cap,
@@ -122,6 +123,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       country: String(r.country ?? ""),
       accountDailyInviteCap: Number(r.account_cap ?? 8),
       agentsOnAccount: Math.max(1, Number(r.agents_on_account ?? 1)),
+      lastRunAt: r.last_run_at ? new Date(Number(r.last_run_at) * 1000) : null,
       warmupStartedAt: r.warmup_started_at ? new Date(Number(r.warmup_started_at) * 1000) : null,
       reviewMode: Number(r.review_mode ?? 0) === 1,
       sender: {
