@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,47 @@ import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
 import { EXTRA_AGENT_PRICE } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
+
+/**
+ * A section that stays out of the way until somebody wants it.
+ *
+ * Written rather than reached for, because the native <details> element brings
+ * its own disclosure triangle and no two browsers draw it the same way. This is
+ * a row and a chevron that turns, which is what the rest of the dashboard looks
+ * like.
+ */
+function Disclosure({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+      <button
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-medium text-slate-900 transition-colors hover:bg-slate-50 dark:text-white dark:hover:bg-white/5"
+        onClick={() => setOpen((v) => !v)}
+        type="button"
+      >
+        {title}
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 flex-none text-slate-400 transition-transform duration-200",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-700">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * The LinkedIn accounts surface, written once and mounted in three places:
@@ -338,7 +379,6 @@ export function ConnectLinkedInDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [country, setCountry] = useState("");
-  const [totpSecret, setTotpSecret] = useState("");
   // The advanced panel. Empty means we allocate, which is what almost everyone
   // should leave it as.
   const [proxyHost, setProxyHost] = useState("");
@@ -355,7 +395,6 @@ export function ConnectLinkedInDialog({
     setEmail("");
     setPassword("");
     setCountry("");
-    setTotpSecret("");
     setProxyHost("");
     setProxyPort("");
     setProxyUser("");
@@ -385,7 +424,6 @@ export function ConnectLinkedInDialog({
           email,
           password,
           country,
-          totpSecret: totpSecret || undefined,
         }),
       });
       const data = await res.json();
@@ -448,10 +486,10 @@ export function ConnectLinkedInDialog({
           </DialogTitle>
           <DialogDescription>
             {step === 1
-              ? "LinkedGrow works from your own profile, so there is no LinkedIn app to authorise. Your password is encrypted the moment it arrives and is never shown again, to you or to us."
+              ? "Encrypted the moment it arrives, and never shown again."
               : step === 2
-                ? "One more thing and the account is connected. This is what keeps it from being asked to prove itself again later."
-                : "We are signing in now. Stay on this screen for a moment: LinkedIn often asks to verify a new sign-in, and if it does we will ask you for the code right here."}
+                ? "Last step."
+                : "Signing in. Stay a moment in case LinkedIn asks for a code."}
           </DialogDescription>
         </DialogHeader>
 
@@ -492,8 +530,7 @@ export function ConnectLinkedInDialog({
                   value={password}
                 />
                 <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                  Stored encrypted so the session can sign back in on its own,
-                  which is why you are asked once rather than every week.
+                  Asked once, not every week.
                 </p>
               </div>
             </>
@@ -515,97 +552,23 @@ export function ConnectLinkedInDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200">
-                  <span className="font-semibold">
-                    Pick where you actually are, not where your audience is.
-                  </span>{" "}
-                  This country becomes a dedicated address reserved for this
-                  account alone, and it stays with the account for as long as the
-                  account exists. Choose it carefully, because it can only be
-                  moved once a month and every agent on the account pauses while
-                  it moves. LinkedIn compares where the account signs in from
-                  against where it has always signed in from, so a neighbouring
-                  country looks like a trip while another continent looks like
-                  somebody else using the account.{" "}
-                  <span className="font-semibold">
-                    If your own country is not in the list, choose the closest
-                    one.
-                  </span>{" "}
-                  LinkedIn may ask you to confirm it is you the first time, which
-                  takes a minute and then stops happening.
+                <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                  Pick where you actually are. LinkedIn compares it against
+                  where this account has always signed in from, and it can only
+                  be changed once a month.
                 </p>
               </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
-                <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    LinkedIn will almost certainly ask you to verify this
-                    sign-in, and we will ask you for the code here.
-                  </span>{" "}
-                  It happens whether or not you use two-factor: this is a
-                  browser and a location LinkedIn has not seen before, so it
-                  checks. The code arrives by email, by text or in your
-                  authenticator app, whichever you already use. Keep it within
-                  reach for the next minute. The sign-in waits on that screen
-                  for you, and once it is done LinkedIn remembers this browser,
-                  so normally it never asks again. It can ask a second time if
-                  you change your LinkedIn password, and we will simply ask you
-                  here again when that happens.
-                </p>
-              </div>
-
-              {/* The setup key used to be a required field on this screen. It
-                  is unusable as one: LinkedIn shows it once when 2FA is turned
-                  on and never again, so anybody who already has it would have
-                  to disable and re-enable two-factor to find it. It survives
-                  here as an option for people who want a re-login months from
-                  now to happen with nobody watching. */}
-              <details className="rounded-xl border border-slate-200 dark:border-slate-700">
-                <summary className="cursor-pointer select-none px-4 py-3 text-[13px] font-medium text-slate-900 dark:text-white">
-                  Advanced: never ask me for a code again
-                </summary>
-                <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-700">
-                  <Input
-                    autoComplete="off"
-                    id="connect-li-totp"
-                    onChange={(e) => setTotpSecret(e.target.value)}
-                    placeholder="Authenticator setup key, if you still have it"
-                    type="password"
-                    value={totpSecret}
-                  />
-                  <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-                    Only worth filling in if you kept the setup key your
-                    authenticator app was given, the long string behind the QR
-                    code rather than the 6 digits that keep changing. Almost
-                    nobody still has it, and it changes nothing about this
-                    sign-in: it only means a re-login months from now finishes
-                    with nobody watching.
-                  </p>
-                </div>
-              </details>
 
               {/* Collapsed by default, because almost nobody needs it and an
                   open form invites people to fill it in. It exists for agencies
                   who already own good infrastructure, and for the countries our
                   suppliers do not carry, where it turns a refusal into a
                   workaround. */}
-              <details className="rounded-xl border border-slate-200 dark:border-slate-700">
-                <summary className="cursor-pointer select-none px-4 py-3 text-[13px] font-medium text-slate-900 dark:text-white">
-                  Advanced: use my own proxy
-                </summary>
-                <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-700">
+              <Disclosure title="Use my own proxy">
                   <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-                    Leave this closed and we allocate a dedicated address for
-                    you, which is what almost everyone should do. Fill it in and
-                    the agent uses yours instead, we allocate nothing, and the
-                    country above is ignored.{" "}
-                    <span className="font-semibold text-slate-700 dark:text-slate-200">
-                      The reputation of an address you supply is yours.
-                    </span>{" "}
-                    The warm-up, the pacing and the device fingerprint still
-                    apply, but if it turns out to be a shared datacentre IP your
-                    account can be restricted and our safety guarantee does not
-                    cover it.
+                    Leave this alone and we allocate an address for you. Fill it
+                    in and we allocate nothing, the country above is ignored,
+                    and the reputation of the address is yours.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
                     <Input
@@ -638,12 +601,10 @@ export function ConnectLinkedInDialog({
                     />
                   </div>
                   <p className="text-[13px] text-slate-500 dark:text-slate-400">
-                    We route one request through it and read the address that
-                    comes out before saving, so a proxy that cannot answer is
-                    refused here rather than failing on your first session.
+                    We test it before saving, so one that cannot answer is
+                    refused here rather than on your first session.
                   </p>
-                </div>
-              </details>
+              </Disclosure>
             </>
           )}
 

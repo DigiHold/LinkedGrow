@@ -1,6 +1,15 @@
-# LinkedGrow - Operating Manual
+# LinkedGrow v2 - Operating Manual
 
-LinkedGrow is a live SaaS (https://linkedgrow.ai, 80+ users, paying customers) that helps users create, schedule, and optimize LinkedIn content with AI. The differentiator is BYOK (Bring Your Own Key): users connect their own AI API keys for unlimited generations. This file is the operating manual for working in this repo. Read the section that matches your task before touching anything. `SEO-GUIDE.md` holds the marketing-page design system; this file holds the hard rules and the known failure modes.
+**This repo is v2 and v2 is a different product wearing the same name.** The category moved from "write LinkedIn posts" to "find leads and clients on LinkedIn, on autopilot". Agents discover an ICP, mine engagement, send connection requests and run DM sequences, every day, without the user touching it. The content half (generator, editor, calendar, carousels, hooks, ideas, analytics) is all kept and all still works, but it is a supporting feature and it never leads the pitch.
+
+Two things about v2 that change almost every answer:
+
+1. **There is no LinkedIn API.** Not for posting, not for reading. Everything happens in a real Chrome, signed in to the customer's own account, on an address reserved for that account, driven by a separate worker (`~/Documents/GitHub/linkedgrow-worker`, deployed to a VPS). The app queues work; the worker does it.
+2. **AI is billed two different ways and they must never be mixed.** Anything the agents do runs on Nicolas's own `ANTHROPIC_API_KEY` inside the worker, under a per-agent daily cap and a per-account monthly cap. Anything the customer generates for a post runs on **the customer's own key** (BYOK), through `/api/ai/*` with `decryptApiKey`. A post generated on Nicolas's key is a direct loss on every customer.
+
+`linkedgrow` (the other repo) is live v1 and keeps running untouched until cutover. Nothing here goes to production before Nicolas says so; see RULE ZERO in the v2 plan.
+
+This file is the operating manual for working in this repo. Read the section that matches your task before touching anything. `SEO-GUIDE.md` holds the marketing-page design system; this file holds the hard rules and the known failure modes.
 
 **How to resolve conflicts between sources, in order:**
 
@@ -19,7 +28,7 @@ If two current sources genuinely contradict and the choice changes the outcome, 
 These override everything else in this file.
 
 1. **No backward compatibility code.** Early-stage product moving fast. No legacy field mappings, migration shims, "for old users" logic, commented-out code, or "deprecated" markers. Change things directly, delete dead code completely.
-2. **LinkedGrow has NO free plan.** Every signup gets a 7-day Pro trial (no credit card). After 7 days the account flips to `plan='free'`, which is the paywall state, not a usable plan. Copy says "7-day Pro trial", "free for 7 days", "no credit card required". Copy never says "free plan", "starts free", "permanent free plan". Comparison tables: LinkedGrow's free-plan cell is `"7-day trial"` with the trial-state icon, never a positive check.
+2. **LinkedGrow has NO free plan, and v2's trial takes a card.** Every signup gets a 7-day trial and **a payment card is required at signup**; at the end of day 7 the card is charged and the subscription begins. There is no flip to a usable free tier and no cardless trial. Copy says "7-day trial", "cancel any time before day 7". Copy never says "free plan", "starts free", or **"no credit card required"** - that last one was true of v1 and is now false, and a scan on 2026-07-25 found 298 occurrences of it across 139 files. Every one has to go before cutover. Comparison tables: LinkedGrow's free-plan cell is `"7-day trial"` with the trial-state icon, never a positive check.
 3. **Security first.** Every new route, page, or feature passes the security bar in section 5 before commit. If you are unsure whether something is secure, assume it is not and add the protection.
 4. **No em dashes anywhere** - not in code, not in copy, not in commits. Use a regular dash with spaces, or restructure the sentence.
 5. **No fabricated facts.** No invented numbers, features, dates, stories, or capabilities in any external-facing text. If a fact is not in section 7 (reference data) or verifiable in the code, it does not go in the copy. A missing fact is a question for Nicolas, not a blank to fill.
@@ -41,13 +50,18 @@ These override everything else in this file.
 | Payments   | Stripe subscriptions                                                                               |
 | Storage    | Cloudflare R2 (`linkedgrow-media` bucket)                                                          |
 | Email      | Brevo (marketing + transactional)                                                                  |
-| Scheduling | QStash (Upstash) for exact-time publishing and daily crons                                         |
+| Scheduling | QStash (Upstash) for daily crons and blog scheduling. **Not for posts**: a scheduled post is a row the worker reads (section 3.11) |
 | Hosting    | Vercel, auto-deploy from GitHub (SSH remote `git@github.com:DigiHold/LinkedGrow.git`)              |
-| AI         | BYOK: OpenAI, Anthropic, Google, Grok, Perplexity, Kimi (text); Google, OpenAI, Replicate (images) |
+| AI (posts) | BYOK: OpenAI, Anthropic, Google, Grok, Perplexity, Kimi (text); Google, OpenAI, Replicate (images) |
+| AI (agents)| Nicolas's own Anthropic key, inside the worker, capped per agent and per account                   |
+| LinkedIn   | **No API.** Real Chrome (Patchright) per account, on that account's own residential address        |
+| Worker     | `DigiHold/linkedgrow-worker`, Node 24, systemd on the Netcup box, polls this same database         |
 
 **Build gate:** `npx next build` is the only automated gate. There is no ESLint config and no typecheck script; do not assume lint runs anywhere. If the build passes, the code ships.
 
-**Deployment:** two branches. `main` -> https://linkedgrow.ai (production), `staging` -> https://staging.linkedgrow.ai. **Default is `main`** (this overrides older guidance that said staging-first). Exception: at the start of a blog/page content job, ask "staging or live?" once, per the shared workflow in MEMORY.md. Vercel purges the whole CDN cache on every deploy; no manual cache clearing exists or is needed.
+**Deployment: `staging` only, and this is the one rule with no exception.** `staging` -> https://staging.linkedgrow.ai, and every branch of v2 work goes there. `main` serves live v1 to paying customers and nothing from this repo reaches it until Nicolas triggers the cutover. This reverses the "default is main" rule that applies in the v1 repo; if you find yourself about to push v2 anywhere else, stop.
+
+Vercel purges the whole CDN cache on every deploy; no manual cache clearing exists or is needed. The worker deploys separately: `git pull` in `/opt/linkedgrow/app` on the VPS, then `systemctl restart linkedgrow-worker`.
 
 ---
 
@@ -171,7 +185,20 @@ Publishing state lives in the `blog_posts` DB table (`draft | scheduled | publis
 
 ### 3.9 Docs system (`src/content/docs/`)
 
-Markdown files power BOTH the public `/docs` pages AND the support chatbot's RAG embeddings (regenerated at build via `scripts/embed-docs.ts`). One source of truth: edit the `.md` files, never create separate chatbot content. Frontmatter: `title`, `description`, `category`, `order`; categories are folders with `_category.json`. Keep docs accurate - wrong docs mean wrong chatbot answers. Do NOT write docs for unimplemented features (Analytics, Advanced Analytics, Engagement are waiting on LinkedIn API).
+Markdown files power BOTH the public `/docs` pages AND the support chatbot's RAG embeddings (regenerated at build via `scripts/embed-docs.ts`). One source of truth: edit the `.md` files, never create separate chatbot content. Frontmatter: `title`, `description`, `category`, `order`; categories are folders with `_category.json`. Keep docs accurate - wrong docs mean wrong chatbot answers.
+
+**The docs are written for v1 and most of them are wrong the day v2 ships.** Rewriting them is a blocking cutover item, not polish, because the chatbot answers from them. Anything describing OAuth, the Share API, QStash publishing, or "we never store your LinkedIn password" is false now; the last one was corrected on 2026-07-31 along with the publishing and scheduling articles. Analytics is no longer "waiting on the LinkedIn API": the worker reads the real numbers off the posts.
+
+### 3.11 Publishing (there is no Share API)
+
+The posting side runs through the worker. Read this before touching anything under `/dashboard/editor`, `/calendar`, `/generator`, `/repurpose` or `/posts`.
+
+- **The `posts` table is the queue.** No separate queue table: it would hold a second copy of the status, the time, the URL and the error, and those disagree the first time a publish half fails. Extra columns: `linkedin_account_id`, `publish_attempts`, `publish_claimed_at`, `first_comment_posted_at`, `linkedin_scheduled_at`. Extra statuses: `queued` (Publish pressed) and `publishing` (a worker owns it).
+- **`POST /api/linkedin/post` queues and returns.** A 200 means queued, never published. Screens use `queuePost`/`publishAndWatch` from `src/lib/publish-client.ts` and watch the post's own row. Never write "Published" from a 200.
+- **A scheduled post is scheduled on LinkedIn.** Hours before the slot, during the account's own day, the worker writes it into the composer and uses LinkedIn's own Schedule control. LinkedIn publishes it. Nothing of ours is awake at 09:00. If the scheduler cannot be driven the post is **not** published early: it falls back to going out at its slot.
+- **A scheduled post never comes back as `queued`.** Every failure path restores the status it had. Turning a post due tomorrow into one due now publishes it a day early, and that is the worst bug this side of the product can have.
+- **Nothing is marked published without being read back** off the account's own feed. When it cannot be found, the post is still marked published with a note asking the user to check, because reposting on a doubt publishes twice.
+- **Analytics are scraped, not fetched.** The worker reads impressions, reactions, comments and reposts off each post every few hours, and the follower count off the profile once a day. Never put a number on that page that LinkedIn did not show us, and never fall back to an industry average.
 
 ### 3.10 Code style
 
@@ -193,12 +220,12 @@ These are the mistakes that have actually been made in this repo (each traced to
 
 | #   | Failure mode                                                                                                  | The rule that prevents it                                                                                                                                                                                                     |
 | --- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P1  | **The free-plan mirage** - describing `plan='free'` as a usable tier in copy or comparison tables             | Non-negotiable #2. The 3 post cycles/mo on `plan='free'` is residual paywall access, never marketable                                                                                                                         |
-| P2  | **Feature fiction** - describing a LinkedGrow capability from imagination (e.g. auto-liking, auto-commenting) | Read the feature's content file or code before writing about it. Network/Team Notifications are email-only notifiers that link out to LinkedIn; no API engagement ever happens on a user's behalf                             |
+| P1  | **The free-plan mirage** - describing `plan='free'` as a usable tier, or promising a cardless trial            | Non-negotiable #2. v2 takes a card at signup and charges it on day 7. "No credit card required" is v1 copy and is now false                                                                                                   |
+| P2  | **Feature fiction** - describing a capability from imagination, in either direction                           | Read the code before writing about it. v2 genuinely does act on the account: it likes, it leaves the first comment, it invites and it messages. What it still does not do is Network/Team Notifications, which remain email-only nudges that link out |
 | P3  | **Revenue cosplay** - implying MRR, profitability, or salaries                                                | LinkedGrow has no recurring-revenue claims. Bootstrapped, founders take no salary. Only section 7 numbers go in copy                                                                                                          |
 | P4  | **Model-name drift** - listing AI models from memory                                                          | `src/app/(dashboard)/dashboard/settings/ai-api/page.tsx` is the source of truth. Read it every time                                                                                                                           |
-| P5  | **Cost inflation** - quoting BYOK costs as "$2-6" or other ranges                                             | The external number is always "$2-4/month"                                                                                                                                                                                    |
-| P6  | **BYOK-first copy** - opening marketing copy with the BYOK pitch                                              | Lead with content repurposing, voice training, the growth stack. BYOK goes near the end                                                                                                                                       |
+| P5  | **Cost inflation, or billing the wrong key** - quoting BYOK ranges, or generating a post on our own key       | "$2-4/month", content side only. Agent AI is ours and included. `/api/ai/*` decrypts the customer's key; the worker uses `ANTHROPIC_API_KEY`. Never cross them                                                                |
+| P6  | **Content-first copy** - opening with posts, repurposing or BYOK                                              | v2 leads with finding leads and clients on autopilot. Content is a supporting feature; BYOK is a footnote near the end                                                                                                        |
 | P7  | **Biography drift** - "solo founder", "10 years on OceanWP", "1M+ sites", invented ages/dates/medical details | Nicolas + Maria, never "solo". OceanWP: created 2016, sold 2019, 500K sites. Personal-story facts come only from Nicolas directly; compute derived dates yourself; never escalate medical severity |
 
 ### Code
@@ -353,44 +380,55 @@ Each bar is a checklist. An item you cannot check is a fail, not a "probably fin
 
 ### 7.1 Trial lifecycle (the critical model)
 
-1. **Signup** (register/Google/LinkedIn) creates `plan='pro'`, `trialStartedAt=now`, `trialEndedAt=now+7d`, `hasUsedTrial=false`. Brevo Welcome automation (#9) runs the in-trial nurture.
-2. **Day 7**: daily `expire-trials` cron flips to `plan='free'`, `hasUsedTrial=true`. Middleware paywall engages.
+**Decided for v2, and it replaces the v1 mechanics below wherever they disagree:** the 7-day trial stays, a payment card is required at signup, and the card is charged automatically at the end of day 7. A trial converts by default rather than by hope. On a failed payment the customer has 2 days to fix it; after that the agents are **paused, never deleted**, which stops the LinkedIn activity and therefore our cost while the leads, sequences and history stay intact. Say the deadline plainly, with the exact date.
+
+The code still implements the v1 flow, so this is the gap to close before cutover:
+
+1. **Signup** creates `plan='pro'`, `trialStartedAt=now`, `trialEndedAt=now+7d`, `hasUsedTrial=false`. Brevo Welcome automation (#9) runs the in-trial nurture.
+2. **Day 7**: daily `expire-trials` cron flips to `plan='free'`, `hasUsedTrial=true`. Middleware paywall engages. **v2: charge the card instead, and pause the agents only if it fails.**
 3. **Day 55**: `inactive-accounts` cron adds never-connected-LinkedIn accounts to Brevo list #28; "deletion in 5 days" email.
 4. **Day 60**: same cron deletes via `deleteUserData()` with a paranoid re-check (no LinkedIn profile, plan free, no Stripe, no LTD, not admin). Brevo contact survives deletion.
 
-**Anti-abuse fingerprint:** `api/linkedin/callback` checks `users.linkedinProfileId`. First account per LinkedIn ID is never flagged; later accounts using the same LinkedIn ID get `hasUsedTrial=true` + `plan='free'` immediately.
+The paywall condition itself lives in `src/proxy.ts` and is copied, deliberately, into the worker's due-posts query. Change one and you change both, or a cancelled account keeps publishing.
+
+**Anti-abuse fingerprint:** the first account per LinkedIn identity is never flagged; a later account reusing it gets `hasUsedTrial=true` + `plan='free'` immediately. v1 checked this in the OAuth callback, which no longer exists, so in v2 it belongs on the connect-an-account path.
 
 ### 7.2 Pricing
 
-| Plan                            | Monthly | Yearly (30% off)  | Posts           | Scheduled | Images    |
-| ------------------------------- | ------- | ----------------- | --------------- | --------- | --------- |
-| Trial (7 days)                  | $0      | -                 | Unlimited (Pro) | Unlimited | Unlimited |
-| Free (= trial expired, paywall) | $0      | -                 | 0               | 0         | 0         |
-| Starter                         | $19/mo  | $160/yr (~$13/mo) | Unlimited       | 10        | 0         |
-| Pro                             | $39/mo  | $328/yr (~$27/mo) | Unlimited       | Unlimited | Unlimited |
-| Business                        | $79/mo  | $664/yr (~$55/mo) | Unlimited       | Unlimited | Unlimited |
+**v2 prices, decided (plan section 9). Two paid plans, no Starter, no lifetime deal.**
 
-Never call the yearly price "Early Access" or "Discounted"; $13 is just yearly Starter. Coupon `PRELAUNCH30`: 30% off 12 months, via `?coupon=PRELAUNCH30`.
+| Plan            | Monthly | What it is                                        |
+| --------------- | ------- | ------------------------------------------------- |
+| Trial (7 days)  | $0, card required at signup | Charged automatically at the end of day 7 |
+| Pro             | $99/mo  | One person running agents                         |
+| Business        | $179/mo | A team running agents: seats, routing, shared inbox, CRM sync |
+| Extra agent     | $49/mo  | Available on both plans, bought from the upsell modal |
 
-Feature split (full truth in `src/lib/plans.ts` - read it before writing any feature-availability copy): Starter = generation, ideas, editor, calendar, 10 scheduled, Reddit ideas. Pro adds images, hooks, analytics, algorithm optimizer, network notifications, unlimited scheduling. Business adds carousels, A/B testing, teams, advanced analytics, API access, priority support.
+`src/lib/plans.ts` still holds the v1 tiers ($19/$39/$79) because production still sells them. **Read it before writing any feature-availability copy, and never assume the file and this table agree yet.** The Stripe products are recreated at cutover; the old ones are archived, never deleted, and existing subscribers keep what they bought.
+
+Open question, do not guess: the plan contradicts itself on how many agents each tier includes (section 9 says Pro 2 / Business 3 in prose and Pro 1 / Business 2 in the table). Ask Nicolas rather than picking one.
 
 ### 7.3 Marketing numbers (the only approved external claims)
 
 - "179+ founders" trusted-by count
-- "30% off" early adopter discount for 12 months
-- "$2-4/month" typical BYOK AI cost
-- "96% less" savings vs competitors ($19 + $2 API vs $49)
 - Voice training accepts max 5 sample posts (not "5-10")
-- Post-trial residual: 3 post cycles/mo (only `action === "ideas"` starts a cycle) - internal fact, not marketable
 - Language support is never tied to BYOK; all AI speaks all languages, UI is English-only
+- **"$2-4/month" BYOK AI cost applies to the content side only.** Agent AI is included in the price and runs on our key, so it is never quoted as a customer cost.
+- **Dead as of v2, never write them again:** "no credit card required", the 30%-off early-adopter discount, the "96% less than competitors" line (it was built on $19 + $2 API vs $49 and none of those numbers survive), and the post-trial 3-cycle residual.
 
 ### 7.4 Brevo
 
 Lists in active use: #9 Welcome (signup nurture), #28 Inactive Warning (Day 55), #16/17/18/23 paid lists (Starter/Pro/Business/LTD, moved by `syncBrevoOnSubscription` from the Stripe webhook). Lists #26/27/29 are no longer populated. Real-time hooks live in `src/lib/newsletter.ts`. Custom attributes: SIGNUP_DATE, TRIAL_STARTED_DATE, TRIAL_ENDS_DATE, LINKEDIN_CONNECTED, AI_KEY_ADDED, POSTS_CREATED, POSTS_PUBLISHED, LAST_POST_DATE. Backfill endpoint `/api/admin/backfill-free-users` (attributes only, never touches lists, skips paying/LTD, idempotent).
 
-### 7.5 LinkedIn API surface
+### 7.5 How LinkedIn is reached (there is no API)
 
-Two products only: Sign In with LinkedIn (OpenID: `openid profile email`) and Share on LinkedIn (`w_member_social`). No Community Management API. Nothing ever likes, comments, or reshares on a user's behalf.
+v2 uses none of LinkedIn's API products, deliberately: the moment LinkedGrow becomes visible the app gets revoked, and doing this migration twice under pressure with paying customers watching is the outcome being avoided.
+
+Instead: one persistent Chrome profile per connected account, launched headful under Xvfb by the worker, signed in with the email and password the customer gave us (encrypted at rest), going out through a residential address reserved for that one account. Every action moves at a human pace, through the same mouse and keyboard model, and no two agents on one account are ever signed in at the same time.
+
+What this changes for copy: the product **does** act on the user's behalf now. It likes, it comments the first comment, it sends invitations and messages. Say so plainly. What v1 could not do and v2 can is not a detail to leave stale in the docs.
+
+Selector maintenance is the standing cost of this choice. LinkedIn changes its interface, and when it does, publishing or mining stops until a selector is fixed. Plan for it rather than discovering it.
 
 ### 7.6 AI models (BYOK)
 
@@ -413,7 +451,15 @@ BREVO_API_KEY
 QSTASH_TOKEN / QSTASH_CURRENT_SIGNING_KEY / QSTASH_NEXT_SIGNING_KEY
 CRON_SECRET (legacy fallback)
 NEXT_PUBLIC_GTM_ID
+ENCRYPTION_KEY            LinkedIn passwords, TOTP secrets, BYOK keys, proxy credentials
+ANTHROPIC_API_KEY         wizard website analysis only. Agent AI lives in the worker
 ```
+
+The worker has its own environment file on the VPS (`/opt/linkedgrow/worker.env`) and nothing
+propagates between the two. `ENCRYPTION_KEY` must be identical in both, and at cutover it must be
+the key production already uses: a new one makes every stored LinkedIn password, 2FA secret and
+BYOK key permanently unreadable. That is the one line of the migration with no recovery path.
+`PROXY_SELLER_API_KEY` belongs on the VPS only, never on Vercel.
 
 ### Key paths
 
@@ -430,9 +476,23 @@ src/lib/                     auth.ts, plans.ts, blog.ts, rate-limit.ts, api-auth
                              newsletter.ts, encryption.ts, team-utils.ts, url.ts,
                              db/{index,schema}.ts, storage/r2.ts
 src/proxy.ts                 middleware (auth, paywall, publicApiPrefixes)
+src/lib/publish-client.ts    queue a post, then watch its row. Every publish button uses this
+src/lib/best-time.ts         best posting time from the user's own measured posts, or nothing
 src/content/docs/            docs markdown = website + chatbot RAG
 scripts/                     generate-blog-images.js (gitignored), gsc/weekly.js,
                              embed-docs.ts, aeo-*-batch.js
+```
+
+The worker is a separate repo, `~/Documents/GitHub/linkedgrow-worker`:
+
+```
+src/worker.ts                three loops: agents (5 min), publishing (1 min), insights (30 min)
+src/linkedin/publish.ts      the composer: type, attach, schedule or post, read it back, comment, like
+src/linkedin/insights.ts     reads a post's numbers and the profile's follower count
+src/publish/{store,pass}.ts  the queue over the posts table, and the loop that drains it
+src/insights/{store,pass}.ts what is stale, and the session that refreshes it
+src/browser/{driver,human,fingerprint}.ts   Chrome per account, the persona's mouse and keyboard
+src/safety/                  slots, address lock, watchdog, warm-up envelope, test allowlist
 ```
 
 ### Founders
