@@ -163,6 +163,8 @@ export async function sourcePass(
         case "keyword":
         case "market":
         case "linkedin_search": {
+          // A pasted search URL needs no special case: searchPostCards opens a URL as a
+          // destination and searches for anything else.
           const queries =
             Array.isArray(config.queries) && config.queries.length > 0
               ? (config.queries as string[])
@@ -174,10 +176,16 @@ export async function sourcePass(
           break;
         }
         case "buying_event": {
-          // Two shapes of the same idea: somebody just took the seat, or
-          // somebody is hiring for the work.
-          const moved = await mineSignal(ctx, page, ctx.cfg, "jobchange", [source.label], { maxPerQuery: budget.perPost });
-          const hiring = await mineSignal(ctx, page, ctx.cfg, "hiring", [source.label], { maxPerQuery: budget.perPost });
+          // Two shapes of the same idea: somebody just took the seat, or somebody is hiring for
+          // the work. Both are searched by ROLE, which is why this source asks the customer for
+          // nothing extra: the roles and industries they already gave are the query. It used to
+          // search for the label of the button they clicked, so it looked for people announcing a
+          // new job as a "High-intent signals".
+          const roles = ctx.cfg.leads.icpKeywords.length
+            ? ctx.cfg.leads.icpKeywords.slice(0, 4)
+            : [source.label];
+          const moved = await mineSignal(ctx, page, ctx.cfg, "jobchange", roles, { maxPerQuery: budget.perPost });
+          const hiring = await mineSignal(ctx, page, ctx.cfg, "hiring", roles, { maxPerQuery: budget.perPost });
           found = [...moved, ...hiring];
           break;
         }

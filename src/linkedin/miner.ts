@@ -240,8 +240,17 @@ export function toIntentLead(card: { href: string; text: string }, query: string
 }
 
 /** Runs a LinkedIn content search and returns the raw post cards. Shared by every search-backed source. */
+/**
+ * Opens a content search and reads the post cards off it.
+ *
+ * `query` is normally what to type, and the URL is built around it. A customer who pasted their own
+ * LinkedIn or Sales Navigator search has already done that part, so a value that is already a URL
+ * is opened as-is rather than searched for literally.
+ */
 export async function searchPostCards(page: Page, query: string): Promise<Array<{ href: string; text: string }>> {
-  const url = `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
+  const url = /^https?:\/\/(www\.)?linkedin\.com\//i.test(query.trim())
+    ? query.trim()
+    : `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
   await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
   await dwell(2500, 4000);
