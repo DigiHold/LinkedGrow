@@ -508,6 +508,20 @@ Write your next message.
  * a prospect who never replied it closes on interest like the other one, since
  * that is the 47% branch rather than the 27% one.
  */
+/**
+ * Why the close is shaped this way, kept out of the prompt because a model does not need the
+ * citation to follow the instruction, and 150 tokens of it went out with every message.
+ *
+ * Gong Labs scored 304,174 emails on whether a meeting was booked within ten days. At the cold
+ * stage an interest close succeeded 47% of the time, against 27% for a close naming a day and time
+ * and 26% for an open-ended meeting ask. At deal stage the order reverses: 37% for the specific
+ * time against 25% for interest.
+ *
+ * Two earlier versions of this note were wrong and the corrections are worth keeping. One credited
+ * Voss's no-oriented question, whose published support is a single anecdote in a book. One quoted
+ * reply-rate figures that appear in secondary write-ups but not in Gong's own post. Gong does not
+ * state its denominator plainly, so read the numbers above as relative rather than absolute.
+ */
 export function askMessage(
   ctx: AgentContext,
   sender: Sender,
@@ -559,7 +573,7 @@ ${wantsMeeting
 - Make declining costless and say so plainly. "If the timing is wrong just say so" beats any nudge.`
   : `- End with a small concrete offer they can accept or ignore in one word. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
 - CLOSE FOR THIS ONE: ${rotate(ASK_CLOSINGS, seedFor(prospect), 13)}. Do not reuse a closing you would send to everyone.`}
-- Frame the close so that "no" is the easy answer. Say plainly that a no is fine, and mean it. Gong Labs scored 304,174 emails on whether a meeting was booked within ten days: at the cold stage an interest close succeeded 47% of the time against 27% for a close naming a day and time, and 26% for an open-ended meeting ask. At deal stage the order reverses, 37% for the specific time against 25% for interest, which is why this wording belongs here and not in a later conversation. (Two earlier versions of this comment were wrong: one credited Voss's no-oriented question, whose published support is a single book anecdote, and one quoted reply-rate figures that appear in secondary write-ups but not in Gong's own post. These are Gong's published numbers. Gong does not state the denominator plainly, so treat them as relative rather than absolute.)
+- Frame the close so that "no" is the easy answer. Say plainly that a no is fine, and mean it.
 - Make it easy to say no in a word. Someone who feels cornered does not answer at all.
 - Three lines at most.`;
 }
