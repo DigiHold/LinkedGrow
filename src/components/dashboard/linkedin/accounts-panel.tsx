@@ -547,8 +547,10 @@ export function ConnectLinkedInDialog({
                   checks. The code arrives by email, by text or in your
                   authenticator app, whichever you already use. Keep it within
                   reach for the next minute. The sign-in waits on that screen
-                  for you, and once it is done LinkedIn remembers the device
-                  and stops asking.
+                  for you, and once it is done LinkedIn remembers this browser,
+                  so normally it never asks again. It can ask a second time if
+                  you change your LinkedIn password, and we will simply ask you
+                  here again when that happens.
                 </p>
               </div>
 
