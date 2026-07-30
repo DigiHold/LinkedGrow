@@ -4,6 +4,7 @@ import { claimLead, db, loadSources, recordEvent } from "../db.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
 import { mineProfileViewers, mineSignal } from "./sources.ts";
+import { ensureTargeting } from "./derive.ts";
 
 /**
  * Finding the people, which is the half the product is actually bought for.
@@ -74,7 +75,7 @@ async function markMined(sourceId: string, found: number): Promise<void> {
 /** Turns whatever a miner returned into claimed rows, and says so out loud. */
 async function claimAll(
   ctx: AgentContext,
-  sourceId: string,
+  sourceId: string | null,
   sourceLabel: string,
   found: Engager[]
 ): Promise<number> {
@@ -115,8 +116,16 @@ export async function sourcePass(
   opts: { firstRun?: boolean } = {}
 ): Promise<number> {
   const sources = await loadSources(ctx);
-  if (sources.length === 0) {
-    log("no sources configured", { agentId: ctx.agentId });
+
+  // What the customer typed always goes first. This only decides whether there is anything left to
+  // do once their own sources are exhausted, which for an agent set up with one competitor and
+  // nothing else is the second day.
+  const hasOwnQueries = sources.some(
+    (s) => s.type === "keyword" || s.type === "market" || s.type === "linkedin_search"
+  );
+
+  if (sources.length === 0 && !ctx.smartLeadFinder) {
+    log("no sources configured and the fallback is off", { agentId: ctx.agentId });
     return 0;
   }
 
@@ -202,6 +211,15 @@ export async function sourcePass(
     log("source mined", { source: source.label, seen: found.length, claimed });
   }
 
+  // The toggle the wizard calls "Keep looking when the topics run dry", finally doing what it says.
+  //
+  // It fires when the customer never gave the agent anything to search for, or when everything
+  // they did give came back empty this pass. An agent that goes quiet because its one competitor is
+  // exhausted is the failure the toggle exists to prevent, and it looks broken from the outside.
+  if (ctx.smartLeadFinder && (!hasOwnQueries || total === 0)) {
+    total += await fallbackPass(ctx, page, budget, hasOwnQueries);
+  }
+
   await recordEvent(
     ctx,
     "sourcing",
@@ -211,4 +229,47 @@ export async function sourcePass(
   ).catch(() => {});
 
   return total;
+}
+
+/**
+ * Searching from what the business is, rather than from what the customer typed.
+ *
+ * The queries are derived once per agent and cached on its row, so this costs one model call in the
+ * lifetime of an agent rather than one per pass. Leads found here are claimed and deduplicated
+ * exactly like any other, and they carry a source label saying where they came from, because a
+ * customer looking at their queue deserves to know which of these they asked for.
+ */
+async function fallbackPass(
+  ctx: AgentContext,
+  page: Page,
+  budget: { perPost: number; posts: number },
+  hadOwnQueries: boolean
+): Promise<number> {
+  const targeting = await ensureTargeting(ctx);
+  const queries = targeting.intentQueries.slice(0, 3);
+  if (queries.length === 0) return 0;
+
+  await recordEvent(
+    ctx,
+    "sourcing",
+    hadOwnQueries
+      ? "Your own topics came back empty, so the agent is widening the search"
+      : "Working out what to search for from your business"
+  ).catch(() => {});
+
+  let found: Engager[] = [];
+  try {
+    found = await mineIntent(ctx, page, ctx.cfg, { queries, maxPerQuery: budget.perPost });
+  } catch (error) {
+    log("the widened search could not be read", {
+      reason: error instanceof Error ? error.message : String(error),
+    });
+    return 0;
+  }
+
+  // Null rather than empty: source_id carries a foreign key onto agent_sources, and there is no
+  // row to point at because nobody added one.
+  const claimed = await claimAll(ctx, null, "a wider search", found);
+  log("fallback mined", { queries: queries.length, seen: found.length, claimed });
+  return claimed;
 }

@@ -79,6 +79,13 @@ export interface AgentContext {
    * end.
    */
   goal: "conversations" | "meetings";
+  /** Their site, read once to work out what to search for when they did not say. */
+  website: string;
+  /**
+   * The wizard toggle reading "Keep looking when the topics run dry", hinted with "Without this
+   * the agent runs out of people and looks broken". On by default, and unread until now.
+   */
+  smartLeadFinder: boolean;
   cfg: Config;
 }
 

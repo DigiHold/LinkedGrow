@@ -65,6 +65,8 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.linkedin_account_id AS account_id,
       a.name              AS name,
       a.goal              AS goal,
+      a.website           AS website,
+      a.smart_lead_finder AS smart_lead_finder,
       a.icp_summary       AS icp_summary,
       a.job_roles         AS job_roles,
       a.industries        AS industries,
@@ -143,6 +145,8 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       reviewMode: Number(r.review_mode ?? 0) === 1,
       // The wizard offers two, and until now the worker read neither.
       goal: String(r.goal ?? "conversations") === "meetings" ? "meetings" : "conversations",
+      website: String(r.website ?? ""),
+      smartLeadFinder: Number(r.smart_lead_finder ?? 1) === 1,
       sender: {
         // The account's own first name. LinkedIn shows it beside every message,
         // so signing with anything else would read as a different person.
