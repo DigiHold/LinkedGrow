@@ -51,6 +51,9 @@ export function LiveTicker() {
   const [events, setEvents] = useState<TickEvent[]>([]);
   const [index, setIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  // Collapsed to a single line by default. On a phone that is the difference between a hint
+  // and something covering what somebody is reading.
+  const [open, setOpen] = useState(false);
   const seen = useRef<string | null>(null);
 
   const load = useCallback(async () => {
@@ -97,10 +100,29 @@ export function LiveTicker() {
   const agents = new Set(events.map((e) => e.agentId)).size;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 sm:inset-x-auto sm:right-6 sm:justify-end">
-      <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-border bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:bg-slate-900/95">
-        <div className="flex items-start gap-3">
-          <span className="relative mt-1.5 flex h-2 w-2 flex-none">
+    <div
+      className={cn(
+        "pointer-events-none fixed z-50",
+        // On a phone it sits in the corner and takes only the width it needs, clear of anything
+        // anchored to the bottom of the screen. On a laptop it can afford to be a card.
+        "bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 max-w-[calc(100vw-1.5rem)]",
+        "sm:bottom-6 sm:right-6"
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-auto overflow-hidden rounded-full border border-border bg-white/90 shadow-sm backdrop-blur",
+          "transition-all duration-300 dark:bg-slate-900/90",
+          // The card shape only appears once there is room for it, and when the person opens it.
+          open ? "rounded-2xl shadow-lg sm:w-[26rem]" : "sm:rounded-2xl sm:shadow-md sm:w-[22rem]"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center gap-2.5 px-3 py-2 text-left sm:gap-3 sm:px-4 sm:py-3"
+        >
+          <span className="relative flex h-2 w-2 flex-none">
             <span
               className={cn(
                 "absolute inline-flex h-full w-full animate-ping rounded-full opacity-60",
@@ -115,36 +137,27 @@ export function LiveTicker() {
             />
           </span>
 
-          <div className="min-w-0 flex-1">
-            <Link
-              href={`/dashboard/agents/${event.agentId}`}
-              className="block truncate text-[13px] font-semibold text-slate-900 hover:underline dark:text-white"
+          <span className="min-w-0 flex-1">
+            {/* One line on a phone until it is opened, so it never covers what somebody is reading. */}
+            <span
+              className={cn(
+                "block text-[13px] leading-snug text-slate-700 dark:text-slate-200",
+                open ? "" : "truncate"
+              )}
             >
-              {event.agentName}
-            </Link>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
               {event.message}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            aria-label="Hide"
-            className="mt-0.5 flex-none rounded-lg px-2 py-1 text-[13px] text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/5 dark:hover:text-slate-200"
-          >
-            &times;
-          </button>
-        </div>
-
-        {events.length > 1 && (
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
-            <span>
-              {events.length} recent {events.length === 1 ? "update" : "updates"}
-              {agents > 1 ? ` across ${agents} agents` : ""}
             </span>
-            <span className="flex gap-1">
-              {events.slice(0, 8).map((e, i) => (
+            {open && (
+              <span className="mt-0.5 block text-[11px] text-slate-400 dark:text-slate-500">
+                {event.agentName}
+                {agents > 1 ? ` and ${agents - 1} other agent${agents > 2 ? "s" : ""}` : ""}
+              </span>
+            )}
+          </span>
+
+          {events.length > 1 && (
+            <span className="hidden flex-none gap-1 sm:flex">
+              {events.slice(0, 6).map((e, i) => (
                 <span
                   key={e.id}
                   className={cn(
@@ -154,6 +167,27 @@ export function LiveTicker() {
                 />
               ))}
             </span>
+          )}
+        </button>
+
+        {open && (
+          <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 sm:px-4">
+            <Link
+              href={`/dashboard/agents/${event.agentId}`}
+              className="truncate text-[13px] font-semibold text-slate-900 hover:underline dark:text-white"
+            >
+              Open {event.agentName}
+            </Link>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDismissed(true);
+              }}
+              className="flex-none rounded-lg px-2 py-1 text-[12px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              Hide
+            </button>
           </div>
         )}
       </div>
