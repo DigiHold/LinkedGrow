@@ -126,6 +126,7 @@ export function NewAgentWizard() {
   const [skipConnected, setSkipConnected] = useState(true);
   const [reviewMode, setReviewMode] = useState(false);
   const [observeOnly, setObserveOnly] = useState(false);
+  const [testRecipients, setTestRecipients] = useState("");
 
   // Reads the customer's own site and proposes the targeting, so the first
   // agent starts from what the business actually sells rather than a blank field.
@@ -273,6 +274,10 @@ export function NewAgentWizard() {
           skipConnected,
           reviewMode,
           observeOnly,
+          testRecipients: testRecipients
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean),
           smartLeadFinder,
           sources: [
             { type: source, label: labelForSource(source) },
@@ -563,6 +568,16 @@ export function NewAgentWizard() {
                 label="Keep looking when the topics run dry"
                 hint="Without this the agent runs out of people and looks broken."
               />
+              <Field
+                label="Only contact these people"
+                hint="For trying it out. Paste one or more LinkedIn profile URLs, comma separated, and the agent will find everyone as usual but only ever write to these. Leave empty to contact everyone it finds."
+              >
+                <Input
+                  value={testRecipients}
+                  onChange={(e) => setTestRecipients(e.target.value)}
+                  placeholder="https://www.linkedin.com/in/your-profile/"
+                />
+              </Field>
             </Group>
           </div>
         </StepBody>
