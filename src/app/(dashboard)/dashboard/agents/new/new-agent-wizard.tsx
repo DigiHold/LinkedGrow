@@ -125,6 +125,7 @@ export function NewAgentWizard() {
   const [linkedinAccountId, setLinkedinAccountId] = useState("");
   const [skipConnected, setSkipConnected] = useState(true);
   const [reviewMode, setReviewMode] = useState(false);
+  const [observeOnly, setObserveOnly] = useState(false);
 
   // Reads the customer's own site and proposes the targeting, so the first
   // agent starts from what the business actually sells rather than a blank field.
@@ -271,6 +272,7 @@ export function NewAgentWizard() {
           companyInfo: companyInfo.trim() || null,
           skipConnected,
           reviewMode,
+          observeOnly,
           smartLeadFinder,
           sources: [
             { type: source, label: labelForSource(source) },
@@ -549,6 +551,12 @@ export function NewAgentWizard() {
             </Group>
 
             <Group title="Volume">
+              <Toggle
+                checked={observeOnly}
+                onChange={setObserveOnly}
+                label="Watch it work before it sends anything"
+                hint="The agent signs in and collects leads, and touches nothing on your account. No likes, no invitations, no messages. Turn it off when you are happy with what it finds."
+              />
               <Toggle
                 checked={smartLeadFinder}
                 onChange={setSmartLeadFinder}

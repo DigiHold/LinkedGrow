@@ -1003,6 +1003,15 @@ export const agents = sqliteTable("agents", {
   reviewMode: integer("review_mode", { mode: "boolean" })
     .notNull()
     .default(false),
+  /**
+   * Read LinkedIn, write nothing to it.
+   *
+   * The agent signs in, mines, scores and queues leads, and fills the activity feed. It never
+   * likes, never invites, never messages. It is how somebody finds out whether the automation
+   * works on their account before letting it act on their behalf, and reviewMode does not cover
+   * that: reviewMode queues messages for approval and still sends the invitations.
+   */
+  observeOnly: integer("observe_only", { mode: "boolean" }).notNull().default(false),
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),

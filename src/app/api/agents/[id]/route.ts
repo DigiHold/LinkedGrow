@@ -50,6 +50,7 @@ export async function GET(
         skipConnected: agents.skipConnected,
         reviewMode: agents.reviewMode,
         smartLeadFinder: agents.smartLeadFinder,
+        observeOnly: agents.observeOnly,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,
@@ -137,6 +138,7 @@ const EDITABLE = [
   "skipConnected",
   "reviewMode",
   "smartLeadFinder",
+  "observeOnly",
   "timezone",
 ] as const;
 

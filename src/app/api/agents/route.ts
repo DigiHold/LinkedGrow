@@ -266,6 +266,7 @@ export async function POST(request: NextRequest) {
       skipConnected: bool(body?.skipConnected, true),
       reviewMode: bool(body?.reviewMode, false),
       smartLeadFinder: bool(body?.smartLeadFinder, true),
+      observeOnly: bool(body?.observeOnly, false),
       // Agents are always created paused. Activating is a separate,
       // deliberate action, per section 7b.
       status: "paused",
