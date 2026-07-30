@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { AgentContext } from "../config.ts";
 import { generate, MODELS } from "../ai.ts";
 import { validateMessage } from "./validate.ts";
@@ -191,6 +192,76 @@ Hard rules, all of them:
 - No trade jargon and no acronyms. Say it the way you would to somebody outside the
   industry, because a stranger reading an acronym knows a script wrote it.`;
 
+/**
+ * The shapes a first message may take, and the reason they are code rather than a prompt line.
+ *
+ * What matters is not the wording but that the STRUCTURE moves. Swapping only the first name inside
+ * one fixed template leaves a pattern readable across a whole sending history, which is what an
+ * automation classifier looks for and what a human notices on receiving the second one.
+ *
+ * This file used to carry the instruction "VARY THE SHAPE between messages" inside the prompt, which
+ * cannot work: every message is an independent call with no memory of the previous ones, so the
+ * model has nothing to vary against and settles on whichever shape it likes. The choice has to be
+ * made outside the model and handed to it, which is what these pools do.
+ */
+export const HELLO_SHAPES = [
+  "greeting with their first name, then one concrete observation",
+  "the observation first, then a short greeting with their first name",
+  "the observation alone, with their first name dropped inside it",
+  "a congratulation on something that just changed for them",
+  "plain empathy for a situation they described, with no compliment",
+] as const;
+
+/**
+ * Openings for the intro and closings for the ask.
+ *
+ * The single-tenant agent shipped without these and the first live preview showed the pattern had
+ * only moved down a message: two unrelated prospects both opened the second message with "I spend
+ * my days scanning" and both closed the third with the same sentence. A fixed opener repeated
+ * across a sending history is the same tell as a fixed template.
+ */
+const INTRO_OPENINGS = [
+  "open on what you keep running into in situations like theirs, then say in one plain clause who you are and what you do",
+  "open on the one plain clause about who you are and what you do, then tie it to the reality of their job",
+  "open on the part of this that people usually get wrong, then say what you do as the reason you see it",
+  "open on an honest remark about how long this normally goes unnoticed, then say what you do",
+] as const;
+
+const ASK_CLOSINGS = [
+  "ask whether it would be a bad idea to send it over, and say plainly they can tell you to forget it",
+  "offer to send it, and say straight out that no answer at all is a fine answer",
+  "say you will send it only if they want it, and that silence means you drop it for good",
+  "ask whether they would rather you send it or leave it, with no follow-up either way",
+] as const;
+
+/** A different digest byte per slot, so the three choices never move together. */
+function rotate<T>(pool: readonly T[], seed: string, slot: number): T {
+  const digest = createHash("sha256").update(seed).digest();
+  return pool[digest[slot % digest.length]! % pool.length]!;
+}
+
+/** Stable per prospect, so a regeneration after a rejected draft keeps the same shape. */
+function seedFor(prospect: Prospect): string {
+  return `${prospect.fullName ?? prospect.firstName}|${prospect.source ?? ""}`;
+}
+
+/**
+ * Stable per prospect yet spread across people, and always a shape the signal can actually carry.
+ * Congratulating somebody who just described a traffic collapse, or pitying somebody who merely
+ * reacted to a post, both read worse than any template, so the pool narrows to what fits.
+ */
+export function pickHelloShape(prospect: Prospect): string {
+  const kind = (prospect.source ?? "").split(":")[0] ?? "";
+  const neutral = HELLO_SHAPES.slice(0, 3);
+  const pool =
+    kind === "jobchange" || kind === "newrole"
+      ? [...neutral, HELLO_SHAPES[3]!]
+      : kind === "intent" || kind === "question"
+        ? [...neutral, HELLO_SHAPES[4]!]
+        : neutral;
+  return rotate(pool, seedFor(prospect), 0);
+}
+
 export interface Sender {
   firstName: string;
   /** What they sell, only used at the ask step. */
@@ -201,8 +272,12 @@ export interface Sender {
 
 export interface Prospect {
   firstName: string;
+  /** Used with the source to seed the shape rotation, so two people never get the same structure. */
+  fullName?: string;
   headline?: string;
   company?: string;
+  /** How they were found, e.g. "reaction:calendly" or "intent:...". Narrows the shape pool. */
+  source?: string;
   /** The thing they actually wrote that surfaced them, if there is one. */
   signalText?: string;
 }
@@ -243,6 +318,7 @@ async function write(
       // The hello is two sentences on a phone; the later steps carry an idea.
       step: purpose as "hello" | "intro" | "converse" | "ask",
       ...(prospect.headline ? { headline: prospect.headline } : {}),
+      ...(prospect.signalText ? { contextText: prospect.signalText } : {}),
       maxWords: 70,
     });
     if (result.ok) return body;
@@ -297,7 +373,7 @@ Write it.
 - TWO LINES. Never three. Under 300 characters.
 - ${prospect.signalText ? "Name the real thing of theirs you saw, in your own words, in half a sentence. Not a compliment, just recognition that you read it." : "Say hello and that it is good to connect. Nothing more, because you have nothing true to point at."}
 - The greeting is plain and contains their first name. "Glad we connected, Sarah", "Good to be connected, Tom". Never "nice to meet you", because you have not met.
-- VARY THE SHAPE between messages. Do not always lead with the greeting. All of these are right and none should be favoured: greeting then observation, observation then a short greeting, the observation alone with their name inside it, a congratulation when they have just changed role, plain empathy for something they described. Swapping only the first name inside one fixed shape is the pattern a reader spots after two messages and a classifier spots across a whole history.
+- SHAPE FOR THIS ONE: ${pickHelloShape(prospect)}. Follow it exactly, so that two messages in a row never share an opening.
 - Ordinary spoken word order. Never a clause that opens on a gerund and lands on the point, because nobody says "Owning a site end to end is why I hit connect" out loud.
 - No trade jargon, no acronyms, no product vocabulary of any kind.
 - ABSOLUTELY NO QUESTION. No question mark anywhere in this message. Not one.
@@ -350,6 +426,7 @@ Write it.
 
 - ${prospect.signalText ? "Open by naming the specific thing they said, in your own words, in a way that shows you read it. Never quote it back at them." : "Open with hello and their first name. Do not pretend to have read anything."}
 - Say who you are AND what you do, in one plain clause. Not a pitch, not a benefit, not an offer, just the honest frame: "I build X for Y" or "I run a small Z". This line is not optional. A message that hides why you are around is a bait and switch, and the reveal three messages later costs more trust than saying it now ever would.
+- STRUCTURE FOR THIS ONE: ${rotate(INTRO_OPENINGS, seedFor(prospect), 7)}. Never open two messages the same way, and never with the words "I spend my days".
 - Ask one question they can answer in a single line, about them or about what they said.
 - Close so that ignoring you costs them nothing. Something like "either way, good to be connected". This part matters more than the rest.
 - Never say what you do for a living in a way that sounds like an offer. There is no offer in this message.
@@ -441,7 +518,8 @@ Write the message where you finally say why you are around, as a person would.
 - ${talked ? "Refer to something they actually said, in one short clause, then get to it." : "Do not pretend you have spoken. Go straight to it, lightly."}
 - Say what you do in one plain sentence, the way you would to someone at a bar who asked. No product name unless it is unavoidable, no features, no numbers, no results, no case studies.
 - End with a small concrete offer they can accept or ignore in one word. Something you would actually send them in two minutes. Never ask for a meeting, a call, a slot, or fifteen minutes of their time.
-- Frame the close so that "no" is the easy answer. "Would it be a bad idea if I sent it over", "are you against me sending it", "tell me to forget it and I will". Say plainly that a no is fine, and mean it. Gong Labs measured this across 304,174 cold emails: at the cold stage an interest-based close drew a 12% reply rate with 68% of those positive, against 7% and 41% for a close that asked for a meeting, so asking for time is 44% worse on replies. The same study found the ordering reverses once somebody is actively evaluating, which is why this wording belongs here and not in a later conversation. (An earlier version of this comment credited Voss's no-oriented question. The behaviour is right, but his published support is one anecdote in a book rather than a study, and Gong is the evidence.)
+- CLOSE FOR THIS ONE: ${rotate(ASK_CLOSINGS, seedFor(prospect), 13)}. Do not reuse a closing you would send to everyone.
+- Frame the close so that "no" is the easy answer. Say plainly that a no is fine, and mean it. Gong Labs measured this across 304,174 cold emails: at the cold stage an interest-based close drew a 12% reply rate with 68% of those positive, against 7% and 41% for a close that asked for a meeting, so asking for time is 44% worse on replies. The same study found the ordering reverses once somebody is actively evaluating, which is why this wording belongs here and not in a later conversation. (An earlier version of this comment credited Voss's no-oriented question. The behaviour is right, but his published support is one anecdote in a book rather than a study, and Gong is the evidence.)
 - Make it easy to say no in a word. Someone who feels cornered does not answer at all.
 - Three lines at most.`,
     "ask"

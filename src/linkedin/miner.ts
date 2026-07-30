@@ -74,8 +74,20 @@ export async function mine(ctx: DB, page: Page, cfg: Config, opts: MineOptions):
   }
 
   const unique = dedupeByProfile(engagers);
-  const onIcp = unique.filter((e) => matchesIcp(cfg.leads.icpKeywords, e.headline));
-  log(`Mined ${unique.length} unique engagers; ${onIcp.length} match the ICP (dropped ${unique.length - onIcp.length} off-target).`);
+
+  // Compared against every competitor the customer named, not only the page they were found on,
+  // because a LinkedIn slug and the brand people type rarely match: cybot is Cookiebot,
+  // tryprofound is Profound.
+  const rivals = knownCompetitors(cfg);
+  const outsiders = unique.filter((e) => {
+    const names = [e.source.split(":")[1] ?? "", ...rivals];
+    return !names.some((n) => worksAtCompany(e.headline, n));
+  });
+  const insiders = unique.length - outsiders.length;
+  if (insiders > 0) log(`Dropped ${insiders} people who work at the company whose posts we read.`);
+
+  const onIcp = outsiders.filter((e) => matchesIcp(cfg.leads.icpKeywords, e.headline));
+  log(`Mined ${unique.length} unique engagers; ${onIcp.length} match the ICP (dropped ${outsiders.length - onIcp.length} off-target).`);
 
   const asked = await promoteAskers(ctx, onIcp);
   if (asked) log(`${asked} of them asked a question under the post: queued as qualified leads.`);
@@ -295,6 +307,51 @@ export function onTopic(query: string, body: string): boolean {
  */
 export function isFirstDegree(text: string): boolean {
   return /(^|[\s·•|])1st\b/i.test(text) || /\b1st degree connection\b/i.test(text);
+}
+
+/**
+ * Every competitor name this agent knows, which is the list of competitor sources its owner added.
+ *
+ * The single-tenant original also merged a cached inference from the business homepage. Here the
+ * customer names them in the wizard, so the sources table is the whole truth and there is nothing
+ * to infer.
+ */
+export function knownCompetitors(cfg: Config): string[] {
+  return [
+    ...new Set((cfg.leads.competitors ?? []).map((n) => n.trim()).filter((n) => n.length >= 3)),
+  ];
+}
+
+/**
+ * True when this person works at the company whose page we are mining.
+ *
+ * A competitor's posts are read by their own founders, staff and alumni, who all sit right at the
+ * top of the reactions list. Pitching a LinkedIn tool to the founder of a LinkedIn tool, because he
+ * reacted to his own company's post, is the kind of mistake that ends a conversation before it
+ * starts. The company name in their headline is enough to spot them.
+ */
+export function worksAtCompany(headline: string, sourceLabel: string): boolean {
+  const company = sourceLabel.replace(/[-_]+/g, " ").trim().toLowerCase();
+  if (company.length < 3) return false;
+  const hay = headline.toLowerCase();
+
+  // A LinkedIn slug rarely matches the name people write in their headline: tryprofound is Profound,
+  // cybot is Cookiebot. So compare the slug, its words, and the slug with a signup-era prefix
+  // stripped, and also accept a headline word that the slug contains.
+  const stripped = company.replace(/^(try|get|use|join|go|the|we?are)/, "");
+  const parts = new Set<string>([company, stripped, ...company.split(" ")].filter((w) => w.length >= 4));
+  for (const part of parts) {
+    if (new RegExp(`(^|[^a-z0-9])${escapeRegex(part)}([^a-z0-9]|$)`, "i").test(hay)) return true;
+  }
+  // The other direction: a headline word long enough to be a brand, sitting inside the slug.
+  return hay
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 5)
+    .some((w) => company.includes(w));
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Keeps only engagers whose headline matches the ICP keywords. An empty keyword list keeps everyone. */

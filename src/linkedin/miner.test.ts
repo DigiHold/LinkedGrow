@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toEngager, toCommenter, matchesIcp, toIntentLead, onTopic, isAsking } from "./miner.ts";
+import { toEngager, toCommenter, matchesIcp, toIntentLead, onTopic, isAsking, worksAtCompany } from "./miner.ts";
 
 // Fixtures mirror the real reactor-row shape captured from the LinkedIn reactors modal
 // (name line, "View <name>'s profile" link, connection-degree noise, then the headline),
@@ -88,6 +88,19 @@ test("matchesIcp keeps a headline that hits a keyword and drops one that misses"
   assert.equal(matchesIcp(kw, "Founder & CEO at a SaaS startup"), true);
   assert.equal(matchesIcp(kw, "Head of Application Security"), true);
   assert.equal(matchesIcp(kw, "Professional violinist and music teacher"), false);
+});
+
+// A competitor's posts are read most of all by their own staff, who sit at the top of the reactions
+// list. Pitching a LinkedIn tool to the founder of a LinkedIn tool, because he reacted to his own
+// company's post, is how the first version wasted its best-looking leads. The filter existed in the
+// single-tenant original and was lost in the port, so the worker queued them for four days.
+test("people who work at the mined company are not prospects", () => {
+  assert.equal(worksAtCompany("Founder & CEO / Intruder / Stop breaches", "intruder"), true);
+  assert.equal(worksAtCompany("Head of Growth at Snyk", "snyk"), true);
+  // The LinkedIn slug and the brand people type rarely match, so both directions have to work.
+  assert.equal(worksAtCompany("Leading Agency Sales @ Profound", "tryprofound"), true);
+  assert.equal(worksAtCompany("Founder at a small SaaS building websites", "intruder"), false);
+  assert.equal(worksAtCompany("Head of Marketing at a Swiss law firm", "snyk"), false);
 });
 
 // Existing contacts must never enter a cold campaign: they cannot be invited, and they are the

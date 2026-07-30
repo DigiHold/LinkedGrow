@@ -34,6 +34,15 @@ export function db(): Client {
   return client;
 }
 
+/** group_concat gives one string; an agent with no competitor source gives null. */
+function splitLines(value: unknown): string[] {
+  if (typeof value !== "string" || !value) return [];
+  return value
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function parseList(value: unknown): string[] {
   if (typeof value !== "string" || !value) return [];
   try {
@@ -72,7 +81,12 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       l.warmup_started_at AS warmup_started_at,
       l.status            AS account_status,
       (SELECT COUNT(*) FROM agents s WHERE s.linkedin_account_id = a.linkedin_account_id)
-                          AS agents_on_account
+                          AS agents_on_account,
+      -- The competitors this agent was pointed at. The miner needs them by name so it can drop
+      -- the rival's own staff, who sit at the top of every reactions list on their own posts.
+      (SELECT group_concat(s.label, char(10)) FROM agent_sources s
+        WHERE s.agent_id = a.id AND s.type = 'competitor' AND s.enabled = 1)
+                          AS competitor_labels
     FROM agents a
     JOIN linkedin_accounts l ON l.id = a.linkedin_account_id
     WHERE a.status IN ('active', 'warming')
@@ -97,7 +111,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       sequence: { ...DEFAULTS.sequence },
       leads: {
         topics: [],
-        competitors: [],
+        competitors: splitLines(r.competitor_labels),
         hashtags: [],
         icp: String(r.icp_summary ?? ""),
         icpKeywords: [

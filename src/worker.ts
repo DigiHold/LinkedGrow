@@ -167,6 +167,10 @@ async function runAgent(ctx: AgentContext): Promise<void> {
         withAddress(key, async () => {
           const to = {
             firstName: prospect.first_name ?? "",
+            // Both feed the shape rotation, which is seeded per prospect so a
+            // regeneration keeps its shape and two people never share one.
+            fullName: prospect.full_name ?? undefined,
+            source: prospect.source ?? undefined,
             headline: prospect.headline ?? undefined,
             signalText: prospect.context ?? undefined,
           };

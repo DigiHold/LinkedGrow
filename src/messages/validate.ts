@@ -17,6 +17,8 @@ export interface ValidateContext {
   step?: "hello" | "intro" | "converse" | "ask";
   /** The prospect's headline, used to reject verbatim headline dumps. */
   headline?: string;
+  /** What the prospect themselves wrote, used to reject a message that recites it back to them. */
+  contextText?: string;
   minWords?: number;
   maxWords?: number;
 }
@@ -171,6 +173,12 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   }
   if (ctx.headline && dumpsHeadline(text, ctx.headline)) {
     reasons.push("dumps the profile headline verbatim");
+  }
+  // Reciting somebody's own post back at them is worse than a template: they wrote it, so the only
+  // thing it proves is that a script parsed it. The check existed here but ran on the Reddit path
+  // only, and nothing ever passed the prospect's words to the DM path, so it was dead for months.
+  if (ctx.contextText && echoesPost(text, ctx.contextText)) {
+    reasons.push("restates their own words back at them instead of reacting to them");
   }
   for (const s of bodySentences(text, ctx.senderName)) {
     // A greeting is allowed to be short, because that is how people greet.

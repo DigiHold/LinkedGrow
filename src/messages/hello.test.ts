@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { validateMessage } from "./validate.ts";
+import { HELLO_SHAPES, pickHelloShape } from "./relationship.ts";
 
 /**
  * The first message after an acceptance, locked down.
@@ -126,4 +127,67 @@ test("the later steps keep the longer minimum", () => {
     "Glad we connected, Jonathan. That client site going down right before a launch is the kind of week nobody deserves.";
   assert.equal(validateMessage(short, ctx).ok, true);
   assert.equal(validateMessage(short, { ...ctx, step: "intro" }).ok, false);
+});
+
+/**
+ * The rotation, which is the half a prompt cannot do.
+ *
+ * The prompt used to carry "VARY THE SHAPE between messages". Every message is an independent
+ * model call with no memory of the previous ones, so there was nothing to vary against and the
+ * model settled on whichever shape it preferred. Choosing outside the model is the only version
+ * of this that works, so these tests guard the choice rather than the wording.
+ */
+test("two prospects do not get the same opening shape", () => {
+  const shapes = new Set(
+    [
+      { firstName: "Tom", fullName: "Tom Meyer", source: "reaction:calendly" },
+      { firstName: "Sarah", fullName: "Sarah Klein", source: "reaction:calendly" },
+      { firstName: "Lea", fullName: "Lea Fontaine", source: "comment:calendly" },
+      { firstName: "Marc", fullName: "Marc Dupuis", source: "reaction:hootsuite" },
+      { firstName: "Jonathan", fullName: "Jonathan Reyes", source: "comment:hootsuite" },
+    ].map((p) => pickHelloShape(p))
+  );
+  assert.ok(shapes.size > 1, "every prospect received the same shape, which is the bug this fixes");
+});
+
+test("the same prospect keeps their shape across a regeneration", () => {
+  const p = { firstName: "Tom", fullName: "Tom Meyer", source: "reaction:calendly" };
+  assert.equal(pickHelloShape(p), pickHelloShape(p));
+});
+
+test("a congratulation is only offered when something actually changed", () => {
+  // Congratulating somebody who merely reacted to a post reads worse than any template, so that
+  // shape has to be unreachable unless the signal is a role change.
+  const congratulation = HELLO_SHAPES[3];
+  const empathy = HELLO_SHAPES[4];
+  for (const name of ["Tom Meyer", "Sarah Klein", "Lea Fontaine", "Marc Dupuis", "Ana Ruiz", "Ivan Petrov"]) {
+    const shape = pickHelloShape({ firstName: name.split(" ")[0]!, fullName: name, source: "reaction:calendly" });
+    assert.notEqual(shape, congratulation, `${name} was offered a congratulation on a bare reaction`);
+    assert.notEqual(shape, empathy, `${name} was offered empathy on a bare reaction`);
+  }
+  const moved = pickHelloShape({ firstName: "Ana", fullName: "Ana Ruiz", source: "jobchange:cto" });
+  assert.ok(HELLO_SHAPES.includes(moved as (typeof HELLO_SHAPES)[number]));
+});
+
+/**
+ * Reciting the prospect's own post back at them. The check lived in this file's validator all
+ * along but ran on the Reddit path only, and the DM path never passed the prospect's words, so
+ * a message could quote them back word for word and pass.
+ */
+test("a message that recites their own post is refused", () => {
+  const theirPost =
+    "spent the whole weekend restoring a client site from a backup that turned out to be four months old";
+  const parrot = validateMessage(
+    "Glad we connected, Tom. Spent the whole weekend restoring a client site from a backup that turned out to be four months old sounds rough.",
+    { ...ctx, contextText: theirPost }
+  );
+  assert.equal(parrot.ok, false);
+  assert.ok(parrot.reasons.some((r) => r.includes("restates their own words")));
+
+  // Reacting to it, rather than repeating it, is the whole point and must still pass.
+  const reaction = validateMessage(
+    "Glad we connected, Tom. Finding out the backup was months stale, mid-restore, is the worst possible moment to learn it.",
+    { ...ctx, contextText: theirPost }
+  );
+  assert.equal(reaction.ok, true, reaction.reasons.join(" | "));
 });
