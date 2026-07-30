@@ -36,6 +36,15 @@ type Agent = {
   skipConnected: boolean;
   reviewMode: boolean;
   smartLeadFinder: boolean;
+  observeOnly: boolean;
+  jobRoles: string | null;
+  industries: string | null;
+  locations: string | null;
+  companySizes: string | null;
+  workdayDays: string;
+  warmupStartPerDay: number | null;
+  warmupIncrementPerWeek: number | null;
+  warmupWeeks: number | null;
   dailyInviteCap: number;
   accountAgentCount: number;
   timezone: string;
@@ -517,6 +526,18 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
             skipConnected: agent.skipConnected,
             reviewMode: agent.reviewMode,
             smartLeadFinder: agent.smartLeadFinder,
+            observeOnly: agent.observeOnly,
+            jobRoles: agent.jobRoles,
+            industries: agent.industries,
+            locations: agent.locations,
+            companySizes: agent.companySizes,
+            timezone: agent.timezone,
+            workdayDays: agent.workdayDays,
+            workdayStart: agent.workdayStart,
+            workdayEnd: agent.workdayEnd,
+            warmupStartPerDay: agent.warmupStartPerDay,
+            warmupIncrementPerWeek: agent.warmupIncrementPerWeek,
+            warmupWeeks: agent.warmupWeeks,
             dailyInviteCap: agent.dailyInviteCap,
             accountAgentCount: agent.accountAgentCount,
             accountCountry: agent.accountCountry,

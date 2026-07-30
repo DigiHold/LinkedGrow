@@ -56,6 +56,14 @@ export async function GET(
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,
         workdayEnd: agents.workdayEnd,
+        workdayDays: agents.workdayDays,
+        jobRoles: agents.jobRoles,
+        industries: agents.industries,
+        locations: agents.locations,
+        companySizes: agents.companySizes,
+        warmupStartPerDay: agents.warmupStartPerDay,
+        warmupIncrementPerWeek: agents.warmupIncrementPerWeek,
+        warmupWeeks: agents.warmupWeeks,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
@@ -130,6 +138,17 @@ export async function GET(
   }
 }
 
+/** Text columns holding JSON, so an array in the body becomes a string in the row. */
+const LIST_FIELDS: readonly string[] = [
+  "jobRoles", "industries", "locations", "companySizes", "workdayDays", "testRecipients",
+];
+/** Minutes from midnight. */
+const MINUTE_FIELDS: readonly string[] = ["workdayStart", "workdayEnd"];
+/** Optional overrides, where null means go back to the safe ramp. */
+const WARMUP_FIELDS: readonly string[] = [
+  "warmupStartPerDay", "warmupIncrementPerWeek", "warmupWeeks",
+];
+
 const EDITABLE = [
   "name",
   "icpSummary",
@@ -141,6 +160,19 @@ const EDITABLE = [
   "smartLeadFinder",
   "observeOnly",
   "timezone",
+  // Set once in the wizard and then frozen, which meant rebuilding an agent and losing every lead
+  // it had found in order to move its working hours by an hour.
+  "jobRoles",
+  "industries",
+  "locations",
+  "companySizes",
+  "workdayDays",
+  "workdayStart",
+  "workdayEnd",
+  "warmupStartPerDay",
+  "warmupIncrementPerWeek",
+  "warmupWeeks",
+  "testRecipients",
 ] as const;
 
 // PATCH /api/agents/[id] - settings, and start or pause
@@ -174,6 +206,22 @@ export async function PATCH(
           );
         }
         patch.name = value.trim();
+      } else if (LIST_FIELDS.includes(field)) {
+        // Stored as JSON in a text column, so an array arrives as one and is written as one.
+        if (!Array.isArray(value)) continue;
+        patch[field] = JSON.stringify(
+          value.filter((v) => typeof v === "string" || typeof v === "number").slice(0, 25)
+        );
+      } else if (MINUTE_FIELDS.includes(field)) {
+        const n = Number(value);
+        if (Number.isInteger(n) && n >= 0 && n <= 1440) patch[field] = n;
+      } else if (WARMUP_FIELDS.includes(field)) {
+        // Null clears an override and restores the safe ramp, which has to stay possible.
+        if (value === null) patch[field] = null;
+        else {
+          const n = Number(value);
+          if (Number.isInteger(n) && n >= 0 && n <= 50) patch[field] = n;
+        }
       } else if (typeof value === "boolean" || typeof value === "string") {
         patch[field] = value;
       }

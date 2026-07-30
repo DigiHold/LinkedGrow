@@ -34,11 +34,99 @@ export type AgentSettings = {
   skipConnected: boolean;
   reviewMode: boolean;
   smartLeadFinder: boolean;
+  observeOnly: boolean;
+  jobRoles: string | null;
+  industries: string | null;
+  locations: string | null;
+  companySizes: string | null;
+  timezone: string;
+  workdayDays: string;
+  workdayStart: number;
+  workdayEnd: number;
+  warmupStartPerDay: number | null;
+  warmupIncrementPerWeek: number | null;
+  warmupWeeks: number | null;
   dailyInviteCap: number;
   accountAgentCount: number;
   accountCountry: string;
   linkedinAccountId: string;
 };
+
+const PICKED =
+  "rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white transition-colors dark:bg-white dark:text-slate-900";
+const UNPICKED =
+  "rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5";
+
+function splitCsv(value: string): string[] {
+  return value.split(",").map((v) => v.trim()).filter(Boolean);
+}
+
+/** Twenty-four options, which a native select renders better than anything hand-rolled. */
+function HourSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="h-11 rounded-xl border border-border bg-background px-3 text-sm text-slate-900 dark:text-white"
+    >
+      {Array.from({ length: 24 }, (_, h) => (
+        <option key={h} value={h}>
+          {String(h).padStart(2, "0")}:00
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Empty means no override, which is not the same as zero. */
+function NumberBox({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400">
+      {label}
+      <input
+        inputMode="numeric"
+        value={value ?? ""}
+        placeholder="auto"
+        onChange={(e) => {
+          const raw = e.target.value.replace(/\D/g, "");
+          onChange(raw === "" ? null : Number(raw));
+        }}
+        className="h-11 w-20 rounded-xl border border-border bg-background px-3 text-sm text-slate-900 dark:text-white"
+      />
+    </label>
+  );
+}
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+"];
+
+/** Columns hold JSON. Anything unreadable becomes an empty list rather than breaking the form. */
+function parseList(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseDays(raw: string): number[] {
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return Array.isArray(v) ? v.filter((x): x is number => typeof x === "number") : [1, 2, 3, 4, 5, 6];
+  } catch {
+    return [1, 2, 3, 4, 5, 6];
+  }
+}
 
 const GOALS = [
   {
@@ -99,6 +187,18 @@ export function SettingsTab({
         skipConnected: form.skipConnected,
         reviewMode: form.reviewMode,
         smartLeadFinder: form.smartLeadFinder,
+        observeOnly: form.observeOnly,
+        jobRoles: parseList(form.jobRoles),
+        industries: parseList(form.industries),
+        locations: parseList(form.locations),
+        companySizes: parseList(form.companySizes),
+        timezone: form.timezone,
+        workdayDays: parseDays(form.workdayDays),
+        workdayStart: form.workdayStart,
+        workdayEnd: form.workdayEnd,
+        warmupStartPerDay: form.warmupStartPerDay,
+        warmupIncrementPerWeek: form.warmupIncrementPerWeek,
+        warmupWeeks: form.warmupWeeks,
         linkedinAccountId: form.linkedinAccountId,
       }),
     });
@@ -222,6 +322,126 @@ export function SettingsTab({
             checked={form.smartLeadFinder}
             onChange={(v) => set("smartLeadFinder", v)}
           />
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelTitle description="Everything here was set when the agent was created and could not be changed afterwards, which meant rebuilding an agent and losing its leads to move its hours by one.">
+          Targeting and schedule
+        </PanelTitle>
+        <div className="space-y-5">
+          <Field label="Job titles" hint="Comma separated. Empty means any.">
+            <input
+              value={parseList(form.jobRoles).join(", ")}
+              onChange={(e) => set("jobRoles", JSON.stringify(splitCsv(e.target.value)))}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+            />
+          </Field>
+          <Field label="Industries" hint="Comma separated. Empty means any.">
+            <input
+              value={parseList(form.industries).join(", ")}
+              onChange={(e) => set("industries", JSON.stringify(splitCsv(e.target.value)))}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+            />
+          </Field>
+          <Field label="Locations" hint="Comma separated. Empty means anywhere.">
+            <input
+              value={parseList(form.locations).join(", ")}
+              onChange={(e) => set("locations", JSON.stringify(splitCsv(e.target.value)))}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+            />
+          </Field>
+
+          <Field label="Company size" hint="All off means any size.">
+            <div className="flex flex-wrap gap-2">
+              {COMPANY_SIZES.map((size) => {
+                const on = parseList(form.companySizes).includes(size);
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      const current = parseList(form.companySizes);
+                      set(
+                        "companySizes",
+                        JSON.stringify(on ? current.filter((x) => x !== size) : [...current, size])
+                      );
+                    }}
+                    className={on ? PICKED : UNPICKED}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Working days" hint="Nothing is sent on the days you leave off.">
+            <div className="flex flex-wrap gap-2">
+              {DAY_NAMES.map((label, day) => {
+                const on = parseDays(form.workdayDays).includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      const current = parseDays(form.workdayDays);
+                      set(
+                        "workdayDays",
+                        JSON.stringify(
+                          on ? current.filter((d) => d !== day) : [...current, day].sort()
+                        )
+                      );
+                    }}
+                    className={on ? PICKED : UNPICKED}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label="Hours" hint="Local to the timezone below.">
+            <div className="flex items-center gap-3">
+              <HourSelect value={form.workdayStart} onChange={(v) => set("workdayStart", v)} />
+              <span className="text-[13px] text-slate-500 dark:text-slate-400">to</span>
+              <HourSelect value={form.workdayEnd} onChange={(v) => set("workdayEnd", v)} />
+            </div>
+          </Field>
+
+          <Field label="Timezone" hint="Where the account behaves as though it lives.">
+            <input
+              value={form.timezone}
+              onChange={(e) => set("timezone", e.target.value)}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+            />
+          </Field>
+
+          <Field
+            label="Warm-up"
+            hint="Leave empty for the safe ramp: 5 invitations a day, climbing by 5 each week for a month. LinkedIn restricts accounts that suddenly send far more than they used to."
+          >
+            <div className="flex flex-wrap gap-3">
+              <NumberBox
+                label="Start"
+                value={form.warmupStartPerDay}
+                onChange={(v) => set("warmupStartPerDay", v)}
+              />
+              <NumberBox
+                label="Weekly"
+                value={form.warmupIncrementPerWeek}
+                onChange={(v) => set("warmupIncrementPerWeek", v)}
+              />
+              <NumberBox
+                label="Weeks"
+                value={form.warmupWeeks}
+                onChange={(v) => set("warmupWeeks", v)}
+              />
+            </div>
+          </Field>
         </div>
       </Panel>
 

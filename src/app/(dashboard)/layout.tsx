@@ -4,6 +4,7 @@ import { Topbar } from "@/components/dashboard/topbar";
 import { SidebarProvider } from "@/components/dashboard/sidebar-context";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
+import { LiveTicker } from "@/components/dashboard/agents/live-ticker";
 
 export default async function DashboardLayout({
   children,
@@ -34,6 +35,9 @@ export default async function DashboardLayout({
             <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
               <Topbar />
               <main className="relative flex-1">{children}</main>
+              {/* One box for the whole dashboard, so a working agent is visible from any page
+                  without anybody having to reload. It renders nothing when nothing is happening. */}
+              <LiveTicker />
             </div>
           </div>
 
