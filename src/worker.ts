@@ -175,6 +175,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
 
     await runSequence(ctx.cfg, ctx, {
       actions,
+      accountDailyCap: ctx.accountDailyInviteCap,
       notify: async (message) => {
         await recordEvent(ctx, "reply", message);
       },

@@ -259,7 +259,11 @@ export async function countActionsSince(
   sinceIso: string
 ): Promise<number> {
   const since = Math.floor(new Date(sinceIso).getTime() / 1000);
-  const accountWide = type === "connect" || type === "invite";
+  // Every limit LinkedIn enforces belongs to the account, never to whatever we happen to call an
+  // agent, so the counting has to match. Invitations were already account-wide and messages were
+  // not, which meant two agents on one profile each sent a full day's worth: forty messages from a
+  // person who is allowed twenty. Anything that touches another human counts against the account.
+  const accountWide = type === "connect" || type === "invite" || type === "dm";
   const { rows } = await db().execute({
     sql: `SELECT COUNT(*) AS total FROM agent_actions
           WHERE workspace_id = ? AND ${accountWide ? "linkedin_account_id = ?" : "agent_id = ?"}

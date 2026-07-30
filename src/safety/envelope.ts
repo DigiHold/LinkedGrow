@@ -50,12 +50,25 @@ export function warmupWeekIndex(startedAt: Date, now: Date = new Date()): number
 }
 
 /** How many connection requests are allowed today, given the warm-up ramp and weekly ceiling. */
-export function dailyConnectAllowance(cfg: Config, weekIndex: number): number {
+export function dailyConnectAllowance(
+  cfg: Config,
+  weekIndex: number,
+  /**
+   * What LinkedIn itself allows this account per day, detected from its tier.
+   *
+   * It was read from the database into every agent's context and then used nowhere, so an account
+   * LinkedIn had put on a tight ceiling was invited to ignore it. The lowest of the three limits
+   * wins, because they answer different questions and only the smallest is safe.
+   */
+  accountDailyCap?: number
+): number {
   const w = Math.min(weekIndex, Math.max(0, cfg.warmup.weeks - 1));
   const ramp = cfg.warmup.startPerDay + w * cfg.warmup.incrementPerWeek;
   const workDays = Math.max(1, cfg.businessHours.days.length);
   const weeklyDailyCap = Math.floor(cfg.limits.connectPerWeekMax / workDays);
-  return Math.max(0, Math.min(ramp, weeklyDailyCap));
+  const ceilings = [ramp, weeklyDailyCap];
+  if (typeof accountDailyCap === "number" && accountDailyCap > 0) ceilings.push(accountDailyCap);
+  return Math.max(0, Math.min(...ceilings));
 }
 
 /** Adds +/-20% so the daily number is never identical two days in a row. */

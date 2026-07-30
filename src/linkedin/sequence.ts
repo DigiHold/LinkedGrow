@@ -95,6 +95,8 @@ const STALE_CONNECT_DAYS = 21;
 
 export interface SequenceDeps {
   actions: LinkedInActions;
+  /** What LinkedIn allows this account per day, so the warm-up ramp can never exceed it. */
+  accountDailyCap?: number;
   /**
    * Writes a validated message for a prospect and step. The thread is passed
    * because the converse and ask steps answer what was actually said, and a
@@ -366,7 +368,7 @@ async function sendNewConnects(
   week: number,
   pause: () => Promise<void>,
 ): Promise<void> {
-  const target = applyDailyVariance(dailyConnectAllowance(cfg, week));
+  const target = applyDailyVariance(dailyConnectAllowance(cfg, week, deps.accountDailyCap));
   const sentToday = await countActionsSince(db, "connect", dayAgoIso());
   const sentWeek = await countActionsSince(db, "connect", weekAgoIso());
   const budget = Math.max(0, Math.min(target - sentToday, cfg.limits.connectPerWeekMax - sentWeek));
