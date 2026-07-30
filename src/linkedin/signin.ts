@@ -31,9 +31,20 @@ const WAIT_FOR_CODE_MS = 5 * 60 * 1000;
 /** A TOTP code lasts 30 seconds, so the poll has to be tight. */
 const POLL_MS = 2_000;
 
+/**
+ * Selectors, ordered from the most specific to the one that still works.
+ *
+ * LinkedIn's login form no longer carries #username or name="session_key". Verified against the
+ * live page on 2026-07-30: every input has a React-generated id like «R3jvukejj35655j6» and no name
+ * attribute at all. Matching on the input type is what is left, and it is stable because the form
+ * has exactly one email field and one password field.
+ *
+ * The old selectors are kept first because an account that meets an older layout should still work,
+ * and because a selector that matches nothing costs nothing.
+ */
 const SEL = {
-  email: "#username, input[name='session_key']",
-  password: "#password, input[name='session_password']",
+  email: "#username, input[name='session_key'], input[type='email']:visible",
+  password: "#password, input[name='session_password'], input[type='password']:visible",
   submit: "button[type='submit'], button[data-litms-control-urn='login-submit']",
   // LinkedIn uses several verification screens and the field is named
   // differently on each, so match the shape rather than one id.
@@ -49,6 +60,21 @@ export class SignInFailed extends Error {
     super(message);
     this.name = "SignInFailed";
   }
+}
+
+/**
+ * True when this session is actually signed in.
+ *
+ * Positive evidence only: the feed URL, or a piece of chrome that only exists behind the login.
+ * Anything inferred from an element being absent is how a selector change turns into a silent
+ * false positive.
+ */
+async function looksSignedIn(page: Page): Promise<boolean> {
+  if (/\/feed|\/mynetwork|\/messaging/.test(page.url())) return true;
+  for (const sel of ["a[href*='/in/']", ".global-nav", "[data-test-global-nav]", "#global-nav"]) {
+    if (await page.locator(sel).first().isVisible().catch(() => false)) return true;
+  }
+  return false;
 }
 
 /** Reads the page to name what is being asked for, so the customer is told. */
@@ -169,11 +195,22 @@ export async function signIn(input: SignInInput): Promise<void> {
   await page.goto("https://www.linkedin.com/login", { waitUntil: "domcontentloaded" });
   await dwell(1200, 2600);
 
-  const emailField = page.locator(SEL.email).first();
-  if (!(await emailField.isVisible().catch(() => false))) {
-    // Already signed in, which is the normal case after the first time.
+  // Being signed in has to be established, never inferred from a missing field.
+  //
+  // This used to read "no email box, therefore already signed in", which is the same conclusion a
+  // changed selector produces. LinkedIn dropped #username at some point before 2026-07-30, so the
+  // old code would have declared every account signed in, skipped the credentials entirely, and
+  // let the rest of the run fail somewhere further along with a stranger error.
+  if (await looksSignedIn(page)) {
     log("already signed in, nothing to do", { accountId });
     return;
+  }
+
+  const emailField = page.locator(SEL.email).first();
+  if (!(await emailField.isVisible().catch(() => false))) {
+    throw new SignInFailed(
+      "The login form did not appear and the session is not signed in. LinkedIn has probably changed the page."
+    );
   }
 
   await typeHuman(page, SEL.email, input.email);
@@ -234,9 +271,7 @@ export async function signIn(input: SignInInput): Promise<void> {
     }
   }
 
-  const signedIn = page.url().includes("/feed") ||
-    (await page.locator("a[href*='/in/'], .global-nav").first().isVisible().catch(() => false));
-  if (!signedIn) {
+  if (!(await looksSignedIn(page))) {
     throw new SignInFailed("Sign-in did not reach a signed-in page");
   }
 
