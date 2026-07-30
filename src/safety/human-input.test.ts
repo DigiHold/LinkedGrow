@@ -1,0 +1,114 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+
+/**
+ * Two rules that are easy to write code against and easy to forget.
+ *
+ * **Everything an account does goes through its own address.** Publishing and
+ * reading analytics were added after the agent loop and each opens its own
+ * session, so each had to remember to ask for the allocation and to refuse in
+ * production without one. Forgetting is invisible in development, where there
+ * is no allocation anyway, and in production it means an account acting from a
+ * datacentre.
+ *
+ * **Everything an account types goes through the persona's keyboard.** There is
+ * a good typing model in human.ts, with this account's own speed, pauses that
+ * cluster at words and sentences, and typos backspaced out. Playwright's
+ * pressSequentially takes a delay and looks close enough, which is how the
+ * post composer and the message composer ended up typing at two different
+ * rhythms for the same person.
+ */
+
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+
+const SESSION_OPENERS = ["../publish/pass.ts", "../insights/pass.ts", "../worker.ts"];
+
+for (const file of SESSION_OPENERS) {
+  test(`${file} opens its session on the account's own address`, () => {
+    const src = read(file);
+    assert.match(src, /allocationFor\(/, "the address is never looked up");
+    assert.match(
+      src,
+      /isProduction\(\)/,
+      "nothing stops this running from the server's own address in production"
+    );
+    // The allocation has to reach openSession, not just be fetched and dropped.
+    const opens = /openSession\(/.test(src);
+    if (opens) {
+      assert.match(
+        src,
+        /openSession\([\s\S]{0,400}?(address|proxy)\s*\)/,
+        "openSession is called without the allocation"
+      );
+    }
+  });
+}
+
+test("nothing types into LinkedIn with a flat delay instead of the persona's keyboard", () => {
+  const dirs = ["../linkedin", "../publish", "../insights"];
+  const offenders: string[] = [];
+
+  for (const dir of dirs) {
+    const base = new URL(`${dir}/`, import.meta.url);
+    for (const name of readdirSync(base)) {
+      if (!name.endsWith(".ts") || name.endsWith(".test.ts")) continue;
+      const src = readFileSync(new URL(name, base), "utf8");
+      src.split("\n").forEach((line, i) => {
+        if (!line.includes("pressSequentially")) return;
+        // The one exception, and it is deliberate: LinkedIn's schedule picker
+        // is a short validated field that reformats what it is given, and a
+        // typo backspaced out of it can leave it in a state that silently
+        // rejects the date. Dates are typed evenly by people anyway.
+        if (src.includes("setField") && line.includes("field.pressSequentially")) return;
+        offenders.push(`${dir}/${name}:${i + 1}`);
+      });
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `these type at a flat rate instead of through typeHumanHere: ${offenders.join(", ")}`
+  );
+});
+
+test("publishing reads the feed before it opens the composer", () => {
+  const src = read("../linkedin/publish.ts");
+  const settle = src.indexOf("async function settleOnFeed");
+  const compose = src.indexOf("await settleOnFeed(page)");
+  assert.ok(settle > 0, "there is no arrival on the feed at all");
+  assert.ok(compose > 0, "the composer opens without the feed having been looked at");
+  assert.match(src.slice(settle, settle + 600), /scrollHuman/, "the feed is loaded and not read");
+});
+
+/**
+ * The safety property of native scheduling, asserted on the code because the
+ * failure only shows up hours later on somebody's profile.
+ *
+ * If LinkedIn's Schedule control cannot be driven, the post is NOT published.
+ * It is not due for hours. The alternative reading of "scheduling failed" is
+ * "post it now", and now is a day early.
+ */
+test("a scheduler that cannot be driven never turns into an immediate post", () => {
+  const publish = read("../linkedin/publish.ts");
+  assert.match(
+    publish,
+    /class ScheduleUnavailableError/,
+    "there is no separate error for the scheduler being unavailable"
+  );
+  // useScheduler must throw rather than fall through to the Post button.
+  const scheduler = publish.slice(publish.indexOf("async function useScheduler"));
+  const body = scheduler.slice(0, scheduler.indexOf("\n}\n"));
+  assert.ok(
+    !/postButton/.test(body),
+    "the scheduler falls back to pressing Post, which would publish it early"
+  );
+
+  const pass = read("../publish/pass.ts");
+  assert.match(
+    pass,
+    /error instanceof ScheduleUnavailableError[\s\S]{0,400}releaseScheduled/,
+    "a failed preparation does not put the post back as scheduled"
+  );
+});

@@ -15,6 +15,10 @@ import { readFileSync } from "node:fs";
  * appears with two agents, a stall, and real timing.
  */
 const worker = readFileSync(new URL("../worker.ts", import.meta.url), "utf8");
+// The watchdog moved out of worker.ts when publishing needed it too, so the
+// guarantee it carries is asserted where it now lives.
+const watchdog = readFileSync(new URL("./watchdog.ts", import.meta.url), "utf8");
+const publish = readFileSync(new URL("../publish/pass.ts", import.meta.url), "utf8");
 
 test("agents are grouped by LinkedIn account and run one at a time inside a group", () => {
   assert.match(worker, /groupKey\(ctx\.linkedinAccountId\)/, "grouping is not by account");
@@ -32,13 +36,37 @@ test("the slot covers the whole group and is released only at the end", () => {
 });
 
 test("a stalled run has its browser closed before the next agent may start", () => {
-  assert.match(worker, /state\.closeBrowser\?\.\(\)/, "the watchdog does not close the abandoned browser");
-  const guard = worker.indexOf("if (!(error instanceof RunStalled)) throw error;");
-  const close = worker.indexOf("state.closeBrowser?.()");
-  const rethrow = worker.indexOf("throw error;", close);
+  assert.match(watchdog, /state\.closeBrowser\?\.\(\)/, "the watchdog does not close the abandoned browser");
+  const guard = watchdog.indexOf("if (!(error instanceof RunStalled)) throw error;");
+  const close = watchdog.indexOf("state.closeBrowser?.()");
+  const rethrow = watchdog.indexOf("throw error;", close);
   assert.ok(guard > 0 && close > guard && rethrow > close, "the close does not happen before the rethrow");
 });
 
 test("closing twice is harmless, since the run's own finally also closes", () => {
   assert.match(worker, /if \(closed\) return;/, "closeOnce is not idempotent");
+  assert.match(publish, /if \(closed\) return;/, "the publish session's close is not idempotent");
+});
+
+/**
+ * Publishing opens a browser too, and it is the newer of the two paths.
+ *
+ * A content-only customer has no agent, so the publish loop is the only thing
+ * that ever opens their session; an agent customer has both loops wanting the
+ * same profile. The slot is what keeps them apart, and it has to be taken
+ * before the session opens and released after it closes, exactly as the agent
+ * pass does.
+ */
+test("publishing takes the account's slot around its whole session", () => {
+  const take = publish.indexOf("takeSlot(work.account.id)");
+  const open = publish.indexOf("runAccount({ account: work.account");
+  const release = publish.indexOf("lease.release();", open);
+  assert.ok(take > 0, "the publish pass does not take a slot");
+  assert.ok(take < open && open < release, "the slot does not span the publishing session");
+  assert.match(publish.slice(open, release + 40), /finally/, "the slot is not released in a finally");
+});
+
+test("publishing runs under the watchdog, so a hung upload cannot hold the account for ever", () => {
+  assert.match(publish, /withWatchdog\(/, "the publish session is not watched");
+  assert.match(publish, /run\.closeBrowser = closeOnce/, "the watchdog cannot close the publish browser");
 });

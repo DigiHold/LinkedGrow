@@ -4,14 +4,21 @@ import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
 import { BudgetExceededError } from "./ai.ts";
-import { openSession, closeSession, ProxyMismatchError, isSignedIn } from "./browser/driver.ts";
-import type { ProxyAllocation } from "./browser/driver.ts";
-import { decryptSecret } from "./crypto.ts";
+import {
+  openSession,
+  closeSession,
+  ProxyMismatchError,
+  isSignedIn,
+  sessionTargetFor,
+} from "./browser/driver.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
-import { startWatch, stopWatch, IDLE_LIMIT_MS, ABSOLUTE_LIMIT_MS, type Stall } from "./safety/heartbeat.ts";
-import { withRunState, currentRun, type RunState } from "./safety/run-context.ts";
+import { currentRun } from "./safety/run-context.ts";
+import { RunStalled, withWatchdog } from "./safety/watchdog.ts";
+import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
+import { publishPass } from "./publish/pass.ts";
+import { insightsPass } from "./insights/pass.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
@@ -50,51 +57,11 @@ import { sleep, randInt } from "./browser/human.ts";
 
 const PASS_INTERVAL_MS = 5 * 60 * 1000;
 
-/**
- * Where an agent's address comes from.
- *
- * The dashboard orders the address the moment the customer picks a country and
- * binds it to their LinkedIn account, so the worker only ever reads. It reads
- * by **LinkedIn account**, never by agent and never by workspace, because the
- * invariant in plan section 5c is one account and one address however many
- * agents drive it.
- *
- * A missing or inactive row is not an error to route around. In production the
- * agent pauses, because an account sending from the server's own address is an
- * account seen from a datacentre.
- */
-async function allocationFor(ctx: AgentContext): Promise<ProxyAllocation | null> {
-  const { rows } = await db().execute({
-    sql: `SELECT host, port, username_encrypted, password_encrypted, last_exit_ip
-            FROM proxy_allocations
-           WHERE linkedin_account_id = ? AND status = 'active'
-           LIMIT 1`,
-    args: [ctx.linkedinAccountId],
-  });
-  const row = rows[0];
-  if (!row) return null;
+/** Publishing checks more often than agents act, because somebody is waiting on it. */
+const PUBLISH_INTERVAL_MS = 60 * 1000;
 
-  const username = decryptSecret(String(row.username_encrypted ?? ""));
-  const password = decryptSecret(String(row.password_encrypted ?? ""));
-  if (!username || !password) {
-    log(`account ${ctx.linkedinAccountId}: address stored without credentials`);
-    return null;
-  }
-
-  return {
-    server: `http://${String(row.host)}:${Number(row.port)}`,
-    username,
-    password,
-    // The driver asserts the observed exit against this before anything runs,
-    // so an address that silently changed stops the session rather than
-    // sending from somewhere the account has never been seen.
-    expectedIp: String(row.last_exit_ip ?? ""),
-  };
-}
-
-function isProduction(): boolean {
-  return process.env.WORKER_ENV === "production";
-}
+/** Reading back how posts did is never urgent, and the numbers move slowly. */
+const INSIGHTS_INTERVAL_MS = 30 * 60 * 1000;
 
 async function runAgent(ctx: AgentContext): Promise<void> {
   // Two windows, because the two halves carry different risk. Reading runs on
@@ -109,7 +76,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
 
   await assertCanSend(ctx);
 
-  const proxy = await allocationFor(ctx);
+  const proxy = await allocationFor(ctx.linkedinAccountId);
   if (!proxy && isProduction()) {
     // Never in production. An account sending from the server's own address is
     // an account seen from a datacentre, which is the fastest way to lose it.
@@ -117,7 +84,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
     return;
   }
 
-  const session = await openSession(ctx, proxy);
+  const session = await openSession(sessionTargetFor(ctx), proxy);
   // Hand the browser to the watchdog. If this run stalls it is abandoned mid-flight, and the next
   // agent on this same LinkedIn account must not be able to open a second Chrome on this profile.
   const run = currentRun();
@@ -232,81 +199,6 @@ async function runAgent(ctx: AgentContext): Promise<void> {
  * ceiling stops the agent for the day, a wrong address stops the session before
  * it touches LinkedIn.
  */
-/**
- * Cutting off an agent that is stuck, and never one that is merely busy.
- *
- * The first version of this was a wall-clock deadline and it was wrong: an agent reading four
- * posts at a human pace can legitimately take a long time, and a limit on duration punishes the
- * work rather than the fault. What is watched instead is silence. Every browser interaction beats
- * through the pacing layer, so an agent that is still clicking keeps running however long it
- * takes, and one that has not touched the page in five minutes is waiting on something that is
- * never coming.
- *
- * It matters because the slot belongs to the whole account and is released only when the group
- * finishes. One hung browser would otherwise keep every agent on that address idle for good.
- */
-class RunStalled extends Error {
-  // Written out rather than declared as a constructor parameter property: Node runs this file with
-  // --experimental-strip-types, which erases types without transpiling, and a parameter property
-  // would have to be rewritten rather than erased. Node 24 tolerated it locally and Node 22 on the
-  // box did not, so the crash only appeared after deploying.
-  readonly stall: Stall;
-
-  constructor(stall: Stall) {
-    super(
-      stall.kind === "idle"
-        ? `no browser activity for ${Math.round(stall.idleMs / 1000)}s`
-        : `still running after ${Math.round(stall.ranMs / 60_000)} minutes`
-    );
-    this.stall = stall;
-    this.name = "RunStalled";
-  }
-}
-
-/** Polls the heartbeat rather than counting down, so a working agent is never interrupted. */
-function withWatchdog<T>(work: () => Promise<T>): Promise<T> {
-  const now = Date.now();
-  // Each agent gets its own persona, its own cursor and its own heartbeat. They used to be module
-  // globals, so with several accounts running at once the last browser to open decided how all of
-  // them moved, and the first agent to finish disarmed everybody else's watchdog.
-  const state: RunState = {
-    persona: null,
-    cursor: { x: 0, y: 0 },
-    heartbeat: { lastBeat: now, startedAt: now },
-  };
-  const running = withRunState(state, async () => {
-    startWatch();
-    return work();
-  });
-  // A stalled run keeps executing after the race is lost, so its rejection has to land somewhere.
-  running.catch(() => {});
-  let timer: NodeJS.Timeout;
-  const watch = new Promise<never>((_, reject) => {
-    timer = setInterval(() => {
-      // Read this run's own numbers, not whichever run happens to be current on the timer's stack.
-      const idleMs = Date.now() - state.heartbeat.lastBeat;
-      const ranMs = Date.now() - state.heartbeat.startedAt;
-      if (idleMs >= IDLE_LIMIT_MS) reject(new RunStalled({ kind: "idle", idleMs, ranMs }));
-      else if (ranMs >= ABSOLUTE_LIMIT_MS) reject(new RunStalled({ kind: "absolute", idleMs, ranMs }));
-    }, 15_000);
-  });
-  return Promise.race([running, watch])
-    .catch(async (error: unknown) => {
-      if (!(error instanceof RunStalled)) throw error;
-      // Close the abandoned browser before returning, or the next agent on this account opens a
-      // second one on the same profile and the account is signed in twice.
-      await Promise.race([
-        state.closeBrowser?.() ?? Promise.resolve(),
-        new Promise((r) => setTimeout(r, 30_000)),
-      ]).catch(() => {});
-      throw error;
-    })
-    .finally(() => {
-      clearInterval(timer);
-      stopWatch();
-    }) as Promise<T>;
-}
-
 async function safely(ctx: AgentContext): Promise<void> {
   try {
     await withWatchdog(() => runAgent(ctx));
@@ -408,8 +300,7 @@ async function pass(): Promise<void> {
   reportSlots();
 }
 
-async function main(): Promise<void> {
-  log("worker starting", { env: process.env.WORKER_ENV ?? "development" });
+async function agentLoop(): Promise<void> {
   for (;;) {
     try {
       await pass();
@@ -418,6 +309,50 @@ async function main(): Promise<void> {
     }
     await sleep(PASS_INTERVAL_MS);
   }
+}
+
+/**
+ * The publishing loop, separate and faster.
+ *
+ * A person who presses Publish is watching the screen, so five minutes is too
+ * long to leave them looking at a spinner; and a content-only customer has no
+ * agent at all, so the pass above would never open a session for them. The two
+ * loops cannot collide over a browser because slots are per LinkedIn account
+ * and taken by both.
+ */
+async function publishLoop(): Promise<void> {
+  for (;;) {
+    try {
+      await publishPass();
+    } catch (error) {
+      logError("publish pass failed", error);
+    }
+    await sleep(PUBLISH_INTERVAL_MS);
+  }
+}
+
+/**
+ * Reading back how the published posts are doing, so the analytics page is
+ * true. The slowest of the three: nothing here is urgent, and an account with
+ * no recent posts never opens a browser for it.
+ */
+async function insightsLoop(): Promise<void> {
+  for (;;) {
+    try {
+      await insightsPass();
+    } catch (error) {
+      logError("insights pass failed", error);
+    }
+    await sleep(INSIGHTS_INTERVAL_MS);
+  }
+}
+
+async function main(): Promise<void> {
+  log("worker starting", { env: process.env.WORKER_ENV ?? "development" });
+  // No loop ever returns, and none may take the others down: a thrown error
+  // inside one is already handled per pass, and Promise.all here only keeps the
+  // process alive.
+  await Promise.all([agentLoop(), publishLoop(), insightsLoop()]);
 }
 
 if (import.meta.filename === process.argv[1]) {

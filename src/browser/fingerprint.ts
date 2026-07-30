@@ -99,6 +99,32 @@ const LOCALE_BY_COUNTRY: Record<string, string> = {
   AE: "en-AE", IL: "he-IL",
 };
 
+/**
+ * The clock an account keeps when nothing else says.
+ *
+ * An agent carries the timezone its owner picked, so this is only reached by an
+ * account with no agent on it: a content-only customer whose session opens just
+ * long enough to publish. Leaving those at UTC would put a French address on a
+ * London clock, which is one of the cheapest mismatches for a fingerprinter to
+ * read. Countries that span zones get the one their business hours live in.
+ */
+const TIMEZONE_BY_COUNTRY: Record<string, string> = {
+  US: "America/New_York", CA: "America/Toronto", GB: "Europe/London",
+  IE: "Europe/Dublin", AU: "Australia/Sydney", NZ: "Pacific/Auckland",
+  FR: "Europe/Paris", BE: "Europe/Brussels", CH: "Europe/Zurich",
+  DE: "Europe/Berlin", AT: "Europe/Vienna", NL: "Europe/Amsterdam",
+  ES: "Europe/Madrid", MX: "America/Mexico_City", IT: "Europe/Rome",
+  PT: "Europe/Lisbon", BR: "America/Sao_Paulo", SE: "Europe/Stockholm",
+  NO: "Europe/Oslo", DK: "Europe/Copenhagen", FI: "Europe/Helsinki",
+  PL: "Europe/Warsaw", CZ: "Europe/Prague", RO: "Europe/Bucharest",
+  SG: "Asia/Singapore", JP: "Asia/Tokyo", IN: "Asia/Kolkata",
+  ZA: "Africa/Johannesburg", AE: "Asia/Dubai", IL: "Asia/Jerusalem",
+};
+
+export function timezoneForCountry(country: string): string {
+  return TIMEZONE_BY_COUNTRY[country.toUpperCase()] ?? "UTC";
+}
+
 export function fingerprintFor(
   accountId: string,
   country: string,

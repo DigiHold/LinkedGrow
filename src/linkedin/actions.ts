@@ -1,7 +1,14 @@
 import type { Page, Locator } from "patchright";
 import type { ProspectRow } from "../store.ts";
 import { log } from "../logger.ts";
-import { dwell, scrollHuman, clickHumanLocator, sleep, randInt } from "../browser/human.ts";
+import {
+  dwell,
+  scrollHuman,
+  clickHumanLocator,
+  sleep,
+  randInt,
+  typeHumanHere,
+} from "../browser/human.ts";
 
 /**
  * Everything the sequence engine needs LinkedIn to do, behind one interface so the engine is
@@ -83,7 +90,11 @@ async function typeMultiline(page: Page, box: Locator, body: string): Promise<vo
   const lines = body.replace(/\r/g, "").split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    if (line.length > 0) await box.pressSequentially(line, { delay: randInt(25, 90) });
+    // Through the persona's own keyboard: this account's speed, pauses that
+    // cluster at words and sentences, and the occasional typo backspaced out.
+    // A flat 25-90ms delay was 130 to 260 words a minute with no corrections,
+    // which nobody writing an original message produces.
+    if (line.length > 0) await typeHumanHere(page, line);
     if (i < lines.length - 1) {
       await page.keyboard.down("Shift");
       await page.keyboard.press("Enter");
@@ -372,7 +383,7 @@ export function browserActions(page: Page): LinkedInActions {
           const box = page.locator(SEL.noteBox).first();
           if ((await box.count()) > 0) {
             await box.click().catch(() => {});
-            await box.pressSequentially(note, { delay: randInt(25, 90) }).catch(() => {});
+            await typeHumanHere(page, note).catch(() => {});
           }
           await dwell(500, 1200);
         }

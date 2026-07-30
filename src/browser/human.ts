@@ -282,6 +282,19 @@ function neighbourOf(ch: string): string | null {
  */
 export async function typeHuman(page: Page, selector: string, text: string): Promise<void> {
   await clickHuman(page, selector);
+  await typeHumanHere(page, text);
+}
+
+/**
+ * The same typing, into whatever already has focus.
+ *
+ * Split out for the post composer, which is found as a locator rather than a
+ * selector and needs a newline handled between lines. Publishing used to type
+ * with a flat random delay and no typos at all, so an account's posts went in
+ * at a steadier rhythm than its messages, which is a difference worth nothing
+ * and visible to anybody measuring.
+ */
+export async function typeHumanHere(page: Page, text: string): Promise<void> {
   // The long one: deciding how to open, before a single character exists.
   await sleep(gaussAtLeast(currentPersona().openingThink, currentPersona().openingThink * 0.4, 300));
 

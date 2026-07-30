@@ -53,15 +53,37 @@ export interface ProxyAllocation {
 
 const PROFILE_ROOT = optionalEnv("PROFILE_ROOT") ?? "profiles";
 
+/**
+ * Everything opening a browser needs to know, which is less than an agent.
+ *
+ * Publishing a post has no agent behind it: a content-only customer never
+ * created one, and their session opens for the two minutes it takes to write a
+ * post and then closes. Narrowing the parameter is what lets that path reuse
+ * this file rather than grow a second, subtly different launcher.
+ */
+export interface SessionTarget {
+  linkedinAccountId: string;
+  country: string;
+  timezone: string;
+}
+
+export function sessionTargetFor(ctx: AgentContext): SessionTarget {
+  return {
+    linkedinAccountId: ctx.linkedinAccountId,
+    country: ctx.country,
+    timezone: ctx.cfg.account.timezone,
+  };
+}
+
 export async function openSession(
-  ctx: AgentContext,
+  target: SessionTarget,
   proxy: ProxyAllocation | null
 ): Promise<Session> {
-  const fp = fingerprintFor(ctx.linkedinAccountId, ctx.country, ctx.cfg.account.timezone);
+  const fp = fingerprintFor(target.linkedinAccountId, target.country, target.timezone);
   // The behaviour persona is derived the same way as the device, so this
   // account types and moves like the same person on every run.
-  usePersona(ctx.linkedinAccountId);
-  const userDataDir = resolve(PROFILE_ROOT, ctx.linkedinAccountId);
+  usePersona(target.linkedinAccountId);
+  const userDataDir = resolve(PROFILE_ROOT, target.linkedinAccountId);
   mkdirSync(userDataDir, { recursive: true });
 
   // A worker killed mid-session leaves Chrome's own lock behind, and the next launch on that
@@ -123,7 +145,7 @@ export async function openSession(
     await context.close().catch(() => {});
     throw new ProxyMismatchError(proxy.expectedIp, observedIp);
   }
-  log(`account ${ctx.linkedinAccountId}: session up at ${observedIp} (${ctx.country})`);
+  log(`account ${target.linkedinAccountId}: session up at ${observedIp} (${target.country})`);
 
   return { context, page, observedIp };
 }
