@@ -69,13 +69,22 @@ const SEQUENCE: Step[] = [
 export function MessagesTab({ agentId }: { agentId: string }) {
   const [sent, setSent] = useState<Record<string, number>>({});
 
+  // Counts of what has actually gone out, refreshed while somebody is watching. Same reason as the
+  // other tabs: the first hour is the whole first impression and a stale zero reads as broken.
   useEffect(() => {
-    fetch(`/api/agents/${agentId}/activity?window=all`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (json?.sent) setSent(json.sent);
-      })
-      .catch(() => {});
+    const load = () =>
+      fetch(`/api/agents/${agentId}/activity?window=all`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          if (json?.sent) setSent(json.sent);
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      load();
+    }, 20_000);
+    return () => clearInterval(timer);
   }, [agentId]);
 
   return (

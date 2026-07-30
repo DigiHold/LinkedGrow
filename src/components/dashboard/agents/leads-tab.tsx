@@ -89,6 +89,23 @@ export function LeadsTab({ agentId }: { agentId: string }) {
     };
   }, [load, search]);
 
+  /**
+   * Keep this list live.
+   *
+   * The first hour after an agent starts is the whole of a customer's first impression, and this
+   * tab is where they watch for it. Fetching once on mount meant a working agent showed an empty
+   * list until the browser was reloaded. Only the first page refreshes, so paging back does not
+   * move under the reader, and nothing polls while the tab is in the background.
+   */
+  useEffect(() => {
+    if (page !== 0) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      load().catch(() => {});
+    }, 15_000);
+    return () => clearInterval(timer);
+  }, [load, page]);
+
   const leads = data?.leads ?? [];
 
   return (
