@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #
-# Turns a bare Ubuntu 24.04 box into the LinkedGrow worker plane.
+# Turns a bare Debian 13 or Ubuntu 24.04 box into the LinkedGrow worker plane.
+#
+# Netcup ships Debian 13 by default, which is what lg-worker runs, and the two
+# differ in exactly one package name, so the script detects rather than assumes.
 #
 # Run once, as root, on a fresh Netcup RS server:
 #     curl -fsSL <this file> | bash
@@ -44,9 +47,18 @@ apt-get install -y -qq --no-install-recommends \
   xvfb x11-utils \
   fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
   libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
-  libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 \
+  libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
   libpango-1.0-0 libcairo2 libatspi2.0-0 \
   restic jq
+
+# The one package whose name differs between the two. Debian 13 and Ubuntu 24.04
+# both did the 64-bit time_t transition, but older Debian did not, so ask apt
+# which one exists rather than guessing.
+if apt-cache show libasound2t64 >/dev/null 2>&1; then
+  apt-get install -y -qq --no-install-recommends libasound2t64
+else
+  apt-get install -y -qq --no-install-recommends libasound2
+fi
 
 say "Node ${NODE_MAJOR}"
 if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | cut -c2- | cut -d. -f1)" -lt ${NODE_MAJOR} ]]; then

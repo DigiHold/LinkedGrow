@@ -9,6 +9,7 @@ import type { ProxyAllocation } from "./browser/driver.ts";
 import { decryptSecret } from "./crypto.ts";
 import { groupKey, withAddress } from "./safety/ip-lock.ts";
 import { NoSlotError, reportSlots, takeSlot } from "./safety/slots.ts";
+import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { isWithinBusinessHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { browserActions } from "./linkedin/actions.ts";
@@ -192,6 +193,16 @@ async function safely(ctx: AgentContext): Promise<void> {
 }
 
 async function pass(): Promise<void> {
+  // Before anything runs: buy the addresses the dashboard asked for. An account
+  // that connected a minute ago should have its address by the time its first
+  // session would open, and an agent without one stays paused rather than
+  // falling back to the server's own IP.
+  try {
+    await fulfilPendingAllocations();
+  } catch (error) {
+    logError("allocation pass failed", error);
+  }
+
   const agents = await loadRunnableAgents();
   if (!agents.length) {
     log("nothing to run");
