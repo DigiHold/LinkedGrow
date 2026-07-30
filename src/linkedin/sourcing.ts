@@ -184,9 +184,15 @@ export async function sourcePass(
           const roles = ctx.cfg.leads.icpKeywords.length
             ? ctx.cfg.leads.icpKeywords.slice(0, 4)
             : [source.label];
-          const moved = await mineSignal(ctx, page, ctx.cfg, "jobchange", roles, { maxPerQuery: budget.perPost });
-          const hiring = await mineSignal(ctx, page, ctx.cfg, "hiring", roles, { maxPerQuery: budget.perPost });
-          found = [...moved, ...hiring];
+          // One row per kind, so a customer who only wants role changes gets only those. A row
+          // without a kind predates the setting and means both.
+          const kind = typeof config.kind === "string" ? config.kind : null;
+          const wanted: Array<"jobchange" | "hiring"> =
+            kind === "jobchange" || kind === "hiring" ? [kind] : ["jobchange", "hiring"];
+          found = [];
+          for (const k of wanted) {
+            found.push(...(await mineSignal(ctx, page, ctx.cfg, k, roles, { maxPerQuery: budget.perPost })));
+          }
           break;
         }
         case "brand": {
