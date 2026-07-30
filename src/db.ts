@@ -75,6 +75,10 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.timezone          AS timezone,
       a.workday_start     AS workday_start,
       a.workday_end       AS workday_end,
+      a.match_level       AS match_level,
+      a.tone              AS tone,
+      a.skip_connected    AS skip_connected,
+      a.company_sizes     AS company_sizes,
       a.review_mode       AS review_mode,
       a.observe_only      AS observe_only,
       a.test_recipients   AS test_recipients,
@@ -120,6 +124,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         : { ...DEFAULTS.limits },
       delaysMs: { ...DEFAULTS.delaysMs },
       sequence: { ...DEFAULTS.sequence },
+      skipConnected: Number(r.skip_connected ?? 1) === 1,
       leads: {
         topics: [],
         competitors: splitLines(r.competitor_labels),
@@ -150,6 +155,20 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       agentsOnAccount: Math.max(1, Number(r.agents_on_account ?? 1)),
       lastRunAt: r.last_run_at ? new Date(Number(r.last_run_at) * 1000) : null,
       warmupStartedAt: r.warmup_started_at ? new Date(Number(r.warmup_started_at) * 1000) : null,
+      matchLevel:
+        String(r.match_level ?? "balanced") === "precision"
+          ? "precision"
+          : String(r.match_level ?? "balanced") === "volume"
+            ? "volume"
+            : "balanced",
+      tone:
+        String(r.tone ?? "conversational") === "professional"
+          ? "professional"
+          : String(r.tone ?? "conversational") === "direct"
+            ? "direct"
+            : "conversational",
+      skipConnected: Number(r.skip_connected ?? 1) === 1,
+      companySizes: parseList(r.company_sizes),
       reviewMode: Number(r.review_mode ?? 0) === 1,
       observeOnly: Number(r.observe_only ?? 0) === 1,
       testRecipients: parseList(r.test_recipients),

@@ -158,7 +158,7 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
 
       let kept = 0;
       for (const card of cards) {
-        const lead = toIntentLead(card, query);
+        const lead = toIntentLead(card, query, !ctx.skipConnected);
         if (!lead) continue;
         if (!matchesIcp(cfg.leads.icpKeywords, lead.headline)) continue;
         // Final authority: the model separates someone with the problem from a consultant selling
@@ -188,10 +188,10 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
  * Splits a search result card into its author and post body, or null when it is not a member post.
  * Card text reads: "Feed post | <name> | · 3rd+ | <headline> | 1w · | Follow | <post>".
  */
-export function parseCard(card: { href: string; text: string }): { profileId: string; fullName: string; headline: string; body: string } | null {
+export function parseCard(card: { href: string; text: string }, keepConnected = false): { profileId: string; fullName: string; headline: string; body: string } | null {
   const profileId = profileIdFromUrl(card.href);
   if (!profileId) return null;
-  if (isFirstDegree(card.text.split("\n").slice(0, 4).join(" "))) return null;
+  if (!keepConnected && isFirstDegree(card.text.split("\n").slice(0, 4).join(" "))) return null;
 
   const lines = card.text
     .split("\n")
@@ -231,8 +231,8 @@ export function cardToEngager(parsed: { profileId: string; fullName: string; hea
  * Turns a search result card into a lead, or null when it is not a real person genuinely discussing
  * the query and asking for help rather than teaching.
  */
-export function toIntentLead(card: { href: string; text: string }, query: string): Engager | null {
-  const parsed = parseCard(card);
+export function toIntentLead(card: { href: string; text: string }, query: string, keepConnected = false): Engager | null {
+  const parsed = parseCard(card, keepConnected);
   if (!parsed) return null;
   if (!onTopic(query, parsed.body)) return null;
   if (!isAsking(parsed.body)) return null;
@@ -313,6 +313,21 @@ export function onTopic(query: string, body: string): boolean {
  * is wasted on them, and worse, they are the account's real contacts: clients, partners, friends.
  * Opening with a stranger's script damages those relationships and earns spam reports, which is what
  * actually gets an account restricted. LinkedIn prints the degree in every row, so it is free to read.
+ */
+/**
+ * Whether this agent should drop people it is already connected to.
+ *
+ * The toggle exists in the wizard and governed nothing: first-degree contacts were dropped
+ * unconditionally, so turning it off changed nothing at all. The default stays on, because a cold
+ * script sent to a real contact damages a real relationship, but the setting now means something.
+ */
+/**
+ * The wizard's "skip people I am already connected to" toggle governed nothing: first-degree
+ * contacts were dropped unconditionally, so turning it off changed nothing at all.
+ *
+ * The default stays on, because a cold script sent to a real contact damages a real relationship,
+ * but the setting means something now. It is threaded as a flag rather than read from the context
+ * because these three converters are pure and tested as such.
  */
 export function isFirstDegree(text: string): boolean {
   return /(^|[\s·•|])1st\b/i.test(text) || /\b1st degree connection\b/i.test(text);
@@ -396,7 +411,7 @@ async function mineTarget(cfg: Config, page: Page, target: string, maxPerPost: n
   for (let i = 0; i < reactionButtons; i++) {
     const opened = await openReactionsModal(page, i);
     if (!opened) continue;
-    const reactors = await extractFromDialog(page, `reaction:${label}`, maxPerPost);
+    const reactors = await extractFromDialog(page, `reaction:${label}`, maxPerPost, !cfg.skipConnected);
     engagers.push(...reactors);
     await closeDialog(page);
     await sleep(actionDelayMs(cfg));
@@ -450,7 +465,7 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
     }, COMMENT_ITEM_SELECTOR);
 
     for (const r of raw) {
-      const engager = toCommenter(r, `comment:${label}`);
+      const engager = toCommenter(r, `comment:${label}`, !cfg.skipConnected);
       if (engager) engagers.push(engager);
       if (engagers.length >= maxPerPost * count) break;
     }
@@ -460,10 +475,10 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
 }
 
 /** Builds an Engager from a structured commenter row (name and headline already isolated). */
-export function toCommenter(row: { href: string; name: string; headline: string; body?: string }, source: string): Engager | null {
+export function toCommenter(row: { href: string; name: string; headline: string; body?: string }, source: string, keepConnected = false): Engager | null {
   const profileId = profileIdFromUrl(row.href);
   if (!profileId) return null;
-  if (isFirstDegree(`${row.name} ${row.headline}`)) return null;
+  if (!keepConnected && isFirstDegree(`${row.name} ${row.headline}`)) return null;
   const fullName = cleanName(row.name) || row.name.split("\n")[0]?.trim() || "";
   if (!fullName) return null;
   const headline = row.headline.split("\n")[0]?.trim() ?? "";
@@ -517,7 +532,7 @@ async function openReactionsModal(page: Page, index: number): Promise<boolean> {
 }
 
 /** Scrolls the reactors list a few times, then reads structured people out of the dialog DOM. */
-async function extractFromDialog(page: Page, source: string, maxPerPost: number): Promise<Engager[]> {
+async function extractFromDialog(page: Page, source: string, maxPerPost: number, keepConnected = false): Promise<Engager[]> {
   const scrollable = page.locator('div[role="dialog"] ul').first();
   for (let i = 0; i < 4; i++) {
     await scrollable.evaluate((el) => el.scrollBy(0, el.clientHeight)).catch(() => {});
@@ -541,7 +556,7 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number)
 
   const engagers: Engager[] = [];
   for (const r of raw) {
-    const engager = toEngager(r, source);
+    const engager = toEngager(r, source, keepConnected);
     if (engager) engagers.push(engager);
     if (engagers.length >= maxPerPost) break;
   }
@@ -567,10 +582,10 @@ async function closeDialog(page: Page): Promise<void> {
  * so the name is the first real line and the headline is the first line after the profile link and
  * the connection-degree noise.
  */
-export function toEngager(row: { href: string; text: string; aria: string }, source: string): Engager | null {
+export function toEngager(row: { href: string; text: string; aria: string }, source: string, keepConnected = false): Engager | null {
   const profileId = profileIdFromUrl(row.href);
   if (!profileId) return null;
-  if (isFirstDegree(row.text)) return null; // already a contact, never a cold prospect
+  if (!keepConnected && isFirstDegree(row.text)) return null; // already a contact, never a cold prospect by default
 
   const lines = row.text
     .split("\n")

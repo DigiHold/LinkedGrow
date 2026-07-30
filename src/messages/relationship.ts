@@ -309,7 +309,7 @@ async function write(
   let failures: string[] = [];
   for (let attempt = 1; attempt <= 4; attempt++) {
     const body = (
-      await generate(ctx, prompt + failureNote(failures), {
+      await generate(ctx, prompt + toneNote(ctx.tone) + failureNote(failures), {
         purpose,
         maxTokens: 220,
         model: MODELS.writer,
@@ -334,6 +334,24 @@ async function write(
     failures = result.reasons;
   }
   throw new Error("Could not write a message that passes the gate");
+}
+
+/**
+ * How the customer asked the messages to sound.
+ *
+ * Deliberately a nudge rather than a rewrite of the voice: every hard rule above exists because
+ * breaking it makes the message read as automated, and a tone setting must not be able to
+ * override that. Professional does not mean formal enough to sound like a letter, and direct does
+ * not mean blunt enough to sound rude.
+ */
+function toneNote(tone: "professional" | "conversational" | "direct"): string {
+  if (tone === "professional") {
+    return "\n\nTone: a shade more measured than casual. Still a person typing on a phone, still contractions, but no slang and no jokes.";
+  }
+  if (tone === "direct") {
+    return "\n\nTone: get to the point sooner. Shorter sentences, no throat-clearing, no softeners like 'just' or 'quick'. Still warm, never curt.";
+  }
+  return "";
 }
 
 function failureNote(failures: string[]): string {

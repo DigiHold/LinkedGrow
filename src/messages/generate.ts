@@ -50,8 +50,13 @@ export async function judgeAsking(ctx: AgentContext, postText: string): Promise<
  * which is how a supermarket planning assistant ends up in a queue meant for website owners.
  */
 export async function judgeIcpFit(ctx: AgentContext, headline: string, context: string): Promise<boolean> {
+  // Volume skips the judgement entirely: the customer asked for reach and the headline gate has
+  // already run. Precision and balanced differ in what the model is told to do when it hesitates.
+  if (ctx.matchLevel === "volume") return true;
+
   const prompt = [
     `We sell to: ${ctx.cfg.leads.icp}`,
+    ctx.companySizes.length ? `Company sizes worth having: ${ctx.companySizes.join(", ")}` : "",
     "",
     `Person's headline: ${headline}`,
     context ? `What they posted: ${context.slice(0, 500)}` : "",
@@ -61,7 +66,9 @@ export async function judgeIcpFit(ctx: AgentContext, headline: string, context: 
     "Answer SKIP when they are junior, when their field is unrelated, or when they work at a large company",
     "or consultancy where a whole department owns the website and no individual could add a tool to it.",
     "Answer FIT mainly for small businesses, startups, agencies and independents who run their own site.",
-    "When unsure, answer SKIP.",
+    ctx.matchLevel === "precision"
+      ? "Answer FIT only when you are confident. Anything you would have to argue for is a SKIP."
+      : "When unsure, answer SKIP.",
   ]
     .filter(Boolean)
     .join("\n");

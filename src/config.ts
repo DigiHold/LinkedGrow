@@ -24,6 +24,8 @@ export interface Config {
   limits: { connectPerWeekMax: number; dmPerDayMax: number };
   delaysMs: { minAction: number; maxAction: number };
   sequence: { waitBetweenDmsDays: number };
+  /** False lets the agent prospect people the account is already connected to. */
+  skipConnected: boolean;
   leads: {
     topics: string[];
     competitors: string[];
@@ -65,6 +67,20 @@ export interface AgentContext {
    * against the live site, and the only safe way to do that is with the writes switched off.
    * reviewMode does not cover it: that queues messages for approval and still sends invitations.
    */
+  /**
+   * How strictly a lead has to fit before the agent takes it.
+   *
+   * precision keeps only people the model agrees are a fit, volume keeps anyone whose headline
+   * matches the roles, balanced sits between. It was offered in the wizard from the start and read
+   * by nothing, so every agent ran at balanced whatever the customer chose.
+   */
+  matchLevel: "precision" | "balanced" | "volume";
+  /** How the messages should sound. Same story: asked for, stored, and never reaching the writer. */
+  tone: "professional" | "conversational" | "direct";
+  /** Whether existing connections stay out of the campaign. */
+  skipConnected: boolean;
+  /** Company sizes the customer named, used by the fit judge rather than as a hard filter. */
+  companySizes: string[];
   observeOnly: boolean;
   /**
    * When set, the only profiles this agent may like, invite or message.

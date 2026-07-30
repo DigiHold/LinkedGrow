@@ -161,7 +161,7 @@ export async function toSignalLead(
   query: string,
   card: { href: string; text: string },
 ): Promise<Engager | null> {
-  const parsed = parseCard(card);
+  const parsed = parseCard(card, !ctx.skipConnected);
   if (!parsed || !passesSignalGates(cfg, kind, parsed)) return null;
   // A tag needs a genuine asker; a move or a hire says something happened, not that it happened to
   // the right person, and those two searches span every industry on earth.
