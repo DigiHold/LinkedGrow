@@ -78,11 +78,30 @@ const LEAD_SOURCES: {
 const MIN_SIGNALS = 4;
 const MAX_SIGNALS = 15;
 
+/** The two shapes of "something just changed here", each searched differently. */
+const BUYING_EVENTS = [
+  {
+    id: "jobchange",
+    label: "Just changed role",
+    hint: "Somebody who announced a new job in the last few months. New seat, new budget, new reasons to fix what they inherited.",
+  },
+  {
+    id: "hiring",
+    label: "Hiring for the work",
+    hint: "A company posting for the role that owns your problem. They have admitted the gap in public.",
+  },
+];
+
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, h) => ({
   id: String(h),
   label: `${String(h).padStart(2, "0")}:00`,
 }));
+
+/** LinkedIn's own bands, so a customer picking these picks what the site shows. */
+const COMPANY_SIZES = [
+  "1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+",
+];
 
 const MATCH_LEVELS = [
   { id: "precision", label: "Precision", hint: "Fewer leads, closer fit" },
@@ -122,6 +141,9 @@ export function NewAgentWizard() {
   // lookalike search finds warm people three different ways, which is the point of having three.
   const [sources, setSources] = useState<string[]>(["buying_event"]);
   const [sourceTargets, setSourceTargets] = useState<Record<string, string>>({});
+  // Which buying events count. Both on by default: they answer different questions and neither is
+  // noisy on its own.
+  const [buyingEvents, setBuyingEvents] = useState<string[]>(["jobchange", "hiring"]);
 
   const toggleSource = (id: string) =>
     setSources((current) =>
@@ -133,6 +155,8 @@ export function NewAgentWizard() {
   const [industries, setIndustries] = useState("");
   const [locations, setLocations] = useState("");
   const [matchLevel, setMatchLevel] = useState<string>("balanced");
+  const [companySizes, setCompanySizes] = useState<string[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
   const [smartLeadFinder, setSmartLeadFinder] = useState(true);
   const [companyInfo, setCompanyInfo] = useState("");
   const [goal, setGoal] = useState<string>("conversations");
@@ -154,6 +178,33 @@ export function NewAgentWizard() {
   const [warmupStartPerDay, setWarmupStartPerDay] = useState(5);
   const [warmupIncrementPerWeek, setWarmupIncrementPerWeek] = useState(5);
   const [warmupWeeks, setWarmupWeeks] = useState(4);
+
+  /**
+   * More topics, on demand.
+   *
+   * The site read already proposes some, but a customer who deleted the ones that did not fit had
+   * no way to ask for others short of retyping the URL. Suggestions that are already in the list
+   * are dropped rather than added twice.
+   */
+  const suggestMore = async () => {
+    if (!website.trim() || suggesting) return;
+    setSuggesting(true);
+    try {
+      const res = await fetch("/api/agents/analyze-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: website.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+      const fresh: string[] = (data.signals ?? []).filter(
+        (k: string) => !keywords.some((existing) => existing.toLowerCase() === k.toLowerCase())
+      );
+      if (fresh.length) setKeywords((current) => [...current, ...fresh].slice(0, MAX_SIGNALS));
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const toggleDay = (d: number) =>
     setWorkdayDays((current) =>
@@ -189,6 +240,7 @@ export function NewAgentWizard() {
       if (data.jobRoles?.length) setJobRoles(data.jobRoles.join(", "));
       if (data.industries?.length) setIndustries(data.industries.join(", "));
       if (data.signals?.length) setKeywords(data.signals.slice(0, 8));
+      if (data.companySizes?.length) setCompanySizes(data.companySizes);
       if (!name.trim() && data.jobRoles?.length) setName(data.jobRoles[0]);
       setReadNote(
         "Read. The next steps are filled in from your site. Change anything that is off.",
@@ -311,6 +363,7 @@ export function NewAgentWizard() {
             .map((v) => v.trim())
             .filter(Boolean),
           smartLeadFinder,
+          companySizes,
           timezone,
           workdayDays,
           workdayStart: workdayStart * 60,
@@ -322,6 +375,14 @@ export function NewAgentWizard() {
             // One row per thing named, because "Gojiberry, Taplio" is two competitors
             // rather than one company with a comma in its name.
             ...sources.flatMap((id) => {
+              if (id === "buying_event") {
+                // One row per kind, so switching one off simply removes its row.
+                return buyingEvents.map((kind) => ({
+                  type: "buying_event",
+                  label: BUYING_EVENTS.find((e) => e.id === kind)?.label ?? kind,
+                  config: { kind },
+                }));
+              }
               const target = (sourceTargets[id] ?? "").trim();
               if (!target) return [{ type: id, label: labelForSource(id) }];
               return target
@@ -489,6 +550,45 @@ export function NewAgentWizard() {
             "Competitor engagement" made the agent search LinkedIn for a company
             called Competitor engagement and find nobody.
           */}
+          {sources.includes("buying_event") && (
+            <div className="mt-6">
+              <Field
+                label="Which moments count?"
+                hint="These are searched by the job titles and industries you give on the next step, so there is nothing else to fill in."
+              >
+                <div className="space-y-2">
+                  {BUYING_EVENTS.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      aria-pressed={buyingEvents.includes(e.id)}
+                      onClick={() =>
+                        setBuyingEvents((current) =>
+                          current.includes(e.id)
+                            ? current.filter((x) => x !== e.id)
+                            : [...current, e.id]
+                        )
+                      }
+                      className={cn(
+                        "block w-full rounded-xl border p-3 text-left transition-colors",
+                        buyingEvents.includes(e.id)
+                          ? "border-cyan-500 bg-cyan-50/60 dark:border-cyan-400/60 dark:bg-cyan-400/10"
+                          : "border-border hover:border-slate-300 dark:hover:border-white/20"
+                      )}
+                    >
+                      <span className="block text-[14px] font-medium text-slate-900 dark:text-white">
+                        {e.label}
+                      </span>
+                      <span className="mt-0.5 block text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                        {e.hint}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            </div>
+          )}
+
           {sources.map((id) =>
             SOURCE_TARGET[id] ? (
               <div className="mt-6" key={id}>
@@ -540,6 +640,15 @@ export function NewAgentWizard() {
                   <Plus className="mr-2 h-4 w-4" />
                   Add
                 </Button>
+                {website.trim() && (
+                  <Button
+                    variant="outline"
+                    onClick={suggestMore}
+                    disabled={suggesting || keywords.length >= MAX_SIGNALS}
+                  >
+                    {suggesting ? "Reading..." : "Suggest more"}
+                  </Button>
+                )}
               </div>
               {topicIdeas.length > 0 && (
                 <div className="mt-3">
@@ -617,6 +726,36 @@ export function NewAgentWizard() {
               />
             </Field>
 
+            <Field
+              label="Company size"
+              hint="Leave all off for any size. It guides the judgement rather than filtering hard, because LinkedIn headcounts are often wrong or missing."
+            >
+              <div className="flex flex-wrap gap-2">
+                {COMPANY_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    aria-pressed={companySizes.includes(size)}
+                    onClick={() =>
+                      setCompanySizes((current) =>
+                        current.includes(size)
+                          ? current.filter((s) => s !== size)
+                          : [...current, size]
+                      )
+                    }
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                      companySizes.includes(size)
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                        : "border border-border text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
+                    )}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
             <Field label="Match level" hint="How strictly a lead has to fit before the agent takes it.">
               <Segmented
                 options={MATCH_LEVELS}
@@ -678,11 +817,9 @@ export function NewAgentWizard() {
                 <div className="space-y-4">
                   <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
                     <p className="text-[13px] leading-relaxed text-amber-900 dark:text-amber-200">
-                      <span className="font-semibold">Read this before you raise them.</span>{" "}
-                      The ramp exists because LinkedIn restricts accounts that suddenly start
-                      sending far more than they used to, and a restriction can be permanent. If you
-                      raise these limits, you are choosing to skip that protection, and any
-                      restriction or ban that follows is on you rather than on us.
+                      <span className="font-semibold">Worth knowing.</span>{" "}
+                      LinkedIn restricts accounts that suddenly send far more than they used to,
+                      and a restriction can be permanent. The ramp exists to avoid that.
                     </p>
                   </div>
                   <Field label="Invitations a day, to begin with" hint="The default is 5.">
@@ -887,6 +1024,7 @@ export function NewAgentWizard() {
               <SummaryRow label="Job titles" value={jobRoles || "Any"} />
               <SummaryRow label="Industries" value={industries || "Any"} />
               <SummaryRow label="Locations" value={locations || "Anywhere"} />
+              <SummaryRow label="Company size" value={companySizes.join(", ") || "Any"} />
               <SummaryRow
                 label="Match level"
                 value={MATCH_LEVELS.find((m) => m.id === matchLevel)?.label ?? ""}
