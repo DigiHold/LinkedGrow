@@ -154,6 +154,19 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       return;
     }
 
+    // Watching mode ends the pass here, before anything can touch LinkedIn. It is deliberately a
+    // hard stop rather than a flag threaded through the sequence: a condition checked in one place
+    // cannot be forgotten in the tenth.
+    if (ctx.observeOnly) {
+      await recordEvent(
+        ctx,
+        "sourcing",
+        "Watching only: leads are being collected and nothing is being sent."
+      ).catch(() => {});
+      await touchRun(ctx);
+      return;
+    }
+
     await runSequence(ctx.cfg, ctx, {
       actions,
       notify: async (message) => {

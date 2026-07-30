@@ -56,6 +56,17 @@ export interface AgentContext {
   warmupStartedAt: Date | null;
   reviewMode: boolean;
   /**
+   * Read LinkedIn, write nothing to it.
+   *
+   * The agent signs in, mines, scores and queues leads, and fills the activity feed exactly as it
+   * normally would. It never likes a post, never sends an invitation, never sends a message.
+   *
+   * This exists because the only honest way to find out whether the automation works is to run it
+   * against the live site, and the only safe way to do that is with the writes switched off.
+   * reviewMode does not cover it: that queues messages for approval and still sends invitations.
+   */
+  observeOnly: boolean;
+  /**
    * Who the messages are from. The relationship steps write as a named person
    * rather than as a company, so the first name is not optional: a message
    * signed with nothing reads as software.
