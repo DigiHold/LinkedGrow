@@ -111,8 +111,16 @@ export function NewAgentWizard() {
   const [readFailed, setReadFailed] = useState(false);
   const [readStage, setReadStage] = useState(0);
   const [name, setName] = useState("");
-  const [source, setSource] = useState<string>("buying_event");
-  const [sourceTarget, setSourceTarget] = useState("");
+  // Several sources at once, because the worker has always rotated through them two per pass and
+  // only this screen insisted on one. An agent watching competitors AND buying signals AND a
+  // lookalike search finds warm people three different ways, which is the point of having three.
+  const [sources, setSources] = useState<string[]>(["buying_event"]);
+  const [sourceTargets, setSourceTargets] = useState<Record<string, string>>({});
+
+  const toggleSource = (id: string) =>
+    setSources((current) =>
+      current.includes(id) ? current.filter((s) => s !== id) : [...current, id]
+    );
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState("");
   const [jobRoles, setJobRoles] = useState("");
@@ -283,13 +291,15 @@ export function NewAgentWizard() {
           sources: [
             // One row per thing named, because "Gojiberry, Taplio" is two competitors
             // rather than one company with a comma in its name.
-            ...(sourceTarget.trim()
-              ? sourceTarget
-                  .split(",")
-                  .map((v) => v.trim())
-                  .filter(Boolean)
-                  .map((target) => ({ type: source, label: target }))
-              : [{ type: source, label: labelForSource(source) }]),
+            ...sources.flatMap((id) => {
+              const target = (sourceTargets[id] ?? "").trim();
+              if (!target) return [{ type: id, label: labelForSource(id) }];
+              return target
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean)
+                .map((label) => ({ type: id, label }));
+            }),
             ...keywords.map((k) => ({ type: "keyword", label: k })),
           ],
         }),
@@ -427,14 +437,14 @@ export function NewAgentWizard() {
       {step === 2 && (
         <StepBody
           title="Where should it look for people?"
-          lead="Pick one. You can add more later."
+          lead="Pick as many as you like. The agent works through them in turn, so more sources means warmer people found more ways."
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {LEAD_SOURCES.map((s) => (
               <OptionCard
                 key={s.id}
-                picked={source === s.id}
-                onClick={() => setSource(s.id)}
+                picked={sources.includes(s.id)}
+                onClick={() => toggleSource(s.id)}
                 icon={s.icon}
                 label={s.label}
                 hint={s.hint}
@@ -449,19 +459,20 @@ export function NewAgentWizard() {
             "Competitor engagement" made the agent search LinkedIn for a company
             called Competitor engagement and find nobody.
           */}
-          {SOURCE_TARGET[source] && (
-            <div className="mt-6">
-              <Field
-                label={SOURCE_TARGET[source]!.label}
-                hint={SOURCE_TARGET[source]!.hint}
-              >
-                <Input
-                  value={sourceTarget}
-                  onChange={(e) => setSourceTarget(e.target.value)}
-                  placeholder={SOURCE_TARGET[source]!.placeholder}
-                />
-              </Field>
-            </div>
+          {sources.map((id) =>
+            SOURCE_TARGET[id] ? (
+              <div className="mt-6" key={id}>
+                <Field label={SOURCE_TARGET[id]!.label} hint={SOURCE_TARGET[id]!.hint}>
+                  <Input
+                    value={sourceTargets[id] ?? ""}
+                    onChange={(e) =>
+                      setSourceTargets((current) => ({ ...current, [id]: e.target.value }))
+                    }
+                    placeholder={SOURCE_TARGET[id]!.placeholder}
+                  />
+                </Field>
+              </div>
+            ) : null
           )}
 
         </StepBody>
@@ -747,7 +758,17 @@ export function NewAgentWizard() {
         
           <dl className="divide-y divide-border">
               <SummaryRow label="Name" value={name || "Not set"} />
-              <SummaryRow label="Lead source" value={labelForSource(source)} />
+              <SummaryRow
+                label={sources.length > 1 ? "Lead sources" : "Lead source"}
+                value={
+                  sources
+                    .map((id) => {
+                      const target = (sourceTargets[id] ?? "").trim();
+                      return target ? `${labelForSource(id)} (${target})` : labelForSource(id);
+                    })
+                    .join(", ") || "None"
+                }
+              />
               <SummaryRow label="Topics" value={keywords.join(", ") || "None"} />
               <SummaryRow label="Job titles" value={jobRoles || "Any"} />
               <SummaryRow label="Industries" value={industries || "Any"} />
