@@ -56,10 +56,13 @@ export interface ProxyCredentials {
 }
 
 /**
- * Routes one request through the proxy and reports what came out the other
- * side. Node's fetch cannot use an HTTP proxy on its own, so this shells the
- * work to curl, which is present on every box the worker runs on and avoids
- * adding a dependency for six lines of behaviour.
+ * Routes one request through the proxy and reports what came out the other side.
+ *
+ * Uses undici's ProxyAgent rather than shelling out to curl, for two reasons
+ * that both bit us: a request handler on Vercel has no guaranteed curl binary
+ * and restricted child processes, and a customer's proxy password would have
+ * had to be shell-escaped into an argument list, which is a category of bug
+ * worth designing out rather than getting right.
  */
 export async function checkExit(
   proxy: ProxyCredentials,
@@ -73,34 +76,30 @@ export async function checkExit(
     looksHosted: false,
   };
 
-  const { execFile } = await import("node:child_process");
-  const { promisify } = await import("node:util");
-  const run = promisify(execFile);
-
-  const auth = `${encodeURIComponent(proxy.username)}:${encodeURIComponent(proxy.password)}`;
-  const proxyUrl = `http://${auth}@${proxy.host}:${proxy.port}`;
-
   try {
-    const { stdout } = await run(
-      "curl",
-      [
-        "--silent",
-        "--show-error",
-        "--max-time",
-        String(Math.ceil(timeoutMs / 1000)),
-        "--proxy",
-        proxyUrl,
-        "https://ipinfo.io/json",
-      ],
-      { timeout: timeoutMs + 5_000 }
-    );
-    const data = JSON.parse(stdout) as {
+    const { ProxyAgent } = await import("undici");
+    const auth = proxy.username
+      ? `${encodeURIComponent(proxy.username)}:${encodeURIComponent(proxy.password)}@`
+      : "";
+    const agent = new ProxyAgent({
+      uri: `http://${auth}${proxy.host}:${proxy.port}`,
+    });
+
+    const response = await fetch("https://ipinfo.io/json", {
+      signal: AbortSignal.timeout(timeoutMs),
+      dispatcher: agent,
+    } as RequestInit);
+    if (!response.ok) {
+      return { ...empty, error: `lookup returned HTTP ${response.status}` };
+    }
+    const data = (await response.json()) as {
       ip?: string;
       org?: string;
       country?: string;
     };
-    // ipinfo returns org as "AS12322 Free SAS", so the number and the name
-    // come apart on the first space.
+
+    // ipinfo returns org as "AS12322 Free SAS", so the number and the name come
+    // apart on the first space.
     const org = data.org ?? null;
     const match = org?.match(/^(AS\d+)\s+(.*)$/);
     const asn = match?.[1] ?? null;

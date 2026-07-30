@@ -107,16 +107,98 @@ async function takeFromPool(
 export interface AllocateResult {
   allocationId: string;
   reused: boolean;
+  /** True when the address still has to be bought by the worker. */
+  pending?: boolean;
   /** Set when the exit resolved to a hosting network. Shown, never blocking. */
   warning?: string;
 }
 
 /**
- * Orders or reuses an address and binds it to one LinkedIn account.
+ * Records that this account needs an address, without buying one.
  *
- * Idempotent on the account: calling it twice returns the existing binding
- * rather than buying a second address, because the invariant is one account and
- * one address and a double-click must not cost money.
+ * **The dashboard must never call the supplier.** Their API is locked to an
+ * allowlist of at most 3 addresses and Vercel functions leave from a pool of
+ * hundreds that changes, so a purchase from a request handler would fail for
+ * most customers and could not be fixed by registering anything. The worker has
+ * one fixed address, so it is the only thing that talks to the supplier.
+ *
+ * This writes the intent and returns immediately. The customer carries on with
+ * the wizard, the worker picks the row up on its next pass, buys, verifies the
+ * exit and flips it to active, and the agent starts only then. If the purchase
+ * fails the row stays visible as `ordering` rather than the failure being lost.
+ */
+export async function requestAllocation(
+  workspaceId: string,
+  linkedinAccountId: string,
+  country: string
+): Promise<AllocateResult> {
+  const iso = country.toUpperCase();
+  const now = new Date();
+
+  const [existing] = await db
+    .select()
+    .from(proxyAllocations)
+    .where(eq(proxyAllocations.linkedinAccountId, linkedinAccountId))
+    .limit(1);
+  if (existing) {
+    return {
+      allocationId: existing.id,
+      reused: true,
+      pending: existing.status === "ordering",
+    };
+  }
+
+  // A spare from the pool needs no supplier call at all, so it can be bound
+  // here and the account is ready immediately.
+  const spare = await takeFromPool(workspaceId, iso);
+  if (spare) {
+    await db
+      .update(proxyAllocations)
+      .set({ linkedinAccountId, status: "active", updatedAt: now })
+      .where(eq(proxyAllocations.id, spare.id));
+    await db
+      .update(linkedinAccounts)
+      .set({ proxyAllocationId: spare.id })
+      .where(eq(linkedinAccounts.id, linkedinAccountId));
+    return { allocationId: spare.id, reused: true };
+  }
+
+  const id = crypto.randomUUID();
+  await db.insert(proxyAllocations).values({
+    id,
+    workspaceId,
+    country: iso,
+    provider: "proxy-seller",
+    // Placeholders until the worker fills them in. Never usable as they are,
+    // and the `ordering` status is what stops anything trying.
+    host: "",
+    port: 0,
+    usernameEncrypted: "",
+    passwordEncrypted: "",
+    providerRef: null,
+    status: "ordering",
+    source: "managed",
+    linkedinAccountId,
+    autoRenew: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db
+    .update(linkedinAccounts)
+    .set({ proxyAllocationId: id })
+    .where(eq(linkedinAccounts.id, linkedinAccountId));
+
+  return { allocationId: id, reused: false, pending: true };
+}
+
+/**
+ * Buys and binds. **Runs on the worker, never in a request handler**, because
+ * this is what calls the supplier and the supplier only answers our one fixed
+ * address. See `requestAllocation` for the dashboard's half.
+ *
+ * Idempotent on the account: it returns an existing active binding rather than
+ * buying a second address, because the invariant is one account and one address
+ * and a retry must not cost money.
  */
 export async function allocateForAccount(
   workspaceId: string,

@@ -6,8 +6,8 @@ import { agents, linkedinAccounts } from "@/lib/db/schema";
 import { loadSessionUser } from "@/lib/auth-user";
 import { isProxyCountry } from "@/lib/proxy-countries";
 import {
-  allocateForAccount,
   allocationForAccount,
+  requestAllocation,
   attachCustomProxy,
   releaseForAccount,
   toView,
@@ -128,7 +128,9 @@ export async function POST(
       );
     }
 
-    const result = await allocateForAccount(workspaceId, id, account.country);
+    // Records the intent only. The worker owns the purchase, because the
+    // supplier's allowlist holds 3 addresses and Vercel has hundreds.
+    const result = await requestAllocation(workspaceId, id, account.country);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     if (error instanceof ProxyProviderError) {
