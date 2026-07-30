@@ -43,6 +43,32 @@ function splitLines(value: unknown): string[] {
     .filter(Boolean);
 }
 
+/**
+ * The days an agent works, Sunday being 0.
+ *
+ * The worker used to apply Monday to Friday from a constant, with nowhere for a customer to say
+ * otherwise. An empty or broken value falls back to the default rather than to no days at all,
+ * because an agent that never runs is the worst reading of a bad input.
+ */
+function parseDays(value: unknown): number[] {
+  const parsed = parseList(value)
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+  if (parsed.length) return [...new Set(parsed)].sort();
+  if (typeof value === "string") {
+    try {
+      const raw = JSON.parse(value) as unknown;
+      if (Array.isArray(raw)) {
+        const nums = raw.filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 6);
+        if (nums.length) return [...new Set(nums)].sort();
+      }
+    } catch {
+      // fall through to the default
+    }
+  }
+  return [...DEFAULTS.businessHours.days];
+}
+
 function parseList(value: unknown): string[] {
   if (typeof value !== "string" || !value) return [];
   try {
@@ -75,6 +101,10 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.timezone          AS timezone,
       a.workday_start     AS workday_start,
       a.workday_end       AS workday_end,
+      a.workday_days      AS workday_days,
+      a.warmup_start_per_day     AS warmup_start_per_day,
+      a.warmup_increment_per_week AS warmup_increment_per_week,
+      a.warmup_weeks      AS warmup_weeks,
       a.match_level       AS match_level,
       a.tone              AS tone,
       a.skip_connected    AS skip_connected,
@@ -113,8 +143,14 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
         timezone: String(r.timezone ?? "Europe/Zurich"),
       },
       business: { url: "", description: String(r.company_info ?? "") },
-      businessHours: { startHour, endHour, days: [...DEFAULTS.businessHours.days] },
-      warmup: { ...DEFAULTS.warmup },
+      businessHours: { startHour, endHour, days: parseDays(r.workday_days) },
+      // Null means the safe ramp. A customer who raised these was told plainly what they were
+      // taking on, and the floor of 1 exists so a typo cannot stop the agent dead.
+      warmup: {
+        startPerDay: Math.max(1, Number(r.warmup_start_per_day ?? DEFAULTS.warmup.startPerDay)),
+        incrementPerWeek: Math.max(0, Number(r.warmup_increment_per_week ?? DEFAULTS.warmup.incrementPerWeek)),
+        weeks: Math.max(1, Number(r.warmup_weeks ?? DEFAULTS.warmup.weeks)),
+      },
       // An agent restricted to a handful of named people is somebody trying the product out, not
       // running a campaign, so its ceilings come down to match. The allowlist is the guarantee and
       // this is the second one: if a write ever escaped the wrapper, it could escape three times

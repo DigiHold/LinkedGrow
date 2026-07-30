@@ -145,7 +145,9 @@ export function requireEnv(name: string): string {
  * account's detected LinkedIn tier overrides.
  */
 export const DEFAULTS = {
-  businessHours: { startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5] },
+  // Monday to Saturday: plenty of the people this sells to work then, and an agent idle two
+  // days out of seven reads as broken to somebody paying by the month.
+  businessHours: { startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5, 6] },
   warmup: { startPerDay: 5, incrementPerWeek: 5, weeks: 4 },
   limits: { connectPerWeekMax: 100, dmPerDayMax: 20 },
   delaysMs: { minAction: 40_000, maxAction: 120_000 },
