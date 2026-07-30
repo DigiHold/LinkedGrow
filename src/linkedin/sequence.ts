@@ -2,11 +2,11 @@ import type { Config } from "../config.ts";
 import { log } from "../logger.ts";
 import { sleep } from "../browser/human.ts";
 import type { LinkedInActions } from "./actions.ts";
-import type { GeneratedMessage } from "../messages/generate.ts";
 import {
   PACING,
   RELATIONSHIP_STEPS,
   shouldHandOver,
+  type GeneratedMessage,
   type RelationshipStep,
   type Turn,
 } from "../messages/relationship.ts";

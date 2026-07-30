@@ -191,3 +191,40 @@ test("a message that recites their own post is refused", () => {
   );
   assert.equal(reaction.ok, true, reaction.reasons.join(" | "));
 });
+
+/**
+ * The vague noun standing in for the thing itself.
+ *
+ * Nicolas caught "that question from the client is the annoying part" in a live run. The banned
+ * list held "that part" and every bare demonstrative, and missed every adjective variant, which is
+ * a list losing a race it cannot win. The pattern is the fix, so these lock its edges.
+ */
+test("a vague noun standing in for the thing is refused", () => {
+  for (const bad of [
+    "That question from the client is the annoying part, you cannot answer it honestly without checking.",
+    "Getting the banner right is the tricky bit, and most builds never get audited at all.",
+    "Rebuilding under a deadline is the hard part, the rest of it is ordinary work.",
+    "Chasing the client for sign-off is that whole side of things nobody warns you about.",
+  ]) {
+    const r = validateMessage(bad, ctx);
+    assert.equal(r.ok, false, `should have been refused: ${bad}`);
+    assert.ok(
+      r.reasons.some((x) => x.includes("vague noun")),
+      `expected the vague noun to be named, got: ${r.reasons.join(" | ")}`
+    );
+  }
+});
+
+test("naming the actual thing still passes", () => {
+  for (const good of [
+    "Auditing every build by hand is what would eat your week, and nobody has that week spare.",
+    "The best part of the job is watching a client stop worrying about it entirely.",
+    "That side of the business is the one your client actually notices when it breaks.",
+  ]) {
+    const r = validateMessage(good, ctx);
+    assert.ok(
+      !r.reasons.some((x) => x.includes("vague noun")),
+      `wrongly flagged as vague: "${good}" -> ${r.reasons.join(" | ")}`
+    );
+  }
+});

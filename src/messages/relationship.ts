@@ -285,6 +285,12 @@ export interface Prospect {
   signalText?: string;
 }
 
+/** What a step hands back to the sequence: the text, and which step wrote it. */
+export interface GeneratedMessage {
+  body: string;
+  angle: string;
+}
+
 export interface Turn {
   from: "us" | "them";
   body: string;

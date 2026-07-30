@@ -65,11 +65,10 @@ const BANNED_PHRASES = [
   // Compliments that would fit anybody, which is what makes them worth nothing.
   "impressed by your", "impressive profile", "impressive background", "love what you",
   "big fan of your", "your profile stood out", "caught my eye", "your work is inspiring",
-  // Vague demonstratives standing in for a real noun. A person names the thing they mean; a model
-  // gestures at it. Caught live on "Months tracks, that part is never a weekend". The prompt bans
-  // these too, but a prompt is a suggestion and this is the gate.
-  "that part", "this part", "that piece", "that bit", "that side of things", "on that front",
-  "that whole", "the whole thing", "that aspect", "in that space", "that world",
+  // Vague gestures the VAGUE_REFERENT pattern cannot reach, because a following "of" is exactly
+  // what makes most of these phrases legitimate elsewhere. The pattern covers the rest of the
+  // family, so nothing is listed twice.
+  "that side of things", "on that front", "in that space", "that world",
   // The rest of the cold-DM tells, from the 2026 write-ups on messages that read as automated
   // (Kondo, Hiration, Origami) plus the phrasings Nicolas rejected in his own outbound.
   "made me press connect", "explore synergies", "potential synergies", "mutually beneficial",
@@ -120,8 +119,36 @@ function signsOff(text: string, senderName: string): boolean {
     && (names.some((n) => last.includes(n)) || words(last).length <= 4);
 }
 
+/**
+ * A vague noun phrase standing in for the thing itself.
+ *
+ * "the annoying part", "the tricky bit", "that whole side of it". A person names what they mean; a
+ * model gestures at it and sounds knowing while saying nothing. The banned-phrase list caught the
+ * bare demonstratives and missed every adjective variant, which is how "that question from the
+ * client is the annoying part" shipped in a live run. A pattern covers the family instead.
+ *
+ * The noun has to be doing the standing-in, so only the empty head nouns count.
+ *
+ * The "of" carve-out is narrow on purpose. "the best part of the job" names something and passes,
+ * while "that whole side of things" names nothing and does not, so a complement only rescues the
+ * phrase when it is a real noun rather than another empty one.
+ */
+const VAGUE_REFERENT =
+  /\b(?:the|that|this)\s+(?:\w+\s+)?(?:part|bit|piece|side|aspect|thing|stage)\b(?:\s+of\s+(?:it|this|that|these|those|things|stuff)\b|(?!\s+(?:of|about|where|which|you|i|we|they|he|she|it)\b))/i;
+
 function words(text: string): string[] {
   return text.split(/\s+/).map((w) => w.trim()).filter(Boolean);
+}
+
+/** True if any 6-word window of what they wrote appears verbatim in our message. */
+function echoesPost(message: string, theirText: string): boolean {
+  const p = words(theirText.toLowerCase());
+  if (p.length < 6) return false;
+  const hay = message.toLowerCase();
+  for (let i = 0; i + 6 <= p.length; i++) {
+    if (hay.includes(p.slice(i, i + 6).join(" "))) return true;
+  }
+  return false;
 }
 
 /** Removes the sign-off block (best/cheers/thanks/name) when it sits in the tail of the message. */
@@ -186,6 +213,8 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   for (const o of BANNED_OPENERS) {
     if (head.startsWith(o)) reasons.push(`generic opener: ${o}`);
   }
+  const vague = text.match(VAGUE_REFERENT);
+  if (vague) reasons.push(`vague noun standing in for the thing: "${vague[0]}"`);
   if (ctx.headline && dumpsHeadline(text, ctx.headline)) {
     reasons.push("dumps the profile headline verbatim");
   }
@@ -225,68 +254,6 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   if (signsOff(text, ctx.senderName)) {
     reasons.push("signs off with a name or a sign-off line (LinkedIn already shows who is writing)");
   }
-
-  return { ok: reasons.length === 0, reasons };
-}
-
-export interface CommentContext {
-  /** The post being commented on, used to reject comments that parrot the post. */
-  postText: string;
-  minWords?: number;
-  maxWords?: number;
-}
-
-/** True if any 6-word window of the post appears verbatim in the comment. */
-function echoesPost(comment: string, postText: string): boolean {
-  const p = words(postText.toLowerCase());
-  if (p.length < 6) return false;
-  const hay = comment.toLowerCase();
-  for (let i = 0; i + 6 <= p.length; i++) {
-    if (hay.includes(p.slice(i, i + 6).join(" "))) return true;
-  }
-  return false;
-}
-
-/**
- * No-slop gate for warm-up comments. A human comment responds to the post; it never quotes a
- * chunk of it to fake having read it, and never reads like AI filler.
- */
-export function validateComment(text: string, ctx: CommentContext): ValidationResult {
-  const reasons: string[] = [];
-  const minWords = ctx.minWords ?? 8;
-  const maxWords = ctx.maxWords ?? 45;
-  const lower = text.toLowerCase();
-
-  if (/\[|\]|\{|\}|firstname|first_name|company_name/i.test(text)) reasons.push("unresolved template token");
-  if (/[—–]/.test(text)) reasons.push("em dash or en dash");
-  // A colon or semicolon mid-sentence is a strong AI/formal tell; real Reddit comments do not use them.
-  if (text.includes(":")) reasons.push("colon (not human in a casual comment)");
-  if (text.includes(";")) reasons.push("semicolon (not human in a casual comment)");
-  if (/[“”‘’]/.test(text)) reasons.push("curly quotes");
-  reasons.push(...bannedWordReasons(text));
-  for (const p of BANNED_PHRASES) {
-    if (lower.includes(p)) reasons.push(`banned phrase: ${p}`);
-  }
-  if (echoesPost(text, ctx.postText)) reasons.push("echoes the post instead of responding to it");
-  const sents = text.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean);
-  for (const s of sents) {
-    if (words(s).length < 6) {
-      reasons.push(`sentence under 6 words: "${s}"`);
-      break;
-    }
-  }
-  // Two short sentences in a row read as engineered AI staccato (no-slop §31), so reject them.
-  for (let i = 0; i + 1 < sents.length; i++) {
-    const a = sents[i] ?? "";
-    const b = sents[i + 1] ?? "";
-    if (words(a).length <= 8 && words(b).length <= 8) {
-      reasons.push("two short choppy sentences in a row (staccato)");
-      break;
-    }
-  }
-  const wc = words(text).length;
-  if (wc < minWords) reasons.push(`too short: ${wc} words (min ${minWords})`);
-  if (wc > maxWords) reasons.push(`too long: ${wc} words (max ${maxWords})`);
 
   return { ok: reasons.length === 0, reasons };
 }
