@@ -2,8 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { linkedinAccounts, proxyAllocations } from "@/lib/db/schema";
 import { encryptApiKey, decryptApiKey } from "@/lib/encryption";
-import { ProxySellerProvider } from "./proxy-seller";
-import { ProxyProviderError, type ProxyProvider } from "./provider";
+import { ProxyProviderError } from "./provider";
 import { acceptForBinding, checkExit, type ProxyCredentials } from "./exit-check";
 
 /**
@@ -26,18 +25,6 @@ import { acceptForBinding, checkExit, type ProxyCredentials } from "./exit-check
  * rejected buffer, which was about pre-buying; it is simply not wasting money.
  */
 
-const TERM_DAYS = 30;
-
-function provider(): ProxyProvider {
-  const key = process.env.PROXY_SELLER_API_KEY;
-  if (!key) {
-    throw new ProxyProviderError(
-      "PROXY_SELLER_API_KEY is not set, so no address can be ordered",
-      "proxy-seller"
-    );
-  }
-  return new ProxySellerProvider(key);
-}
 
 export interface AllocationView {
   id: string;
@@ -191,100 +178,6 @@ export async function requestAllocation(
   return { allocationId: id, reused: false, pending: true };
 }
 
-/**
- * Buys and binds. **Runs on the worker, never in a request handler**, because
- * this is what calls the supplier and the supplier only answers our one fixed
- * address. See `requestAllocation` for the dashboard's half.
- *
- * Idempotent on the account: it returns an existing active binding rather than
- * buying a second address, because the invariant is one account and one address
- * and a retry must not cost money.
- */
-export async function allocateForAccount(
-  workspaceId: string,
-  linkedinAccountId: string,
-  country: string
-): Promise<AllocateResult> {
-  const iso = country.toUpperCase();
-  const now = new Date();
-
-  const [existing] = await db
-    .select()
-    .from(proxyAllocations)
-    .where(eq(proxyAllocations.linkedinAccountId, linkedinAccountId))
-    .limit(1);
-  if (existing) {
-    return { allocationId: existing.id, reused: true };
-  }
-
-  const spare = await takeFromPool(workspaceId, iso);
-  if (spare) {
-    await db
-      .update(proxyAllocations)
-      .set({
-        linkedinAccountId,
-        status: "active",
-        updatedAt: now,
-      })
-      .where(eq(proxyAllocations.id, spare.id));
-    await db
-      .update(linkedinAccounts)
-      .set({ proxyAllocationId: spare.id })
-      .where(eq(linkedinAccounts.id, linkedinAccountId));
-    return { allocationId: spare.id, reused: true };
-  }
-
-  // Nothing free, so buy exactly one. The row is written first with status
-  // `ordering` so a crash between the purchase and the write is visible as a
-  // stuck row rather than as money spent on an address nobody knows about.
-  const id = crypto.randomUUID();
-  const bought = await provider().purchase(iso, 1, TERM_DAYS);
-  const address = bought[0];
-  if (!address) {
-    throw new ProxyProviderError("Purchase returned no address", "proxy-seller");
-  }
-
-  const check = await checkExit(address);
-  const verdict = acceptForBinding(check, iso);
-
-  await db.insert(proxyAllocations).values({
-    id,
-    workspaceId,
-    country: iso,
-    provider: "proxy-seller",
-    host: address.host,
-    port: address.port,
-    usernameEncrypted: encryptApiKey(address.username) ?? "",
-    passwordEncrypted: encryptApiKey(address.password) ?? "",
-    providerRef: address.ref,
-    status: verdict.ok ? "active" : "cooling",
-    source: "managed",
-    linkedinAccountId: verdict.ok ? linkedinAccountId : null,
-    expiresAt: address.expiresAt,
-    autoRenew: true,
-    lastCheckedAt: now,
-    lastExitIp: check.ip || null,
-    lastAsn: check.asn,
-    lastAsnOrg: check.asnOrg,
-    exitLooksHosted: check.looksHosted,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  if (!verdict.ok) {
-    throw new ProxyProviderError(
-      `Address bought but not bound: ${verdict.reason}`,
-      "proxy-seller"
-    );
-  }
-
-  await db
-    .update(linkedinAccounts)
-    .set({ proxyAllocationId: id })
-    .where(eq(linkedinAccounts.id, linkedinAccountId));
-
-  return { allocationId: id, reused: false, warning: verdict.warn };
-}
 
 /**
  * Stores an address the customer brought themselves.

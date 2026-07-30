@@ -1006,6 +1006,14 @@ export const agents = sqliteTable("agents", {
   smartLeadFinder: integer("smart_lead_finder", { mode: "boolean" })
     .notNull()
     .default(true),
+  /**
+   * What the agent worked out to search for on its own, cached as JSON.
+   *
+   * Filled by the worker the first time smartLeadFinder has to fill a gap, and reused after, so
+   * deriving it costs one model call per agent rather than one per run. Clearing this column is
+   * how you make an agent re-read the business after the website changes.
+   */
+  derivedTargeting: text("derived_targeting"),
   timezone: text("timezone").notNull().default("Europe/Zurich"),
   // Minutes from midnight, so the envelope survives a timezone change.
   workdayStart: integer("workday_start").notNull().default(540),
