@@ -94,39 +94,28 @@ export async function openSession(
     rmSync(resolve(userDataDir, lock), { force: true });
   }
 
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    channel: "chrome",
-    // Headful under a virtual display. Section 8a layer 2.
-    headless: false,
-    viewport: fp.viewport,
-    userAgent: fp.userAgent,
-    locale: fp.locale,
-    timezoneId: fp.timezone,
-    ...(proxy
-      ? {
-          proxy: {
-            server: proxy.server,
-            username: proxy.username,
-            password: proxy.password,
-          },
-        }
-      : {}),
-    args: [
-      `--window-size=${fp.viewport.width},${fp.viewport.height}`,
-      // WebRTC would announce the real address regardless of the proxy, and
-      // IPv6 would route around it entirely. Both are the classic leak.
-      "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
-      "--disable-features=WebRtcHideLocalIpsWithMdns",
-      "--disable-ipv6",
-      // A container has no compositor telling Chrome it is visible, and a
-      // throttled renderer stalls the session.
-      "--disable-renderer-backgrounding",
-      "--disable-backgrounding-occluded-windows",
-      "--disable-features=CalculateNativeWinOcclusion",
-      "--no-first-run",
-      "--no-default-browser-check",
-    ],
-  });
+  // Chrome's first launch on a brand-new profile fails often enough to matter,
+  // and it fails hard: the process dies on SIGTRAP with crashpad complaining
+  // about its own socket, and nothing about the second attempt is different
+  // except that it works. It cost Maria's first sign-in on 2026-07-31.
+  //
+  // The profile is never deleted between attempts. It may already hold the
+  // session cookie, and throwing that away to fix a launch would turn a hiccup
+  // into a fresh sign-in that LinkedIn has to verify all over again.
+  let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>>;
+  try {
+    context = await launchChrome(userDataDir, fp, proxy);
+  } catch (error) {
+    log(`account ${target.linkedinAccountId}: Chrome did not start, trying once more`, {
+      reason: error instanceof Error ? error.message.split("\n")[0] : String(error),
+    });
+    await new Promise((r) => setTimeout(r, 3000));
+    for (const lock of ["SingletonLock", "SingletonSocket", "SingletonCookie"]) {
+      rmSync(resolve(userDataDir, lock), { force: true });
+    }
+    context = await launchChrome(userDataDir, fp, proxy);
+  }
+
 
   await context.addInitScript(fingerprintInitScript(fp));
 
@@ -195,4 +184,45 @@ export async function hasSessionCookie(
 ): Promise<boolean> {
   const cookies = await context.cookies("https://www.linkedin.com");
   return cookies.some((c) => c.name === cookieName && !!c.value);
+}
+
+/** One attempt at starting Chrome for this account, exactly as configured. */
+function launchChrome(
+  userDataDir: string,
+  fp: ReturnType<typeof fingerprintFor>,
+  proxy: ProxyAllocation | null
+) {
+  return chromium.launchPersistentContext(userDataDir, {
+    channel: "chrome",
+    // Headful under a virtual display. Section 8a layer 2.
+    headless: false,
+    viewport: fp.viewport,
+    userAgent: fp.userAgent,
+    locale: fp.locale,
+    timezoneId: fp.timezone,
+    ...(proxy
+      ? {
+          proxy: {
+            server: proxy.server,
+            username: proxy.username,
+            password: proxy.password,
+          },
+        }
+      : {}),
+    args: [
+      `--window-size=${fp.viewport.width},${fp.viewport.height}`,
+      // WebRTC would announce the real address regardless of the proxy, and
+      // IPv6 would route around it entirely. Both are the classic leak.
+      "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+      "--disable-features=WebRtcHideLocalIpsWithMdns",
+      "--disable-ipv6",
+      // A container has no compositor telling Chrome it is visible, and a
+      // throttled renderer stalls the session.
+      "--disable-renderer-backgrounding",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-features=CalculateNativeWinOcclusion",
+      "--no-first-run",
+      "--no-default-browser-check",
+    ],
+  });
 }
