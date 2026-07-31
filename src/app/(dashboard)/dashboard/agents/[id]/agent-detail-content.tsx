@@ -1014,7 +1014,14 @@ function ActivityChart({ days }: { days: ChartDay[] }) {
           </span>
         </div>
       </div>
-      <div className="p-4">
+      <div className="relative p-4">
+        {/* A week of flat stubs and nothing else reads as a broken chart rather
+            than as a quiet week, so an empty one says which it is. */}
+        {peak === 1 && days.every((d) => !d.leads && !d.invitations && !d.messages) && (
+          <p className="absolute inset-x-0 top-14 text-center text-[13px] text-slate-400 dark:text-slate-500">
+            Nothing yet this week.
+          </p>
+        )}
         <div className="flex h-[130px] items-end gap-2.5">
           {days.map((day, i) => {
             const empty = !day.leads && !day.invitations && !day.messages;
