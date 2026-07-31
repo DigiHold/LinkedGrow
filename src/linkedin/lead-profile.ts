@@ -182,7 +182,17 @@ export async function readLeadProfile(
           )
           .join(" ")
           .trim();
-        if (body.length > 40) recentPosts.push(body.slice(0, 700));
+        // Each chunk still opens with the author's own byline: the connection
+        // degree, their headline, then the age of the post. The post itself
+        // starts after that age marker, which is the one part of the preamble
+        // with a shape rather than a wording.
+        const started = /\b\d+\s*(h|d|w|mo|y|hours?|days?|weeks?|months?|years?)\b\s*[•·]?\s*/i.exec(
+          body
+        );
+        const text = started
+          ? body.slice((started.index ?? 0) + started[0].length).trim()
+          : body;
+        if (text.length > 40) recentPosts.push(text.slice(0, 700));
         if (recentPosts.length >= 5) break;
       }
     }
