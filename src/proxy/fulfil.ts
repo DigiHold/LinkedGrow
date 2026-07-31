@@ -221,6 +221,31 @@ async function claimFromPool(row: { id: string; country: string }): Promise<bool
 }
 
 /**
+ * The login and password for an order, which do not live on the proxy row.
+ *
+ * `generateAuth: "Y"` on the order does create them, and the proxy listing then
+ * reports an empty login and an empty password, which reads exactly like "this
+ * address needs no credentials". It is not: the credentials are their own
+ * objects, listed separately and tied back by an order number that starts with
+ * the order id. Reading the proxy row alone produces an address that times out
+ * on every request, which is what happened on 2026-07-30.
+ */
+export async function credentialsForOrder(
+  orderId: string | number
+): Promise<{ login: string; password: string } | null> {
+  const list = await call<Array<{ login?: string; password?: string; orderNumber?: string; active?: boolean }>>(
+    "GET",
+    "auth/list"
+  );
+  const prefix = `${orderId}_`;
+  const found = (list ?? []).find(
+    (a) => a.active !== false && String(a.orderNumber ?? "").startsWith(prefix)
+  );
+  if (!found?.login) return null;
+  return { login: String(found.login), password: String(found.password ?? "") };
+}
+
+/**
  * The address belonging to an order, waited for rather than read once.
  *
  * The supplier pays the order first and provisions the address a moment later,
@@ -297,9 +322,13 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
   }
 
   const host = String(mine.ip);
-  const port = Number(mine.port_socks ?? mine.port_http ?? 0);
-  const user = String(mine.login ?? "");
-  const pass = String(mine.password ?? "");
+  // The HTTP port, because everything downstream speaks HTTP CONNECT: undici's
+  // ProxyAgent here and Chrome's --proxy-server in the driver. Preferring the
+  // socks port meant every single request through a bought address timed out.
+  const port = Number(mine.port_http ?? mine.port_socks ?? 0);
+  const auth = await credentialsForOrder(orderId);
+  const user = auth?.login ?? String(mine.login ?? "");
+  const pass = auth?.password ?? String(mine.password ?? "");
 
   const exit = await checkExit(host, port, user, pass);
   if (exit.error || !exit.ip) {

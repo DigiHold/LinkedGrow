@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { db } from "../db.ts";
 import { log } from "../logger.ts";
-import { addressForOrder, checkExit, encryptFor } from "./fulfil.ts";
+import { addressForOrder, checkExit, credentialsForOrder, encryptFor } from "./fulfil.ts";
 
 /**
  * Bringing an address that was paid for into the database by hand.
@@ -37,9 +37,10 @@ async function main(): Promise<void> {
   }
 
   const host = String(mine.ip);
-  const port = Number(mine.port_socks ?? mine.port_http ?? 0);
-  const user = String(mine.login ?? "");
-  const pass = String(mine.password ?? "");
+  const port = Number(mine.port_http ?? mine.port_socks ?? 0);
+  const auth = await credentialsForOrder(orderId);
+  const user = auth?.login ?? String(mine.login ?? "");
+  const pass = auth?.password ?? String(mine.password ?? "");
 
   // The same check a bought address gets. An address that cannot answer is
   // worse than no address, because the account would try to use it.
