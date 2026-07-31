@@ -393,13 +393,24 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
   // The registry, second, and it is the one that catches a reseller's geofeed.
   // See registryCountry: a geolocation database can be talked into saying Paris
   // about a Lithuanian block, and LinkedIn's did not agree.
-  if (
-    exit.registryCountry &&
-    exit.registryCountry !== row.country.toUpperCase()
-  ) {
-    throw new Error(
-      `Bought ${host} and geolocation calls it ${exit.country}, but it is registered in ${exit.registryCountry}, not ${row.country}. Platforms follow the registration, so this address would have the account signing in from two different countries.`
-    );
+  //
+  // Recorded and shouted about rather than refused, and the difference matters.
+  // The IP is only knowable after the money is spent, so throwing here strands
+  // a paid address AND the customer waiting on it. If a supplier's whole French
+  // range sits on a Lithuanian registration, refusing would quietly stop every
+  // French signup in the product rather than fix anything. Whether that range
+  // is acceptable is a decision about a supplier, so it belongs to a person who
+  // can call one, and this makes sure that person finds out.
+  const registryMismatch =
+    !!exit.registryCountry && exit.registryCountry !== row.country.toUpperCase();
+  if (registryMismatch) {
+    log("ADDRESS REGISTERED IN THE WRONG COUNTRY, expect inconsistent locations", {
+      allocation: row.id,
+      exit: exit.ip,
+      soldAs: row.country.toUpperCase(),
+      geolocatesTo: exit.country,
+      registeredIn: exit.registryCountry,
+    });
   }
   if (exit.looksHosted) {
     log("address exits on what reads as a hosting network", {
@@ -415,7 +426,7 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
              SET host = ?, port = ?, username_encrypted = ?, password_encrypted = ?,
                  provider_ref = ?, status = 'active', expires_at = ?,
                  last_checked_at = ?, last_exit_ip = ?, last_asn = ?, last_asn_org = ?,
-                 exit_looks_hosted = ?, updated_at = ?
+                 exit_looks_hosted = ?, registry_country = ?, updated_at = ?
            WHERE id = ? AND status = 'ordering'`,
     args: [
       host,
@@ -433,6 +444,7 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
       exit.asn,
       exit.asnOrg,
       exit.looksHosted ? 1 : 0,
+      exit.registryCountry,
       Math.floor(Date.now() / 1000),
       row.id,
     ],

@@ -91,7 +91,11 @@ test("a bought address is checked against the registry, not just a geo database"
   assert.match(src, /rdap/i, "the registry is not queried over RDAP");
   assert.match(
     src,
-    /exit\.registryCountry &&[\s\S]{0,120}!==[\s\S]{0,80}throw new Error/,
-    "a registration in the wrong country does not stop the purchase"
+    /registryMismatch[\s\S]{0,200}ADDRESS REGISTERED IN THE WRONG COUNTRY/,
+    "a registration in the wrong country passes without anyone being told"
   );
+  // Deliberately not a refusal: the address is only knowable after it is paid
+  // for, so throwing would strand the money and the customer both, and would
+  // stop every signup in a country whose whole range is registered elsewhere.
+  assert.match(src, /registry_country = \?/, "the mismatch is not written down anywhere");
 });
