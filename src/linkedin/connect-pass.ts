@@ -34,6 +34,31 @@ interface Waiting {
   country: string;
 }
 
+
+/**
+ * Says so, on the account, when its credentials cannot be read.
+ *
+ * This is not a transient failure and retrying it every minute for ever helps
+ * nobody: the stored value was written under a different key and no amount of
+ * waiting changes that. The customer sees a sentence telling them to reconnect,
+ * which is the one action that fixes it.
+ */
+async function unreadable(accountId: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET status = 'challenged',
+                 status_reason = ?,
+                 updated_at = ?
+           WHERE id = ? AND status = 'pending'`,
+    args: [
+      "This account's sign-in details could not be read. Disconnect it and connect it again.",
+      Math.floor(Date.now() / 1000),
+      accountId,
+    ],
+  });
+  log("account credentials cannot be decrypted, asking for a reconnection", { accountId });
+}
+
 async function loadWaiting(): Promise<Waiting[]> {
   const { rows } = await db().execute(
     `SELECT id, workspace_id, email, password_encrypted, totp_secret_encrypted, country
@@ -44,16 +69,28 @@ async function loadWaiting(): Promise<Waiting[]> {
   );
   const out: Waiting[] = [];
   for (const row of rows) {
-    const password = decryptSecret(String(row.password_encrypted ?? ""));
-    if (!password) {
-      log("account has no readable password, leaving it alone", { accountId: String(row.id) });
+    const id = String(row.id);
+    // Decryption throws rather than returning null when the key does not match
+    // what wrote the value, and it used to throw straight out of this loop. One
+    // account encrypted under a key the worker does not have therefore stopped
+    // every other account on the box from signing in, once a minute, silently.
+    let password: string | null = null;
+    let totp: string | null = null;
+    try {
+      password = decryptSecret(String(row.password_encrypted ?? ""));
+      totp = row.totp_secret_encrypted
+        ? decryptSecret(String(row.totp_secret_encrypted))
+        : "";
+    } catch {
+      await unreadable(id);
       continue;
     }
-    const totp = row.totp_secret_encrypted
-      ? decryptSecret(String(row.totp_secret_encrypted))
-      : "";
+    if (!password) {
+      await unreadable(id);
+      continue;
+    }
     out.push({
-      id: String(row.id),
+      id,
       workspaceId: String(row.workspace_id),
       email: String(row.email),
       password,
