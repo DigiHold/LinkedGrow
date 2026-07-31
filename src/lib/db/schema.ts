@@ -1409,7 +1409,16 @@ export const agentActivity = sqliteTable("agent_activity", {
   subjectUrl: text("subject_url"),
   /** What it is working on when there is no person: a search term, a source. */
   detail: text("detail"),
+  /** When this action began. The clock on screen counts from here. */
   startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  /**
+   * The last sign of life, which is what decides whether to believe the row.
+   *
+   * Mining one competitor runs for minutes at a human pace, so a single
+   * freshness window measured from the start would go dark while the agent was
+   * still working. The worker pulses this every half minute instead.
+   */
+  beatAt: integer("beat_at", { mode: "timestamp" }),
 });
 
 // The activity log. message is a finished plain-English phrase, per section 2c,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { desc, eq, gte, inArray, and } from "drizzle-orm";
+import { desc, eq, gte, inArray, and, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { agentActivity, agentEvents, agents } from "@/lib/db/schema";
@@ -22,15 +22,15 @@ import { loadSessionUser } from "@/lib/auth-user";
 const LIMIT = 12;
 
 /**
- * How long a "doing" record is believed.
+ * How long a "doing" record is believed, counted from its last heartbeat.
  *
- * The pacing layer means a single action takes tens of seconds and a sourcing
- * pass takes minutes, so this has to be generous. It also has to expire: when
- * the watchdog kills a hung session the row is left behind, and without a
- * window the dashboard would claim for hours that the agent is still liking a
- * post it abandoned.
+ * The worker pulses `beat_at` every half minute for as long as it is really
+ * working, so this only has to outlast a few missed pulses rather than a whole
+ * mining run. It has to expire at all because a session the watchdog kills
+ * leaves its row behind, and without a window the dashboard would claim for
+ * hours that the agent is still liking a post it abandoned.
  */
-const DOING_MS = 5 * 60 * 1000;
+const DOING_MS = 2 * 60 * 1000;
 
 export async function GET() {
   try {
@@ -65,12 +65,19 @@ export async function GET() {
           subjectUrl: agentActivity.subjectUrl,
           detail: agentActivity.detail,
           startedAt: agentActivity.startedAt,
+          beatAt: agentActivity.beatAt,
         })
         .from(agentActivity)
         .where(
           and(
             inArray(agentActivity.agentId, ids),
-            gte(agentActivity.startedAt, new Date(Date.now() - DOING_MS))
+            // Believed for as long as it keeps pulsing, not for a fixed span
+            // after it began. A row with no heartbeat at all predates the
+            // column and falls back to its start time.
+            gte(
+              sql`COALESCE(${agentActivity.beatAt}, ${agentActivity.startedAt})`,
+              Math.floor((Date.now() - DOING_MS) / 1000)
+            )
           )
         )
         .orderBy(desc(agentActivity.startedAt)),
