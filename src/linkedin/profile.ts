@@ -95,51 +95,84 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
   }
 
   const read = await page.evaluate(() => {
-    const main = document.querySelector("main");
-
     /**
-     * The name, from the page title first.
+     * Anchored on `componentkey`, which is the one attribute LinkedIn's own
+     * renderer puts there on purpose.
      *
-     * It used to be read as "the only h1 on a profile". Verified against the
-     * live page on 2026-07-31: a profile now has no h1 at all, anywhere in the
-     * document, and no .text-body-medium either. The name sits in an h2 among
-     * the section headings, and there are no meta tags to fall back on because
-     * the page is rendered client side.
+     * Every class on this page is a content hash: `e0ce24f6`, `_1f7cdc35`.
+     * They change without notice and they are unreadable, so they cannot be
+     * used as landmarks. Nicolas found the alternative on 2026-07-31 and it is
+     * the right one: `componentkey` names the component, survives restyling,
+     * and some of the values even carry the profile slug.
      *
-     * So the title is the primary source. It is "Maria LECOCQ | LinkedIn",
-     * it has survived every redesign, and it does not depend on a class name.
-     * The heading is the cross-check and the fallback.
+     * What the old code did instead, and why all three fields came back empty:
+     * it looked for the only `h1` (a profile now has no `h1` anywhere in the
+     * document), for `.text-body-medium` (gone), and for an image whose `alt`
+     * contains the member's name. That last one is the instructive failure. It
+     * happened to work on Maria's profile and returns nothing on Nicolas's,
+     * where the same image carries `alt=""`.
      */
+    const main = document.querySelector("main");
+    const topcard =
+      (document.querySelector('[componentkey$="topcard"]') as HTMLElement | null) ??
+      (main as HTMLElement | null);
+
+    // The name, from the component built around it. The page title is the
+    // cross-check: it reads "Maria LECOCQ | LinkedIn" and has outlived every
+    // redesign.
+    const fromComponent = (
+      document.querySelector('[componentkey^="ProfileVerificationTriggerRef-"]') as
+        | HTMLElement
+        | null
+    )?.innerText?.trim();
     const fromTitle = (document.title.split("|")[0] ?? "").trim();
-    const headings = Array.from(
-      main?.querySelectorAll('h1, h2, [role="heading"]') ?? []
-    )
-      .map((e) => (e.textContent ?? "").trim())
-      .filter(Boolean);
-    const name = fromTitle || headings[0] || "";
+    const name = fromComponent || fromTitle || "";
 
     /**
-     * The headline, which is the line printed under the name.
+     * The headline, which has no component key of its own.
      *
-     * Read positionally rather than by selector, because the selector it used
-     * to have is gone and the next one will go too. Everything between the
-     * name and the location is the professional headline; the few fixed labels
-     * that can appear in between are skipped by name.
+     * Structure instead, read off both of the real profiles this was built
+     * against: the name sits in a stack of nested divs, and the headline is
+     * the first `<p>` that follows that stack as a sibling. Everything after
+     * it (location, "Contact info", follower counts) is inside a further div,
+     * so the first sibling paragraph is unambiguous.
+     *
+     *   <div>… <a componentkey="ProfileVerificationTriggerRef-…"><h2>Name</h2></a> …</div>
+     *   <p>The headline</p>
+     *   <div><p>Paris, Île-de-France, France</p><p>·</p><p>Contact info</p></div>
      */
     let headline = "";
-    const lines = ((main as HTMLElement | null)?.innerText ?? "")
+    const anchor = document.querySelector(
+      '[componentkey^="ProfileVerificationTriggerRef-"]'
+    );
+    let climb: Element | null = anchor;
+    for (let hop = 0; climb && hop < 6; hop++) {
+      const next = climb.nextElementSibling;
+      if (next?.tagName === "P") {
+        const text = (next as HTMLElement).innerText.trim();
+        if (text && text !== name && text.length <= 220) {
+          headline = text;
+          break;
+        }
+      }
+      climb = climb.parentElement;
+    }
+
+    // Failing that, the line under the name. Kept because the structure above
+    // is two profiles' worth of evidence, not a contract.
+    const lines = (topcard?.innerText ?? "")
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
-    const at = lines.findIndex((l) => l === name);
+    const at = headline ? -1 : lines.findIndex((l) => l === name);
     if (at >= 0) {
       const skip =
-        /^(contact info|see contact info|add profile section|open to|enhance profile|analytics|\d+(st|nd|rd|th)\s|following|followers|connections|·)/i;
+        /^(contact info|see contact info|add profile section|add section|open to|enhance profile|resources|analytics|\d+(st|nd|rd|th)\s|following|followers|connections|·)/i;
       for (let i = at + 1; i < Math.min(at + 6, lines.length); i++) {
         const candidate = lines[i] as string;
         if (skip.test(candidate) || candidate.length > 220) continue;
-        // A line that is nothing but a parenthesis is the maiden or former
-        // name LinkedIn prints under the current one. Maria's profile shows
+        // A line that is nothing but brackets is the maiden or former name
+        // LinkedIn prints under the current one. Maria's profile shows
         // "(Maria Nassif)" there and it was stored as her job title.
         if (/^\(.*\)$/.test(candidate)) continue;
         headline = candidate;
@@ -147,17 +180,39 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
       }
     }
 
-    // The profile photo, never the background image and never a suggestion in
-    // the sidebar: it is the one whose alt carries the member's own name. This
-    // worked all along and failed only because the name above was empty.
+    /**
+     * The photo, from the component that holds it, at the largest size offered.
+     *
+     * `src` on that image is the 100x100 thumbnail, which is how a stored
+     * avatar came out at 4KB. The `srcset` carries the same photo up to 800
+     * wide for nothing extra, so take the widest candidate in it.
+     */
+    const widest = (img: HTMLImageElement): string => {
+      const best = (img.getAttribute("srcset") ?? "")
+        .split(",")
+        .map((part) => part.trim().split(/\s+/))
+        .map(([url, size]) => ({ url: url ?? "", w: parseInt(size ?? "0", 10) || 0 }))
+        .filter((c) => c.url)
+        .sort((a, b) => b.w - a.w)[0];
+      return best?.url || img.src;
+    };
+
     let photo = "";
-    for (const img of Array.from(main?.querySelectorAll("img") ?? [])) {
-      const el = img as HTMLImageElement;
-      const alt = (el.alt ?? "").trim();
-      if (!el.src || !alt) continue;
-      if (name && alt.includes(name)) {
-        photo = el.src;
-        break;
+    const holder = document.querySelector(
+      '[componentkey="topcard-logo-image-referencekey"]'
+    );
+    const own = holder?.querySelector("img") as HTMLImageElement | null;
+    if (own?.src) photo = widest(own);
+
+    // Only if the component is not there. Kept because it costs nothing and an
+    // older layout should still produce a picture.
+    if (!photo && name) {
+      for (const img of Array.from(main?.querySelectorAll("img") ?? [])) {
+        const el = img as HTMLImageElement;
+        if (el.src && (el.alt ?? "").includes(name)) {
+          photo = widest(el);
+          break;
+        }
       }
     }
     return { name, headline, photo };
