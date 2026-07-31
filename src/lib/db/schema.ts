@@ -921,7 +921,10 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
    * the moment it is used.
    */
   challengeState: text("challenge_state", {
-    enum: ["none", "awaiting_code", "submitted", "failed"],
+    // `awaiting_approval` is the one a real account actually meets: LinkedIn
+    // pushes a notification to the phones already carrying its app and waits
+    // for a tap on Yes, with no code and no input anywhere on the page.
+    enum: ["none", "awaiting_code", "awaiting_approval", "submitted", "failed"],
   })
     .notNull()
     .default("none"),

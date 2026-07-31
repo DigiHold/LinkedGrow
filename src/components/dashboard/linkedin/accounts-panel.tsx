@@ -97,6 +97,7 @@ export interface LinkedInAccount {
   country: string;
   status: string;
   statusReason: string | null;
+  challengeState: string;
   warmupStartedAt: string | null;
   dailyInviteCap: number;
   agentCount: number;
@@ -355,7 +356,9 @@ export function LinkedInAccountsPanel({
                     worker stops trying after three failures on purpose, so
                     somebody has to be able to say go. */}
                 {(account.status === "challenged" ||
-                  account.status === "restricted") && (
+                  account.status === "restricted") &&
+                  account.challengeState !== "awaiting_code" &&
+                  account.challengeState !== "awaiting_approval" && (
                   <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-[13px] leading-relaxed text-amber-800 dark:text-amber-200">
                       {account.statusReason ??
@@ -482,6 +485,7 @@ function SignInProgress({
   const [state, setState] = useState<{
     status: string;
     reason: string | null;
+    challengeState: string;
   } | null>(null);
 
   useEffect(() => {
@@ -490,8 +494,18 @@ function SignInProgress({
       try {
         const res = await fetch(`/api/linkedin/accounts/${accountId}/challenge`);
         if (!res.ok || !live) return;
-        const data = (await res.json()) as { status: string; reason: string | null };
-        if (live) setState({ status: data.status, reason: data.reason });
+        const data = (await res.json()) as {
+          status: string;
+          reason: string | null;
+          state: string;
+        };
+        if (live) {
+          setState({
+            status: data.status,
+            reason: data.reason,
+            challengeState: data.state,
+          });
+        }
       } catch {
         // One missed poll changes nothing. The next is two seconds away.
       }
@@ -506,7 +520,13 @@ function SignInProgress({
 
   const status = state?.status ?? "pending";
   const done = status === "active";
-  const stopped = status === "challenged" || status === "restricted";
+  // A browser waiting for a code or a tap is `challenged` too, and it is the
+  // opposite of stopped: the prompt below is live and the session is held open.
+  const waitingOnYou =
+    state?.challengeState === "awaiting_code" ||
+    state?.challengeState === "awaiting_approval";
+  const stopped =
+    !waitingOnYou && (status === "challenged" || status === "restricted");
 
   return (
     <div className="space-y-4">

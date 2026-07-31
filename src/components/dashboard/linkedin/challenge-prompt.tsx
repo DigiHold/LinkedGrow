@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
  */
 
 interface ChallengeState {
-  state: "none" | "awaiting_code" | "submitted" | "failed";
+  state: "none" | "awaiting_code" | "awaiting_approval" | "submitted" | "failed";
   kind: string | null;
   reason: string | null;
   /** The account's own state, which is what says the sign-in finished. */
@@ -93,8 +93,39 @@ export function ChallengePrompt({
     }
   };
 
-  if (!info || (info.state !== "awaiting_code" && info.state !== "failed")) {
+  if (
+    !info ||
+    (info.state !== "awaiting_code" &&
+      info.state !== "awaiting_approval" &&
+      info.state !== "failed")
+  ) {
     return null;
+  }
+
+  /**
+   * The tap, not a code.
+   *
+   * LinkedIn's usual checkpoint for an account signing in somewhere new sends a
+   * notification to the phones already carrying the LinkedIn app. There is
+   * nothing to type, so showing a code box here would ask for something that
+   * does not exist and leave the person hunting for it. The browser is holding
+   * the page open and finishes on its own the moment they tap Yes.
+   */
+  if (info.state === "awaiting_approval") {
+    return (
+      <div className="flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-4">
+        <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-primary" />
+        <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
+          <span className="font-semibold text-slate-900 dark:text-white">
+            Open the LinkedIn app on your phone and tap Yes.
+          </span>{" "}
+          LinkedIn sent it a notification to confirm this sign-in for {label}.
+          Nothing to type here, and it finishes on its own once you tap. We tick
+          the box that tells LinkedIn to remember the device, so it only asks
+          the once.
+        </p>
+      </div>
+    );
   }
 
   if (info.state === "failed") {

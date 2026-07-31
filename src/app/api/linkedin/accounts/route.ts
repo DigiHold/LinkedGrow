@@ -55,6 +55,10 @@ export async function GET() {
         // verification" and nothing else leaves the person with no idea what to
         // do next; the worker writes the what and the why into this column.
         statusReason: linkedinAccounts.statusReason,
+        // A browser holding a page open for a code or a tap is not a stopped
+        // account, even though both are `challenged`. Without this the row
+        // offers Try again underneath a prompt that is already working.
+        challengeState: linkedinAccounts.challengeState,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         agentCount: count(agents.id),
@@ -79,6 +83,7 @@ export async function GET() {
         country: r.country,
         status: r.status,
         statusReason: r.statusReason,
+        challengeState: r.challengeState,
         warmupStartedAt: r.warmupStartedAt,
         dailyInviteCap: r.dailyInviteCap,
         agentCount: r.agentCount,
