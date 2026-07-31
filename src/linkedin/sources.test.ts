@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { toViewer, passesSignalGates, looksLikeBuyer, type SignalKind } from "./sources.ts";
 import { parseCard } from "./miner.ts";
 import type { Config } from "../config.ts";
+import { splitHeadline } from "./sourcing.ts";
 
 const HREF = "https://www.linkedin.com/in/ACoAAENZabc123DEF456/";
 
@@ -62,4 +63,26 @@ test("looksLikeBuyer keeps decision makers", () => {
   assert.equal(looksLikeBuyer("Head of Growth at a SaaS"), true);
   assert.equal(looksLikeBuyer("Technical Recruiter at Acme"), false);
   assert.equal(looksLikeBuyer("Computer Science Student"), false);
+});
+
+/**
+ * The job title and the company have columns and were never filled.
+ *
+ * Every lead arrived with a headline and two empty fields, so nothing could
+ * group or sort by either. The headline already carries both in the shape
+ * people write it, and reading it costs no LinkedIn traffic at all.
+ */
+test("the job title and the company are read out of the headline", () => {
+  const cases: Array<[string, string | null, string | null]> = [
+    ["Senior Software Engineer @Brainstormforce | PHP, JS", "Senior Software Engineer", "Brainstormforce"],
+    ["Head of Growth at Acme", "Head of Growth", "Acme"],
+    ["Fondateur de schoolsWP | Formateur WordPress", "Fondateur", "schoolsWP"],
+    ["Freelance WordPress developer", "Freelance WordPress developer", null],
+    ["", null, null],
+  ];
+  for (const [headline, title, company] of cases) {
+    const got = splitHeadline(headline);
+    assert.equal(got.jobTitle, title, `title for "${headline}"`);
+    assert.equal(got.company, company, `company for "${headline}"`);
+  }
 });

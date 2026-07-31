@@ -89,6 +89,8 @@ async function claimAll(
       profileUrl: person.profileUrl,
       fullName: person.fullName,
       headline: person.headline ?? null,
+      // Split out of the headline, which already carries both.
+      ...splitHeadline(person.headline ?? null),
       // As LinkedIn served it. The insights pass copies it into our own bucket
       // afterwards, because these URLs expire and a lead should not lose its
       // face a week after it was found.
@@ -117,6 +119,51 @@ async function claimAll(
  * Runs inside the session the caller already opened, so it costs no extra
  * sign-in and shares the address and the pacing of everything else.
  */
+/**
+ * The job title and the company, read out of the headline.
+ *
+ * They have their own columns and nothing ever filled them, so every lead
+ * arrived with a headline and two empty fields, and the dashboard could not
+ * group or sort by either. The headline already carries both in the shape
+ * people write it: "Senior Software Engineer @Brainstormforce", "Fondateur de
+ * schoolsWP | Formateur WordPress", "Head of Growth at Acme".
+ *
+ * Read rather than guessed: no separator means no company, and the title is
+ * whatever came before it. Nothing here visits a profile.
+ */
+export function splitHeadline(headline: string | null): {
+  jobTitle: string | null;
+  company: string | null;
+} {
+  const raw = (headline ?? "").trim();
+  if (!raw) return { jobTitle: null, company: null };
+
+  // Everything up to the first separator is the role people lead with.
+  const first = raw.split(/\s[|·•]\s|\s[-–—]\s/)[0]?.trim() ?? raw;
+
+  // "@Acme" carries no space after the sign; "at Acme" needs one, or every
+  // headline containing the word "at" would lose half its title.
+  const at =
+    /\s@\s*(.+)$/.exec(first) ?? /\s(?:at|chez|bei|presso)\s+(.+)$/i.exec(first);
+  if (at) {
+    const company = (at[1] ?? "").trim().replace(/[.,;]$/, "");
+    const title = first.slice(0, at.index).trim();
+    return {
+      jobTitle: title.slice(0, 120) || null,
+      company: company.slice(0, 120) || null,
+    };
+  }
+  // "Fondateur de schoolsWP": the same shape with a different preposition.
+  const of = /^(.+?)\s+(?:de|du|of)\s+(.+)$/i.exec(first);
+  if (of && (of[2] ?? "").length <= 40) {
+    return {
+      jobTitle: (of[1] ?? "").trim().slice(0, 120) || null,
+      company: (of[2] ?? "").trim().slice(0, 120) || null,
+    };
+  }
+  return { jobTitle: first.slice(0, 120) || null, company: null };
+}
+
 export async function sourcePass(
   ctx: AgentContext,
   page: Page,
