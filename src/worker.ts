@@ -65,6 +65,17 @@ const PUBLISH_INTERVAL_MS = 60 * 1000;
 /** Reading back how posts did is never urgent, and the numbers move slowly. */
 const INSIGHTS_INTERVAL_MS = 30 * 60 * 1000;
 
+/**
+ * Connecting is the only loop with somebody watching a spinner in real time.
+ *
+ * It used to ride the publishing loop, so a customer who had just typed their
+ * password waited up to a minute before anything at all began, on top of the
+ * minute the sign-in itself honestly takes. Two minutes of nothing reads as a
+ * broken page, and it was read that way. Both passes underneath are a single
+ * indexed query that returns nothing the rest of the time.
+ */
+const CONNECT_INTERVAL_MS = 8 * 1000;
+
 async function runAgent(ctx: AgentContext): Promise<void> {
   // Two windows, because the two halves carry different risk. Reading runs on
   // an extended day so a customer who signs up in the evening sees their first
@@ -320,30 +331,38 @@ async function agentLoop(): Promise<void> {
 async function publishLoop(): Promise<void> {
   for (;;) {
     try {
-      // The address first, because the sign-in cannot start without one and
-      // refuses to run from the server's own. This used to sit in the
-      // five-minute pass, so somebody who had just connected an account watched
-      // a spinner for up to five minutes while a free address sat in the
-      // buffer. It costs one indexed query when there is nothing to buy.
-      await fulfilPendingAllocations();
-    } catch (error) {
-      logError("allocation pass failed", error);
-    }
-    try {
-      // Then the sign-in. Connecting is the other moment the customer is
-      // certainly watching, and LinkedIn's verification code expires in thirty
-      // seconds. Nothing called signIn at all until 2026-07-31: an account sat
-      // at "waiting for its first sign-in" for ever.
-      await connectPass();
-    } catch (error) {
-      logError("sign-in pass failed", error);
-    }
-    try {
       await publishPass();
     } catch (error) {
       logError("publish pass failed", error);
     }
     await sleep(PUBLISH_INTERVAL_MS);
+  }
+}
+
+/**
+ * Getting a newly connected account onto LinkedIn, while its owner watches.
+ *
+ * The address comes first, because the sign-in cannot start without one and
+ * refuses to run from the server's own. Then the sign-in, which is also where
+ * LinkedIn's verification code lands, and that code is dead thirty seconds
+ * after it is read off a phone.
+ *
+ * Nothing called signIn at all until 2026-07-31: an account sat at "waiting for
+ * its first sign-in" for ever, and the dialog span for ever above it.
+ */
+async function connectLoop(): Promise<void> {
+  for (;;) {
+    try {
+      await fulfilPendingAllocations();
+    } catch (error) {
+      logError("allocation pass failed", error);
+    }
+    try {
+      await connectPass();
+    } catch (error) {
+      logError("sign-in pass failed", error);
+    }
+    await sleep(CONNECT_INTERVAL_MS);
   }
 }
 
@@ -368,7 +387,7 @@ async function main(): Promise<void> {
   // No loop ever returns, and none may take the others down: a thrown error
   // inside one is already handled per pass, and Promise.all here only keeps the
   // process alive.
-  await Promise.all([agentLoop(), publishLoop(), insightsLoop()]);
+  await Promise.all([agentLoop(), connectLoop(), publishLoop(), insightsLoop()]);
 }
 
 if (import.meta.filename === process.argv[1]) {

@@ -132,6 +132,30 @@ test("a connected account is actually signed in by something", () => {
 });
 
 /**
+ * A sign-in that keeps failing has to stop, and has to say so.
+ *
+ * The connect loop reads every account still marked `pending`, so a mistyped
+ * password means another sign-in attempt every few seconds, from one address,
+ * for ever. That is the exact shape of traffic that gets a real profile
+ * restricted, and the customer would meanwhile watch a spinner that never
+ * resolves because nothing ever writes a failure anywhere.
+ */
+test("a sign-in that keeps failing stops, backs off, and tells the customer", () => {
+  const src = read("../linkedin/connect-pass.ts");
+  assert.match(src, /sign_in_attempts < \?/, "nothing bounds how many times a sign-in is retried");
+  assert.match(src, /last_check_at <= \? -/, "failed attempts are retried with no gap between them");
+  assert.match(
+    src,
+    /challenge_state = 'none'/,
+    "an account waiting on its owner for a code is picked up again automatically"
+  );
+  assert.match(src, /async function givenUp/, "giving up leaves the account looking merely slow");
+  // The progress line is the difference between a minute of silence and a
+  // minute of "signing in". Both are a minute; only one reads as working.
+  assert.match(src, /await progress\(/, "the worker never says what it is doing");
+});
+
+/**
  * One vocabulary for an account's state.
  *
  * The type said connected/checkpoint, the sign-in wrote active/challenged, and

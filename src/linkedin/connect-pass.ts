@@ -32,8 +32,70 @@ interface Waiting {
   password: string;
   totpSecret: string | null;
   country: string;
+  attempts: number;
 }
 
+/**
+ * How many times a connection is allowed to fail before it stops trying.
+ *
+ * Without a ceiling this loop retries a failing sign-in every few seconds for
+ * ever. An account with a mistyped password would therefore hammer LinkedIn's
+ * login form all night from one address, which is exactly the pattern that gets
+ * a real profile restricted. The customer's mistake must cost them a message,
+ * not their account.
+ */
+const MAX_ATTEMPTS = 3;
+
+/** Seconds to wait before attempt n+1, indexed by attempts already made. */
+const BACKOFF_SECONDS = [0, 120, 600];
+
+/**
+ * A line for the customer, while they are watching the dialog.
+ *
+ * Connecting is the one step where somebody is certainly staring at the screen,
+ * and it takes a minute or two by design: the sign-in types at a human pace on
+ * a residential address. Without a word from the worker that minute looks
+ * exactly like a hung page, which is what it was mistaken for on 2026-07-31.
+ *
+ * Guarded so it can never overwrite something more important. `signIn` writes
+ * real messages into the same column while the account is still `pending`, and
+ * a progress line landing on top of "LinkedIn did not accept that code" would
+ * be worse than saying nothing at all.
+ */
+async function progress(accountId: string, line: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET status_reason = ?, updated_at = ?
+           WHERE id = ? AND status = 'pending' AND challenge_state = 'none'`,
+    args: [line, Math.floor(Date.now() / 1000), accountId],
+  });
+}
+
+/** Records that an attempt is starting, so a crash still counts as a try. */
+async function attemptStarts(accountId: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET sign_in_attempts = sign_in_attempts + 1,
+                 last_check_at = ?, updated_at = ?
+           WHERE id = ?`,
+    args: [Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000), accountId],
+  });
+}
+
+/** Nothing more will be tried on its own, and the customer is told why. */
+async function givenUp(accountId: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET status = 'challenged', status_reason = ?, updated_at = ?
+           WHERE id = ? AND status = 'pending'`,
+    args: [
+      `LinkedIn did not let this account sign in, after ${MAX_ATTEMPTS} tries. The usual cause is the password. Disconnect it and connect it again with the password you use on linkedin.com.`,
+      Math.floor(Date.now() / 1000),
+      accountId,
+    ],
+  });
+  log("sign-in given up on, waiting for the customer", { accountId });
+}
 
 /**
  * Says so, on the account, when its credentials cannot be read.
@@ -60,13 +122,30 @@ async function unreadable(accountId: string): Promise<void> {
 }
 
 async function loadWaiting(): Promise<Waiting[]> {
-  const { rows } = await db().execute(
-    `SELECT id, workspace_id, email, password_encrypted, totp_secret_encrypted, country
-       FROM linkedin_accounts
-      WHERE status = 'pending'
-      ORDER BY created_at
-      LIMIT 3`
-  );
+  // Three conditions beyond "pending", and each one exists because of a way
+  // this loop can otherwise run for ever:
+  //
+  //   challenge_state != 'failed'  a sign-in that timed out waiting for a code
+  //                                needs the customer, not another attempt
+  //   sign_in_attempts             the ceiling above
+  //   last_check_at + backoff      space between tries, growing each time
+  const now = Math.floor(Date.now() / 1000);
+  const { rows } = await db().execute({
+    sql: `SELECT id, workspace_id, email, password_encrypted, totp_secret_encrypted,
+                 country, sign_in_attempts
+            FROM linkedin_accounts
+           WHERE status = 'pending'
+             AND challenge_state = 'none'
+             AND sign_in_attempts < ?
+             AND (last_check_at IS NULL
+                  OR last_check_at <= ? - (CASE sign_in_attempts
+                                             WHEN 0 THEN ${BACKOFF_SECONDS[0]}
+                                             WHEN 1 THEN ${BACKOFF_SECONDS[1]}
+                                             ELSE ${BACKOFF_SECONDS[2]} END))
+           ORDER BY created_at
+           LIMIT 3`,
+    args: [MAX_ATTEMPTS, now],
+  });
   const out: Waiting[] = [];
   for (const row of rows) {
     const id = String(row.id);
@@ -96,6 +175,7 @@ async function loadWaiting(): Promise<Waiting[]> {
       password,
       totpSecret: totp || null,
       country: String(row.country),
+      attempts: Number(row.sign_in_attempts ?? 0),
     });
   }
   return out;
@@ -108,10 +188,26 @@ async function connectOne(account: Waiting): Promise<void> {
       // The address is still being set up. Signing in from the server's own
       // address now would teach LinkedIn a location the account will never use
       // again, which is worse than waiting a minute.
+      //
+      // Deliberately not counted as an attempt: nothing was tried, and burning
+      // the retry budget on the supplier being slow would strand an account
+      // that has nothing wrong with it.
+      await progress(
+        account.id,
+        "Setting up the address this account will always sign in from."
+      );
       log("sign-in waiting for the account's address", { accountId: account.id });
       return;
     }
   }
+
+  await attemptStarts(account.id);
+  await progress(
+    account.id,
+    account.attempts === 0
+      ? "Opening a browser on this account's own address."
+      : `Trying the sign-in again, attempt ${account.attempts + 1} of ${MAX_ATTEMPTS}.`
+  );
 
   const session = await openSession(
     {
@@ -132,6 +228,7 @@ async function connectOne(account: Waiting): Promise<void> {
   if (run) run.closeBrowser = closeOnce;
 
   try {
+    await progress(account.id, "Signing in to LinkedIn.");
     await signIn({
       page: session.page,
       accountId: account.id,
@@ -144,6 +241,12 @@ async function connectOne(account: Waiting): Promise<void> {
     // Only if it worked. signIn writes the status itself and leaves the account
     // where it was on a challenge it could not finish.
     if (await isSignedIn(session.context)) {
+      // Before the profile read, because the dialog is watching this row and
+      // the name and picture take a few more seconds to arrive.
+      await db().execute({
+        sql: `UPDATE linkedin_accounts SET sign_in_attempts = 0, updated_at = ? WHERE id = ?`,
+        args: [Math.floor(Date.now() / 1000), account.id],
+      });
       await ensureProfileCaptured(session.page, account.id);
       log("account signed in", { accountId: account.id });
     }
@@ -170,6 +273,17 @@ export async function connectPass(): Promise<void> {
       await withWatchdog(() => connectOne(account));
     } catch (error) {
       logError("sign-in failed", error, { accountId: account.id });
+      // The attempt was counted before it ran, so this is the last one when the
+      // count has reached the ceiling. Saying so beats a spinner that never
+      // resolves and a loop that never stops.
+      if (account.attempts + 1 >= MAX_ATTEMPTS) {
+        await givenUp(account.id);
+      } else {
+        await progress(
+          account.id,
+          `That sign-in did not go through. Trying again in ${Math.round((BACKOFF_SECONDS[account.attempts + 1] ?? 600) / 60)} minutes.`
+        );
+      }
     } finally {
       lease.release();
     }
