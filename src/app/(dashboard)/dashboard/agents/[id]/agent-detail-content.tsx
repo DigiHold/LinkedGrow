@@ -225,10 +225,11 @@ function rampWeeks(agent: Agent): Array<{
           weeks,
           Math.max(1, Math.floor((Date.now() - started) / (7 * 86_400_000)) + 1)
         );
-  const top = Math.max(weeks, agent.dailyInviteCap);
   return Array.from({ length: weeks }, (_, i) => i + 1).map((week) => ({
     week,
-    perDay: Math.max(1, Math.round((top / weeks) * week)),
+    // The real allowance for that week, not the ceiling divided up. The rail
+    // used to print 2, 4, 6, 8 while the engine was going to send 5, 8, 8, 8.
+    perDay: dayPace(agent, week),
     state: current === 0 ? "todo" : week < current ? "done" : week === current ? "now" : "todo",
   }));
 }
@@ -471,7 +472,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         <span>
           Today&apos;s limit{" "}
           <b className="font-semibold text-slate-900 dark:text-white">
-            {agent.dailyInviteCap} invitations
+            {dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations
           </b>
         </span>
       </div>
@@ -689,7 +690,14 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
             <div className="grid gap-2.5 p-4">
               {[
                 { label: "Invitations this week", value: `${contacted} of 100` },
-                { label: "Today's ceiling", value: `${agent.dailyInviteCap} invitations` },
+                {
+                  label: "Today's limit",
+                  value: `${dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations`,
+                },
+                {
+                  label: "After the warm-up",
+                  value: `${dayPace(agent, agent.warmupWeeks ?? 4)} a day`,
+                },
                 {
                   label: "Working hours",
                   value: `${clock(agent.workdayStart)} to ${clock(agent.workdayEnd)}`,
