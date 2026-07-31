@@ -91,8 +91,26 @@ async function main(): Promise<void> {
     return;
   }
 
-  // No row waiting: it goes in the buffer, workspace-less and account-less,
-  // and the next account in this country takes it instead of buying.
+  // No row waiting: it goes in the buffer, account-less, and the next account
+  // in this country takes it instead of buying.
+  //
+  // It still needs a workspace, because the column is a foreign key onto the
+  // owner and an empty string is not a user. The one that paid for it holds it
+  // until somebody claims it, and claiming re-points the row, so the buffer is
+  // still fleet-wide in behaviour.
+  const holder = await db().execute(
+    `SELECT workspace_id FROM proxy_allocations ORDER BY created_at DESC LIMIT 1`
+  );
+  const workspaceId = holder.rows[0]?.workspace_id
+    ? String(holder.rows[0].workspace_id)
+    : "";
+  if (!workspaceId) {
+    console.error(
+      "No workspace to hold this address. Connect an account first, or pass one explicitly."
+    );
+    process.exit(1);
+  }
+
   const id = crypto.randomUUID();
   await db().execute({
     sql: `INSERT INTO proxy_allocations
@@ -100,10 +118,10 @@ async function main(): Promise<void> {
              password_encrypted, provider_ref, status, source, linkedin_account_id,
              expires_at, auto_renew, last_checked_at, last_exit_ip, last_asn, last_asn_org,
              exit_looks_hosted, created_at, updated_at)
-          VALUES (?, '', ?, 'proxy-seller', ?, ?, ?, ?, ?, 'active', 'managed', NULL,
+          VALUES (?, ?, ?, 'proxy-seller', ?, ?, ?, ?, ?, 'active', 'managed', NULL,
                   ?, 1, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
-      id, exit.country ?? "", fields.host, fields.port, fields.username, fields.password,
+      id, workspaceId, exit.country ?? "", fields.host, fields.port, fields.username, fields.password,
       String(orderId), fields.expiresAt, now, fields.exitIp, fields.asn, fields.asnOrg,
       fields.hosted, now, now,
     ],
