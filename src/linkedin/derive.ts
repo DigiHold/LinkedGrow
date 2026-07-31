@@ -148,7 +148,7 @@ function prompt(ctx: AgentContext, site: string): string {
     '{"intentQueries": string[], "topics": string[], "hashtags": string[], "competitors": string[]}',
     "",
     "Rules:",
-    `- intentQueries: up to ${CAPS.intentQueries} short phrases somebody with this problem would actually type in a LinkedIn post while asking for help. Write them the way a person complains, not the way a vendor markets. "cookie banner keeps breaking" beats "GDPR compliance solutions".`,
+    `- intentQueries: up to ${CAPS.intentQueries} search phrases of THREE TO SIX WORDS. Not sentences. These are typed into a search box, not spoken. Write the words that would appear inside a post from somebody with this problem, the way a person complains rather than the way a vendor markets. "cookie banner broken" and "website not secure" are right. "just found out my API key was exposed on my site" is wrong: it is a sentence, and LinkedIn returns nothing at all for it.`,
     `- topics: up to ${CAPS.topics} subjects this audience posts about.`,
     `- hashtags: up to ${CAPS.hashtags} LinkedIn hashtags this audience follows, each starting with #.`,
     `- competitors: up to ${CAPS.competitors} real, well known company or brand names selling something similar. Names only, no descriptions. If you are not confident a company exists, leave it out.`,
@@ -174,7 +174,15 @@ function normaliseObject(o: Record<string, unknown>): Targeting {
       ? [...new Set(v.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean))].slice(0, cap)
       : [];
   return {
-    intentQueries: list(o.intentQueries, CAPS.intentQueries),
+    // Enforced rather than requested. The prompt asked for short phrases and
+    // the model returned "just found out my API key was exposed on my site",
+    // eleven words, which LinkedIn's content search answers with nothing at
+    // all: on 2026-07-31 two of three derived queries returned zero cards. A
+    // long query also defeats the on-topic test downstream, which needs two of
+    // its terms to appear in the post.
+    intentQueries: list(o.intentQueries, CAPS.intentQueries).filter(
+      (q) => q.split(/\s+/).filter(Boolean).length <= 6
+    ),
     topics: list(o.topics, CAPS.topics),
     hashtags: list(o.hashtags, CAPS.hashtags).map((h) => (h.startsWith("#") ? h : `#${h}`)),
     competitors: list(o.competitors, CAPS.competitors),
