@@ -217,6 +217,30 @@ export async function downloadAttachment(
 }
 
 /** The first visible element in a set, because LinkedIn ships hidden duplicates. */
+/**
+ * Button labels, matched by accessible name rather than by CSS text.
+ *
+ * Playwright's `:text-is()` only looks at an element's own text nodes, and
+ * LinkedIn wraps every button label in a nested span. So `button:text-is("Post")`
+ * found nothing while `document.querySelectorAll("button")` filtered by
+ * innerText found the button, visible and enabled: the composer worked, the
+ * text was typed and verified, and publishing then reported no Post button.
+ * Diagnosed on the live page, 2026-07-31.
+ *
+ * `getByRole` reads the accessible name, which is computed from the
+ * descendants, so it sees what a person sees. The names are regexes because
+ * the interface language follows the account.
+ */
+const BUTTON_NAME = {
+  post: /^(post|publier|posten|publicar|pubblica|publiceren|publicera|opublikuj|发布|投稿する)$/i,
+  next: /^(next|done|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
+} as const;
+
+/** The same lookup for a page or a container, by what the button is called. */
+function namedButton(scope: Page | Locator, name: RegExp): Locator {
+  return scope.getByRole("button", { name });
+}
+
 async function firstVisible(loc: Locator): Promise<Locator | null> {
   const n = await loc.count();
   for (let i = 0; i < n; i++) {
@@ -268,7 +292,9 @@ async function waitForUpload(page: Page, dialog: Locator, mimeType: string | nul
     const busy = await dialog.locator(SEL.uploadProgress).count().catch(() => 0);
     if (busy > 0) continue;
 
-    const post = await firstVisible(dialog.locator(SEL.postButton));
+    const post =
+      (await firstVisible(namedButton(dialog, BUTTON_NAME.post))) ??
+      (await firstVisible(namedButton(page, BUTTON_NAME.post)));
     if (!post) continue;
     if (await post.isDisabled().catch(() => true)) continue;
 
@@ -333,7 +359,9 @@ async function attachMedia(
   // rather than a filename.
   await fillDocumentTitle(page, dialog, postText);
 
-  const next = await firstVisible(dialog.locator(SEL.nextButton));
+  const next =
+    (await firstVisible(namedButton(dialog, BUTTON_NAME.next))) ??
+    (await firstVisible(namedButton(page, BUTTON_NAME.next)));
   if (next && !(await next.isDisabled().catch(() => true))) {
     await clickHumanLocator(page, next);
     await dwell(1500, 3000);
@@ -675,7 +703,8 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   // sits outside whatever container holds the editor, so a scoped lookup found
   // the text, typed it, verified it, and then reported no Post button.
   const postButton =
-    (await firstVisible(dialog.locator(SEL.postButton))) ??
+    (await firstVisible(namedButton(dialog, BUTTON_NAME.post))) ??
+    (await firstVisible(namedButton(page, BUTTON_NAME.post))) ??
     (await firstVisible(page.locator(SEL.postButton)));
   if (!postButton) {
     throw new PublishError("The Post button was not there, so nothing was published.");
