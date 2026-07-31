@@ -331,11 +331,48 @@ async function attachMedia(
   mimeType: string | null,
   postText: string
 ): Promise<void> {
-  const addMedia = await firstVisible(dialog.locator(SEL.addMedia));
-  if (addMedia) {
-    await clickHumanLocator(page, addMedia);
-    await dwell(900, 2200);
+  /**
+   * The right door for the kind of file this is.
+   *
+   * The composer has one entry per content type and they are not
+   * interchangeable: Photo opens an image-only picker, so a PDF pushed into it
+   * is taken by the input and then never finishes uploading, which is exactly
+   * how a carousel failed on 2026-07-31 with "the attachment did not finish
+   * uploading". Document is the one for a carousel, and it only exists after
+   * the content types are expanded. Verified on the live composer: the entries
+   * carry the aria-labels Photo, Video, Document, Poll and Event.
+   */
+  const wanted =
+    mimeType === "application/pdf"
+      ? "Document"
+      : mimeType?.startsWith("video/")
+        ? "Video"
+        : "Photo";
+
+  const entry = async () =>
+    (await firstVisible(page.locator(`button[aria-label="${wanted}" i]`))) ??
+    (await firstVisible(dialog.locator(`button[aria-label="${wanted}" i]`)));
+
+  let addMedia = await entry();
+  if (!addMedia) {
+    // Document sits behind the overflow; Photo and Video are on the bar.
+    const more = await firstVisible(page.locator(SEL.moreMediaTypes));
+    if (more) {
+      await clickHumanLocator(page, more);
+      await dwell(1200, 2400);
+      addMedia = await entry();
+    }
   }
+  // Whatever is offered, rather than nothing at all, for an older layout.
+  addMedia ??= await firstVisible(dialog.locator(SEL.addMedia));
+
+  if (!addMedia) {
+    throw new PublishError(
+      `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()}, so nothing was posted.`
+    );
+  }
+  await clickHumanLocator(page, addMedia);
+  await dwell(900, 2200);
 
   // Mounted by the click above, and not necessarily inside the scoped
   // container, so the page is the fallback here as well.
