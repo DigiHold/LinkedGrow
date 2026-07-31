@@ -285,8 +285,21 @@ export async function searchPostCards(
     : `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
   await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
+  // Wait for the results themselves, not for the shell around them.
+  //
+  // `main` appears long before the feed does, and the cards are rendered
+  // asynchronously after it. Reading at that moment returned an empty page for
+  // queries that plainly have results: "website security" reported 0 cards
+  // twice on 2026-07-31 and 5 cards a minute later with nothing changed but the
+  // wait. Silent, intermittent, and indistinguishable from a query nobody has
+  // posted about, which is the worst shape a bug can take here.
+  //
+  // A genuinely empty result set costs this timeout once, and nothing else.
+  await page.waitForSelector(POST_CARD_SELECTOR, { timeout: 15_000 }).catch(() => {});
   await dwell(2500, 4000);
   await scrollHuman(page, randInt(2, 3));
+  // Scrolling loads more of them, and they arrive after the scroll settles.
+  await dwell(1500, 2500);
   return page.evaluate((sel) => {
     const out: Array<{ href: string; text: string; photo: string }> = [];
     for (const c of Array.from(document.querySelectorAll(sel))) {
