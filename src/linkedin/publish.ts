@@ -130,11 +130,10 @@ const SEL = {
   startPost:
     'button.share-box-feed-entry__trigger, button:has-text("Start a post"), ' +
     'button[aria-label*="Start a post" i], button[aria-label*="Create a post" i], ' +
-    '[role="button"]:has-text("Start a post"), ' +
-    'div:text-is("Start a post"), div:text-is("Commencer un post"), ' +
-    'div:text-is("Créer un post"), div:text-is("Beitrag beginnen"), ' +
-    'div:text-is("Empezar una publicación"), div:text-is("Crea un post"), ' +
-    'div:text-is("Começar publicação"), div:text-is("Bericht schrijven")',
+    '[role="button"]:has-text("Start a post"), [role="button"]:has-text("Commencer un post"), ' +
+    '[role="button"]:has-text("Créer un post"), [role="button"]:has-text("Beitrag beginnen"), ' +
+    '[role="button"]:has-text("Empezar una publicación"), [role="button"]:has-text("Crea un post"), ' +
+    '[role="button"]:has-text("Começar publicação"), [role="button"]:has-text("Bericht schrijven")',
   dialog: 'div[role="dialog"].share-creation-state, div.share-box, div[role="dialog"]',
   editor: '.ql-editor[contenteditable="true"], div[role="textbox"][contenteditable="true"]',
   // ":text-is" is exact: "Post" the button, never "Post to anyone" the audience row.
@@ -596,17 +595,35 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   }
   await clickHumanLocator(page, trigger);
 
-  // The visible one: LinkedIn keeps hidden dialogs mounted, and .first() picked
-  // an empty one in the message composer often enough to be a known trap.
-  await page.waitForSelector(SEL.dialog, { state: "visible", timeout: 20_000 }).catch(() => {});
-  const dialog = await firstVisible(page.locator(SEL.dialog));
-  if (!dialog) {
-    throw new PublishError("The post composer did not open, so nothing was published.");
-  }
-  const editor = await firstVisible(dialog.locator(SEL.editor));
+  /**
+   * Wait for the editor, and take the composer to be wherever the editor is.
+   *
+   * The composer used to be a `role="dialog"` and is not one any more. Read off
+   * the live feed on 2026-07-31: clicking the trigger produces no dialog at
+   * all, only a `div[role="textbox"][contenteditable="true"]` and a Post
+   * button, and the only elements still carrying `role="dialog"` on that page
+   * belong to a video player's caption settings. Requiring a dialog meant
+   * publishing stopped one step after opening, every time, reporting "the post
+   * composer did not open" while the composer was plainly open.
+   *
+   * Quill is gone too, so `.ql-editor` matches nothing and the role selector
+   * behind it is what now does the work.
+   */
+  await page.waitForSelector(SEL.editor, { state: "visible", timeout: 20_000 }).catch(() => {});
+  const editor = await firstVisible(page.locator(SEL.editor));
   if (!editor) {
     throw new PublishError("The post composer did not open, so nothing was published.");
   }
+
+  // Everything below scopes its lookups to this. A real dialog when there is
+  // one, which keeps the older layout working and keeps hidden mounted dialogs
+  // out; the page itself when there is not, where the open composer owns the
+  // only editor and the only Post button anyway.
+  const realDialog = await firstVisible(page.locator(SEL.dialog));
+  const dialog =
+    realDialog && (await realDialog.locator(SEL.editor).count()) > 0
+      ? realDialog
+      : page.locator("body");
 
   await typeBody(page, editor, body);
   await dwell(700, 1600);
