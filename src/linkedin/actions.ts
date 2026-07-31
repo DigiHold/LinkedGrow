@@ -64,7 +64,11 @@ const SEL = {
   addNote: 'button[aria-label*="Add a note"]',
   noteBox: 'textarea[name="message"], #custom-message',
   sendInvite: 'button[aria-label*="Send invitation"], button[aria-label*="Send now"], button[aria-label*="Send"]',
-  likeFirstPost: 'button[aria-label="React Like"], button[aria-label^="React Like"]',
+  // Renamed by LinkedIn: the control now reads "Reaction button state: Like".
+  // The old names are kept behind it because they cost nothing and an older
+  // layout should still work. Verified on the live page 2026-07-31.
+  likeFirstPost:
+    'button[aria-label*="Reaction button state: Like" i], button[aria-label="React Like"], button[aria-label^="React Like"]',
   msgBox: '.msg-form__contenteditable, div[role="textbox"][contenteditable="true"]',
   msgSend: "button.msg-form__send-button",
   firstDegree: "span.dist-value, .distance-badge .dist-value",
@@ -262,6 +266,38 @@ export function browserActions(page: Page): LinkedInActions {
   async function composeHref(p: ProspectRow): Promise<{ href: string; certain: boolean } | null> {
     const id = (p.profile_id ?? "").trim();
     const full = (p.full_name ?? "").trim();
+
+    /**
+     * The Message control in the profile's own top card, which is the only one
+     * on the page that certainly belongs to the person being looked at.
+     *
+     * This is the primary route now, and it had to become one. The compose
+     * links carry the member URN, `recipient=ACoAAD-hVfAB...`, and never the
+     * vanity slug we store, so matching the slug against the href never
+     * succeeded. The fallback then read an aria-label that the control no
+     * longer has: it is a plain <a> whose only text is "Message". Every DM
+     * therefore failed with "could not open a conversation", on 2026-07-31,
+     * with six compose links sitting on the page.
+     *
+     * Position is the identity here. The page carries other people's compose
+     * links in the sidebar and in the feed below, which is exactly why this
+     * cannot simply take the first one.
+     */
+    const topcard = page.locator('[componentkey$="Topcard"]').first();
+    if (await topcard.count()) {
+      const own = topcard.locator('a[href*="/messaging/compose"]').first();
+      if (await own.count()) {
+        const href = (await own.getAttribute("href").catch(() => "")) ?? "";
+        if (href) {
+          // Cross-checked when it can be: the top card's own key ends in the
+          // member's URN, and the compose link names its recipient.
+          const key = (await topcard.getAttribute("componentkey").catch(() => "")) ?? "";
+          const urn = /profile\.card\.ref(.+?)Topcard$/.exec(key)?.[1] ?? "";
+          if (!urn || href.includes(urn)) return { href, certain: true };
+        }
+      }
+    }
+
     const anchors = page.locator('a[href*="/messaging/compose"]');
     const n = await anchors.count();
 
@@ -270,8 +306,7 @@ export function browserActions(page: Page): LinkedInActions {
       const a = anchors.nth(i);
       const href = (await a.getAttribute("href").catch(() => "")) ?? "";
       if (!href) continue;
-      // The link carries the member id in its recipient and profileUrn parameters, so a match is
-      // proof it opens this exact person's thread. Nothing else on the page can claim that.
+      // Kept for the older layout, where the slug did appear in the link.
       if (id && href.includes(id)) return { href, certain: true };
       const aria = (await a.getAttribute("aria-label").catch(() => "")) ?? "";
       if (full && aria.includes(full)) byName ??= href;
