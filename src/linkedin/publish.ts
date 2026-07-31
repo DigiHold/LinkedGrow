@@ -313,6 +313,20 @@ async function waitForUpload(
      */
     if (mimeType === "application/pdf") {
       await fillDocumentTitle(page, dialog, postText).catch(() => {});
+      /**
+       * And then leave the document screen.
+       *
+       * A carousel is composed on a screen of its own with Back and Done, and
+       * the Post button does not exist, let alone enable, until Done is taken.
+       * The code that presses Next or Done ran after this wait, so the wait
+       * could never end: it timed out on a document that had uploaded fine and
+       * was sitting there asking to be confirmed.
+       */
+      const done = await firstVisible(namedButton(page, BUTTON_NAME.next));
+      if (done && !(await done.isDisabled().catch(() => true))) {
+        await clickHumanLocator(page, done);
+        await dwell(1500, 2800);
+      }
     }
 
     const busy = await dialog.locator(SEL.uploadProgress).count().catch(() => 0);
