@@ -136,15 +136,64 @@ export interface ExitCheck {
   ip: string;
   asn: string | null;
   asnOrg: string | null;
+  /** Where a geolocation database places this address today. */
   country: string | null;
+  /** The country this address is REGISTERED to at the regional registry. */
+  registryCountry: string | null;
   looksHosted: boolean;
   error?: string;
 }
 
 const HOSTING = /hosting|datacent|data center|\bserver\b|cloud|\bvps\b|colocation|leaseweb|hostroyale|m247|choopa|quadranet|ovh|hetzner|contabo|digitalocean|linode|vultr|scaleway|amazon|azure/i;
 
+/**
+ * The country an address is REGISTERED to, which is not the same question as
+ * where a geolocation database currently places it.
+ *
+ * On 2026-07-31 LinkedIn emailed Nicolas three times about the same address,
+ * 213.164.108.143. Once it said Paris. Twice it said Vilnius. ipinfo, ip-api
+ * and iplocation all called it Paris, so the purchase check passed happily,
+ * but the RIPE record for 213.164.108.0/24 says netname BITE-HRS, country LT,
+ * UAB Init in Kaunas. The reseller had published a geofeed claiming Paris and
+ * some databases believed it while LinkedIn's did not.
+ *
+ * A geofeed is a claim. The registry entry is a registration. When they
+ * disagree the account is seen from two countries on different days, which no
+ * real person does, and it is worse than being seen from one wrong country
+ * consistently: the fingerprint says Europe/Paris while the address says
+ * Vilnius, and that pair is a textbook proxy tell.
+ *
+ * Queried directly rather than through the proxy: this is a question about the
+ * address, not from it. RDAP is the standard interface every registry serves,
+ * and rdap.org routes to whichever one owns the block.
+ */
+export async function registryCountry(ip: string): Promise<string | null> {
+  for (const url of [`https://rdap.org/ip/${ip}`, `https://rdap.db.ripe.net/ip/${ip}`]) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        redirect: "follow",
+      });
+      if (!res.ok) continue;
+      const body = (await res.json()) as { country?: string };
+      if (body.country) return body.country.toUpperCase();
+    } catch {
+      // Try the other one. A registry being unreachable must not block a
+      // purchase for ever, and the caller decides what to do with null.
+    }
+  }
+  return null;
+}
+
 export async function checkExit(host: string, port: number, user: string, pass: string): Promise<ExitCheck> {
-  const blank: ExitCheck = { ip: "", asn: null, asnOrg: null, country: null, looksHosted: false };
+  const blank: ExitCheck = {
+    ip: "",
+    asn: null,
+    asnOrg: null,
+    country: null,
+    registryCountry: null,
+    looksHosted: false,
+  };
   try {
     const { ProxyAgent } = await import("undici");
     const auth = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : "";
@@ -157,11 +206,13 @@ export async function checkExit(host: string, port: number, user: string, pass: 
     const d = (await r.json()) as { ip?: string; org?: string; country?: string };
     const m = d.org?.match(/^(AS\d+)\s+(.*)$/);
     const asnOrg = m?.[2] ?? d.org ?? null;
+    const ip = d.ip ?? "";
     return {
-      ip: d.ip ?? "",
+      ip,
       asn: m?.[1] ?? null,
       asnOrg,
       country: d.country ?? null,
+      registryCountry: ip ? await registryCountry(ip) : null,
       looksHosted: asnOrg ? HOSTING.test(asnOrg) : false,
     };
   } catch (error) {
@@ -337,6 +388,17 @@ async function fulfil(row: { id: string; country: string; providerRef: string })
   if (exit.country && exit.country.toUpperCase() !== row.country.toUpperCase()) {
     throw new Error(
       `Bought ${host} but it exits in ${exit.country} rather than ${row.country}`
+    );
+  }
+  // The registry, second, and it is the one that catches a reseller's geofeed.
+  // See registryCountry: a geolocation database can be talked into saying Paris
+  // about a Lithuanian block, and LinkedIn's did not agree.
+  if (
+    exit.registryCountry &&
+    exit.registryCountry !== row.country.toUpperCase()
+  ) {
+    throw new Error(
+      `Bought ${host} and geolocation calls it ${exit.country}, but it is registered in ${exit.registryCountry}, not ${row.country}. Platforms follow the registration, so this address would have the account signing in from two different countries.`
     );
   }
   if (exit.looksHosted) {

@@ -49,6 +49,15 @@ async function main(): Promise<void> {
     console.error(`${host} did not answer: ${exit.error ?? "no exit"}. Nothing was changed.`);
     process.exit(1);
   }
+  // Said rather than refused, because this command exists to rescue an order
+  // that has already been paid for and refusing it would strand the money.
+  // See registryCountry: geolocation and registration disagreeing is what had
+  // one address reported as Paris and Vilnius on the same night.
+  if (exit.registryCountry && exit.country && exit.registryCountry !== exit.country.toUpperCase()) {
+    console.error(
+      `WARNING: ${host} geolocates to ${exit.country} but is registered in ${exit.registryCountry}. Platforms follow the registration. Adopting anyway.`
+    );
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const end = mine.date_end ? parseEnd(String(mine.date_end)) : null;

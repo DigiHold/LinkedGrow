@@ -3,6 +3,7 @@ import { db } from "../db.ts";
 import { decryptSecret } from "../crypto.ts";
 import { closeSession, openSession, type ProxyAllocation } from "../browser/driver.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
+import { registryCountry } from "../proxy/fulfil.ts";
 
 /**
  * Proving the machine can do the job, without spending a LinkedIn sign-in on it.
@@ -75,6 +76,18 @@ async function main(): Promise<void> {
 
   console.log(`this server        ${direct}`);
   console.log(`address expected   ${found.allocation.expectedIp} (${found.country}, held for ${found.boundTo})`);
+
+  // Sold as one country, registered in another, is not a detail. LinkedIn
+  // reported the same address as Paris once and Vilnius twice on 2026-07-31,
+  // and an account that appears to move between countries is an account that
+  // keeps being asked to prove itself.
+  const registered = await registryCountry(found.allocation.expectedIp);
+  console.log(`registered in      ${registered ?? "unknown"}`);
+  if (registered && registered !== found.country.toUpperCase()) {
+    console.log(
+      `WARNING: sold as ${found.country} but registered in ${registered}. Platforms follow the registration.`
+    );
+  }
 
   const session = await openSession(
     {

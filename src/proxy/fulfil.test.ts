@@ -65,10 +65,33 @@ test("the address is waited for rather than read once", () => {
 
 test("the final write keeps the order id rather than replacing it with the proxy id", () => {
   const update = src.slice(src.indexOf("UPDATE proxy_allocations\n             SET host"));
+
   const args = update.slice(0, update.indexOf("});"));
   assert.ok(
     !/String\(mine\.id/.test(args),
     "the proxy row id overwrites the order id, which would let a later failure buy again"
   );
   assert.match(args, /String\(orderId\)/, "the order id is not preserved");
+});
+
+/**
+ * An address is only in the country it is REGISTERED in.
+ *
+ * The purchase check asked one geolocation database and believed it. On
+ * 2026-07-31 that database said Paris about 213.164.108.143 while the RIPE
+ * record for its block said netname BITE-HRS, country LT, and LinkedIn emailed
+ * Nicolas three times about the same address: Paris once, Vilnius twice. An
+ * account that appears to move between countries is worse off than one seen
+ * consistently from the wrong one, because the browser is meanwhile insisting
+ * its timezone is Europe/Paris.
+ */
+test("a bought address is checked against the registry, not just a geo database", () => {
+  const src = readFileSync(new URL("./fulfil.ts", import.meta.url), "utf8");
+  assert.match(src, /export async function registryCountry/, "nothing reads the registry");
+  assert.match(src, /rdap/i, "the registry is not queried over RDAP");
+  assert.match(
+    src,
+    /exit\.registryCountry &&[\s\S]{0,120}!==[\s\S]{0,80}throw new Error/,
+    "a registration in the wrong country does not stop the purchase"
+  );
 });
