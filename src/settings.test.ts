@@ -40,6 +40,17 @@ const SETTINGS: Array<{ field: string; usedAs: string }> = [
   { field: "testRecipients", usedAs: "ctx.testRecipients" },
   { field: "website", usedAs: "ctx.website" },
   { field: "accountDailyInviteCap", usedAs: "ctx.accountDailyInviteCap" },
+  // Added 2026-07-31, Nicolas: "chaque settings dois bien fonctionner, donc la
+  // timezone, jour d'activites, le ton pour les DMs". The list above was
+  // written when five settings turned out to be dead, and it did not cover the
+  // ones he named, so it could not have caught them either.
+  { field: "timezone", usedAs: "cfg.account.timezone" },
+  { field: "workdayStart", usedAs: "businessHours.startHour" },
+  { field: "workdayEnd", usedAs: "businessHours.endHour" },
+  { field: "workdayDays", usedAs: "businessHours.days" },
+  { field: "reviewMode", usedAs: "ctx.reviewMode" },
+  { field: "warmupStartPerDay", usedAs: "cfg.warmup.startPerDay" },
+  { field: "warmupWeeks", usedAs: "cfg.warmup.weeks" },
 ];
 
 test("every setting the worker loads is actually used by it", () => {
