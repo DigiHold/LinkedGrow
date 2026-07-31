@@ -330,8 +330,14 @@ async function waitForUpload(
       }
     }
 
-    const busy = await dialog.locator(SEL.uploadProgress).count().catch(() => 0);
-    if (busy > 0) continue;
+    // Visible, not merely present.
+    //
+    // This counted every [role="progressbar"] in the page, and the scope is
+    // the whole page now that the composer is not a dialog. One hidden bar
+    // parked in the DOM was therefore enough to say "still uploading" for
+    // ever: a carousel that had finished, rendered its two pages and shown an
+    // enabled Post button still timed out here, six times.
+    if (await firstVisible(dialog.locator(SEL.uploadProgress))) continue;
 
     const post =
       (await firstVisible(namedButton(dialog, BUTTON_NAME.post))) ??
@@ -343,7 +349,7 @@ async function waitForUpload(
     // finishing and the preview rendering, and clicking in that gap posts a
     // shell with no media in it.
     await sleep(1500);
-    if ((await dialog.locator(SEL.uploadProgress).count().catch(() => 0)) > 0) continue;
+    if (await firstVisible(dialog.locator(SEL.uploadProgress))) continue;
     if (await post.isDisabled().catch(() => true)) continue;
     return;
   }
