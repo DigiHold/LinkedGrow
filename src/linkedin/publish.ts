@@ -234,6 +234,8 @@ export async function downloadAttachment(
 const BUTTON_NAME = {
   post: /^(post|publier|posten|publicar|pubblica|publiceren|publicera|opublikuj|发布|投稿する)$/i,
   next: /^(next|done|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
+  schedule: /^(schedule|programmer|planen|programar|pianifica|plannen|schemalägg)/i,
+  discard: /^(discard|supprimer|verwerfen|descartar|elimina|weggooien|kasta)/i,
 } as const;
 
 /** The same lookup for a page or a container, by what the button is called. */
@@ -565,7 +567,10 @@ async function useScheduler(
     );
   }
 
-  const confirm = await firstVisible(panel.locator(SEL.scheduleConfirm));
+  const confirm =
+    (await firstVisible(namedButton(panel, BUTTON_NAME.next))) ??
+    (await firstVisible(namedButton(panel, BUTTON_NAME.schedule))) ??
+    (await firstVisible(panel.locator(SEL.scheduleConfirm)));
   if (!confirm) {
     throw new ScheduleUnavailableError("The scheduler had no way to confirm the date.");
   }
@@ -574,7 +579,10 @@ async function useScheduler(
 
   // The primary button now says Schedule instead of Post. If it still says
   // Post, the date never took and pressing it would publish immediately.
-  const primary = await firstVisible(dialog.locator(SEL.scheduledPrimary));
+  const primary =
+    (await firstVisible(namedButton(dialog, BUTTON_NAME.schedule))) ??
+    (await firstVisible(namedButton(page, BUTTON_NAME.schedule))) ??
+    (await firstVisible(dialog.locator(SEL.scheduledPrimary)));
   const label = ((await primary?.innerText().catch(() => "")) ?? "").trim().toLowerCase();
   if (!primary || !label.startsWith("schedule")) {
     throw new ScheduleUnavailableError(
@@ -722,7 +730,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     await dwell(600, 1400);
     // LinkedIn asks whether to keep the draft. Discarding leaves nothing behind.
     const discard = await firstVisible(
-      page.locator('button:has-text("Discard"), button:has-text("Supprimer")')
+      namedButton(page, BUTTON_NAME.discard)
     );
     if (discard) await clickHumanLocator(page, discard);
     return { url: null, verified: false, scheduled: false, rehearsed: !disabled };
@@ -820,7 +828,7 @@ export async function postFirstComment(
   await dwell(1200, 3000);
 
   const submit = await firstVisible(
-    page.locator('button.comments-comment-box__submit-button, main button:text-is("Post")')
+    namedButton(page.locator("main"), BUTTON_NAME.post)
   );
   if (!submit || (await submit.isDisabled().catch(() => true))) {
     log("first comment: the submit button never became available");
