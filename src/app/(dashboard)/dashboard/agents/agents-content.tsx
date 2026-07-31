@@ -35,11 +35,16 @@ type Agent = {
   dailyInviteCap: number;
   accountId: string;
   warmupStartedAt: string | null;
+  warmupWeeks: number | null;
   lastRunAt: string | null;
   accountName: string | null;
   accountAvatar: string | null;
   accountStatus: string;
   accountCountry: string;
+  timezone: string;
+  workdayStart: number;
+  workdayEnd: number;
+  workdayDays: string;
   createdAt?: string | null;
   funnel?: Funnel;
 };
@@ -64,11 +69,60 @@ function ago(iso: string | null): string | null {
   return `${mins} minute${mins === 1 ? "" : "s"} ago`;
 }
 
-/** Which week of the ramp this account is in, 1-based, or null before it starts. */
-function warmupWeek(startedAt: string | null): number | null {
+/** Which week of the ramp this account is in, 1-based, or null once it is over. */
+function warmupWeek(
+  startedAt: string | null,
+  of: number
+): { week: number; of: number } | null {
   if (!startedAt) return null;
   const weeks = Math.floor((Date.now() - new Date(startedAt).getTime()) / (7 * 86_400_000));
-  return Number.isFinite(weeks) ? Math.min(4, Math.max(1, weeks + 1)) : null;
+  if (!Number.isFinite(weeks)) return null;
+  const week = Math.max(1, weeks + 1);
+  return week > of ? null : { week, of };
+}
+
+function workingDays(raw: string): number[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((d): d is number => typeof d === "number")
+      : [1, 2, 3, 4, 5];
+  } catch {
+    return [1, 2, 3, 4, 5];
+  }
+}
+
+/**
+ * When this agent next wakes up, in its own timezone.
+ *
+ * The card used to say only how many invitations a day it sends, which does not
+ * answer the question somebody actually has in front of a quiet agent: is it
+ * broken, or is it simply the middle of the night where it lives.
+ */
+function nextLaunch(agent: Agent): string {
+  let local: Date;
+  try {
+    local = new Date(new Date().toLocaleString("en-US", { timeZone: agent.timezone }));
+  } catch {
+    local = new Date();
+  }
+  const minutes = local.getHours() * 60 + local.getMinutes();
+  const days = workingDays(agent.workdayDays);
+  const open = days.includes(local.getDay());
+
+  if (open && minutes >= agent.workdayStart && minutes < agent.workdayEnd) return "now";
+
+  let ahead = 0;
+  if (!(open && minutes < agent.workdayStart)) {
+    ahead = 1;
+    while (ahead < 8 && !days.includes((local.getDay() + ahead) % 7)) ahead++;
+    if (ahead >= 8) return "never, no working days are on";
+  }
+  const until = ahead * 1440 + agent.workdayStart - minutes;
+  if (until < 90) return `in ${until} minutes`;
+  const hours = Math.round(until / 60);
+  if (hours < 36) return `in ${hours} hours`;
+  return `in ${Math.round(hours / 24)} days`;
 }
 
 function Pill({
@@ -189,10 +243,10 @@ const GlobeIcon = (
 );
 
 /** The four small dashes that say how far along the ramp this account is. */
-function WarmupDots({ week }: { week: number | null }) {
+function WarmupDots({ week, of = 4 }: { week: number | null; of?: number }) {
   return (
     <span className="flex flex-none gap-[3px]">
-      {[1, 2, 3, 4].map((w) => (
+      {Array.from({ length: Math.max(1, of) }, (_, i) => i + 1).map((w) => (
         <u
           key={w}
           className={cn(
@@ -311,7 +365,7 @@ export function AgentsContent() {
         {data?.agents.map((agent) => {
           const status = STATUS[agent.status];
           const siblings = perAccount.get(agent.accountId) ?? 1;
-          const week = warmupWeek(agent.warmupStartedAt);
+          const ramp = warmupWeek(agent.warmupStartedAt, Math.max(1, agent.warmupWeeks ?? 4));
           const country = (() => {
             try {
               return COUNTRY.of(agent.accountCountry) ?? agent.accountCountry;
@@ -376,19 +430,25 @@ export function AgentsContent() {
                   <StateLine icon={ClockIcon}>
                     {paused ? (
                       <>
-                        Paused, <b>nothing is being sent</b>
+                        Paused by you, <b>nothing is being sent</b>
                       </>
                     ) : (
                       <>
-                        Sending up to <b>{agent.dailyInviteCap} invitations</b> a day
-                        {siblings > 1 && `, shared with ${siblings - 1} other agent`}
+                        Next launch <b>{nextLaunch(agent)}</b>, sending{" "}
+                        <b>{agent.dailyInviteCap} invitations</b>
+                        {siblings > 1 && ` shared with ${siblings - 1} other agent`}
                       </>
                     )}
                   </StateLine>
-                  <StateLine icon={<WarmupDots week={week} />}>
-                    {week ? (
+                  <StateLine icon={<WarmupDots week={ramp?.week ?? null} of={ramp?.of ?? 4} />}>
+                    {ramp ? (
                       <>
-                        Warm-up <b>week {week} of 4</b>
+                        Warm-up <b>week {ramp.week} of {ramp.of}</b>, then{" "}
+                        {agent.dailyInviteCap} a day
+                      </>
+                    ) : agent.warmupStartedAt ? (
+                      <>
+                        Warm-up <b>finished</b>, running at its full pace
                       </>
                     ) : (
                       "Warm-up starts when you activate it"
@@ -397,13 +457,20 @@ export function AgentsContent() {
                   <StateLine icon={ShieldIcon}>
                     Account health{" "}
                     {agent.accountStatus === "active" ? (
-                      <b className="!text-emerald-700 dark:!text-emerald-400">fine</b>
+                      <>
+                        <b className="!text-emerald-700 dark:!text-emerald-400">fine</b>, no
+                        verification asked
+                      </>
                     ) : (
-                      <b className="!text-amber-700 dark:!text-amber-400">needs attention</b>
+                      <>
+                        <b className="!text-amber-700 dark:!text-amber-400">needs attention</b>,
+                        LinkedIn is asking to verify
+                      </>
                     )}
                   </StateLine>
                   <StateLine icon={GlobeIcon}>
                     Dedicated address in <b>{country}</b>
+                    {agent.warmupStartedAt ? ", unchanged since day one" : ", reserved and waiting"}
                   </StateLine>
                 </div>
               </div>

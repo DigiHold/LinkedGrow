@@ -54,8 +54,15 @@ export async function GET() {
         icpSummary: agents.icpSummary,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
+        warmupWeeks: agents.warmupWeeks,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
+        // The card says when the agent next wakes up, which needs its own
+        // working window rather than the reader's clock.
+        timezone: agents.timezone,
+        workdayStart: agents.workdayStart,
+        workdayEnd: agents.workdayEnd,
+        workdayDays: agents.workdayDays,
         accountId: linkedinAccounts.id,
         accountName: linkedinAccounts.fullName,
         accountAvatar: linkedinAccounts.avatarUrl,
