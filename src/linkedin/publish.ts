@@ -286,11 +286,31 @@ async function settleOnFeed(page: Page): Promise<void> {
  * upload, which makes it the most honest readiness signal on the page, and it
  * is the one that catches a video still transcoding after its bar has gone.
  */
-async function waitForUpload(page: Page, dialog: Locator, mimeType: string | null): Promise<void> {
+async function waitForUpload(
+  page: Page,
+  dialog: Locator,
+  mimeType: string | null,
+  postText = ""
+): Promise<void> {
   const deadline = Date.now() + uploadTimeoutFor(mimeType);
 
   while (Date.now() < deadline) {
     await sleep(1500);
+
+    /**
+     * A document will not enable the button until it has a title.
+     *
+     * This waits for the button to come alive, and for a carousel that never
+     * happens on its own: LinkedIn requires a title first, and the code that
+     * fills it ran after this. So every carousel timed out here with "the
+     * attachment did not finish uploading" while the upload had in fact
+     * finished. Filling it inside the loop puts the two in the right order
+     * whatever moment the field appears at.
+     */
+    if (mimeType === "application/pdf") {
+      await fillDocumentTitle(page, dialog, postText).catch(() => {});
+    }
+
     const busy = await dialog.locator(SEL.uploadProgress).count().catch(() => 0);
     if (busy > 0) continue;
 
@@ -385,7 +405,7 @@ async function attachMedia(
     throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
   }
   await input.setInputFiles(filePath);
-  await waitForUpload(page, dialog, mimeType);
+  await waitForUpload(page, dialog, mimeType, postText);
 
   // Looking at what was attached. A person does; and it also gives LinkedIn's
   // preview time to finish rendering before the Next button is pressed.
