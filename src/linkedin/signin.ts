@@ -3,6 +3,7 @@ import { db } from "../db.ts";
 import { log } from "../logger.ts";
 import { decryptSecret } from "../crypto.ts";
 import { clickHuman, clickHumanLocator, dwell, sleep, typeHuman } from "../browser/human.ts";
+import { capturePage } from "./diagnose.ts";
 
 /**
  * Signing an account in for the first time, including the code LinkedIn asks for.
@@ -303,12 +304,22 @@ export async function signIn(input: SignInInput): Promise<void> {
           accountId,
         ],
       });
+      await capturePage(page, accountId, "verification code refused");
       throw new SignInFailed("LinkedIn rejected the verification code");
     }
   }
 
   if (!(await looksSignedIn(page))) {
-    throw new SignInFailed("Sign-in did not reach a signed-in page");
+    // The page itself is the diagnosis, and there is no second chance to read
+    // it: the next attempt is another login on a real account. A captcha, a
+    // refused password, a "verify it's you" screen and a renamed class all
+    // reach this line, and only the capture tells them apart.
+    const says = await capturePage(page, accountId, "did not reach a signed-in page");
+    throw new SignInFailed(
+      says
+        ? `Sign-in did not reach a signed-in page. LinkedIn said: ${says}`
+        : "Sign-in did not reach a signed-in page"
+    );
   }
 
   await db().execute({

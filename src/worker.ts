@@ -310,6 +310,7 @@ async function pass(): Promise<void> {
 
 async function agentLoop(): Promise<void> {
   for (;;) {
+    if (shuttingDown()) return;
     try {
       await pass();
     } catch (error) {
@@ -330,6 +331,7 @@ async function agentLoop(): Promise<void> {
  */
 async function publishLoop(): Promise<void> {
   for (;;) {
+    if (shuttingDown()) return;
     try {
       await publishPass();
     } catch (error) {
@@ -352,6 +354,7 @@ async function publishLoop(): Promise<void> {
  */
 async function connectLoop(): Promise<void> {
   for (;;) {
+    if (shuttingDown()) return;
     try {
       await fulfilPendingAllocations();
     } catch (error) {
@@ -373,6 +376,7 @@ async function connectLoop(): Promise<void> {
  */
 async function insightsLoop(): Promise<void> {
   for (;;) {
+    if (shuttingDown()) return;
     try {
       await insightsPass();
     } catch (error) {
@@ -380,6 +384,34 @@ async function insightsLoop(): Promise<void> {
     }
     await sleep(INSIGHTS_INTERVAL_MS);
   }
+}
+
+/**
+ * Set the moment systemd asks the worker to stop.
+ *
+ * Nothing listened for SIGTERM, so every deploy killed whatever was in the
+ * browser at that second. The unit already waits 180 seconds for a clean exit,
+ * precisely so Chrome can flush its cookies, but that patience was spent
+ * waiting for a process that had no intention of leaving and then SIGKILLed
+ * anyway. A sign-in interrupted this way looks exactly like a sign-in that
+ * failed, and it spends one of the account's three attempts.
+ *
+ * Read before each pass rather than mid-pass: the work already running is
+ * allowed to finish inside the window it has, and no new browser opens.
+ */
+let stopping = false;
+
+/** True when the loops should wind down rather than start anything new. */
+function shuttingDown(): boolean {
+  return stopping;
+}
+
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    if (stopping) return;
+    stopping = true;
+    log("shutting down, letting the current pass finish", { signal });
+  });
 }
 
 async function main(): Promise<void> {
