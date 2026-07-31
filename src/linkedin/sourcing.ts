@@ -39,6 +39,9 @@ import { ensureTargeting } from "./derive.ts";
 /** How many sources one pass will work through, so a pass stays bounded. */
 const SOURCES_PER_PASS = 2;
 
+/** How many to read on the very first pass, when time to the first lead is the whole game. */
+const FIRST_RUN_SOURCES = 6;
+
 /**
  * Reading allowance by how long the account has existed. A first pass finds
  * enough for a customer to see the thing working within minutes, without the
@@ -161,7 +164,19 @@ export async function sourcePass(
   const budget = readingBudget(ctx);
   // The oldest-mined first, which loadSources already orders by, so attention
   // spreads rather than always landing on the same competitor.
-  const take = opts.firstRun ? Math.min(2, sources.length) : SOURCES_PER_PASS;
+  /**
+   * The first run reads wider, because it is the one somebody is watching.
+   *
+   * Two sources per pass spreads attention over the week, which is right once
+   * an agent is established and wrong on the day it is created: with a dozen
+   * sources it takes half an hour before the first one that actually produces
+   * anything comes up, and the customer sees an empty list and concludes the
+   * product does not work. Reading is the safe half of what an agent does, so
+   * a wider first pass costs nothing on the account.
+   */
+  const take = opts.firstRun
+    ? Math.min(FIRST_RUN_SOURCES, sources.length)
+    : SOURCES_PER_PASS;
   const chosen = sources.slice(0, take);
 
   await recordEvent(
