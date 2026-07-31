@@ -93,12 +93,10 @@ export function ChallengePrompt({
     }
   };
 
-  if (
-    !info ||
-    (info.state !== "awaiting_code" &&
-      info.state !== "awaiting_approval" &&
-      info.state !== "failed")
-  ) {
+  // Only while something is genuinely waiting on the person. A sign-in that
+  // gave up is rendered by whoever hosts this component, next to the Try again
+  // button that acts on it, so showing it here too said the same thing twice.
+  if (!info || (info.state !== "awaiting_code" && info.state !== "awaiting_approval")) {
     return null;
   }
 
@@ -123,17 +121,6 @@ export function ChallengePrompt({
           Nothing to type here, and it finishes on its own once you tap. We tick
           the box that tells LinkedIn to remember the device, so it only asks
           the once.
-        </p>
-      </div>
-    );
-  }
-
-  if (info.state === "failed") {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10">
-        <p className="text-[13px] leading-relaxed text-amber-800 dark:text-amber-200">
-          {info.reason ??
-            `The sign-in for ${label} stopped while it was waiting for a code. Start it again whenever you are ready.`}
         </p>
       </div>
     );
