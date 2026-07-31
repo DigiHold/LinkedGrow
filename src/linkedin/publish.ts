@@ -369,9 +369,12 @@ async function attachMedia(
         ? "Video"
         : "Photo";
 
+  // Never by tag. Photo is a <button>, Document is not, and assuming the tag is
+  // the single mistake that broke the Message link, the connect control, the
+  // composer trigger and this, all on the same day.
   const entry = async () =>
-    (await firstVisible(page.locator(`button[aria-label="${wanted}" i]`))) ??
-    (await firstVisible(dialog.locator(`button[aria-label="${wanted}" i]`)));
+    (await firstVisible(page.locator(`[aria-label="${wanted}" i]`))) ??
+    (await firstVisible(dialog.locator(`[aria-label="${wanted}" i]`)));
 
   let addMedia = await entry();
   if (!addMedia) {
