@@ -1,82 +1,116 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Panel, PanelTitle, Pill } from "@/components/dashboard/ui/page";
+import { Pill } from "@/components/dashboard/ui/page";
 
 /**
- * What the agent sends, in order.
+ * What your agent sends.
  *
- * This tab is where the product's one real difference is visible, so it states
- * the sequence plainly and never dresses it up. The counts underneath each step
- * are what actually went out, not a forecast.
+ * Every message is written for one person, moments before it goes, from what
+ * that person actually wrote. So this tab shows the real thing: the last
+ * message the agent sent at each step, with the name it was sent to. Until a
+ * step has run, it shows the shape instead, with {name} where the person's
+ * name goes, resolved against the next person in the queue so it reads the way
+ * it will read.
  *
- * The copy here mirrors the engine in linkedgrow-worker/src/messages/
- * relationship.ts. If the sequence changes there, it changes here.
+ * The sequence itself mirrors linkedgrow-worker/src/messages/relationship.ts.
+ * If it changes there, it changes here.
  */
 
 type Step = {
   key: string;
   title: string;
-  body: string;
+  what: string;
   pacing: string;
+  /** The shape, shown until a real one exists. */
+  shape?: string;
 };
 
 const SEQUENCE: Step[] = [
   {
     key: "warm",
     title: "It likes their most recent post",
-    body: "So the invitation arrives from someone who has read them, rather than from a stranger. We make no claim that this raises acceptance, because nobody has measured it cleanly.",
+    what: "So the invitation arrives from somebody who has read them.",
     pacing: "Roughly a day before the invitation",
   },
   {
     key: "invite",
-    title: "It sends the invitation, with no note",
-    body: "Four separate datasets found that adding a note does not raise acceptance and slightly lowers it. So the invitation carries nothing.",
-    pacing: "Within the daily cap for the account",
+    title: "Invitation, with no note",
+    what: "Four separate datasets found that a note does not raise acceptance and slightly lowers it, so the invitation carries nothing.",
+    pacing: "Inside the day's ramped allowance",
   },
   {
     key: "hello",
-    title: "It says hello, and asks for nothing at all",
-    body: "Two lines. One real thing you saw of theirs, then a plain human close. No question mark anywhere, no offer, no mention of what you do. People accept a connection out of curiosity, and a first message that asks for something breaks that on the spot. This one is not trying to earn a reply, it is making the next message land in an open conversation.",
+    title: "It says hello, and asks for nothing",
+    what: "Two lines: one real thing it saw of theirs, then a plain close. No question mark, no offer, no mention of what you do.",
     pacing: "A few hours after they accept, never the same minute",
+    shape: "Thanks for accepting, {name}. {one real thing you saw of theirs}. Good to be connected.",
   },
   {
     key: "intro",
-    title: "The real message introduces a person, and sells nothing",
-    body: "It names what they wrote, says who you are and what you do in one plain clause, asks one thing they can answer in a line, and closes so that ignoring it costs nothing. It discloses on purpose: a message built to look non-commercial when it is commercial is a bait and switch. Sent within hours if they answered the hello, after a few days if they did not.",
-    pacing: "Hours after they reply, or 3 to 5 days of silence",
+    title: "The first real message, and it sells nothing",
+    what: "It names what they wrote, says who you are in one plain clause, and asks one thing they can answer in a line.",
+    pacing: "Hours after they answer the hello, or 3 to 5 days of silence",
+    shape:
+      "{name}, {what they wrote about}. I {what you do, in one clause}. {one question they can answer in a line}",
   },
   {
     key: "converse",
-    title: "If they answer, it answers back like a person",
-    body: "It addresses what they actually said before anything else, then asks one thing back. It does not mention the product here, not once and not as a hint. This can happen up to three times.",
-    pacing: "Between 12 minutes and 3 hours, so it is neither instant nor forgotten",
+    title: "If they answer, it answers back",
+    what: "It addresses what they actually said before anything else, then asks one thing back. The product is not mentioned here, not once.",
+    pacing: "Between 12 minutes and 3 hours",
+    shape: "{answer to what they said}. {one question back}",
   },
   {
     key: "ask",
-    title: "One ask, and it makes an offer rather than requesting time",
-    body: "Something small, concrete and free that they can accept or ignore in one word. Never a meeting, a call or fifteen minutes. Across 85M cold emails, asking for a meeting scored 44% below baseline while making an offer scored 28% above it. This is sent whether or not they ever replied.",
-    pacing: "2 to 4 days after the conversation, 4 to 7 days if they stayed silent",
+    title: "One ask, and it offers rather than requests",
+    what: "Something small and free they can accept or ignore in a word. Never a meeting, a call, or fifteen minutes.",
+    pacing: "2 to 4 days after the conversation, 4 to 7 after silence",
+    shape: "{name}, {the small concrete thing you can send them}. Want it?",
   },
   {
     key: "handover",
     title: "Then it stops, for good",
-    body: "No third chase, no re-sequencing, no reactivation months later. Whatever happens next belongs to you, and the agent will not message that person again.",
-    pacing: "Immediately after the ask, or the moment they say something a human should answer",
+    what: "No third chase and no reactivation months later. Whatever happens next is yours.",
+    pacing: "Right after the ask, or the moment a human should answer",
   },
 ];
 
-export function MessagesTab({ agentId }: { agentId: string }) {
-  const [sent, setSent] = useState<Record<string, number>>({});
+type Payload = {
+  sent: Record<string, number>;
+  examples: Record<string, { body: string; leadName: string }>;
+  invitations: number;
+  accepted: number;
+};
 
-  // Counts of what has actually gone out, refreshed while somebody is watching. Same reason as the
-  // other tabs: the first hour is the whole first impression and a stale zero reads as broken.
+/** The next real name in line, so {name} in a shape reads as a person. */
+function useNextName(agentId: string): string | null {
+  const [name, setName] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`/api/agents/${agentId}/queue`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const first =
+          json?.queue?.[0]?.fullName ?? json?.nextUp?.[0]?.fullName ?? null;
+        setName(typeof first === "string" ? first.split(/\s+/)[0] : null);
+      })
+      .catch(() => {});
+  }, [agentId]);
+  return name;
+}
+
+export function MessagesTab({ agentId }: { agentId: string }) {
+  const [data, setData] = useState<Payload | null>(null);
+  const nextName = useNextName(agentId);
+
+  // Counts and examples of what has actually gone out, refreshed while somebody
+  // is watching. A stale zero in the first hour reads as broken.
   useEffect(() => {
     const load = () =>
       fetch(`/api/agents/${agentId}/activity?window=all`)
         .then((r) => (r.ok ? r.json() : null))
         .then((json) => {
-          if (json?.sent) setSent(json.sent);
+          if (json) setData(json);
         })
         .catch(() => {});
     load();
@@ -87,50 +121,93 @@ export function MessagesTab({ agentId }: { agentId: string }) {
     return () => clearInterval(timer);
   }, [agentId]);
 
-  return (
-    <div className="mt-6 space-y-4">
-      <Panel>
-        <PanelTitle description="Seven steps, then it stops. Any reply moves it forward, and a reply that needs a human stops it immediately.">
-          What your agent does
-        </PanelTitle>
-        <ol className="-mx-2 divide-y divide-border">
-          {SEQUENCE.map((step, i) => (
-            <li key={step.key} className="flex gap-4 px-2 py-5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 tabular-nums dark:bg-white/5 dark:text-slate-400">
-                {i + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {step.title}
-                  </p>
-                  {sent[step.key] ? (
-                    <Pill tone="brand">{sent[step.key]} sent</Pill>
-                  ) : null}
-                </div>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  {step.body}
-                </p>
-                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-                  {step.pacing}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </Panel>
+  const sent = data?.sent ?? {};
 
-      <Panel>
-        <PanelTitle>Why it is written this way</PanelTitle>
-        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Every other tool pitches on the first message. This one does not,
-          which only works if it is honest about why it is there. So the first
-          message says what you do and asks for nothing, and the one ask comes
-          later and offers something rather than requesting your prospect&apos;s
-          time. Tone and audience are yours to set in Settings, and the sequence
-          itself does not change.
+  /** "177 sent · 74 accepted", or nothing when a step has not run. */
+  function counts(step: Step): string | null {
+    if (step.key === "invite") {
+      const n = data?.invitations ?? 0;
+      if (!n) return null;
+      return `${n} sent · ${data?.accepted ?? 0} accepted`;
+    }
+    const n = sent[step.key] ?? 0;
+    return n ? `${n} sent` : null;
+  }
+
+  return (
+    <div className="mt-6 space-y-3.5">
+      <div>
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+          What your agent sends
+        </h2>
+        <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+          Each message is written for one person from what they actually wrote,
+          shortly before it goes out. Tomorrow&apos;s are in Today&apos;s queue,
+          where you can read and edit every one of them.
         </p>
-      </Panel>
+      </div>
+
+      {SEQUENCE.map((step, i) => {
+        const example = data?.examples[step.key];
+        const count = counts(step);
+        const shape = step.shape?.replace(/\{name\}/g, nextName ?? "{name}");
+        return (
+          <div
+            key={step.key}
+            className="overflow-hidden rounded-xl border border-border bg-card"
+          >
+            <div className="flex flex-wrap items-center gap-2.5 border-b border-border px-4 py-3">
+              <Pill>Step {i + 1}</Pill>
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-white">
+                {step.title}
+              </h3>
+              <div className="flex-1" />
+              {count && (
+                <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">
+                  {count}
+                </span>
+              )}
+            </div>
+            <div className="px-4 py-3.5">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                {step.what}
+              </p>
+
+              {example ? (
+                <div className="mt-3 rounded-lg bg-slate-50 p-3.5 dark:bg-white/[0.03]">
+                  <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-slate-700 dark:text-slate-200">
+                    {example.body}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    The last one it sent, to {example.leadName}
+                  </p>
+                </div>
+              ) : shape ? (
+                <div className="mt-3 rounded-lg border border-dashed border-border p-3.5">
+                  <p className="text-[13.5px] leading-relaxed text-slate-500 dark:text-slate-400">
+                    {shape}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    {nextName
+                      ? `The shape it follows. The name is ${nextName}, who is next in the queue.`
+                      : "The shape it follows, until the first one goes out."}
+                  </p>
+                </div>
+              ) : null}
+
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                {step.pacing}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+
+      <p className="px-1 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+        Tone and goal are yours to set in Settings and they change how every one
+        of these is written. The sequence itself does not change, because the
+        order is what keeps the first message from reading as a pitch.
+      </p>
     </div>
   );
 }

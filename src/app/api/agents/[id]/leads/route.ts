@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { agents, agentLeads, agentSources } from "@/lib/db/schema";
-import { and, count, desc, eq, like, or, type SQL } from "drizzle-orm";
+import { agents, agentLeads, agentQueue, agentSources } from "@/lib/db/schema";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  like,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 /**
@@ -74,6 +84,12 @@ export async function GET(
       );
     }
     if (sourceParam) filters.push(eq(agentLeads.sourceId, sourceParam));
+    // "70 and up" on the toolbar. A lead with no score at all drops out of a
+    // score filter, which is the honest reading of it.
+    const minScore = Number.parseInt(url.searchParams.get("minScore") ?? "", 10);
+    if (Number.isInteger(minScore) && minScore > 0 && minScore <= 100) {
+      filters.push(gte(agentLeads.matchScore, minScore));
+    }
     if (search) {
       const term = `%${search.replace(/[%_]/g, "")}%`;
       const match = or(
@@ -100,10 +116,12 @@ export async function GET(
           matchReason: agentLeads.matchReason,
           signalText: agentLeads.signalText,
           signalUrl: agentLeads.signalUrl,
+          signalAuthor: agentLeads.signalAuthor,
           sourceId: agentLeads.sourceId,
           step: agentLeads.step,
           stepAt: agentLeads.stepAt,
           foundAt: agentLeads.foundAt,
+          excludedReason: agentLeads.excludedReason,
         })
         .from(agentLeads)
         .where(where)
@@ -122,7 +140,11 @@ export async function GET(
         )
         .groupBy(agentLeads.step),
       db
-        .select({ id: agentSources.id, label: agentSources.label })
+        .select({
+          id: agentSources.id,
+          label: agentSources.label,
+          type: agentSources.type,
+        })
         .from(agentSources)
         .where(eq(agentSources.agentId, id)),
     ]);
@@ -142,5 +164,83 @@ export async function GET(
     });
   } catch {
     return NextResponse.json({ error: "Failed to load leads" }, { status: 500 });
+  }
+}
+
+/**
+ * Reject one lead.
+ *
+ * The row is kept rather than deleted, and this is deliberate: the unique index
+ * on (workspace, profile) is what stops a second agent contacting the same
+ * person, so removing the row would hand the prospect straight back to another
+ * agent. Excluding it drops whatever was queued for them and leaves the claim.
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await loadSessionUser(session.user.id);
+    if (!data) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const workspaceId = data.teamOwnerId ?? data.user.id;
+
+    const body = await request.json();
+    if (body.action !== "reject") {
+      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+    const leadId = typeof body.leadId === "string" ? body.leadId : "";
+    if (!leadId || leadId.length > 64) {
+      return NextResponse.json({ error: "Which lead?" }, { status: 400 });
+    }
+
+    const now = new Date();
+    // Ownership and the agent both live in the WHERE, so a lead id from another
+    // workspace matches nothing rather than being rejected on their behalf.
+    const rejected = await db
+      .update(agentLeads)
+      .set({
+        step: "excluded",
+        stepAt: now,
+        rejectedAt: now,
+        excludedReason: "You rejected this person",
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(agentLeads.id, leadId),
+          eq(agentLeads.agentId, id),
+          eq(agentLeads.workspaceId, workspaceId)
+        )
+      )
+      .returning({ id: agentLeads.id });
+
+    if (rejected.length === 0) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
+
+    // Anything already queued for them stops. Rejecting somebody and then
+    // watching the agent message them an hour later is the worst version of it.
+    await db
+      .update(agentQueue)
+      .set({ state: "skipped", updatedAt: now })
+      .where(
+        and(
+          eq(agentQueue.leadId, leadId),
+          eq(agentQueue.workspaceId, workspaceId),
+          inArray(agentQueue.state, ["pending", "approved"])
+        )
+      );
+
+    return NextResponse.json({ rejected: true });
+  } catch {
+    return NextResponse.json({ error: "Failed to reject" }, { status: 500 });
   }
 }

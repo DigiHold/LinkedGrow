@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Panel, EmptyState, Pill } from "@/components/dashboard/ui/page";
+import { EmptyState } from "@/components/dashboard/ui/page";
 import { AnalyticsIcon } from "@/components/dashboard/nav-icons";
-import { Avatar, When } from "./lead-bits";
+import { Cell, Row, Table } from "./lead-bits";
 
 type Event = {
   id: string;
@@ -19,19 +19,40 @@ type Event = {
 const WINDOWS = [
   { key: "7d", label: "Last 7 days" },
   { key: "30d", label: "Last 30 days" },
-  { key: "all", label: "Everything" },
+  { key: "all", label: "All activity" },
 ];
 
-/** A colour per kind of event, so a scan finds the failures. */
-const TONE: Record<string, "good" | "warn" | "brand" | "neutral"> = {
-  reply: "good",
-  accepted: "good",
-  error: "warn",
-  blocked: "warn",
-  country: "warn",
-  invite: "brand",
-  message: "brand",
+/**
+ * The headline for each kind of event.
+ *
+ * The stored message is already a finished sentence, so it goes in the result
+ * column and this only names the kind, which is what makes the table scannable.
+ */
+const HEADLINE: Record<string, string> = {
+  sourcing: "Looked for leads",
+  lead: "Found new people",
+  reply: "Replied to you",
+  accepted: "Invitation accepted",
+  invite: "Invitation sent",
+  message: "Message sent",
+  error: "Something went wrong",
+  budget: "Reached its AI budget",
+  paused: "Paused",
+  blocked: "Stopped on a problem",
+  country: "Address problem",
 };
+
+function longAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(ms / 86_400_000);
+  if (days >= 2) return `${days} days ago`;
+  if (days === 1) return "a day ago";
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours >= 1) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const mins = Math.floor(ms / 60_000);
+  if (mins >= 1) return `${mins} minutes ago`;
+  return "just now";
+}
 
 export function ActivityTab({ agentId }: { agentId: string }) {
   const [events, setEvents] = useState<Event[]>([]);
@@ -77,8 +98,8 @@ export function ActivityTab({ agentId }: { agentId: string }) {
   }, [load, page, windowKey]);
 
   return (
-    <div className="mt-6 space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-6 space-y-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         {WINDOWS.map((w) => (
           <button
             key={w.key}
@@ -87,96 +108,109 @@ export function ActivityTab({ agentId }: { agentId: string }) {
               setWindowKey(w.key);
             }}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+              "rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
               windowKey === w.key
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                : "border border-border text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
+                ? "border-blue-500 bg-blue-50/60 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                : "border-border bg-card text-slate-600 hover:border-blue-500 hover:text-blue-600 dark:text-slate-300"
             )}
           >
             {w.label}
           </button>
         ))}
+        <div className="flex-1" />
         {!loading && (
-          <span className="ml-auto text-xs text-slate-400 tabular-nums dark:text-slate-500">
+          <span className="text-xs text-slate-400 tabular-nums dark:text-slate-500">
             {total} events
           </span>
         )}
       </div>
 
-      <Panel padded={false}>
-        {!loading && events.length === 0 ? (
+      {!loading && events.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card">
           <EmptyState
             icon={<AnalyticsIcon className="h-6 w-6" />}
             title="Nothing in this window"
             description="Every action the agent takes is written down here in plain words, including the ones that failed."
           />
-        ) : (
-          <ul className="divide-y divide-border">
-            {events.map((event) => (
-              <li key={event.id} className="flex items-start gap-3 px-5 py-3.5">
-                {event.leadName ? (
-                  <Avatar
-                    src={event.leadAvatar}
-                    name={event.leadName}
-                    size={32}
-                  />
-                ) : (
-                  <span className="h-8 w-8 shrink-0" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-slate-700 dark:text-slate-200">
-                    {event.message}
-                  </p>
-                  {event.leadName && event.leadUrl && (
-                    <a
-                      href={event.leadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-0.5 inline-block text-xs text-slate-500 underline-offset-2 hover:underline dark:text-slate-400"
-                    >
-                      {event.leadName}
-                    </a>
+        </div>
+      ) : (
+        <Table columns={["What happened", "Who", "Result", "When"]}>
+          {events.map((event) => (
+            <Row key={event.id} highlight={event.type === "reply"}>
+              <Cell>
+                <b
+                  className={cn(
+                    "text-[13px] font-semibold",
+                    event.type === "reply"
+                      ? "text-blue-700 dark:text-blue-400"
+                      : "text-slate-900 dark:text-white"
                   )}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Pill tone={TONE[event.type] ?? "neutral"}>{event.type}</Pill>
-                  <When value={event.createdAt} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                >
+                  {HEADLINE[event.type] ?? event.type}
+                </b>
+              </Cell>
+              <Cell label="Who">
+                {event.leadName && event.leadUrl ? (
+                  <a
+                    href={event.leadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] text-slate-700 underline-offset-2 hover:underline dark:text-slate-200"
+                  >
+                    {event.leadName}
+                  </a>
+                ) : (
+                  <span className="text-[13px] text-slate-400 dark:text-slate-500">
+                    -
+                  </span>
+                )}
+              </Cell>
+              <Cell label="Result">
+                <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                  {event.message}
+                </span>
+              </Cell>
+              <Cell label="When" className="whitespace-nowrap">
+                <span className="text-[13px] text-slate-400 dark:text-slate-500">
+                  {longAgo(event.createdAt)}
+                </span>
+              </Cell>
+            </Row>
+          ))}
+        </Table>
+      )}
 
-        {(page > 0 || hasMore) && (
-          <div className="flex items-center justify-between border-t border-border px-5 py-3">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className={cn(
-                "rounded-lg border border-border px-3 py-1.5 text-xs font-semibold",
-                page === 0
-                  ? "opacity-40"
-                  : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
-              )}
-            >
-              Previous
-            </button>
-            <Pill>Page {page + 1}</Pill>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasMore}
-              className={cn(
-                "rounded-lg border border-border px-3 py-1.5 text-xs font-semibold",
-                hasMore
-                  ? "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
-                  : "opacity-40"
-              )}
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </Panel>
+      {(page > 0 || hasMore) && (
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className={cn(
+              "rounded-lg border border-border px-3 py-1.5 text-xs font-semibold",
+              page === 0
+                ? "opacity-40"
+                : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+            )}
+          >
+            Previous
+          </button>
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Page {page + 1}
+          </span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+            className={cn(
+              "rounded-lg border border-border px-3 py-1.5 text-xs font-semibold",
+              hasMore
+                ? "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                : "opacity-40"
+            )}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1261,6 +1261,17 @@ export const agentLeads = sqliteTable("agent_leads", {
   })
     .notNull()
     .default("found"),
+  /**
+   * Where the relationship engine has this person, in its own vocabulary.
+   *
+   * `step` is the coarse funnel the dashboard draws. This is the fine state the
+   * worker's sequence reads and writes (queued, connect_sent, connected,
+   * hello_sent, hello_answered, conversing, intro_sent, ask_sent, handed_over),
+   * and it is what says who is next in line for an invitation.
+   */
+  sequenceStatus: text("sequence_status"),
+  /** The angle the last message took, so the next one does not repeat it. */
+  angle: text("angle"),
   stepAt: integer("step_at", { mode: "timestamp" }),
   foundAt: integer("found_at", { mode: "timestamp" }).notNull(),
   rejectedAt: integer("rejected_at", { mode: "timestamp" }),
@@ -1320,6 +1331,35 @@ export const agentQueue = sqliteTable("agent_queue", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
+/**
+ * Every action the worker takes on LinkedIn, and the meter its caps read.
+ *
+ * Separate from agent_events, which is prose for the customer. This one is the
+ * count: an invitation is one row of type "connect", a message one of type
+ * "dm". Written by the worker; the dashboard only reads it, to draw the week.
+ * The account id is on the row because LinkedIn's limits belong to the profile,
+ * not to whatever we happen to call an agent.
+ */
+export const agentActions = sqliteTable("agent_actions", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  linkedinAccountId: text("linkedin_account_id")
+    .notNull()
+    .references(() => linkedinAccounts.id, { onDelete: "cascade" }),
+  leadId: text("lead_id").references(() => agentLeads.id, {
+    onDelete: "set null",
+  }),
+  /** connect, dm, reply, like. */
+  type: text("type").notNull(),
+  detail: text("detail").notNull().default(""),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
 // Every message either way. readAt drives the unread state that both the
 // Replies view and the activity feed need.
 export const agentMessages = sqliteTable("agent_messages", {
@@ -1339,6 +1379,37 @@ export const agentMessages = sqliteTable("agent_messages", {
   sentAt: integer("sent_at", { mode: "timestamp" }).notNull(),
   readAt: integer("read_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+/**
+ * What each agent is doing at this exact moment. One row per agent, overwritten.
+ *
+ * Everything else here is written after the fact, which is why the dashboard
+ * could only ever narrate the past: "Invitation sent to Lea Perrin" reads like
+ * a log. The worker writes this one BEFORE it acts, so the ticker can say "the
+ * agent is liking a post by Thomas Blanc" while it is happening, with his face
+ * beside it.
+ *
+ * One row per agent rather than a history, so it cannot grow. Nothing deletes
+ * stale rows either: a reader ignores anything older than a few minutes, which
+ * is what keeps a session the watchdog killed from claiming forever that the
+ * agent is still liking a post it gave up on.
+ */
+export const agentActivity = sqliteTable("agent_activity", {
+  agentId: text("agent_id")
+    .primaryKey()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** Present tense, and it reads on from the agent: "liking a post by". */
+  verb: text("verb").notNull(),
+  subjectName: text("subject_name"),
+  subjectAvatar: text("subject_avatar"),
+  subjectUrl: text("subject_url"),
+  /** What it is working on when there is no person: a search term, a source. */
+  detail: text("detail"),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
 });
 
 // The activity log. message is a finished plain-English phrase, per section 2c,

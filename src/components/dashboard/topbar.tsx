@@ -11,6 +11,7 @@ import {
   SunIcon,
 } from "@/components/dashboard/nav-icons";
 import { useSidebar } from "@/components/dashboard/sidebar-context";
+import { useCrumbLabel } from "@/components/dashboard/crumb-context";
 
 /**
  * Labels for path segments that do not read well when de-slugified, plus the
@@ -58,6 +59,7 @@ export function Topbar() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const { toggle, isOpen } = useSidebar();
+  const namedCrumb = useCrumbLabel();
   const [mounted, setMounted] = useState(false);
 
   // The theme is only known on the client, so the toggle renders a stable
@@ -70,6 +72,11 @@ export function Topbar() {
     href: `/${segments.slice(0, index + 1).join("/")}`,
     isLast: index === segments.length - 1,
   }));
+
+  // A detail page hands up the name of the record it loaded, which beats
+  // anything derivable from a url ending in an id.
+  const named = crumbs[crumbs.length - 1];
+  if (named && namedCrumb) named.label = namedCrumb;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl lg:px-6 dark:border-white/10 dark:bg-card/80">

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Panel,
   PanelTitle,
   Field,
   FieldActions,
-  Pill,
 } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
 
@@ -49,6 +50,8 @@ export type AgentSettings = {
   dailyInviteCap: number;
   accountAgentCount: number;
   accountCountry: string;
+  accountName: string | null;
+  accountAvatar: string | null;
   linkedinAccountId: string;
 };
 
@@ -119,6 +122,64 @@ function NumberBox({
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+"];
 
+/**
+ * The zones people actually run accounts from.
+ *
+ * A free-text field here is a trap: one typo and the worker cannot read the
+ * zone, so the working window silently falls back and the agent runs at the
+ * wrong hours. Whatever is already stored stays selectable even if it is not
+ * on this list.
+ */
+const TIMEZONES = [
+  "Europe/Paris",
+  "Europe/Zurich",
+  "Europe/London",
+  "Europe/Madrid",
+  "Europe/Berlin",
+  "Europe/Amsterdam",
+  "Europe/Brussels",
+  "Europe/Lisbon",
+  "Europe/Warsaw",
+  "Europe/Bucharest",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Sao_Paulo",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+];
+
+/** Minutes from midnight, as a clock. */
+function hhmm(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60
+  ).padStart(2, "0")}`;
+}
+
+function Avatar({ name, src }: { name: string | null; src: string | null }) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt=""
+        width={32}
+        height={32}
+        className="h-8 w-8 flex-none rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-white/5 dark:text-slate-400">
+      {(name ?? "?").slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
 /** Columns hold JSON. Anything unreadable becomes an empty list rather than breaking the form. */
 function parseList(raw: string | null): string[] {
   if (!raw) return [];
@@ -139,14 +200,23 @@ function parseDays(raw: string): number[] {
   }
 }
 
+/**
+ * The values here are the database's, not near-misses of them.
+ *
+ * These two lists offered "relationship"/"meeting" and "any"/"close"/"exact"
+ * while the columns hold "conversations"/"meetings" and
+ * "precision"/"balanced"/"volume". Nothing ever matched, so no option was ever
+ * highlighted, and saving the screen posted a value the route dropped on the
+ * floor. Both settings were unreachable from the interface.
+ */
 const GOALS = [
   {
-    value: "relationship",
+    value: "conversations",
     label: "Start conversations",
     hint: "Build a relationship first, ask later",
   },
   {
-    value: "meeting",
+    value: "meetings",
     label: "Book calls and demos",
     hint: "Comes to the ask sooner",
   },
@@ -159,9 +229,9 @@ const TONES = [
 ];
 
 const MATCH_LEVELS = [
-  { value: "any", label: "Any match", hint: "More people, looser fit" },
-  { value: "close", label: "Close match", hint: "Fewer people, better fit" },
-  { value: "exact", label: "Exact match", hint: "Only who you described" },
+  { value: "volume", label: "Any match", hint: "More people, looser fit" },
+  { value: "balanced", label: "Close match", hint: "Fewer people, better fit" },
+  { value: "precision", label: "Exact match", hint: "Only who you described" },
 ];
 
 export function SettingsTab({
@@ -177,6 +247,7 @@ export function SettingsTab({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [limitsOpen, setLimitsOpen] = useState(false);
 
   function set<K extends keyof AgentSettings>(key: K, value: AgentSettings[K]) {
     setSaved(false);
@@ -333,12 +404,18 @@ export function SettingsTab({
             checked={form.smartLeadFinder}
             onChange={(v) => set("smartLeadFinder", v)}
           />
+          <Toggle
+            label="Read LinkedIn, write nothing to it"
+            hint="The agent signs in, finds people, scores them and fills the queue, and never likes, invites or messages anybody. It is how you watch it work on your own account before letting it act for you."
+            checked={form.observeOnly}
+            onChange={(v) => set("observeOnly", v)}
+          />
         </div>
       </Panel>
 
       <Panel>
-        <PanelTitle description="Everything here was set when the agent was created and could not be changed afterwards, which meant rebuilding an agent and losing its leads to move its hours by one.">
-          Targeting and schedule
+        <PanelTitle description="Narrow the audience without rebuilding the agent. Everything here was frozen at creation, which meant losing every lead it had found in order to change one line.">
+          Who counts as a match
         </PanelTitle>
         <div className="space-y-5">
           <Field label="Job titles" hint="Comma separated. Empty means any.">
@@ -388,71 +465,6 @@ export function SettingsTab({
             </div>
           </Field>
 
-          <Field label="Working days" hint="Nothing is sent on the days you leave off.">
-            <div className="flex flex-wrap gap-2">
-              {DAY_NAMES.map((label, day) => {
-                const on = parseDays(form.workdayDays).includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => {
-                      const current = parseDays(form.workdayDays);
-                      set(
-                        "workdayDays",
-                        JSON.stringify(
-                          on ? current.filter((d) => d !== day) : [...current, day].sort()
-                        )
-                      );
-                    }}
-                    className={on ? PICKED : UNPICKED}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-
-          <Field label="Hours" hint="Local to the timezone below.">
-            <div className="flex items-center gap-3">
-              <HourSelect value={form.workdayStart} onChange={(v) => set("workdayStart", v)} />
-              <span className="text-[13px] text-slate-500 dark:text-slate-400">to</span>
-              <HourSelect value={form.workdayEnd} onChange={(v) => set("workdayEnd", v)} />
-            </div>
-          </Field>
-
-          <Field label="Timezone" hint="Where the account behaves as though it lives.">
-            <input
-              value={form.timezone}
-              onChange={(e) => set("timezone", e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
-            />
-          </Field>
-
-          <Field
-            label="Warm-up"
-            hint="Leave empty for the safe ramp: 5 invitations a day, climbing by 5 each week for a month. LinkedIn restricts accounts that suddenly send far more than they used to."
-          >
-            <div className="flex flex-wrap gap-3">
-              <NumberBox
-                label="Start"
-                value={form.warmupStartPerDay}
-                onChange={(v) => set("warmupStartPerDay", v)}
-              />
-              <NumberBox
-                label="Weekly"
-                value={form.warmupIncrementPerWeek}
-                onChange={(v) => set("warmupIncrementPerWeek", v)}
-              />
-              <NumberBox
-                label="Weeks"
-                value={form.warmupWeeks}
-                onChange={(v) => set("warmupWeeks", v)}
-              />
-            </div>
-          </Field>
         </div>
       </Panel>
 
@@ -461,14 +473,35 @@ export function SettingsTab({
           The account it sends from
         </PanelTitle>
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Dedicated address in {form.accountCountry}
-            {form.accountAgentCount > 1
-              ? `, shared with ${form.accountAgentCount - 1} other agent${form.accountAgentCount > 2 ? "s" : ""}`
-              : ""}
-          </p>
-          <Pill>{form.dailyInviteCap} invitations a day</Pill>
+        {/* The sender row, with everything about pace behind one button. Days,
+            hours, timezone and warm-up all belong to how hard this account is
+            pushed, and spreading them down the page is how people lost them. */}
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border p-3.5">
+          <Avatar name={form.accountName} src={form.accountAvatar} />
+          <div className="min-w-0">
+            <b className="block text-[13px] font-semibold text-slate-900 dark:text-white">
+              {form.accountName ?? "No account connected"}
+            </b>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Dedicated address in {form.accountCountry}
+              {form.accountAgentCount > 1
+                ? `, shared with ${form.accountAgentCount - 1} other agent${form.accountAgentCount > 2 ? "s" : ""}`
+                : ""}
+            </div>
+          </div>
+          <div className="flex-1" />
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {form.dailyInviteCap} a day ·{" "}
+            {parseDays(form.workdayDays).length} days ·{" "}
+            {hhmm(form.workdayStart)} to {hhmm(form.workdayEnd)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setLimitsOpen(true)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-500 hover:text-blue-600 dark:text-slate-200"
+          >
+            Limits
+          </button>
         </div>
 
         <LinkedInAccountsPanel
@@ -477,6 +510,153 @@ export function SettingsTab({
           selectedId={form.linkedinAccountId}
         />
       </Panel>
+
+      {limitsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setLimitsOpen(false)}
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-white shadow-2xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {form.accountName ?? "This account"}
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  When this account works, and how hard it is pushed
+                </p>
+              </div>
+              <div className="flex-1" />
+              <button
+                type="button"
+                onClick={() => setLimitsOpen(false)}
+                aria-label="Close"
+                className="text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5 px-5 py-5">
+              <Field
+                label="Days it works"
+                hint="An account that works every Saturday looks automated on its own, and worse combined with volume."
+              >
+                <div className="flex flex-wrap gap-2">
+                  {DAY_NAMES.map((label, day) => {
+                    const on = parseDays(form.workdayDays).includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => {
+                          const current = parseDays(form.workdayDays);
+                          set(
+                            "workdayDays",
+                            JSON.stringify(
+                              on
+                                ? current.filter((d) => d !== day)
+                                : [...current, day].sort()
+                            )
+                          );
+                        }}
+                        className={on ? PICKED : UNPICKED}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              <Field label="Hours" hint="Local to the timezone below.">
+                <div className="flex items-center gap-3">
+                  <HourSelect
+                    value={form.workdayStart}
+                    onChange={(v) => set("workdayStart", v)}
+                  />
+                  <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                    to
+                  </span>
+                  <HourSelect
+                    value={form.workdayEnd}
+                    onChange={(v) => set("workdayEnd", v)}
+                  />
+                </div>
+              </Field>
+
+              <Field
+                label="Timezone"
+                hint="Where the account behaves as though it lives. Pick where you actually are, not where your buyers are."
+              >
+                <select
+                  value={form.timezone}
+                  onChange={(e) => set("timezone", e.target.value)}
+                  className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-slate-900 dark:text-white"
+                >
+                  {(TIMEZONES.includes(form.timezone)
+                    ? TIMEZONES
+                    : [form.timezone, ...TIMEZONES]
+                  ).map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field
+                label="Warm-up"
+                hint="Leave empty for the safe ramp: 5 invitations a day, climbing by 5 each week for a month. These numbers are ours. LinkedIn's own ceiling is roughly 100 invitations a week and it sits above all of them."
+              >
+                <div className="flex flex-wrap gap-3">
+                  <NumberBox
+                    label="Start"
+                    value={form.warmupStartPerDay}
+                    onChange={(v) => set("warmupStartPerDay", v)}
+                  />
+                  <NumberBox
+                    label="Weekly"
+                    value={form.warmupIncrementPerWeek}
+                    onChange={(v) => set("warmupIncrementPerWeek", v)}
+                  />
+                  <NumberBox
+                    label="Weeks"
+                    value={form.warmupWeeks}
+                    onChange={(v) => set("warmupWeeks", v)}
+                  />
+                </div>
+              </Field>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5 border-t border-border bg-slate-50 px-5 py-3.5 dark:bg-white/[0.02]">
+              <div className="flex-1" />
+              <button
+                type="button"
+                onClick={() => setLimitsOpen(false)}
+                className="rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-200"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await save();
+                  setLimitsOpen(false);
+                }}
+                disabled={busy}
+                className="rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
+              >
+                {busy ? "Saving" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/5 dark:text-red-400">

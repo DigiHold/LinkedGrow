@@ -5,19 +5,9 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  PageShell,
-  PageHeader,
-  Panel,
-  PanelTitle,
-  Pill,
-  StatCard,
-  EmptyState,
-} from "@/components/dashboard/ui/page";
-import {
-  AgentIcon,
-  ChevronLeftIcon,
-} from "@/components/dashboard/nav-icons";
+import { PageShell, Panel, Pill, EmptyState } from "@/components/dashboard/ui/page";
+import { AgentIcon, ChevronLeftIcon } from "@/components/dashboard/nav-icons";
+import { useNamedCrumb } from "@/components/dashboard/crumb-context";
 import { LeadsTab } from "@/components/dashboard/agents/leads-tab";
 import { QueueTab } from "@/components/dashboard/agents/queue-tab";
 import { MessagesTab } from "@/components/dashboard/agents/messages-tab";
@@ -53,6 +43,7 @@ type Agent = {
   workdayEnd: number;
   warmupStartedAt: string | null;
   lastRunAt: string | null;
+  createdAt: string;
   accountId: string;
   accountName: string | null;
   accountAvatar: string | null;
@@ -74,100 +65,141 @@ type Source = {
 
 type Event = { id: string; type: string; message: string; createdAt: string };
 
+type ChartDay = {
+  day: string;
+  leads: number;
+  invitations: number;
+  messages: number;
+};
+
+type Reply = {
+  id: string;
+  body: string;
+  sentAt: string;
+  leadId: string;
+  leadName: string;
+  leadAvatar: string | null;
+};
+
 type Payload = {
   agent: Agent;
   sources: Source[];
   steps: Record<string, number>;
   events: Event[];
   queuedToday: number;
+  chart: ChartDay[];
+  replies: Reply[];
 };
 
-
-/**
- * When the agent next does something, said the way a person would say it.
- *
- * An agent that is running but outside office hours looks broken otherwise:
- * the counters sit at zero and nothing explains why. The window and the
- * timezone are the agent's own, so a customer in Paris reads Paris hours.
- */
-function nextRunLine(agent: {
-  status: string;
-  timezone: string;
-  workdayStart: number;
-  workdayEnd: number;
-}): { headline: string; detail: string } {
-  const clock = (minutes: number) =>
-    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-  const window = `${clock(agent.workdayStart)} to ${clock(agent.workdayEnd)}, ${agent.timezone}`;
-
-  if (agent.status === "paused" || agent.status === "stopped") {
-    return {
-      headline: "Not running",
-      detail: `Start it and it works ${window}, weekdays only.`,
-    };
-  }
-  if (agent.status === "blocked") {
-    return {
-      headline: "Stopped on a problem",
-      detail: "Fix what it flags below and it picks up again on its own.",
-    };
-  }
-
-  const now = new Date();
-  const local = new Date(now.toLocaleString("en-US", { timeZone: agent.timezone }));
-  const minutes = local.getHours() * 60 + local.getMinutes();
-  const weekday = local.getDay() >= 1 && local.getDay() <= 5;
-  const working = weekday && minutes >= agent.workdayStart && minutes < agent.workdayEnd;
-
-  if (working) {
-    return { headline: "Working now", detail: `Office hours are ${window}.` };
-  }
-  const when =
-    weekday && minutes < agent.workdayStart
-      ? `today at ${clock(agent.workdayStart)}`
-      : `the next working day at ${clock(agent.workdayStart)}`;
-  return { headline: `Next run ${when}`, detail: `It works ${window}, weekdays only.` };
-}
-
-// Five, not seven. "Today's queue" and "Activity" were the same object either
-// side of now, and "Messages" was the sequence template, which is configuration
-// and belongs under Settings rather than beside real messages.
 const TABS = [
   "Overview",
   "Leads",
-  "Messages",
+  "Today's queue",
   "Sources",
+  "Messages",
+  "Activity",
   "Settings",
 ] as const;
 type Tab = (typeof TABS)[number];
 
+/** The state pill: is this agent switched on at all. */
 const STATUS: Record<
   Agent["status"],
   { label: string; tone: "neutral" | "good" | "warn" | "brand" }
 > = {
-  active: { label: "Running", tone: "good" },
-  warming: { label: "Warming up", tone: "brand" },
-  paused: { label: "Paused", tone: "neutral" },
+  active: { label: "Active", tone: "good" },
+  warming: { label: "Active", tone: "good" },
+  paused: { label: "Paused", tone: "warn" },
   stopped: { label: "Stopped", tone: "neutral" },
   blocked: { label: "Needs attention", tone: "warn" },
 };
 
-/** Minutes from midnight to something a person reads. */
-/** "51 out of 100", the conversion into this step. Empty when there is nothing to divide by. */
+function clock(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60
+  ).padStart(2, "0")}`;
+}
+
+/** The agent's own local time, since the window and the days are its own. */
+function localNow(timezone: string): Date {
+  try {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
+  } catch {
+    return new Date();
+  }
+}
+
+function workingDays(raw: string): number[] {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((d): d is number => typeof d === "number")
+      : [1, 2, 3, 4, 5];
+  } catch {
+    return [1, 2, 3, 4, 5];
+  }
+}
+
+/** Is it inside its hours, on a day it works. */
+function isWorkingNow(agent: Agent): boolean {
+  const local = localNow(agent.timezone);
+  const minutes = local.getHours() * 60 + local.getMinutes();
+  return (
+    workingDays(agent.workdayDays).includes(local.getDay()) &&
+    minutes >= agent.workdayStart &&
+    minutes < agent.workdayEnd
+  );
+}
+
+/**
+ * When it next does something, said the way a person would say it.
+ *
+ * An agent that is on but outside its hours looks broken otherwise: the
+ * counters sit still and nothing on screen explains why.
+ */
+function nextLaunch(agent: Agent): string {
+  if (agent.status === "paused" || agent.status === "stopped") return "paused";
+  if (agent.status === "blocked") return "stopped on a problem";
+  if (isWorkingNow(agent)) return "now";
+
+  const local = localNow(agent.timezone);
+  const minutes = local.getHours() * 60 + local.getMinutes();
+  const days = workingDays(agent.workdayDays);
+
+  // Later today, or the next day it works.
+  let ahead = 0;
+  if (!(days.includes(local.getDay()) && minutes < agent.workdayStart)) {
+    ahead = 1;
+    while (ahead < 8 && !days.includes((local.getDay() + ahead) % 7)) ahead++;
+    if (ahead >= 8) return "never, no working days are switched on";
+  }
+  const until = ahead * 1440 + agent.workdayStart - minutes;
+  if (until < 90) return `in ${until} minutes`;
+  const hours = Math.round(until / 60);
+  if (hours < 36) return `in ${hours} hours`;
+  return `in ${Math.round(hours / 24)} days`;
+}
+
+/** "23 days ago", for the meta line under the title. */
+function since(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days >= 2) return `${days} days ago`;
+  if (days === 1) return "yesterday";
+  return "today";
+}
+
+/** "51 out of 100", the conversion into this step. */
 function rateOf(value: number, base: number): string {
   if (!base) return "nothing yet";
   return `${Math.round((value / base) * 100)} out of 100`;
 }
 
-/** "3d", "2h", "just now". Short, because it sits at the end of every row. */
-function shortAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < 60_000) return "just now";
-  const days = Math.floor(ms / 86_400_000);
-  if (days >= 1) return `${days}d`;
-  const hours = Math.floor(ms / 3_600_000);
-  if (hours >= 1) return `${hours}h`;
-  return `${Math.floor(ms / 60_000)}m`;
+/** First name and last initial: "Nicolas L.", which is how the header says it. */
+function shortName(full: string | null): string {
+  if (!full) return "nobody yet";
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${(parts[parts.length - 1] ?? "").charAt(0)}.`;
 }
 
 /**
@@ -175,23 +207,40 @@ function shortAgo(iso: string): string {
  *
  * The numbers are ours, not LinkedIn's: a new account that suddenly sends at
  * full pace is the pattern that gets restricted, so the agent climbs to its
- * ceiling over a month. LinkedIn's own limit sits above all of them.
+ * ceiling over a month. LinkedIn's own ceiling sits above all of them.
  */
-function rampWeeks(agent: {
-  warmupStartedAt: string | null;
-  dailyInviteCap: number;
-}): Array<{ week: number; perDay: number; state: "done" | "now" | "todo" }> {
-  const started = agent.warmupStartedAt ? new Date(agent.warmupStartedAt).getTime() : null;
+function rampWeeks(agent: Agent): Array<{
+  week: number;
+  perDay: number;
+  state: "done" | "now" | "todo";
+}> {
+  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const started = agent.warmupStartedAt
+    ? new Date(agent.warmupStartedAt).getTime()
+    : null;
   const current =
     started === null
       ? 0
-      : Math.min(4, Math.max(1, Math.floor((Date.now() - started) / (7 * 86_400_000)) + 1));
-  const top = Math.max(4, agent.dailyInviteCap);
-  return [1, 2, 3, 4].map((week) => ({
+      : Math.min(
+          weeks,
+          Math.max(1, Math.floor((Date.now() - started) / (7 * 86_400_000)) + 1)
+        );
+  const top = Math.max(weeks, agent.dailyInviteCap);
+  return Array.from({ length: weeks }, (_, i) => i + 1).map((week) => ({
     week,
-    perDay: Math.max(1, Math.round((top / 4) * week)),
+    perDay: Math.max(1, Math.round((top / weeks) * week)),
     state: current === 0 ? "todo" : week < current ? "done" : week === current ? "now" : "todo",
   }));
+}
+
+/** Which week of the ramp, or null once the ramp is over. */
+function warmupWeek(agent: Agent): { week: number; of: number } | null {
+  if (!agent.warmupStartedAt) return null;
+  const of = Math.max(1, agent.warmupWeeks ?? 4);
+  const week = Math.floor(
+    (Date.now() - new Date(agent.warmupStartedAt).getTime()) / (7 * 86_400_000)
+  ) + 1;
+  return week > of ? null : { week, of };
 }
 
 /** What each kind of source is, in the customer's words rather than the column's. */
@@ -206,17 +255,14 @@ const SOURCE_KIND: Record<string, { badge: string; what: string }> = {
 };
 
 /** The audience, flattened out of the wizard's lists into plain tags. */
-function icpTags(agent: {
-  jobRoles: string | null;
-  industries: string | null;
-  locations: string | null;
-  companySizes: string | null;
-}): string[] {
+function icpTags(agent: Agent): string[] {
   const parse = (raw: string | null): string[] => {
     if (!raw) return [];
     try {
       const parsed: unknown = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((v): v is string => typeof v === "string")
+        : [];
     } catch {
       return [];
     }
@@ -229,12 +275,6 @@ function icpTags(agent: {
   ];
 }
 
-function hhmm(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}:${String(m).padStart(2, "0")}`;
-}
-
 export function AgentDetailContent({ agentId }: { agentId: string }) {
   const router = useRouter();
   const [data, setData] = useState<Payload | null>(null);
@@ -243,6 +283,10 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
   const [busy, setBusy] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // The breadcrumb is built from the url, which ends in an id. This is the only
+  // place that knows the agent's name.
+  useNamedCrumb(data?.agent.name);
 
   const load = useCallback(() => {
     fetch(`/api/agents/${agentId}`)
@@ -260,12 +304,9 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
   /**
    * The agent's own state, kept current while somebody is watching it.
    *
-   * The status and the counts on this page come from one fetch on mount, so an agent that started
-   * warming, found leads and began sending still read "paused, 0 leads" until the browser was
-   * reloaded. Somebody watching their first agent work is exactly the person who should not have
-   * to press refresh to find out whether it works.
-   *
-   * Fifteen seconds, and nothing at all while the tab is in the background.
+   * Somebody watching their first agent work is exactly the person who should
+   * not have to press refresh to find out whether it works. Fifteen seconds,
+   * and nothing at all while the tab is in the background.
    */
   useEffect(() => {
     const timer = setInterval(() => {
@@ -326,9 +367,11 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
     );
   }
 
-  const { agent, sources, steps, events, queuedToday } = data;
+  const { agent, sources, steps, queuedToday, chart, replies } = data;
   const status = STATUS[agent.status];
-  const running = agent.status === "active" || agent.status === "warming";
+  const on = agent.status === "active" || agent.status === "warming";
+  const running = on && isWorkingNow(agent);
+  const ramp = warmupWeek(agent);
 
   const found = Object.values(steps).reduce((a, b) => a + b, 0);
   const contacted = ["invited", "accepted", "messaged", "replied", "finished"]
@@ -351,76 +394,134 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         All agents
       </Link>
 
-      <div className="mt-4">
-        <PageHeader
-          title={agent.name}
-          description={
-            agent.icpSummary ||
-            "No audience described yet. Open Settings to tell the agent who it should be looking for."
-          }
-          meta={
-            <>
-              <Pill tone={status.tone}>
-                {agent.status === "active" && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                )}
-                {status.label}
-              </Pill>
-              <Pill>{agent.accountCountry}</Pill>
-            </>
-          }
-          actions={
-            <button
-              onClick={() => setStatus(running ? "paused" : "active")}
-              disabled={busy}
-              className={cn(
-                "rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform disabled:opacity-50",
-                running
-                  ? "border border-border text-slate-700 hover:-translate-y-0.5 dark:text-slate-200"
-                  : "bg-linear-to-r from-cyan-500 to-blue-600 text-white hover:-translate-y-0.5"
-              )}
-            >
-              {running ? "Pause agent" : "Start agent"}
-            </button>
-          }
-        />
+      {/* The header: what state it is in, then what you can do about it. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-[26px] font-bold leading-tight tracking-[-0.035em] text-slate-900 dark:text-white">
+          {agent.name}
+        </h1>
+        <Pill tone={status.tone}>
+          {on && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+          {status.label}
+        </Pill>
+        {running && (
+          <Pill tone="brand">
+            <Spinner />
+            Running
+          </Pill>
+        )}
+        {ramp && (
+          <Pill tone="warn">
+            Warm-up, week {ramp.week} of {ramp.of}
+          </Pill>
+        )}
+        {agent.observeOnly && <Pill>Reading only</Pill>}
+        <div className="flex-1" />
+        <button
+          onClick={() => setStatus(on ? "paused" : "active")}
+          disabled={busy}
+          className="rounded-lg border border-border bg-card px-3.5 py-2.5 text-[13px] font-semibold text-slate-700 transition-colors hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 dark:text-slate-200"
+        >
+          {on ? "Pause agent" : "Start agent"}
+        </button>
+        <button
+          onClick={() => setTab("Today's queue")}
+          className="rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 px-3.5 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+        >
+          Review today&apos;s queue
+        </button>
       </div>
 
-      {agent.pausedReason && agent.status !== "active" && (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-300">
+      <div className="mt-1.5 flex flex-wrap gap-4 text-xs text-slate-400 dark:text-slate-500">
+        <span>
+          Created <b className="font-semibold text-slate-900 dark:text-white">{since(agent.createdAt)}</b>
+        </span>
+        <span>
+          Next launch{" "}
+          <b className="font-semibold text-slate-900 dark:text-white">{nextLaunch(agent)}</b>
+        </span>
+        <span>
+          Sending as{" "}
+          <b className="font-semibold text-slate-900 dark:text-white">
+            {shortName(agent.accountName)}
+          </b>
+        </span>
+        <span>
+          Today&apos;s limit{" "}
+          <b className="font-semibold text-slate-900 dark:text-white">
+            {agent.dailyInviteCap} invitations
+          </b>
+        </span>
+      </div>
+
+      {agent.pausedReason && !on && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-300">
           {agent.pausedReason}
         </div>
       )}
 
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-border">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
-              tab === t
-                ? "border-blue-600 text-slate-900 dark:border-blue-400 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            )}
-          >
-            {t}
-            {t === "Messages" && queuedToday > 0 && (
-              <span className="ml-2 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400">
-                {queuedToday}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="mt-5 flex gap-0.5 overflow-x-auto border-b border-border">
+        {TABS.map((t) => {
+          const badge =
+            t === "Leads" ? found : t === "Today's queue" ? queuedToday : 0;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "shrink-0 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition-colors",
+                tab === t
+                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              )}
+            >
+              {t}
+              {badge > 0 && (
+                <span
+                  className={cn(
+                    "ml-1.5 inline-block rounded-full px-1.5 py-px text-[11px] tabular-nums",
+                    tab === t
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
+                      : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400"
+                  )}
+                >
+                  {badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {tab === "Overview" && (
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_264px]">
+        <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_264px]">
           <div>
-            {/* The spine: the whole funnel in one row, each step a way in.
-                It replaces four separate stat cards, which showed the same
-                numbers without ever showing the drop between them. */}
-            <div className="mb-[18px] grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-5">
+            {/* Only when there is something to act on. These used to sit here
+                permanently, which trained people to stop reading them. */}
+            {replies.length > 0 && (
+              <ActionRow
+                count={replies.length}
+                title={
+                  replies.length === 1 && replies[0]
+                    ? `${replies[0].leadName} replied ${shortAgo(replies[0].sentAt)}`
+                    : `${replies.length} people replied and are waiting for you`
+                }
+                why="The agent has stopped messaging them for good"
+                cta="Read them"
+                onClick={() => setTab("Leads")}
+              />
+            )}
+            {queuedToday > 0 && on && (
+              <ActionRow
+                count={queuedToday}
+                title={`${queuedToday} ${queuedToday === 1 ? "person" : "people"} will be contacted next`}
+                why="You can read and edit every message before it goes"
+                cta="Review queue"
+                onClick={() => setTab("Today's queue")}
+              />
+            )}
+
+            {/* The spine: the whole funnel in one row, each step a way in. */}
+            <div className="mb-[18px] mt-[18px] grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-5">
               {(
                 [
                   { label: "Found", value: found, rate: "all time", fill: "opacity-100" },
@@ -468,45 +569,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
               ))}
             </div>
 
-            {/* Activity, cut to what somebody actually needs to see.
-                It used to print every line the agent ever wrote, newest first,
-                with a full timestamp on each. Nicolas, 2026-07-31: not
-                everything the agent does, the data that matters. */}
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                <h2 className="text-[13px] font-semibold text-slate-900 dark:text-white">
-                  Latest activity
-                </h2>
-                <div className="flex-1" />
-                {events.length > 6 && (
-                  <button
-                    type="button"
-                    onClick={() => setTab("Leads")}
-                    className="text-xs font-medium text-blue-600 dark:text-blue-400"
-                  >
-                    See the leads
-                  </button>
-                )}
-              </div>
-              {events.length === 0 ? (
-                <p className="px-4 py-8 text-center text-[13px] text-slate-500 dark:text-slate-400">
-                  Nothing yet. Once the agent runs, the few things worth knowing show up here.
-                </p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {events.slice(0, 6).map((event) => (
-                    <li key={event.id} className="flex items-start gap-3 px-4 py-2.5">
-                      <span className="flex-1 text-[13px] text-slate-700 dark:text-slate-200">
-                        {event.message}
-                      </span>
-                      <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
-                        {shortAgo(event.createdAt)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <ActivityChart days={chart} />
           </div>
 
           {/* The rail: is the account safe, how far along is the ramp, and how
@@ -531,8 +594,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                   Account health
                 </h4>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                  {agent.accountName || "Not connected"} · dedicated address,{" "}
-                  {agent.accountCountry}
+                  {shortName(agent.accountName)} · dedicated address, {agent.accountCountry}
                 </p>
               </div>
             </div>
@@ -595,15 +657,19 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                   </li>
                 ))}
               </ol>
+              <p className="mt-3 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+                Our own ramp, not LinkedIn&apos;s. An account that suddenly sends
+                far more than it used to is the pattern that gets restricted.
+              </p>
             </div>
 
             <div className="grid gap-2.5 p-4">
               {[
-                { label: "Invitations this week", value: `${contacted} / 100` },
+                { label: "Invitations this week", value: `${contacted} of 100` },
                 { label: "Today's ceiling", value: `${agent.dailyInviteCap} invitations` },
                 {
                   label: "Working hours",
-                  value: `${hhmm(agent.workdayStart)} to ${hhmm(agent.workdayEnd)}`,
+                  value: `${clock(agent.workdayStart)} to ${clock(agent.workdayEnd)}`,
                 },
                 { label: "Time zone", value: agent.timezone },
               ].map((r) => (
@@ -619,6 +685,12 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
           </aside>
         </div>
       )}
+
+      {tab === "Leads" && <LeadsTab agentId={agentId} />}
+      {tab === "Today's queue" && <QueueTab agentId={agentId} />}
+      {tab === "Messages" && <MessagesTab agentId={agentId} />}
+      {tab === "Activity" && <ActivityTab agentId={agentId} />}
+
       {tab === "Sources" && (
         <div className="mt-6">
           <div className="mb-3.5 flex flex-wrap items-center gap-3">
@@ -742,99 +814,60 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
           </div>
         </div>
       )}
-      {tab === "Leads" && <LeadsTab agentId={agentId} />}
-      {tab === "Messages" && (
-        <div className="mt-6 space-y-8">
-          <section>
-            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
-              Coming up
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              What it plans to send next. Edit or remove anything before it goes.
-            </p>
-            <div className="mt-3">
-              <QueueTab agentId={agentId} />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
-              Already done
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Everything it has sent, accepted or failed, newest first.
-            </p>
-            <div className="mt-3">
-              <ActivityTab agentId={agentId} />
-            </div>
-          </section>
-        </div>
-      )}
-      {tab === "Settings" && (
-        <SettingsTab
-          agentId={agentId}
-          settings={{
-            name: agent.name,
-            icpSummary: agent.icpSummary,
-            goal: agent.goal,
-            tone: agent.tone,
-            matchLevel: agent.matchLevel,
-            skipConnected: agent.skipConnected,
-            reviewMode: agent.reviewMode,
-            smartLeadFinder: agent.smartLeadFinder,
-            observeOnly: agent.observeOnly,
-            jobRoles: agent.jobRoles,
-            industries: agent.industries,
-            locations: agent.locations,
-            companySizes: agent.companySizes,
-            timezone: agent.timezone,
-            workdayDays: agent.workdayDays,
-            workdayStart: agent.workdayStart,
-            workdayEnd: agent.workdayEnd,
-            warmupStartPerDay: agent.warmupStartPerDay,
-            warmupIncrementPerWeek: agent.warmupIncrementPerWeek,
-            warmupWeeks: agent.warmupWeeks,
-            dailyInviteCap: agent.dailyInviteCap,
-            accountAgentCount: agent.accountAgentCount,
-            accountCountry: agent.accountCountry,
-            linkedinAccountId: agent.accountId,
-          }}
-          onSaved={load}
-        />
-      )}
 
       {tab === "Settings" && (
-        <div className="mt-8 border-t border-border pt-8">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
-            The message sequence
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            How it writes, and when it stops. This is the shape every contact follows.
-          </p>
-          <div className="mt-3">
-            <MessagesTab agentId={agentId} />
+        <>
+          <SettingsTab
+            agentId={agentId}
+            settings={{
+              name: agent.name,
+              icpSummary: agent.icpSummary,
+              goal: agent.goal,
+              tone: agent.tone,
+              matchLevel: agent.matchLevel,
+              skipConnected: agent.skipConnected,
+              reviewMode: agent.reviewMode,
+              smartLeadFinder: agent.smartLeadFinder,
+              observeOnly: agent.observeOnly,
+              jobRoles: agent.jobRoles,
+              industries: agent.industries,
+              locations: agent.locations,
+              companySizes: agent.companySizes,
+              timezone: agent.timezone,
+              workdayDays: agent.workdayDays,
+              workdayStart: agent.workdayStart,
+              workdayEnd: agent.workdayEnd,
+              warmupStartPerDay: agent.warmupStartPerDay,
+              warmupIncrementPerWeek: agent.warmupIncrementPerWeek,
+              warmupWeeks: agent.warmupWeeks,
+              dailyInviteCap: agent.dailyInviteCap,
+              accountAgentCount: agent.accountAgentCount,
+              accountCountry: agent.accountCountry,
+              accountName: agent.accountName,
+              accountAvatar: agent.accountAvatar,
+              linkedinAccountId: agent.accountId,
+            }}
+            onSaved={load}
+          />
+
+          {/* Only under Settings, and last. It used to sit below every tab, so
+              the way to delete an agent was one scroll from reading its leads. */}
+          <div className="mt-8 rounded-xl border border-red-200 p-4 dark:border-red-500/30">
+            <p className="text-[13px] font-semibold text-red-600 dark:text-red-400">
+              Delete this agent
+            </p>
+            <p className="mt-1 max-w-xl text-[13px] text-slate-500 dark:text-slate-400">
+              Its leads are kept, so nobody it already contacted can be contacted again by another
+              agent. The LinkedIn account and its address stay connected.
+            </p>
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="mt-3 rounded-lg border border-red-200 px-3 py-1.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            >
+              Delete agent
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* Only under Settings. It used to sit below every tab, so the way to
-          delete an agent was one scroll away from reading its leads. */}
-      {tab === "Settings" && (
-        <div className="mt-8 border-t border-border pt-6">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-white">
-            Delete this agent
-          </p>
-          <p className="mt-1 max-w-xl text-[13px] text-slate-500 dark:text-slate-400">
-            Its leads are kept, so nobody it already contacted can be contacted again by another
-            agent. The LinkedIn account and its address stay connected.
-          </p>
-          <button
-            onClick={() => setConfirmingDelete(true)}
-            className="mt-3 rounded-lg border border-red-200 px-3 py-1.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
-          >
-            Delete agent
-          </button>
-        </div>
+        </>
       )}
 
       {/* A LinkedGrow modal rather than the browser's confirm box, which shows
@@ -859,5 +892,142 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         variant="destructive"
       />
     </PageShell>
+  );
+}
+
+/** "2 h", for the reply line. */
+function shortAgo(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (mins < 60) return `${Math.max(1, mins)} minutes ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 36) return `${hours} hours ago`;
+  return `${Math.round(hours / 24)} days ago`;
+}
+
+function Spinner() {
+  return (
+    <span className="h-[11px] w-[11px] flex-none animate-spin rounded-full border-[1.6px] border-current border-t-transparent opacity-70" />
+  );
+}
+
+/** One thing waiting for the reader, with the way to deal with it. */
+function ActionRow({
+  count,
+  title,
+  why,
+  cta,
+  onClick,
+}: {
+  count: number;
+  title: string;
+  why: string;
+  cta: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="mb-2.5 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5">
+      <div className="flex h-6.5 w-6.5 flex-none items-center justify-center rounded-lg bg-blue-50 text-xs font-bold text-blue-700 tabular-nums dark:bg-blue-500/10 dark:text-blue-300">
+        {count}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[13.5px] font-medium text-slate-900 dark:text-white">{title}</p>
+        <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{why}</div>
+      </div>
+      <div className="flex-1" />
+      <button
+        type="button"
+        onClick={onClick}
+        className="whitespace-nowrap text-xs font-semibold text-blue-600 dark:text-blue-400"
+      >
+        {cta}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The week, three series a day.
+ *
+ * Heights are a share of the busiest bar in the window, so the shape of the
+ * week is readable whether the agent found four people or four hundred. A day
+ * with nothing at all keeps a flat stub, which reads as "nothing happened"
+ * rather than as a missing column.
+ */
+function ActivityChart({ days }: { days: ChartDay[] }) {
+  const peak = Math.max(
+    1,
+    ...days.map((d) => Math.max(d.leads, d.invitations, d.messages))
+  );
+  const height = (value: number) =>
+    value === 0 ? "8%" : `${Math.max(10, Math.round((value / peak) * 100))}%`;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-border px-4 py-3.5">
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+          Activity
+        </h2>
+        <div className="flex-1" />
+        <div className="flex flex-wrap gap-3.5 text-xs text-slate-500 dark:text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <i className="h-2 w-2 rounded-sm bg-blue-600" />
+            Leads found
+          </span>
+          <span className="flex items-center gap-1.5">
+            <i className="h-2 w-2 rounded-sm bg-blue-600/50" />
+            Invitations
+          </span>
+          <span className="flex items-center gap-1.5">
+            <i className="h-2 w-2 rounded-sm bg-slate-300 dark:bg-white/20" />
+            Messages
+          </span>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="flex h-[130px] items-end gap-2.5">
+          {days.map((day, i) => {
+            const empty = !day.leads && !day.invitations && !day.messages;
+            return (
+              <div key={`${day.day}-${i}`} className="flex h-full flex-1 items-end gap-0.5">
+                {empty ? (
+                  <span
+                    className="block flex-1 rounded-t-sm bg-slate-200 dark:bg-white/10"
+                    style={{ height: "8%" }}
+                  />
+                ) : (
+                  <>
+                    <span
+                      className="block flex-1 rounded-t-sm bg-blue-600"
+                      style={{ height: height(day.leads) }}
+                      title={`${day.leads} leads found`}
+                    />
+                    <span
+                      className="block flex-1 rounded-t-sm bg-blue-600/50"
+                      style={{ height: height(day.invitations) }}
+                      title={`${day.invitations} invitations`}
+                    />
+                    <span
+                      className="block flex-1 rounded-t-sm bg-slate-300 dark:bg-white/20"
+                      style={{ height: height(day.messages) }}
+                      title={`${day.messages} messages`}
+                    />
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-2 flex gap-2.5">
+          {days.map((day, i) => (
+            <span
+              key={`${day.day}-label-${i}`}
+              className="flex-1 text-center text-[10.5px] text-slate-400 dark:text-slate-500"
+            >
+              {day.day}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

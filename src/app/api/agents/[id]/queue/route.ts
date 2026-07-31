@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { agents, agentLeads, agentQueue } from "@/lib/db/schema";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { agents, agentLeads, agentQueue, linkedinAccounts } from "@/lib/db/schema";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 /**
@@ -12,9 +12,25 @@ import { loadSessionUser } from "@/lib/auth-user";
  * have read first, so this route serves the exact stored body and lets it be
  * edited or dropped before the worker picks it up. Rows already sent are
  * immutable here; editing history would make the activity log a lie.
+ *
+ * Two lists, because the sequence works in two ways. A message is written by
+ * the model shortly before it goes, and that draft lands in agent_queue, which
+ * is what `queue` holds. An invitation has no text to write, so the people
+ * waiting for one are simply the next in line: `nextUp` is that line, in the
+ * order the worker itself takes them, cut to what the day's ramp allows.
  */
 
 const MAX_BODY = 1200;
+
+/**
+ * The worker's own ordering, copied deliberately rather than approximated.
+ *
+ * Somebody who asked a question out loud is worth contacting before somebody
+ * who merely reacted to a post, and inside each tier the oldest goes first so
+ * that nobody waits forever. If this ordering drifts from the worker's, the tab
+ * names people the agent is not about to contact, which is worse than no tab.
+ */
+const WORKER_PRIORITY = sql`CASE WHEN ${agentLeads.signalType} LIKE 'question:%' OR ${agentLeads.signalType} LIKE 'intent:%' THEN 0 ELSE 1 END`;
 
 export async function GET(
   _request: NextRequest,
@@ -34,8 +50,21 @@ export async function GET(
     const workspaceId = data.teamOwnerId ?? data.user.id;
 
     const [agent] = await db
-      .select({ id: agents.id, reviewMode: agents.reviewMode })
+      .select({
+        id: agents.id,
+        reviewMode: agents.reviewMode,
+        observeOnly: agents.observeOnly,
+        status: agents.status,
+        timezone: agents.timezone,
+        workdayStart: agents.workdayStart,
+        workdayEnd: agents.workdayEnd,
+        dailyInviteCap: linkedinAccounts.dailyInviteCap,
+      })
       .from(agents)
+      .innerJoin(
+        linkedinAccounts,
+        eq(linkedinAccounts.id, agents.linkedinAccountId)
+      )
       .where(and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)))
       .limit(1);
     if (!agent) {
@@ -72,7 +101,45 @@ export async function GET(
       )
       .orderBy(asc(agentQueue.scheduledAt));
 
-    return NextResponse.json({ queue: rows, reviewMode: agent.reviewMode });
+    // The people waiting for an invitation, in the order the worker takes them.
+    // Capped at the day's allowance, because listing 400 people as "today" when
+    // fifteen go out would be a lie the customer notices within a day.
+    const nextUp = await db
+      .select({
+        leadId: agentLeads.id,
+        fullName: agentLeads.fullName,
+        headline: agentLeads.headline,
+        jobTitle: agentLeads.jobTitle,
+        company: agentLeads.company,
+        avatarUrl: agentLeads.avatarUrl,
+        profileUrl: agentLeads.profileUrl,
+        matchScore: agentLeads.matchScore,
+        matchReason: agentLeads.matchReason,
+        signalText: agentLeads.signalText,
+        signalUrl: agentLeads.signalUrl,
+      })
+      .from(agentLeads)
+      .where(
+        and(
+          eq(agentLeads.agentId, id),
+          eq(agentLeads.workspaceId, workspaceId),
+          eq(agentLeads.sequenceStatus, "queued")
+        )
+      )
+      .orderBy(WORKER_PRIORITY, asc(agentLeads.updatedAt))
+      .limit(Math.max(1, Math.min(50, agent.dailyInviteCap)));
+
+    return NextResponse.json({
+      queue: rows,
+      nextUp,
+      reviewMode: agent.reviewMode,
+      observeOnly: agent.observeOnly,
+      status: agent.status,
+      timezone: agent.timezone,
+      workdayStart: agent.workdayStart,
+      workdayEnd: agent.workdayEnd,
+      dailyInviteCap: agent.dailyInviteCap,
+    });
   } catch {
     return NextResponse.json({ error: "Failed to load the queue" }, { status: 500 });
   }

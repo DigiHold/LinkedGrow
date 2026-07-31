@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { agents, agentEvents, agentLeads, agentMessages } from "@/lib/db/schema";
-import { and, count, desc, eq, gte } from "drizzle-orm";
+import {
+  agents,
+  agentActions,
+  agentEvents,
+  agentLeads,
+  agentMessages,
+} from "@/lib/db/schema";
+import { and, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 /**
@@ -61,7 +67,7 @@ export async function GET(
     }
     const where = and(...filters);
 
-    const [rows, totals, steps] = await Promise.all([
+    const [rows, totals, steps, samples, invitations, accepted] = await Promise.all([
       db
         .select({
           id: agentEvents.id,
@@ -91,10 +97,64 @@ export async function GET(
           )
         )
         .groupBy(agentMessages.step),
+      // The last 40 messages, newest first. The Messages tab shows one real
+      // example per step, because a tab about what the agent writes that shows
+      // nothing it has written is the complaint that started this.
+      db
+        .select({
+          step: agentMessages.step,
+          body: agentMessages.body,
+          sentAt: agentMessages.sentAt,
+          leadName: agentLeads.fullName,
+        })
+        .from(agentMessages)
+        .innerJoin(agentLeads, eq(agentLeads.id, agentMessages.leadId))
+        .where(
+          and(
+            eq(agentMessages.agentId, id),
+            eq(agentMessages.workspaceId, workspaceId),
+            eq(agentMessages.direction, "out")
+          )
+        )
+        .orderBy(desc(agentMessages.sentAt))
+        .limit(40),
+      // Invitations have no message, so they are counted from the action log.
+      db
+        .select({ total: count() })
+        .from(agentActions)
+        .where(
+          and(
+            eq(agentActions.agentId, id),
+            eq(agentActions.workspaceId, workspaceId),
+            eq(agentActions.type, "connect")
+          )
+        ),
+      db
+        .select({ total: count() })
+        .from(agentLeads)
+        .where(
+          and(
+            eq(agentLeads.agentId, id),
+            eq(agentLeads.workspaceId, workspaceId),
+            inArray(agentLeads.step, [
+              "accepted",
+              "messaged",
+              "replied",
+              "finished",
+            ])
+          )
+        ),
     ]);
 
     const sent: Record<string, number> = {};
     for (const row of steps) if (row.step) sent[row.step] = row.total;
+
+    // One example per step, the most recent, with the name it was written to.
+    const examples: Record<string, { body: string; leadName: string }> = {};
+    for (const row of samples) {
+      if (!row.step || examples[row.step]) continue;
+      examples[row.step] = { body: row.body, leadName: row.leadName };
+    }
 
     const total = totals[0]?.total ?? 0;
     return NextResponse.json({
@@ -104,6 +164,9 @@ export async function GET(
       pageSize: PAGE_SIZE,
       hasMore: (page + 1) * PAGE_SIZE < total,
       sent,
+      examples,
+      invitations: invitations[0]?.total ?? 0,
+      accepted: accepted[0]?.total ?? 0,
     });
   } catch {
     return NextResponse.json({ error: "Failed to load the activity" }, { status: 500 });

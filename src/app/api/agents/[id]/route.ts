@@ -3,19 +3,75 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   agents,
+  agentActions,
   agentLeads,
+  agentMessages,
   agentSources,
   agentEvents,
   agentQueue,
   linkedinAccounts,
 } from "@/lib/db/schema";
-import { and, count, desc, eq } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+} from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 async function resolveWorkspaceId(userId: string) {
   const data = await loadSessionUser(userId);
   if (!data) return null;
   return data.teamOwnerId ?? data.user.id;
+}
+
+/**
+ * The engine's own words for what it did.
+ *
+ * An invitation is recorded as "connect" and every message as "dm", in
+ * agent_actions, which is the same table the daily caps are counted from. The
+ * chart reads that rather than the queue, so a column can never show a number
+ * the limiter did not also see.
+ */
+const INVITATION = "connect";
+const MESSAGE = "dm";
+
+type ChartDay = {
+  day: string;
+  leads: number;
+  invitations: number;
+  messages: number;
+};
+
+/**
+ * The last seven days, one column per day, three series in each.
+ *
+ * Bucketed here rather than in SQL because SQLite has no timezone-aware date
+ * grouping, and a week of one agent is a few hundred rows at most.
+ */
+function sevenDays(
+  found: Date[],
+  sent: Array<{ action: string; at: Date }>
+): ChartDay[] {
+  const days: ChartDay[] = [];
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+
+  for (let back = 6; back >= 0; back--) {
+    const from = new Date(midnight.getTime() - back * 86_400_000);
+    const to = new Date(from.getTime() + 86_400_000);
+    const within = (d: Date) => d >= from && d < to;
+    days.push({
+      day: from.toLocaleDateString("en-US", { weekday: "short" }),
+      leads: found.filter(within).length,
+      invitations: sent.filter((s) => s.action === INVITATION && within(s.at)).length,
+      messages: sent.filter((s) => s.action === MESSAGE && within(s.at)).length,
+    });
+  }
+  return days;
 }
 
 // GET /api/agents/[id] - the agent, its sources, its queue and its recent events
@@ -86,8 +142,20 @@ export async function GET(
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
-    // Five independent reads, so they go together rather than in sequence.
-    const [sources, funnel, events, queued, siblings] = await Promise.all([
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+
+    // Independent reads, so they go together rather than in sequence.
+    const [
+      sources,
+      funnel,
+      events,
+      drafted,
+      nextUp,
+      siblings,
+      found,
+      sent,
+      replies,
+    ] = await Promise.all([
       db
         .select()
         .from(agentSources)
@@ -103,10 +171,28 @@ export async function GET(
         .where(eq(agentEvents.agentId, id))
         .orderBy(desc(agentEvents.createdAt))
         .limit(20),
+      // Everything still waiting to go out: the drafted messages held in the
+      // queue, plus the people next in line for an invitation, which is the
+      // other half of what the Today's queue tab shows. An approved row is
+      // still waiting, so both states count.
       db
         .select({ total: count() })
         .from(agentQueue)
-        .where(and(eq(agentQueue.agentId, id), eq(agentQueue.state, "pending"))),
+        .where(
+          and(
+            eq(agentQueue.agentId, id),
+            inArray(agentQueue.state, ["pending", "approved"])
+          )
+        ),
+      db
+        .select({ total: count() })
+        .from(agentLeads)
+        .where(
+          and(
+            eq(agentLeads.agentId, id),
+            eq(agentLeads.sequenceStatus, "queued")
+          )
+        ),
       // How many agents send from the same LinkedIn account. They divide its
       // daily budget, so the screen cannot present the cap as this agent's own.
       db
@@ -118,6 +204,42 @@ export async function GET(
             eq(agents.workspaceId, workspaceId)
           )
         ),
+      // The two series behind the Activity chart.
+      db
+        .select({ at: agentLeads.foundAt })
+        .from(agentLeads)
+        .where(and(eq(agentLeads.agentId, id), gte(agentLeads.foundAt, weekAgo))),
+      db
+        .select({ action: agentActions.type, at: agentActions.createdAt })
+        .from(agentActions)
+        .where(
+          and(
+            eq(agentActions.agentId, id),
+            gte(agentActions.createdAt, weekAgo)
+          )
+        ),
+      // Replies nobody has read yet. The overview mentions them only when there
+      // are any, rather than printing a zero somebody has to interpret.
+      db
+        .select({
+          id: agentMessages.id,
+          body: agentMessages.body,
+          sentAt: agentMessages.sentAt,
+          leadId: agentMessages.leadId,
+          leadName: agentLeads.fullName,
+          leadAvatar: agentLeads.avatarUrl,
+        })
+        .from(agentMessages)
+        .innerJoin(agentLeads, eq(agentLeads.id, agentMessages.leadId))
+        .where(
+          and(
+            eq(agentMessages.agentId, id),
+            eq(agentMessages.direction, "in"),
+            isNull(agentMessages.readAt)
+          )
+        )
+        .orderBy(desc(agentMessages.sentAt))
+        .limit(5),
     ]);
 
     const steps: Record<string, number> = {};
@@ -128,7 +250,14 @@ export async function GET(
       sources,
       steps,
       events,
-      queuedToday: queued[0]?.total ?? 0,
+      queuedToday:
+        (drafted[0]?.total ?? 0) +
+        Math.min(nextUp[0]?.total ?? 0, agent.dailyInviteCap),
+      chart: sevenDays(
+        found.map((row) => row.at),
+        sent
+      ),
+      replies,
     });
   } catch {
     return NextResponse.json(
@@ -148,6 +277,31 @@ const MINUTE_FIELDS: readonly string[] = ["workdayStart", "workdayEnd"];
 const WARMUP_FIELDS: readonly string[] = [
   "warmupStartPerDay", "warmupIncrementPerWeek", "warmupWeeks",
 ];
+
+/**
+ * The columns that only accept certain words, checked here rather than trusted.
+ *
+ * SQLite does not enforce a Drizzle enum, so a screen offering the wrong values
+ * writes them straight into the column and the worker then reads a setting it
+ * has no branch for. That is exactly what happened: the settings screen offered
+ * "relationship" and "meeting" for a column holding "conversations" and
+ * "meetings", so the goal was both unselectable and unsaveable.
+ */
+const CHOICES: Record<string, readonly string[]> = {
+  goal: ["conversations", "meetings"],
+  tone: ["professional", "conversational", "direct"],
+  matchLevel: ["precision", "balanced", "volume"],
+};
+
+/** A zone the runtime can actually resolve. A typo here breaks the workday. */
+function isRealTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const EDITABLE = [
   "name",
@@ -222,6 +376,22 @@ export async function PATCH(
           const n = Number(value);
           if (Number.isInteger(n) && n >= 0 && n <= 50) patch[field] = n;
         }
+      } else if (CHOICES[field]) {
+        if (typeof value !== "string" || !CHOICES[field].includes(value)) {
+          return NextResponse.json(
+            { error: `${field} must be one of ${CHOICES[field].join(", ")}` },
+            { status: 400 }
+          );
+        }
+        patch[field] = value;
+      } else if (field === "timezone") {
+        if (typeof value !== "string" || !isRealTimezone(value)) {
+          return NextResponse.json(
+            { error: "That is not a timezone the agent can read" },
+            { status: 400 }
+          );
+        }
+        patch.timezone = value;
       } else if (typeof value === "boolean" || typeof value === "string") {
         patch[field] = value;
       }

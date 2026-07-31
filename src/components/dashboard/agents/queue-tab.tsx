@@ -1,11 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Panel, EmptyState, Pill } from "@/components/dashboard/ui/page";
+import { EmptyState, Pill } from "@/components/dashboard/ui/page";
 import { ReplyIcon } from "@/components/dashboard/nav-icons";
-import { Avatar, MatchScore, Signal, When } from "./lead-bits";
+import { Cell, Contact, Row, Table } from "./lead-bits";
 
-type Item = {
+/**
+ * Today's queue: everyone the agent is about to contact, before it does.
+ *
+ * Two kinds of row, because the sequence has two. A message is written by the
+ * model shortly before it goes out, so it arrives here as a real draft that can
+ * be read, edited or dropped. An invitation carries no text, so those rows are
+ * the people next in line, in the order the worker takes them.
+ */
+
+type Drafted = {
   id: string;
   action: string;
   state: string;
@@ -24,21 +33,59 @@ type Item = {
   signalUrl: string | null;
 };
 
+type NextUp = {
+  leadId: string;
+  fullName: string;
+  headline: string | null;
+  jobTitle: string | null;
+  company: string | null;
+  avatarUrl: string | null;
+  profileUrl: string;
+  matchScore: number | null;
+  matchReason: string | null;
+  signalText: string | null;
+  signalUrl: string | null;
+};
+
+type Payload = {
+  queue: Drafted[];
+  nextUp: NextUp[];
+  reviewMode: boolean;
+  observeOnly: boolean;
+  status: string;
+  timezone: string;
+  workdayStart: number;
+  workdayEnd: number;
+  dailyInviteCap: number;
+};
+
 /** What each queued action is, said the way the user would say it. */
 const ACTION_LABEL: Record<string, string> = {
-  visit: "Look at their profile",
+  visit: "Profile visit",
   like: "Like their last post",
-  invite: "Send the invitation",
-  hello: "Say hello, nothing more",
-  intro: "First real message, no pitch",
-  converse: "Answering what they said",
+  invite: "Invitation",
+  hello: "Hello",
+  intro: "First message",
+  converse: "Reply",
   ask: "The one ask",
   withdraw: "Withdraw the invitation",
 };
 
+function clock(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60
+  ).padStart(2, "0")}`;
+}
+
+function atTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function QueueTab({ agentId }: { agentId: string }) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [reviewMode, setReviewMode] = useState(false);
+  const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ id: string; body: string } | null>(null);
@@ -47,9 +94,7 @@ export function QueueTab({ agentId }: { agentId: string }) {
   const load = useCallback(async () => {
     const res = await fetch(`/api/agents/${agentId}/queue`);
     if (!res.ok) return;
-    const json = await res.json();
-    setItems(json.queue);
-    setReviewMode(json.reviewMode);
+    setData(await res.json());
     setLoading(false);
   }, [agentId]);
 
@@ -58,12 +103,8 @@ export function QueueTab({ agentId }: { agentId: string }) {
   }, [load]);
 
   /**
-   * Keep this list live.
-   *
-   * The first hour after an agent starts is the whole of a customer's first impression, and this
-   * tab is where they watch for it. Fetching once on mount meant a working agent showed an empty
-   * list until the browser was reloaded. Only the first page refreshes, so paging back does not
-   * move under the reader, and nothing polls while the tab is in the background.
+   * Keep this list live. The first hour after an agent starts is the whole of a
+   * customer's first impression, and nothing polls while the tab is hidden.
    */
   useEffect(() => {
     const timer = setInterval(() => {
@@ -91,42 +132,65 @@ export function QueueTab({ agentId }: { agentId: string }) {
     setBusy(null);
   }
 
-  const pending = items.filter((i) => i.state === "pending").length;
+  /** Removing somebody from the queue is rejecting the lead behind the row. */
+  async function skipLead(leadId: string) {
+    setBusy(leadId);
+    setError(null);
+    const res = await fetch(`/api/agents/${agentId}/leads`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reject", leadId }),
+    });
+    if (!res.ok) setError("That did not go through.");
+    else await load();
+    setBusy(null);
+  }
 
-  if (!loading && items.length === 0) {
+  const queue = data?.queue ?? [];
+  const nextUp = data?.nextUp ?? [];
+  const total = queue.length + nextUp.length;
+  const pending = queue.filter((i) => i.state === "pending").length;
+
+  if (!loading && total === 0) {
     return (
-      <div className="mt-6">
-        <Panel padded={false}>
-          <EmptyState
-            icon={<ReplyIcon className="h-6 w-6" />}
-            title="Nothing queued"
-            description="The agent builds tomorrow's queue during the night. Whatever it plans to send appears here first, so you can read it before anyone does."
-          />
-        </Panel>
+      <div className="mt-6 rounded-xl border border-border bg-card">
+        <EmptyState
+          icon={<ReplyIcon className="h-6 w-6" />}
+          title="Nobody is queued"
+          description="Whoever the agent plans to contact next appears here first, with the message it wrote, so you can read it before anybody else does."
+        />
       </div>
     );
   }
 
+  const window = data
+    ? `${clock(data.workdayStart)} to ${clock(data.workdayEnd)}, ${data.timezone}`
+    : "";
+
   return (
-    <div className="mt-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
-        <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">
-            {loading
-              ? "Loading the queue"
-              : `${items.length} queued, ${pending} still to review`}
-          </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {reviewMode
-              ? "Nothing goes out until you approve it. If you stop reviewing, the agent stops sending."
-              : "The agent sends on its own. You can still edit or remove anything below before it goes."}
-          </p>
+    <div className="mt-6 space-y-3.5">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-50/60 px-4 py-3.5 dark:bg-blue-500/10">
+        <div className="flex h-6.5 w-6.5 flex-none items-center justify-center rounded-lg bg-blue-100 text-xs font-bold text-blue-700 tabular-nums dark:bg-blue-500/20 dark:text-blue-300">
+          {total}
         </div>
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-medium text-slate-900 dark:text-white">
+            {total} {total === 1 ? "person is" : "people are"} queued
+          </p>
+          <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            {data?.observeOnly
+              ? "This agent is reading only, so nothing here will be sent."
+              : data?.status === "paused" || data?.status === "stopped"
+                ? "The agent is paused, so nothing goes out until you start it."
+                : `The agent works ${window}. Edit or remove anyone before then.`}
+          </div>
+        </div>
+        <div className="flex-1" />
         {pending > 0 && (
           <button
             onClick={() => send({ action: "approveAll" }, "all")}
             disabled={busy !== null}
-            className="rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="text-xs font-semibold text-blue-600 disabled:opacity-50 dark:text-blue-400"
           >
             Approve all {pending}
           </button>
@@ -134,133 +198,211 @@ export function QueueTab({ agentId }: { agentId: string }) {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/5 dark:text-red-400">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/5 dark:text-red-400">
           {error}
         </div>
       )}
 
-      <ul className="space-y-3">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            className="rounded-2xl border border-border bg-card p-5"
-          >
-            <div className="flex flex-wrap items-start gap-3">
-              <Avatar src={item.avatarUrl} name={item.fullName} size={40} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <a
-                    href={item.profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-slate-900 hover:underline dark:text-white"
-                  >
-                    {item.fullName}
-                  </a>
-                  {item.state === "approved" && <Pill tone="good">Approved</Pill>}
-                </div>
-                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                  {item.headline || item.company}
-                </p>
-                <div className="mt-2 space-y-1.5">
-                  <MatchScore score={item.matchScore} reason={item.matchReason} />
-                  <Signal text={item.signalText} url={item.signalUrl} />
-                </div>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                <Pill tone="brand">
-                  {ACTION_LABEL[item.action] ?? item.action}
-                </Pill>
-                <When value={item.scheduledAt} />
-              </div>
-            </div>
-
-            {item.messageBody !== null && (
-              <div className="mt-4">
-                {draft?.id === item.id ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={draft.body}
-                      onChange={(e) =>
-                        setDraft({ id: item.id, body: e.target.value })
+      <Table
+        columns={[
+          "Contact",
+          "Why this person",
+          "Step",
+          "Message the agent wrote",
+          "Goes out",
+          "",
+        ]}
+      >
+        {queue.map((item) => (
+          <Row key={item.id} highlight={item.state === "pending"}>
+            <Cell>
+              <Contact
+                name={item.fullName}
+                title={item.company || item.headline}
+                avatarUrl={item.avatarUrl}
+                profileUrl={item.profileUrl}
+              />
+            </Cell>
+            <Cell label="Why this person">
+              <Why text={item.signalText} url={item.signalUrl} reason={item.matchReason} />
+            </Cell>
+            <Cell label="Step">
+              <Pill tone={item.state === "pending" ? "warn" : "neutral"}>
+                {ACTION_LABEL[item.action] ?? item.action}
+              </Pill>
+            </Cell>
+            <Cell label="Message the agent wrote" className="md:max-w-[380px]">
+              {draft?.id === item.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={draft.body}
+                    onChange={(e) => setDraft({ id: item.id, body: e.target.value })}
+                    rows={5}
+                    maxLength={1200}
+                    className="w-full rounded-lg border border-border bg-background p-3 text-[13px] leading-relaxed text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() =>
+                        send(
+                          { action: "edit", itemId: item.id, messageBody: draft.body },
+                          item.id
+                        )
                       }
-                      rows={5}
-                      maxLength={1200}
-                      className="w-full rounded-xl border border-border bg-background p-3.5 text-sm leading-relaxed text-slate-900 focus:border-blue-500 focus:outline-hidden dark:text-white"
-                    />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() =>
-                          send(
-                            {
-                              action: "edit",
-                              itemId: item.id,
-                              messageBody: draft.body,
-                            },
-                            item.id
-                          )
-                        }
-                        disabled={busy !== null}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setDraft(null)}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300"
-                      >
-                        Cancel
-                      </button>
-                      <span className="text-xs text-slate-400 tabular-nums">
-                        {draft.body.length} / 1200
-                      </span>
-                    </div>
+                      disabled={busy !== null}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setDraft(null)}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                    >
+                      Cancel
+                    </button>
+                    <span className="text-xs text-slate-400 tabular-nums">
+                      {draft.body.length} / 1200
+                    </span>
                   </div>
-                ) : (
-                  <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3.5 text-sm leading-relaxed text-slate-700 dark:bg-white/5 dark:text-slate-200">
-                    {item.messageBody}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {draft?.id !== item.id && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+                  {item.messageBody ?? "No text: an invitation carries none."}
+                </p>
+              )}
+            </Cell>
+            <Cell label="Goes out" className="whitespace-nowrap">
+              <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                {atTime(item.scheduledAt)}
+              </span>
+            </Cell>
+            <Cell>
+              <div className="flex flex-wrap gap-1.5">
                 {item.state === "pending" && (
-                  <button
-                    onClick={() =>
-                      send({ action: "approve", itemId: item.id }, item.id)
-                    }
+                  <RowButton
+                    onClick={() => send({ action: "approve", itemId: item.id }, item.id)}
                     disabled={busy !== null}
-                    className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
                   >
                     Approve
-                  </button>
+                  </RowButton>
                 )}
-                {item.messageBody !== null && (
-                  <button
-                    onClick={() =>
-                      setDraft({ id: item.id, body: item.messageBody ?? "" })
-                    }
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                {item.messageBody !== null && draft?.id !== item.id && (
+                  <RowButton
+                    onClick={() => setDraft({ id: item.id, body: item.messageBody ?? "" })}
                   >
-                    Edit the message
-                  </button>
+                    Edit
+                  </RowButton>
                 )}
-                <button
-                  onClick={() =>
-                    send({ action: "skip", itemId: item.id }, item.id)
-                  }
+                <RowButton
+                  onClick={() => send({ action: "skip", itemId: item.id }, item.id)}
                   disabled={busy !== null}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 disabled:opacity-50 dark:text-slate-400 dark:hover:text-red-400"
                 >
-                  Remove from the queue
-                </button>
+                  Skip
+                </RowButton>
               </div>
-            )}
-          </li>
+            </Cell>
+          </Row>
         ))}
-      </ul>
+
+        {nextUp.map((lead) => (
+          <Row key={lead.leadId}>
+            <Cell>
+              <Contact
+                name={lead.fullName}
+                title={
+                  [lead.jobTitle, lead.company].filter(Boolean).join(", ") ||
+                  lead.headline
+                }
+                avatarUrl={lead.avatarUrl}
+                profileUrl={lead.profileUrl}
+              />
+            </Cell>
+            <Cell label="Why this person">
+              <Why text={lead.signalText} url={lead.signalUrl} reason={lead.matchReason} />
+            </Cell>
+            <Cell label="Step">
+              <Pill>Invitation</Pill>
+            </Cell>
+            <Cell label="Message the agent wrote" className="md:max-w-[380px]">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                An invitation goes out with no note, because a note does not
+                raise acceptance. The first message is written after they accept.
+              </p>
+            </Cell>
+            <Cell label="Goes out" className="whitespace-nowrap">
+              <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                In today&apos;s window
+              </span>
+            </Cell>
+            <Cell>
+              <RowButton
+                onClick={() => skipLead(lead.leadId)}
+                disabled={busy !== null}
+              >
+                {busy === lead.leadId ? "Removing" : "Skip"}
+              </RowButton>
+            </Cell>
+          </Row>
+        ))}
+      </Table>
     </div>
+  );
+}
+
+/** The evidence, then the reason, which is the pair the prototype shows. */
+function Why({
+  text,
+  url,
+  reason,
+}: {
+  text: string | null;
+  url: string | null;
+  reason: string | null;
+}) {
+  return (
+    <>
+      {text ? (
+        url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-b border-blue-600/40 text-[13px] text-blue-600 dark:text-blue-400"
+          >
+            {text}
+          </a>
+        ) : (
+          <span className="text-[13px] text-slate-700 dark:text-slate-200">{text}</span>
+        )
+      ) : (
+        <span className="text-[13px] text-slate-400">-</span>
+      )}
+      {reason && (
+        <div className="mt-[3px] text-xs text-slate-500 dark:text-slate-400">
+          {reason}
+        </div>
+      )}
+    </>
+  );
+}
+
+function RowButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 dark:text-slate-300"
+    >
+      {children}
+    </button>
   );
 }

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { SidebarProvider } from "@/components/dashboard/sidebar-context";
+import { CrumbProvider } from "@/components/dashboard/crumb-context";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { OnboardingCheck } from "@/components/dashboard/onboarding-check";
 import { LiveTicker } from "@/components/dashboard/agents/live-ticker";
@@ -31,14 +32,19 @@ export default async function DashboardLayout({
           <div className="flex">
             <Sidebar />
 
-            {/* min-w-0 stops wide tables from forcing horizontal page scroll */}
-            <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
-              <Topbar />
-              <main className="relative flex-1">{children}</main>
-              {/* One box for the whole dashboard, so a working agent is visible from any page
-                  without anybody having to reload. It renders nothing when nothing is happening. */}
-              <LiveTicker />
-            </div>
+            {/* min-w-0 stops wide tables from forcing horizontal page scroll.
+                The crumb provider wraps both the bar and the page, because a
+                detail page is the only thing that knows its own record's name
+                and the bar is where that name has to appear. */}
+            <CrumbProvider>
+              <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
+                <Topbar />
+                <main className="relative flex-1">{children}</main>
+                {/* One box for the whole dashboard, so a working agent is visible from any page
+                    without anybody having to reload. It renders nothing when nothing is happening. */}
+                <LiveTicker />
+              </div>
+            </CrumbProvider>
           </div>
 
           {/* Setup wizard for first-time users, on any dashboard page */}
