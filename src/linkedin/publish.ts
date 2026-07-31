@@ -389,22 +389,35 @@ async function attachMedia(
    * is taken by the input and then never finishes uploading, which is exactly
    * how a carousel failed on 2026-07-31 with "the attachment did not finish
    * uploading". Document is the one for a carousel, and it only exists after
-   * the content types are expanded. Verified on the live composer: the entries
-   * carry the aria-labels Photo, Video, Document, Poll and Event.
+   * the content types are expanded.
+   *
+   * The names move. On 2026-07-31 the bar carried Photo, Video, Document, Poll
+   * and Event; hours later on the same account it carried Media, Document,
+   * Event, Job, Celebration and Aside, with photo and video merged into one
+   * entry. So each kind of file has a list of names in preference order rather
+   * than one, and the old names stay in it because an account that has not
+   * been moved to the new composer still shows them.
    */
-  const wanted =
+  const wantedNames: string[] =
     mimeType === "application/pdf"
-      ? "Document"
+      ? ["Document"]
       : mimeType?.startsWith("video/")
-        ? "Video"
-        : "Photo";
+        ? ["Media", "Video"]
+        : ["Media", "Photo"];
+  const wanted = wantedNames[0] ?? "Media";
 
   // Never by tag. Photo is a <button>, Document is not, and assuming the tag is
   // the single mistake that broke the Message link, the connect control, the
   // composer trigger and this, all on the same day.
-  const entry = async () =>
-    (await firstVisible(page.locator(`[aria-label="${wanted}" i]`))) ??
-    (await firstVisible(dialog.locator(`[aria-label="${wanted}" i]`)));
+  const entry = async () => {
+    for (const name of wantedNames) {
+      const found =
+        (await firstVisible(page.locator(`[aria-label="${name}" i]`))) ??
+        (await firstVisible(dialog.locator(`[aria-label="${name}" i]`)));
+      if (found) return found;
+    }
+    return null;
+  };
 
   let addMedia = await entry();
   if (!addMedia) {
@@ -421,7 +434,7 @@ async function attachMedia(
 
   if (!addMedia) {
     throw new PublishError(
-      `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()}, so nothing was posted.`
+      `LinkedIn did not offer a way to attach a ${wanted.toLowerCase()} (looked for ${wantedNames.join(" or ")}), so nothing was posted.`
     );
   }
   await clickHumanLocator(page, addMedia);
