@@ -310,6 +310,40 @@ export async function leadsAtStep(ctx: AgentContext, step: string, limit: number
   return rows;
 }
 
+/**
+ * Leads nobody has scored yet, oldest first.
+ *
+ * The score and its reason are what the leads table shows in its Match column
+ * and what the sequence orders people by, and until now both columns were null
+ * for every lead ever found: the scorer was written months ago and nothing
+ * called it. Oldest first so a backlog drains in the order it arrived.
+ */
+export async function unscoredLeads(ctx: AgentContext, limit: number) {
+  const { rows } = await db().execute({
+    sql: `SELECT id, full_name, headline, company
+          FROM agent_leads
+          WHERE workspace_id = ? AND agent_id = ? AND match_score IS NULL
+          ORDER BY found_at ASC
+          LIMIT ?`,
+    args: [ctx.workspaceId, ctx.agentId, limit],
+  });
+  return rows;
+}
+
+export async function setLeadScore(
+  ctx: AgentContext,
+  leadId: string,
+  score: number,
+  reason: string
+) {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `UPDATE agent_leads SET match_score = ?, match_reason = ?, updated_at = ?
+          WHERE id = ? AND workspace_id = ?`,
+    args: [score, reason.slice(0, 300), now, leadId, ctx.workspaceId],
+  });
+}
+
 export async function setLeadStep(ctx: AgentContext, leadId: string, step: string) {
   const now = Math.floor(Date.now() / 1000);
   await db().execute({

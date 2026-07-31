@@ -388,6 +388,34 @@ export async function hasActionWithDetail(
 }
 
 /** Small per-agent key-value state, the original's meta table. */
+/**
+ * When this LinkedIn account started its ramp, seeding it on the first run.
+ *
+ * On the ACCOUNT, deliberately, and this is a correction. The week index used
+ * to live in agent_meta, keyed by agent, while the dashboard read
+ * linkedin_accounts.warmup_started_at, which only the app ever wrote. The two
+ * disagreed the moment an agent was created already running: the engine paced
+ * itself off week 1 while every screen said the warm-up had not started.
+ *
+ * The account is the right scope anyway. LinkedIn watches the profile, so two
+ * agents on one account share one ramp rather than each climbing its own.
+ */
+export async function accountWarmupStart(ctx: DB): Promise<Date> {
+  const { rows } = await db().execute({
+    sql: `SELECT warmup_started_at FROM linkedin_accounts WHERE id = ? LIMIT 1`,
+    args: [ctx.linkedinAccountId],
+  });
+  const existing = Number(rows[0]?.warmup_started_at ?? 0);
+  if (existing > 0) return new Date(existing * 1000);
+
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `UPDATE linkedin_accounts SET warmup_started_at = ?, updated_at = ? WHERE id = ?`,
+    args: [now, now, ctx.linkedinAccountId],
+  });
+  return new Date(now * 1000);
+}
+
 export async function getMeta(ctx: DB, key: string): Promise<string | null> {
   const { rows } = await db().execute({
     sql: `SELECT value FROM agent_meta WHERE agent_id = ? AND key = ? LIMIT 1`,

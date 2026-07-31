@@ -1,6 +1,14 @@
 import type { Page } from "patchright";
 import type { AgentContext } from "../config.ts";
-import { claimLead, db, loadSources, recordEvent } from "../db.ts";
+import {
+  claimLead,
+  db,
+  loadSources,
+  recordEvent,
+  setLeadScore,
+  unscoredLeads,
+} from "../db.ts";
+import { BudgetExceededError, scoreLead } from "../ai.ts";
 import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
@@ -77,6 +85,45 @@ async function markMined(sourceId: string, found: number): Promise<void> {
 }
 
 /** Turns whatever a miner returned into claimed rows, and says so out loud. */
+/**
+ * Why this person is in the list, in a sentence the customer can read.
+ *
+ * The column existed and was empty for every lead that was not an intent lead,
+ * because the sentence was only ever taken from the question somebody had
+ * posted. Everything else carried a machine string in signal_type and nothing
+ * in signal_text, so the Signal column on the leads table and the "Why this
+ * person" column on the queue were blank down the page. This costs no model
+ * call: the shape is already in the type.
+ */
+export function signalSentence(
+  signalType: string | null,
+  sourceLabel: string
+): string {
+  const [kind, ...rest] = (signalType ?? "").split(":");
+  const subject = rest.join(":").trim();
+  const named = subject || sourceLabel;
+  switch (kind) {
+    case "comment":
+      return `Commented on a post by ${named}`;
+    case "reaction":
+      return `Reacted to a post by ${named}`;
+    case "search":
+      return `Came up in a search for "${named}"`;
+    case "question":
+      return `Asked a question about ${named}`;
+    case "intent":
+      return `Posted about ${named}`;
+    case "jobchange":
+      return `Started a new role, ${named}`;
+    case "hiring":
+      return `Hiring for ${named}`;
+    case "viewer":
+      return "Viewed your profile";
+    default:
+      return sourceLabel ? `Found through ${sourceLabel}` : "Found by the agent";
+  }
+}
+
 async function claimAll(
   ctx: AgentContext,
   sourceId: string | null,
@@ -97,7 +144,10 @@ async function claimAll(
       // face a week after it was found.
       avatarUrl: person.avatarUrl ?? null,
       signalType: person.source ?? null,
-      signalText: person.context ?? null,
+      // The question they posted when there is one, because their own words
+      // beat any sentence of ours. Otherwise the sentence built from the shape
+      // of the signal, so the column is never blank.
+      signalText: person.context ?? signalSentence(person.source ?? null, sourceLabel),
       sourceId,
     });
     if (!ok) continue; // Another agent already has them, which is the right outcome.
@@ -405,7 +455,56 @@ export async function sourcePass(
       : "No new people this time. The sources will be checked again on the next run"
   ).catch(() => {});
 
+  await scorePass(ctx);
+
   return total;
+}
+
+/**
+ * How well each new person matches, and why, in one line.
+ *
+ * Capped per pass because this is the one cost line LinkedIn's own limits do
+ * not bound: an agent pointed at wide sources could otherwise score hundreds of
+ * people in an afternoon. Anything left over is picked up on the next pass,
+ * oldest first, so a backlog drains rather than being dropped.
+ *
+ * It reads the headline and the company rather than opening the profile. A
+ * visit per lead just to score it would cost a page load each and show up in
+ * "who viewed your profile" for people the agent has decided nothing about yet.
+ */
+const SCORED_PER_PASS = 20;
+
+async function scorePass(ctx: AgentContext): Promise<void> {
+  const icp = ctx.cfg.leads.icp;
+  if (!icp) return;
+
+  const waiting = await unscoredLeads(ctx, SCORED_PER_PASS);
+  if (waiting.length === 0) return;
+
+  let done = 0;
+  for (const row of waiting) {
+    const name = String(row.full_name ?? "");
+    const headline = String(row.headline ?? "");
+    if (!name) continue;
+    try {
+      const { score, reason } = await scoreLead(ctx, icp, {
+        name,
+        headline,
+        company: row.company ? String(row.company) : undefined,
+      });
+      await setLeadScore(ctx, String(row.id), score, reason);
+      done += 1;
+    } catch (error) {
+      // A budget ceiling stops the whole pass; anything else is one lead that
+      // stays unscored and is picked up next time.
+      if (error instanceof BudgetExceededError) throw error;
+      log("could not score a lead", {
+        lead: name,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  if (done > 0) log("leads scored", { count: done });
 }
 
 /**

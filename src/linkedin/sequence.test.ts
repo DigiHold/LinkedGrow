@@ -45,7 +45,20 @@ async function freshDb(): Promise<DB> {
     `CREATE TABLE agent_meta (
        agent_id TEXT NOT NULL, workspace_id TEXT NOT NULL, key TEXT NOT NULL,
        value TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (agent_id, key))`,
+    // The warm-up ramp is a property of the LinkedIn account, so the sequence
+    // reads and seeds it here. It used to keep its own copy per agent in
+    // agent_meta, which the dashboard never saw.
+    `CREATE TABLE linkedin_accounts (
+       id TEXT PRIMARY KEY, warmup_started_at INTEGER, updated_at INTEGER)`,
+    `CREATE TABLE agent_activity (
+       agent_id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, verb TEXT NOT NULL,
+       subject_name TEXT, subject_avatar TEXT, subject_url TEXT, detail TEXT,
+       started_at INTEGER NOT NULL, beat_at INTEGER)`,
   ]);
+  await c.execute({
+    sql: `INSERT INTO linkedin_accounts (id, warmup_started_at, updated_at) VALUES (?, NULL, ?)`,
+    args: ["acct-test", 0],
+  });
   return {
     agentId: "agent-test",
     workspaceId: "ws-test",

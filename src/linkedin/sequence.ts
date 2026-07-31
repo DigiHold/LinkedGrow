@@ -22,8 +22,7 @@ import {
   recordAction,
   countActionsSince,
   countProspectsByStatus,
-  getMeta,
-  setMeta,
+  accountWarmupStart,
   announce,
   stopAnnouncing,
 } from "../store.ts";
@@ -427,10 +426,5 @@ async function sendNewConnects(
 
 /** Warm-up week index, seeding the start timestamp on the first run. */
 async function currentWarmupWeek(db: DB): Promise<number> {
-  let startedAt = await getMeta(db, "warmup_started_at");
-  if (!startedAt) {
-    startedAt = new Date().toISOString();
-    await setMeta(db, "warmup_started_at", startedAt);
-  }
-  return warmupWeekIndex(new Date(startedAt));
+  return warmupWeekIndex(await accountWarmupStart(db));
 }
