@@ -50,8 +50,12 @@ async function anyAllocation(accountId: string | undefined): Promise<{
   return {
     allocation: {
       server: `http://${String(row.host)}:${Number(row.port)}`,
-      username: decryptSecret(String(row.username_encrypted ?? "")),
-      password: decryptSecret(String(row.password_encrypted ?? "")),
+      // decryptSecret returns null on an empty or unreadable value, and the
+      // allocation type wants a string. An address with no credentials cannot
+      // be used anyway, so an empty one fails the connection rather than the
+      // compiler.
+      username: decryptSecret(String(row.username_encrypted ?? "")) ?? "",
+      password: decryptSecret(String(row.password_encrypted ?? "")) ?? "",
       expectedIp: String(row.last_exit_ip ?? ""),
     },
     country: String(row.country ?? "FR"),

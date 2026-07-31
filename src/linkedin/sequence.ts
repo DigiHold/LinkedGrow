@@ -24,6 +24,8 @@ import {
   countProspectsByStatus,
   getMeta,
   setMeta,
+  announce,
+  stopAnnouncing,
 } from "../store.ts";
 import {
   warmupWeekIndex,
@@ -121,6 +123,28 @@ function label(p: ProspectRow): string {
   return p.first_name || p.full_name || p.profile_url;
 }
 
+/** The person, in the shape the live ticker wants. */
+function subjectOf(p: ProspectRow) {
+  return {
+    name: p.full_name ?? p.first_name,
+    avatarUrl: p.avatar_url,
+    profileUrl: p.profile_url,
+  };
+}
+
+/**
+ * What each message step is called while it is being written.
+ *
+ * Present tense and reading on from the agent's name, because that is how the
+ * ticker prints it: "Writing the first message to Thomas Blanc".
+ */
+const WRITING: Record<string, string> = {
+  hello: "writing a hello to",
+  intro: "writing the first message to",
+  converse: "writing a reply to",
+  ask: "writing the one ask to",
+};
+
 /**
  * One bounded work pass: read replies first, promote accepted invites, move everyone who is due to
  * their next step, then send new invitations within the day's allowance. Every state change is
@@ -138,10 +162,15 @@ export async function runSequence(cfg: Config, db: DB, deps: SequenceDeps): Prom
   // and messaged in the same pass: an acceptance is only noticed on a pass, and holding it for the
   // following one meant a Saturday acceptance waited until Monday. The person accepted at some
   // earlier point anyway, and the pause between actions keeps the pace human.
+  // Each phase says what it is doing before it starts, so the dashboard can
+  // narrate the pass in the present rather than reporting it afterwards.
+  await announce(db, "checking the inbox for replies");
   await detectReplies(db, deps, pause);
+  await announce(db, "checking who accepted an invitation");
   await sweepAcceptances(cfg, db, deps, pause);
   await advanceSequence(cfg, db, deps, pause);
   await sendNewConnects(cfg, db, deps, week, pause);
+  await stopAnnouncing(db);
 }
 
 /**
@@ -340,6 +369,7 @@ async function sendStep(
 ): Promise<boolean> {
   const thread = await getThread(db, p.id);
   let message: GeneratedMessage;
+  await announce(db, WRITING[step] ?? "writing to", subjectOf(p));
   try {
     message = await deps.writeMessage(p, step, thread);
   } catch (err) {
@@ -347,6 +377,7 @@ async function sendStep(
     log(`Skipping ${label(p)}: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
+  await announce(db, "sending a message to", subjectOf(p));
   const sent = await deps.actions.sendDm(p, message.body);
   if (!sent) {
     log(`${step} to ${label(p)} was not sent (action returned false).`);
@@ -375,8 +406,10 @@ async function sendNewConnects(
   if (budget <= 0) return;
 
   for (const p of await getProspects(db, STATUS.queued, { limit: budget })) {
+    await announce(db, "liking a post by", subjectOf(p));
     await deps.actions.warmUp(p); // best-effort; a missed like does not block the connect
     await pause();
+    await announce(db, "sending an invitation to", subjectOf(p));
     const sent = await deps.actions.sendConnect(p, "");
     if (!sent) {
       await pause();

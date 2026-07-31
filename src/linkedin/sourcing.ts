@@ -1,6 +1,7 @@
 import type { Page } from "patchright";
 import type { AgentContext } from "../config.ts";
 import { claimLead, db, loadSources, recordEvent } from "../db.ts";
+import { announce } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
@@ -251,6 +252,19 @@ export async function sourcePass(
     const config = parseConfig(source.config);
     let found: Engager[] = [];
 
+    // Mining one source takes minutes, so this is the line the dashboard shows
+    // for most of a working day. It says which source, in the present.
+    await announce(
+      ctx,
+      source.type === "competitor"
+        ? "reading who engaged with"
+        : source.type === "brand"
+          ? "reading who viewed the profile:"
+          : "looking for people posting about",
+      undefined,
+      source.label
+    );
+
     try {
       switch (source.type) {
         case "competitor": {
@@ -401,6 +415,7 @@ async function fallbackPass(
   ).catch(() => {});
 
   let found: Engager[] = [];
+  await announce(ctx, "widening the search to", undefined, queries.join(", "));
   try {
     found = await mineIntent(ctx, page, ctx.cfg, { queries, maxPerQuery: budget.perPost });
   } catch (error) {

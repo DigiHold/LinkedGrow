@@ -33,6 +33,8 @@ export interface ProspectRow {
   first_name: string | null;
   headline: string | null;
   company: string | null;
+  /** Their photo, on our own bucket. The live ticker puts a face on the row. */
+  avatar_url: string | null;
   website: string | null;
   source: string | null;
   angle: string | null;
@@ -83,6 +85,7 @@ function toRow(r: Record<string, unknown>): ProspectRow {
     first_name: (r.first_name as string) ?? null,
     headline: (r.headline as string) ?? null,
     company: (r.company as string) ?? null,
+    avatar_url: (r.avatar_url as string) ?? null,
     website: null,
     source: (r.signal_type as string) ?? null,
     angle: (r.angle as string) ?? null,
@@ -221,6 +224,66 @@ export async function countOutboundStep(
     args: [ctx.workspaceId, ctx.agentId, uuidFor(prospectId), step],
   });
   return Number(res.rows[0]?.n ?? 0);
+}
+
+/**
+ * Says what the agent is about to do, before it does it.
+ *
+ * Everything else in this file is written after the fact, which is why the
+ * dashboard could only narrate the past. This one row per agent is overwritten
+ * as the pass moves, and the dashboard polls it, so somebody watching sees
+ * "liking a post by Thomas Blanc" while that is happening rather than reading
+ * about it a minute later.
+ *
+ * Best effort on purpose. A ticker that cannot be written is not a reason to
+ * stop working, so every failure here is swallowed: the caller is in the middle
+ * of a LinkedIn session and this is decoration.
+ */
+export async function announce(
+  ctx: DB,
+  verb: string,
+  subject?: { name?: string | null; avatarUrl?: string | null; profileUrl?: string | null },
+  detail?: string
+): Promise<void> {
+  try {
+    await db().execute({
+      sql: `INSERT INTO agent_activity
+              (agent_id, workspace_id, verb, subject_name, subject_avatar, subject_url, detail, started_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(agent_id) DO UPDATE SET
+              verb = excluded.verb,
+              subject_name = excluded.subject_name,
+              subject_avatar = excluded.subject_avatar,
+              subject_url = excluded.subject_url,
+              detail = excluded.detail,
+              started_at = excluded.started_at`,
+      args: [
+        ctx.agentId, ctx.workspaceId, verb,
+        subject?.name ?? null, subject?.avatarUrl ?? null, subject?.profileUrl ?? null,
+        detail ?? null, Math.floor(Date.now() / 1000),
+      ],
+    });
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Stops narrating.
+ *
+ * Called when a pass ends. The reader also ignores anything older than a few
+ * minutes, so a session the watchdog kills mid-action goes quiet on its own
+ * rather than claiming forever that the agent is still working.
+ */
+export async function stopAnnouncing(ctx: DB): Promise<void> {
+  try {
+    await db().execute({
+      sql: `DELETE FROM agent_activity WHERE agent_id = ?`,
+      args: [ctx.agentId],
+    });
+  } catch {
+    return;
+  }
 }
 
 /**

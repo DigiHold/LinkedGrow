@@ -34,6 +34,7 @@ import {
   askMessage,
 } from "./messages/relationship.ts";
 import { getStyleSamples } from "./linkedin/style.ts";
+import { announce, stopAnnouncing } from "./store.ts";
 import { sleep, randInt } from "./browser/human.ts";
 
 /**
@@ -117,6 +118,9 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       );
       return;
     }
+
+    // From here on the dashboard can narrate the pass while it happens.
+    await announce(ctx, "opening LinkedIn");
 
     // Who this account is, once. It fills the name and picture the dashboard
     // shows, and the profile URL that publishing and the follower count both
@@ -217,6 +221,10 @@ async function runAgent(ctx: AgentContext): Promise<void> {
 
     await touchRun(ctx);
   } finally {
+    // The pass is over, so the dashboard stops saying the agent is working.
+    // The reader also ignores anything more than a few minutes old, which is
+    // what covers a session the watchdog cuts off before this line runs.
+    await stopAnnouncing(ctx).catch(() => {});
     await closeOnce();
   }
 }
