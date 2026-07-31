@@ -173,9 +173,23 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
       for (const card of cards) {
         const lead = toIntentLead(card, query, !ctx.skipConnected);
         if (!lead) continue;
+        // Counted, not enforced, and deliberately so.
+        //
+        // This function's own premise is that intent beats demographics:
+        // somebody posting "how do I make my site GDPR compliant" is a warmer
+        // lead than somebody who merely holds a matching title. Requiring a
+        // job-title keyword on top of that contradicts it, and in practice it
+        // emptied every run: a person writing about their broken cookie banner
+        // does not put "Founder" or "Small business" in the sentence. On
+        // 2026-07-31 it rejected both qualified askers on the only query that
+        // returned any.
+        //
+        // The model below is the real qualifier and it is the one that can tell
+        // a person with the problem from a consultant selling the cure, which
+        // is the distinction the keyword list was reaching for and cannot make.
+        // The gate stays where it belongs, on the demographic miner above.
         if (!matchesIcp(cfg.leads.icpKeywords, lead.headline, lead.context ?? "")) {
           offIcp++;
-          continue;
         }
         // Final authority: the model separates someone with the problem from a consultant selling
         // the cure. Keyword rules cannot, and contacting peers burns the account for nothing.
@@ -190,7 +204,7 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
       // which of the four filters emptied the page, and finding that out cost
       // an hour of live diagnosis on 2026-07-31.
       log(
-        `  ${kept} on-topic, on-ICP askers for "${query}" (${cards.length} cards, ${offIcp} off-ICP, ${notAsking} not asking).`
+        `  ${kept} askers kept for "${query}" (${cards.length} cards, ${offIcp} without an ICP keyword, ${notAsking} judged not asking).`
       );
       await sleep(actionDelayMs(cfg));
     }
