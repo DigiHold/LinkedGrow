@@ -114,9 +114,27 @@ export class ScheduleUnavailableError extends Error {
 // postButton, which then only matched a dialog nested in a dialog and never
 // found the button at all.
 const SEL = {
+  /**
+   * The control that opens the composer, which is no longer a button.
+   *
+   * Read off the live feed on 2026-07-31: it is a plain <div> whose only text
+   * is "Start a post", with no role, no aria-label and no stable class. Every
+   * selector here required a <button>, so publishing failed at the first step
+   * with "LinkedIn did not offer the post composer".
+   *
+   * The text is translated, and the interface language follows the account
+   * rather than the address it goes out through, so the wording has to cover
+   * the languages we sell into. `:text-is` is exact and matches the innermost
+   * element, which keeps it off the container wrapping half the page.
+   */
   startPost:
     'button.share-box-feed-entry__trigger, button:has-text("Start a post"), ' +
-    'button[aria-label*="Start a post" i], button[aria-label*="Create a post" i]',
+    'button[aria-label*="Start a post" i], button[aria-label*="Create a post" i], ' +
+    '[role="button"]:has-text("Start a post"), ' +
+    'div:text-is("Start a post"), div:text-is("Commencer un post"), ' +
+    'div:text-is("Créer un post"), div:text-is("Beitrag beginnen"), ' +
+    'div:text-is("Empezar una publicación"), div:text-is("Crea un post"), ' +
+    'div:text-is("Começar publicação"), div:text-is("Bericht schrijven")',
   dialog: 'div[role="dialog"].share-creation-state, div.share-box, div[role="dialog"]',
   editor: '.ql-editor[contenteditable="true"], div[role="textbox"][contenteditable="true"]',
   // ":text-is" is exact: "Post" the button, never "Post to anyone" the audience row.
