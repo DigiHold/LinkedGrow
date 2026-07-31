@@ -140,13 +140,31 @@ export async function minePeople(
         if (seen.has(href)) continue;
         seen.add(href);
         const row = a.closest("li") ?? a.parentElement;
-        const img = (row as HTMLElement)?.querySelector("img");
+        /**
+         * Climb until the face turns up.
+         *
+         * The picture is on the card but not reliably inside whatever element
+         * the name link sits in: on the people-search results it is several
+         * levels up, and looking only in the immediate row found nothing, so
+         * the first leads this source produced had no avatar at all. Bounded
+         * to five hops so it can never wander into the next person's card.
+         */
+        let photo = "";
+        let hop: HTMLElement | null = row as HTMLElement | null;
+        for (let i = 0; hop && i < 5 && !photo; i++) {
+          for (const candidate of Array.from(hop.querySelectorAll("img"))) {
+            const src = (candidate as HTMLImageElement).src ?? "";
+            if (/licdn/.test(src) && !/company-logo|ghost/.test(src)) {
+              photo = src;
+              break;
+            }
+          }
+          hop = hop.parentElement;
+        }
         out.push({
           href,
           text: ((row as HTMLElement)?.innerText ?? "").trim(),
-          // Already on the card, so taking it costs nothing and saves a
-          // profile visit per lead just to fetch a face.
-          photo: img && /licdn/.test(img.src) ? img.src : "",
+          photo,
         });
       }
       return out;
