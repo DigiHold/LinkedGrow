@@ -241,16 +241,6 @@ async function safely(ctx: AgentContext): Promise<void> {
 }
 
 async function pass(): Promise<void> {
-  // Before anything runs: buy the addresses the dashboard asked for. An account
-  // that connected a minute ago should have its address by the time its first
-  // session would open, and an agent without one stays paused rather than
-  // falling back to the server's own IP.
-  try {
-    await fulfilPendingAllocations();
-  } catch (error) {
-    logError("allocation pass failed", error);
-  }
-
   const agents = await loadRunnableAgents();
   if (!agents.length) {
     log("nothing to run");
@@ -330,9 +320,18 @@ async function agentLoop(): Promise<void> {
 async function publishLoop(): Promise<void> {
   for (;;) {
     try {
-      // Signing in a freshly connected account comes first and shares this
-      // loop, because connecting is the other moment the customer is certainly
-      // watching, and because LinkedIn's verification code expires in thirty
+      // The address first, because the sign-in cannot start without one and
+      // refuses to run from the server's own. This used to sit in the
+      // five-minute pass, so somebody who had just connected an account watched
+      // a spinner for up to five minutes while a free address sat in the
+      // buffer. It costs one indexed query when there is nothing to buy.
+      await fulfilPendingAllocations();
+    } catch (error) {
+      logError("allocation pass failed", error);
+    }
+    try {
+      // Then the sign-in. Connecting is the other moment the customer is
+      // certainly watching, and LinkedIn's verification code expires in thirty
       // seconds. Nothing called signIn at all until 2026-07-31: an account sat
       // at "waiting for its first sign-in" for ever.
       await connectPass();
