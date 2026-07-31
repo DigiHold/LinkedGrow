@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { linkedinAccounts, agents, proxyAllocations } from "@/lib/db/schema";
-import { and, count, eq, isNull, or } from "drizzle-orm";
+import { linkedinAccounts, agents } from "@/lib/db/schema";
+import { and, count, eq } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 import { AUTH_RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
+import { releaseForAccount } from "@/lib/proxy/allocate";
 
-/**
- * Disconnect a LinkedIn account.
- *
- * The proxy allowlists /api/linkedin/ so the route guards itself rather than
- * relying on the middleware.
- *
- * Refuses while an agent still sends from it. Deleting the account would take
- * its agents with it through the cascade, and losing an agent and its whole
- * lead history to a click meant as "stop using this profile" is not a trade
- * anyone would choose. Removing the agents first is a deliberate second step.
- */
 /**
  * Try the sign-in again, on purpose rather than on a timer.
  *
@@ -89,6 +79,17 @@ export async function POST(
   }
 }
 
+/**
+ * Disconnect a LinkedIn account.
+ *
+ * The proxy allowlists /api/linkedin/ so the route guards itself rather than
+ * relying on the middleware.
+ *
+ * Refuses while an agent still sends from it. Deleting the account would take
+ * its agents with it through the cascade, and losing an agent and its whole
+ * lead history to a click meant as "stop using this profile" is not a trade
+ * anyone would choose. Removing the agents first is a deliberate second step.
+ */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -141,31 +142,11 @@ export async function DELETE(
     // provider, per plan section 5b: addresses are inventory, and the next
     // account in that country takes it instead of buying one.
     //
-    // Done here explicitly rather than left to the foreign key. The column
-    // declares onDelete: "set null", SQLite does not enforce foreign keys
-    // unless asked to, and it is not asked to, so every disconnection was
-    // quietly orphaning an address somebody had paid for. Found 2026-07-31.
-    await db
-      .update(proxyAllocations)
-      .set({ linkedinAccountId: null, updatedAt: new Date() })
-      .where(
-        and(
-          eq(proxyAllocations.linkedinAccountId, id),
-          eq(proxyAllocations.status, "active")
-        )
-      );
-
-    // An order that never completed bought nothing, so there is nothing to keep.
-    // One that did carries the supplier's order id and stays as a buffer row.
-    await db
-      .delete(proxyAllocations)
-      .where(
-        and(
-          eq(proxyAllocations.linkedinAccountId, id),
-          eq(proxyAllocations.status, "ordering"),
-          or(isNull(proxyAllocations.providerRef), eq(proxyAllocations.providerRef, ""))
-        )
-      );
+    // Through the shared helper, not a copy of it. This route used to unbind
+    // the row inline, in a slightly different shape from the one the pool
+    // reader looked for, so every disconnection quietly orphaned an address
+    // somebody had paid for and the next connection bought another.
+    await releaseForAccount(id);
 
     return NextResponse.json({ ok: true });
   } catch {

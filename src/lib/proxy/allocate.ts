@@ -72,8 +72,26 @@ export function credentialsOf(
  * term ends, and because a warm address with history behind it is worth more
  * than a fresh one.
  */
+/**
+ * A spare address is one that is `active` and bound to nobody.
+ *
+ * That is the whole definition, and it has to be the same one everywhere,
+ * because three places write it and two read it. It was not: this function
+ * looked for `cooling`, the disconnect route wrote `active` with a null
+ * account, and the worker's own claim looked for `active` with a null account.
+ * So an address released by disconnecting an account could never be found by
+ * the dashboard, and one released here could never be found by the worker.
+ * Either way the next connection bought an address that was already paid for
+ * and sitting idle. It cost two French addresses on 2026-07-30 before anyone
+ * noticed the pattern.
+ *
+ * Not filtered by workspace, deliberately. Addresses are inventory bought by
+ * us, not by the customer, and holding a paid French address hostage to the
+ * workspace that first used it means buying a second one for the next customer
+ * who wants France.
+ */
 async function takeFromPool(
-  workspaceId: string,
+  _workspaceId: string,
   country: string
 ): Promise<typeof proxyAllocations.$inferSelect | null> {
   const [spare] = await db
@@ -81,9 +99,8 @@ async function takeFromPool(
     .from(proxyAllocations)
     .where(
       and(
-        eq(proxyAllocations.workspaceId, workspaceId),
         eq(proxyAllocations.country, country.toUpperCase()),
-        eq(proxyAllocations.status, "cooling"),
+        eq(proxyAllocations.status, "active"),
         isNull(proxyAllocations.linkedinAccountId)
       )
     )
@@ -251,8 +268,11 @@ export async function attachCustomProxy(
 /**
  * Unbinds an account's address.
  *
- * A managed address goes back to the pool as `cooling` rather than being
- * deleted, because it is paid for until its term ends and reusing it is free.
+ * A managed address goes back to the pool rather than being deleted, because
+ * it is paid for until its term ends and reusing it is free. Back to the pool
+ * means `active` and bound to nobody, which is the one shape every reader
+ * agrees on. See takeFromPool for what went wrong when they did not.
+ *
  * A custom one is simply dropped, since it was never ours.
  */
 export async function releaseForAccount(linkedinAccountId: string): Promise<void> {
@@ -263,14 +283,23 @@ export async function releaseForAccount(linkedinAccountId: string): Promise<void
     .limit(1);
   if (!row) return;
 
-  if (row.source === "custom") {
+  // An order that never reached the supplier bought nothing, so there is
+  // nothing worth keeping. One that did carries the supplier's order id, and
+  // must stay `ordering` with no account on it: the worker is still going to
+  // fill in its host and credentials, and it becomes a spare when it does.
+  // Flipping it to `active` here would publish a row with an empty host as an
+  // address ready to use, and the next account to connect would take it.
+  const nothingBought =
+    row.status === "ordering" && !row.providerRef;
+
+  if (row.source === "custom" || nothingBought) {
     await db.delete(proxyAllocations).where(eq(proxyAllocations.id, row.id));
   } else {
     await db
       .update(proxyAllocations)
       .set({
         linkedinAccountId: null,
-        status: "cooling",
+        status: row.status === "ordering" ? "ordering" : "active",
         updatedAt: new Date(),
       })
       .where(eq(proxyAllocations.id, row.id));

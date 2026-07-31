@@ -997,7 +997,10 @@ export const proxyAllocations = sqliteTable("proxy_allocations", {
   /** The provider's own order identifier, needed to prolong or release. */
   providerRef: text("provider_ref"),
   status: text("status", {
-    enum: ["ordering", "active", "cooling", "burned", "released"],
+    // No `cooling`. A spare address is `active` with no account bound to it,
+    // and a second word for the same state is what let the dashboard and the
+    // worker each fail to find addresses the other had released.
+    enum: ["ordering", "active", "burned", "released"],
   })
     .notNull()
     .default("ordering"),
