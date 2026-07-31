@@ -146,9 +146,22 @@ const SEL = {
   scheduleConfirm: 'button:text-is("Next"), button:text-is("Done"), button:text-is("Schedule")',
   scheduledPrimary: 'button:text-is("Schedule"), button.share-actions__primary-action',
   fileInput: 'input[type="file"]',
+  /**
+   * The control that reveals the file input.
+   *
+   * There is no `input[type=file]` on the composer until this is pressed, which
+   * is why attaching failed with "LinkedIn would not accept the attachment"
+   * while the composer was open and working. Read off the live page on
+   * 2026-07-31: the button's entire label is now "Photo", and everything else
+   * (document, video) sits behind "Expand content types".
+   */
   addMedia:
-    'button[aria-label*="Add media" i], button[aria-label*="add a photo" i], ' +
-    'button[aria-label*="Add a photo" i], button[aria-label*="video" i]',
+    'button[aria-label="Photo" i], button[aria-label*="Add media" i], ' +
+    'button[aria-label*="add a photo" i], button[aria-label*="Add a photo" i], ' +
+    'button[aria-label*="video" i], button[aria-label*="photo" i], ' +
+    'button[aria-label*="image" i]',
+  /** Document and video hide behind this on the new composer. */
+  moreMediaTypes: 'button[aria-label*="Expand content types" i]',
   // A document post (which is what a carousel is) will not continue without a
   // title. LinkedIn labels it rather than giving it a stable class.
   documentTitle:
@@ -296,7 +309,13 @@ async function attachMedia(
     await dwell(900, 2200);
   }
 
-  const input = dialog.locator(SEL.fileInput).first();
+  // Mounted by the click above, and not necessarily inside the scoped
+  // container, so the page is the fallback here as well.
+  await page
+    .waitForSelector(SEL.fileInput, { state: "attached", timeout: 10_000 })
+    .catch(() => {});
+  let input = dialog.locator(SEL.fileInput).first();
+  if ((await input.count()) === 0) input = page.locator(SEL.fileInput).first();
   if ((await input.count()) === 0) {
     throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
   }
@@ -651,7 +670,13 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
     return { url: null, verified: false, scheduled: true };
   }
 
-  const postButton = await firstVisible(dialog.locator(SEL.postButton));
+  // Scoped first, then the whole page. The composer is a page of its own now
+  // (clicking the trigger navigates to /sharing/compose), and its Post button
+  // sits outside whatever container holds the editor, so a scoped lookup found
+  // the text, typed it, verified it, and then reported no Post button.
+  const postButton =
+    (await firstVisible(dialog.locator(SEL.postButton))) ??
+    (await firstVisible(page.locator(SEL.postButton)));
   if (!postButton) {
     throw new PublishError("The Post button was not there, so nothing was published.");
   }
