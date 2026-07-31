@@ -79,6 +79,11 @@ test("the job title and the company are read out of the headline", () => {
     ["Fondateur de schoolsWP | Formateur WordPress", "Fondateur", "schoolsWP"],
     ["Freelance WordPress developer", "Freelance WordPress developer", null],
     ["", null, null],
+    // Headlines routinely open with an emoji or a bare separator, and taking
+    // the first segment as-is stored job titles like "| WordPress".
+    ["🚀 | WordPress Developer | Shopify", "WordPress Developer", null],
+    ["💻 Full Stack Magento & WordPress", "Full Stack Magento & WordPress", null],
+    ["✨", null, null],
   ];
   for (const [headline, title, company] of cases) {
     const got = splitHeadline(headline);

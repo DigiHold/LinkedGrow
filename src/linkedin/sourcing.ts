@@ -139,7 +139,18 @@ export function splitHeadline(headline: string | null): {
   if (!raw) return { jobTitle: null, company: null };
 
   // Everything up to the first separator is the role people lead with.
-  const first = raw.split(/\s[|·•]\s|\s[-–—]\s/)[0]?.trim() ?? raw;
+  //
+  // Cleaned at both ends first. Headlines routinely open with an emoji, a flag
+  // or a bare separator, and taking the segment as-is stored job titles like
+  // "| WordPress" and "🚀". Anything left with no letters in it is not a title.
+  const cleaned = raw
+    .replace(/^[\s|·•\-–—/]+/, "")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .trim();
+  const first = (cleaned.split(/\s*[|·•]\s*|\s[-–—]\s/)[0] ?? cleaned)
+    .replace(/^[\s|·•\-–—/]+|[\s|·•\-–—/]+$/g, "")
+    .trim();
+  if (!/\p{L}/u.test(first)) return { jobTitle: null, company: null };
 
   // "@Acme" carries no space after the sign; "at Acme" needs one, or every
   // headline containing the word "at" would lose half its title.
