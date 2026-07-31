@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fetch as undiciFetch, ProxyAgent } from "undici";
 import { log } from "../logger.ts";
+import { capturePage } from "./diagnose.ts";
 import {
   clickHumanLocator,
   dwell,
@@ -347,8 +348,13 @@ async function waitForUpload(
     return;
   }
 
+  // The screen, at the moment it gave up. Six attempts were spent guessing at
+  // the carousel flow on 2026-07-31 before anyone looked at it.
+  const says = await capturePage(page, "composer", `upload stalled (${mimeType ?? "no type"})`);
   throw new PublishError(
-    "The attachment did not finish uploading to LinkedIn, so nothing was posted."
+    says
+      ? `The attachment did not finish uploading to LinkedIn, so nothing was posted. The composer says: ${says}`
+      : "The attachment did not finish uploading to LinkedIn, so nothing was posted."
   );
 }
 
