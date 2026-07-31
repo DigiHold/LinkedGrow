@@ -1023,6 +1023,13 @@ export const proxyAllocations = sqliteTable("proxy_allocations", {
 }, (table) => [
   index("idx_proxy_alloc_account").on(table.linkedinAccountId),
   index("idx_proxy_alloc_free").on(table.status, table.country),
+  // One live address per LinkedIn account. It replaced a unique index on
+  // (workspace, country) on 2026-07-31, which was the earlier model where up to
+  // three accounts shared an address. That index outlived the decision and
+  // blocked both a second French account in one workspace and any spare sitting
+  // in the buffer, since a buffer row has no account and the pair collided.
+  // Applied as a partial index in SQL: Drizzle cannot express the WHERE.
+  uniqueIndex("uq_proxy_account_active").on(table.linkedinAccountId),
 ]);
 
 // An agent is one ICP: its own sources, scoring, tone and sequence. Several
