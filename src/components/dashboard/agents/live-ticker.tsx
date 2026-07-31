@@ -146,14 +146,28 @@ export function LiveTicker() {
     return () => clearInterval(timer);
   }, [load]);
 
-  // The age of the current action ticks up on its own, so the box reads as live
-  // between polls rather than freezing on a number for eight seconds. The same
-  // tick is what retires a line once it has had its time on screen.
+  /**
+   * The clock on the box, and the moment it comes down.
+   *
+   * The age has to tick every second or the box freezes on one number between
+   * polls and stops reading as live. It runs only while a line is up, and a
+   * timeout at the end of that line's turn takes the box down on time rather
+   * than up to a second late.
+   */
   useEffect(() => {
-    if (doing.length === 0 && showing === null) return;
-    const timer = setInterval(() => setNow(Date.now()), 1_000);
-    return () => clearInterval(timer);
-  }, [doing.length, showing]);
+    if (showing === null) return;
+    const left = showing.since + ON_SCREEN_MS - Date.now();
+    if (left <= 0) return;
+    const tick = setInterval(() => setNow(Date.now()), 1_000);
+    const done = setTimeout(() => {
+      clearInterval(tick);
+      setNow(Date.now());
+    }, left);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(done);
+    };
+  }, [showing]);
 
   /**
    * News puts the box up; time takes it down.
