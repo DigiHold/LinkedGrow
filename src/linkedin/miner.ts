@@ -648,16 +648,26 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number,
   }
   const raw = await page.evaluate(() => {
     const dialog = document.querySelector('div[role="dialog"]');
-    if (!dialog) return [] as Array<{ href: string; text: string; aria: string }>;
+    if (!dialog) return [] as Array<{ href: string; text: string; aria: string; photo: string }>;
     const anchors = Array.from(dialog.querySelectorAll('a[href*="/in/"]')) as HTMLAnchorElement[];
     const seen = new Set<string>();
-    const rows: Array<{ href: string; text: string; aria: string }> = [];
+    const rows: Array<{ href: string; text: string; aria: string; photo: string }> = [];
     for (const a of anchors) {
       const href = a.href.split("?")[0] ?? a.href;
       if (seen.has(href)) continue;
       seen.add(href);
       const container = a.closest("li") ?? a.parentElement?.parentElement ?? a;
-      rows.push({ href, text: (container as HTMLElement).innerText ?? "", aria: a.getAttribute("aria-label") ?? "" });
+      // The face is already rendered on the row. The commenter path has always
+      // taken it and this one never did, so every lead mined from a reactions
+      // list arrived with no picture and the dashboard showed grey initials.
+      // Going back for it later would cost a profile visit per lead.
+      const img = (container as HTMLElement).querySelector("img") as HTMLImageElement | null;
+      rows.push({
+        href,
+        text: (container as HTMLElement).innerText ?? "",
+        aria: a.getAttribute("aria-label") ?? "",
+        photo: img && /licdn/.test(img.src) ? img.src : "",
+      });
     }
     return rows;
   });
@@ -690,7 +700,7 @@ async function closeDialog(page: Page): Promise<void> {
  * so the name is the first real line and the headline is the first line after the profile link and
  * the connection-degree noise.
  */
-export function toEngager(row: { href: string; text: string; aria: string }, source: string, keepConnected = false): Engager | null {
+export function toEngager(row: { href: string; text: string; aria: string; photo?: string }, source: string, keepConnected = false): Engager | null {
   const profileId = profileIdFromUrl(row.href);
   if (!profileId) return null;
   if (!keepConnected && isFirstDegree(row.text)) return null; // already a contact, never a cold prospect by default
@@ -713,6 +723,7 @@ export function toEngager(row: { href: string; text: string; aria: string }, sou
     firstName,
     headline,
     source,
+    avatarUrl: row.photo || undefined,
   };
 }
 
