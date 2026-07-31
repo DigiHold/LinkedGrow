@@ -1039,6 +1039,24 @@ export const proxyAllocations = sqliteTable("proxy_allocations", {
   exitLooksHosted: integer("exit_looks_hosted", { mode: "boolean" })
     .notNull()
     .default(false),
+  /**
+   * The country this address is REGISTERED to, which is a different question
+   * from where a geolocation database places it today.
+   *
+   * On 2026-07-31 LinkedIn emailed three times about one address: Paris once,
+   * Vilnius twice, same night, same session. ipinfo, ip-api and iplocation all
+   * said Paris; the RIPE record for the block says netname BITE-HRS, country
+   * LT. The reseller had published a geofeed claiming Paris and LinkedIn did
+   * not believe it, or did not always. An account that appears to move between
+   * countries while its browser insists on Europe/Paris is an account that
+   * keeps being asked to prove itself.
+   *
+   * Recorded rather than enforced: the address is only knowable after it is
+   * paid for, so refusing would strand the money and could stop every signup
+   * in a country whose whole range is registered elsewhere. Whether a supplier
+   * is acceptable is a decision for a person who can call one.
+   */
+  registryCountry: text("registry_country"),
   burnedAt: integer("burned_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
