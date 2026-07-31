@@ -227,6 +227,10 @@ export function AgentsContent() {
     let cancelled = false;
     fetch("/api/agents")
       .then(async (r) => {
+        // A signed-out session is not a broken page, and saying "could not
+        // load your agents" for it sends somebody hunting a bug that is not
+        // there. It cost Nicolas a diagnosis on 2026-07-31.
+        if (r.status === 401) throw new Error("__signedout__");
         if (!r.ok) throw new Error("Could not load your agents");
         return r.json();
       })
@@ -273,10 +277,27 @@ export function AgentsContent() {
       </div>
 
       <div className="mt-6 grid gap-4">
-        {error && (
-          <p className="rounded-2xl border border-border bg-card p-5 text-sm text-red-600 dark:text-red-400">
-            {error}
-          </p>
+        {error === "__signedout__" ? (
+          <div className="rounded-2xl border border-border bg-card p-6 text-center">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              Your session has expired
+            </p>
+            <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+              Nothing is wrong with your agents. Sign in again and they are all still here.
+            </p>
+            <Link
+              href="/sign-in"
+              className="mt-4 inline-flex items-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              Sign in
+            </Link>
+          </div>
+        ) : (
+          error && (
+            <p className="rounded-2xl border border-border bg-card p-5 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )
         )}
 
         {!data && !error && (
