@@ -135,9 +135,13 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
     if (at >= 0) {
       const skip =
         /^(contact info|see contact info|add profile section|open to|enhance profile|analytics|\d+(st|nd|rd|th)\s|following|followers|connections|·)/i;
-      for (let i = at + 1; i < Math.min(at + 5, lines.length); i++) {
+      for (let i = at + 1; i < Math.min(at + 6, lines.length); i++) {
         const candidate = lines[i] as string;
         if (skip.test(candidate) || candidate.length > 220) continue;
+        // A line that is nothing but a parenthesis is the maiden or former
+        // name LinkedIn prints under the current one. Maria's profile shows
+        // "(Maria Nassif)" there and it was stored as her job title.
+        if (/^\(.*\)$/.test(candidate)) continue;
         headline = candidate;
         break;
       }
