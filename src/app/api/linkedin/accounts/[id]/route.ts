@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { linkedinAccounts, agents } from "@/lib/db/schema";
-import { and, count, eq } from "drizzle-orm";
+import { linkedinAccounts, agents, proxyAllocations } from "@/lib/db/schema";
+import { and, count, eq, isNull, or } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
 
 /**
@@ -64,9 +64,36 @@ export async function DELETE(
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
-    // The address goes back to the pool rather than being cancelled at the
-    // provider, per plan section 5b: IPs are inventory. Releasing it is the
-    // proxy layer's job and happens when that layer exists.
+    // The address goes back to the buffer rather than being cancelled at the
+    // provider, per plan section 5b: addresses are inventory, and the next
+    // account in that country takes it instead of buying one.
+    //
+    // Done here explicitly rather than left to the foreign key. The column
+    // declares onDelete: "set null", SQLite does not enforce foreign keys
+    // unless asked to, and it is not asked to, so every disconnection was
+    // quietly orphaning an address somebody had paid for. Found 2026-07-31.
+    await db
+      .update(proxyAllocations)
+      .set({ linkedinAccountId: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(proxyAllocations.linkedinAccountId, id),
+          eq(proxyAllocations.status, "active")
+        )
+      );
+
+    // An order that never completed bought nothing, so there is nothing to keep.
+    // One that did carries the supplier's order id and stays as a buffer row.
+    await db
+      .delete(proxyAllocations)
+      .where(
+        and(
+          eq(proxyAllocations.linkedinAccountId, id),
+          eq(proxyAllocations.status, "ordering"),
+          or(isNull(proxyAllocations.providerRef), eq(proxyAllocations.providerRef, ""))
+        )
+      );
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
