@@ -241,6 +241,15 @@ const BUTTON_NAME = {
   next: /^(next|done|suivant|terminé|termine|weiter|fertig|siguiente|hecho|avanti|fatto|volgende|klaar)$/i,
   schedule: /^(schedule|programmer|planen|programar|pianifica|plannen|schemalägg)/i,
   discard: /^(discard|supprimer|verwerfen|descartar|elimina|weggooien|kasta)/i,
+  /**
+   * The button that sends a comment, which is not the one that sends a post.
+   *
+   * The first comment looked for BUTTON_NAME.post inside `main` and reported
+   * "the submit button never became available" every time, because on a post
+   * page the only thing called Post is the feed's own composer trigger, when it
+   * is there at all. LinkedIn calls this one Comment, or Reply under a reply.
+   */
+  comment: /^(comment|commenter|reply|répondre|repondre|kommentieren|comentar|commenta|reageren|kommentera)$/i,
 } as const;
 
 /** The same lookup for a page or a container, by what the button is called. */
@@ -950,9 +959,21 @@ export async function postFirstComment(
   await typeHumanHere(page, body);
   await dwell(1200, 3000);
 
-  const submit = await firstVisible(
-    namedButton(page.locator("main"), BUTTON_NAME.post)
-  );
+  /**
+   * The send control for this comment box, looked for beside the box itself.
+   *
+   * Scoped to the form the editor sits in first, because a post page can hold
+   * several comment boxes once replies are open and the one that matters is the
+   * one just typed into. `main` is the fallback for a layout with no form.
+   */
+  const container = page
+    .locator("form, .comments-comment-box")
+    .filter({ has: box })
+    .first();
+  const submit =
+    (await firstVisible(namedButton(container, BUTTON_NAME.comment))) ??
+    (await firstVisible(namedButton(page.locator("main"), BUTTON_NAME.comment))) ??
+    (await firstVisible(namedButton(container, BUTTON_NAME.post)));
   if (!submit || (await submit.isDisabled().catch(() => true))) {
     log("first comment: the submit button never became available");
     return false;
