@@ -149,3 +149,22 @@ test("the worker writes the account states the dashboard reads", () => {
   );
   assert.match(read("../linkedin/signin.ts"), /status = 'active'/, "sign-in does not mark the account active");
 });
+
+/**
+ * A window bigger than the screen kills Chrome at launch.
+ *
+ * The fingerprint pool holds machines up to 2560x1440 and the virtual display
+ * was 1920x1080, so an account whose id hashed to the largest machine could
+ * never open a browser: not slowly, not sometimes, never. Roughly one account
+ * in five, and the only symptom was Chrome dying on SIGTRAP.
+ */
+test("the browser window can never be larger than the display it opens on", () => {
+  const driver = read("../browser/driver.ts");
+  assert.match(driver, /function windowFor\(/, "nothing bounds the window to the screen");
+  assert.ok(
+    !/--window-size=\$\{fp\.viewport/.test(driver),
+    "the window is still sized straight from the fingerprint"
+  );
+  assert.match(driver, /viewport: windowFor\(fp\)/, "the viewport is not bounded either");
+  assert.match(driver, /SCREEN_SIZE/, "the display size is hardcoded rather than read from the unit");
+});

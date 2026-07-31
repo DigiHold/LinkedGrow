@@ -54,6 +54,41 @@ export interface ProxyAllocation {
 const PROFILE_ROOT = optionalEnv("PROFILE_ROOT") ?? "profiles";
 
 /**
+ * How big the virtual display actually is.
+ *
+ * The fingerprint pool contains machines up to 2560x1440, and the window is
+ * sized from the machine. A window larger than the X screen does not get
+ * clipped: Chrome dies at launch, so an account whose id happened to hash to
+ * the biggest machine could never open a browser at all, for ever, while its
+ * neighbour worked. One account in five, and it took a real sign-in to find.
+ *
+ * Set alongside DISPLAY in the unit file so the two cannot drift.
+ */
+function displaySize(): { width: number; height: number } {
+  const raw = optionalEnv("SCREEN_SIZE") ?? "1920x1080";
+  const [w, h] = raw.split("x").map(Number);
+  return {
+    width: Number.isFinite(w) && w ? (w as number) : 1920,
+    height: Number.isFinite(h) && h ? (h as number) : 1080,
+  };
+}
+
+/**
+ * The window this account opens, never bigger than the screen it opens on.
+ *
+ * Clamping the window rather than the reported screen size is also what is
+ * true of a real machine: a window is smaller than the display, and the page
+ * still reads the full screen resolution.
+ */
+function windowFor(fp: ReturnType<typeof fingerprintFor>): { width: number; height: number } {
+  const screen = displaySize();
+  return {
+    width: Math.min(fp.viewport.width, screen.width),
+    height: Math.min(fp.viewport.height, screen.height),
+  };
+}
+
+/**
  * Everything opening a browser needs to know, which is less than an agent.
  *
  * Publishing a post has no agent behind it: a content-only customer never
@@ -196,7 +231,7 @@ function launchChrome(
     channel: "chrome",
     // Headful under a virtual display. Section 8a layer 2.
     headless: false,
-    viewport: fp.viewport,
+    viewport: windowFor(fp),
     userAgent: fp.userAgent,
     locale: fp.locale,
     timezoneId: fp.timezone,
@@ -210,7 +245,7 @@ function launchChrome(
         }
       : {}),
     args: [
-      `--window-size=${fp.viewport.width},${fp.viewport.height}`,
+      `--window-size=${windowFor(fp).width},${windowFor(fp).height}`,
       // WebRTC would announce the real address regardless of the proxy, and
       // IPv6 would route around it entirely. Both are the classic leak.
       "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
