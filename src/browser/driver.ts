@@ -1,5 +1,5 @@
 import { chromium, type BrowserContext, type Page } from "patchright";
-import { mkdirSync, rmSync } from "node:fs";
+import { accessSync, constants, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import type { AgentContext } from "../config.ts";
 import { optionalEnv } from "../config.ts";
@@ -110,10 +110,42 @@ export function sessionTargetFor(ctx: AgentContext): SessionTarget {
   };
 }
 
+/**
+ * Chrome needs a home it can write to, and says so very badly when it has none.
+ *
+ * --user-data-dir does not cover it: the crashpad handler resolves its database
+ * from HOME, and so do ~/.config, ~/.cache and ~/.pki. Under the unit's
+ * sandboxing the service account's own home is either blanked by
+ * ProtectHome=yes or read-only under ProtectSystem=strict, and Chrome then dies
+ * on SIGTRAP with one warning line about crashpad and nothing else. It cost a
+ * whole night on 2026-07-31 and it looked, from the dashboard, like the account
+ * was simply slow to sign in.
+ *
+ * Failing here instead turns that into one sentence naming the cause, for
+ * whatever machine this runs on next.
+ */
+function assertWritableHome(): void {
+  const home = process.env.HOME;
+  if (!home) {
+    throw new Error(
+      "HOME is not set, and Chrome cannot start without a writable home. Set Environment=HOME=<dir inside ReadWritePaths> in the unit."
+    );
+  }
+  try {
+    mkdirSync(home, { recursive: true });
+    accessSync(home, constants.W_OK);
+  } catch {
+    throw new Error(
+      `HOME (${home}) is not writable, so Chrome will die at launch with a crashpad error and nothing else. Point HOME at a directory inside the unit's ReadWritePaths.`
+    );
+  }
+}
+
 export async function openSession(
   target: SessionTarget,
   proxy: ProxyAllocation | null
 ): Promise<Session> {
+  assertWritableHome();
   const fp = fingerprintFor(target.linkedinAccountId, target.country, target.timezone);
   // The behaviour persona is derived the same way as the device, so this
   // account types and moves like the same person on every run.

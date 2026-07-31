@@ -30,6 +30,16 @@ set -euo pipefail
 WORKER_USER="${WORKER_USER:-linkedgrow}"
 WORKER_HOME="/opt/linkedgrow"
 PROFILE_ROOT="${WORKER_HOME}/profiles"
+# Chrome's own home, deliberately not the account's.
+#
+# Chrome writes to $HOME whatever --user-data-dir says: the crashpad handler
+# resolves its database there, and so do ~/.config, ~/.cache and ~/.pki. The
+# service account's home is /home/linkedgrow, which ProtectHome=yes blanks and
+# ProtectSystem=strict would leave read-only anyway, so Chrome died at launch
+# for every account, every time, with nothing in its output but
+# "chrome_crashpad_handler: --database is required". Pointing HOME inside the
+# one writable path fixes it without giving the service any of /home back.
+BROWSER_HOME="${WORKER_HOME}/home"
 # Matches what the code is developed and tested against. Node 22 and Node 24 disagree about
 # which TypeScript syntax --experimental-strip-types accepts, and the 22 box crashed on a
 # constructor parameter property that 24 had run happily for weeks.
@@ -84,7 +94,7 @@ google-chrome --version
 
 say "Worker user and directories"
 id -u "${WORKER_USER}" >/dev/null 2>&1 || useradd --system --create-home --shell /usr/sbin/nologin "${WORKER_USER}"
-mkdir -p "${WORKER_HOME}" "${PROFILE_ROOT}"
+mkdir -p "${WORKER_HOME}" "${PROFILE_ROOT}" "${BROWSER_HOME}"
 chown -R "${WORKER_USER}:${WORKER_USER}" "${WORKER_HOME}"
 # Profiles hold live session cookies, which are the credential. Nobody else reads them.
 chmod 700 "${PROFILE_ROOT}"
@@ -123,6 +133,9 @@ Type=simple
 User=${WORKER_USER}
 WorkingDirectory=${WORKER_HOME}/app
 Environment=DISPLAY=:99
+# Inside ReadWritePaths, because Chrome needs a writable home and the sandbox
+# below takes the real one away. See BROWSER_HOME at the top of this script.
+Environment=HOME=${BROWSER_HOME}
 # Read by the driver to bound the browser window to the screen. Keep it equal to
 # the Xvfb geometry above.
 Environment=SCREEN_SIZE=2560x1440

@@ -158,6 +158,32 @@ test("the worker writes the account states the dashboard reads", () => {
  * never open a browser: not slowly, not sometimes, never. Roughly one account
  * in five, and the only symptom was Chrome dying on SIGTRAP.
  */
+/**
+ * Chrome gets a writable home, or it does not start at all.
+ *
+ * The unit sandboxes the service with ProtectHome=yes and ProtectSystem=strict,
+ * both of which take away the account's own /home/linkedgrow. Chrome writes
+ * there regardless of --user-data-dir, so it died at launch on every account,
+ * every time, saying only "chrome_crashpad_handler: --database is required".
+ * The two halves of the fix live in different files and either one alone is
+ * useless, which is exactly the shape of thing that rots.
+ */
+test("the unit gives Chrome a home it can write to", () => {
+  const unit = readFileSync(new URL("../../deploy/bootstrap.sh", import.meta.url), "utf8");
+  assert.match(unit, /^Environment=HOME=\$\{BROWSER_HOME\}$/m, "the unit does not set HOME at all");
+  assert.match(
+    unit,
+    /^BROWSER_HOME="\$\{WORKER_HOME\}\/home"$/m,
+    "HOME is not inside WORKER_HOME, which is the only path ReadWritePaths opens up"
+  );
+  assert.match(unit, /mkdir -p .*\$\{BROWSER_HOME\}/, "the home is never created");
+  assert.match(
+    read("../browser/driver.ts"),
+    /assertWritableHome\(\)/,
+    "nothing checks the home before paying for a browser launch that cannot work"
+  );
+});
+
 test("the browser window can never be larger than the display it opens on", () => {
   const driver = read("../browser/driver.ts");
   assert.match(driver, /function windowFor\(/, "nothing bounds the window to the screen");
