@@ -161,7 +161,11 @@ const SEL = {
     'button[aria-label*="video" i], button[aria-label*="photo" i], ' +
     'button[aria-label*="image" i]',
   /** Document and video hide behind this on the new composer. */
-  moreMediaTypes: 'button[aria-label*="Expand content types" i]',
+  moreMediaTypes: '[aria-label*="Expand content types" i]',
+  /** The document screen's own picker, which is what creates the file input. */
+  chooseFile:
+    '[aria-label*="Choose file" i], button:has-text("Choose file"), ' +
+    '[role="button"]:has-text("Choose file"), button:has-text("Choisir un fichier")',
   // A document post (which is what a carousel is) will not continue without a
   // title. LinkedIn labels it rather than giving it a stable class.
   documentTitle:
@@ -404,10 +408,30 @@ async function attachMedia(
     .catch(() => {});
   let input = dialog.locator(SEL.fileInput).first();
   if ((await input.count()) === 0) input = page.locator(SEL.fileInput).first();
+
   if ((await input.count()) === 0) {
-    throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
+    /**
+     * A document has one more step: LinkedIn shows a "Share a document" screen
+     * with a Choose file button, and there is no input in the page at all until
+     * that button is pressed. Waiting for one is waiting for something that
+     * will never exist, which is how a carousel failed with "LinkedIn would not
+     * accept the attachment" on a composer that was working perfectly.
+     *
+     * The file-chooser event covers both shapes: an input created on click, and
+     * a native dialog.
+     */
+    const chooser = await firstVisible(page.locator(SEL.chooseFile));
+    if (!chooser) {
+      throw new PublishError("LinkedIn would not accept the attachment, so nothing was posted.");
+    }
+    const [picker] = await Promise.all([
+      page.waitForEvent("filechooser", { timeout: 15_000 }),
+      clickHumanLocator(page, chooser),
+    ]);
+    await picker.setFiles(filePath);
+  } else {
+    await input.setInputFiles(filePath);
   }
-  await input.setInputFiles(filePath);
   await waitForUpload(page, dialog, mimeType, postText);
 
   // Looking at what was attached. A person does; and it also gives LinkedIn's
