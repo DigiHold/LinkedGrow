@@ -103,6 +103,15 @@ async function claimAll(
     if (!ok) continue; // Another agent already has them, which is the right outcome.
     claimed += 1;
 
+    // A found person is the one thing on the live line worth interrupting
+    // somebody for, so it takes the line off whichever source was mining and
+    // says who, with their face.
+    await announce(ctx, "adding a new lead:", {
+      name: person.fullName,
+      avatarUrl: person.avatarUrl ?? null,
+      profileUrl: person.profileUrl,
+    });
+
     // One event per person, because this is what the customer watches during
     // the first hour and a silent agent reads as a broken one.
     await recordEvent(
