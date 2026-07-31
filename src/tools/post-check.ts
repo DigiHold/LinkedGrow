@@ -80,6 +80,35 @@ async function makeVideo(): Promise<string | null> {
 
 type Check = { name: string; ok: boolean; detail: string };
 
+/**
+ * A check that cannot hang.
+ *
+ * The first run of this tool sat on the account for twenty-five minutes and had
+ * to be killed, which left a Chrome holding the profile the worker needs. The
+ * composer's own waits have deadlines; the locators around them did not, and a
+ * `filter({ hasText })` over a loaded LinkedIn page can take minutes on its
+ * own. Every check gets a wall clock, and running out of it is a reported
+ * failure rather than a tool that never comes back.
+ */
+async function within<T>(
+  name: string,
+  ms: number,
+  work: () => Promise<T>
+): Promise<{ value: T } | { timedOut: true }> {
+  let timer: NodeJS.Timeout | undefined;
+  const deadline = new Promise<{ timedOut: true }>((resolve) => {
+    timer = setTimeout(() => resolve({ timedOut: true }), ms);
+  });
+  try {
+    return await Promise.race([work().then((value) => ({ value })), deadline]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** How long each check may take. Video is the slow one: LinkedIn transcodes. */
+const BUDGET = { video: 7 * 60_000, comment: 3 * 60_000, schedule: 5 * 60_000 };
+
 async function main(): Promise<void> {
   const accountId = process.argv[2];
   const only = (process.argv[3] ?? "all").toLowerCase();
@@ -108,20 +137,32 @@ async function main(): Promise<void> {
         });
       } else {
         try {
-          const out = await publishPost(session.page, {
-            text: `${SAMPLE_TEXT} (video)`,
-            filePath: file,
-            mimeType: "video/mp4",
-            profileUrl: acct.profileUrl,
-            rehearse: true,
-          });
-          results.push({
-            name: "video",
-            ok: Boolean(out.rehearsed),
-            detail: out.rehearsed
-              ? "the composer took the video and the Post button was enabled"
-              : "the composer did not reach an enabled Post button",
-          });
+          const attempt = await within("video", BUDGET.video, () =>
+            publishPost(session.page, {
+              text: `${SAMPLE_TEXT} (video)`,
+              filePath: file,
+              mimeType: "video/mp4",
+              profileUrl: acct.profileUrl,
+              rehearse: true,
+            })
+          );
+          if ("timedOut" in attempt) {
+            await capturePage(session.page, accountId, "video-timeout").catch(() => {});
+            results.push({
+              name: "video",
+              ok: false,
+              detail: `gave up after ${BUDGET.video / 60_000} minutes, see the capture in /opt/linkedgrow/debug`,
+            });
+          } else {
+            const out = attempt.value;
+            results.push({
+              name: "video",
+              ok: Boolean(out.rehearsed),
+              detail: out.rehearsed
+                ? "the composer took the video and the Post button was enabled"
+                : "the composer did not reach an enabled Post button",
+            });
+          }
         } catch (error) {
           await capturePage(session.page, accountId, "video-rehearsal").catch(() => {});
           results.push({
@@ -138,9 +179,12 @@ async function main(): Promise<void> {
     if (only === "all" || only === "comment") {
       // The account's own last post, because commenting needs something that
       // exists and this is the one post we are entitled to touch.
-      const mine = acct.profileUrl
-        ? await recentOwnPost(session.page, acct.profileUrl)
-        : null;
+      const found = acct.profileUrl
+        ? await within("own post", 60_000, () =>
+            recentOwnPost(session.page, acct.profileUrl as string)
+          )
+        : { value: null };
+      const mine = "timedOut" in found ? null : found.value;
       if (!mine) {
         results.push({
           name: "first comment",
@@ -149,12 +193,13 @@ async function main(): Promise<void> {
         });
       } else {
         const text = "Testing the comment box, this comment is removed straight away.";
-        const landed = await postFirstComment(session.page, mine, text).catch(
-          (error: unknown) => {
+        const attempt = await within("comment", BUDGET.comment, () =>
+          postFirstComment(session.page, mine, text).catch((error: unknown) => {
             void capturePage(session.page, accountId, "first-comment");
             return error instanceof Error ? error.message : String(error);
-          }
+          })
         );
+        const landed = "timedOut" in attempt ? "gave up waiting on the comment box" : attempt.value;
         results.push({
           name: "first comment",
           ok: landed === true,
@@ -164,11 +209,16 @@ async function main(): Promise<void> {
               : String(landed),
         });
         if (landed === true) {
-          const gone = await deleteOwnComment(session.page, mine, text);
+          const cleanup = await within("cleanup", BUDGET.comment, () =>
+            deleteOwnComment(session.page, mine, text)
+          );
+          const gone = "timedOut" in cleanup ? false : cleanup.value;
           results.push({
             name: "comment cleanup",
             ok: gone,
-            detail: gone ? "the test comment was removed" : "COULD NOT REMOVE IT, delete it by hand",
+            detail: gone
+              ? "the test comment was removed"
+              : `COULD NOT REMOVE IT, delete it by hand on ${mine}`,
           });
         }
       }
@@ -180,20 +230,32 @@ async function main(): Promise<void> {
       const at = new Date(Date.now() + 3 * 86_400_000);
       at.setHours(11, 0, 0, 0);
       try {
-        const out = await publishPost(session.page, {
-          text: `${SAMPLE_TEXT} (scheduled, and deleted immediately)`,
-          filePath: null,
-          mimeType: null,
-          profileUrl: acct.profileUrl,
-          scheduleFor: { at, timeZone: "Europe/Paris" },
-        });
-        results.push({
-          name: "schedule",
-          ok: out.scheduled,
-          detail: out.scheduled
-            ? `LinkedIn accepted it for ${at.toISOString()}`
-            : "LinkedIn did not accept it into its scheduler",
-        });
+        const attempt = await within("schedule", BUDGET.schedule, () =>
+          publishPost(session.page, {
+            text: `${SAMPLE_TEXT} (scheduled, and deleted immediately)`,
+            filePath: null,
+            mimeType: null,
+            profileUrl: acct.profileUrl,
+            scheduleFor: { at, timeZone: "Europe/Paris" },
+          })
+        );
+        if ("timedOut" in attempt) {
+          await capturePage(session.page, accountId, "schedule-timeout").catch(() => {});
+          results.push({
+            name: "schedule",
+            ok: false,
+            detail:
+              "gave up part way through. CHECK THE SCHEDULED LIST BY HAND: it may have gone in.",
+          });
+        } else {
+          results.push({
+            name: "schedule",
+            ok: attempt.value.scheduled,
+            detail: attempt.value.scheduled
+              ? `LinkedIn accepted it for ${at.toISOString()}. DELETE IT from the scheduled list.`
+              : "LinkedIn did not accept it into its scheduler",
+          });
+        }
       } catch (error) {
         await capturePage(session.page, accountId, "schedule").catch(() => {});
         results.push({
