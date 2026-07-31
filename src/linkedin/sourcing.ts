@@ -1,7 +1,7 @@
 import type { Page } from "patchright";
 import type { AgentContext } from "../config.ts";
 import { claimLead, db, loadSources, recordEvent } from "../db.ts";
-import { announce } from "../store.ts";
+import { announce, keepAlive } from "../store.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
 import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
@@ -265,6 +265,13 @@ export async function sourcePass(
       source.label
     );
 
+    // Mining one source runs for minutes at a human pace, which is longer than
+    // the dashboard will believe a single claim. A pulse every half minute is
+    // what keeps the line on screen for as long as the work is really running.
+    const alive = setInterval(() => {
+      void keepAlive(ctx);
+    }, 30_000);
+
     try {
       switch (source.type) {
         case "competitor": {
@@ -359,6 +366,10 @@ export async function sourcePass(
       });
       await markMined(source.id, 0);
       continue;
+    } finally {
+      // Runs on every way out of the block, including the two `continue`s and
+      // the error path, so no pulse is ever left beating on a finished source.
+      clearInterval(alive);
     }
 
     const claimed = await claimAll(ctx, source.id, source.label, found);
@@ -416,6 +427,9 @@ async function fallbackPass(
 
   let found: Engager[] = [];
   await announce(ctx, "widening the search to", undefined, queries.join(", "));
+  const alive = setInterval(() => {
+    void keepAlive(ctx);
+  }, 30_000);
   try {
     found = await mineIntent(ctx, page, ctx.cfg, { queries, maxPerQuery: budget.perPost });
   } catch (error) {
@@ -423,6 +437,8 @@ async function fallbackPass(
       reason: error instanceof Error ? error.message : String(error),
     });
     return 0;
+  } finally {
+    clearInterval(alive);
   }
 
   // Null rather than empty: source_id carries a foreign key onto agent_sources, and there is no

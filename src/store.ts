@@ -246,22 +246,46 @@ export async function announce(
   detail?: string
 ): Promise<void> {
   try {
+    const now = Math.floor(Date.now() / 1000);
     await db().execute({
       sql: `INSERT INTO agent_activity
-              (agent_id, workspace_id, verb, subject_name, subject_avatar, subject_url, detail, started_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              (agent_id, workspace_id, verb, subject_name, subject_avatar, subject_url,
+               detail, started_at, beat_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(agent_id) DO UPDATE SET
               verb = excluded.verb,
               subject_name = excluded.subject_name,
               subject_avatar = excluded.subject_avatar,
               subject_url = excluded.subject_url,
               detail = excluded.detail,
-              started_at = excluded.started_at`,
+              started_at = excluded.started_at,
+              beat_at = excluded.beat_at`,
       args: [
         ctx.agentId, ctx.workspaceId, verb,
         subject?.name ?? null, subject?.avatarUrl ?? null, subject?.profileUrl ?? null,
-        detail ?? null, Math.floor(Date.now() / 1000),
+        detail ?? null, now, now,
       ],
+    });
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Still alive, still on the same thing.
+ *
+ * Mining one competitor takes minutes: the browser opens each post, scrolls it
+ * at a human pace and reads the comments. Without this the reader would treat
+ * an action that long as stale and go dark while the agent was mid-work. So the
+ * two timestamps mean different things: `started_at` is when the action began,
+ * which is what the clock on screen counts from, and `beat_at` is the last sign
+ * of life, which is what decides whether to believe any of it.
+ */
+export async function keepAlive(ctx: DB): Promise<void> {
+  try {
+    await db().execute({
+      sql: `UPDATE agent_activity SET beat_at = ? WHERE agent_id = ?`,
+      args: [Math.floor(Date.now() / 1000), ctx.agentId],
     });
   } catch {
     return;
