@@ -98,6 +98,18 @@ export async function mine(ctx: DB, page: Page, cfg: Config, opts: MineOptions):
   const onIcp = outsiders.filter((e) =>
     matchesIcp(cfg.leads.icpKeywords, e.headline ?? "", e.context ?? "")
   );
+  // What was dropped, in their own words. "11 mined, 0 on ICP" is the same
+  // line whether the filter is too narrow or the headlines came back empty
+  // because a selector moved, and those need opposite fixes.
+  if (onIcp.length === 0 && outsiders.length > 0) {
+    log("nobody matched the ICP, here is what was read", {
+      keywords: cfg.leads.icpKeywords.slice(0, 6),
+      sample: outsiders.slice(0, 3).map((e) => ({
+        name: e.fullName,
+        headline: e.headline ?? "(empty)",
+      })),
+    });
+  }
   log(`Mined ${unique.length} unique engagers; ${onIcp.length} match the ICP (dropped ${outsiders.length - onIcp.length} off-target).`);
 
   const asked = await promoteAskers(ctx, onIcp);
