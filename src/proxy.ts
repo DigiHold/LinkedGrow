@@ -80,7 +80,11 @@ const authProxy = auth(async (req) => {
     return response;
   }
 
-  const isLoggedIn = !!req.auth;
+  // A session object is not a session. An invalidated token can still
+  // deserialise into one with no user on it, and treating that as signed in is
+  // what created the loop above: redirected away from /sign-in, refused by
+  // every API route.
+  const isLoggedIn = !!req.auth?.user?.id;
   const isAdmin = req.auth?.user?.isAdmin === true;
 
   // Check maintenance mode first (takes priority)

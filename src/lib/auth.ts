@@ -130,10 +130,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // Invalidate the session if the password changed after this token
           // was issued. Still checked on every call.
+          //
+          // Null, not a token with a null id. Returning the emptied token left
+          // a session object in place: the middleware asks `!!req.auth` and saw
+          // one, so it treated the person as signed in and bounced them off
+          // /sign-in back to the dashboard, while every API route read
+          // session.user.id, found nothing and answered 401. Changing your own
+          // password therefore locked you out of the app with no way back in,
+          // in a loop, which is what happened to Nicolas on 2026-07-31.
           if (dbUser.passwordChangedAt && token.issuedAt) {
             const changedAt = new Date(dbUser.passwordChangedAt as string).getTime();
             if (changedAt > (token.issuedAt as number)) {
-              return { ...token, id: null };
+              return null;
             }
           }
 
