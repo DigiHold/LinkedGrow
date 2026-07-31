@@ -199,12 +199,15 @@ function SignInForm() {
                   type="button"
                   onClick={() => handleSocialLogin("google")}
                   disabled={socialLoading !== null}
-                  className="h-12 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-12 w-full flex items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {socialLoading === "google" ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <GoogleIcon className="w-5 h-5" />
+                    <>
+                      <GoogleIcon className="w-5 h-5" />
+                      <span>Continue with Google</span>
+                    </>
                   )}
                 </button>
               </div>
