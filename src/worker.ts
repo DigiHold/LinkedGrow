@@ -196,8 +196,15 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       // Each step of the relationship sequence writes differently, and the
       // differences are the product. Routing them through one generic
       // "write a DM" call is how they would quietly become the same message.
-      writeMessage: async (prospect, step, thread) =>
-        withAddress(key, async () => {
+      writeMessage: async (prospect, step, thread) => {
+        // A message the customer wrote themselves is sent as they wrote it, and
+        // costs no model call. Their own words beat anything generated, and the
+        // whole point of the box on the Messages tab is that it is obeyed.
+        const written = ctx.templates[step];
+        if (written) {
+          return { body: fillTemplate(written, prospect), angle: step };
+        }
+        return withAddress(key, async () => {
           const to = {
             firstName: prospect.first_name ?? "",
             // Both feed the shape rotation, which is seeded per prospect so a
@@ -216,7 +223,8 @@ async function runAgent(ctx: AgentContext): Promise<void> {
                 ? await converseMessage(ctx, ctx.sender, to, thread)
                 : await askMessage(ctx, ctx.sender, to, thread);
           return { body, angle: step };
-        }),
+        });
+      },
     });
 
     await touchRun(ctx);
@@ -237,6 +245,33 @@ async function runAgent(ctx: AgentContext): Promise<void> {
  * ceiling stops the agent for the day, a wrong address stops the session before
  * it touches LinkedIn.
  */
+/**
+ * Fills a hand-written message with what is known about the person.
+ *
+ * Unknown placeholders are removed rather than left in: a message arriving with
+ * a literal {jobTitle} in it is worse than one missing the phrase, and the
+ * validator's "unresolved template token" rule exists for exactly that reason.
+ * The tidy-up afterwards is what stops "Hi , " when a first name is missing.
+ */
+function fillTemplate(
+  template: string,
+  prospect: { first_name: string | null; full_name: string | null; company: string | null; headline: string | null }
+): string {
+  const first =
+    prospect.first_name ?? (prospect.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+  return template
+    .replace(/\{name\}/g, first)
+    .replace(/\{firstName\}/g, first)
+    .replace(/\{fullName\}/g, prospect.full_name ?? first)
+    .replace(/\{company\}/g, prospect.company ?? "")
+    .replace(/\{jobTitle\}/g, prospect.headline ?? "")
+    .replace(/\{[a-zA-Z]+\}/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.!?])/g, "$1")
+    .replace(/([,.!?])\1+/g, "$1")
+    .trim();
+}
+
 async function safely(ctx: AgentContext): Promise<void> {
   try {
     await withWatchdog(() => runAgent(ctx));

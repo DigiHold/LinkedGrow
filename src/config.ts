@@ -83,6 +83,14 @@ export interface AgentContext {
   companySizes: string[];
   observeOnly: boolean;
   /**
+   * Messages the customer wrote by hand, keyed by relationship step.
+   *
+   * Present means sent word for word with {name}, {company} and {jobTitle}
+   * filled in, and no model call for that step. Absent means the agent writes
+   * that one itself, for each person, as it always has.
+   */
+  templates: Record<string, string>;
+  /**
    * When set, the only profiles this agent may like, invite or message.
    *
    * Everything else runs normally and every other lead is queued and visible, simply never

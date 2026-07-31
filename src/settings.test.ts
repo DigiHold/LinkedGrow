@@ -51,6 +51,10 @@ const SETTINGS: Array<{ field: string; usedAs: string }> = [
   { field: "reviewMode", usedAs: "ctx.reviewMode" },
   { field: "warmupStartPerDay", usedAs: "cfg.warmup.startPerDay" },
   { field: "warmupWeeks", usedAs: "cfg.warmup.weeks" },
+  // The messages the customer writes on the Messages tab. A box that is typed
+  // into and then ignored is the same failure as a dead setting, in the one
+  // place where the customer would notice it on the first message sent.
+  { field: "templates", usedAs: "ctx.templates" },
 ];
 
 test("every setting the worker loads is actually used by it", () => {
@@ -67,6 +71,7 @@ test("the loader selects the columns those settings come from", () => {
   for (const column of [
     "goal", "match_level", "tone", "company_sizes", "skip_connected",
     "smart_lead_finder", "observe_only", "test_recipients", "website",
+    "sequence_templates",
   ]) {
     assert.ok(db.includes(`AS ${column}`), `the agent query does not select ${column}`);
   }

@@ -112,6 +112,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       a.review_mode       AS review_mode,
       a.observe_only      AS observe_only,
       a.test_recipients   AS test_recipients,
+      a.sequence          AS sequence_templates,
       a.status            AS status,
       a.last_run_at       AS last_run_at,
       l.full_name         AS account_full_name,
@@ -211,6 +212,29 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       reviewMode: Number(r.review_mode ?? 0) === 1,
       observeOnly: Number(r.observe_only ?? 0) === 1,
       testRecipients: parseList(r.test_recipients),
+      /**
+       * Messages the customer wrote themselves, keyed by step.
+       *
+       * A step with one here is sent word for word with the placeholders
+       * filled, and no model is called for it. A step without one is written
+       * for each person as before. An unreadable column is no templates rather
+       * than a broken agent.
+       */
+      templates: (() => {
+        const raw = r.sequence_templates;
+        if (typeof raw !== "string" || !raw.trim()) return {};
+        try {
+          const parsed: unknown = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+          const out: Record<string, string> = {};
+          for (const [step, body] of Object.entries(parsed as Record<string, unknown>)) {
+            if (typeof body === "string" && body.trim()) out[step] = body.trim();
+          }
+          return out;
+        } catch {
+          return {};
+        }
+      })(),
       // The wizard offers two, and until now the worker read neither.
       goal: String(r.goal ?? "conversations") === "meetings" ? "meetings" : "conversations",
       website: String(r.website ?? ""),
