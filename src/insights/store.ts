@@ -193,3 +193,60 @@ export async function saveStats(postId: string, stats: PostStats): Promise<void>
     ],
   });
 }
+
+export interface LeadFace {
+  leadId: string;
+  profileId: string;
+  remoteUrl: string;
+}
+
+/**
+ * Leads whose face is still a LinkedIn URL rather than one of ours.
+ *
+ * The miner takes the picture off the card, which costs nothing because it is
+ * already rendered there. Copying it into the bucket is the part that costs a
+ * request, so it happens here, in the loop that is already slow on purpose,
+ * rather than in the middle of mining.
+ *
+ * It matters because LinkedIn's media URLs are signed and expire. A lead found
+ * today would have no face by next week, which is exactly how the leads tab
+ * ends up as a list of names and grey initials.
+ */
+export async function loadLeadFaces(limit = 30): Promise<LeadFace[]> {
+  const { rows } = await db().execute({
+    sql: `SELECT id, profile_id, avatar_url
+            FROM agent_leads
+           WHERE avatar_url IS NOT NULL
+             AND avatar_url <> ''
+             AND avatar_url LIKE '%licdn%'
+           ORDER BY found_at DESC
+           LIMIT ?`,
+    args: [limit],
+  });
+  return rows.map((r) => ({
+    leadId: String(r.id),
+    profileId: String(r.profile_id),
+    remoteUrl: String(r.avatar_url),
+  }));
+}
+
+export async function saveLeadFace(leadId: string, url: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_leads SET avatar_url = ?, updated_at = ? WHERE id = ?`,
+    args: [url, nowSeconds(), leadId],
+  });
+}
+
+/**
+ * Gives up on a face we could not copy, rather than trying for ever.
+ *
+ * An expired URL never becomes valid again, so leaving it in place would mean
+ * every pass retrying the same dead links until the leads table fills with
+ * them. Clearing it costs the lead its picture and costs the loop nothing.
+ */
+export async function forgetLeadFace(leadId: string): Promise<void> {
+  await db().execute({
+    sql: `UPDATE agent_leads SET avatar_url = NULL, updated_at = ? WHERE id = ?`,
+    args: [nowSeconds(), leadId],
+  });
+}

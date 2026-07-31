@@ -23,6 +23,7 @@ import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.
 import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
 import { browserActions } from "./linkedin/actions.ts";
+import { ensureProfileCaptured } from "./linkedin/profile.ts";
 import { onlyContact } from "./safety/allowlist.ts";
 import {
   RELATIONSHIP_STEPS,
@@ -104,6 +105,11 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       );
       return;
     }
+
+    // Who this account is, once. It fills the name and picture the dashboard
+    // shows, and the profile URL that publishing and the follower count both
+    // read from. Cheap to call: one indexed SELECT says there is nothing to do.
+    await ensureProfileCaptured(session.page, ctx.linkedinAccountId);
 
     // Every write funnels through here, so the test allowlist is applied once rather than checked
     // at five call sites, any one of which could be forgotten.

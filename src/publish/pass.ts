@@ -7,6 +7,8 @@ import { withWatchdog, RunStalled } from "../safety/watchdog.ts";
 import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
+import { ensureProfileCaptured } from "../linkedin/profile.ts";
+import { db } from "../db.ts";
 import {
   downloadAttachment,
   findPublishedUrl,
@@ -235,7 +237,8 @@ async function confirmOne(session: Session, account: PublishAccount, post: DuePo
 
 /** Everything one account has to do this minute, in one session. */
 async function runAccount(work: AccountWork, address: Address): Promise<void> {
-  const { account, jobs } = work;
+  let { account } = work;
+  const { jobs } = work;
 
   const session = await openSession(
     {
@@ -265,6 +268,19 @@ async function runAccount(work: AccountWork, address: Address): Promise<void> {
         else await unclaim(post.id, SIGNED_OUT_MESSAGE);
       }
       return;
+    }
+
+    // A content-only customer has no agent, so this is the only place that ever
+    // learns their profile URL, and without it a published post can never be
+    // read back and confirmed.
+    await ensureProfileCaptured(session.page, account.id);
+    if (!account.profileUrl) {
+      const { rows } = await db().execute({
+        sql: `SELECT profile_url FROM linkedin_accounts WHERE id = ? LIMIT 1`,
+        args: [account.id],
+      });
+      const found = rows[0]?.profile_url;
+      if (found) account = { ...account, profileUrl: String(found) };
     }
 
     const key = groupKey(account.id);

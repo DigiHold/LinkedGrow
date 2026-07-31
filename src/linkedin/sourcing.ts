@@ -86,6 +86,10 @@ async function claimAll(
       profileUrl: person.profileUrl,
       fullName: person.fullName,
       headline: person.headline ?? null,
+      // As LinkedIn served it. The insights pass copies it into our own bucket
+      // afterwards, because these URLs expire and a lead should not lose its
+      // face a week after it was found.
+      avatarUrl: person.avatarUrl ?? null,
       signalType: person.source ?? null,
       signalText: person.context ?? null,
       sourceId,

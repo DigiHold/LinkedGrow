@@ -1,5 +1,6 @@
 import { log, logError } from "../logger.ts";
 import { closeSession, isSignedIn, openSession } from "../browser/driver.ts";
+import type { Session } from "../browser/driver.ts";
 import { allocationFor, isProduction } from "../proxy/allocation.ts";
 import { NoSlotError, takeSlot } from "../safety/slots.ts";
 import { withWatchdog } from "../safety/watchdog.ts";
@@ -7,11 +8,15 @@ import { currentRun } from "../safety/run-context.ts";
 import { withAddress, groupKey } from "../safety/ip-lock.ts";
 import { dwell, randInt, sleep } from "../browser/human.ts";
 import { readFollowerCount, readPostStats } from "../linkedin/insights.ts";
+import { ensureProfileCaptured, storeAvatar } from "../linkedin/profile.ts";
 import { db } from "../db.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
 import {
+  forgetLeadFace,
+  loadLeadFaces,
   loadPostsNeedingStats,
   needsFollowerReading,
+  saveLeadFace,
   saveFollowerCount,
   saveStats,
   type StalePost,
@@ -33,6 +38,9 @@ import {
 
 /** How many posts one session looks at. Beyond this it stops looking like browsing. */
 const MAX_POSTS_PER_SESSION = 8;
+
+/** How many lead pictures one session copies. It is a background chore, not the job. */
+const MAX_FACES_PER_SESSION = 30;
 
 /** Between two posts, the pause of somebody clicking through their own history. */
 const BETWEEN_POSTS_MS = { min: 6_000, max: 20_000 };
@@ -105,6 +113,8 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
       return;
     }
 
+    await ensureProfileCaptured(session.page, account.id);
+
     const key = groupKey(account.id);
 
     // Once a day, the follower count off the profile. It is the Followers card
@@ -120,6 +130,11 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
         logError("reading the follower count failed", error, { accountId: account.id });
       }
     }
+
+    // The leads found since the last pass still wear a LinkedIn URL for a face.
+    // Copying them costs one fetch each and no page load, so it rides along on
+    // a session that is already open.
+    await copyLeadFaces(session);
 
     for (let i = 0; i < posts.length; i++) {
       const post = posts[i];
@@ -142,6 +157,29 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
   } finally {
     await closeOnce();
   }
+}
+
+/**
+ * Copies the faces the miner collected into our own bucket.
+ *
+ * Bounded per session, because it is a nice-to-have riding on a session that
+ * exists for another reason, and a hundred image fetches in a row is not what
+ * somebody reading their own analytics looks like.
+ */
+async function copyLeadFaces(session: Session): Promise<void> {
+  const faces = await loadLeadFaces(MAX_FACES_PER_SESSION);
+  for (const face of faces) {
+    try {
+      const stored = await storeAvatar(session.page, face.remoteUrl, `linkedin/leads/${face.profileId}`);
+      if (stored) await saveLeadFace(face.leadId, stored);
+      else await forgetLeadFace(face.leadId);
+    } catch (error) {
+      logError("could not copy a lead's picture", error, { lead: face.leadId });
+      await forgetLeadFace(face.leadId).catch(() => {});
+    }
+    await sleep(randInt(400, 1400));
+  }
+  if (faces.length) log("lead pictures copied", { count: faces.length });
 }
 
 export async function insightsPass(): Promise<void> {

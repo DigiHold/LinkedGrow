@@ -21,6 +21,15 @@ export interface Engager {
   source: string;
   /** For intent leads, the question they posted, used to personalise the first message. */
   context?: string;
+  /**
+   * The face on the card, as LinkedIn served it.
+   *
+   * Stored as their URL first and copied into our own bucket afterwards, by the
+   * insights pass. LinkedIn's media URLs expire, so the copy is what keeps a
+   * lead from becoming faceless a week later; taking it here rather than later
+   * is what avoids a profile visit per lead just to fetch a thumbnail.
+   */
+  avatarUrl?: string;
 }
 
 export interface MineOptions {
@@ -188,7 +197,7 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
  * Splits a search result card into its author and post body, or null when it is not a member post.
  * Card text reads: "Feed post | <name> | · 3rd+ | <headline> | 1w · | Follow | <post>".
  */
-export function parseCard(card: { href: string; text: string }, keepConnected = false): { profileId: string; fullName: string; headline: string; body: string } | null {
+export function parseCard(card: { href: string; text: string; photo?: string }, keepConnected = false): { profileId: string; fullName: string; headline: string; body: string } | null {
   const profileId = profileIdFromUrl(card.href);
   if (!profileId) return null;
   if (!keepConnected && isFirstDegree(card.text.split("\n").slice(0, 4).join(" "))) return null;
@@ -215,7 +224,10 @@ export function parseCard(card: { href: string; text: string }, keepConnected = 
 }
 
 /** Builds an Engager from a parsed card. */
-export function cardToEngager(parsed: { profileId: string; fullName: string; headline: string; body: string }, source: string): Engager {
+export function cardToEngager(
+  parsed: { profileId: string; fullName: string; headline: string; body: string; photo?: string },
+  source: string
+): Engager {
   return {
     profileId: parsed.profileId,
     profileUrl: `https://www.linkedin.com/in/${parsed.profileId}/`,
@@ -224,6 +236,7 @@ export function cardToEngager(parsed: { profileId: string; fullName: string; hea
     headline: parsed.headline,
     source,
     context: parsed.body.slice(0, 400) || undefined,
+    avatarUrl: parsed.photo || undefined,
   };
 }
 
@@ -231,7 +244,11 @@ export function cardToEngager(parsed: { profileId: string; fullName: string; hea
  * Turns a search result card into a lead, or null when it is not a real person genuinely discussing
  * the query and asking for help rather than teaching.
  */
-export function toIntentLead(card: { href: string; text: string }, query: string, keepConnected = false): Engager | null {
+export function toIntentLead(
+  card: { href: string; text: string; photo?: string },
+  query: string,
+  keepConnected = false
+): Engager | null {
   const parsed = parseCard(card, keepConnected);
   if (!parsed) return null;
   if (!onTopic(query, parsed.body)) return null;
@@ -247,7 +264,10 @@ export function toIntentLead(card: { href: string; text: string }, query: string
  * LinkedIn or Sales Navigator search has already done that part, so a value that is already a URL
  * is opened as-is rather than searched for literally.
  */
-export async function searchPostCards(page: Page, query: string): Promise<Array<{ href: string; text: string }>> {
+export async function searchPostCards(
+  page: Page,
+  query: string
+): Promise<Array<{ href: string; text: string; photo?: string }>> {
   const url = /^https?:\/\/(www\.)?linkedin\.com\//i.test(query.trim())
     ? query.trim()
     : `https://www.linkedin.com/search/results/content/?keywords=${encodeURIComponent(query)}&sortBy=%22date_posted%22`;
@@ -256,11 +276,21 @@ export async function searchPostCards(page: Page, query: string): Promise<Array<
   await dwell(2500, 4000);
   await scrollHuman(page, randInt(2, 3));
   return page.evaluate((sel) => {
-    const out: Array<{ href: string; text: string }> = [];
+    const out: Array<{ href: string; text: string; photo: string }> = [];
     for (const c of Array.from(document.querySelectorAll(sel))) {
       const a = c.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
       if (!a) continue; // company page posts have no member link
-      out.push({ href: a.href.split("?")[0] ?? a.href, text: (c as HTMLElement).innerText ?? "" });
+      // The picture is already rendered on the card, so taking it costs
+      // nothing. Not taking it meant every lead in the dashboard was a name and
+      // two grey initials, and going back for it later would mean a profile
+      // visit per lead, which is real LinkedIn activity for a thumbnail.
+      const img = (c as HTMLElement).querySelector("img");
+      const photo = img && /licdn/.test(img.src) ? img.src : "";
+      out.push({
+        href: a.href.split("?")[0] ?? a.href,
+        text: (c as HTMLElement).innerText ?? "",
+        photo,
+      });
     }
     return out;
   }, POST_CARD_SELECTOR);
@@ -443,7 +473,7 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
     const raw = await page.evaluate((sel) => {
       const items = Array.from(document.querySelectorAll(sel));
       const seen = new Set<string>();
-      const rows: Array<{ href: string; name: string; headline: string; body: string }> = [];
+      const rows: Array<{ href: string; name: string; headline: string; body: string; photo: string }> = [];
       for (const item of items) {
         const a = item.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
         if (!a) continue;
@@ -456,6 +486,10 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
         const bodyEl = item.querySelector(".comments-comment-item__main-content") as HTMLElement | null;
         rows.push({
           href,
+          photo: (() => {
+            const img = item.querySelector("img") as HTMLImageElement | null;
+            return img && /licdn/.test(img.src) ? img.src : "";
+          })(),
           name: (nameEl?.innerText ?? a.getAttribute("aria-label") ?? "").trim(),
           headline: (headlineEl?.innerText ?? "").trim(),
           body: (bodyEl?.innerText ?? "").replace(/\s+/g, " ").trim(),
@@ -475,7 +509,11 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
 }
 
 /** Builds an Engager from a structured commenter row (name and headline already isolated). */
-export function toCommenter(row: { href: string; name: string; headline: string; body?: string }, source: string, keepConnected = false): Engager | null {
+export function toCommenter(
+  row: { href: string; name: string; headline: string; body?: string; photo?: string },
+  source: string,
+  keepConnected = false
+): Engager | null {
   const profileId = profileIdFromUrl(row.href);
   if (!profileId) return null;
   if (!keepConnected && isFirstDegree(`${row.name} ${row.headline}`)) return null;
@@ -491,6 +529,7 @@ export function toCommenter(row: { href: string; name: string; headline: string;
     headline,
     source,
     context: row.body?.slice(0, 400) || undefined,
+    avatarUrl: row.photo || undefined,
   };
 }
 
