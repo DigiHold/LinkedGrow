@@ -96,14 +96,56 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
 
   const read = await page.evaluate(() => {
     const main = document.querySelector("main");
-    // The name is the only h1 on a profile, and the headline is the line
-    // beneath it. Both are read from structure rather than from class names,
-    // which LinkedIn rewrites constantly.
-    const name = main?.querySelector("h1")?.textContent?.trim() ?? "";
-    const headline =
-      (main?.querySelector(".text-body-medium") as HTMLElement | null)?.innerText?.trim() ?? "";
+
+    /**
+     * The name, from the page title first.
+     *
+     * It used to be read as "the only h1 on a profile". Verified against the
+     * live page on 2026-07-31: a profile now has no h1 at all, anywhere in the
+     * document, and no .text-body-medium either. The name sits in an h2 among
+     * the section headings, and there are no meta tags to fall back on because
+     * the page is rendered client side.
+     *
+     * So the title is the primary source. It is "Maria LECOCQ | LinkedIn",
+     * it has survived every redesign, and it does not depend on a class name.
+     * The heading is the cross-check and the fallback.
+     */
+    const fromTitle = (document.title.split("|")[0] ?? "").trim();
+    const headings = Array.from(
+      main?.querySelectorAll('h1, h2, [role="heading"]') ?? []
+    )
+      .map((e) => (e.textContent ?? "").trim())
+      .filter(Boolean);
+    const name = fromTitle || headings[0] || "";
+
+    /**
+     * The headline, which is the line printed under the name.
+     *
+     * Read positionally rather than by selector, because the selector it used
+     * to have is gone and the next one will go too. Everything between the
+     * name and the location is the professional headline; the few fixed labels
+     * that can appear in between are skipped by name.
+     */
+    let headline = "";
+    const lines = ((main as HTMLElement | null)?.innerText ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const at = lines.findIndex((l) => l === name);
+    if (at >= 0) {
+      const skip =
+        /^(contact info|see contact info|add profile section|open to|enhance profile|analytics|\d+(st|nd|rd|th)\s|following|followers|connections|·)/i;
+      for (let i = at + 1; i < Math.min(at + 5, lines.length); i++) {
+        const candidate = lines[i] as string;
+        if (skip.test(candidate) || candidate.length > 220) continue;
+        headline = candidate;
+        break;
+      }
+    }
+
     // The profile photo, never the background image and never a suggestion in
-    // the sidebar: it is the one whose alt is the member's own name.
+    // the sidebar: it is the one whose alt carries the member's own name. This
+    // worked all along and failed only because the name above was empty.
     let photo = "";
     for (const img of Array.from(main?.querySelectorAll("img") ?? [])) {
       const el = img as HTMLImageElement;
