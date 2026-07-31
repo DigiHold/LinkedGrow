@@ -483,7 +483,7 @@ export function AgentsContent() {
                     ) : (
                       <>
                         Next launch <b>{nextLaunch(agent)}</b>, sending{" "}
-                        <b>{agent.dailyInviteCap} invitations</b>
+                        <b>{dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations</b>
                         {siblings > 1 && ` shared with ${siblings - 1} other agent`}
                       </>
                     )}
