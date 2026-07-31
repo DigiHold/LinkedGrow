@@ -166,7 +166,7 @@ async function readAccount(account: Account, posts: StalePost[]): Promise<void> 
  * exists for another reason, and a hundred image fetches in a row is not what
  * somebody reading their own analytics looks like.
  */
-async function copyLeadFaces(session: Session): Promise<void> {
+export async function copyLeadFaces(session: Session): Promise<void> {
   const faces = await loadLeadFaces(MAX_FACES_PER_SESSION);
   for (const face of faces) {
     try {
@@ -184,6 +184,15 @@ async function copyLeadFaces(session: Session): Promise<void> {
 
 export async function insightsPass(): Promise<void> {
   const stale = await loadPostsNeedingStats();
+  // Faces are not post statistics and must not depend on them.
+  //
+  // This returned here whenever there was nothing to re-read, which for an
+  // account that has never published is always. copyLeadFaces sits further
+  // down this same function, so lead pictures were never copied into the
+  // bucket on any account doing outreach and no posting: every lead kept a
+  // LinkedIn URL that expires within days, and the dashboard showed grey
+  // initials for ever. Found 2026-07-31 after Nicolas asked why 23 leads had
+  // no avatar.
   if (!stale.length) return;
 
   const accounts = await accountsFor(stale);

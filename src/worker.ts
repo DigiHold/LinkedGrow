@@ -19,7 +19,7 @@ import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
 import { connectPass } from "./linkedin/connect-pass.ts";
 import { publishPass } from "./publish/pass.ts";
-import { insightsPass } from "./insights/pass.ts";
+import { insightsPass, copyLeadFaces } from "./insights/pass.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
 import { runSequence } from "./linkedin/sequence.ts";
 import { sourcePass } from "./linkedin/sourcing.ts";
@@ -142,6 +142,18 @@ async function runAgent(ctx: AgentContext): Promise<void> {
     if (canSource) {
       try {
         await sourcePass(ctx, session.page, { firstRun: neverRan });
+        // The faces of the people just found, into our own bucket, on the
+        // session that found them.
+        //
+        // It used to be left to the insights pass, which returns early unless
+        // some published post needs its numbers re-read. An account that does
+        // outreach and never posts therefore copied no pictures at all, and
+        // LinkedIn's own image URLs expire within days, so every lead ended up
+        // faceless. Doing it here means the picture is stored in the same
+        // minute the lead is found, and it needs no second session.
+        await copyLeadFaces(session).catch((error: unknown) => {
+          logError("could not copy the lead pictures", error, { agentId: ctx.agentId });
+        });
       } catch (error) {
       // Sourcing failing must never stop the sequence: there may already be
       // people in the queue who are owed a reply.
