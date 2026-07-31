@@ -248,6 +248,7 @@ export function SettingsTab({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [limitsOpen, setLimitsOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   function set<K extends keyof AgentSettings>(key: K, value: AgentSettings[K]) {
     setSaved(false);
@@ -469,14 +470,15 @@ export function SettingsTab({
       </Panel>
 
       <Panel>
-        <PanelTitle description="Pick the profile this agent works from. Moving it to another account keeps every lead it has already found, and the new account's own warm-up sets the pace from there.">
+        <PanelTitle description="One row, because there is one sender. Everything about how hard this account is pushed lives behind Limits.">
           The account it sends from
         </PanelTitle>
 
-        {/* The sender row, with everything about pace behind one button. Days,
-            hours, timezone and warm-up all belong to how hard this account is
-            pushed, and spreading them down the page is how people lost them. */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border p-3.5">
+        {/* One profile, once. The picker below used to render the same person
+            again underneath this row, so the same face and name appeared twice
+            in a panel about a single account. It is behind a disclosure now,
+            and only opens when somebody actually wants to move the agent. */}
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3.5">
           <Avatar name={form.accountName} src={form.accountAvatar} />
           <div className="min-w-0">
             <b className="block text-[13px] font-semibold text-slate-900 dark:text-white">
@@ -504,11 +506,27 @@ export function SettingsTab({
           </button>
         </div>
 
-        <LinkedInAccountsPanel
-          mode="pick"
-          onSelect={(id) => set("linkedinAccountId", id)}
-          selectedId={form.linkedinAccountId}
-        />
+        <button
+          type="button"
+          onClick={() => setSwitching((v) => !v)}
+          className="mt-3 text-xs font-medium text-blue-600 dark:text-blue-400"
+        >
+          {switching ? "Never mind" : "Send from another account"}
+        </button>
+
+        {switching && (
+          <div className="mt-3 border-t border-border pt-4">
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+              Moving the agent keeps every lead it has already found, and the new
+              account&apos;s own warm-up sets the pace from there.
+            </p>
+            <LinkedInAccountsPanel
+              mode="pick"
+              onSelect={(id) => set("linkedinAccountId", id)}
+              selectedId={form.linkedinAccountId}
+            />
+          </div>
+        )}
       </Panel>
 
       {limitsOpen && (

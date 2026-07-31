@@ -134,7 +134,14 @@ export function ActivityTab({ agentId }: { agentId: string }) {
           />
         </div>
       ) : (
-        <Table columns={["What happened", "Who", "Result", "When"]}>
+        <Table
+          columns={[
+            { label: "What happened", width: "20%" },
+            { label: "Who", width: "18%" },
+            { label: "Result", width: "47%" },
+            { label: "When", width: "15%" },
+          ]}
+        >
           {events.map((event) => (
             <Row key={event.id} highlight={event.type === "reply"}>
               <Cell>

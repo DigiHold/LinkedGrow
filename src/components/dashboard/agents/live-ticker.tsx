@@ -48,8 +48,23 @@ interface TickEvent {
 const POLL_MS = 8_000;
 /** How long each finished event holds the line before the next one takes it. */
 const ROTATE_MS = 4_500;
-/** Nothing older than this is worth interrupting somebody with. */
-const FRESH_MS = 10 * 60 * 1000;
+/**
+ * Nothing older than this is worth interrupting somebody with.
+ *
+ * Short on purpose. This component remounts on every navigation, so a long
+ * window meant the same finished event popped the box open again on each page
+ * somebody visited for the next ten minutes. Recent means recent.
+ */
+const FRESH_MS = 3 * 60 * 1000;
+/**
+ * How long one line stays on screen before the box goes away.
+ *
+ * It appears when something changes, it is read, it leaves. Mining a single
+ * source runs for minutes, so a box tied to the work rather than to the news
+ * would have sat in the corner all afternoon saying the same sentence, which is
+ * wallpaper rather than information. A new line brings it straight back.
+ */
+const ON_SCREEN_MS = 18_000;
 
 const TONE: Record<string, string> = {
   lead: "bg-emerald-500",
@@ -80,6 +95,11 @@ function sentence(doing: Doing): string {
   return line.charAt(0).toUpperCase() + line.slice(1);
 }
 
+/** What makes one line different from the last. */
+function keyOf(doing: Doing): string {
+  return `${doing.agentId}|${doing.verb}|${doing.subjectName ?? doing.detail ?? ""}`;
+}
+
 export function LiveTicker() {
   const [doing, setDoing] = useState<Doing[]>([]);
   const [events, setEvents] = useState<TickEvent[]>([]);
@@ -90,6 +110,9 @@ export function LiveTicker() {
   // and something covering what somebody is reading.
   const [open, setOpen] = useState(false);
   const seen = useRef<string | null>(null);
+  // The line currently on screen, and when it went up. The box hides itself
+  // once a line has had its time, and comes back when the line changes.
+  const [showing, setShowing] = useState<{ key: string; since: number } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -124,12 +147,33 @@ export function LiveTicker() {
   }, [load]);
 
   // The age of the current action ticks up on its own, so the box reads as live
-  // between polls rather than freezing on a number for eight seconds.
+  // between polls rather than freezing on a number for eight seconds. The same
+  // tick is what retires a line once it has had its time on screen.
   useEffect(() => {
-    if (doing.length === 0) return;
+    if (doing.length === 0 && showing === null) return;
     const timer = setInterval(() => setNow(Date.now()), 1_000);
     return () => clearInterval(timer);
-  }, [doing.length]);
+  }, [doing.length, showing]);
+
+  /**
+   * News puts the box up; time takes it down.
+   *
+   * Keyed on the newest thing there is, whether that is what the agent is doing
+   * or the last thing it finished. Reading one competitor's followers takes
+   * minutes, so a box tied to whether the agent is busy would have sat in the
+   * corner all afternoon saying the same sentence. This one appears when
+   * something changes, holds long enough to be read, and leaves.
+   */
+  useEffect(() => {
+    const next = doing[0] ? keyOf(doing[0]) : (events[0]?.id ?? null);
+    if (next === null) {
+      setShowing(null);
+      return;
+    }
+    setShowing((current) =>
+      current && current.key === next ? current : { key: next, since: Date.now() }
+    );
+  }, [doing, events]);
 
   // Take it in turn, so one busy agent cannot hide the others.
   useEffect(() => {
@@ -139,7 +183,10 @@ export function LiveTicker() {
     return () => clearInterval(timer);
   }, [doing.length, events.length]);
 
-  if (dismissed) return null;
+  // Read, and done. Nothing shows again until the agent says something new.
+  if (dismissed || showing === null || now - showing.since > ON_SCREEN_MS) {
+    return null;
+  }
 
   const current = doing.length > 0 ? doing[Math.min(index, doing.length - 1)] : null;
   const event =

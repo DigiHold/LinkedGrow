@@ -299,7 +299,14 @@ export function LeadsTab({ agentId }: { agentId: string }) {
         </div>
       ) : (
         <Table
-          columns={["Contact", "Signal", "Match", "Step", "Found on", ""]}
+          columns={[
+            { label: "Contact", width: "20%" },
+            { label: "Signal", width: "25%" },
+            { label: "Match", width: "17%" },
+            { label: "Step", width: "18%" },
+            { label: "Found on", width: "11%" },
+            { label: "", width: "9%" },
+          ]}
         >
           {leads.map((lead) => {
             const state = stepLine(lead);

@@ -205,12 +205,14 @@ export function QueueTab({ agentId }: { agentId: string }) {
 
       <Table
         columns={[
-          "Contact",
-          "Why this person",
-          "Step",
-          "Message the agent wrote",
-          "Goes out",
-          "",
+          { label: "Contact", width: "17%" },
+          { label: "Why this person", width: "19%" },
+          { label: "Step", width: "10%" },
+          // The widest column on purpose: reading what the agent wrote before
+          // it goes out is the whole point of this tab.
+          { label: "Message the agent wrote", width: "35%" },
+          { label: "Goes out", width: "10%" },
+          { label: "", width: "9%" },
         ]}
       >
         {queue.map((item) => (
@@ -231,7 +233,7 @@ export function QueueTab({ agentId }: { agentId: string }) {
                 {ACTION_LABEL[item.action] ?? item.action}
               </Pill>
             </Cell>
-            <Cell label="Message the agent wrote" className="md:max-w-[380px]">
+            <Cell label="Message the agent wrote">
               {draft?.id === item.id ? (
                 <div className="space-y-2">
                   <textarea
@@ -323,7 +325,7 @@ export function QueueTab({ agentId }: { agentId: string }) {
             <Cell label="Step">
               <Pill>Invitation</Pill>
             </Cell>
-            <Cell label="Message the agent wrote" className="md:max-w-[380px]">
+            <Cell label="Message the agent wrote">
               <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                 An invitation goes out with no note, because a note does not
                 raise acceptance. The first message is written after they accept.

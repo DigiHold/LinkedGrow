@@ -123,29 +123,42 @@ export function When({ value }: { value: string | null }) {
 /**
  * The tables.
  *
- * One table below, one on a phone: below md every row becomes a card and each
- * cell prints its own column name above itself. Tables never scroll sideways
- * here, which is a standing rule and the reason this is a set of pieces rather
- * than a plain <table> in each tab.
+ * One table on a screen, cards on a phone: below md every row becomes a card
+ * and each cell prints its own column name above itself. Nothing here ever
+ * scrolls sideways, which is a standing rule.
+ *
+ * Column widths are given, not guessed. Left to itself the browser hands a
+ * column as much room as its longest cell wants, and Contact, which holds two
+ * lines of name and job title, took a third of the table while the message the
+ * agent wrote was squeezed into a strip. `table-fixed` plus a share per column
+ * is what keeps the important cell the widest one.
  */
 export function Table({
   columns,
   children,
 }: {
-  columns: string[];
+  columns: Array<{ label: string; width?: string }>;
   children: React.ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <table className="block w-full border-collapse md:table">
+      <table className="block w-full border-collapse md:table md:table-fixed">
+        <colgroup className="hidden md:table-column-group">
+          {columns.map((column, i) => (
+            <col
+              key={`${column.label}-${i}`}
+              {...(column.width ? { style: { width: column.width } } : {})}
+            />
+          ))}
+        </colgroup>
         <thead className="hidden md:table-header-group">
           <tr>
             {columns.map((column, i) => (
               <th
-                key={`${column}-${i}`}
-                className="whitespace-nowrap border-b border-border px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500"
+                key={`${column.label}-${i}`}
+                className="truncate border-b border-border px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500"
               >
-                {column}
+                {column.label}
               </th>
             ))}
           </tr>
@@ -190,6 +203,9 @@ export function Cell({
     <td
       className={cn(
         "block pb-2.5 align-top last:pb-0 md:table-cell md:border-b md:border-border md:px-3.5 md:py-3",
+        // A fixed column cannot widen for a long word, so anything that does
+        // not fit wraps rather than pushing the table sideways.
+        "wrap-break-word",
         className
       )}
     >
@@ -230,14 +246,14 @@ export function Contact({
   profileUrl: string;
 }) {
   return (
-    <div className="flex gap-2.5">
-      <Avatar src={avatarUrl} name={name} size={32} />
+    <div className="flex min-w-0 gap-2">
+      <Avatar src={avatarUrl} name={name} size={28} />
       <div className="min-w-0">
         <a
           href={profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 hover:underline dark:text-white"
+          className="flex min-w-0 items-center gap-1 text-[13px] font-semibold text-slate-900 hover:underline dark:text-white"
         >
           <span className="truncate">{name}</span>
           <LinkedInGlyph />
