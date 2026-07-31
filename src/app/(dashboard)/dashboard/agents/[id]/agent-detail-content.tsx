@@ -153,6 +153,82 @@ const STATUS: Record<
 };
 
 /** Minutes from midnight to something a person reads. */
+/** "51 out of 100", the conversion into this step. Empty when there is nothing to divide by. */
+function rateOf(value: number, base: number): string {
+  if (!base) return "nothing yet";
+  return `${Math.round((value / base) * 100)} out of 100`;
+}
+
+/** "3d", "2h", "just now". Short, because it sits at the end of every row. */
+function shortAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 60_000) return "just now";
+  const days = Math.floor(ms / 86_400_000);
+  if (days >= 1) return `${days}d`;
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours >= 1) return `${hours}h`;
+  return `${Math.floor(ms / 60_000)}m`;
+}
+
+/**
+ * The four weeks of the ramp, and which one this account is in.
+ *
+ * The numbers are ours, not LinkedIn's: a new account that suddenly sends at
+ * full pace is the pattern that gets restricted, so the agent climbs to its
+ * ceiling over a month. LinkedIn's own limit sits above all of them.
+ */
+function rampWeeks(agent: {
+  warmupStartedAt: string | null;
+  dailyInviteCap: number;
+}): Array<{ week: number; perDay: number; state: "done" | "now" | "todo" }> {
+  const started = agent.warmupStartedAt ? new Date(agent.warmupStartedAt).getTime() : null;
+  const current =
+    started === null
+      ? 0
+      : Math.min(4, Math.max(1, Math.floor((Date.now() - started) / (7 * 86_400_000)) + 1));
+  const top = Math.max(4, agent.dailyInviteCap);
+  return [1, 2, 3, 4].map((week) => ({
+    week,
+    perDay: Math.max(1, Math.round((top / 4) * week)),
+    state: current === 0 ? "todo" : week < current ? "done" : week === current ? "now" : "todo",
+  }));
+}
+
+/** What each kind of source is, in the customer's words rather than the column's. */
+const SOURCE_KIND: Record<string, { badge: string; what: string }> = {
+  competitor: { badge: "C", what: "People engaging with a competitor" },
+  keyword: { badge: "K", what: "People posting about a subject" },
+  market: { badge: "M", what: "People posting about a subject" },
+  linkedin_search: { badge: "S", what: "A LinkedIn search you saved" },
+  buying_event: { badge: "J", what: "New role or hiring, under 90 days" },
+  brand: { badge: "V", what: "People who viewed your profile" },
+  csv: { badge: "U", what: "A list you uploaded" },
+};
+
+/** The audience, flattened out of the wizard's lists into plain tags. */
+function icpTags(agent: {
+  jobRoles: string | null;
+  industries: string | null;
+  locations: string | null;
+  companySizes: string | null;
+}): string[] {
+  const parse = (raw: string | null): string[] => {
+    if (!raw) return [];
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+    } catch {
+      return [];
+    }
+  };
+  return [
+    ...parse(agent.jobRoles),
+    ...parse(agent.industries),
+    ...parse(agent.locations),
+    ...parse(agent.companySizes),
+  ];
+}
+
 function hhmm(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -262,6 +338,8 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
     .map((s) => steps[s] ?? 0)
     .reduce((a, b) => a + b, 0);
   const replied = steps.replied ?? 0;
+  // The last column of the spine: people who answered and were not written off.
+  const interested = steps.finished ?? 0;
 
   return (
     <PageShell>
@@ -337,158 +415,333 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
       </div>
 
       {tab === "Overview" && (
-        <div className="mt-6 space-y-4">
-          {(() => {
-            const run = nextRunLine(agent);
-            return (
-              <div className="rounded-2xl border border-border bg-card p-5">
-                <p className="text-[15px] font-semibold text-slate-900 dark:text-white">
-                  {run.headline}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">{run.detail}</p>
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_264px]">
+          <div>
+            {/* The spine: the whole funnel in one row, each step a way in.
+                It replaces four separate stat cards, which showed the same
+                numbers without ever showing the drop between them. */}
+            <div className="mb-[18px] grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-5">
+              {(
+                [
+                  { label: "Found", value: found, rate: "all time", fill: "opacity-100" },
+                  {
+                    label: "Contacted",
+                    value: contacted,
+                    rate: rateOf(contacted, found),
+                    fill: "opacity-[.76]",
+                  },
+                  {
+                    label: "Accepted",
+                    value: accepted,
+                    rate: rateOf(accepted, contacted),
+                    fill: "opacity-[.54]",
+                  },
+                  {
+                    label: "Replied",
+                    value: replied,
+                    rate: rateOf(replied, accepted),
+                    fill: "opacity-[.34]",
+                  },
+                  {
+                    label: "Interested",
+                    value: interested,
+                    rate: "judged by AI",
+                    fill: "opacity-[.18]",
+                  },
+                ] as const
+              ).map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => setTab("Leads")}
+                  type="button"
+                  className="relative border-b border-r border-border px-4 pb-4 pt-3.5 text-left last:border-r-0 hover:bg-slate-50 sm:border-b-0 dark:hover:bg-white/5"
+                >
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500">
+                    {s.label}
+                  </div>
+                  <div className="mb-0.5 mt-1.5 text-[28px] font-bold tracking-[-0.035em] text-slate-900 dark:text-white">
+                    {s.value}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{s.rate}</div>
+                  <i className={cn("absolute inset-x-0 bottom-0 h-[3px] bg-blue-600", s.fill)} />
+                </button>
+              ))}
+            </div>
+
+            {/* Activity, cut to what somebody actually needs to see.
+                It used to print every line the agent ever wrote, newest first,
+                with a full timestamp on each. Nicolas, 2026-07-31: not
+                everything the agent does, the data that matters. */}
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <h2 className="text-[13px] font-semibold text-slate-900 dark:text-white">
+                  Latest activity
+                </h2>
+                <div className="flex-1" />
+                {events.length > 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setTab("Leads")}
+                    className="text-xs font-medium text-blue-600 dark:text-blue-400"
+                  >
+                    See the leads
+                  </button>
+                )}
               </div>
-            );
-          })()}
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <StatCard label="Leads found" value={found} />
-            <StatCard label="Contacted" value={contacted} />
-            <StatCard label="Accepted" value={accepted} />
-            <StatCard
-              label="Replied"
-              value={replied}
-              note={replied > 0 ? "Waiting on you" : undefined}
-              tone="good"
-            />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Panel className="lg:col-span-2">
-              <PanelTitle description="Newest first">Recent activity</PanelTitle>
               {events.length === 0 ? (
-                <EmptyState
-                  title="Nothing has happened yet"
-                  description="Once the agent is running, everything it does shows up here in plain words."
-                />
+                <p className="px-4 py-8 text-center text-[13px] text-slate-500 dark:text-slate-400">
+                  Nothing yet. Once the agent runs, the few things worth knowing show up here.
+                </p>
               ) : (
-                <ul className="-mx-2 divide-y divide-border">
-                  {events.map((event) => (
-                    <li
-                      key={event.id}
-                      className="flex items-start justify-between gap-4 px-2 py-3"
-                    >
-                      <span className="text-sm text-slate-700 dark:text-slate-200">
+                <ul className="divide-y divide-border">
+                  {events.slice(0, 6).map((event) => (
+                    <li key={event.id} className="flex items-start gap-3 px-4 py-2.5">
+                      <span className="flex-1 text-[13px] text-slate-700 dark:text-slate-200">
                         {event.message}
                       </span>
                       <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
-                        {new Date(event.createdAt).toLocaleString()}
+                        {shortAgo(event.createdAt)}
                       </span>
                     </li>
                   ))}
                 </ul>
               )}
-            </Panel>
+            </div>
+          </div>
 
-            <Panel>
-              <PanelTitle>The account it uses</PanelTitle>
-              <div className="flex items-center gap-3">
-                {agent.accountAvatar ? (
-                  <Image
-                    src={agent.accountAvatar}
-                    alt=""
-                    width={44}
-                    height={44}
-                    className="h-11 w-11 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/5">
-                    <AgentIcon className="h-5 w-5" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                    {agent.accountName || "Not connected yet"}
-                  </p>
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                    {agent.accountHeadline || agent.accountStatus}
-                  </p>
+          {/* The rail: is the account safe, how far along is the ramp, and how
+              close are we to LinkedIn's own ceilings. */}
+          <aside className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="flex items-center gap-2.5 border-b border-border px-4 pb-3 pt-3.5">
+              {agent.accountAvatar ? (
+                <Image
+                  src={agent.accountAvatar}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5">
+                  <AgentIcon className="h-4 w-4 text-slate-400" />
                 </div>
+              )}
+              <div className="min-w-0">
+                <h4 className="truncate text-[13px] font-semibold text-slate-900 dark:text-white">
+                  Account health
+                </h4>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  {agent.accountName || "Not connected"} · dedicated address,{" "}
+                  {agent.accountCountry}
+                </p>
               </div>
+            </div>
 
-              <dl className="mt-5 space-y-3 border-t border-border pt-5 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-500 dark:text-slate-400">Pace today</dt>
-                  <dd className="font-medium tabular-nums">
-                    {/* The cap belongs to the LinkedIn account. When more than
-                        one agent sends from it they divide this number, so
-                        presenting it as this agent's own would overstate it. */}
-                    {agent.accountAgentCount > 1
-                      ? `${agent.dailyInviteCap} invitations, shared across ${agent.accountAgentCount} agents on this account`
-                      : `up to ${agent.dailyInviteCap} invitations`}
-                  </dd>
+            <div className="border-b border-border p-4">
+              <div
+                className={cn(
+                  "text-[14.5px] font-semibold",
+                  agent.accountStatus === "active"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-amber-700 dark:text-amber-400"
+                )}
+              >
+                {agent.accountStatus === "active"
+                  ? "Everything looks fine"
+                  : "LinkedIn wants a verification"}
+              </div>
+              <div className="my-2 h-[5px] overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+                <i
+                  className={cn(
+                    "block h-full rounded-full",
+                    agent.accountStatus === "active" ? "bg-emerald-600" : "bg-amber-600"
+                  )}
+                  style={{ width: agent.accountStatus === "active" ? "88%" : "35%" }}
+                />
+              </div>
+              <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                {agent.accountStatus === "active"
+                  ? "LinkedIn has not asked this account to verify anything since it was connected."
+                  : "Open the accounts page and answer what LinkedIn is asking, and the agent picks up on its own."}
+              </p>
+            </div>
+
+            <div className="border-b border-border p-4">
+              <h5 className="mb-3 text-[11.5px] font-semibold text-slate-500 dark:text-slate-400">
+                Warm-up
+              </h5>
+              <ol className="grid gap-2">
+                {rampWeeks(agent).map((w) => (
+                  <li
+                    key={w.week}
+                    className={cn(
+                      "grid grid-cols-[52px_1fr_auto] items-center gap-2.5 text-xs",
+                      w.state === "now" && "font-semibold"
+                    )}
+                  >
+                    <span className="text-slate-400 dark:text-slate-500">Week {w.week}</span>
+                    <span className="h-[5px] overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+                      <i
+                        className={cn(
+                          "block h-full",
+                          w.state === "done" && "bg-blue-600/45",
+                          w.state === "now" && "bg-blue-600",
+                          w.state === "todo" && "bg-transparent"
+                        )}
+                        style={{ width: w.state === "todo" ? "0%" : "100%" }}
+                      />
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400">{w.perDay}/day</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="grid gap-2.5 p-4">
+              {[
+                { label: "Invitations this week", value: `${contacted} / 100` },
+                { label: "Today's ceiling", value: `${agent.dailyInviteCap} invitations` },
+                {
+                  label: "Working hours",
+                  value: `${hhmm(agent.workdayStart)} to ${hhmm(agent.workdayEnd)}`,
+                },
+                { label: "Time zone", value: agent.timezone },
+              ].map((r) => (
+                <div
+                  key={r.label}
+                  className="flex justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"
+                >
+                  <span>{r.label}</span>
+                  <b className="font-semibold text-slate-900 dark:text-white">{r.value}</b>
                 </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-500 dark:text-slate-400">Working hours</dt>
-                  <dd className="font-medium tabular-nums">
-                    {hhmm(agent.workdayStart)} to {hhmm(agent.workdayEnd)}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-500 dark:text-slate-400">Time zone</dt>
-                  <dd className="font-medium">{agent.timezone}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-slate-500 dark:text-slate-400">Address</dt>
-                  {/* The country, never the IP. */}
-                  <dd className="font-medium">
-                    Dedicated, {agent.accountCountry}
-                  </dd>
-                </div>
-              </dl>
-            </Panel>
+              ))}
+            </div>
+          </aside>
+        </div>
+      )}
+      {tab === "Sources" && (
+        <div className="mt-6">
+          <div className="mb-3.5 flex flex-wrap items-center gap-3">
+            <div>
+              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+                Where your leads come from
+              </h2>
+              <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+                Turn a source off if it brings people who never reply.
+              </p>
+            </div>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => setTab("Settings")}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              Add a source
+            </button>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="flex items-center gap-2.5 border-b border-border px-4 py-3.5">
+              <div className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-blue-50 text-[11px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                AI
+              </div>
+              <div className="min-w-0">
+                <b className="block text-[13px] font-semibold text-slate-900 dark:text-white">
+                  Signal discovery
+                </b>
+                <small className="text-xs text-slate-500 dark:text-slate-400">
+                  {sources.reduce((n, s) => n + s.leadsFound, 0)} leads found across{" "}
+                  {sources.length} source{sources.length === 1 ? "" : "s"}
+                </small>
+              </div>
+              <div className="flex-1" />
+              <Pill tone={sources.some((s) => s.enabled) ? "good" : "neutral"}>
+                {sources.some((s) => s.enabled) ? "Active" : "All off"}
+              </Pill>
+            </div>
+
+            {/* Who the agent is looking for, as the tags the wizard collected. */}
+            {icpTags(agent).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 border-b border-border bg-slate-50 px-4 py-3 dark:bg-white/[0.02]">
+                <span className="mr-1 text-xs text-slate-400 dark:text-slate-500">
+                  Who you target
+                </span>
+                {icpTags(agent)
+                  .slice(0, 6)
+                  .map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-md border border-border bg-card px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                {icpTags(agent).length > 6 && (
+                  <span className="rounded-md border border-border bg-card px-2 py-0.5 text-xs text-slate-500">
+                    +{icpTags(agent).length - 6}
+                  </span>
+                )}
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setTab("Settings")}
+                  className="text-xs font-medium text-blue-600 dark:text-blue-400"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+
+            {sources.length === 0 ? (
+              <p className="px-4 py-10 text-center text-[13px] text-slate-500 dark:text-slate-400">
+                No source yet. A source is where the agent looks: a competitor whose audience
+                overlaps yours, a subject your buyers post about, people who just changed job.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {sources.map((source) => {
+                  const kind = SOURCE_KIND[source.type] ?? SOURCE_KIND.keyword;
+                  return (
+                    <li key={source.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                        {kind.badge}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <b className="block truncate text-[13px] font-semibold text-slate-900 dark:text-white">
+                          {source.label}
+                        </b>
+                        <small className="text-xs text-slate-500 dark:text-slate-400">
+                          {kind.what}
+                        </small>
+                      </div>
+                      <div className="flex-none text-right">
+                        <b className="text-[13px] font-semibold text-slate-900 dark:text-white">
+                          {source.leadsFound}
+                        </b>
+                        <span className="text-xs text-slate-500 dark:text-slate-400"> leads</span>
+                        <div
+                          className={cn(
+                            "text-[11px]",
+                            source.replied > 0
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-slate-400 dark:text-slate-500"
+                          )}
+                        >
+                          {source.replied > 0
+                            ? `${source.replied} replied`
+                            : source.enabled
+                              ? "no reply yet"
+                              : "off"}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       )}
-
-      {tab === "Sources" && (
-        <div className="mt-6">
-          <Panel padded={sources.length === 0}>
-            {sources.length === 0 ? (
-              <EmptyState
-                title="No sources yet"
-                description="Sources are where the agent looks: competitor audiences, posts about the problem you solve, people who just changed job."
-              />
-            ) : (
-              <div className="overflow-hidden">
-                <PanelTitle description="Which source actually earns replies">
-                  Sources
-                </PanelTitle>
-                <ul className="-mx-2 divide-y divide-border">
-                  {sources.map((source) => (
-                    <li key={source.id} className="px-2 py-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                          {source.label}
-                        </span>
-                        <Pill tone={source.enabled ? "good" : "neutral"}>
-                          {source.enabled ? "Active" : "Off"}
-                        </Pill>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-500 sm:grid-cols-4 dark:text-slate-400">
-                        <span>{source.leadsFound} found</span>
-                        <span>{source.contacted} contacted</span>
-                        <span>{source.accepted} accepted</span>
-                        <span>{source.replied} replied</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Panel>
-        </div>
-      )}
-
       {tab === "Leads" && <LeadsTab agentId={agentId} />}
       {tab === "Messages" && (
         <div className="mt-6 space-y-8">
@@ -564,14 +817,25 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         </div>
       )}
 
-      <div className="mt-8 border-t border-border pt-6">
-        <button
-          onClick={() => setConfirmingDelete(true)}
-          className="text-sm font-medium text-red-600 hover:underline dark:text-red-400"
-        >
-          Delete this agent
-        </button>
-      </div>
+      {/* Only under Settings. It used to sit below every tab, so the way to
+          delete an agent was one scroll away from reading its leads. */}
+      {tab === "Settings" && (
+        <div className="mt-8 border-t border-border pt-6">
+          <p className="text-[13px] font-semibold text-slate-900 dark:text-white">
+            Delete this agent
+          </p>
+          <p className="mt-1 max-w-xl text-[13px] text-slate-500 dark:text-slate-400">
+            Its leads are kept, so nobody it already contacted can be contacted again by another
+            agent. The LinkedIn account and its address stay connected.
+          </p>
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="mt-3 rounded-lg border border-red-200 px-3 py-1.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            Delete agent
+          </button>
+        </div>
+      )}
 
       {/* A LinkedGrow modal rather than the browser's confirm box, which shows
           the domain name, cannot be styled, and freezes the page. */}

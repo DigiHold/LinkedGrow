@@ -4,14 +4,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import {
-  PageShell,
-  PageHeader,
-  Panel,
-  Pill,
-  EmptyState,
-} from "@/components/dashboard/ui/page";
-import { AgentIcon, ChevronRightIcon } from "@/components/dashboard/nav-icons";
+
+/**
+ * The agents list, built to the v2 dashboard prototype.
+ *
+ * The shape is the prototype's, point for point: a card per agent, split into
+ * the funnel on the left and the agent's state on the right, with a footer
+ * carrying who it sends as and the two actions. What it is NOT is a list of
+ * every field we hold. Somebody opening this page is asking two questions,
+ * "is it working" and "is anything waiting for me", and the design answers
+ * both without a click.
+ *
+ * Colours are the prototype's tokens: brand #2563eb, ok #059669, warn #b45309.
+ */
 
 type Funnel = {
   found: number;
@@ -35,6 +40,7 @@ type Agent = {
   accountAvatar: string | null;
   accountStatus: string;
   accountCountry: string;
+  createdAt?: string | null;
   funnel?: Funnel;
 };
 
@@ -43,50 +49,162 @@ type Payload = {
   quota: { used: number; limit: number };
 };
 
-/** Plain words, never a status code. Section 2c. */
-const STATUS: Record<
-  Agent["status"],
-  { label: string; tone: "neutral" | "good" | "warn" | "brand" }
-> = {
-  active: { label: "Running", tone: "good" },
-  warming: { label: "Warming up", tone: "brand" },
-  paused: { label: "Paused", tone: "neutral" },
-  stopped: { label: "Stopped", tone: "neutral" },
-  blocked: { label: "Needs attention", tone: "warn" },
-};
+const COUNTRY = new Intl.DisplayNames(["en"], { type: "region" });
 
-function FunnelBar({ funnel }: { funnel: Funnel }) {
-  // Every stage is a share of what was found, so the bars are comparable
-  // across agents with very different volumes.
-  const base = Math.max(funnel.found, 1);
+/** "3 days", "in 16 hours". Plain words, never a timestamp. */
+function ago(iso: string | null): string | null {
+  if (!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms)) return null;
+  const days = Math.floor(ms / 86_400_000);
+  if (days >= 1) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours >= 1) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const mins = Math.max(1, Math.floor(ms / 60_000));
+  return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+}
+
+/** Which week of the ramp this account is in, 1-based, or null before it starts. */
+function warmupWeek(startedAt: string | null): number | null {
+  if (!startedAt) return null;
+  const weeks = Math.floor((Date.now() - new Date(startedAt).getTime()) / (7 * 86_400_000));
+  return Number.isFinite(weeks) ? Math.min(4, Math.max(1, weeks + 1)) : null;
+}
+
+function Pill({
+  tone,
+  children,
+}: {
+  tone: "ok" | "warn" | "neutral" | "brand";
+  children: React.ReactNode;
+}) {
+  const tones = {
+    ok: "text-emerald-700 border-emerald-600/35 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/10",
+    warn: "text-amber-700 border-amber-700/35 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/10",
+    brand: "text-blue-700 border-blue-600/35 bg-blue-50 dark:text-blue-300 dark:bg-blue-500/10",
+    neutral: "text-slate-600 border-border bg-slate-50 dark:text-slate-300 dark:bg-white/5",
+  } as const;
+  return (
+    <span
+      className={cn(
+        "inline-flex flex-none items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        tones[tone]
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+const STATUS: Record<Agent["status"], { label: string; tone: "ok" | "warn" | "neutral" | "brand" }> =
+  {
+    active: { label: "Active", tone: "ok" },
+    warming: { label: "Warming up", tone: "brand" },
+    paused: { label: "Paused", tone: "warn" },
+    stopped: { label: "Stopped", tone: "neutral" },
+    blocked: { label: "Needs attention", tone: "warn" },
+  };
+
+/**
+ * The funnel as one bar rather than four numbers in boxes.
+ *
+ * Each segment is sized by its own count, so the drop between stages is the
+ * thing you see first, which is the only reading of a funnel that means
+ * anything. The trailing grey is whatever has not moved yet.
+ */
+function Funnel({ funnel }: { funnel: Funnel }) {
   const stages = [
-    { key: "Found", value: funnel.found, className: "bg-slate-300 dark:bg-slate-600" },
-    { key: "Contacted", value: funnel.contacted, className: "bg-blue-300 dark:bg-blue-500/60" },
-    { key: "Accepted", value: funnel.accepted, className: "bg-blue-500 dark:bg-blue-400" },
-    { key: "Replied", value: funnel.replied, className: "bg-emerald-500 dark:bg-emerald-400" },
+    { label: "found", value: funnel.found, opacity: "opacity-100" },
+    { label: "contacted", value: funnel.contacted, opacity: "opacity-70" },
+    { label: "accepted", value: funnel.accepted, opacity: "opacity-50" },
+    { label: "replied", value: funnel.replied, opacity: "opacity-30" },
   ];
+  const total = Math.max(funnel.found, 1);
+  const rest = Math.max(0, total - funnel.contacted);
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
-      {stages.map((stage) => (
-        <div key={stage.key}>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
-              {stage.key}
-            </span>
-            <span className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-white">
-              {stage.value}
-            </span>
+    <div className="border-b border-border p-[18px] md:border-b-0 md:border-r">
+      <div className="mb-3 flex items-baseline gap-2">
+        <b className="text-xs font-semibold text-slate-900 dark:text-white">
+          From found to interested
+        </b>
+        <small className="text-xs text-slate-400 dark:text-slate-500">last 30 days</small>
+      </div>
+      <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+        {stages.map((s) => (
+          <span
+            key={s.label}
+            className={cn("block bg-blue-600", s.opacity)}
+            style={{ flex: s.value }}
+          />
+        ))}
+        <span style={{ flex: rest }} />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-3.5">
+        {stages.map((s) => (
+          <div
+            key={s.label}
+            className="flex items-baseline gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+          >
+            <i className={cn("inline-block h-2 w-2 rounded-sm bg-blue-600", s.opacity)} />
+            <b className="text-[15px] font-bold tracking-[-0.02em] text-slate-900 dark:text-white">
+              {s.value}
+            </b>
+            {s.label}
           </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-            <div
-              className={cn("h-full rounded-full", stage.className)}
-              style={{ width: `${Math.round((stage.value / base) * 100)}%` }}
-            />
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
+  );
+}
+
+function StateLine({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+      <span className="h-[15px] w-[15px] flex-none opacity-60">{icon}</span>
+      <span className="[&_b]:font-semibold [&_b]:text-slate-900 dark:[&_b]:text-white">
+        {children}
+      </span>
+    </div>
+  );
+}
+
+const ClockIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+);
+const ShieldIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 3l7 3v6c0 4.2-2.9 7.4-7 9-4.1-1.6-7-4.8-7-9V6z" />
+    <path d="M9.2 12l2 2 3.6-4" />
+  </svg>
+);
+const GlobeIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M4 12h16M12 4a14 14 0 000 16M12 4a14 14 0 010 16" />
+  </svg>
+);
+
+/** The four small dashes that say how far along the ramp this account is. */
+function WarmupDots({ week }: { week: number | null }) {
+  return (
+    <span className="flex flex-none gap-[3px]">
+      {[1, 2, 3, 4].map((w) => (
+        <u
+          key={w}
+          className={cn(
+            "h-[5px] w-4 rounded-full",
+            week === null && "bg-slate-200 dark:bg-white/10",
+            week !== null && w < week && "bg-blue-600/45",
+            week !== null && w === week && "bg-blue-600",
+            week !== null && w > week && "bg-slate-200 dark:bg-white/10"
+          )}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -95,8 +213,8 @@ export function AgentsContent() {
   const [error, setError] = useState<string | null>(null);
 
   // How many agents send from each LinkedIn account. The daily cap belongs to
-  // the account, so two agents on one account divide it rather than each
-  // getting their own, and the row has to say so.
+  // the account, so two agents on one divide it rather than each getting their
+  // own, and the card has to say so.
   const perAccount = useMemo(() => {
     const counts = new Map<string, number>();
     for (const a of data?.agents ?? []) {
@@ -104,7 +222,6 @@ export function AgentsContent() {
     }
     return counts;
   }, [data]);
-  const sharedBy = (accountId: string) => perAccount.get(accountId) ?? 1;
 
   useEffect(() => {
     let cancelled = false;
@@ -125,137 +242,212 @@ export function AgentsContent() {
   }, []);
 
   const quota = data?.quota;
+  const running = (data?.agents ?? []).filter(
+    (a) => a.status === "active" || a.status === "warming"
+  ).length;
   const atLimit = quota ? quota.used >= quota.limit : false;
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Agents"
-        description="Each agent runs one LinkedIn account against one audience, every working day, at human pace."
-        meta={
-          quota ? (
-            <Pill tone={atLimit ? "warn" : "neutral"}>
-              {quota.used} of {quota.limit} agent{quota.limit === 1 ? "" : "s"} used
-            </Pill>
-          ) : null
-        }
-        actions={
-          <Link
-            href={atLimit ? "/dashboard/upgrade" : "/dashboard/agents/new"}
-            className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
-          >
-            {atLimit ? "Add an agent" : "New agent"}
-          </Link>
-        }
-      />
+    <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <div>
+          <h1 className="font-display text-[26px] font-bold tracking-[-0.035em] text-slate-900 dark:text-white">
+            Agents
+          </h1>
+          <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+            Each agent runs one LinkedIn account, one audience, on its own dedicated address.
+          </p>
+        </div>
+        <div className="flex-1" />
+        {quota && (
+          <Pill tone="neutral">
+            {running} / {quota.limit} running
+          </Pill>
+        )}
+        <Link
+          href={atLimit ? "/dashboard/upgrade" : "/dashboard/agents/new"}
+          className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+        >
+          Create an agent
+        </Link>
+      </div>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-6 grid gap-4">
         {error && (
-          <Panel>
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </Panel>
+          <p className="rounded-2xl border border-border bg-card p-5 text-sm text-red-600 dark:text-red-400">
+            {error}
+          </p>
         )}
 
         {!data && !error && (
           <>
             {[0, 1].map((i) => (
-              <div
-                key={i}
-                className="h-40 animate-pulse rounded-2xl border border-border bg-card"
-              />
+              <div key={i} className="h-56 animate-pulse rounded-2xl border border-border bg-card" />
             ))}
           </>
         )}
 
-        {data?.agents.length === 0 && (
-          <Panel padded={false}>
-            <EmptyState
-              icon={<AgentIcon className="h-6 w-6" />}
-              title="No agent yet"
-              description="An agent reads your website, works out who buys from you, then finds those people on LinkedIn and opens the conversation. Setting one up takes about four minutes."
-              action={
-                <Link
-                  href="/dashboard/agents/new"
-                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
-                >
-                  Create your first agent
-                </Link>
-              }
-            />
-          </Panel>
-        )}
-
         {data?.agents.map((agent) => {
           const status = STATUS[agent.status];
-          const siblings = sharedBy(agent.accountId);
+          const siblings = perAccount.get(agent.accountId) ?? 1;
+          const week = warmupWeek(agent.warmupStartedAt);
+          const country = (() => {
+            try {
+              return COUNTRY.of(agent.accountCountry) ?? agent.accountCountry;
+            } catch {
+              return agent.accountCountry;
+            }
+          })();
+          const paused = agent.status === "paused" || agent.status === "stopped";
+          const funnel = agent.funnel ?? {
+            found: 0,
+            contacted: 0,
+            accepted: 0,
+            replied: 0,
+            unread: 0,
+          };
+
           return (
-            <Link
+            <div
               key={agent.id}
-              href={`/dashboard/agents/${agent.id}`}
-              className="group block rounded-2xl border border-border bg-card p-5 transition-colors hover:border-slate-300 sm:p-6 dark:hover:border-white/20"
+              className={cn(
+                "overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-slate-300 dark:hover:border-white/20",
+                paused && "opacity-95"
+              )}
             >
-              <div className="flex flex-wrap items-start gap-4">
+              <div className="flex items-center gap-3 px-[18px] pb-3.5 pt-4">
                 {agent.accountAvatar ? (
                   <Image
                     src={agent.accountAvatar}
                     alt=""
-                    width={44}
-                    height={44}
-                    className="h-11 w-11 shrink-0 rounded-full object-cover"
+                    width={38}
+                    height={38}
+                    className="h-[38px] w-[38px] flex-none rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500">
-                    <AgentIcon className="h-5 w-5" />
+                  <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-slate-100 text-[13px] font-semibold uppercase text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                    {(agent.accountName || agent.name).slice(0, 2)}
                   </div>
                 )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
-                      {agent.name}
-                    </h2>
-                    <Pill tone={status.tone}>
-                      {agent.status === "active" && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      )}
-                      {status.label}
-                    </Pill>
-                    {agent.funnel && agent.funnel.unread > 0 && (
-                      <Pill tone="brand">
-                        {agent.funnel.unread} new repl
-                        {agent.funnel.unread === 1 ? "y" : "ies"}
-                      </Pill>
-                    )}
-                  </div>
-                  <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
-                    {agent.accountName || "LinkedIn account"} ·{" "}
-                    {agent.accountCountry} ·{" "}
-                    {/* The cap belongs to the LinkedIn account, so when two
-                        agents send from one it is a budget they divide, and
-                        saying "up to 25 each" would be a lie. */}
-                    {siblings > 1
-                      ? `${agent.dailyInviteCap} invitations a day shared with ${siblings - 1} other agent${siblings > 2 ? "s" : ""}`
-                      : `up to ${agent.dailyInviteCap} invitations a day`}
-                  </p>
-                  {agent.pausedReason && (
-                    <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-                      {agent.pausedReason}
-                    </p>
+                <div className="min-w-0">
+                  <b className="font-display block truncate text-[17px] font-bold tracking-[-0.035em] text-slate-900 dark:text-white">
+                    {agent.name}
+                  </b>
+                  {agent.icpSummary && (
+                    <div className="mt-0.5 truncate text-[12.5px] text-slate-500 dark:text-slate-400">
+                      {agent.icpSummary}
+                    </div>
                   )}
                 </div>
-
-                <ChevronRightIcon className="mt-3 h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 dark:text-slate-600" />
+                <div className="flex-1" />
+                <Pill tone={status.tone}>
+                  {agent.status === "active" && (
+                    <i className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                  )}
+                  {status.label}
+                </Pill>
               </div>
 
-              {agent.funnel && (
-                <div className="mt-5 border-t border-border pt-5">
-                  <FunnelBar funnel={agent.funnel} />
+              <div className="grid border-t border-border md:grid-cols-[1.15fr_1fr]">
+                <Funnel funnel={funnel} />
+
+                <div className="grid content-start gap-2.5 p-[18px]">
+                  <StateLine icon={ClockIcon}>
+                    {paused ? (
+                      <>
+                        Paused, <b>nothing is being sent</b>
+                      </>
+                    ) : (
+                      <>
+                        Sending up to <b>{agent.dailyInviteCap} invitations</b> a day
+                        {siblings > 1 && `, shared with ${siblings - 1} other agent`}
+                      </>
+                    )}
+                  </StateLine>
+                  <StateLine icon={<WarmupDots week={week} />}>
+                    {week ? (
+                      <>
+                        Warm-up <b>week {week} of 4</b>
+                      </>
+                    ) : (
+                      "Warm-up starts when you activate it"
+                    )}
+                  </StateLine>
+                  <StateLine icon={ShieldIcon}>
+                    Account health{" "}
+                    {agent.accountStatus === "active" ? (
+                      <b className="!text-emerald-700 dark:!text-emerald-400">fine</b>
+                    ) : (
+                      <b className="!text-amber-700 dark:!text-amber-400">needs attention</b>
+                    )}
+                  </StateLine>
+                  <StateLine icon={GlobeIcon}>
+                    Dedicated address in <b>{country}</b>
+                  </StateLine>
                 </div>
+              </div>
+
+              {agent.pausedReason && (
+                <p className="border-t border-border bg-amber-50 px-[18px] py-2.5 text-[12.5px] text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+                  {agent.pausedReason}
+                </p>
               )}
-            </Link>
+
+              <div className="flex flex-wrap items-center gap-2.5 border-t border-border bg-slate-50 px-[18px] py-3 text-xs text-slate-500 dark:bg-white/[0.02] dark:text-slate-400">
+                <span>
+                  Sending as{" "}
+                  <b className="font-semibold text-slate-900 dark:text-white">
+                    {agent.accountName || "this account"}
+                  </b>
+                </span>
+                {ago(agent.lastRunAt) && (
+                  <>
+                    <span>·</span>
+                    <span>last run {ago(agent.lastRunAt)}</span>
+                  </>
+                )}
+                {funnel.unread > 0 && (
+                  <>
+                    <span>·</span>
+                    <span>
+                      <b className="font-semibold text-slate-900 dark:text-white">
+                        {funnel.unread} repl{funnel.unread === 1 ? "y" : "ies"}
+                      </b>{" "}
+                      waiting for you
+                    </span>
+                  </>
+                )}
+                <div className="flex-1" />
+                <Link
+                  href={`/dashboard/agents/${agent.id}`}
+                  className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+                >
+                  Open agent
+                </Link>
+              </div>
+            </div>
           );
         })}
+
+        {data && (
+          <Link
+            href={atLimit ? "/dashboard/upgrade" : "/dashboard/agents/new"}
+            className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-dashed border-slate-300 p-[22px] transition-colors hover:border-blue-600/50 dark:border-white/15"
+          >
+            <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-blue-50 text-lg text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+              +
+            </div>
+            <div>
+              <b className="block text-sm font-semibold text-slate-900 dark:text-white">
+                {data.agents.length === 0 ? "Create your first agent" : "Add another agent"}
+              </b>
+              <small className="text-[12.5px] text-slate-500 dark:text-slate-400">
+                One more LinkedIn account, one more audience, its own dedicated address.
+              </small>
+            </div>
+          </Link>
+        )}
       </div>
-    </PageShell>
+    </div>
   );
 }

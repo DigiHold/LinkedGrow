@@ -62,11 +62,22 @@ function splitCsv(value: string): string[] {
 }
 
 /** Twenty-four options, which a native select renders better than anything hand-rolled. */
+/**
+ * Hours in the list, minutes in the column.
+ *
+ * The working window is stored as minutes from midnight, 480 for 08:00, and
+ * this list offered the 24 hours as 0 to 23. So a saved 480 matched no option
+ * and the browser fell back to the first one: every agent read "00:00 to
+ * 00:00" here while the overview correctly said 8:00 to 22:00. Worse than a
+ * display bug, because saving that screen wrote 9 back as nine MINUTES past
+ * midnight, leaving an agent a window eight minutes long in which it could
+ * never do anything.
+ */
 function HourSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <select
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      value={Math.round(value / 60)}
+      onChange={(e) => onChange(Number(e.target.value) * 60)}
       className="h-11 rounded-xl border border-border bg-background px-3 text-sm text-slate-900 dark:text-white"
     >
       {Array.from({ length: 24 }, (_, h) => (
