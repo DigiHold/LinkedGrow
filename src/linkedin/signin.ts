@@ -29,6 +29,15 @@ import { capturePage } from "./diagnose.ts";
 
 /** How long a browser will sit on the verification page waiting for a human. */
 const WAIT_FOR_CODE_MS = 5 * 60 * 1000;
+/**
+ * Longer for the tap than for the code, because they are different asks.
+ *
+ * A code is read off a screen already in somebody's hand. The tap needs them to
+ * find the LinkedIn app, and the notification may arrive while they are looking
+ * at the dashboard rather than at their phone. Ten minutes is still short
+ * enough that a browser is never left holding a slot all afternoon.
+ */
+const WAIT_FOR_APPROVAL_MS = 10 * 60 * 1000;
 /** A TOTP code lasts 30 seconds, so the poll has to be tight. */
 const POLL_MS = 2_000;
 
@@ -65,7 +74,37 @@ const SEL = {
   codeSubmit: "button[type='submit'], #two-step-submit-button",
 } as const;
 
-export type ChallengeKind = "authenticator app" | "text message" | "email" | "verification";
+export type ChallengeKind =
+  | "authenticator app"
+  | "text message"
+  | "email"
+  | "app notification"
+  | "verification";
+
+/**
+ * The checkpoint LinkedIn actually shows a real account signing in somewhere new.
+ *
+ * Not a code. It pushes a notification to the phones already carrying the
+ * LinkedIn app and waits for a tap on Yes, and the page carries no input at
+ * all. Nothing here knew that screen existed, so the sign-in typed the
+ * password, landed on the checkpoint, found no code field, and reported "did
+ * not reach a signed-in page" while LinkedIn sat there waiting for somebody to
+ * confirm. It is the first thing a genuine account meets, and it met it on
+ * 2026-07-31 with Maria's.
+ *
+ * Matched on the address rather than the wording, because the page is served in
+ * the language of the country the account signs in from: this one arrived in
+ * French, and an English matcher would have missed it for most customers.
+ */
+const CHECKPOINT_URL = /\/checkpoint\/(challenge|challengesV2)/;
+
+/** Words for "we sent a notification to your app", in the languages we sell into. */
+const APP_APPROVAL =
+  /(linkedin app|appli linkedin|app linkedin|linkedin-app|aplicación de linkedin|app di linkedin|tap yes|touchez oui|toque en sí|tippen sie auf ja|tocca sì|benachrichtigung|notification|notificación|notifica)/i;
+
+/** The box that stops this happening on every future sign-in. */
+const REMEMBER_DEVICE =
+  /^(remember|recognize|recognise|reconna(î|i)tre|erkennen|recordar|ricorda|onthouden).*/i;
 
 export class SignInFailed extends Error {
   /** Same reason as RunStalled in worker.ts: strip-only TypeScript cannot rewrite a parameter property. */
@@ -149,6 +188,56 @@ async function askForCode(
     ],
   });
   log("waiting for a verification code", { accountId, kind });
+}
+
+/**
+ * Waits for the tap on the phone, having asked for it in the dashboard.
+ *
+ * Nothing is typed and nothing is submitted. LinkedIn moves the page itself the
+ * moment the notification is answered, so the only job here is to notice, and
+ * to tick "remember this device" first so the account is never asked again.
+ *
+ * Returns true when the checkpoint clears.
+ */
+async function waitForApproval(
+  page: Page,
+  accountId: string,
+  workspaceId: string
+): Promise<boolean> {
+  // Tick it before asking, because after the tap the page is gone. Best effort:
+  // the box is not always there, and its absence is not a failure.
+  const remember = page.getByRole("checkbox", { name: REMEMBER_DEVICE }).first();
+  if (await remember.isVisible().catch(() => false)) {
+    await remember.check().catch(() => {});
+  }
+
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET challenge_state = 'awaiting_approval', challenge_kind = 'app notification',
+                 challenge_code_encrypted = NULL, challenge_asked_at = ?,
+                 status = 'challenged', status_reason = ?, updated_at = ?
+           WHERE id = ? AND workspace_id = ?`,
+    args: [
+      Math.floor(Date.now() / 1000),
+      "LinkedIn sent a notification to the LinkedIn app on your phone. Open it and tap Yes, and this finishes on its own.",
+      Math.floor(Date.now() / 1000),
+      accountId,
+      workspaceId,
+    ],
+  });
+  log("waiting for the tap on the phone", { accountId });
+
+  const until = Date.now() + WAIT_FOR_APPROVAL_MS;
+  while (Date.now() < until) {
+    await sleep(POLL_MS);
+    if (!CHECKPOINT_URL.test(page.url())) return true;
+    // Some accounts get offered a code after a while instead. Let the caller
+    // deal with it rather than waiting out the full window for nothing.
+    if (await page.locator(SEL.codeInput).first().isVisible().catch(() => false)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Polls for the code the customer typed into the dashboard. */
@@ -258,6 +347,47 @@ export async function signIn(input: SignInInput): Promise<void> {
 
   await page.waitForLoadState("domcontentloaded").catch(() => {});
   await dwell(2500, 4500);
+
+  // The device-approval checkpoint comes first, because it is the one a real
+  // account actually meets and it carries no input at all. Left undetected, the
+  // sign-in walks straight past it into "did not reach a signed-in page" while
+  // LinkedIn waits for a tap nobody has been told about.
+  if (CHECKPOINT_URL.test(page.url())) {
+    const shown = (await page.locator("body").first().innerText().catch(() => "")) || "";
+    const hasCodeField = await page
+      .locator(SEL.codeInput)
+      .first()
+      .isVisible()
+      .catch(() => false);
+
+    if (!hasCodeField && APP_APPROVAL.test(shown)) {
+      const approved = await waitForApproval(page, accountId, workspaceId);
+      if (!approved) {
+        await db().execute({
+          sql: `UPDATE linkedin_accounts
+                   SET challenge_state = 'failed', status_reason = ?, updated_at = ?
+                 WHERE id = ?`,
+          args: [
+            "Nobody confirmed the sign-in in the LinkedIn app, so it stopped. Press Try again whenever you have your phone.",
+            Math.floor(Date.now() / 1000),
+            accountId,
+          ],
+        });
+        throw new SignInFailed("The sign-in was not confirmed on the phone in time");
+      }
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      await dwell(1500, 3000);
+    } else if (!hasCodeField) {
+      // A checkpoint we cannot drive: a puzzle, a captcha, something new. Say so
+      // rather than blaming the password, and keep the page for whoever fixes it.
+      const says = await capturePage(page, accountId, "checkpoint with nothing to fill in");
+      throw new SignInFailed(
+        says
+          ? `LinkedIn is showing a security check that has to be done by hand. It says: ${says}`
+          : "LinkedIn is showing a security check that has to be done by hand."
+      );
+    }
+  }
 
   const codeField = page.locator(SEL.codeInput).first();
   const needsCode = await codeField.isVisible().catch(() => false);
