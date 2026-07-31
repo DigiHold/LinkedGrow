@@ -146,14 +146,20 @@ export async function readOwnProfile(page: Page): Promise<Profile | null> {
       '[componentkey^="ProfileVerificationTriggerRef-"]'
     );
     let climb: Element | null = anchor;
-    for (let hop = 0; climb && hop < 6; hop++) {
-      const next = climb.nextElementSibling;
-      if (next?.tagName === "P") {
-        const text = (next as HTMLElement).innerText.trim();
-        if (text && text !== name && text.length <= 220) {
+    for (let hop = 0; climb && hop < 6 && !headline; hop++) {
+      // Every paragraph that follows, not only the first. Maria's profile
+      // carries a maiden name in brackets between the name and the headline
+      // and Nicolas's does not, so taking the first sibling stored
+      // "(Maria Nassif)" as her job title.
+      let sibling = climb.nextElementSibling;
+      while (sibling?.tagName === "P") {
+        const text = (sibling as HTMLElement).innerText.trim();
+        const isAlternateName = /^\(.*\)$/.test(text);
+        if (text && text !== name && !isAlternateName && text.length <= 220) {
           headline = text;
           break;
         }
+        sibling = sibling.nextElementSibling;
       }
       climb = climb.parentElement;
     }
