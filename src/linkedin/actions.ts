@@ -58,9 +58,6 @@ export interface LinkedInActions {
 // - a message from the other party carries .msg-s-event-listitem--other; our own does not; body is
 //   in .msg-s-event-listitem__body
 const SEL = {
-  connectAny: 'button[aria-label*="to connect"]',
-  // The Connect item inside an opened overflow menu, scoped to the menu so sidebar suggestions never match.
-  menuConnect: '.artdeco-dropdown__content [aria-label*="to connect" i], div[role="menu"] [aria-label*="to connect" i]',
   addNote: 'button[aria-label*="Add a note"]',
   noteBox: 'textarea[name="message"], #custom-message',
   sendInvite: 'button[aria-label*="Send invitation"], button[aria-label*="Send now"], button[aria-label*="Send"]',
@@ -152,7 +149,7 @@ async function clickThrough(page: Page, loc: Locator): Promise<boolean> {
  * href and navigating to it is far more reliable than clicking a menu row, whose centre is covered by
  * its own icon and rejects real mouse clicks.
  */
-async function inviteHref(page: Page, fullName: string): Promise<string | null> {
+export async function inviteHref(page: Page, fullName: string): Promise<string | null> {
   const exact = `a[aria-label="Invite ${fullName} to connect"]`;
   // Some profiles label the row, others render the very same link bare, so the href is what to trust.
   const byHref = 'a[href*="/preload/custom-invite/"]';
