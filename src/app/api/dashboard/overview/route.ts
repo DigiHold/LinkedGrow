@@ -182,7 +182,10 @@ export async function GET(_request: NextRequest) {
     );
 
     const needsAttention = accountRows.filter(
-      (a) => a.status === "checkpoint" || a.status === "restricted" || a.status === "disconnected"
+      // "challenged" is the value the sign-in writes when LinkedIn asks to
+      // verify; the type used to say "checkpoint", which nothing ever wrote, so
+      // an account stuck waiting for a code was never flagged as needing help.
+      (a) => a.status === "challenged" || a.status === "restricted" || a.status === "disconnected"
     );
 
     return NextResponse.json({

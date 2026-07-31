@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(linkedinAccounts.workspaceId, workspaceId),
-          eq(linkedinAccounts.status, "connected")
+          eq(linkedinAccounts.status, "active")
         )
       )
       .orderBy(asc(linkedinAccounts.createdAt));

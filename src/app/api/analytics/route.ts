@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(linkedinAccounts.workspaceId, ownerId),
-            eq(linkedinAccounts.status, "connected")
+            eq(linkedinAccounts.status, "active")
           )
         )
         .limit(1),

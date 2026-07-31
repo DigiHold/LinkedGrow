@@ -954,7 +954,11 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   countryChanges: integer("country_changes").notNull().default(0),
   lastCountryChangeAt: integer("last_country_change_at", { mode: "timestamp" }),
   status: text("status", {
-    enum: ["pending", "connected", "checkpoint", "restricted", "disconnected"],
+    // These are the values the product actually writes and renders. The type
+    // used to say connected/checkpoint, which nothing wrote and nothing read,
+    // so an account that signed in successfully was invisible to every query
+    // that trusted the type. Found on 2026-07-31.
+    enum: ["pending", "active", "challenged", "restricted", "disconnected"],
   })
     .notNull()
     .default("pending"),
