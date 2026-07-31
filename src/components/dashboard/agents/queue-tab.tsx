@@ -50,13 +50,15 @@ type NextUp = {
 type Payload = {
   queue: Drafted[];
   nextUp: NextUp[];
+  /** People in line behind today's, who wait for a later day. */
+  laterCount: number;
   reviewMode: boolean;
   observeOnly: boolean;
   status: string;
   timezone: string;
   workdayStart: number;
   workdayEnd: number;
-  dailyInviteCap: number;
+  todaysPace: number;
 };
 
 /** What each queued action is, said the way the user would say it. */
@@ -82,6 +84,18 @@ function atTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** Is the agent inside its own hours right now, in its own timezone. */
+function working(data: Payload): boolean {
+  let local: Date;
+  try {
+    local = new Date(new Date().toLocaleString("en-US", { timeZone: data.timezone }));
+  } catch {
+    local = new Date();
+  }
+  const minutes = local.getHours() * 60 + local.getMinutes();
+  return minutes >= data.workdayStart && minutes < data.workdayEnd;
 }
 
 export function QueueTab({ agentId }: { agentId: string }) {
@@ -167,6 +181,22 @@ export function QueueTab({ agentId }: { agentId: string }) {
     ? `${clock(data.workdayStart)} to ${clock(data.workdayEnd)}, ${data.timezone}`
     : "";
 
+  /**
+   * When an invitation goes out, without inventing a minute.
+   *
+   * The engine picks people up during a run and paces them apart by a random
+   * human gap, so no per-person time exists to print. "In today's window" was
+   * true and useless. The start of the window is the real answer, and "in this
+   * run" is the real answer once the agent is already awake.
+   */
+  const goesOut = !data
+    ? ""
+    : data.status === "paused" || data.status === "stopped"
+      ? "When you start it"
+      : working(data)
+        ? "In this run"
+        : `After ${clock(data.workdayStart)}`;
+
   return (
     <div className="mt-6 space-y-3.5">
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-50/60 px-4 py-3.5 dark:bg-blue-500/10">
@@ -183,6 +213,13 @@ export function QueueTab({ agentId }: { agentId: string }) {
               : data?.status === "paused" || data?.status === "stopped"
                 ? "The agent is paused, so nothing goes out until you start it."
                 : `The agent works ${window}. Edit or remove anyone before then.`}
+            {data && data.laterCount > 0 && (
+              <>
+                {" "}
+                {data.laterCount} more {data.laterCount === 1 ? "is" : "are"} in line behind
+                them, for the days after.
+              </>
+            )}
           </div>
         </div>
         <div className="flex-1" />
@@ -333,7 +370,7 @@ export function QueueTab({ agentId }: { agentId: string }) {
             </Cell>
             <Cell label="Goes out" className="whitespace-nowrap">
               <span className="text-[13px] text-slate-500 dark:text-slate-400">
-                In today&apos;s window
+                {goesOut}
               </span>
             </Cell>
             <Cell>

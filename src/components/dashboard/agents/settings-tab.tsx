@@ -591,7 +591,10 @@ export function SettingsTab({
                 </div>
               </Field>
 
-              <Field label="Hours" hint="Local to the timezone below.">
+              <Field
+                label="Hours it sends in"
+                hint="Local to the timezone below. These hours govern what the agent sends: invitations, messages, likes. Finding people is reading rather than writing, so it runs on a wider day, 07:00 to 23:00, which is what lets an agent started in the evening have leads by the morning."
+              >
                 <div className="flex items-center gap-3">
                   <HourSelect
                     value={form.workdayStart}

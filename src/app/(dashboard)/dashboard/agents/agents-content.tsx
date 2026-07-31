@@ -35,6 +35,8 @@ type Agent = {
   dailyInviteCap: number;
   accountId: string;
   warmupStartedAt: string | null;
+  warmupStartPerDay: number | null;
+  warmupIncrementPerWeek: number | null;
   warmupWeeks: number | null;
   lastRunAt: string | null;
   accountName: string | null;
@@ -80,6 +82,31 @@ function warmupWeek(
   const week = Math.max(1, weeks + 1);
   return week > of ? null : { week, of };
 }
+
+/**
+ * How many invitations a day the agent may send in a given week of the ramp.
+ *
+ * Mirrors dailyConnectAllowance in the worker's safety envelope, and has to
+ * keep mirroring it: the card said "then 8 a day" during week 1 while the agent
+ * was actually sending 5, because it printed the account's ceiling for both
+ * numbers. Three limits, and the smallest wins, because they answer different
+ * questions: our own ramp, LinkedIn's weekly allowance spread over the working
+ * days, and whatever ceiling this account's tier carries.
+ */
+function dayPace(agent: Agent, week: number): number {
+  const start = agent.warmupStartPerDay ?? 5;
+  const step = agent.warmupIncrementPerWeek ?? 5;
+  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const ramp = start + Math.min(Math.max(0, week - 1), weeks - 1) * step;
+  const days = Math.max(1, workingDays(agent.workdayDays).length);
+  return Math.max(
+    0,
+    Math.min(ramp, Math.floor(WEEKLY_INVITE_CEILING / days), agent.dailyInviteCap)
+  );
+}
+
+/** LinkedIn's own weekly ceiling, which it does not publish. Ours is below it. */
+const WEEKLY_INVITE_CEILING = 100;
 
 function workingDays(raw: string): number[] {
   try {
@@ -212,10 +239,31 @@ function Funnel({ funnel }: { funnel: Funnel }) {
   );
 }
 
-function StateLine({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function StateLine({
+  icon,
+  wideIcon = false,
+  children,
+}: {
+  icon: React.ReactNode;
+  /**
+   * The warm-up bars are four pills wide, not a 15px glyph.
+   *
+   * Every icon on these lines went into a fixed 15px box, which squashed the
+   * ramp into four hairline ticks nobody could read as progress.
+   */
+  wideIcon?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-2.5 text-[12.5px] text-slate-500 dark:text-slate-400">
-      <span className="h-[15px] w-[15px] flex-none opacity-60">{icon}</span>
+      <span
+        className={cn(
+          "flex-none opacity-60",
+          wideIcon ? "opacity-100" : "h-[15px] w-[15px]"
+        )}
+      >
+        {icon}
+      </span>
       <span className="[&_b]:font-semibold [&_b]:text-slate-900 dark:[&_b]:text-white">
         {children}
       </span>
@@ -440,11 +488,14 @@ export function AgentsContent() {
                       </>
                     )}
                   </StateLine>
-                  <StateLine icon={<WarmupDots week={ramp?.week ?? null} of={ramp?.of ?? 4} />}>
+                  <StateLine
+                    wideIcon
+                    icon={<WarmupDots week={ramp?.week ?? null} of={ramp?.of ?? 4} />}
+                  >
                     {ramp ? (
                       <>
-                        Warm-up <b>week {ramp.week} of {ramp.of}</b>, then{" "}
-                        {agent.dailyInviteCap} a day
+                        Warm-up <b>week {ramp.week} of {ramp.of}</b>, {dayPace(agent, ramp.week)} a
+                        day now, then {dayPace(agent, ramp.of)}
                       </>
                     ) : agent.warmupStartedAt ? (
                       <>

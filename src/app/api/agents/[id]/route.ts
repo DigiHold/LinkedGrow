@@ -107,6 +107,9 @@ export async function GET(
         reviewMode: agents.reviewMode,
         smartLeadFinder: agents.smartLeadFinder,
         observeOnly: agents.observeOnly,
+        // The messages the customer wrote by hand, as JSON keyed by step. Empty
+        // means the agent writes that step itself, for each person.
+        sequence: agents.sequence,
         testRecipients: agents.testRecipients,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         timezone: agents.timezone,
@@ -327,7 +330,42 @@ const EDITABLE = [
   "warmupIncrementPerWeek",
   "warmupWeeks",
   "testRecipients",
+  // The messages written by hand, as JSON keyed by step.
+  "sequence",
 ] as const;
+
+/** Steps a customer may write themselves. The invitation carries no text. */
+const WRITABLE_STEPS: readonly string[] = ["hello", "intro", "converse", "ask"];
+const MAX_TEMPLATE = 1200;
+
+/**
+ * A hand-written message per step, or nothing.
+ *
+ * Stored as JSON in one column, validated here rather than trusted, because the
+ * worker sends whatever is in it word for word. An unknown step is dropped
+ * instead of rejected: it costs the customer nothing and it cannot reach
+ * anybody, since the engine only ever asks for the four steps it has.
+ */
+function cleanSequence(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const kept: Record<string, string> = {};
+  for (const [step, body] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!WRITABLE_STEPS.includes(step)) continue;
+    if (typeof body !== "string") continue;
+    const text = body.trim();
+    if (!text) continue;
+    if (text.length > MAX_TEMPLATE) return null;
+    kept[step] = text;
+  }
+  return JSON.stringify(kept);
+}
 
 // PATCH /api/agents/[id] - settings, and start or pause
 export async function PATCH(
@@ -376,6 +414,15 @@ export async function PATCH(
           const n = Number(value);
           if (Number.isInteger(n) && n >= 0 && n <= 50) patch[field] = n;
         }
+      } else if (field === "sequence") {
+        const cleaned = cleanSequence(value);
+        if (cleaned === null) {
+          return NextResponse.json(
+            { error: `Each message has to be under ${MAX_TEMPLATE} characters.` },
+            { status: 400 }
+          );
+        }
+        patch.sequence = cleaned;
       } else if (CHOICES[field]) {
         if (typeof value !== "string" || !CHOICES[field].includes(value)) {
           return NextResponse.json(

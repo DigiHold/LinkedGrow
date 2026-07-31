@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { agents, agentLeads, agentQueue, linkedinAccounts } from "@/lib/db/schema";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
+import { todaysPace } from "@/lib/agent-pace";
 
 /**
  * Today's queue.
@@ -58,6 +59,11 @@ export async function GET(
         timezone: agents.timezone,
         workdayStart: agents.workdayStart,
         workdayEnd: agents.workdayEnd,
+        workdayDays: agents.workdayDays,
+        warmupStartPerDay: agents.warmupStartPerDay,
+        warmupIncrementPerWeek: agents.warmupIncrementPerWeek,
+        warmupWeeks: agents.warmupWeeks,
+        warmupStartedAt: linkedinAccounts.warmupStartedAt,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
       })
       .from(agents)
@@ -101,9 +107,14 @@ export async function GET(
       )
       .orderBy(asc(agentQueue.scheduledAt));
 
+    // What the agent may really send today: its ramp this week, not the
+    // account's eventual ceiling. Listing eight people as "today" while the
+    // engine sends five is the same lie in a smaller size.
+    const pace = todaysPace(agent, agent.warmupStartedAt);
+
     // The people waiting for an invitation, in the order the worker takes them.
     // Capped at the day's allowance, because listing 400 people as "today" when
-    // fifteen go out would be a lie the customer notices within a day.
+    // five go out would be a lie the customer notices within a day.
     const nextUp = await db
       .select({
         leadId: agentLeads.id,
@@ -127,18 +138,32 @@ export async function GET(
         )
       )
       .orderBy(WORKER_PRIORITY, asc(agentLeads.updatedAt))
-      .limit(Math.max(1, Math.min(50, agent.dailyInviteCap)));
+      .limit(Math.max(1, Math.min(50, pace)));
+
+    // How many more are behind today's, so the tab can say so instead of
+    // pretending the line ends where it was cut.
+    const [waiting] = await db
+      .select({ total: count() })
+      .from(agentLeads)
+      .where(
+        and(
+          eq(agentLeads.agentId, id),
+          eq(agentLeads.workspaceId, workspaceId),
+          eq(agentLeads.sequenceStatus, "queued")
+        )
+      );
 
     return NextResponse.json({
       queue: rows,
       nextUp,
+      laterCount: Math.max(0, (waiting?.total ?? 0) - nextUp.length),
       reviewMode: agent.reviewMode,
       observeOnly: agent.observeOnly,
       status: agent.status,
       timezone: agent.timezone,
       workdayStart: agent.workdayStart,
       workdayEnd: agent.workdayEnd,
-      dailyInviteCap: agent.dailyInviteCap,
+      todaysPace: pace,
     });
   } catch {
     return NextResponse.json({ error: "Failed to load the queue" }, { status: 500 });

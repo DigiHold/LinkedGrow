@@ -233,6 +233,29 @@ function rampWeeks(agent: Agent): Array<{
   }));
 }
 
+/** LinkedIn's own weekly ceiling, which it does not publish. Ours sits below it. */
+const WEEKLY_INVITE_CEILING = 100;
+
+/**
+ * How many invitations a day the agent may send in a given week of the ramp.
+ *
+ * Mirrors dailyConnectAllowance in the worker's safety envelope. The header
+ * printed the account's ceiling as "today's limit", so an agent in week 1 of
+ * its warm-up was described as sending 8 a day when it was sending 5. Three
+ * limits answer three different questions and the smallest wins.
+ */
+function dayPace(agent: Agent, week: number): number {
+  const start = agent.warmupStartPerDay ?? 5;
+  const step = agent.warmupIncrementPerWeek ?? 5;
+  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const ramp = start + Math.min(Math.max(0, week - 1), weeks - 1) * step;
+  const days = Math.max(1, workingDays(agent.workdayDays).length);
+  return Math.max(
+    0,
+    Math.min(ramp, Math.floor(WEEKLY_INVITE_CEILING / days), agent.dailyInviteCap)
+  );
+}
+
 /** Which week of the ramp, or null once the ramp is over. */
 function warmupWeek(agent: Agent): { week: number; of: number } | null {
   if (!agent.warmupStartedAt) return null;

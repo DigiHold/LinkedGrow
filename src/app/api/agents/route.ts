@@ -54,6 +54,8 @@ export async function GET() {
         icpSummary: agents.icpSummary,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
+        warmupStartPerDay: agents.warmupStartPerDay,
+        warmupIncrementPerWeek: agents.warmupIncrementPerWeek,
         warmupWeeks: agents.warmupWeeks,
         lastRunAt: agents.lastRunAt,
         createdAt: agents.createdAt,
