@@ -73,7 +73,13 @@ export function toViewer(row: { href: string; text: string }): Engager | null {
     .map((l) => l.trim())
     .filter(Boolean)
     .filter((l) => !/^[•·]/.test(l) && !/^·?\s*\d+(st|nd|rd|th)\+?$/i.test(l) && !/^(view|message|connect|follow)\b/i.test(l));
-  const fullName = lines[0] ?? "";
+  // LinkedIn prints the connection degree inside the name line on search
+  // results, so leads were being stored as "Inga Fira-Jurkowska • 2nd" and
+  // every message would have opened with it.
+  const fullName = (lines[0] ?? "")
+    .replace(/\s*[•·]\s*\d+(st|nd|rd|th)\+?\s*$/i, "")
+    .replace(/\s*\b\d+(st|nd|rd|th)\+?\s*$/i, "")
+    .trim();
   if (!fullName || fullName.length > 60) return null;
   return {
     profileId: id,

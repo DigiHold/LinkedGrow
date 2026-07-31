@@ -275,13 +275,19 @@ export async function sourcePass(
            * pages of them. The two are complementary rather than alternatives,
            * so a source runs both and the results are deduplicated by profile.
            */
+          // dryRun on both, because the caller below is what actually claims
+          // them. Left to insert themselves, they went in through a thinner
+          // path that sets no source, no job title, no company and no picture,
+          // and the richer insert afterwards was then ignored as a duplicate.
           const [asking, matching] = [
             await mineIntent(ctx, page, ctx.cfg, {
               queries,
               maxPerQuery: budget.perPost,
+              dryRun: true,
             }),
             await minePeople(ctx, page, ctx.cfg, queries, {
               maxPerQuery: budget.perPost,
+              dryRun: true,
             }),
           ];
           found = [...asking, ...matching];

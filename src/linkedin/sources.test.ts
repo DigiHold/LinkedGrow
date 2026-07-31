@@ -86,3 +86,20 @@ test("the job title and the company are read out of the headline", () => {
     assert.equal(got.company, company, `company for "${headline}"`);
   }
 });
+
+/**
+ * The connection degree is printed inside the name on search results.
+ *
+ * Leads were stored as "Inga Fira-Jurkowska • 2nd", and the first message an
+ * agent sent would have opened with it.
+ */
+test("the connection degree never ends up inside the name", () => {
+  for (const [text, expected] of [
+    ["Inga Fira-Jurkowska • 2nd\nFounder at Acme", "Inga Fira-Jurkowska"],
+    ["Vanessa Donatiello • 3rd+\nCourse creator", "Vanessa Donatiello"],
+    ["John Hitchens\nFreelancer", "John Hitchens"],
+  ] as const) {
+    const lead = toViewer({ href: "https://www.linkedin.com/in/x/", text });
+    assert.equal(lead?.fullName, expected);
+  }
+});
