@@ -51,6 +51,10 @@ export async function GET() {
         avatarUrl: linkedinAccounts.avatarUrl,
         country: linkedinAccounts.country,
         status: linkedinAccounts.status,
+        // The sentence behind the badge. A row reading "LinkedIn asked for a
+        // verification" and nothing else leaves the person with no idea what to
+        // do next; the worker writes the what and the why into this column.
+        statusReason: linkedinAccounts.statusReason,
         warmupStartedAt: linkedinAccounts.warmupStartedAt,
         dailyInviteCap: linkedinAccounts.dailyInviteCap,
         agentCount: count(agents.id),
@@ -74,6 +78,7 @@ export async function GET() {
         avatarUrl: r.avatarUrl,
         country: r.country,
         status: r.status,
+        statusReason: r.statusReason,
         warmupStartedAt: r.warmupStartedAt,
         dailyInviteCap: r.dailyInviteCap,
         agentCount: r.agentCount,

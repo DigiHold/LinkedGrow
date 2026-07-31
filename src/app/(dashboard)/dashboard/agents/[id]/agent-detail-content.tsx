@@ -23,6 +23,7 @@ import { QueueTab } from "@/components/dashboard/agents/queue-tab";
 import { MessagesTab } from "@/components/dashboard/agents/messages-tab";
 import { ActivityTab } from "@/components/dashboard/agents/activity-tab";
 import { SettingsTab } from "@/components/dashboard/agents/settings-tab";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type Agent = {
   id: string;
@@ -164,6 +165,8 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Overview");
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     fetch(`/api/agents/${agentId}`)
@@ -563,16 +566,34 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
 
       <div className="mt-8 border-t border-border pt-6">
         <button
-          onClick={async () => {
-            if (!confirm(`Delete ${agent.name}? Its leads are kept, so nobody it already contacted can be contacted again by another agent.`)) return;
-            const res = await fetch(`/api/agents/${agentId}`, { method: "DELETE" });
-            if (res.ok) router.push("/dashboard/agents");
-          }}
+          onClick={() => setConfirmingDelete(true)}
           className="text-sm font-medium text-red-600 hover:underline dark:text-red-400"
         >
           Delete this agent
         </button>
       </div>
+
+      {/* A LinkedGrow modal rather than the browser's confirm box, which shows
+          the domain name, cannot be styled, and freezes the page. */}
+      <ConfirmModal
+        confirmText="Delete agent"
+        description={`Its leads are kept, so nobody ${agent.name} already contacted can be contacted again by another agent.`}
+        loading={deleting}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={async () => {
+          setDeleting(true);
+          const res = await fetch(`/api/agents/${agentId}`, { method: "DELETE" });
+          if (res.ok) {
+            router.push("/dashboard/agents");
+            return;
+          }
+          setDeleting(false);
+          setConfirmingDelete(false);
+        }}
+        open={confirmingDelete}
+        title={`Delete ${agent.name}?`}
+        variant="destructive"
+      />
     </PageShell>
   );
 }

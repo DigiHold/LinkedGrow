@@ -963,6 +963,18 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
     .notNull()
     .default("pending"),
   statusReason: text("status_reason"),
+  /**
+   * How many times the worker has tried to sign this account in, and when it
+   * last tried.
+   *
+   * The connect loop reads every account still `pending`, so without a counter
+   * a wrong password means another sign-in attempt every few seconds, from one
+   * address, until somebody notices. LinkedIn restricts real profiles for less.
+   * Three tries with a growing gap, then the account is marked `challenged`
+   * with a sentence naming the likely cause. Reset to 0 on a successful
+   * sign-in, so a re-login months later starts with a full budget.
+   */
+  signInAttempts: integer("sign_in_attempts").notNull().default(0),
   lastCheckAt: integer("last_check_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

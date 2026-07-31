@@ -17,6 +17,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   carouselTemplates,
   templateCategories,
@@ -56,6 +57,8 @@ export function TemplateGallery({
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [isLoadingUserTemplates, setIsLoadingUserTemplates] = useState(false);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+  /** The template the confirmation modal is asking about, never a browser confirm box. */
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const filteredTemplates = selectedCategory === 'all'
     ? carouselTemplates
@@ -83,8 +86,7 @@ export function TemplateGallery({
   };
 
   const handleDeleteUserTemplate = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
-
+    setConfirmingDeleteId(null);
     setDeletingTemplateId(id);
     try {
       const response = await fetch(`/api/user/templates/${id}`, {
@@ -315,7 +317,7 @@ export function TemplateGallery({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDeleteUserTemplate(template.id);
+              setConfirmingDeleteId(template.id);
             }}
             className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors"
           >
@@ -333,6 +335,18 @@ export function TemplateGallery({
   };
 
   return (
+    <>
+    <ConfirmModal
+      confirmText="Delete template"
+      description="It is removed from your saved templates. Carousels you already made with it are not touched."
+      onClose={() => setConfirmingDeleteId(null)}
+      onConfirm={() => {
+        if (confirmingDeleteId) handleDeleteUserTemplate(confirmingDeleteId);
+      }}
+      open={confirmingDeleteId !== null}
+      title="Delete this template?"
+      variant="destructive"
+    />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -436,6 +450,7 @@ export function TemplateGallery({
         )}
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 

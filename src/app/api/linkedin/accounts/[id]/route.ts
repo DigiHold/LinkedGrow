@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { linkedinAccounts, agents, proxyAllocations } from "@/lib/db/schema";
 import { and, count, eq, isNull, or } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
+import { AUTH_RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
 
 /**
  * Disconnect a LinkedIn account.
@@ -16,6 +17,78 @@ import { loadSessionUser } from "@/lib/auth-user";
  * lead history to a click meant as "stop using this profile" is not a trade
  * anyone would choose. Removing the agents first is a deliberate second step.
  */
+/**
+ * Try the sign-in again, on purpose rather than on a timer.
+ *
+ * The worker gives up after three failures and after a verification code goes
+ * unanswered, both deliberately: retrying a bad password every few seconds from
+ * one address is how a real LinkedIn profile gets restricted. Giving up needs a
+ * way back, though, or a customer who simply mistyped once is stuck looking at
+ * an account that will never try again.
+ *
+ * It only resets. The worker picks the account up within seconds, because
+ * `pending` with a clean attempt count is exactly what its connect pass reads.
+ */
+export async function POST(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await loadSessionUser(session.user.id);
+    if (!data) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const workspaceId = data.teamOwnerId ?? data.user.id;
+
+    // A slow hand on this button must not become a way to hammer LinkedIn's
+    // login form through us.
+    const limit = rateLimit(`li-retry:${id}`, AUTH_RATE_LIMITS.challengeCode);
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: "Give it a moment before trying again." },
+        { status: 429 }
+      );
+    }
+
+    const reset = await db
+      .update(linkedinAccounts)
+      .set({
+        status: "pending",
+        statusReason: null,
+        signInAttempts: 0,
+        lastCheckAt: null,
+        challengeState: "none",
+        challengeKind: null,
+        challengeCodeEncrypted: null,
+        challengeAskedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(linkedinAccounts.id, id),
+          eq(linkedinAccounts.workspaceId, workspaceId)
+        )
+      )
+      .returning({ id: linkedinAccounts.id });
+
+    if (!reset.length) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json(
+      { error: "That account could not be retried" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

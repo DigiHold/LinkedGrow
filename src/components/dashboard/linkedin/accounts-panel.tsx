@@ -2,9 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Loader2,
+  Plus,
+  RotateCw,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -87,6 +96,7 @@ export interface LinkedInAccount {
   avatarUrl: string | null;
   country: string;
   status: string;
+  statusReason: string | null;
   warmupStartedAt: string | null;
   dailyInviteCap: number;
   agentCount: number;
@@ -197,6 +207,10 @@ export function LinkedInAccountsPanel({
   const [upselling, setUpselling] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
+  /** The account the disconnect modal is asking about, if any. */
+  const [confirmingRemoval, setConfirmingRemoval] =
+    useState<LinkedInAccount | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
 
   const used = accounts?.length ?? 0;
   const atQuota = quota > 0 && used >= quota;
@@ -208,10 +222,6 @@ export function LinkedInAccountsPanel({
   };
 
   const remove = async (account: LinkedInAccount) => {
-    const label = accountLabel(account);
-    if (!confirm(`Disconnect ${label}? Its password and session are deleted here, and nothing changes on LinkedIn itself.`)) {
-      return;
-    }
     setRemoving(account.id);
     setRowError(null);
     try {
@@ -226,6 +236,32 @@ export function LinkedInAccountsPanel({
       await afterChange();
     } finally {
       setRemoving(null);
+      setConfirmingRemoval(null);
+    }
+  };
+
+  /**
+   * Ask the worker to try the sign-in again.
+   *
+   * It stops on its own after three failures, so an account that hit that
+   * ceiling needs a person to say go. Nothing here retries anything: it clears
+   * the counter, and the worker picks the account up within seconds.
+   */
+  const retry = async (account: LinkedInAccount) => {
+    setRetrying(account.id);
+    setRowError(null);
+    try {
+      const res = await fetch(`/api/linkedin/accounts/${account.id}`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setRowError(data?.error ?? "That sign-in could not be started again.");
+        return;
+      }
+      await afterChange();
+    } finally {
+      setRetrying(null);
     }
   };
 
@@ -302,7 +338,7 @@ export function LinkedInAccountsPanel({
                   aria-label={`Disconnect ${accountLabel(account)}`}
                   className="flex-none rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                   disabled={removing === account.id}
-                  onClick={() => remove(account)}
+                  onClick={() => setConfirmingRemoval(account)}
                   type="button"
                 >
                   {removing === account.id ? (
@@ -312,6 +348,36 @@ export function LinkedInAccountsPanel({
                   )}
                 </button>
                 </div>
+
+                {/* Why it is in that state, and the way out of it.
+                    A badge reading "LinkedIn asked for a verification" with no
+                    sentence and no button leaves the person guessing. The
+                    worker stops trying after three failures on purpose, so
+                    somebody has to be able to say go. */}
+                {(account.status === "challenged" ||
+                  account.status === "restricted") && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[13px] leading-relaxed text-amber-800 dark:text-amber-200">
+                      {account.statusReason ??
+                        "LinkedIn stopped this sign-in. Try it again, and if it stops a second time the password is the usual cause."}
+                    </p>
+                    <Button
+                      className="flex-none"
+                      disabled={retrying === account.id}
+                      onClick={() => retry(account)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      {retrying === account.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCw className="mr-2 h-4 w-4" />
+                      )}
+                      Try again
+                    </Button>
+                  </div>
+                )}
 
                 {/* Full width under the row rather than beside the buttons: it
                     only appears while a browser is actually waiting, and when
@@ -364,6 +430,130 @@ export function LinkedInAccountsPanel({
         open={upselling}
         quota={quota}
       />
+      {/* Never the browser's own confirm box. It carries the domain name and
+          the browser's buttons, it cannot be styled, and it stops the page
+          dead. Nicolas, 2026-07-31. */}
+      <ConfirmModal
+        confirmText="Disconnect"
+        description={
+          confirmingRemoval
+            ? `The password and the signed-in session for ${accountLabel(confirmingRemoval)} are deleted here. Nothing changes on LinkedIn itself, and its dedicated address goes back to your pool for the next account.`
+            : undefined
+        }
+        loading={removing === confirmingRemoval?.id}
+        onClose={() => setConfirmingRemoval(null)}
+        onConfirm={() => {
+          if (confirmingRemoval) remove(confirmingRemoval);
+        }}
+        open={confirmingRemoval !== null}
+        title={
+          confirmingRemoval
+            ? `Disconnect ${accountLabel(confirmingRemoval)}?`
+            : ""
+        }
+        variant="destructive"
+      />
+    </div>
+  );
+}
+
+/**
+ * What is happening right now, while the worker signs the account in.
+ *
+ * The old version of this was a spinner and one fixed sentence, and it never
+ * looked at the account again. So a sign-in that succeeded kept spinning, and a
+ * sign-in that failed kept spinning too: on 2026-07-31 the browser could not
+ * start at all and the dialog showed the same thing it shows when everything is
+ * fine, for as long as anybody was willing to watch it. A progress display that
+ * cannot express failure is a progress display that is lying most of the time.
+ *
+ * The worker writes a line into `status_reason` as it goes, so this shows the
+ * real step rather than a guess: setting up the address, opening a browser,
+ * signing in. Same poll as the code prompt, which is already fast because a
+ * verification code lives 30 seconds.
+ */
+function SignInProgress({
+  accountId,
+  email,
+}: {
+  accountId: string;
+  email: string;
+}) {
+  const [state, setState] = useState<{
+    status: string;
+    reason: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/linkedin/accounts/${accountId}/challenge`);
+        if (!res.ok || !live) return;
+        const data = (await res.json()) as { status: string; reason: string | null };
+        if (live) setState({ status: data.status, reason: data.reason });
+      } catch {
+        // One missed poll changes nothing. The next is two seconds away.
+      }
+    };
+    poll();
+    const timer = setInterval(poll, 2000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [accountId]);
+
+  const status = state?.status ?? "pending";
+  const done = status === "active";
+  const stopped = status === "challenged" || status === "restricted";
+
+  return (
+    <div className="space-y-4">
+      {done ? (
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+          <Check className="mt-0.5 h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" />
+          <p className="text-[13px] leading-relaxed text-emerald-800 dark:text-emerald-200">
+            <span className="font-semibold">{email} is signed in.</span> Its
+            name and picture arrive in a few seconds, and an agent can send from
+            it straight away.
+          </p>
+        </div>
+      ) : stopped ? (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-600 dark:text-amber-400" />
+          <p className="text-[13px] leading-relaxed text-amber-800 dark:text-amber-200">
+            {state?.reason ??
+              `LinkedIn stopped the sign-in for ${email}. Try it again from the accounts page.`}
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
+          <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-primary" />
+          <div className="space-y-1">
+            <p className="text-[13px] font-medium text-slate-900 dark:text-white">
+              {state?.reason ?? "Getting this account ready."}
+            </p>
+            <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Signing in as {email}. It takes about a minute, because the
+              sign-in types at a human pace rather than all at once.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* The same prompt as the accounts page, here where the person already
+          is. It renders nothing until a browser is genuinely waiting, so the
+          step stays quiet when no code is wanted. */}
+      <ChallengePrompt accountId={accountId} label={email} />
+
+      {!done && (
+        <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+          You can close this window at any time. The sign-in carries on without
+          you, and if a code is needed later it will be waiting on the accounts
+          page.
+        </p>
+      )}
     </div>
   );
 }
@@ -618,37 +808,7 @@ export function ConnectLinkedInDialog({
           )}
 
           {step === 3 && connectedId && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-white/5">
-                <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-primary" />
-                <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
-                  Signing in as{" "}
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {email}
-                  </span>
-                  . This takes a minute, because the sign-in runs at a human
-                  pace on purpose rather than all at once.
-                </p>
-              </div>
-
-              {/* The same prompt as the accounts page, here where the person
-                  already is. It renders nothing until a browser is genuinely
-                  waiting, so the step stays quiet when no code is wanted. */}
-              <ChallengePrompt
-                accountId={connectedId}
-                label={email}
-                onResolved={() => {
-                  reset();
-                  onOpenChange(false);
-                }}
-              />
-
-              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-                You can close this window at any time. The sign-in carries on
-                without you, and if a code is needed later it will be waiting
-                on the accounts page.
-              </p>
-            </div>
+            <SignInProgress accountId={connectedId} email={email} />
           )}
 
           {error && (
