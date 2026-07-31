@@ -725,7 +725,7 @@ function profileIdFromUrl(url: string): string | null {
   return m?.[1] ?? null;
 }
 
-function dedupeByProfile(engagers: Engager[]): Engager[] {
+export function dedupeByProfile(engagers: Engager[]): Engager[] {
   const seen = new Set<string>();
   const out: Engager[] = [];
   for (const e of engagers) {

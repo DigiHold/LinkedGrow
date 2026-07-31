@@ -3,7 +3,7 @@ import type { AgentContext } from "../config.ts";
 import { claimLead, db, loadSources, recordEvent } from "../db.ts";
 import { log } from "../logger.ts";
 import { mine, mineIntent, type Engager } from "./miner.ts";
-import { mineProfileViewers, mineSignal } from "./sources.ts";
+import { mineProfileViewers, mineSignal, minePeople } from "./sources.ts";
 import { ensureTargeting } from "./derive.ts";
 
 /**
@@ -198,10 +198,31 @@ export async function sourcePass(
             Array.isArray(config.queries) && config.queries.length > 0
               ? (config.queries as string[])
               : [source.label];
-          found = await mineIntent(ctx, page, ctx.cfg, {
-            queries,
-            maxPerQuery: budget.perPost,
-          });
+
+          /**
+           * Both doors, not one.
+           *
+           * A keyword source used to mean "find posts about this", and only
+           * that. It answers "who is talking about this right now", which is a
+           * narrow question: for a niche audience in one country it returns
+           * nobody most days, and on 2026-07-31 a whole agent run produced zero
+           * leads with every filter behaving correctly.
+           *
+           * The people search answers the other question, "who matches this
+           * description", and it is the wide one. A title and a country return
+           * pages of them. The two are complementary rather than alternatives,
+           * so a source runs both and the results are deduplicated by profile.
+           */
+          const [asking, matching] = [
+            await mineIntent(ctx, page, ctx.cfg, {
+              queries,
+              maxPerQuery: budget.perPost,
+            }),
+            await minePeople(ctx, page, ctx.cfg, queries, {
+              maxPerQuery: budget.perPost,
+            }),
+          ];
+          found = [...asking, ...matching];
           break;
         }
         case "buying_event": {

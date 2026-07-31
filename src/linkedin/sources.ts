@@ -7,7 +7,7 @@ import { actionDelayMs } from "../safety/envelope.ts";
 import type { DB } from "../store.ts";
 import { judgeAsking, judgeIcpFit } from "../messages/generate.ts";
 import { AGENT } from "./agent-meta.ts";
-import { type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking } from "./miner.ts";
+import { type Engager, matchesIcp, parseCard, cardToEngager, searchPostCards, queueLeads, isAsking, dedupeByProfile } from "./miner.ts";
 
 /**
  * Lead sources beyond competitor engagement. Each one reads a different intent signal, all through
@@ -83,6 +83,96 @@ export function toViewer(row: { href: string; text: string }): Engager | null {
     headline: lines[1] ?? "",
     source: "viewer",
   };
+}
+
+/**
+ * The people search, which is the source that was missing entirely.
+ *
+ * Everything else in this product finds people through something they WROTE:
+ * a post asking for help, a comment under a competitor. Both are narrow by
+ * construction, and for a niche audience in one country they legitimately
+ * return nobody on most days. On 2026-07-31 a full agent run produced zero
+ * leads with every filter behaving correctly, because the only two doors it
+ * knows were both empty.
+ *
+ * This is the third door and the wide one: LinkedIn's own people search, which
+ * answers "who matches this description" rather than "who happened to post
+ * this week". A title and a country return pages of them.
+ *
+ * It reads only. Nothing is liked, invited or messaged while searching, and
+ * the ICP filter still applies afterwards, so a wide door is not a loose one.
+ */
+export async function minePeople(
+  ctx: DB,
+  page: Page,
+  cfg: Config,
+  queries: string[],
+  opts: { maxPerQuery?: number; dryRun?: boolean } = {}
+): Promise<Engager[]> {
+  const db = ctx;
+  const maxPerQuery = opts.maxPerQuery ?? 10;
+  const found: Engager[] = [];
+
+  for (const query of queries) {
+    const url = /^https?:\/\//i.test(query.trim())
+      ? query.trim()
+      : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`;
+    log(`Searching people: "${query}"`);
+    await page.goto(url, { waitUntil: "domcontentloaded" }).catch(() => {});
+    await page.waitForSelector("main", { timeout: 20_000 }).catch(() => {});
+    // Wait for the results themselves. `main` arrives long before they do and
+    // reading at that moment reports an empty search, which is the same bug
+    // that made the content search look like a targeting problem for an hour.
+    await page
+      .waitForSelector('main a[href*="/in/"]', { timeout: 15_000 })
+      .catch(() => {});
+    await dwell(2500, 4000);
+    await scrollHuman(page, randInt(2, 3));
+    await dwell(1500, 2500);
+
+    const rows = await page.evaluate(() => {
+      const out: Array<{ href: string; text: string; photo: string }> = [];
+      const seen = new Set<string>();
+      for (const a of Array.from(
+        document.querySelectorAll('main a[href*="/in/"]')
+      ) as HTMLAnchorElement[]) {
+        const href = a.href.split("?")[0] ?? a.href;
+        if (seen.has(href)) continue;
+        seen.add(href);
+        const row = a.closest("li") ?? a.parentElement;
+        const img = (row as HTMLElement)?.querySelector("img");
+        out.push({
+          href,
+          text: ((row as HTMLElement)?.innerText ?? "").trim(),
+          // Already on the card, so taking it costs nothing and saves a
+          // profile visit per lead just to fetch a face.
+          photo: img && /licdn/.test(img.src) ? img.src : "",
+        });
+      }
+      return out;
+    });
+
+    let kept = 0;
+    let offIcp = 0;
+    for (const row of rows) {
+      const lead = toViewer(row);
+      if (!lead) continue;
+      if (!matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "")) {
+        offIcp++;
+        continue;
+      }
+      found.push({ ...lead, source: `search:${query}`, avatarUrl: row.photo || undefined });
+      if (++kept >= maxPerQuery) break;
+    }
+    log(`  ${kept} kept for "${query}" (${rows.length} people, ${offIcp} off-ICP).`);
+    await sleep(actionDelayMs(cfg));
+  }
+
+  const unique = dedupeByProfile(found);
+  if (!opts.dryRun) {
+    log(`Queued ${await queueLeads(db, unique)} new people-search leads.`);
+  }
+  return unique;
 }
 
 export type SignalKind = "hashtag" | "jobchange" | "hiring";
