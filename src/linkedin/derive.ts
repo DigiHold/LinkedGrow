@@ -28,12 +28,30 @@ export interface Targeting {
   hashtags: string[];
   /** Rivals whose audiences overlap, so their commenters can be mined and their staff skipped. */
   competitors: string[];
+  /**
+   * Words this audience actually puts in their LinkedIn headline.
+   *
+   * The wizard collects job titles from a set of checkboxes, and those are the
+   * words a marketer uses to describe a segment rather than the words the
+   * segment uses to describe itself. Matching a headline against "Small
+   * business" finds nobody: real headlines say founder, gérant, indépendante,
+   * e-commerce, boutique, agency owner. On 2026-07-31 the demographic gate
+   * dropped every one of three real people mined off a competitor's post for
+   * exactly this reason.
+   */
+  icpKeywords: string[];
 }
 
-const EMPTY: Targeting = { intentQueries: [], topics: [], hashtags: [], competitors: [] };
+const EMPTY: Targeting = {
+  intentQueries: [],
+  topics: [],
+  hashtags: [],
+  competitors: [],
+  icpKeywords: [],
+};
 
 /** Small on purpose. A long list is not more coverage, it is more chances to be wrong. */
-const CAPS = { intentQueries: 8, topics: 8, hashtags: 6, competitors: 12 };
+const CAPS = { intentQueries: 8, topics: 8, hashtags: 6, competitors: 12, icpKeywords: 16 };
 
 export async function ensureTargeting(ctx: AgentContext): Promise<Targeting> {
   if (!ctx.smartLeadFinder) return EMPTY;
@@ -145,10 +163,11 @@ function prompt(ctx: AgentContext, site: string): string {
     site ? `\nTheir homepage text, truncated:\n"""\n${site}\n"""` : "",
     "",
     "Return STRICT JSON and nothing else, no markdown fence, no prose:",
-    '{"intentQueries": string[], "topics": string[], "hashtags": string[], "competitors": string[]}',
+    '{"intentQueries": string[], "topics": string[], "hashtags": string[], "competitors": string[], "icpKeywords": string[]}',
     "",
     "Rules:",
     `- intentQueries: up to ${CAPS.intentQueries} search phrases of THREE TO SIX WORDS. Not sentences. These are typed into a search box, not spoken. Write the words that would appear inside a post from somebody with this problem, the way a person complains rather than the way a vendor markets. "cookie banner broken" and "website not secure" are right. "just found out my API key was exposed on my site" is wrong: it is a sentence, and LinkedIn returns nothing at all for it.`,
+    `- icpKeywords: up to ${CAPS.icpKeywords} single words or two-word phrases that appear in THIS AUDIENCE'S OWN LinkedIn headline. Not the words a marketer uses for the segment. "small business" is wrong because nobody writes it about themselves; "founder", "owner", "gérant", "independent", "e-commerce", "boutique" are right. Lowercase. Include the words in the audience's own language as well as English.`,
     `- topics: up to ${CAPS.topics} subjects this audience posts about.`,
     `- hashtags: up to ${CAPS.hashtags} LinkedIn hashtags this audience follows, each starting with #.`,
     `- competitors: up to ${CAPS.competitors} real, well known company or brand names selling something similar. Names only, no descriptions. If you are not confident a company exists, leave it out.`,
@@ -186,5 +205,6 @@ function normaliseObject(o: Record<string, unknown>): Targeting {
     topics: list(o.topics, CAPS.topics),
     hashtags: list(o.hashtags, CAPS.hashtags).map((h) => (h.startsWith("#") ? h : `#${h}`)),
     competitors: list(o.competitors, CAPS.competitors),
+    icpKeywords: list(o.icpKeywords, CAPS.icpKeywords).map((k) => k.toLowerCase()),
   };
 }

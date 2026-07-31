@@ -133,6 +133,31 @@ export async function sourcePass(
     return 0;
   }
 
+  // Widen the headline filter with the words this audience uses about itself.
+  //
+  // The wizard collects job titles from checkboxes, and a headline is matched
+  // against them literally, so an audience described as "Small business" and
+  // "Founder" matches almost nobody: people write gérant, indépendante,
+  // e-commerce, agency owner. On 2026-07-31 the demographic gate dropped all
+  // three real people mined off a competitor's post, and the run reported
+  // nothing found.
+  //
+  // Added to what the customer chose rather than replacing it. Their words are
+  // the intent; these are the synonyms they should not have to think of.
+  if (ctx.smartLeadFinder) {
+    const derived = await ensureTargeting(ctx);
+    if (derived.icpKeywords.length) {
+      ctx.cfg.leads.icpKeywords = [
+        ...new Set([...ctx.cfg.leads.icpKeywords, ...derived.icpKeywords]),
+      ];
+      log("widened the headline filter", {
+        agentId: ctx.agentId,
+        from: ctx.cfg.leads.icpKeywords.length - derived.icpKeywords.length,
+        now: ctx.cfg.leads.icpKeywords.length,
+      });
+    }
+  }
+
   const budget = readingBudget(ctx);
   // The oldest-mined first, which loadSources already orders by, so attention
   // spreads rather than always landing on the same competitor.
