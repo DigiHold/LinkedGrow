@@ -95,7 +95,9 @@ export async function mine(ctx: DB, page: Page, cfg: Config, opts: MineOptions):
   const insiders = unique.length - outsiders.length;
   if (insiders > 0) log(`Dropped ${insiders} people who work at the company whose posts we read.`);
 
-  const onIcp = outsiders.filter((e) => matchesIcp(cfg.leads.icpKeywords, e.headline));
+  const onIcp = outsiders.filter((e) =>
+    matchesIcp(cfg.leads.icpKeywords, e.headline ?? "", e.context ?? "")
+  );
   log(`Mined ${unique.length} unique engagers; ${onIcp.length} match the ICP (dropped ${outsiders.length - onIcp.length} off-target).`);
 
   const asked = await promoteAskers(ctx, onIcp);
@@ -166,20 +168,30 @@ export async function mineIntent(ctx: DB, page: Page, cfg: Config, opts: { queri
       const cards = await searchPostCards(page, query);
 
       let kept = 0;
+      let offIcp = 0;
+      let notAsking = 0;
       for (const card of cards) {
         const lead = toIntentLead(card, query, !ctx.skipConnected);
         if (!lead) continue;
-        if (!matchesIcp(cfg.leads.icpKeywords, lead.headline)) continue;
+        if (!matchesIcp(cfg.leads.icpKeywords, lead.headline, lead.context ?? "")) {
+          offIcp++;
+          continue;
+        }
         // Final authority: the model separates someone with the problem from a consultant selling
         // the cure. Keyword rules cannot, and contacting peers burns the account for nothing.
         if (!(await judgeAsking(ctx, lead.context ?? ""))) {
-          log(`  skipped ${lead.fullName}: sharing expertise, not asking.`);
+          notAsking++;
           continue;
         }
         found.push(lead);
         if (++kept >= maxPerQuery) break;
       }
-      log(`  ${kept} on-topic, on-ICP askers for "${query}".`);
+      // Counted per gate, because "0 found" on its own says nothing about
+      // which of the four filters emptied the page, and finding that out cost
+      // an hour of live diagnosis on 2026-07-31.
+      log(
+        `  ${kept} on-topic, on-ICP askers for "${query}" (${cards.length} cards, ${offIcp} off-ICP, ${notAsking} not asking).`
+      );
       await sleep(actionDelayMs(cfg));
     }
   } finally {
@@ -408,11 +420,29 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Keeps only engagers whose headline matches the ICP keywords. An empty keyword list keeps everyone. */
-export function matchesIcp(icpKeywords: string[], headline: string): boolean {
+/**
+ * Keeps engagers who look like the ICP. An empty keyword list keeps everyone.
+ *
+ * Reads what the person WROTE as well as what their headline says, because the
+ * headline is where people put their pitch and the post is where they say their
+ * situation. Tested against a real search on 2026-07-31: of four people found
+ * asking about website security, one introduced himself as "I'm the owner of
+ * Apex Workforce" in the post itself and carried none of the ICP words in his
+ * headline. Judging him off-target on that basis threw away the best lead on
+ * the page, and the run reported nothing found.
+ *
+ * Still a gate rather than a scorer: what it keeps out is the consultant whose
+ * headline and post are both about selling the same service. The model gets the
+ * final say on that afterwards.
+ */
+export function matchesIcp(
+  icpKeywords: string[],
+  headline: string,
+  context = ""
+): boolean {
   if (!icpKeywords.length) return true;
-  const h = (headline || "").toLowerCase();
-  return icpKeywords.some((k) => h.includes(k.toLowerCase()));
+  const hay = `${headline || ""}\n${context || ""}`.toLowerCase();
+  return icpKeywords.some((k) => hay.includes(k.toLowerCase()));
 }
 
 /** Opens a target's recent posts and extracts engagers from each. */

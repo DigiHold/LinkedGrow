@@ -51,7 +51,7 @@ export async function mineProfileViewers(ctx: DB, page: Page, cfg: Config, opts:
     const leads: Engager[] = [];
     for (const r of rows) {
       const lead = toViewer(r);
-      if (lead && matchesIcp(cfg.leads.icpKeywords, lead.headline)) leads.push(lead);
+      if (lead && matchesIcp(cfg.leads.icpKeywords, lead.headline ?? "", lead.context ?? "")) leads.push(lead);
     }
     // A free account names only a handful of the viewers it counts, so a small number here is normal.
     log(`Profile viewers: ${rows.length} named, ${leads.length} match the ICP.`);
@@ -142,7 +142,7 @@ type ParsedCard = { profileId: string; fullName: string; headline: string; body:
  * nothing, and they are what the offline tests cover.
  */
 export function passesSignalGates(cfg: Config, kind: SignalKind, parsed: ParsedCard): boolean {
-  if (!matchesIcp(cfg.leads.icpKeywords, parsed.headline)) return false;
+  if (!matchesIcp(cfg.leads.icpKeywords, parsed.headline, parsed.body ?? "")) return false;
   // A job move or a hiring post only counts when the author could actually buy. Recruiters, HR and
   // juniors show up constantly on both searches and can decide nothing.
   if (kind !== "hashtag" && !looksLikeBuyer(parsed.headline)) return false;
