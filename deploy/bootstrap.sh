@@ -98,7 +98,11 @@ After=network.target
 [Service]
 # 1920x1080 because that is what the per-account fingerprints report, and a
 # window larger than its own screen is a contradiction a detection script reads.
-ExecStart=/usr/bin/Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp -dpi 96
+# 2560x1440 because the fingerprint pool contains a 2560x1440 machine and the
+# window is sized from the machine. A window larger than the X screen is not
+# clipped, Chrome dies at launch, so a smaller screen silently condemns every
+# account whose id happens to hash to the biggest machine.
+ExecStart=/usr/bin/Xvfb :99 -screen 0 2560x1440x24 -nolisten tcp -dpi 96
 Restart=always
 RestartSec=2
 
@@ -119,6 +123,9 @@ Type=simple
 User=${WORKER_USER}
 WorkingDirectory=${WORKER_HOME}/app
 Environment=DISPLAY=:99
+# Read by the driver to bound the browser window to the screen. Keep it equal to
+# the Xvfb geometry above.
+Environment=SCREEN_SIZE=2560x1440
 Environment=NODE_ENV=production
 Environment=PROFILE_ROOT=${PROFILE_ROOT}
 EnvironmentFile=${WORKER_HOME}/worker.env
@@ -136,6 +143,12 @@ SendSIGKILL=yes
 
 NoNewPrivileges=yes
 PrivateTmp=yes
+# Xvfb creates its socket at /tmp/.X11-unix/X99 in the real /tmp, and PrivateTmp
+# gives this service a private one where that socket does not exist. Chrome then
+# cannot reach the display and dies at launch, on every account, every time,
+# with nothing in its output but a crashpad warning. Found 2026-07-31 after it
+# blocked the first real sign-in for an hour.
+BindReadOnlyPaths=/tmp/.X11-unix
 ProtectSystem=strict
 ProtectHome=yes
 ReadWritePaths=${WORKER_HOME}
