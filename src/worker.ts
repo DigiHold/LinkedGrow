@@ -17,6 +17,7 @@ import { currentRun } from "./safety/run-context.ts";
 import { RunStalled, withWatchdog } from "./safety/watchdog.ts";
 import { allocationFor, isProduction } from "./proxy/allocation.ts";
 import { fulfilPendingAllocations } from "./proxy/fulfil.ts";
+import { connectPass } from "./linkedin/connect-pass.ts";
 import { publishPass } from "./publish/pass.ts";
 import { insightsPass } from "./insights/pass.ts";
 import { isWithinBusinessHours, isWithinSourcingHours } from "./safety/envelope.ts";
@@ -328,6 +329,16 @@ async function agentLoop(): Promise<void> {
  */
 async function publishLoop(): Promise<void> {
   for (;;) {
+    try {
+      // Signing in a freshly connected account comes first and shares this
+      // loop, because connecting is the other moment the customer is certainly
+      // watching, and because LinkedIn's verification code expires in thirty
+      // seconds. Nothing called signIn at all until 2026-07-31: an account sat
+      // at "waiting for its first sign-in" for ever.
+      await connectPass();
+    } catch (error) {
+      logError("sign-in pass failed", error);
+    }
     try {
       await publishPass();
     } catch (error) {

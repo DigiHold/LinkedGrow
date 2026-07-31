@@ -66,7 +66,7 @@ async function freshDb(): Promise<void> {
        status TEXT NOT NULL DEFAULT 'ready', created_at INTEGER)`,
     `CREATE TABLE linkedin_accounts (
        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, country TEXT NOT NULL,
-       profile_url TEXT, status TEXT NOT NULL DEFAULT 'connected',
+       profile_url TEXT, status TEXT NOT NULL DEFAULT 'active',
        created_at INTEGER NOT NULL)`,
     `CREATE TABLE agents (
        id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, linkedin_account_id TEXT,
@@ -129,7 +129,7 @@ async function addAccount(
       workspaceId,
       String(overrides.country ?? "FR"),
       (overrides.profile_url as string | null) ?? "https://www.linkedin.com/in/maria/",
-      String(overrides.status ?? "connected"),
+      String(overrides.status ?? "active"),
       Number(overrides.created_at ?? seconds(-HOUR)),
     ],
   });

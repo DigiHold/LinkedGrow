@@ -112,3 +112,40 @@ test("a scheduler that cannot be driven never turns into an immediate post", () 
     "a failed preparation does not put the post back as scheduled"
   );
 });
+
+/**
+ * Something has to call the sign-in.
+ *
+ * `signIn` was written, tested, exported, and called by nothing. An account
+ * connected in the dashboard stayed at `pending` for ever, and the customer
+ * watched a row promising a sign-in that no code path could ever perform. It
+ * would have been found by the first real connection rather than by a test,
+ * which is the expensive way round.
+ */
+test("a connected account is actually signed in by something", () => {
+  const pass = read("../linkedin/connect-pass.ts");
+  assert.match(pass, /signIn\(/, "the connect pass does not call signIn");
+  assert.match(pass, /status = 'pending'/, "nothing looks for accounts waiting to sign in");
+
+  const worker = read("../worker.ts");
+  assert.match(worker, /await connectPass\(\)/, "no loop runs the connect pass");
+});
+
+/**
+ * One vocabulary for an account's state.
+ *
+ * The type said connected/checkpoint, the sign-in wrote active/challenged, and
+ * the dashboard rendered active/challenged. So an account that signed in
+ * successfully was invisible to every query written against the type, which
+ * included publishing, analytics and the agent loader.
+ */
+test("the worker writes the account states the dashboard reads", () => {
+  const all = ["../linkedin/signin.ts", "../db.ts", "../publish/store.ts", "../insights/pass.ts"]
+    .map(read)
+    .join("\n");
+  assert.ok(
+    !/status\s*=\s*'connected'|status\s*=\s*'checkpoint'/.test(all),
+    "something still uses the account states nothing writes"
+  );
+  assert.match(read("../linkedin/signin.ts"), /status = 'active'/, "sign-in does not mark the account active");
+});

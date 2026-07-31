@@ -324,7 +324,7 @@ export async function accountForPost(post: DuePost): Promise<PublishAccount | nu
       sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
               FROM linkedin_accounts la
               LEFT JOIN agents a ON a.linkedin_account_id = la.id
-             WHERE la.id = ? AND la.workspace_id = ? AND la.status = 'connected'
+             WHERE la.id = ? AND la.workspace_id = ? AND la.status = 'active'
              LIMIT 1`,
       args: [post.linkedinAccountId, post.workspaceId],
     });
@@ -344,7 +344,7 @@ export async function accountForPost(post: DuePost): Promise<PublishAccount | nu
     sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
             FROM linkedin_accounts la
             LEFT JOIN agents a ON a.linkedin_account_id = la.id
-           WHERE la.workspace_id = ? AND la.status = 'connected'
+           WHERE la.workspace_id = ? AND la.status = 'active'
            ORDER BY la.created_at ASC
            LIMIT 1`,
     args: [post.workspaceId],

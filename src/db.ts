@@ -129,7 +129,10 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
     FROM agents a
     JOIN linkedin_accounts l ON l.id = a.linkedin_account_id
     WHERE a.status IN ('active', 'warming')
-      AND l.status IN ('pending', 'active')
+      -- Signed in, and nothing else. 'pending' used to be accepted here, which
+      -- meant an agent could be handed an account that had never signed in and
+      -- would open a browser onto a login page every five minutes.
+      AND l.status = 'active'
   `);
 
   return rows.map((r) => {

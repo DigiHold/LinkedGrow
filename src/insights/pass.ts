@@ -62,7 +62,7 @@ async function accountsFor(posts: StalePost[]): Promise<Map<string, Account>> {
     sql: `SELECT la.id, la.workspace_id, la.country, la.profile_url, a.timezone AS timezone
             FROM linkedin_accounts la
             LEFT JOIN agents a ON a.linkedin_account_id = la.id
-           WHERE la.status = 'connected'`,
+           WHERE la.status = 'active'`,
   });
 
   const byWorkspace = new Map<string, Account>();
