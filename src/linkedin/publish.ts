@@ -55,6 +55,21 @@ export interface PublishInput {
    * the clock the browser is running on and the one the composer reads.
    */
   scheduleFor?: { at: Date; timeZone: string };
+  /**
+   * Walk the whole composer and then throw it away.
+   *
+   * Everything happens for real: the composer opens, the body is typed through
+   * the persona's keyboard, the file is attached and the upload is waited out,
+   * the text is read back. Only the last click is not made, and the dialog is
+   * discarded instead.
+   *
+   * It exists because there is no other way to find out whether posting still
+   * works. LinkedIn renames its controls without notice, and on 2026-07-31 that
+   * had already broken the Message link, the like button and three profile
+   * fields. Discovering the same thing about the composer by publishing a test
+   * post on a customer's real profile is not an acceptable way to find out.
+   */
+  rehearse?: boolean;
 }
 
 export interface PublishResult {
@@ -71,6 +86,8 @@ export interface PublishResult {
   verified: boolean;
   /** True when LinkedIn accepted it into its own scheduler rather than posting it. */
   scheduled: boolean;
+  /** Rehearsals only: the composer took the whole post and was ready to send it. */
+  rehearsed?: boolean;
 }
 
 export class PublishError extends Error {
@@ -593,7 +610,7 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   // post it is the most natural pause in the whole sequence.
   await dwell(3000, 9000);
 
-  if (input.scheduleFor) {
+  if (input.scheduleFor && !input.rehearse) {
     await useScheduler(page, dialog, input.scheduleFor.at, input.scheduleFor.timeZone);
     log("post handed to LinkedIn's scheduler", { at: input.scheduleFor.at.toISOString() });
     return { url: null, verified: false, scheduled: true };
@@ -603,7 +620,26 @@ export async function publishPost(page: Page, input: PublishInput): Promise<Publ
   if (!postButton) {
     throw new PublishError("The Post button was not there, so nothing was published.");
   }
-  if (await postButton.isDisabled().catch(() => true)) {
+  const disabled = await postButton.isDisabled().catch(() => true);
+
+  // Everything above happened. Nothing below does.
+  if (input.rehearse) {
+    log("rehearsal: the composer accepted this post", {
+      characters: body.length,
+      attachment: input.filePath ? input.mimeType : "none",
+      postButton: disabled ? "present but disabled" : "ready",
+    });
+    await page.keyboard.press("Escape").catch(() => {});
+    await dwell(600, 1400);
+    // LinkedIn asks whether to keep the draft. Discarding leaves nothing behind.
+    const discard = await firstVisible(
+      page.locator('button:has-text("Discard"), button:has-text("Supprimer")')
+    );
+    if (discard) await clickHumanLocator(page, discard);
+    return { url: null, verified: false, scheduled: false, rehearsed: !disabled };
+  }
+
+  if (disabled) {
     throw new PublishError("LinkedIn kept the Post button disabled, so nothing was published.");
   }
   await clickHumanLocator(page, postButton);
