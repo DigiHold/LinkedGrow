@@ -632,7 +632,7 @@ export function SettingsTab({
 
               <Field
                 label="Warm-up"
-                hint="Leave empty for the safe ramp: 5 invitations a day, climbing by 5 each week for a month. These numbers are ours. LinkedIn's own ceiling is roughly 100 invitations a week and it sits above all of them."
+                hint="Leave empty for the default ramp: 10 invitations a day in week 1, 15 in week 2, then whatever the weekly ceiling allows. LinkedIn caps a free or Premium account at 100 invitations a week on a rolling 7 days and starts throttling past about 20 a day, so those are the walls this stays under."
               >
                 <div className="flex flex-wrap gap-3">
                   <NumberBox

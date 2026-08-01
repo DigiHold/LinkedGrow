@@ -682,8 +682,9 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                 ))}
               </ol>
               <p className="mt-3 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
-                Our own ramp, not LinkedIn&apos;s. An account that suddenly sends
-                far more than it used to is the pattern that gets restricted.
+                LinkedIn caps a free account at 100 invitations a week and
+                throttles past about 20 a day. The ramp keeps a cold account
+                under both while it builds a record.
               </p>
             </div>
 

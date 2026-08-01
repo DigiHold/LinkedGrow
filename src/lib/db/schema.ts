@@ -946,11 +946,20 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   // account, so an aged account that gets a new agent must keep its earned
   // pace, and only a freshly connected account starts the ramp over.
   warmupStartedAt: integer("warmup_started_at", { mode: "timestamp" }),
-  // The daily ceiling lives here rather than on the agent, because LinkedIn
-  // watches the profile. Several agents can drive one account and they share
-  // this one budget; a per-agent cap cannot see its siblings, so two agents at
-  // 25 each would send 50 a day from one profile and lose it.
-  dailyInviteCap: integer("daily_invite_cap").notNull().default(8),
+  /**
+   * Invitations a day this profile may send once it is warmed up.
+   *
+   * It lives here rather than on the agent because LinkedIn watches the
+   * profile. Several agents can drive one account and they share this one
+   * budget; a per-agent cap cannot see its siblings, so two agents at 25 each
+   * would send 50 a day from one profile and lose it.
+   *
+   * 20 is LinkedIn's own daily soft cap on a free or Premium account in 2026:
+   * past roughly 20 to 25 a day it starts throttling. The weekly ceiling of 100
+   * usually binds first anyway, which is why the envelope takes the smallest of
+   * the three limits. The old default of 8 was ours and was invented.
+   */
+  dailyInviteCap: integer("daily_invite_cap").notNull().default(20),
   // Moving an account to another country reallocates its address and resets
   // the trust that address had built, so section 5b bounds how often it can
   // happen. Counted here rather than in the interface alone.
