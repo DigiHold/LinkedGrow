@@ -168,11 +168,14 @@ export const DEFAULTS = {
    * what the platform allows. It cost a customer two weeks of their first
    * month for nothing.
    *
-   * Week 1 is 10 a day, week 2 is 15, and after that the weekly ceiling of 100
-   * binds: over six working days that is 16 a day, which the envelope works out
-   * on its own by taking the smallest of the three limits.
+   * Week 1 is 15 a day, the middle of that 10-to-20 range rather than the
+   * bottom of it: an established profile that is only new to automation does
+   * not need the most cautious setting available. After week 1 the weekly
+   * ceiling of 100 binds before the ramp does, and over six working days that
+   * is 16 a day, which the envelope works out on its own by taking the
+   * smallest of the three limits.
    */
-  warmup: { startPerDay: 10, incrementPerWeek: 5, weeks: 2 },
+  warmup: { startPerDay: 15, incrementPerWeek: 5, weeks: 2 },
   /**
    * Invitations had a daily and a weekly ceiling. Messages only had a daily
    * one, and 20 a day over six working days is 120 a week against LinkedIn's
