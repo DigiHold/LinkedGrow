@@ -35,32 +35,42 @@ type Step = {
    * underneath once they exist.
    */
   rule: string;
+  /**
+   * One message written to the rule above, so the rule can be understood.
+   *
+   * Labelled an example on screen and never put in the box, because it is an
+   * illustration and not what gets sent: every real one is written for its own
+   * person and takes a different structure. Somebody reading a rule with no
+   * example cannot picture the message, and somebody handed a default
+   * paragraph will send it to four hundred people.
+   */
+  example: string;
 };
 
 const STEPS: Step[] = [
   {
     key: "hello",
     title: "After they accept",
-    hint: "Write your own only if you want every one of them identical.",
-    rule: "One concrete thing about them and a greeting, in one of five structures picked per person. No question mark, no offer, nothing asked for.",
+    hint: "Fill this only to send the same words to everybody.",
+    rule: "One concrete thing about them, and a greeting, in one of five structures chosen per person. No question, no offer, nothing asked for. It is here to make the next message land in an open conversation, not to earn a reply.",
+    example:
+      "Thanks for accepting, Léa. Your point about consent banners shifting the whole layout is the kind of thing only somebody who has actually shipped one notices.",
   },
   {
     key: "intro",
     title: "The first real message",
-    hint: "Write your own only if you want every one of them identical.",
-    rule: "Names what they actually wrote, says who you are and what you do in one plain clause, asks one question they can answer in a line, and closes so that ignoring it costs them nothing. Three lines, opened one of four ways.",
-  },
-  {
-    key: "converse",
-    title: "When they answer",
-    hint: "This one cannot be written in advance.",
-    rule: "Answers what they actually said, in their terms, before anything else, then asks one thing back. The product is not mentioned.",
+    hint: "Fill this only to send the same words to everybody.",
+    rule: "Names what they wrote, says who you are and what you do in one plain clause, asks one question they can answer in a line, and closes so that ignoring it costs them nothing. Three lines, opened one of four ways. The clause about what you do is not optional: hiding it and revealing it later costs more trust than saying it now.",
+    example:
+      "Léa, the banner pushing the page around is the part most people only find after launch. I run a small tool that scans a site and hands back what is broken, so I see it a lot. How are you handling it at the moment? Either way, good to be connected.",
   },
   {
     key: "ask",
     title: "The one ask",
-    hint: "Write your own only if you want every one of them identical.",
-    rule: "Offers something small and concrete rather than asking for time, and closes one of four ways, all of which make silence an acceptable answer.",
+    hint: "Fill this only to send the same words to everybody.",
+    rule: "Offers something small and concrete instead of asking for time, and closes one of four ways, all of which make silence an acceptable answer. Asking for a meeting at this point scores 44% below asking for interest, so it never does.",
+    example:
+      "Léa, I pulled the three things on your site that would fail a consent check. Want me to send it over, or would you rather I left it? No answer is a fine answer.",
   },
 ];
 
@@ -218,10 +228,20 @@ export function MessagesTab({ agentId }: { agentId: string }) {
         const example = data?.examples[step.key];
         const count = sent[step.key] ?? 0;
         return (
-          <div
-            key={step.key}
-            className="overflow-hidden rounded-xl border border-border bg-card"
-          >
+          <div key={step.key} className="space-y-3.5">
+            {/* The reply step has no box, because it answers something nobody
+                can read in advance. Saying so is still better than a sequence
+                that looks like it ignores replies. */}
+            {step.key === "ask" && (
+              <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-dashed border-border px-4 py-3">
+                <Pill>If they answer</Pill>
+                <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                  The agent answers what they actually said, then asks one thing
+                  back. Written on the spot, so there is nothing to set here.
+                </span>
+              </div>
+            )}
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex flex-wrap items-center gap-2.5 border-b border-border px-4 py-3">
               <Pill>Step {i + 1}</Pill>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-white">
@@ -240,8 +260,24 @@ export function MessagesTab({ agentId }: { agentId: string }) {
               )}
             </div>
             <div className="px-4 py-3.5">
-              <p className="mb-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                 {step.rule}
+              </p>
+
+              {/* One written to that rule, so the rule can be pictured. Never
+                  put in the box: it is an illustration, not a template. */}
+              <figure className="mt-3 rounded-lg border-l-2 border-blue-500/40 bg-slate-50 py-2.5 pl-3.5 pr-3 dark:bg-white/[0.03]">
+                <p className="text-[13.5px] leading-relaxed text-slate-700 dark:text-slate-200">
+                  {step.example}
+                </p>
+                <figcaption className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                  An example. Every real one is written for its own person and
+                  takes a different shape.
+                </figcaption>
+              </figure>
+
+              <p className="mb-2 mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                Or write it yourself, for everybody
               </p>
               <textarea
                 value={value}
@@ -283,6 +319,7 @@ export function MessagesTab({ agentId }: { agentId: string }) {
                 </span>
               </div>
             </div>
+          </div>
           </div>
         );
       })}

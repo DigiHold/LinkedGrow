@@ -25,7 +25,7 @@ export const WEEKLY_INVITE_CEILING = 100;
  * described here as running at 5. The same class of bug as keeping the warm-up
  * start in two tables.
  */
-export const RAMP = { startPerDay: 10, incrementPerWeek: 5, weeks: 2 } as const;
+export const RAMP = { startPerDay: 15, incrementPerWeek: 5, weeks: 2 } as const;
 
 export type PaceInput = {
   warmupStartPerDay: number | null;
