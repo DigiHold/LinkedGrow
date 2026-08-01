@@ -156,7 +156,23 @@ export const DEFAULTS = {
   // Monday to Saturday: plenty of the people this sells to work then, and an agent idle two
   // days out of seven reads as broken to somebody paying by the month.
   businessHours: { startHour: 9, endHour: 18, days: [1, 2, 3, 4, 5, 6] },
-  warmup: { startPerDay: 5, incrementPerWeek: 5, weeks: 4 },
+  /**
+   * The ramp, from what LinkedIn actually tolerates in 2026 rather than from
+   * caution.
+   *
+   * Checked 2026-08-01 against PhantomBuster, Linkedify and LeadLoft, which
+   * agree: 100 invitations a week on free and Premium, a daily soft cap around
+   * 20 before throttling, and a cold account starting at 10 to 20 a day and
+   * ramping over about two weeks. The old 5 a day climbing by 5 over a month
+   * was ours, invented, and roughly half the pace and twice the duration of
+   * what the platform allows. It cost a customer two weeks of their first
+   * month for nothing.
+   *
+   * Week 1 is 10 a day, week 2 is 15, and after that the weekly ceiling of 100
+   * binds: over six working days that is 16 a day, which the envelope works out
+   * on its own by taking the smallest of the three limits.
+   */
+  warmup: { startPerDay: 10, incrementPerWeek: 5, weeks: 2 },
   limits: { connectPerWeekMax: 100, dmPerDayMax: 20 },
   delaysMs: { minAction: 40_000, maxAction: 120_000 },
   sequence: { waitBetweenDmsDays: 3 },
