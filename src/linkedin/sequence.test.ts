@@ -392,10 +392,33 @@ test("the daily DM cap is respected", async () => {
   await seed(db, STATUS.connected, daysAgo(3));
   await seed(db, STATUS.connected, daysAgo(3));
   await seed(db, STATUS.connected, daysAgo(3));
-  const cfg = baseCfg({ limits: { connectPerWeekMax: 100, dmPerDayMax: 2 } });
+  const cfg = baseCfg({
+    limits: { connectPerWeekMax: 100, dmPerDayMax: 2, dmPerWeekMax: 100 },
+  });
   await runSequence(cfg, db, deps(fakeActions()));
   assert.equal(await countProspectsByStatus(db, STATUS.helloSent), 2);
   assert.equal(await countProspectsByStatus(db, STATUS.connected), 1);
+  drop();
+});
+
+/**
+ * The other message ceiling, which nothing counted until 2026-08-01.
+ *
+ * Twenty a day over six working days is 120 a week, and LinkedIn allows 100 on
+ * a free or Premium account. The daily cap alone let an agent run 20% over it
+ * every week.
+ */
+test("the weekly DM cap is respected even when the daily one is not reached", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.connected, daysAgo(3));
+  await seed(db, STATUS.connected, daysAgo(3));
+  await seed(db, STATUS.connected, daysAgo(3));
+  const cfg = baseCfg({
+    limits: { connectPerWeekMax: 100, dmPerDayMax: 20, dmPerWeekMax: 1 },
+  });
+  await runSequence(cfg, db, deps(fakeActions()));
+  assert.equal(await countProspectsByStatus(db, STATUS.helloSent), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.connected), 2);
   drop();
 });
 

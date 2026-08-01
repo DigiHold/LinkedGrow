@@ -21,7 +21,7 @@ export interface Config {
   business: { url: string; description?: string };
   businessHours: { startHour: number; endHour: number; days: number[] };
   warmup: { startPerDay: number; incrementPerWeek: number; weeks: number };
-  limits: { connectPerWeekMax: number; dmPerDayMax: number };
+  limits: { connectPerWeekMax: number; dmPerDayMax: number; dmPerWeekMax: number };
   delaysMs: { minAction: number; maxAction: number };
   sequence: { waitBetweenDmsDays: number };
   /** False lets the agent prospect people the account is already connected to. */
@@ -173,7 +173,14 @@ export const DEFAULTS = {
    * on its own by taking the smallest of the three limits.
    */
   warmup: { startPerDay: 10, incrementPerWeek: 5, weeks: 2 },
-  limits: { connectPerWeekMax: 100, dmPerDayMax: 20 },
+  /**
+   * Invitations had a daily and a weekly ceiling. Messages only had a daily
+   * one, and 20 a day over six working days is 120 a week against LinkedIn's
+   * 100 for a free or Premium account (checked 2026-08-01). An agent at full
+   * pace would have gone 20% over every week, on the one limit nobody was
+   * counting.
+   */
+  limits: { connectPerWeekMax: 100, dmPerDayMax: 20, dmPerWeekMax: 100 },
   delaysMs: { minAction: 40_000, maxAction: 120_000 },
   sequence: { waitBetweenDmsDays: 3 },
 } as const;

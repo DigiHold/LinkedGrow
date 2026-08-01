@@ -160,7 +160,7 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       // this is the second one: if a write ever escaped the wrapper, it could escape three times
       // rather than twenty. Belt and braces, on somebody's real account.
       limits: Number(r.observe_only ?? 0) === 1 || parseList(r.test_recipients).length > 0
-        ? { connectPerWeekMax: 3, dmPerDayMax: 3 }
+        ? { connectPerWeekMax: 3, dmPerDayMax: 3, dmPerWeekMax: 3 }
         : { ...DEFAULTS.limits },
       delaysMs: { ...DEFAULTS.delaysMs },
       sequence: { ...DEFAULTS.sequence },

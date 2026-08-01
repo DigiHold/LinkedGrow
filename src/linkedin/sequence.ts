@@ -293,7 +293,12 @@ function normalizeName(name: string): string {
  * its budget on asks leaves real replies waiting.
  */
 async function advanceSequence(cfg: Config, db: DB, deps: SequenceDeps, pause: () => Promise<void>): Promise<void> {
-  let budget = cfg.limits.dmPerDayMax - await countActionsSince(db, "dm", dayAgoIso());
+  // Both ceilings, and the smaller one wins, the same way invitations are
+  // bounded. Counted on the LinkedIn account rather than the agent, because the
+  // limit is LinkedIn's and LinkedIn watches the profile.
+  const today = cfg.limits.dmPerDayMax - (await countActionsSince(db, "dm", dayAgoIso()));
+  const thisWeek = cfg.limits.dmPerWeekMax - (await countActionsSince(db, "dm", weekAgoIso()));
+  let budget = Math.min(today, thisWeek);
   if (budget <= 0) return;
 
   // 1. Answer the people who wrote back, up to the cap on how many times the
