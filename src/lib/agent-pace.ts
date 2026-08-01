@@ -13,8 +13,19 @@
  * works, and whatever per-day ceiling this account's tier carries.
  */
 
-/** LinkedIn's own weekly ceiling. It does not publish one; this is the observed figure. */
+/** LinkedIn's own weekly ceiling on a free or Premium account, checked 2026-08-01. */
 export const WEEKLY_INVITE_CEILING = 100;
+
+/**
+ * The ramp when an agent sets no override of its own.
+ *
+ * These have to equal DEFAULTS.warmup in linkedgrow-worker/src/config.ts. They
+ * are the one thing on this page that is not read from the row, so when the
+ * worker's ramp changed and these did not, an agent running at 10 a day was
+ * described here as running at 5. The same class of bug as keeping the warm-up
+ * start in two tables.
+ */
+export const RAMP = { startPerDay: 10, incrementPerWeek: 5, weeks: 2 } as const;
 
 export type PaceInput = {
   warmupStartPerDay: number | null;
@@ -49,9 +60,9 @@ export function warmupWeek(
 
 /** Invitations a day allowed in a given week of the ramp. */
 export function dayPace(agent: PaceInput, week: number): number {
-  const start = agent.warmupStartPerDay ?? 5;
-  const step = agent.warmupIncrementPerWeek ?? 5;
-  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const start = agent.warmupStartPerDay ?? RAMP.startPerDay;
+  const step = agent.warmupIncrementPerWeek ?? RAMP.incrementPerWeek;
+  const weeks = Math.max(1, agent.warmupWeeks ?? RAMP.weeks);
   const ramp = start + Math.min(Math.max(0, week - 1), weeks - 1) * step;
   const days = Math.max(1, workingDays(agent.workdayDays).length);
   return Math.max(
@@ -65,7 +76,7 @@ export function todaysPace(
   agent: PaceInput,
   warmupStartedAt: Date | string | null
 ): number {
-  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const weeks = Math.max(1, agent.warmupWeeks ?? RAMP.weeks);
   const ramp = warmupWeek(warmupStartedAt, weeks);
   return dayPace(agent, ramp ? ramp.week : weeks);
 }

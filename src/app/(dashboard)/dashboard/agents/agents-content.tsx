@@ -4,6 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+// One place decides the pace, and it mirrors the worker's safety envelope.
+// Keeping a copy here is how the card came to print a ramp the engine was
+// never going to follow.
+import { RAMP, dayPace, workingDays } from "@/lib/agent-pace";
 
 /**
  * The agents list, built to the v2 dashboard prototype.
@@ -83,41 +87,6 @@ function warmupWeek(
   return week > of ? null : { week, of };
 }
 
-/**
- * How many invitations a day the agent may send in a given week of the ramp.
- *
- * Mirrors dailyConnectAllowance in the worker's safety envelope, and has to
- * keep mirroring it: the card said "then 8 a day" during week 1 while the agent
- * was actually sending 5, because it printed the account's ceiling for both
- * numbers. Three limits, and the smallest wins, because they answer different
- * questions: our own ramp, LinkedIn's weekly allowance spread over the working
- * days, and whatever ceiling this account's tier carries.
- */
-function dayPace(agent: Agent, week: number): number {
-  const start = agent.warmupStartPerDay ?? 5;
-  const step = agent.warmupIncrementPerWeek ?? 5;
-  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
-  const ramp = start + Math.min(Math.max(0, week - 1), weeks - 1) * step;
-  const days = Math.max(1, workingDays(agent.workdayDays).length);
-  return Math.max(
-    0,
-    Math.min(ramp, Math.floor(WEEKLY_INVITE_CEILING / days), agent.dailyInviteCap)
-  );
-}
-
-/** LinkedIn's own weekly ceiling, which it does not publish. Ours is below it. */
-const WEEKLY_INVITE_CEILING = 100;
-
-function workingDays(raw: string): number[] {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((d): d is number => typeof d === "number")
-      : [1, 2, 3, 4, 5];
-  } catch {
-    return [1, 2, 3, 4, 5];
-  }
-}
 
 /**
  * When this agent next wakes up, in its own timezone.
@@ -413,7 +382,7 @@ export function AgentsContent() {
         {data?.agents.map((agent) => {
           const status = STATUS[agent.status];
           const siblings = perAccount.get(agent.accountId) ?? 1;
-          const ramp = warmupWeek(agent.warmupStartedAt, Math.max(1, agent.warmupWeeks ?? 4));
+          const ramp = warmupWeek(agent.warmupStartedAt, Math.max(1, agent.warmupWeeks ?? RAMP.weeks));
           const country = (() => {
             try {
               return COUNTRY.of(agent.accountCountry) ?? agent.accountCountry;
@@ -483,7 +452,7 @@ export function AgentsContent() {
                     ) : (
                       <>
                         Next launch <b>{nextLaunch(agent)}</b>, sending{" "}
-                        <b>{dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations</b>
+                        <b>{dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? RAMP.weeks))} invitations</b>
                         {siblings > 1 && ` shared with ${siblings - 1} other agent`}
                       </>
                     )}

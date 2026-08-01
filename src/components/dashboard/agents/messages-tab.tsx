@@ -22,13 +22,44 @@ type Step = {
   title: string;
   /** What the writer needs to know to fill the box, and nothing more. */
   hint: string;
+  /**
+   * The message as it goes out when nobody has rewritten it.
+   *
+   * Shown so the tab is never a page of empty boxes: you can read exactly what
+   * this agent sends before it sends anything, and edit it. Leaving it as it is
+   * lets the agent rewrite it per person from what they posted; saving it makes
+   * it fixed, word for word.
+   */
+  fallback: string;
 };
 
 const STEPS: Step[] = [
-  { key: "hello", title: "After they accept", hint: "Two lines. Nothing asked for." },
-  { key: "intro", title: "The first real message", hint: "One question they can answer in a line." },
-  { key: "converse", title: "When they answer", hint: "Left empty this one is always written for the reply it answers." },
-  { key: "ask", title: "The one ask", hint: "Something small they can take or ignore in a word." },
+  {
+    key: "hello",
+    title: "After they accept",
+    hint: "Two lines. Nothing asked for.",
+    fallback: "Thanks for accepting, {name}. Good to be connected.",
+  },
+  {
+    key: "intro",
+    title: "The first real message",
+    hint: "One question they can answer in a line.",
+    fallback:
+      "{name}, I work on the same problem you posted about, from the other side of it. How are you handling it at the moment?",
+  },
+  {
+    key: "converse",
+    title: "When they answer",
+    hint: "Left empty this one is always written for the reply it answers.",
+    fallback: "",
+  },
+  {
+    key: "ask",
+    title: "The one ask",
+    hint: "Something small they can take or ignore in a word.",
+    fallback:
+      "{name}, want me to send it over? Takes a minute to put together and you can ignore it either way.",
+  },
 ];
 
 const TOKENS = [
@@ -138,8 +169,10 @@ export function MessagesTab({ agentId }: { agentId: string }) {
             What your agent sends
           </h2>
           <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
-            Write a message and it is sent exactly as you wrote it. Leave one
-            empty and the agent writes that one itself, for each person.
+            These are the messages this agent sends. Edit one and save, and it
+            goes out exactly as you wrote it. Leave it and the agent rewrites it
+            for each person from what they posted. Clear a box to hand that step
+            back to the agent.
           </p>
         </div>
         <div className="flex-1" />
@@ -174,7 +207,11 @@ export function MessagesTab({ agentId }: { agentId: string }) {
       </div>
 
       {STEPS.map((step, i) => {
-        const value = templates[step.key] ?? "";
+        const own = templates[step.key];
+        // The box is never empty when there is a default to read: the tab is
+        // about what the agent sends, and a blank page answers nothing.
+        const value = own ?? step.fallback;
+        const yours = Boolean(own);
         const example = data?.examples[step.key];
         const count = sent[step.key] ?? 0;
         return (
@@ -187,7 +224,7 @@ export function MessagesTab({ agentId }: { agentId: string }) {
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-white">
                 {step.title}
               </h3>
-              {value && <Pill tone="brand">Yours</Pill>}
+              {yours ? <Pill tone="brand">Yours</Pill> : <Pill>Default</Pill>}
               <div className="flex-1" />
               {count > 0 && (
                 <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">
@@ -219,7 +256,7 @@ export function MessagesTab({ agentId }: { agentId: string }) {
                 </div>
               )}
 
-              {!value && example && (
+              {!yours && example && (
                 <div className="mt-2.5 rounded-lg bg-slate-50 p-3 dark:bg-white/[0.03]">
                   <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-slate-700 dark:text-slate-200">
                     {example.body}

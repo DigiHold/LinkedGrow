@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { PageShell, Panel, Pill, EmptyState } from "@/components/dashboard/ui/page";
 import { AgentIcon, ChevronLeftIcon } from "@/components/dashboard/nav-icons";
 import { useNamedCrumb } from "@/components/dashboard/crumb-context";
+// One place decides the pace, mirroring the worker's safety envelope.
+import { RAMP } from "@/lib/agent-pace";
 import { LeadsTab } from "@/components/dashboard/agents/leads-tab";
 import { QueueTab } from "@/components/dashboard/agents/queue-tab";
 import { MessagesTab } from "@/components/dashboard/agents/messages-tab";
@@ -214,7 +216,7 @@ function rampWeeks(agent: Agent): Array<{
   perDay: number;
   state: "done" | "now" | "todo";
 }> {
-  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const weeks = Math.max(1, agent.warmupWeeks ?? RAMP.weeks);
   const started = agent.warmupStartedAt
     ? new Date(agent.warmupStartedAt).getTime()
     : null;
@@ -246,9 +248,9 @@ const WEEKLY_INVITE_CEILING = 100;
  * limits answer three different questions and the smallest wins.
  */
 function dayPace(agent: Agent, week: number): number {
-  const start = agent.warmupStartPerDay ?? 5;
-  const step = agent.warmupIncrementPerWeek ?? 5;
-  const weeks = Math.max(1, agent.warmupWeeks ?? 4);
+  const start = agent.warmupStartPerDay ?? RAMP.startPerDay;
+  const step = agent.warmupIncrementPerWeek ?? RAMP.incrementPerWeek;
+  const weeks = Math.max(1, agent.warmupWeeks ?? RAMP.weeks);
   const ramp = start + Math.min(Math.max(0, week - 1), weeks - 1) * step;
   const days = Math.max(1, workingDays(agent.workdayDays).length);
   return Math.max(
@@ -260,7 +262,7 @@ function dayPace(agent: Agent, week: number): number {
 /** Which week of the ramp, or null once the ramp is over. */
 function warmupWeek(agent: Agent): { week: number; of: number } | null {
   if (!agent.warmupStartedAt) return null;
-  const of = Math.max(1, agent.warmupWeeks ?? 4);
+  const of = Math.max(1, agent.warmupWeeks ?? RAMP.weeks);
   const week = Math.floor(
     (Date.now() - new Date(agent.warmupStartedAt).getTime()) / (7 * 86_400_000)
   ) + 1;
@@ -472,7 +474,7 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
         <span>
           Today&apos;s limit{" "}
           <b className="font-semibold text-slate-900 dark:text-white">
-            {dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations
+            {dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? RAMP.weeks))} invitations
           </b>
         </span>
       </div>
@@ -693,11 +695,11 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                 { label: "Invitations this week", value: `${contacted} of 100` },
                 {
                   label: "Today's limit",
-                  value: `${dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? 4))} invitations`,
+                  value: `${dayPace(agent, ramp?.week ?? (agent.warmupWeeks ?? RAMP.weeks))} invitations`,
                 },
                 {
                   label: "After the warm-up",
-                  value: `${dayPace(agent, agent.warmupWeeks ?? 4)} a day`,
+                  value: `${dayPace(agent, agent.warmupWeeks ?? RAMP.weeks)} a day`,
                 },
                 {
                   label: "Working hours",
