@@ -23,42 +23,44 @@ type Step = {
   /** What the writer needs to know to fill the box, and nothing more. */
   hint: string;
   /**
-   * The message as it goes out when nobody has rewritten it.
+   * What this step is built to do, in one line.
    *
-   * Shown so the tab is never a page of empty boxes: you can read exactly what
-   * this agent sends before it sends anything, and edit it. Leaving it as it is
-   * lets the agent rewrite it per person from what they posted; saving it makes
-   * it fixed, word for word.
+   * NOT a default message, and this tab must never invent one. There are no
+   * fixed templates in the engine on purpose: relationship.ts picks a structure
+   * per prospect from a rotating pool, hashed off the person, precisely because
+   * one wording repeated across a whole sending history is the pattern a
+   * classifier looks for and the thing a human notices on the second one. A
+   * default paragraph sitting in a box is exactly what that file exists to
+   * prevent, so what is shown here is the rule, and the real messages
+   * underneath once they exist.
    */
-  fallback: string;
+  rule: string;
 };
 
 const STEPS: Step[] = [
   {
     key: "hello",
     title: "After they accept",
-    hint: "Two lines. Nothing asked for.",
-    fallback: "Thanks for accepting, {name}. Good to be connected.",
+    hint: "Write your own only if you want every one of them identical.",
+    rule: "One concrete thing about them and a greeting, in one of five structures picked per person. No question mark, no offer, nothing asked for.",
   },
   {
     key: "intro",
     title: "The first real message",
-    hint: "One question they can answer in a line.",
-    fallback:
-      "{name}, I work on the same problem you posted about, from the other side of it. How are you handling it at the moment?",
+    hint: "Write your own only if you want every one of them identical.",
+    rule: "Names what they actually wrote, says who you are and what you do in one plain clause, asks one question they can answer in a line, and closes so that ignoring it costs them nothing. Three lines, opened one of four ways.",
   },
   {
     key: "converse",
     title: "When they answer",
-    hint: "Left empty this one is always written for the reply it answers.",
-    fallback: "",
+    hint: "This one cannot be written in advance.",
+    rule: "Answers what they actually said, in their terms, before anything else, then asks one thing back. The product is not mentioned.",
   },
   {
     key: "ask",
     title: "The one ask",
-    hint: "Something small they can take or ignore in a word.",
-    fallback:
-      "{name}, want me to send it over? Takes a minute to put together and you can ignore it either way.",
+    hint: "Write your own only if you want every one of them identical.",
+    rule: "Offers something small and concrete rather than asking for time, and closes one of four ways, all of which make silence an acceptable answer.",
   },
 ];
 
@@ -169,10 +171,13 @@ export function MessagesTab({ agentId }: { agentId: string }) {
             What your agent sends
           </h2>
           <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
-            These are the messages this agent sends. Edit one and save, and it
-            goes out exactly as you wrote it. Leave it and the agent rewrites it
-            for each person from what they posted. Clear a box to hand that step
-            back to the agent.
+            Every message is written for one person, from what that person
+            actually posted, and the structure moves between them on purpose:
+            one wording repeated across a whole sending history is what a
+            classifier looks for and what somebody notices on the second one.
+            The real messages appear here as they go out. Fill a box only if you
+            want that step identical for everybody, which trades the whole thing
+            away.
           </p>
         </div>
         <div className="flex-1" />
@@ -208,9 +213,7 @@ export function MessagesTab({ agentId }: { agentId: string }) {
 
       {STEPS.map((step, i) => {
         const own = templates[step.key];
-        // The box is never empty when there is a default to read: the tab is
-        // about what the agent sends, and a blank page answers nothing.
-        const value = own ?? step.fallback;
+        const value = own ?? "";
         const yours = Boolean(own);
         const example = data?.examples[step.key];
         const count = sent[step.key] ?? 0;
@@ -224,7 +227,11 @@ export function MessagesTab({ agentId }: { agentId: string }) {
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-white">
                 {step.title}
               </h3>
-              {yours ? <Pill tone="brand">Yours</Pill> : <Pill>Default</Pill>}
+              {yours ? (
+                <Pill tone="warn">Fixed wording</Pill>
+              ) : (
+                <Pill tone="good">Written per person</Pill>
+              )}
               <div className="flex-1" />
               {count > 0 && (
                 <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">
@@ -233,6 +240,9 @@ export function MessagesTab({ agentId }: { agentId: string }) {
               )}
             </div>
             <div className="px-4 py-3.5">
+              <p className="mb-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                {step.rule}
+              </p>
               <textarea
                 value={value}
                 onChange={(e) => {
