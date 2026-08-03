@@ -224,6 +224,59 @@ async function main(): Promise<void> {
       }
     }
 
+    /**
+     * Take back anything a failed comment check left behind.
+     *
+     * postFirstComment reports false when the box does not clear after the
+     * submit, which is honest but ambiguous: the comment may have gone up
+     * anyway. The check only cleans up on a reported success, so a false leaves
+     * a test comment on somebody's real post. This mode looks for it by its
+     * exact text and removes it, and says plainly when it cannot.
+     */
+    if (only === "cleanup") {
+      const text = "Testing the comment box, this comment is removed straight away.";
+      const found = acct.profileUrl
+        ? await within("own post", 60_000, () =>
+            recentOwnPost(session.page, acct.profileUrl as string)
+          )
+        : { value: null };
+      const mine = "timedOut" in found ? null : found.value;
+      if (!mine) {
+        results.push({
+          name: "cleanup",
+          ok: false,
+          detail: "could not open the account's own latest post",
+        });
+      } else {
+        await session.page.goto(mine, { waitUntil: "domcontentloaded" }).catch(() => {});
+        await session.page.waitForTimeout(4000);
+        const present = await session.page
+          .getByText(text, { exact: false })
+          .first()
+          .isVisible()
+          .catch(() => false);
+        if (!present) {
+          results.push({
+            name: "cleanup",
+            ok: true,
+            detail: `nothing was left behind on ${mine}`,
+          });
+        } else {
+          const removed = await within("cleanup", BUDGET.comment, () =>
+            deleteOwnComment(session.page, mine, text)
+          );
+          const gone = "timedOut" in removed ? false : removed.value;
+          results.push({
+            name: "cleanup",
+            ok: gone,
+            detail: gone
+              ? "the test comment was found and removed"
+              : `A TEST COMMENT IS STILL ON ${mine}. Delete it by hand.`,
+          });
+        }
+      }
+    }
+
     if (only === "schedule") {
       // Deliberately not part of "all": it writes a real row into LinkedIn's
       // own scheduler, and it is only run when somebody asked for it.
