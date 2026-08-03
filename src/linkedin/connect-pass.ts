@@ -82,14 +82,24 @@ async function attemptStarts(accountId: string): Promise<void> {
   });
 }
 
-/** Nothing more will be tried on its own, and the customer is told why. */
-async function givenUp(accountId: string): Promise<void> {
+/**
+ * Nothing more will be tried on its own, and the customer is told why.
+ *
+ * The reason carries the last failure rather than a guess. It used to say "the
+ * usual cause is the password" whatever had happened, and on 2026-08-03 that
+ * sent somebody looking at a password while the real answer, sitting in the
+ * error the sign-in had already thrown, was that LinkedIn never showed the
+ * login form at all.
+ */
+async function givenUp(accountId: string, lastError?: string): Promise<void> {
   await db().execute({
     sql: `UPDATE linkedin_accounts
              SET status = 'challenged', status_reason = ?, updated_at = ?
            WHERE id = ? AND status = 'pending'`,
     args: [
-      `LinkedIn did not let this account sign in, after ${MAX_ATTEMPTS} tries. The usual cause is the password. Disconnect it and connect it again with the password you use on linkedin.com.`,
+      `LinkedIn did not let this account sign in, after ${MAX_ATTEMPTS} tries. ${
+        lastError ?? "The usual cause is the password."
+      } If the password changed, disconnect the account and connect it again with the one you use on linkedin.com.`,
       Math.floor(Date.now() / 1000),
       accountId,
     ],
@@ -277,7 +287,10 @@ export async function connectPass(): Promise<void> {
       // count has reached the ceiling. Saying so beats a spinner that never
       // resolves and a loop that never stops.
       if (account.attempts + 1 >= MAX_ATTEMPTS) {
-        await givenUp(account.id);
+        await givenUp(
+          account.id,
+          error instanceof Error ? error.message : undefined
+        );
       } else {
         await progress(
           account.id,

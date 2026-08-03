@@ -334,8 +334,15 @@ export async function signIn(input: SignInInput): Promise<void> {
 
   const emailField = page.locator(SEL.email).first();
   if (!(await emailField.isVisible().catch(() => false))) {
+    // Whatever LinkedIn is showing instead, on disk, because three attempts
+    // failed here on 2026-08-03 and the only thing anybody could read
+    // afterwards was this sentence. A restriction notice, a checkpoint and a
+    // redesigned form all reach this line and need different answers.
+    const says = await capturePage(page, accountId, "signin-no-form").catch(() => null);
     throw new SignInFailed(
-      "The login form did not appear and the session is not signed in. LinkedIn has probably changed the page."
+      `The login form did not appear and the session is not signed in.${
+        says ? ` The page says: "${says}".` : ""
+      } The capture is in /opt/linkedgrow/debug.`
     );
   }
 
