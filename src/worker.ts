@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, recordEvent } from "./db.ts";
+import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, requestSignIn, recordEvent } from "./db.ts";
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
@@ -111,10 +111,13 @@ async function runAgent(ctx: AgentContext): Promise<void> {
   if (run) run.closeBrowser = closeOnce;
   try {
     if (!(await isSignedIn(session.context))) {
-      await flagAccount(
+      // Not a challenge, and not something a human has to fix: the password is
+      // stored and the sign-in pass exists. Flagging it as challenged put the
+      // account in a state that pass never looks at, which is how it sat signed
+      // out for two days with nothing retrying.
+      await requestSignIn(
         ctx,
-        "challenged",
-        "This account is signed out. Sign in once from the dashboard and the agent picks up on its own."
+        "The session ended, so the agent is signing back in on its own."
       );
       return;
     }

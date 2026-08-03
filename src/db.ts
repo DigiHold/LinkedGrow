@@ -512,6 +512,37 @@ export async function pauseAgent(ctx: AgentContext, reason: string) {
 }
 
 /** Marks the account itself, which pauses every agent that sends from it. */
+/**
+ * Ask for a fresh sign-in instead of giving up on the account.
+ *
+ * A session that is merely signed out is not a challenge. LinkedIn ends
+ * sessions on its own and cookies expire, and the password is already stored:
+ * nothing about that needs a human. But the only thing runAgent could do with
+ * it was flagAccount("challenged"), and the sign-in pass only ever looks at
+ * accounts whose status is 'pending', so a signed-out account fell into a state
+ * nothing retried. On 2026-08-01 that cost this account two full days of
+ * silence, and the only visible sign was a line in the event log.
+ *
+ * Back to 'pending' puts it in front of the sign-in pass, which counts its own
+ * attempts and escalates to 'challenged' by itself after three, with the
+ * message telling the customer to reconnect. So the give-up path still exists;
+ * it is simply reached by trying first.
+ *
+ * The agents are deliberately not paused. They cost nothing while the account
+ * is out, each pass ends immediately, and pausing them would mean somebody has
+ * to notice and restart them by hand after a sign-out they never saw.
+ */
+export async function requestSignIn(ctx: AgentContext, reason: string) {
+  const now = Math.floor(Date.now() / 1000);
+  await db().execute({
+    sql: `UPDATE linkedin_accounts
+             SET status = 'pending', status_reason = ?, updated_at = ?
+           WHERE id = ? AND workspace_id = ? AND challenge_state = 'none'`,
+    args: [reason, now, ctx.linkedinAccountId, ctx.workspaceId],
+  });
+  await recordEvent(ctx, "signin", reason);
+}
+
 export async function flagAccount(
   ctx: AgentContext,
   status: "challenged" | "restricted",
