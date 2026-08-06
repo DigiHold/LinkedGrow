@@ -111,6 +111,7 @@ function PostRow({
 
 export function HomeContent() {
   const { data: session } = useSession();
+  const [tab, setTab] = useState<"leads" | "posts">("leads");
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [total, setTotal] = useState(0);
@@ -209,20 +210,47 @@ export function HomeContent() {
       ].filter(Boolean)
     : [];
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
     <PageShell>
-      {/* Leads first. This page used to open with a post count, which stopped
-          being the reason anyone signs in. */}
-      <HomeLeads firstName={firstName} />
+      <h1 className="text-[26px] font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
+        {greeting}, {firstName}
+      </h1>
 
-      <div className="mt-10 border-t border-border pt-8">
-        <h2 className="text-[17px] font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
-          Posting
-        </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Your own content, on your own AI key. Your agent does not need it.
-        </p>
+      {/* Two tabs rather than one long scroll. Leads and posting are separate
+          jobs, and stacking them made the page read as one confused list. */}
+      <div
+        role="tablist"
+        aria-label="Dashboard sections"
+        className="mt-5 flex w-fit gap-1 rounded-xl border border-border bg-slate-100/70 p-1 dark:bg-white/5"
+      >
+        {(["leads", "posts"] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={cn(
+              "rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors",
+              tab === key
+                ? "bg-white text-slate-900 shadow-sm dark:bg-white/10 dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            )}
+          >
+            {key}
+          </button>
+        ))}
       </div>
+
+      <div className="mt-6" hidden={tab !== "leads"}>
+        <HomeLeads />
+      </div>
+
+      <div hidden={tab !== "posts"}>
 
       {setupSteps.length > 0 && (
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -400,6 +428,7 @@ export function HomeContent() {
             </div>
           )}
         </Panel>
+        </div>
       </div>
     </PageShell>
   );

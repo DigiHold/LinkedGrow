@@ -59,7 +59,7 @@ type Overview = {
   series: { day: string; total: number }[];
 };
 
-export function HomeLeads({ firstName }: { firstName: string }) {
+export function HomeLeads() {
   const [data, setData] = useState<Overview | null>(null);
 
   useEffect(() => {
@@ -74,10 +74,6 @@ export function HomeLeads({ firstName }: { firstName: string }) {
       cancelled = true;
     };
   }, []);
-
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   // Nothing is claimed before the data lands. A zero that turns into 431 a
   // second later reads as a bug.
@@ -107,7 +103,7 @@ export function HomeLeads({ firstName }: { firstName: string }) {
       <Panel padded={false}>
         <EmptyState
           icon={<AgentIcon className="h-6 w-6" />}
-          title={`${greeting}, ${firstName}`}
+          title="No agent yet"
           description="No agent yet. An agent watches for people talking about the problem you solve, likes their post, invites them, and starts a real conversation before it ever asks for anything."
           action={
             <Link
@@ -126,10 +122,7 @@ export function HomeLeads({ firstName }: { firstName: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.04em] text-slate-900 dark:text-white">
-            {greeting}, {firstName}
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {running > 0
               ? `${running} agent${running > 1 ? "s" : ""} running across ${data.accounts.length} LinkedIn account${data.accounts.length > 1 ? "s" : ""}, watching ${data.sourcesWatched} source${data.sourcesWatched === 1 ? "" : "s"}.`
               : "Every agent is paused. Nothing goes out until you start one."}
