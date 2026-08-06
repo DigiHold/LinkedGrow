@@ -285,7 +285,8 @@ function BillingContent() {
                 <span className="text-2xl font-bold">
                   {planNames[billing?.plan || "free"]}
                 </span>
-                {billing?.subscription?.status === "active" && (
+                {billing?.subscription?.status === "active" &&
+                  !billing?.subscription?.cancelAtPeriodEnd && (
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     Active
@@ -305,7 +306,11 @@ function BillingContent() {
                   </p>
                   {billing.subscription.cancelAtPeriodEnd ? (
                     <p className="text-amber-600 dark:text-amber-400">
-                      Access until {formatDate(billing.subscription.currentPeriodEnd)}
+                      Access until{" "}
+                      {formatDate(
+                        billing.subscription.cancelAt ??
+                          billing.subscription.currentPeriodEnd
+                      )}
                     </p>
                   ) : (
                     <p>
