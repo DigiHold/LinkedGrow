@@ -129,11 +129,18 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
                           AS competitor_labels
     FROM agents a
     JOIN linkedin_accounts l ON l.id = a.linkedin_account_id
+    JOIN users u ON u.id = a.workspace_id
     WHERE a.status IN ('active', 'warming')
       -- Signed in, and nothing else. 'pending' used to be accepted here, which
       -- meant an agent could be handed an account that had never signed in and
       -- would open a browser onto a login page every five minutes.
       AND l.status = 'active'
+      -- Somebody has to be paying. The app pauses the agents when a
+      -- subscription ends, but the app and this process are separate deploys
+      -- and this query is re-read every pass, so it is the guarantee: a missed
+      -- webhook cannot leave a cancelled customer's LinkedIn account being
+      -- driven on our AI budget.
+      AND (u.plan IN ('pro', 'business') OR u.is_lifetime_deal = 1 OR u.is_admin = 1)
   `);
 
   return rows.map((r) => {
