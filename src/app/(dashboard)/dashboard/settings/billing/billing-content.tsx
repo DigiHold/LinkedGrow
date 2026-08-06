@@ -49,6 +49,8 @@ interface Subscription {
   cancelAt: number | null;
   extraAgents: { quantity: number; unitAmount: number; amount: number } | null;
   totalAmount: number;
+  /** What Stripe says the next invoice will be, when there is one. */
+  nextCharge: { amount: number; at: number } | null;
   priceId: string;
   amount: number;
   currency: string;
@@ -146,8 +148,13 @@ function invoicePill(status: string) {
  * actually checking for.
  */
 function nextChargeLine(subscription: Subscription): string {
-  const total = money(subscription.totalAmount || subscription.amount, subscription.currency);
-  const when = day(subscription.currentPeriodEnd);
+  // Stripe's own preview when we have it. The plan total paired with the plan's
+  // period end is only right when every item shares one cycle.
+  const total = money(
+    subscription.nextCharge?.amount ?? subscription.totalAmount ?? subscription.amount,
+    subscription.currency
+  );
+  const when = day(subscription.nextCharge?.at ?? subscription.currentPeriodEnd);
   if (subscription.cancelAtPeriodEnd) {
     return `Nothing more will be charged. Your access runs until ${day(
       subscription.cancelAt ?? subscription.currentPeriodEnd
