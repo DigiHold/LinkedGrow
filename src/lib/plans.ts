@@ -122,9 +122,8 @@ export const DUNNING_GRACE_DAYS = 2;
  */
 export const UNCARDED_DELETE_DAYS = 14;
 
-/** Price per extra agent, on either plan. */
+/** Price per extra agent, on either plan. Monthly only, by decision. */
 export const EXTRA_AGENT_PRICE = 49;
-export const EXTRA_AGENT_YEARLY_PRICE = 490;
 
 export const FEATURE_INFO: Record<keyof PlanFeatures, { name: string; description: string; icon: string }> = {
   abTesting: {
