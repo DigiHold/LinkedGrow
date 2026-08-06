@@ -14,13 +14,16 @@
 
 import { db } from "@/lib/db";
 import { agents } from "@/lib/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { agentQuotaFor, type PlanId } from "@/lib/plans";
 
 export const BILLING_PAUSE = {
   /** The card was declined and the grace window ran out. */
   payment: "Paused: the payment did not go through",
   /** Cancelled, refunded, or otherwise no longer on a plan. */
   cancelled: "Paused: there is no active plan on this account",
+  /** More agents running than the plan includes, after a downgrade. */
+  overQuota: "Paused: your plan does not include this many agents",
 } as const;
 
 export type BillingPauseReason = (typeof BILLING_PAUSE)[keyof typeof BILLING_PAUSE];
@@ -56,6 +59,44 @@ export async function pauseAgentsForBilling(
  * An agent the customer paused by hand carries "Paused by you" and is left
  * alone, and one that LinkedIn blocked keeps its own reason.
  */
+/**
+ * Stops whatever runs beyond what the plan pays for.
+ *
+ * Business includes three agents and Pro two, and a downgrade left all three
+ * running: the customer paid $99 and kept $179 of capacity, on a third
+ * residential address and a third AI budget. The oldest agents keep running,
+ * because the newest is the one most likely to be the extra.
+ *
+ * When the $49 add-on gets a purchase path, its quantity has to be added to
+ * this ceiling.
+ */
+export async function enforceAgentQuota(
+  workspaceId: string,
+  plan: PlanId
+): Promise<number> {
+  const quota = agentQuotaFor(plan);
+
+  const running = await db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(
+      and(
+        eq(agents.workspaceId, workspaceId),
+        inArray(agents.status, ["active", "warming"])
+      )
+    )
+    .orderBy(asc(agents.createdAt));
+
+  const excess = running.slice(quota).map((a) => a.id);
+  if (excess.length === 0) return 0;
+
+  const result = await db
+    .update(agents)
+    .set({ status: "paused", pausedReason: BILLING_PAUSE.overQuota, updatedAt: new Date() })
+    .where(inArray(agents.id, excess));
+  return result.rowsAffected ?? 0;
+}
+
 export async function resumeAgentsAfterBilling(workspaceId: string): Promise<number> {
   const result = await db
     .update(agents)
