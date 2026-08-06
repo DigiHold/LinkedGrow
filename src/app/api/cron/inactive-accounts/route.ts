@@ -30,7 +30,8 @@ import {
   sendChurnAskEmail,
 } from "@/lib/email";
 import { DUNNING_GRACE_DAYS } from "@/lib/plans";
-import { agents, agentLeads } from "@/lib/db/schema";
+import { agents, agentLeads, linkedinAccounts } from "@/lib/db/schema";
+import { sendTrialWelcomeEmail, sendNoAgentEmail, sendNoAccountEmail, sendHalfwayEmail } from "@/lib/email";
 import { count, inArray } from "drizzle-orm";
 
 const receiver = new Receiver({
@@ -58,6 +59,7 @@ async function runInactiveAccounts(): Promise<{
     uncarded_deleted: 0,
     uncarded_skipped: 0,
     churn_sent: 0,
+    onboarding_sent: 0,
     agents_paused: 0,
     churn_candidates: 0,
     last_error: "",
@@ -346,6 +348,107 @@ async function runInactiveAccounts(): Promise<{
         .set({ status: "paused", updatedAt: new Date() })
         .where(and(eq(agents.workspaceId, person.id), eq(agents.status, "active")));
       stats.agents_paused += result.rowsAffected ?? 0;
+    } catch {
+      stats.errors++;
+    }
+  }
+
+  const now = new Date();
+
+  // ---------- Phase F: the trial nudges, each gated on what the account has ----------
+  // Not a schedule. A nudge to set up an agent that is already running is worse
+  // than no email, so every one of these reads the account first and
+  // onboarding_stage stops a second cron run repeating one.
+  const inTrial = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      trialStartedAt: users.trialStartedAt,
+      trialEndedAt: users.trialEndedAt,
+      stage: users.onboardingStage,
+    })
+    .from(users)
+    .where(
+      and(
+        isNotNull(users.trialStartedAt),
+        isNotNull(users.trialEndedAt),
+        gt(users.trialEndedAt, now),
+        isNotNull(users.stripeSubscriptionId)
+      )
+    );
+
+  for (const person of inTrial) {
+    if (!person.email || !person.trialStartedAt || !person.trialEndedAt) continue;
+    const dayOfTrial = Math.floor((now.getTime() - person.trialStartedAt.getTime()) / 86400000);
+    const daysLeft = Math.max(
+      0,
+      Math.ceil((person.trialEndedAt.getTime() - now.getTime()) / 86400000)
+    );
+    const stage = person.stage ?? 0;
+
+    const theirAgents = await db
+      .select({ id: agents.id, name: agents.name, accountId: agents.linkedinAccountId })
+      .from(agents)
+      .where(eq(agents.workspaceId, person.id));
+
+    try {
+      // Day 2, nothing built. The only wall that matters on an empty account.
+      if (dayOfTrial >= 2 && stage < 1 && theirAgents.length === 0) {
+        await sendNoAgentEmail({ to: person.email, name: person.name, daysLeft });
+        await db.update(users).set({ onboardingStage: 1, updatedAt: now }).where(eq(users.id, person.id));
+        stats.onboarding_sent++;
+        continue;
+      }
+
+      // Day 3, an agent with no account behind it, which is the other half of
+      // the same wall and looks identical from the dashboard.
+      const orphan = theirAgents.find((a) => !a.accountId);
+      if (dayOfTrial >= 3 && stage < 2 && orphan) {
+        const connected = await db
+          .select({ id: linkedinAccounts.id })
+          .from(linkedinAccounts)
+          .where(eq(linkedinAccounts.workspaceId, person.id))
+          .limit(1);
+        if (connected.length === 0) {
+          await sendNoAccountEmail({
+            to: person.email,
+            name: person.name,
+            agentName: orphan.name,
+            agentId: orphan.id,
+          });
+          await db.update(users).set({ onboardingStage: 2, updatedAt: now }).where(eq(users.id, person.id));
+          stats.onboarding_sent++;
+          continue;
+        }
+      }
+
+      // Day 4, the numbers so far, or why there are none.
+      const running = theirAgents[0];
+      if (dayOfTrial >= 4 && stage < 3 && running) {
+        const [found] = await db
+          .select({ n: count() })
+          .from(agentLeads)
+          .where(eq(agentLeads.workspaceId, person.id));
+        const [invited] = await db
+          .select({ n: count() })
+          .from(agentLeads)
+          .where(and(eq(agentLeads.workspaceId, person.id), eq(agentLeads.step, "invited")));
+        const [replied] = await db
+          .select({ n: count() })
+          .from(agentLeads)
+          .where(and(eq(agentLeads.workspaceId, person.id), eq(agentLeads.step, "replied")));
+        await sendHalfwayEmail({
+          to: person.email,
+          name: person.name,
+          found: found?.n ?? 0,
+          invited: invited?.n ?? 0,
+          replied: replied?.n ?? 0,
+          agentId: running.id,
+        });
+        await db.update(users).set({ onboardingStage: 3, updatedAt: now }).where(eq(users.id, person.id));
+        stats.onboarding_sent++;
+      }
     } catch {
       stats.errors++;
     }

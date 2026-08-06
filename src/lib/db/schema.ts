@@ -8,6 +8,8 @@ export const users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "timestamp" }),
   image: text("image"),
   password: text("password"), // Hashed password for credentials auth
+  /** How far the trial onboarding nudges have gone: 0 none, 1 day 2, 2 day 3, 3 day 4. */
+  onboardingStage: integer("onboarding_stage").default(0),
   /** When the subscription ended, which starts the winback clock. */
   churnedAt: integer("churned_at", { mode: "timestamp" }),
   /** How far the winback sequence has gone: 0 none, 1 day 3 sent, 2 day 7 sent. */
