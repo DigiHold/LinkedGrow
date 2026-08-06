@@ -37,6 +37,7 @@ export {
 
 export * from "./templates/agent-alert-emails";
 export * from "./templates/lifecycle-emails";
+export * from "./templates/onboarding-emails";
 export {
   sendLeadsDigestEmail,
   sendVerificationNeededEmail,
@@ -49,6 +50,10 @@ export {
   sendChurnImmediateEmail,
   sendChurnValueEmail,
   sendChurnAskEmail,
+  sendTrialWelcomeEmail,
+  sendNoAgentEmail,
+  sendNoAccountEmail,
+  sendHalfwayEmail,
 } from "./notify";
 
 // Re-export send functions for convenience

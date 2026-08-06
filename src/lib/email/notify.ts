@@ -45,6 +45,20 @@ import {
   churnAskEmailTemplate,
   churnAskEmailText,
 } from "./templates/lifecycle-emails";
+import {
+  welcomeSubject,
+  welcomeEmailTemplate,
+  welcomeEmailText,
+  noAgentSubject,
+  noAgentEmailTemplate,
+  noAgentEmailText,
+  noAccountSubject,
+  noAccountEmailTemplate,
+  noAccountEmailText,
+  halfwaySubject,
+  halfwayEmailTemplate,
+  halfwayEmailText,
+} from "./templates/onboarding-emails";
 
 /** Everything here is addressed by first name, and a missing one is common. */
 function firstNameOf(name: string | null | undefined): string {
@@ -220,5 +234,67 @@ export async function sendChurnAskEmail(params: { to: string; name: string | nul
     subject: churnAskSubject,
     html: churnAskEmailTemplate({ firstName }),
     text: churnAskEmailText({ firstName }),
+  });
+}
+
+// ----------------------------------------------------------------- onboarding
+
+export async function sendTrialWelcomeEmail(params: {
+  to: string;
+  name: string | null;
+  endsOn: string;
+}) {
+  const firstName = firstNameOf(params.name);
+  return sendEmail({
+    to: params.to,
+    subject: welcomeSubject,
+    html: welcomeEmailTemplate({ ...params, firstName }),
+    text: welcomeEmailText({ ...params, firstName }),
+  });
+}
+
+export async function sendNoAgentEmail(params: {
+  to: string;
+  name: string | null;
+  daysLeft: number;
+}) {
+  const firstName = firstNameOf(params.name);
+  return sendEmail({
+    to: params.to,
+    subject: noAgentSubject,
+    html: noAgentEmailTemplate({ ...params, firstName }),
+    text: noAgentEmailText({ ...params, firstName }),
+  });
+}
+
+export async function sendNoAccountEmail(params: {
+  to: string;
+  name: string | null;
+  agentName: string;
+  agentId: string;
+}) {
+  const firstName = firstNameOf(params.name);
+  return sendEmail({
+    to: params.to,
+    subject: noAccountSubject,
+    html: noAccountEmailTemplate({ ...params, firstName }),
+    text: noAccountEmailText({ ...params, firstName }),
+  });
+}
+
+export async function sendHalfwayEmail(params: {
+  to: string;
+  name: string | null;
+  found: number;
+  invited: number;
+  replied: number;
+  agentId: string;
+}) {
+  const firstName = firstNameOf(params.name);
+  return sendEmail({
+    to: params.to,
+    subject: halfwaySubject,
+    html: halfwayEmailTemplate({ ...params, firstName }),
+    text: halfwayEmailText({ ...params, firstName }),
   });
 }
