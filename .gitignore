@@ -104,3 +104,4 @@ migrations/
 # Package manager locks (keep package-lock.json, ignore others if not using)
 # yarn.lock
 # pnpm-lock.yaml
+.env*
