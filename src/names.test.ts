@@ -79,3 +79,22 @@ test("the guard ignores a message with no greeting name at all", () => {
     null
   );
 });
+
+test("a blank first_name column falls back to the full name rather than greeting nobody", () => {
+  // The store normalises "" to null so the `??` fallback in the worker fires.
+  // Without it the greeting reads "Glad we connected, " with nothing after the
+  // comma, which is the same family of mistake as the Marija DM.
+  const normalise = (value: string | null) => (value ?? "").trim() || null;
+
+  assert.equal(normalise(""), null);
+  assert.equal(normalise("   "), null);
+  assert.equal(normalise(null), null);
+  assert.equal(normalise("Sasho"), "Sasho");
+
+  const greetingFor = (firstName: string | null, fullName: string | null) =>
+    firstName ?? firstNameOf(fullName);
+
+  assert.equal(greetingFor(normalise(""), "Sasho Jovanovski"), "Sasho");
+  assert.equal(greetingFor(normalise("  "), "Mr Happiness - Sasho Jovanovski"), "Sasho");
+  assert.equal(greetingFor(normalise("Ana"), "Sasho Jovanovski"), "Ana");
+});

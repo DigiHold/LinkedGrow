@@ -82,7 +82,12 @@ function toRow(r: Record<string, unknown>): ProspectRow {
     profile_id: (r.profile_id as string) ?? null,
     profile_url: String(r.profile_url),
     full_name: (r.full_name as string) ?? null,
-    first_name: (r.first_name as string) ?? null,
+    // Empty becomes null, because every caller falls back with `??` and `??`
+    // does not fire on "". A blank column would therefore address somebody as
+    // "Glad we connected, " with nothing after the comma, which is the same
+    // family of mistake as the DM that greeted Sasho as Marija. Every row in
+    // the table is NULL today; this is what keeps it safe the day one is not.
+    first_name: ((r.first_name as string) ?? "").trim() || null,
     headline: (r.headline as string) ?? null,
     company: (r.company as string) ?? null,
     avatar_url: (r.avatar_url as string) ?? null,
