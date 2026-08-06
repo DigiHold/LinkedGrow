@@ -1,5 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
-import { p, lead, small, button, textLink, figures, signature } from "./parts";
+import { p, lead, small, button, textLink, figures } from "./parts";
 
 /**
  * The six emails about money, and the one thing they have in common.
@@ -36,7 +36,6 @@ ${p("If it was the card: the trial runs 7 days and you can cancel any time befor
 ${p("If it was something else, reply to this email and tell me what it was. I read every one of them.")}
 ${params.deletedOn ? p(`An account with no card on it is closed after 14 days, so this one goes on ${params.deletedOn} unless you finish.`) : ""}
 ${button(`${APP}/dashboard`, "Finish setting up my agent")}
-${signature()}
 `,
   });
 }
@@ -50,10 +49,7 @@ If it was the card: the trial runs 7 days and you can cancel any time before it 
 
 If it was something else, reply and tell me what it was.
 ${params.deletedOn ? `\nAn account with no card on it is closed after 14 days, so this one goes on ${params.deletedOn} unless you finish.\n` : ""}
-${APP}/dashboard
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard`;
 
 // ----------------------------------------------------------------- trial ending
 
@@ -84,7 +80,6 @@ ${figures([
 ${button(`${APP}/dashboard/agents`, "See what it found")}
 ${p("If you want to stop, one click cancels and nothing is charged. There is no email to write and no call to book.")}
 ${textLink(`${APP}/dashboard/settings/billing`, "Cancel my trial")}
-${signature()}
 `,
   });
 }
@@ -103,10 +98,7 @@ Your trial ends on ${params.endsOn} and your card is charged ${params.price} unl
 In 7 days your agent found ${params.found} people and ${params.replied} of them replied.
 
 See what it found: ${APP}/dashboard/agents
-Cancel: ${APP}/dashboard/settings/billing
-
-Nicolas
-Founder, LinkedGrow`;
+Cancel: ${APP}/dashboard/settings/billing`;
 
 // ---------------------------------------------------------------- payment failed
 
@@ -125,7 +117,6 @@ ${lead("Your bank declined this month's payment.")}
 ${p(`Your agent keeps running for ${graceDays} more days while you sort it out.`)}
 ${button(`${APP}/dashboard/settings/billing`, "Update my card")}
 ${p("After that it pauses, and your leads, your conversations and your history stay exactly where they are. It starts again the moment the payment goes through.")}
-${signature()}
 `,
   });
 }
@@ -137,10 +128,7 @@ Your bank declined this month's payment. Your agent keeps running for ${params.g
 
 ${APP}/dashboard/settings/billing
 
-After that it pauses, and nothing is deleted.
-
-Nicolas
-Founder, LinkedGrow`;
+After that it pauses, and nothing is deleted.`;
 
 // ------------------------------------------------------------------- churn, day 0
 
@@ -155,7 +143,6 @@ ${lead("Your agent sends its last invitation tonight and stops at midnight.")}
 ${p("Until then it is still reading the sources you picked and still finding people who match. Everything it has found stays in your account and does not disappear.")}
 ${p("What stops is the finding, and the people posting about your problem tomorrow are the ones you will not see.")}
 ${button(`${APP}/dashboard/settings/billing`, "Keep my agent running")}
-${signature()}
 `,
   });
 }
@@ -167,10 +154,7 @@ Your agent sends its last invitation tonight and stops at midnight. Everything i
 
 What stops is the finding, and the people posting about your problem tomorrow are the ones you will not see.
 
-${APP}/dashboard/settings/billing
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard/settings/billing`;
 
 // ------------------------------------------------------------------- churn, day 3
 
@@ -190,7 +174,6 @@ ${lead(`While it was running, your agent read ${read} profiles and kept ${kept} 
 ${p("They came from people commenting on your competitors, people asking about the problem you solve, and people who had just changed job. None of them would have reached you on their own, and finding them by hand is an afternoon a week.")}
 ${p("They are still in your account, and turning the agent back on carries on from there rather than starting over.")}
 ${button(`${APP}/dashboard/settings/billing`, "Turn it back on")}
-${signature()}
 `,
   });
 }
@@ -206,10 +189,7 @@ While it was running, your agent read ${params.read} profiles and kept ${params.
 
 Turning it back on carries on from there rather than starting over.
 
-${APP}/dashboard/settings/billing
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard/settings/billing`;
 
 // ------------------------------------------------------------------- churn, day 7
 
@@ -225,7 +205,6 @@ ${p("You cancelled last week and I would like to know why.")}
 ${p("Was it that the leads were not good enough, that the setup was confusing, or that the timing was wrong?")}
 ${p("Two words in a reply is enough, and it helps more than you would think.")}
 ${p("If it was the leads, I will look at your account myself and tell you what I would have changed. That offer stands whether or not you come back.")}
-${signature()}
 `,
   });
 }
@@ -239,7 +218,4 @@ Was it that the leads were not good enough, that the setup was confusing, or tha
 
 Two words in a reply is enough.
 
-If it was the leads, I will look at your account myself and tell you what I would have changed, whether or not you come back.
-
-Nicolas
-Founder, LinkedGrow`;
+If it was the leads, I will look at your account myself and tell you what I would have changed, whether or not you come back.`;

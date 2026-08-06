@@ -77,7 +77,3 @@ export function figures(rows: Array<{ label: string; value: string }>): string {
 </table>`;
 }
 
-/** Nicolas signs the ones a founder should sign. The rest are unsigned. */
-export function signature(name = "Nicolas", role = "Founder, LinkedGrow"): string {
-  return `<p style="font-family: ${FONT}; font-size: 15px; line-height: 1.6; color: #334155; margin: 24px 0 0;">${name}<br><span style="color: #64748b; font-size: 13px;">${role}</span></p>`;
-}

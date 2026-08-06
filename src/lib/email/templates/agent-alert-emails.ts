@@ -1,5 +1,5 @@
 import { baseEmailTemplate } from "./base-template";
-import { p, lead, small, button, quote, personRow, figures, signature } from "./parts";
+import { p, lead, small, button, quote, personRow, figures } from "./parts";
 
 /**
  * What the agent tells its owner.
@@ -53,7 +53,6 @@ ${
       )
     : ""
 }
-${signature()}
 `,
   });
 }
@@ -70,10 +69,7 @@ Your agent found ${params.count} people this week and scored every one against t
 
 ${params.best.map((b) => `${b.name} (${b.score ?? "unscored"}) - ${b.title}. ${b.why}`).join("\n")}
 
-See all of them: ${APP}/dashboard/agents/${params.agentId}
-
-Nicolas
-Founder, LinkedGrow`;
+See all of them: ${APP}/dashboard/agents/${params.agentId}`;
 
 // ---------------------------------------------------------- verification needed
 
@@ -94,7 +90,6 @@ ${p("Nothing was lost while it waited and nobody was contacted. Your leads and y
 ${p("Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds and carries on.")}
 ${button(`${APP}/dashboard/agents/${agentId}`, "Open my agent")}
 ${small("This happens to accounts that have been quiet for a while and then start reaching out. It is a check rather than a penalty, and it clears the moment you answer it.")}
-${signature()}
 `,
   });
 }
@@ -110,10 +105,7 @@ LinkedIn asked ${params.accountName} to verify itself, so your agent has stopped
 
 Open LinkedIn, answer what it asks, then press Start on your agent. It signs itself back in within seconds.
 
-${APP}/dashboard/agents/${params.agentId}
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard/agents/${params.agentId}`;
 
 // ------------------------------------------------------------------ agent stopped
 
@@ -140,7 +132,6 @@ ${
     : p("It will not start again on its own. Opening it and pressing Start re-checks the account.")
 }
 ${button(`${APP}/dashboard/agents/${agentId}`, "Check my agent")}
-${signature()}
 `,
   });
 }
@@ -154,10 +145,7 @@ export const agentStoppedEmailText = (params: {
 
 Your agent stopped and has not sent anything since. What it reported: ${params.reason}
 
-${APP}/dashboard/agents/${params.agentId}
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard/agents/${params.agentId}`;
 
 // ------------------------------------------------------------------ someone replied
 
@@ -182,7 +170,6 @@ ${
     : p("Your agent has stopped writing to this person for good. The conversation is yours from here.")
 }
 ${button(`${APP}/dashboard/replies`, "Read the whole thread")}
-${signature()}
 `,
   });
 }
@@ -194,10 +181,7 @@ ${params.from} answered:
 
 "${params.body}"
 
-Read the whole thread: ${APP}/dashboard/replies
-
-Nicolas
-Founder, LinkedGrow`;
+Read the whole thread: ${APP}/dashboard/replies`;
 
 // -------------------------------------------------------------------- first day
 
@@ -224,7 +208,6 @@ ${figures([
 ${p(`It sends ${perDay} invitations a day this week and climbs from there. That is deliberate: an account that suddenly sends at full speed is the one LinkedIn restricts.`)}
 ${button(`${APP}/dashboard/agents/${agentId}`, "Watch it work")}
 ${small("From here you get one email a week with what it found, and an immediate one whenever somebody replies or something needs you.")}
-${signature()}
 `,
   });
 }
@@ -239,7 +222,4 @@ export const firstDayEmailText = (params: {
 
 Your agent signed in and went to work. It found ${params.found} people on its first pass and sends ${params.perDay} invitations a day this week.
 
-${APP}/dashboard/agents/${params.agentId}
-
-Nicolas
-Founder, LinkedGrow`;
+${APP}/dashboard/agents/${params.agentId}`;
