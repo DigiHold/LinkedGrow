@@ -1460,6 +1460,9 @@ export const agentEvents = sqliteTable("agent_events", {
   type: text("type").notNull(),
   message: text("message").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  // Set once the alert cron has emailed about this event. Null on every event
+  // it does not email about, which is most of them.
+  notifiedAt: integer("notified_at", { mode: "timestamp" }),
 });
 
 // Every model call the worker makes, written before the response is used.

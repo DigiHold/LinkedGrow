@@ -35,6 +35,22 @@ export {
   networkNotificationNotifyEmailText,
 } from "./templates/network-notification-notify-email";
 
+export * from "./templates/agent-alert-emails";
+export * from "./templates/lifecycle-emails";
+export {
+  sendLeadsDigestEmail,
+  sendVerificationNeededEmail,
+  sendAgentStoppedEmail,
+  sendReplyEmail,
+  sendFirstDayEmail,
+  sendAbandonedCheckoutEmail,
+  sendTrialEndingEmail,
+  sendPaymentFailedEmail,
+  sendChurnImmediateEmail,
+  sendChurnValueEmail,
+  sendChurnAskEmail,
+} from "./notify";
+
 // Re-export send functions for convenience
 import { sendEmail } from "./ses-client";
 import {
