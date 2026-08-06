@@ -1,0 +1,227 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { PageShell, PageHeader, Panel, Pill, EmptyState } from "@/components/dashboard/ui/page";
+import { ReplyIcon } from "@/components/dashboard/nav-icons";
+import { Avatar, LinkedInGlyph, MatchBar } from "@/components/dashboard/agents/lead-bits";
+
+/**
+ * The people who answered.
+ *
+ * A reply ends the sequence for that person for good, so this page is where
+ * the product hands the conversation back. It shows the whole thread rather
+ * than the last line: answering somebody without reading what was already
+ * said in your name is how you contradict your own agent.
+ *
+ * There is no reply box. Sending from here would mean driving the customer's
+ * LinkedIn to write a message they did not have the thread in front of them
+ * for, and the thread is on LinkedIn anyway. The button opens it there.
+ */
+
+type Message = { from: "in" | "out"; body: string; at: string };
+
+type Thread = {
+  leadId: string;
+  agentName: string;
+  unread: boolean;
+  repliedAt: string;
+  lastReply: string;
+  fullName: string;
+  title: string | null;
+  avatarUrl: string | null;
+  profileUrl: string;
+  matchScore: number | null;
+  signalText: string | null;
+  messages: Message[];
+};
+
+function ago(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(ms / 86_400_000);
+  if (days >= 2) return `${days} days ago`;
+  if (days === 1) return "yesterday";
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours >= 1) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const mins = Math.max(1, Math.floor(ms / 60_000));
+  return `${mins} minutes ago`;
+}
+
+export function RepliesContent() {
+  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    fetch("/api/replies")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => setThreads(json?.threads ?? []))
+      .catch(() => setThreads([]));
+  }, []);
+
+  useEffect(load, [load]);
+
+  // A reply that lands while somebody is on this page should appear on it.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      load();
+    }, 20_000);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  /** Opening a conversation is reading it. */
+  async function openThread(leadId: string) {
+    const next = open === leadId ? null : leadId;
+    setOpen(next);
+    if (next === null) return;
+    setThreads((all) =>
+      (all ?? []).map((t) => (t.leadId === leadId ? { ...t, unread: false } : t))
+    );
+    await fetch("/api/replies", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId }),
+    }).catch(() => {});
+  }
+
+  const unread = (threads ?? []).filter((t) => t.unread).length;
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="Replies"
+        description="Everyone who answered. The agent goes permanently silent for anybody who replies, so the conversation is yours from here."
+        meta={unread > 0 ? <Pill tone="good">{unread} unread</Pill> : undefined}
+      />
+
+      <div className="mt-8">
+        {threads === null && (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-24 animate-pulse rounded-2xl border border-border bg-card"
+              />
+            ))}
+          </div>
+        )}
+
+        {threads !== null && threads.length === 0 && (
+          <Panel padded={false}>
+            <EmptyState
+              icon={<ReplyIcon className="h-6 w-6" />}
+              title="No replies yet"
+              description="Once an agent is running, every answer lands here within a minute, alongside the messages it had already sent."
+              action={
+                <Link
+                  href="/dashboard/agents"
+                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
+                >
+                  Go to your agents
+                </Link>
+              }
+            />
+          </Panel>
+        )}
+
+        <ul className="space-y-3">
+          {(threads ?? []).map((thread) => (
+            <li
+              key={thread.leadId}
+              className={cn(
+                "overflow-hidden rounded-2xl border bg-card transition-colors",
+                thread.unread ? "border-blue-500/40" : "border-border"
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => openThread(thread.leadId)}
+                className="flex w-full items-start gap-3 p-4 text-left hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+              >
+                <Avatar src={thread.avatarUrl} name={thread.fullName} size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
+                      {thread.fullName}
+                      <LinkedInGlyph />
+                    </span>
+                    {thread.unread && <Pill tone="good">New</Pill>}
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                      {ago(thread.repliedAt)}
+                    </span>
+                  </span>
+                  {thread.title && (
+                    <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">
+                      {thread.title}
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "mt-1.5 block text-[13px] leading-relaxed text-slate-700 dark:text-slate-200",
+                      open === thread.leadId ? "" : "line-clamp-2"
+                    )}
+                  >
+                    {thread.lastReply}
+                  </span>
+                </span>
+                <span className="hidden shrink-0 sm:block">
+                  <MatchBar score={thread.matchScore} reason={null} />
+                </span>
+              </button>
+
+              {open === thread.leadId && (
+                <div className="border-t border-border bg-slate-50 px-4 py-4 dark:bg-white/[0.02]">
+                  {thread.signalText && (
+                    <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                      Found by {thread.agentName}. {thread.signalText}
+                    </p>
+                  )}
+                  <ol className="space-y-2.5">
+                    {thread.messages.map((message, i) => (
+                      <li
+                        key={`${thread.leadId}-${i}`}
+                        className={cn(
+                          "max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                          message.from === "in"
+                            ? "bg-white text-slate-700 dark:bg-white/10 dark:text-slate-200"
+                            : "ml-auto bg-blue-600 text-white"
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap">{message.body}</p>
+                        <p
+                          className={cn(
+                            "mt-1.5 text-[11px]",
+                            message.from === "in"
+                              ? "text-slate-400 dark:text-slate-500"
+                              : "text-white/70"
+                          )}
+                        >
+                          {message.from === "in" ? thread.fullName : "Your agent"} ·{" "}
+                          {ago(message.at)}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="mt-4 flex flex-wrap gap-2.5">
+                    <a
+                      href={thread.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-linear-to-r from-cyan-500 to-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white"
+                    >
+                      Answer on LinkedIn
+                    </a>
+                    <span className="self-center text-xs text-slate-400 dark:text-slate-500">
+                      Nothing else is sent to this person.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </PageShell>
+  );
+}
