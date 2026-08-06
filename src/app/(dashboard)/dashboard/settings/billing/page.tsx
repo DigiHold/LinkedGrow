@@ -292,6 +292,15 @@ function BillingContent() {
                     Active
                   </Badge>
                 )}
+                {/* A trial showed no badge at all, so the only thing on screen
+                    was "Next billing", which reads like a charge already
+                    happened. Say plainly that nothing has been taken yet. */}
+                {billing?.subscription?.status === "trialing" &&
+                  !billing?.subscription?.cancelAtPeriodEnd && (
+                  <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100">
+                    Free trial
+                  </Badge>
+                )}
                 {billing?.subscription?.cancelAtPeriodEnd && (
                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
                     Canceling
@@ -311,6 +320,10 @@ function BillingContent() {
                         billing.subscription.cancelAt ??
                           billing.subscription.currentPeriodEnd
                       )}
+                    </p>
+                  ) : billing.subscription.status === "trialing" ? (
+                    <p>
+                      First charge: {formatDate(billing.subscription.currentPeriodEnd)}
                     </p>
                   ) : (
                     <p>
