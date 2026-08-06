@@ -42,6 +42,98 @@ const sha256 = (value: string | Buffer): string =>
 const hmac = (key: Buffer, value: string): Buffer =>
   createHmac("sha256", key).update(value).digest();
 
+/**
+ * Signs one request the way R2 wants it, so PUT and DELETE do not each carry
+ * their own sixty lines of SigV4.
+ */
+function signedHeadersFor(
+  cfg: Bucket,
+  method: "PUT" | "DELETE",
+  path: string,
+  payloadHash: string,
+  contentType?: string
+): Record<string, string> {
+  const host = `${cfg.accountId}.r2.cloudflarestorage.com`;
+  const now = new Date();
+  const amzDate = `${now.toISOString().replace(/[:-]|\.\d{3}/g, "")}`;
+  const dateStamp = amzDate.slice(0, 8);
+
+  const canonicalHeaders =
+    (contentType ? `content-type:${contentType}\n` : "") +
+    `host:${host}\n` +
+    `x-amz-content-sha256:${payloadHash}\n` +
+    `x-amz-date:${amzDate}\n`;
+  const signedHeaders = contentType
+    ? "content-type;host;x-amz-content-sha256;x-amz-date"
+    : "host;x-amz-content-sha256;x-amz-date";
+  const canonicalRequest = [
+    method,
+    path,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
+
+  // R2 ignores the region but the signature does not, and "auto" is what it
+  // expects to see.
+  const scope = `${dateStamp}/auto/s3/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    scope,
+    sha256(canonicalRequest),
+  ].join("\n");
+
+  let signingKey = hmac(Buffer.from(`AWS4${cfg.secretAccessKey}`, "utf8"), dateStamp);
+  signingKey = hmac(signingKey, "auto");
+  signingKey = hmac(signingKey, "s3");
+  signingKey = hmac(signingKey, "aws4_request");
+  const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+
+  return {
+    ...(contentType ? { "Content-Type": contentType } : {}),
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate,
+    Authorization:
+      `AWS4-HMAC-SHA256 Credential=${cfg.accessKeyId}/${scope}, ` +
+      `SignedHeaders=${signedHeaders}, Signature=${signature}`,
+  };
+}
+
+/**
+ * Removes one object from the bucket.
+ *
+ * This exists for the videos. A customer's video is up to 200MB, LinkedIn keeps
+ * its own copy the moment the composer accepts it, and ours is dead weight from
+ * that second on: a handful of customers posting weekly fills the bucket with
+ * gigabytes nobody will ever read again. Images and documents are small enough
+ * to keep so the dashboard can still show the post as it went out.
+ *
+ * Returns true only when the object is gone. R2 answers 204 for a delete and
+ * also for a key that was never there, which is the right answer for both.
+ */
+export async function deleteObject(key: string): Promise<boolean> {
+  const cfg = bucketConfig();
+  if (!cfg) return false;
+
+  const host = `${cfg.accountId}.r2.cloudflarestorage.com`;
+  const path = `/${cfg.bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
+  const payloadHash = sha256("");
+
+  const response = await fetch(`https://${host}${path}`, {
+    method: "DELETE",
+    headers: signedHeadersFor(cfg, "DELETE", path, payloadHash),
+    signal: AbortSignal.timeout(30_000),
+  }).catch(() => null);
+
+  if (!response || !response.ok) {
+    log("could not remove a file", { key, status: response?.status ?? "no response" });
+    return false;
+  }
+  return true;
+}
+
 /** Uploads one object and returns the URL it can be read back from, or null. */
 export async function putObject(
   key: string,

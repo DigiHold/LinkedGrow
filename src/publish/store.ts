@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { db } from "../db.ts";
+import { log } from "../logger.ts";
+import { deleteObject } from "../storage/r2.ts";
 import { timezoneForCountry } from "../browser/fingerprint.ts";
 
 /**
@@ -491,6 +493,48 @@ export async function markPublished(
            WHERE id = ?`,
     args: [now, url, note, now, postId],
   });
+}
+
+/**
+ * Deletes the customer's video from our bucket, once LinkedIn has it.
+ *
+ * A video is up to 200MB and it never enters the media table, so the daily
+ * orphan sweep on the app side has never been able to see one: every video
+ * anybody has ever posted is still sitting in R2. LinkedIn keeps its own copy
+ * from the moment the composer accepts the upload, so ours stops being needed
+ * the second the post is confirmed live.
+ *
+ * The metadata entry goes with it. Leaving the URL behind would give the
+ * dashboard a link to an object that no longer exists, and would make the next
+ * pass try to download it again if the post were ever requeued.
+ */
+export async function releaseVideo(post: DuePost): Promise<boolean> {
+  if (!post.metadata) return false;
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(post.metadata) as Record<string, unknown>;
+  } catch {
+    return false;
+  }
+
+  const video = parsed.video as { storageKey?: unknown; url?: unknown } | undefined;
+  const key = typeof video?.storageKey === "string" ? video.storageKey : null;
+  if (!key) return false;
+
+  const removed = await deleteObject(key);
+  if (!removed) return false;
+
+  // Keep everything else the post carried, and record that the file is gone
+  // rather than silently dropping the fact there ever was one.
+  const { video: _dropped, ...rest } = parsed;
+  const next = { ...rest, videoReleasedAt: nowSeconds() };
+  await db().execute({
+    sql: `UPDATE posts SET metadata = ?, updated_at = ? WHERE id = ?`,
+    args: [JSON.stringify(next), nowSeconds(), post.id],
+  });
+  log("video removed from storage", { postId: post.id, key });
+  return true;
 }
 
 export async function markFirstCommentPosted(postId: string): Promise<void> {

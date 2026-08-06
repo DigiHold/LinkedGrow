@@ -28,6 +28,7 @@ import {
   markFailed,
   markFirstCommentPosted,
   markHandedToScheduler,
+  releaseVideo,
   markPublished,
   mediaForPost,
   releaseScheduled,
@@ -145,11 +146,23 @@ async function writeOne(
         postId: post.id,
         slot: new Date(post.scheduledAt * 1000).toISOString(),
       });
+      // LinkedIn took the upload when it accepted the schedule, so it holds the
+      // video from here and there is no path back through this function that
+      // would need ours again.
+      await releaseVideo(post).catch((error: unknown) =>
+        logError("could not remove the video from storage", error, { postId: post.id })
+      );
       return;
     }
 
     await markPublished(post.id, result.url, result.verified ? null : UNVERIFIED_NOTE);
     log("post published", { postId: post.id, verified: result.verified, url: result.url });
+    // LinkedIn holds its own copy now, so ours is 200MB of dead weight. Done
+    // after the post is marked published, never before: a delete that raced a
+    // failed publish would leave a retry with nothing to upload.
+    await releaseVideo(post).catch((error: unknown) =>
+      logError("could not remove the video from storage", error, { postId: post.id })
+    );
     await afterPublishing(session, post, result.url);
   } finally {
     cleanup?.();
@@ -232,6 +245,11 @@ async function confirmOne(session: Session, account: PublishAccount, post: DuePo
 
   await markPublished(post.id, url, null);
   log("scheduled post confirmed on LinkedIn", { postId: post.id, url });
+  // Second chance at it: the delete at hand-off is the one that normally runs,
+  // and this catches the pass where the bucket was briefly unreachable.
+  await releaseVideo(post).catch((error: unknown) =>
+    logError("could not remove the video from storage", error, { postId: post.id })
+  );
   await afterPublishing(session, post, url);
 }
 
