@@ -335,10 +335,22 @@ export async function sourcePass(
       switch (source.type) {
         case "competitor": {
           const url = typeof config.url === "string" ? config.url : null;
+          /**
+           * dryRun, so claimAll below does the insert.
+           *
+           * Left to insert itself, this path went through insertProspects,
+           * which writes a name and a profile and nothing else: no source, no
+           * job title, no company, no picture and no signal sentence. Every
+           * lead from a competitor therefore arrived faceless with an empty
+           * Signal column while every lead from a keyword had both, and the
+           * fixes made to claimAll never reached them. The keyword sources
+           * were converted months ago and this one was missed.
+           */
           found = await mine(ctx, page, ctx.cfg, {
             ...(url ? { targets: [url] } : { competitorNames: [source.label] }),
             maxPerPost: budget.perPost,
             maxPostsPerTarget: budget.posts,
+            dryRun: true,
           });
           break;
         }
