@@ -21,7 +21,11 @@ const APP = "https://linkedgrow.ai";
 
 export const abandonedCheckoutSubject = "You stopped at the card";
 
-export function abandonedCheckoutEmailTemplate(params: { firstName: string }): string {
+export function abandonedCheckoutEmailTemplate(params: {
+  firstName: string;
+  /** Set when the account is close to being deleted. 8f: say the date plainly. */
+  deletedOn?: string;
+}): string {
   return baseEmailTemplate({
     preheader: "Two minutes from an agent that works while you do not.",
     content: `
@@ -30,13 +34,14 @@ ${lead("You got as far as the payment page and stopped.")}
 ${p("That is usually one of two things.")}
 ${p("If it was the card: the trial runs 7 days and you can cancel any time before it ends. The card is there so your agent keeps working the day the trial finishes, and for nothing else.")}
 ${p("If it was something else, reply to this email and tell me what it was. I read every one of them.")}
+${params.deletedOn ? p(`An account with no card on it is closed after 14 days, so this one goes on ${params.deletedOn} unless you finish.`) : ""}
 ${button(`${APP}/dashboard`, "Finish setting up my agent")}
 ${signature()}
 `,
   });
 }
 
-export const abandonedCheckoutEmailText = (params: { firstName: string }) =>
+export const abandonedCheckoutEmailText = (params: { firstName: string; deletedOn?: string }) =>
   `Hello ${params.firstName},
 
 You got as far as the payment page and stopped.
@@ -44,7 +49,7 @@ You got as far as the payment page and stopped.
 If it was the card: the trial runs 7 days and you can cancel any time before it ends. The card is there so your agent keeps working the day the trial finishes.
 
 If it was something else, reply and tell me what it was.
-
+${params.deletedOn ? `\nAn account with no card on it is closed after 14 days, so this one goes on ${params.deletedOn} unless you finish.\n` : ""}
 ${APP}/dashboard
 
 Nicolas

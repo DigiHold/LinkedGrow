@@ -94,6 +94,34 @@ export const PLANS: Record<PlanId, PlanInfo> = {
   },
 };
 
+/**
+ * How long the trial runs.
+ *
+ * Stripe owns the clock: the length is passed to Checkout as
+ * `trial_period_days` and the dates on the user row are a mirror the webhook
+ * writes. Nothing else may set them, because two clocks disagree the first time
+ * somebody upgrades mid-trial.
+ */
+export const TRIAL_DAYS = 7;
+
+/**
+ * How long a failed payment has before the agents stop.
+ *
+ * Pausing rather than deleting: it stops the LinkedIn activity and therefore
+ * our per-agent cost, while the leads, the sequences and the history stay where
+ * they are so a recovered card resumes instantly.
+ */
+export const DUNNING_GRACE_DAYS = 2;
+
+/**
+ * How long an account may sit with no card before it is deleted.
+ *
+ * Signup creates a row that can reach nothing. Keeping those for ever fills the
+ * table with people who never finished, so they go after 2 weeks with a warning
+ * email first.
+ */
+export const UNCARDED_DELETE_DAYS = 14;
+
 /** Price per extra agent, on either plan. */
 export const EXTRA_AGENT_PRICE = 49;
 export const EXTRA_AGENT_YEARLY_PRICE = 490;

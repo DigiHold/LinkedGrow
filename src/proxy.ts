@@ -133,9 +133,12 @@ const authProxy = auth(async (req) => {
   // v2 the AI is billed to us rather than to the user's own key.
   if ((isProtectedRoute || isApiRoute) && isLoggedIn) {
     const user = req.auth?.user;
+    // hasUsedTrial is deliberately not part of this. From v2 the trial is
+    // granted by Stripe against a card, so an account that has never trialled
+    // is an account that never finished signing up, and it gets the same wall
+    // as one that cancelled.
     const isPaywalled =
       user?.plan === "free" &&
-      user?.hasUsedTrial === true &&
       !user?.stripeSubscriptionId &&
       // Lifetime holders bought the content half before agents existed and
       // keep it permanently. See section 9a of the v2 plan.

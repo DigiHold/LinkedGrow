@@ -20,9 +20,11 @@ import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users, affiliates } from "@/lib/db/schema";
-import { eq, and, lte, isNull, isNotNull, notExists } from "drizzle-orm";
+import { eq, and, lte, gt, isNull, isNotNull, notExists } from "drizzle-orm";
 import { addToInactiveWarningList, brevoDate } from "@/lib/newsletter";
 import { deleteUserData } from "@/lib/user-deletion";
+import { UNCARDED_DELETE_DAYS } from "@/lib/plans";
+import { sendAbandonedCheckoutEmail } from "@/lib/email";
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
@@ -41,7 +43,15 @@ async function runInactiveAccounts(): Promise<{
   delete_skipped: number;
   errors: number;
 }> {
-  const stats = { warned: 0, deleted: 0, delete_skipped: 0, errors: 0 };
+  const stats = {
+    warned: 0,
+    deleted: 0,
+    delete_skipped: 0,
+    uncarded_warned: 0,
+    uncarded_deleted: 0,
+    uncarded_skipped: 0,
+    errors: 0,
+  };
 
   const fiftyFiveDaysAgo = daysAgo(55);
   const sixtyDaysAgo = daysAgo(60);
@@ -158,6 +168,85 @@ async function runInactiveAccounts(): Promise<{
 
       await deleteUserData(candidate.id);
       stats.deleted++;
+    } catch {
+      stats.errors++;
+    }
+  }
+
+
+  // ---------- Phase C: the account that never got a card ----------
+  // v2 grants no plan at signup. The row exists, it can sign in, and it can
+  // reach nothing but the plan picker until Stripe says otherwise. Keeping
+  // those for ever fills the table with people who never finished, so they are
+  // warned 3 days out and closed on day 14.
+  //
+  // "Never had a subscription" is the whole test: hasUsedTrial is set by the
+  // webhook the moment a Stripe trial starts, so an account with it false and
+  // no subscription id has never been billable.
+  const warnOn = daysAgo(UNCARDED_DELETE_DAYS - 3);
+  const closeOn = daysAgo(UNCARDED_DELETE_DAYS);
+
+  const uncardedBase = () =>
+    and(
+      eq(users.plan, "free"),
+      eq(users.hasUsedTrial, false),
+      isNull(users.stripeSubscriptionId),
+      eq(users.isLifetimeDeal, false),
+      eq(users.isAdmin, false)
+    );
+
+  const toWarn = await db
+    .select({ id: users.id, email: users.email, name: users.name, createdAt: users.createdAt })
+    .from(users)
+    .where(and(uncardedBase(), lte(users.createdAt, warnOn), gt(users.createdAt, closeOn)));
+
+  for (const account of toWarn) {
+    if (!account.email || !account.createdAt) continue;
+    const goesOn = new Date(account.createdAt.getTime() + UNCARDED_DELETE_DAYS * 86400000);
+    try {
+      await sendAbandonedCheckoutEmail({
+        to: account.email,
+        name: account.name,
+        deletedOn: goesOn.toLocaleDateString("en-US", { day: "numeric", month: "long" }),
+      });
+      stats.uncarded_warned++;
+    } catch {
+      stats.errors++;
+    }
+  }
+
+  const toClose = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(uncardedBase(), lte(users.createdAt, closeOn)));
+
+  for (const account of toClose) {
+    try {
+      // Same race-safety as phase B: refetch and re-verify every filter, because
+      // a checkout that completed one second ago must survive this loop.
+      const fresh = await db.query.users.findFirst({ where: eq(users.id, account.id) });
+      if (
+        !fresh ||
+        fresh.plan !== "free" ||
+        fresh.hasUsedTrial ||
+        fresh.stripeSubscriptionId ||
+        fresh.isLifetimeDeal ||
+        fresh.isAdmin ||
+        !fresh.createdAt ||
+        fresh.createdAt > closeOn
+      ) {
+        stats.uncarded_skipped++;
+        continue;
+      }
+      const affiliateRecord = await db.query.affiliates.findFirst({
+        where: eq(affiliates.userId, account.id),
+      });
+      if (affiliateRecord) {
+        stats.uncarded_skipped++;
+        continue;
+      }
+      await deleteUserData(account.id);
+      stats.uncarded_deleted++;
     } catch {
       stats.errors++;
     }

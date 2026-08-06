@@ -1,14 +1,18 @@
 /**
- * Daily cron - flip expired 7-day Pro trials to the post-trial paywall state.
+ * Daily cron - close out trials that Stripe never took over.
+ *
+ * In v2 a trial only exists against a card, and Stripe charges it on day 7 by
+ * itself. This pass no longer creates the paywall state for anybody: it exists
+ * for the accounts left behind by v1, which were given `plan='pro'` and an end
+ * date with nothing behind them. It flips those and nothing else.
  *
  * Targets users who:
  *   - plan = 'pro'
  *   - trialEndedAt is in the past
- *   - no Stripe subscription
+ *   - no Stripe subscription, so Stripe is not the one deciding
  *   - not a Lifetime Deal customer
  *
- * Action: set plan='free', hasUsedTrial=true. Middleware then redirects them
- * from dashboard pages to /dashboard/upgrade.
+ * Once the last v1 trial has expired this route does nothing and can go.
  */
 
 import { NextRequest, NextResponse } from "next/server";

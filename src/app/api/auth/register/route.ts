@@ -113,16 +113,15 @@ export async function POST(request: NextRequest) {
     // they can upgrade to a paid plan at any time during the trial from
     // /dashboard/upgrade or the post-checkout flow.
     const userId = randomUUID();
-    const trialStart = new Date();
-    const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     await db.insert(users).values({
       id: userId,
       name: name,
       email: email,
       password: hashedPassword,
-      plan: "pro",
-      trialStartedAt: trialStart,
-      trialEndedAt: trialEnd,
+      // No plan until Stripe says so. The trial is granted by Checkout and its
+      // dates are written back by the webhook, so an account created here can
+      // sign in and reach nothing except the plan picker.
+      plan: "free",
       hasUsedTrial: false,
       twoFactorEnabled: false,
       referredBy: validAffiliate?.referralCode || null,
@@ -159,10 +158,9 @@ export async function POST(request: NextRequest) {
       name: name || undefined,
       source: "email_signup",
       attributes: {
-        PLAN: "pro",
+        PLAN: "free",
         IS_PAID: false,
         SIGNUP_DATE: brevoDate(new Date()),
-        TRIAL_ENDS_DATE: brevoDate(trialEnd),
         LINKEDIN_CONNECTED: false,
         AI_KEY_ADDED: false,
         POSTS_CREATED: 0,

@@ -140,13 +140,15 @@ export async function sendFirstDayEmail(params: {
 export async function sendAbandonedCheckoutEmail(params: {
   to: string;
   name: string | null;
+  deletedOn?: string;
 }) {
   const firstName = firstNameOf(params.name);
+  const rest = params.deletedOn ? { deletedOn: params.deletedOn } : {};
   return sendEmail({
     to: params.to,
     subject: abandonedCheckoutSubject,
-    html: abandonedCheckoutEmailTemplate({ firstName }),
-    text: abandonedCheckoutEmailText({ firstName }),
+    html: abandonedCheckoutEmailTemplate({ firstName, ...rest }),
+    text: abandonedCheckoutEmailText({ firstName, ...rest }),
   });
 }
 
