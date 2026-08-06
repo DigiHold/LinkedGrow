@@ -24,7 +24,14 @@ import { eq, and, lte, gt, isNull, isNotNull, notExists } from "drizzle-orm";
 import { addToInactiveWarningList, brevoDate } from "@/lib/newsletter";
 import { deleteUserData } from "@/lib/user-deletion";
 import { UNCARDED_DELETE_DAYS } from "@/lib/plans";
-import { sendAbandonedCheckoutEmail } from "@/lib/email";
+import {
+  sendAbandonedCheckoutEmail,
+  sendChurnValueEmail,
+  sendChurnAskEmail,
+} from "@/lib/email";
+import { DUNNING_GRACE_DAYS } from "@/lib/plans";
+import { agents, agentLeads } from "@/lib/db/schema";
+import { count, inArray } from "drizzle-orm";
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
@@ -50,6 +57,8 @@ async function runInactiveAccounts(): Promise<{
     uncarded_warned: 0,
     uncarded_deleted: 0,
     uncarded_skipped: 0,
+    churn_sent: 0,
+    agents_paused: 0,
     errors: 0,
   };
 
@@ -247,6 +256,89 @@ async function runInactiveAccounts(): Promise<{
       }
       await deleteUserData(account.id);
       stats.uncarded_deleted++;
+    } catch {
+      stats.errors++;
+    }
+  }
+
+
+  // ---------- Phase D: the winback, days 3 and 7 ----------
+  // Stripe tells us about a cancellation once, so the two later emails are a
+  // clock rather than an event. churnStage is the marker: 0 means only the
+  // day-0 email went, and it climbs so a cron that runs twice sends once.
+  const churnDay3 = daysAgo(3);
+  const churnDay7 = daysAgo(7);
+
+  const churnQueue = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      churnedAt: users.churnedAt,
+      churnStage: users.churnStage,
+    })
+    .from(users)
+    .where(and(isNotNull(users.churnedAt), lte(users.churnedAt, churnDay3), isNull(users.stripeSubscriptionId)));
+
+  for (const person of churnQueue) {
+    if (!person.email || !person.churnedAt) continue;
+    const stage = person.churnStage ?? 0;
+    const due = person.churnedAt <= churnDay7 ? 2 : 1;
+    if (stage >= due) continue;
+
+    try {
+      if (due === 1) {
+        // Their own numbers, because "your agent read 412 profiles and kept 68"
+        // is the only winback line that is not a discount.
+        const [read] = await db
+          .select({ n: count() })
+          .from(agentLeads)
+          .where(eq(agentLeads.workspaceId, person.id));
+        const [kept] = await db
+          .select({ n: count() })
+          .from(agentLeads)
+          .where(
+            and(
+              eq(agentLeads.workspaceId, person.id),
+              inArray(agentLeads.step, ["queued", "invited", "accepted", "messaged", "replied"])
+            )
+          );
+        await sendChurnValueEmail({
+          to: person.email,
+          name: person.name,
+          read: read?.n ?? 0,
+          kept: kept?.n ?? 0,
+        });
+      } else {
+        await sendChurnAskEmail({ to: person.email, name: person.name });
+      }
+      await db
+        .update(users)
+        .set({ churnStage: due, updatedAt: new Date() })
+        .where(eq(users.id, person.id));
+      stats.churn_sent++;
+    } catch {
+      stats.errors++;
+    }
+  }
+
+  // ---------- Phase E: a declined card stops the agents ----------
+  // Pausing rather than deleting. It stops the LinkedIn activity and therefore
+  // our per-agent cost, and the leads, the sequences and the history stay where
+  // they are so a recovered card resumes instantly.
+  const dunningDeadline = daysAgo(DUNNING_GRACE_DAYS);
+  const overdue = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(isNotNull(users.paymentFailedAt), lte(users.paymentFailedAt, dunningDeadline)));
+
+  for (const person of overdue) {
+    try {
+      await db
+        .update(agents)
+        .set({ status: "paused", updatedAt: new Date() })
+        .where(and(eq(agents.workspaceId, person.id), eq(agents.status, "active")));
+      stats.agents_paused++;
     } catch {
       stats.errors++;
     }

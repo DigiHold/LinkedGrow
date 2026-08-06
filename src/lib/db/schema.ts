@@ -8,6 +8,12 @@ export const users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "timestamp" }),
   image: text("image"),
   password: text("password"), // Hashed password for credentials auth
+  /** When the subscription ended, which starts the winback clock. */
+  churnedAt: integer("churned_at", { mode: "timestamp" }),
+  /** How far the winback sequence has gone: 0 none, 1 day 3 sent, 2 day 7 sent. */
+  churnStage: integer("churn_stage").default(0),
+  /** When Stripe first reported a declined payment. Cleared on recovery. */
+  paymentFailedAt: integer("payment_failed_at", { mode: "timestamp" }),
   passwordChangedAt: text("password_changed_at"), // ISO timestamp - invalidates JWTs issued before this time
 
   // 2FA fields
