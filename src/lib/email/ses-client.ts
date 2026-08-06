@@ -12,9 +12,25 @@ interface SendEmailParams {
   replyTo?: string;
 }
 
+/**
+ * Addresses no mail server will ever accept.
+ *
+ * RFC 2606 reserves .test, .example, .invalid and .localhost so they can never
+ * resolve, and Brevo tries anyway: 498 soft bounces on 2026-08-06 from one
+ * afternoon of billing tests, all of them against the sending domain's own
+ * reputation for no possible benefit. Dropping them here costs nothing in
+ * production, where no real customer can have one, and keeps the statistics
+ * honest.
+ */
+const UNDELIVERABLE = /@(?:[^@]+\.)?(?:test|example|invalid|localhost)$/i;
+
 export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams) {
   if (!BREVO_API_KEY) {
     throw new Error("BREVO_API_KEY is not configured");
+  }
+
+  if (UNDELIVERABLE.test(to.trim())) {
+    return { success: true, skipped: true as const, messageId: null };
   }
 
   try {

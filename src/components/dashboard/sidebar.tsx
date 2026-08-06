@@ -99,12 +99,10 @@ const adminLinks = [
   { name: "Site data", href: "/dashboard/admin/site-data" },
   { name: "Abandoned carts", href: "/dashboard/admin/abandoned-carts" },
   { name: "Docs feedback", href: "/dashboard/admin/docs-feedback" },
-  { name: "LTD codes", href: "/dashboard/admin/ltd-codes" },
 ];
 
 const planNames: Record<string, string> = {
-  free: "Free",
-  starter: "Starter",
+  free: "No plan",
   pro: "Pro",
   business: "Business",
 };
