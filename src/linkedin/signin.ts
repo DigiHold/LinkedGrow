@@ -145,6 +145,42 @@ async function submitLogin(page: Page): Promise<void> {
  * Anything inferred from an element being absent is how a selector change turns into a silent
  * false positive.
  */
+/**
+ * LinkedIn's "we know this browser" page, which signs itself in.
+ *
+ * Shown instead of the login form when the profile still carries a remembered
+ * session: the account's name, a masked email, a countdown and a Cancel link.
+ * Read off Maria's account on 2026-08-06:
+ *
+ *   Connexion en cours
+ *   Si vous restez sur cette page, vous serez connecté(e).
+ *   9
+ *   Maria LECOCQ / m*****@gmail.com / Annuler la connexion
+ *
+ * Doing nothing is the correct action, so this waits rather than typing. The
+ * wait is capped: a countdown that never finishes is a page that has stalled,
+ * and falling through to the capture beats hanging on the account.
+ */
+const AUTO_SIGN_IN = /connexion en cours|vous serez connect|signing you in|you.?ll be signed in|you will be signed in/i;
+const AUTO_SIGN_IN_WAIT_MS = 45_000;
+
+async function waitOutAutoSignIn(page: Page, accountId: string): Promise<boolean> {
+  const text = await page.evaluate(() => document.body.innerText ?? "").catch(() => "");
+  if (!AUTO_SIGN_IN.test(text)) return false;
+
+  log("LinkedIn is signing this browser in by itself, waiting it out", { accountId });
+  const until = Date.now() + AUTO_SIGN_IN_WAIT_MS;
+  while (Date.now() < until) {
+    await sleep(2000);
+    if (await looksSignedIn(page)) {
+      log("the countdown finished and the session is up", { accountId });
+      return true;
+    }
+  }
+  log("the countdown never finished", { accountId });
+  return false;
+}
+
 async function looksSignedIn(page: Page): Promise<boolean> {
   if (/\/feed|\/mynetwork|\/messaging/.test(page.url())) return true;
   for (const sel of ["a[href*='/in/']", ".global-nav", "[data-test-global-nav]", "#global-nav"]) {
@@ -334,10 +370,19 @@ export async function signIn(input: SignInInput): Promise<void> {
 
   const emailField = page.locator(SEL.email).first();
   if (!(await emailField.isVisible().catch(() => false))) {
-    // Whatever LinkedIn is showing instead, on disk, because three attempts
-    // failed here on 2026-08-03 and the only thing anybody could read
-    // afterwards was this sentence. A restriction notice, a checkpoint and a
-    // redesigned form all reach this line and need different answers.
+    // LinkedIn already knows this browser and is signing it in by itself.
+    //
+    // The page carries the account's name, a masked email and a countdown:
+    // "Connexion en cours, si vous restez sur cette page vous serez
+    // connecté(e)". There is no email field because none is being asked for.
+    // The old code read the missing field as a broken page and gave up three
+    // times in a row, nine seconds short of a session, and left the account
+    // red for two days telling the customer to check their password.
+    if (await waitOutAutoSignIn(page, accountId)) return markSignedIn(accountId);
+
+    // Anything else it might be showing, on disk. A restriction notice, a
+    // checkpoint and a redesigned form all reach this line and each needs a
+    // different answer.
     const says = await capturePage(page, accountId, "signin-no-form").catch(() => null);
     throw new SignInFailed(
       `The login form did not appear and the session is not signed in.${
@@ -459,6 +504,17 @@ export async function signIn(input: SignInInput): Promise<void> {
     );
   }
 
+  await markSignedIn(accountId);
+}
+
+/**
+ * The account is up: green, no reason, no challenge held over from last time.
+ *
+ * Its own function because two paths reach it now, the one that types the
+ * credentials and the one that waits out LinkedIn's own countdown, and a
+ * second copy of this update is a second place for the two to disagree.
+ */
+async function markSignedIn(accountId: string): Promise<void> {
   await db().execute({
     sql: `UPDATE linkedin_accounts
              SET status = 'active', status_reason = NULL, challenge_state = 'none',
