@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
-import { EXTRA_AGENT_PRICE, EXTRA_AGENT_YEARLY_PRICE } from "@/lib/plans";
+import { EXTRA_AGENT_PRICE } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
 
@@ -915,12 +915,11 @@ export function ExtraAgentDialog({
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState("");
 
-  // A yearly customer is quoted the yearly figure and keeps one invoice a year.
-  // Quoting them $49 a month and then charging $490 is the kind of surprise
-  // that arrives as a chargeback.
-  const yearly = billingInterval === "year";
-  const addonPrice = yearly ? EXTRA_AGENT_YEARLY_PRICE : EXTRA_AGENT_PRICE;
-  const per = yearly ? "a year" : "a month";
+  // Monthly for everybody, including a yearly plan: Stripe bills each item on
+  // its own cycle, so the annual invoice stays annual and this arrives monthly.
+  const addonPrice = EXTRA_AGENT_PRICE;
+  const per = "a month";
+  const alsoYearly = billingInterval === "year";
 
   const buyOne = async () => {
     setBuying(true);
@@ -956,6 +955,9 @@ export function ExtraAgentDialog({
             Every agent sends from one account of its own, so another account
             means another agent. An extra one is ${addonPrice} {per} and brings
             its own targeting and its own address.
+            {alsoYearly
+              ? " Your plan is billed yearly and this is billed monthly, so it arrives on its own invoice."
+              : ""}
           </DialogDescription>
         </DialogHeader>
 

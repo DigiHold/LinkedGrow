@@ -170,8 +170,16 @@ function BillingContent() {
     }
   };
 
-  // Redirect free users to upgrade page
-  if (!isLoading && session?.user?.plan === "free") {
+  /**
+   * No plan, but the invoices stay.
+   *
+   * This used to return early and show nothing but an upgrade button, so
+   * somebody who cancelled could no longer reach a single invoice they had
+   * paid for. They are entitled to those documents and their accountant needs
+   * them, so the plan card is replaced and everything below it still renders.
+   */
+  const noPlan = !isLoading && session?.user?.plan === "free";
+  if (noPlan && !billing?.invoices?.length) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
         <Card className="text-center py-12">
@@ -314,6 +322,12 @@ function BillingContent() {
                   </Badge>
                 )}
               </div>
+              {!billing?.subscription && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  There is no plan on this account, so the agents are stopped.
+                  Every invoice you have already paid is still below.
+                </p>
+              )}
               {billing?.subscription && (
                 <div className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
                   <p>
@@ -359,7 +373,11 @@ function BillingContent() {
             </div>
 
             <Button variant="outline" onClick={() => router.push("/dashboard/upgrade")}>
-              {billing?.plan === "business" ? "View Plans" : "Change Plan"}
+              {!billing?.subscription
+                ? "Pick a plan"
+                : billing?.plan === "business"
+                  ? "View Plans"
+                  : "Change Plan"}
             </Button>
           </div>
         </CardContent>
