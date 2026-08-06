@@ -191,6 +191,23 @@ export function agentQuotaFor(plan: PlanId): number {
   return PLANS[plan].limits.agents;
 }
 
+/** How many agents may run in total: the plan, plus whatever was bought on top. */
+export function effectiveAgentQuota(plan: PlanId, extraAgents = 0): number {
+  // A cancelled account keeps nothing, whatever it once paid for as an add-on:
+  // the add-on item dies with the subscription it hangs off.
+  if (plan === "free") return 0;
+  const extra = Number.isFinite(extraAgents) ? Math.max(0, Math.trunc(extraAgents)) : 0;
+  return agentQuotaFor(plan) + Math.min(extra, MAX_EXTRA_AGENTS);
+}
+
+/**
+ * The ceiling on add-on agents.
+ *
+ * Each one is a real LinkedIn account behind its own residential address, so a
+ * runaway quantity is a bill we pay before the customer does.
+ */
+export const MAX_EXTRA_AGENTS = 10;
+
 export function getUpgradePath(currentPlan: PlanId): PlanId | null {
   const order: PlanId[] = ["free", "pro", "business"];
   const currentIndex = order.indexOf(currentPlan);

@@ -15,7 +15,7 @@
 import { db } from "@/lib/db";
 import { agents } from "@/lib/db/schema";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { agentQuotaFor, type PlanId } from "@/lib/plans";
+import { effectiveAgentQuota, type PlanId } from "@/lib/plans";
 
 export const BILLING_PAUSE = {
   /** The card was declined and the grace window ran out. */
@@ -67,14 +67,15 @@ export async function pauseAgentsForBilling(
  * residential address and a third AI budget. The oldest agents keep running,
  * because the newest is the one most likely to be the extra.
  *
- * When the $49 add-on gets a purchase path, its quantity has to be added to
- * this ceiling.
+ * The $49 add-on raises the ceiling, and the quantity comes from Stripe by way
+ * of users.extra_agents rather than from anything the client sends.
  */
 export async function enforceAgentQuota(
   workspaceId: string,
-  plan: PlanId
+  plan: PlanId,
+  extraAgents = 0
 ): Promise<number> {
-  const quota = agentQuotaFor(plan);
+  const quota = effectiveAgentQuota(plan, extraAgents);
 
   const running = await db
     .select({ id: agents.id })

@@ -127,6 +127,7 @@ const STATUS: Record<string, { label: string; className: string }> = {
 export function useLinkedInAccounts() {
   const [accounts, setAccounts] = useState<LinkedInAccount[] | null>(null);
   const [quota, setQuota] = useState(0);
+  const [extraAgents, setExtraAgents] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -141,6 +142,7 @@ export function useLinkedInAccounts() {
       if (agentsRes.ok) {
         const agentData = await agentsRes.json();
         setQuota(agentData.quota?.limit ?? 0);
+        setExtraAgents(agentData.quota?.extra ?? 0);
       }
       setError(null);
     } catch (e) {
@@ -152,7 +154,7 @@ export function useLinkedInAccounts() {
     load();
   }, [load]);
 
-  return { accounts, quota, error, reload: load };
+  return { accounts, quota, extraAgents, error, reload: load };
 }
 
 /** The name a person recognises, which is the address until LinkedIn answers. */
@@ -203,7 +205,7 @@ export function LinkedInAccountsPanel({
   onChanged?: () => void;
   emptyHint?: string;
 }) {
-  const { accounts, quota, error, reload } = useLinkedInAccounts();
+  const { accounts, quota, extraAgents, error, reload } = useLinkedInAccounts();
   const [connecting, setConnecting] = useState(false);
   const [upselling, setUpselling] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -429,7 +431,9 @@ export function LinkedInAccountsPanel({
         open={connecting}
       />
       <ExtraAgentDialog
+        extraAgents={extraAgents}
         onOpenChange={setUpselling}
+        onPurchased={() => reload()}
         open={upselling}
         quota={quota}
       />
@@ -893,11 +897,41 @@ export function ExtraAgentDialog({
   open,
   onOpenChange,
   quota,
+  extraAgents = 0,
+  onPurchased,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quota: number;
+  extraAgents?: number;
+  onPurchased?: () => void;
 }) {
+  const [buying, setBuying] = useState(false);
+  const [error, setError] = useState("");
+
+  const buyOne = async () => {
+    setBuying(true);
+    setError("");
+    try {
+      const res = await fetch("/api/stripe/extra-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: extraAgents + 1 }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not add the agent");
+        return;
+      }
+      onPurchased?.();
+      onOpenChange(false);
+    } catch {
+      setError("Could not reach the billing service. Try again.");
+    } finally {
+      setBuying(false);
+    }
+  };
+
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="rounded-2xl">
@@ -921,13 +955,31 @@ export function ExtraAgentDialog({
           in its settings first, and it keeps every lead it has found.
         </p>
 
+        {error && (
+          <p className="text-[13px] text-red-600 dark:text-red-400">{error}</p>
+        )}
+
         <DialogFooter className="gap-2 sm:justify-between">
           <Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
             Not now
           </Button>
-          <Link href="/dashboard/settings/billing">
-            <Button type="button">See billing</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/dashboard/settings/billing">
+              <Button type="button" variant="outline">
+                See billing
+              </Button>
+            </Link>
+            <Button disabled={buying} onClick={buyOne} type="button">
+              {buying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding
+                </>
+              ) : (
+                `Add one for $${EXTRA_AGENT_PRICE} a month`
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

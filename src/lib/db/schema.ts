@@ -18,6 +18,8 @@ export const users = sqliteTable("users", {
   paymentFailedAt: integer("payment_failed_at", { mode: "timestamp" }),
   /** When the "you stopped at the card" warning went out, so it goes out once. */
   uncardedWarnedAt: integer("uncarded_warned_at", { mode: "timestamp" }),
+  /** Agents bought on top of the plan. Mirrors the add-on quantity on Stripe. */
+  extraAgents: integer("extra_agents").default(0),
   passwordChangedAt: text("password_changed_at"), // ISO timestamp - invalidates JWTs issued before this time
 
   // 2FA fields

@@ -10,7 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { loadSessionUser } from "@/lib/auth-user";
-import { agentQuotaFor, effectivePlan, type PlanId } from "@/lib/plans";
+import { EXTRA_AGENT_PRICE, effectiveAgentQuota, effectivePlan, type PlanId } from "@/lib/plans";
 
 /**
  * The workspace owns agents, not the individual user, so a team member sees
@@ -29,6 +29,9 @@ async function resolveWorkspace(userId: string) {
       plan: data.owner?.plan ?? data.user.plan,
       isAdmin: data.user.isAdmin,
     }) as PlanId,
+    // Add-on agents belong to whoever pays, so a team member reads the owner's
+    // count rather than their own empty one.
+    extraAgents: data.owner?.extraAgents ?? data.user.extraAgents ?? 0,
   };
 }
 
@@ -81,7 +84,7 @@ export async function GET() {
     if (rows.length === 0) {
       return NextResponse.json({
         agents: [],
-        quota: { used: 0, limit: agentQuotaFor(workspace.plan) },
+        quota: { used: 0, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents },
       });
     }
 
@@ -141,7 +144,7 @@ export async function GET() {
         // The IP itself is never exposed, only the country it sits in.
         funnel: byAgent.get(row.id),
       })),
-      quota: { used: rows.length, limit: agentQuotaFor(workspace.plan) },
+      quota: { used: rows.length, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents },
     });
   } catch {
     return NextResponse.json(
@@ -182,7 +185,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const limit = agentQuotaFor(workspace.plan);
+    const limit = effectiveAgentQuota(workspace.plan, workspace.extraAgents);
     if (limit === 0) {
       return NextResponse.json(
         { error: "Agents require the Pro plan", feature: "agents" },
@@ -217,7 +220,7 @@ export async function POST(request: NextRequest) {
     if ((existing?.total ?? 0) >= limit) {
       return NextResponse.json(
         {
-          error: `Your plan includes ${limit} agent${limit === 1 ? "" : "s"}`,
+          error: `Your plan covers ${limit} agent${limit === 1 ? "" : "s"}. Add another for $${EXTRA_AGENT_PRICE} a month.`,
           quota: { used: existing?.total ?? 0, limit },
         },
         { status: 403 }
