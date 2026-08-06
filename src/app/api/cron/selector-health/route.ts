@@ -17,8 +17,8 @@ import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, agentEvents, workerFlags } from "@/lib/db/schema";
-import { and, eq, gte, inArray, isNotNull } from "drizzle-orm";
-import { sendEmail } from "@/lib/email";
+import { and, eq, gte, inArray } from "drizzle-orm";
+import { sendSelectorAlertEmail } from "@/lib/email";
 
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
@@ -140,27 +140,14 @@ async function alertOnce(health: Health): Promise<boolean> {
     .limit(1);
   if (flag?.value === today) return false;
 
-  const lines = [
-    `Publishing over the last ${health.window_hours} hours: ${health.publish.published} went up, ${health.publish.failed} failed.`,
-    health.publish.rate !== null
-      ? `That is a ${Math.round(health.publish.rate * 100)}% success rate.`
-      : "Too few attempts to give a rate.",
-    `${health.publish.selector_failures} of the failures name a control that was not found, and ${health.agents.selector_failures} agent runs did the same.`,
-    "",
-    "What could not be found:",
-    ...health.worst.map((w) => `  - ${w}`),
-    "",
-    "This is what a LinkedIn rename looks like. The captures are on the worker box under /opt/linkedgrow/debug.",
-  ];
-
-  await sendEmail({
-    to: "contact@linkedgrow.ai",
-    subject: "LinkedGrow: publishing is failing across accounts",
-    html: `<pre style="font:14px/1.6 ui-monospace,monospace">${lines
-      .join("\n")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")}</pre>`,
-    text: lines.join("\n"),
+  await sendSelectorAlertEmail({
+    windowHours: health.window_hours,
+    published: health.publish.published,
+    failed: health.publish.failed,
+    rate: health.publish.rate,
+    selectorFailures: health.publish.selector_failures,
+    agentFailures: health.agents.selector_failures,
+    missing: health.worst,
   });
 
   await db

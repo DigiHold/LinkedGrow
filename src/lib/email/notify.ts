@@ -46,6 +46,11 @@ import {
   churnAskEmailText,
 } from "./templates/lifecycle-emails";
 import {
+  selectorAlertSubject,
+  selectorAlertEmailTemplate,
+  selectorAlertEmailText,
+} from "./templates/ops-emails";
+import {
   welcomeSubject,
   welcomeEmailTemplate,
   welcomeEmailText,
@@ -296,5 +301,25 @@ export async function sendHalfwayEmail(params: {
     subject: halfwaySubject,
     html: halfwayEmailTemplate({ ...params, firstName }),
     text: halfwayEmailText({ ...params, firstName }),
+  });
+}
+
+// ------------------------------------------------------------------ operations
+
+/** Comes to us, not to a customer, and still through the same shell. */
+export async function sendSelectorAlertEmail(params: {
+  windowHours: number;
+  published: number;
+  failed: number;
+  rate: number | null;
+  selectorFailures: number;
+  agentFailures: number;
+  missing: string[];
+}) {
+  return sendEmail({
+    to: "contact@linkedgrow.ai",
+    subject: selectorAlertSubject,
+    html: selectorAlertEmailTemplate(params),
+    text: selectorAlertEmailText(params),
   });
 }

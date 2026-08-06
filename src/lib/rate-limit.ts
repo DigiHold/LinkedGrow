@@ -90,9 +90,16 @@ export const AUTH_RATE_LIMITS = {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000,
   },
-  // Register: 3 attempts per hour per IP
+  /**
+   * Register: 10 an hour per IP.
+   *
+   * An IP is a building, not a person. At 3 the fourth colleague signing up on
+   * one office connection, or the fourth attendee on a conference wifi, met a
+   * wall for an hour. 10 is still far below anything a script would produce and
+   * removes that. Raised by Nicolas, 2026-08-07.
+   */
   register: {
-    maxRequests: 3,
+    maxRequests: 10,
     windowMs: 60 * 60 * 1000,
   },
   // Forgot password: 3 attempts per hour per IP (to prevent spam)
