@@ -11,6 +11,7 @@ import {
   FieldActions,
 } from "@/components/dashboard/ui/page";
 import { LinkedInAccountsPanel } from "@/components/dashboard/linkedin/accounts-panel";
+import { RAMP, dayPace, workingDays } from "@/lib/agent-pace";
 
 /**
  * Agent settings.
@@ -153,6 +154,31 @@ const TIMEZONES = [
   "Asia/Tokyo",
   "Australia/Sydney",
 ];
+
+/**
+ * The three warm-up numbers, read back as the schedule they produce.
+ *
+ * Every value is passed through the same function the worker's envelope uses,
+ * so what is printed is what will actually be sent: the ramp is only one of
+ * three ceilings and it is rarely the one that binds. Somebody setting 8, 4
+ * and 3 should see "8 a day this week, then 12, then 16" rather than having to
+ * work it out, and should see it capped when their account cannot go there.
+ */
+function rampSchedule(form: AgentSettings): string {
+  const weeks = Math.max(1, form.warmupWeeks ?? RAMP.weeks);
+  const pace = (week: number) => dayPace(form, week);
+  const steps: string[] = [];
+  for (let week = 1; week <= Math.min(weeks, 6); week++) {
+    const at = pace(week);
+    // A week that adds nothing is the ceiling arriving early, and repeating it
+    // down the line reads as a broken calculator.
+    if (steps.length && at === pace(week - 1)) continue;
+    steps.push(week === 1 ? `${at} a day this week` : `${at} from week ${week}`);
+  }
+  const settled = pace(weeks);
+  const days = workingDays(form.workdayDays).length;
+  return `${steps.join(", then ")}, and it stays at ${settled} a day after that. Over ${days} working days that is ${settled * days} invitations a week, against the 100 LinkedIn allows.`;
+}
 
 /** Minutes from midnight, as a clock. */
 function hhmm(minutes: number): string {
@@ -632,25 +658,36 @@ export function SettingsTab({
 
               <Field
                 label="Warm-up"
-                hint="Leave empty for the default ramp: 15 invitations a day in week 1, then whatever the weekly ceiling allows, which is 16 a day over six working days. LinkedIn caps a free or Premium account at 100 invitations a week on a rolling 7 days and starts throttling past about 20 a day, so those are the walls this stays under."
+                hint="A new account that suddenly sends at full pace is the pattern LinkedIn restricts, so the agent climbs to its speed instead of starting there. LinkedIn caps a free or Premium account at 100 invitations a week on a rolling 7 days, and throttles past about 20 a day."
               >
                 <div className="flex flex-wrap gap-3">
+                  {/* Labelled by what the number does, not by the column it is
+                      stored in. "Start", "Weekly" and "Weeks" meant per-day in
+                      week one, the per-day increase each week, and the length
+                      of the climb, and read as none of those. */}
                   <NumberBox
-                    label="Start"
+                    label="Invitations a day, week 1"
                     value={form.warmupStartPerDay}
                     onChange={(v) => set("warmupStartPerDay", v)}
                   />
                   <NumberBox
-                    label="Weekly"
+                    label="Add per day, each week"
                     value={form.warmupIncrementPerWeek}
                     onChange={(v) => set("warmupIncrementPerWeek", v)}
                   />
                   <NumberBox
-                    label="Weeks"
+                    label="Weeks of climbing"
                     value={form.warmupWeeks}
                     onChange={(v) => set("warmupWeeks", v)}
                   />
                 </div>
+
+                {/* The schedule those three numbers actually produce, spelled
+                    out. Three inputs whose meaning has to be reasoned about is
+                    three chances to set the wrong pace on a real account. */}
+                <p className="mt-3 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-slate-600 dark:bg-white/[0.03] dark:text-slate-300">
+                  {rampSchedule(form)}
+                </p>
               </Field>
             </div>
 
