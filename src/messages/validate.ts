@@ -3,6 +3,8 @@
  * check fails. Rules are self-contained so the tool is shareable without external files.
  */
 
+import { namesSomebodyElse } from "../names.ts";
+
 export interface ValidateContext {
   /** The sender's first name, used to strip a stray sign-off before counting. */
   senderName: string;
@@ -17,6 +19,13 @@ export interface ValidateContext {
   step?: "hello" | "intro" | "converse" | "ask";
   /** The prospect's headline, used to reject verbatim headline dumps. */
   headline?: string;
+  /**
+   * The prospect's name as LinkedIn has it, used to reject a message that
+   * greets somebody else. On 2026-08-06 a DM to "Mr Happiness - Sasho
+   * Jovanovski" went out addressed to Marija, because the prompt carried an
+   * empty first name and the model filled the hole itself.
+   */
+  prospectFullName?: string;
   /** What the prospect themselves wrote, used to reject a message that recites it back to them. */
   contextText?: string;
   minWords?: number;
@@ -215,6 +224,10 @@ export function validateMessage(text: string, ctx: ValidateContext): ValidationR
   }
   const vague = text.match(VAGUE_REFERENT);
   if (vague) reasons.push(`vague noun standing in for the thing: "${vague[0]}"`);
+  const wrongName = namesSomebodyElse(text, ctx.prospectFullName ?? null, ctx.senderName);
+  if (wrongName) {
+    reasons.push(`greets somebody who is not the prospect: "${wrongName}"`);
+  }
   if (ctx.headline && dumpsHeadline(text, ctx.headline)) {
     reasons.push("dumps the profile headline verbatim");
   }

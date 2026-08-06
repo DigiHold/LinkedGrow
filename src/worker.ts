@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { firstNameOf } from "./names.ts";
 import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, requestSignIn, recordEvent } from "./db.ts";
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
@@ -209,7 +210,7 @@ async function runAgent(ctx: AgentContext): Promise<void> {
         }
         return withAddress(key, async () => {
           const to = {
-            firstName: prospect.first_name ?? "",
+            firstName: prospect.first_name ?? firstNameOf(prospect.full_name),
             // Both feed the shape rotation, which is seeded per prospect so a
             // regeneration keeps its shape and two people never share one.
             fullName: prospect.full_name ?? undefined,
@@ -260,8 +261,7 @@ function fillTemplate(
   template: string,
   prospect: { first_name: string | null; full_name: string | null; company: string | null; headline: string | null }
 ): string {
-  const first =
-    prospect.first_name ?? (prospect.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+  const first = prospect.first_name ?? firstNameOf(prospect.full_name);
   return template
     .replace(/\{name\}/g, first)
     .replace(/\{firstName\}/g, first)

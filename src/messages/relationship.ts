@@ -327,6 +327,7 @@ async function write(
       // The hello is two sentences on a phone; the later steps carry an idea.
       step: purpose as "hello" | "intro" | "converse" | "ask",
       ...(prospect.headline ? { headline: prospect.headline } : {}),
+      ...(prospect.fullName ? { prospectFullName: prospect.fullName } : {}),
       ...(prospect.signalText ? { contextText: prospect.signalText } : {}),
       maxWords: 70,
     });
