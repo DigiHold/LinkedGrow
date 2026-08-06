@@ -27,8 +27,12 @@ import { capturePage } from "../linkedin/diagnose.ts";
  *   comment   needs a post that already exists, so it comments on the
  *             account's own most recent post and deletes the comment again.
  *             Skipped, loudly, when the account has never posted.
+ *   carousel  nothing. Same rehearsal as the video, with a real PDF, because a
+ *             carousel is a LinkedIn document post and it goes in through a
+ *             different door than an image: its own Share a document screen,
+ *             its own file chooser, and a title it will not continue without.
  *
- * Usage: node --experimental-strip-types src/tools/post-check.ts <accountId> [video|schedule|comment|all]
+ * Usage: node --experimental-strip-types src/tools/post-check.ts <accountId> [video|carousel|schedule|comment|all]
  */
 
 const SAMPLE_TEXT =
@@ -78,6 +82,41 @@ async function makeVideo(): Promise<string | null> {
   return path;
 }
 
+/**
+ * A tiny real PDF, written byte by byte rather than pulled from a library.
+ *
+ * LinkedIn parses the file before it will accept it as a document, so a
+ * renamed text file is refused and the check would report a composer failure
+ * that is really a bad fixture. Two pages, because a one-page carousel does
+ * not swipe and swiping is half of what is being checked.
+ */
+function makeCarousel(): string {
+  const path = join(tmpdir(), "linkedgrow-selftest.pdf");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 612] /Contents 4 0 R /Resources << /Font << /F1 7 0 R >> >> >>",
+    "<< /Length 62 >>\nstream\nBT /F1 36 Tf 72 500 Td (Composer check, page 1) Tj ET\nendstream",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 612] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>",
+    "<< /Length 62 >>\nstream\nBT /F1 36 Tf 72 500 Td (Composer check, page 2) Tj ET\nendstream",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  objects.forEach((body, i) => {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+
+  writeFileSync(path, pdf, "latin1");
+  return path;
+}
+
 type Check = { name: string; ok: boolean; detail: string };
 
 /**
@@ -107,7 +146,7 @@ async function within<T>(
 }
 
 /** How long each check may take. Video is the slow one: LinkedIn transcodes. */
-const BUDGET = { video: 7 * 60_000, comment: 3 * 60_000, schedule: 5 * 60_000 };
+const BUDGET = { video: 7 * 60_000, carousel: 5 * 60_000, comment: 3 * 60_000, schedule: 5 * 60_000 };
 
 async function main(): Promise<void> {
   const accountId = process.argv[2];
@@ -173,6 +212,47 @@ async function main(): Promise<void> {
         } finally {
           try { unlinkSync(file); } catch { /* the temp file is not worth a failure */ }
         }
+      }
+    }
+
+    if (only === "all" || only === "carousel") {
+      const file = makeCarousel();
+      try {
+        const attempt = await within("carousel", BUDGET.carousel, () =>
+          publishPost(session.page, {
+            text: `${SAMPLE_TEXT} (carousel)`,
+            filePath: file,
+            mimeType: "application/pdf",
+            profileUrl: acct.profileUrl,
+            rehearse: true,
+          })
+        );
+        if ("timedOut" in attempt) {
+          await capturePage(session.page, accountId, "carousel-timeout").catch(() => {});
+          results.push({
+            name: "carousel",
+            ok: false,
+            detail: `gave up after ${BUDGET.carousel / 60_000} minutes, see the capture in /opt/linkedgrow/debug`,
+          });
+        } else {
+          const out = attempt.value;
+          results.push({
+            name: "carousel",
+            ok: Boolean(out.rehearsed),
+            detail: out.rehearsed
+              ? "the document uploaded, took its title and the Post button was enabled"
+              : "the composer did not reach an enabled Post button",
+          });
+        }
+      } catch (error) {
+        await capturePage(session.page, accountId, "carousel-rehearsal").catch(() => {});
+        results.push({
+          name: "carousel",
+          ok: false,
+          detail: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        try { unlinkSync(file); } catch { /* the temp file is not worth a failure */ }
       }
     }
 
