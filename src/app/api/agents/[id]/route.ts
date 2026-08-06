@@ -473,6 +473,39 @@ export async function PATCH(
           .where(and(eq(agents.id, id), eq(agents.workspaceId, workspaceId)))
           .limit(1);
 
+        /**
+         * Starting an agent re-checks its account instead of leaving it red.
+         *
+         * A signed-out or challenged account never runs again on its own:
+         * loadRunnableAgents wants the account active, and only a successful
+         * sign-in sets that, and the sign-in pass only looks at accounts that
+         * are pending. So once it went red it stayed red, and the customer who
+         * had just passed LinkedIn's verification saw "LinkedIn wants a
+         * verification" for ever and had nothing to press.
+         *
+         * Pressing Start now puts the account back in front of the sign-in
+         * pass, which runs every 8 seconds and, on success, sets it active and
+         * clears the message by itself. Attempts reset so a fresh press gets a
+         * fresh three tries, and it is skipped while LinkedIn is actually
+         * holding a checkpoint, because retrying into one helps nobody.
+         */
+        await db
+          .update(linkedinAccounts)
+          .set({
+            status: "pending",
+            statusReason: "Checking this account can still sign in.",
+            signInAttempts: 0,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(linkedinAccounts.id, current.accountId),
+              eq(linkedinAccounts.workspaceId, workspaceId),
+              eq(linkedinAccounts.status, "challenged"),
+              eq(linkedinAccounts.challengeState, "none")
+            )
+          );
+
         if (current && !current.warmupStartedAt) {
           await db
             .update(linkedinAccounts)
