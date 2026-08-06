@@ -55,7 +55,7 @@ export interface ComparePageProps {
   cta: { badge: string; line1: string; gradient: string; description: string };
 }
 
-const TRUST = ["7-day Pro trial", "No credit card required", "Everything included"];
+const TRUST = ["7-day trial", "Cancel before day 7", "Everything included"];
 
 /** Column headings, so the unit is stated once instead of on every figure. */
 function PriceHead() {

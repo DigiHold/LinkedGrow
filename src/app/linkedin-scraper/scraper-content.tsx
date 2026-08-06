@@ -349,7 +349,7 @@ export function LinkedinScraperContent({
         description="Give the agent your website address. It works out who buys from you, watches for the week they start looking, and opens the conversation from your own account at a pace that account can carry."
         headline={{ line1: "Skip the spreadsheet.", gradient: "Start the conversation." }}
         primaryCta={{ text: "Launch my agent", href: "/sign-up" }}
-        trustIndicators={["7-day Pro trial", "No credit card required", "Everything included"]}
+        trustIndicators={["7-day trial", "Cancel before day 7", "Everything included"]}
       />
 
       <Footer />

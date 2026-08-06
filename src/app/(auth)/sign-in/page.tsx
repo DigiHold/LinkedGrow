@@ -76,7 +76,7 @@ function SignInForm() {
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
         if (plan) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+          const interval = (searchParams.get("interval") as "month" | "year") || "month";
           const coupon = searchParams.get("coupon") || undefined;
           const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
           if (redirected) return;
@@ -125,7 +125,7 @@ function SignInForm() {
         // If user came from pricing with a plan selected, try Stripe checkout first
         const plan = searchParams.get("plan");
         if (plan && userEmail) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+          const interval = (searchParams.get("interval") as "month" | "year") || "month";
           const coupon = searchParams.get("coupon") || undefined;
           const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
           if (redirected) return;

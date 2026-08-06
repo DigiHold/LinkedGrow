@@ -233,7 +233,7 @@ export function LinkedinAiAgentContent({
         description="Give it your website address and it works out who buys from you before you type anything else. Two connected LinkedIn accounts on Pro, a dedicated address each, and the AI that writes is in the price."
         headline={{ line1: "Put it to work", gradient: "on your own account." }}
         primaryCta={{ text: "Launch my agent", href: "/sign-up" }}
-        trustIndicators={["7-day Pro trial", "No credit card required", "Everything included"]}
+        trustIndicators={["7-day trial", "Cancel before day 7", "Everything included"]}
       />
 
       <Footer />

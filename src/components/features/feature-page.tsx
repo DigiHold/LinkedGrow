@@ -86,7 +86,7 @@ export interface FeaturePageProps {
   };
 }
 
-const TRUST = ["7-day Pro trial", "No credit card required", "Everything included"];
+const TRUST = ["7-day trial", "Cancel before day 7", "Everything included"];
 
 export function FeaturePage({
   hero,

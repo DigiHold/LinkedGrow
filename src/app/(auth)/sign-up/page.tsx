@@ -87,10 +87,13 @@ function SignUpContent() {
         // Force session refresh to get updated user data, then redirect
         const session = await updateSession();
         const userEmail = session?.user?.email;
-        // If user came from pricing with a plan selected, try Stripe checkout first
-        const plan = searchParams.get("plan");
-        if (plan && userEmail) {
-          const interval = (searchParams.get("interval") as "month" | "year") || "year";
+        // Every new account goes to Checkout. The plan buttons on the pricing
+        // page carry their own choice in the query string; a signup that came
+        // from anywhere else gets Pro monthly, which is what the product sells
+        // by default. The trial and the charge both follow whichever it is.
+        const plan = searchParams.get("plan") || "pro";
+        if (userEmail) {
+          const interval = (searchParams.get("interval") as "month" | "year") || "month";
           const coupon = searchParams.get("coupon") || undefined;
           const redirected = await redirectToCheckout(plan, userEmail, undefined, interval, coupon);
           if (redirected) return;
@@ -161,15 +164,17 @@ function SignUpContent() {
 
       // Redirect to sign in page, preserving plan selection and callbackUrl
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
-      const plan = searchParams.get("plan");
-      const interval = searchParams.get("interval");
+      // Same defaults as the OAuth path above: the account exists but owns
+      // nothing until Checkout runs, so the plan travels through sign-in.
+      const plan = searchParams.get("plan") || "pro";
+      const interval = searchParams.get("interval") || "month";
       const coupon = searchParams.get("coupon");
       const ltd = searchParams.get("ltd");
 
       const signInParams = new URLSearchParams({ registered: "true" });
       if (callbackUrl !== "/dashboard") signInParams.set("callbackUrl", callbackUrl);
-      if (plan) signInParams.set("plan", plan);
-      if (interval) signInParams.set("interval", interval);
+      signInParams.set("plan", plan);
+      signInParams.set("interval", interval);
       if (coupon) signInParams.set("coupon", coupon);
       if (ltd) signInParams.set("ltd", ltd);
 

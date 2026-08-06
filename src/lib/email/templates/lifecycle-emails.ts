@@ -12,7 +12,7 @@ import { p, lead, small, button, textLink, figures, signature } from "./parts";
  *
  * v2 truths these must never break: the trial is 7 days, a card is required at
  * signup, the card is charged on day 7, and there is no free tier to fall back
- * to. "No credit card required" was v1 and is now false.
+ * to. "Cancel before day 7" was v1 and is now false.
  */
 
 const APP = "https://linkedgrow.ai";
