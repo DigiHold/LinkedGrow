@@ -555,9 +555,37 @@ async function extractCommenters(cfg: Config, page: Page, label: string, maxPost
         const bodyEl = item.querySelector(".comments-comment-item__main-content") as HTMLElement | null;
         rows.push({
           href,
+          /**
+           * The face, read the way the people search reads it.
+           *
+           * This took the first img in the row and accepted it only if its src
+           * already held a licdn URL. On a company's own post that fails every
+           * time: the avatar is lazy-loaded, so src is a placeholder until it
+           * scrolls in, and the first image in the row can be the company's
+           * own logo. Every lead mined from Lovable, Calendly and Cal.com
+           * arrived with no picture at all while every lead from the people
+           * search had one.
+           *
+           * So: every img rather than the first, the lazy attributes as well as
+           * src, and company logos and ghosts rejected. The same picker lives
+           * in the reactions extractor below and in minePeople in sources.ts.
+           */
           photo: (() => {
-            const img = item.querySelector("img") as HTMLImageElement | null;
-            return img && /licdn/.test(img.src) ? img.src : "";
+            for (const el of Array.from(item.querySelectorAll("img"))) {
+              const img = el as HTMLImageElement;
+              const widest = (img.getAttribute("srcset") ?? "")
+                .split(",")
+                .map((part) => part.trim().split(/\s+/)[0] ?? "")
+                .filter(Boolean)
+                .pop();
+              const src =
+                img.getAttribute("data-delayed-url") ||
+                widest ||
+                img.src ||
+                "";
+              if (/licdn/.test(src) && !/company-logo|ghost/.test(src)) return src;
+            }
+            return "";
           })(),
           name: (nameEl?.innerText ?? a.getAttribute("aria-label") ?? "").trim(),
           headline: (headlineEl?.innerText ?? "").trim(),
@@ -661,12 +689,29 @@ async function extractFromDialog(page: Page, source: string, maxPerPost: number,
       // taken it and this one never did, so every lead mined from a reactions
       // list arrived with no picture and the dashboard showed grey initials.
       // Going back for it later would cost a profile visit per lead.
-      const img = (container as HTMLElement).querySelector("img") as HTMLImageElement | null;
+      // Same picker as the commenter path above and minePeople in sources.ts:
+      // every img rather than the first, the lazy attributes as well as src,
+      // and company logos and ghosts rejected. Taking only img.src found
+      // nothing on a company's post, where the avatar loads late.
+      const photo = (() => {
+        for (const el of Array.from((container as HTMLElement).querySelectorAll("img"))) {
+          const candidate = el as HTMLImageElement;
+          const widest = (candidate.getAttribute("srcset") ?? "")
+            .split(",")
+            .map((part) => part.trim().split(/\s+/)[0] ?? "")
+            .filter(Boolean)
+            .pop();
+          const src =
+            candidate.getAttribute("data-delayed-url") || widest || candidate.src || "";
+          if (/licdn/.test(src) && !/company-logo|ghost/.test(src)) return src;
+        }
+        return "";
+      })();
       rows.push({
         href,
         text: (container as HTMLElement).innerText ?? "",
         aria: a.getAttribute("aria-label") ?? "",
-        photo: img && /licdn/.test(img.src) ? img.src : "",
+        photo,
       });
     }
     return rows;
