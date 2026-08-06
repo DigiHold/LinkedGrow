@@ -32,10 +32,16 @@ export function p(text: string): string {
   );
 }
 
-/** The one sentence the email exists for, sized like the welcome email's h1. */
+/**
+ * The one sentence the email exists for.
+ *
+ * Emphasis, not a heading. It sits directly under "Hello Nicolas," and a 26px
+ * h1 in that position reads as a title arriving after the letter has already
+ * started, which is what it looked like on 2026-08-06.
+ */
 export function lead(text: string): string {
   return row(
-    `<h1 style="font-family: ${FONT}; color: ${HEADING}; font-size: 26px; line-height: 130%; font-weight: bold; margin: 0;">${text}</h1>`
+    `<p style="font-family: ${FONT}; color: ${HEADING}; font-size: 17px; line-height: 155%; font-weight: bold; margin: 0;">${text}</p>`
   );
 }
 
