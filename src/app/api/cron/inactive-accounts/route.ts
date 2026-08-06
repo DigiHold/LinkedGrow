@@ -338,11 +338,14 @@ async function runInactiveAccounts(): Promise<{
 
   for (const person of overdue) {
     try {
-      await db
+      // Count what actually changed. Counting the loop instead reported a
+      // pause for a workspace whose agents were already stopped, which is how
+      // a no-op read as a working feature on 2026-08-06.
+      const result = await db
         .update(agents)
         .set({ status: "paused", updatedAt: new Date() })
         .where(and(eq(agents.workspaceId, person.id), eq(agents.status, "active")));
-      stats.agents_paused++;
+      stats.agents_paused += result.rowsAffected ?? 0;
     } catch {
       stats.errors++;
     }
