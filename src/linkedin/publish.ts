@@ -339,6 +339,32 @@ async function waitForUpload(
       }
     }
 
+    /**
+     * A video has the same shape and it was missing the same step.
+     *
+     * Once the upload lands, LinkedIn puts the video on its own editing screen
+     * with a thumbnail, captions and a Next. The Post button does not exist
+     * until that Next is taken, so this loop waited for a button that could not
+     * appear, and the press that would have made it appear sat after the loop
+     * in attachMedia. That is exactly how the carousel deadlocked, and the
+     * video rehearsal on 2026-07-31 stalled the same way.
+     *
+     * Nothing is clicked while the upload is still running, because Next stays
+     * disabled until the file is in, and a disabled button is skipped.
+     */
+    if (mimeType?.startsWith("video/")) {
+      if (!(await firstVisible(dialog.locator(SEL.uploadProgress)))) {
+        const alreadyPostable = await firstVisible(namedButton(page, BUTTON_NAME.post));
+        if (!alreadyPostable) {
+          const onwards = await firstVisible(namedButton(page, BUTTON_NAME.next));
+          if (onwards && !(await onwards.isDisabled().catch(() => true))) {
+            await clickHumanLocator(page, onwards);
+            await dwell(1500, 3000);
+          }
+        }
+      }
+    }
+
     // Visible, not merely present.
     //
     // This counted every [role="progressbar"] in the page, and the scope is
