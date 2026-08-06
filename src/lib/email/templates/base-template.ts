@@ -63,16 +63,19 @@ export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): s
               <td align="center">
 
                 <!-- Logo Header -->
-                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background: linear-gradient(135deg, #06B6D4 0%, #2563EB 100%);">
-                  <tr><td height="28" style="line-height: 28px;"></td></tr>
+                <!-- The wordmark as the site draws it: Linked in slate, Grow in the
+                     brand blue. The site puts a cyan-to-blue gradient on that text and
+                     Outlook and Gmail both drop it, so the solid end of the gradient is
+                     the faithful fallback rather than white on a coloured bar. -->
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff">
+                  <tr><td height="32" style="line-height: 32px;"></td></tr>
                   <tr>
                     <td align="center" style="padding: 0 40px;">
-                      <a href="https://linkedgrow.ai" style="text-decoration: none;">
-                        <span style="font-family: 'Inter', sans-serif; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">LinkedGrow</span>
-                      </a>
+                      <a href="https://linkedgrow.ai" style="text-decoration: none; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 27px; font-weight: 700; letter-spacing: -0.9px;"><span style="color: #0f172a;">Linked</span><span style="color: #2563eb;">Grow</span></a>
                     </td>
                   </tr>
-                  <tr><td height="28" style="line-height: 28px;"></td></tr>
+                  <tr><td height="26" style="line-height: 26px;"></td></tr>
+                  <tr><td style="padding: 0 40px;"><table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td height="1" bgcolor="#e2e8f0" style="line-height: 1px; font-size: 0;">&nbsp;</td></tr></table></td></tr>
                 </table>
 
                 <!-- Body Content -->
@@ -97,11 +100,11 @@ export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): s
                         <a href="https://twitter.com/linkedgrow" style="color: #06B6D4; text-decoration: none; font-weight: 600;">X (Twitter)</a>
                       </p>
                       <p style="color: #64748b; font-size: 12px; line-height: 1.6; margin: 0;">
-                        LinkedGrow - AI-Powered LinkedIn Content Platform<br>
-                        A product of Vayalis, Paris, France<br><br>
-                        <a href="https://linkedgrow.ai/privacy" style="color: #06B6D4; text-decoration: none;">Privacy Policy</a> |
-                        <a href="https://linkedgrow.ai/cookies" style="color: #06B6D4; text-decoration: none;">Cookie Policy</a><br><br>
-                        &copy; ${new Date().getFullYear()} LinkedGrow. All rights reserved.
+                        <a href="https://linkedgrow.ai/privacy" style="color: #64748b; text-decoration: underline;">Privacy</a> &nbsp;&middot;&nbsp;
+                        <a href="https://linkedgrow.ai/cookies" style="color: #64748b; text-decoration: underline;">Cookies</a> &nbsp;&middot;&nbsp;
+                        <a href="https://linkedgrow.ai/dashboard/settings" style="color: #64748b; text-decoration: underline;">Email settings</a><br><br>
+                        &copy; ${new Date().getFullYear()} LinkedGrow, made with love in Switzerland by
+                        <a href="https://nicolaslecocq.com/" style="color: #64748b; text-decoration: underline;">Nicolas Lecocq</a>.
                       </p>
                     </td>
                   </tr>
