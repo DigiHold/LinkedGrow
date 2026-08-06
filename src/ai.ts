@@ -258,11 +258,34 @@ export async function prefilter(
 export async function scoreLead(
   ctx: AgentContext,
   icp: string,
-  profile: { name: string; headline: string; company?: string; about?: string }
+  /**
+   * `signal` is why this person was found, and it is the strongest thing known
+   * about them. It was collected at claim time and then not passed here, so the
+   * scorer judged everybody off a headline alone: every reason it wrote said
+   * "likely", and nothing ever scored above 85 because a headline cannot make a
+   * model certain. Somebody who commented under a competitor's post is not
+   * "likely" the audience.
+   */
+  profile: {
+    name: string;
+    headline: string;
+    company?: string;
+    about?: string;
+    signal?: string;
+  }
 ): Promise<{ score: number; reason: string }> {
   const answer = await generate(
     ctx,
-    `Ideal customer: ${icp}\n\nProspect:\nName: ${profile.name}\nHeadline: ${profile.headline}\nCompany: ${profile.company ?? "unknown"}\nAbout: ${(profile.about ?? "").slice(0, 600)}\n\nReply with a score from 0 to 100 and a one-sentence reason, formatted exactly as: SCORE|reason`,
+    `Ideal customer: ${icp}
+
+Prospect:
+Name: ${profile.name}
+Headline: ${profile.headline}
+Company: ${profile.company ?? "unknown"}
+${profile.signal ? `How they were found: ${profile.signal}` : ""}
+${profile.about ? `About: ${profile.about.slice(0, 600)}` : ""}
+
+Score from 0 to 100. What they were doing when they were found counts as much as their title: somebody engaging with a competitor or asking about the problem is a stronger match than the same headline found in a search. Reply with the score and a one-sentence reason.`,
     {
       model: MODELS.fast,
       purpose: "score",

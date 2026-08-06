@@ -344,7 +344,7 @@ export async function leadsAtStep(ctx: AgentContext, step: string, limit: number
  */
 export async function unscoredLeads(ctx: AgentContext, limit: number) {
   const { rows } = await db().execute({
-    sql: `SELECT id, full_name, headline, company
+    sql: `SELECT id, full_name, headline, company, signal_text
           FROM agent_leads
           WHERE workspace_id = ? AND agent_id = ? AND match_score IS NULL
           ORDER BY found_at ASC

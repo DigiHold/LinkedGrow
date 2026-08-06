@@ -503,6 +503,7 @@ async function scorePass(ctx: AgentContext): Promise<void> {
         name,
         headline,
         company: row.company ? String(row.company) : undefined,
+        signal: row.signal_text ? String(row.signal_text) : undefined,
       });
       await setLeadScore(ctx, String(row.id), score, reason);
       done += 1;
