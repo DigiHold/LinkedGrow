@@ -434,10 +434,13 @@ function BillingScreen() {
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                       {invoice.number ? `${invoice.number} · ` : ""}
-                      {/* The first invoice of a subscription carries the same
-                          start and end, and "Aug 6 to Aug 6" reads as a bug. */}
-                      {invoice.periodStart === invoice.periodEnd
-                        ? "First payment"
+                      {/* The first invoice of a subscription, and any charge
+                          for a part-period, carries a start and an end inside
+                          the same day. Comparing the raw timestamps missed it
+                          by the few seconds between them and printed "Aug 7,
+                          2026 to Aug 7, 2026", which reads as a bug. */}
+                      {shortDay(invoice.periodStart) === shortDay(invoice.periodEnd)
+                        ? shortDay(invoice.periodStart)
                         : `${shortDay(invoice.periodStart)} to ${shortDay(invoice.periodEnd)}`}
                     </p>
                   </div>
