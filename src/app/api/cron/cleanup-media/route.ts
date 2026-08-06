@@ -7,14 +7,20 @@
  * - Have no postId (not attached to a post)
  * - Are older than 24 hours
  * - Are not referenced in any saved carousel or user template
+ *
+ * Then a second pass for the videos, which never enter the media table at all:
+ * they are too large to keep so the dashboard writes their key onto the post
+ * instead, which means this sweep could not see a single one of them. The
+ * worker deletes a video the moment LinkedIn has it; this catches the ones
+ * where that failed, and the ones on posts that were never published.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { media, savedCarousels, userTemplates } from "@/lib/db/schema";
-import { eq, and, isNull, lt, inArray } from "drizzle-orm";
+import { media, posts, savedCarousels, userTemplates } from "@/lib/db/schema";
+import { eq, and, isNull, isNotNull, lt, inArray, notInArray } from "drizzle-orm";
 import { deleteFromR2 } from "@/lib/storage/r2";
 
 const BATCH_SIZE = 50;
@@ -141,6 +147,75 @@ async function runCleanup(): Promise<{
   return { deleted, errors, scanned: orphanCandidates.length, batches };
 }
 
+/** How long a video may sit on a post that never went out. */
+const ABANDONED_VIDEO_DAYS = 30;
+
+/**
+ * Frees the videos nothing will ever read again.
+ *
+ * Two cases. A published post whose video the worker could not delete, usually
+ * because the bucket was briefly unreachable, and a post that was written with
+ * a video and never sent: a draft somebody forgot, or a publish that failed for
+ * good. Anything queued, publishing or scheduled is left alone, because the
+ * worker is going to need that file.
+ */
+async function releaseVideos(): Promise<{ freed: number; failed: number; scanned: number }> {
+  const abandonedBefore = new Date(Date.now() - ABANDONED_VIDEO_DAYS * 86400000);
+
+  const candidates = await db
+    .select({
+      id: posts.id,
+      status: posts.status,
+      metadata: posts.metadata,
+      updatedAt: posts.updatedAt,
+    })
+    .from(posts)
+    .where(
+      and(
+        isNotNull(posts.metadata),
+        notInArray(posts.status, ["queued", "publishing", "scheduled"])
+      )
+    );
+
+  let freed = 0;
+  let failed = 0;
+  let scanned = 0;
+
+  for (const post of candidates) {
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(post.metadata as string) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    const video = parsed.video as { storageKey?: unknown } | undefined;
+    const key = typeof video?.storageKey === "string" ? video.storageKey : null;
+    if (!key) continue;
+
+    // A draft still being written keeps its video until it is clearly forgotten.
+    const stale = !post.updatedAt || post.updatedAt < abandonedBefore;
+    if (post.status !== "published" && !stale) continue;
+
+    scanned++;
+    try {
+      await deleteFromR2(key);
+      const { video: _gone, ...rest } = parsed;
+      await db
+        .update(posts)
+        .set({
+          metadata: JSON.stringify({ ...rest, videoReleasedAt: Math.floor(Date.now() / 1000) }),
+          updatedAt: new Date(),
+        })
+        .where(eq(posts.id, post.id));
+      freed++;
+    } catch {
+      failed++;
+    }
+  }
+
+  return { freed, failed, scanned };
+}
+
 function extractKeysFromCanvas(canvasJson: string, keysSet: Set<string>): void {
   try {
     const canvas = JSON.parse(canvasJson);
@@ -196,7 +271,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await runCleanup();
-    return NextResponse.json(result);
+    const videos = await releaseVideos();
+    // Surfaced with its own counts rather than folded into `deleted`: a video
+    // is up to 200MB and an image is under 5, so one number covering both says
+    // nothing about how much space came back.
+    return NextResponse.json({ ...result, videos });
   } catch {
     return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
   }
