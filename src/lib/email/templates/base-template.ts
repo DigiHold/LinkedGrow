@@ -104,6 +104,11 @@ export function baseEmailTemplate({ preheader, content }: BaseTemplateParams): s
                                     </tr>
                                 </table>
 ${content}
+                                <!-- Gap: the body used to run straight into the photo -->
+                                <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
+                                    <tr><td height="36" style="line-height: 36px;"></td></tr>
+                                </table>
+
                                 <!-- Photos -->
                                 <table width="100%" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0">
                                     <tr>

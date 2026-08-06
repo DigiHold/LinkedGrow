@@ -86,7 +86,12 @@ export function personRow(name: string, title: string, why: string, score: numbe
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #EAECED; border-radius: 8px;">
         <tr>
             <td style="padding: 14px 16px;">
-                <p style="font-family: ${FONT}; font-size: 15px; font-weight: bold; color: ${HEADING}; margin: 0;">${name}${score === null ? "" : ` <span style="color: #0182f2;">${score}</span>`}</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td align="left" style="font-family: ${FONT}; font-size: 15px; font-weight: bold; color: ${HEADING};">${name}</td>
+                        ${score === null ? "" : `<td align="right" style="font-family: ${FONT}; font-size: 13px; font-weight: 600; color: #0182f2; white-space: nowrap;">${score}/100 match</td>`}
+                    </tr>
+                </table>
                 <p style="font-family: ${FONT}; font-size: 14px; color: #7B8794; margin: 4px 0 0;">${title}</p>
                 <p style="font-family: ${FONT}; font-size: 14px; color: ${INK}; line-height: 155%; margin: 8px 0 0;">${why}</p>
             </td>
