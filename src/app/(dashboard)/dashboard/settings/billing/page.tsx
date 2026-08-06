@@ -30,6 +30,8 @@ interface Subscription {
   currentPeriodEnd: number;
   cancelAtPeriodEnd: boolean;
   cancelAt: number | null;
+  extraAgents: { quantity: number; unitAmount: number; amount: number } | null;
+  totalAmount: number;
   priceId: string;
   amount: number;
   currency: string;
@@ -178,8 +180,13 @@ function BillingContent() {
               <Crown className="w-8 h-8 text-slate-500 dark:text-slate-400" />
             </div>
             <h2 className="text-xl font-semibold mb-2">No Active Subscription</h2>
+            {/* v1 copy told this person they were "currently on the 7-day Pro
+                trial". They are not: free is the state an account lands in when
+                a trial ends or a subscription is cancelled, and it grants
+                nothing. */}
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
-              You are currently on the 7-day Pro trial. Upgrade to unlock billing management, invoices, and premium features.
+              There is no plan on this account, so your agents are stopped and the
+              dashboard is closed. Pick a plan and everything picks up where it left off.
             </p>
             <Button
               onClick={() => router.push("/dashboard/upgrade")}
@@ -313,6 +320,23 @@ function BillingContent() {
                     {formatCurrency(billing.subscription.amount, billing.subscription.currency)}
                     /{billing.subscription.interval}
                   </p>
+                  {billing.subscription.extraAgents && (
+                    <p>
+                      {billing.subscription.extraAgents.quantity} extra agent
+                      {billing.subscription.extraAgents.quantity === 1 ? "" : "s"}
+                      {" "}
+                      {formatCurrency(
+                        billing.subscription.extraAgents.amount,
+                        billing.subscription.currency
+                      )}
+                      /{billing.subscription.interval}, so{" "}
+                      {formatCurrency(
+                        billing.subscription.totalAmount,
+                        billing.subscription.currency
+                      )}
+                      {" "}in total
+                    </p>
+                  )}
                   {billing.subscription.cancelAtPeriodEnd ? (
                     <p className="text-amber-600 dark:text-amber-400">
                       Access until{" "}
