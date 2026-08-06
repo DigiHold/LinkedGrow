@@ -311,11 +311,15 @@ function BillingScreen() {
                       </dd>
                     </div>
                   )}
-                  {subscription.extraAgents && (
+                  {/* A total only means something when both lines share a
+                      period. Adding $1,790 a year to $98 a month produced
+                      "$1,888.00", which is not a sum of anything the customer
+                      will ever be charged. */}
+                  {subscription.extraAgents && subscription.interval === "month" && (
                     <div className="flex items-baseline justify-between gap-6 border-t border-border pt-1.5 sm:justify-start">
                       <dt className="font-medium text-slate-900 dark:text-white">Total</dt>
                       <dd className="font-semibold tabular-nums text-slate-900 sm:ml-6 dark:text-white">
-                        {money(subscription.totalAmount, subscription.currency)}
+                        {money(subscription.totalAmount, subscription.currency)} / month
                       </dd>
                     </div>
                   )}
@@ -430,7 +434,11 @@ function BillingScreen() {
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                       {invoice.number ? `${invoice.number} · ` : ""}
-                      {shortDay(invoice.periodStart)} to {shortDay(invoice.periodEnd)}
+                      {/* The first invoice of a subscription carries the same
+                          start and end, and "Aug 6 to Aug 6" reads as a bug. */}
+                      {invoice.periodStart === invoice.periodEnd
+                        ? "First payment"
+                        : `${shortDay(invoice.periodStart)} to ${shortDay(invoice.periodEnd)}`}
                     </p>
                   </div>
 
