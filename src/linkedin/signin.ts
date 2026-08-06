@@ -210,12 +210,15 @@ async function askForCode(
   await db().execute({
     sql: `UPDATE linkedin_accounts
              SET challenge_state = 'awaiting_code', challenge_kind = ?,
-                 challenge_code_encrypted = NULL, challenge_asked_at = ?,
+                 challenge_code_encrypted = NULL, challenge_asked_at = ?, last_challenge_at = ?,
                  status = 'challenged',
                  status_reason = ?, updated_at = ?
            WHERE id = ? AND workspace_id = ?`,
     args: [
       kind,
+      Math.floor(Date.now() / 1000),
+      // last_challenge_at, which unlike challenge_asked_at survives the
+      // recovery. It is the only record that LinkedIn ever asked.
       Math.floor(Date.now() / 1000),
       `LinkedIn is asking for the code from your ${kind}. Enter it on the accounts page and the sign-in finishes on its own.`,
       Math.floor(Date.now() / 1000),
@@ -250,7 +253,7 @@ async function waitForApproval(
   await db().execute({
     sql: `UPDATE linkedin_accounts
              SET challenge_state = 'awaiting_approval', challenge_kind = 'app notification',
-                 challenge_code_encrypted = NULL, challenge_asked_at = ?,
+                 challenge_code_encrypted = NULL, challenge_asked_at = ?, last_challenge_at = ?,
                  status = 'challenged', status_reason = ?, updated_at = ?
            WHERE id = ? AND workspace_id = ?`,
     args: [

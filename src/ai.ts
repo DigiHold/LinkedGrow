@@ -268,14 +268,45 @@ export async function scoreLead(
       purpose: "score",
       maxTokens: 150,
       systemPrompt:
-        "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one. Answer only as SCORE|reason.",
+        // "Answer only as SCORE|reason" invited the model to repeat that line
+        // before answering, which is what broke the parsing. Showing a filled
+        // example instead of a template gives it nothing to echo.
+        "You score how well a prospect matches an ideal customer profile. Be strict: 80 and above means they clearly are one. Reply with one line and nothing else, a number then a pipe then the reason, like this: 72|Founder at a small SaaS, buys their own tools.",
     }
   );
 
-  const [rawScore, ...rest] = answer.split("|");
-  const score = Math.max(0, Math.min(100, parseInt(rawScore ?? "", 10) || 0));
-  const reason = rest.join("|").trim() || "No reason given";
-  return { score, reason };
+  return parseScore(answer);
+}
+
+/**
+ * Pulls the score and the reason out of whatever shape the answer arrives in.
+ *
+ * Splitting on the first pipe looked right and was wrong in the one way that
+ * mattered: the model often repeats the format line before answering, so the
+ * reply is "SCORE|reason\n\n72|Founder at a small SaaS". The first pipe then
+ * belongs to the echoed template, parseInt("SCORE") is NaN, and every lead was
+ * stored at 0 with "reason\n\n72|Founder at a small SaaS" as its reason. Ten
+ * leads in a row scored 0 on the dashboard while the model had actually judged
+ * them 72, 25 and 15.
+ *
+ * So it looks for the pattern rather than a position: a number of up to three
+ * digits, a pipe, then text. The last match wins, because the echoed template
+ * comes first and the real answer comes after it.
+ */
+export function parseScore(answer: string): { score: number; reason: string } {
+  const matches = [...answer.matchAll(/(?:^|\n)\s*(\d{1,3})\s*\|\s*(.+)/g)];
+  const best = matches[matches.length - 1];
+  if (best) {
+    const score = Math.max(0, Math.min(100, Number(best[1])));
+    return { score, reason: (best[2] ?? "").trim() || "No reason given" };
+  }
+  // No pipe anywhere. A bare number is still an answer; anything else is not,
+  // and a lead left unscored is picked up again rather than stored as a zero.
+  const bare = /(?:^|\n)\s*(\d{1,3})\s*$/m.exec(answer);
+  if (bare) {
+    return { score: Math.max(0, Math.min(100, Number(bare[1]))), reason: "No reason given" };
+  }
+  throw new Error(`The scorer answered in a shape nothing could read: ${answer.slice(0, 120)}`);
 }
 
 /** Logged rather than thrown, because a metering failure must not stop the run twice. */
