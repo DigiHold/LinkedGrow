@@ -27,8 +27,13 @@ export type Lead = {
 
 // ---------------------------------------------------------------- weekly digest
 
+/**
+ * Emoji on the three subjects somebody opens out of wanting to, never on the
+ * four they have to believe. A declined card decorated with an icon reads as
+ * spam and does the opposite of its job (Nicolas, 2026-08-06).
+ */
 export const leadsDigestSubject = (count: number) =>
-  count === 1 ? "1 new lead this week" : `${count} new leads, all scored`;
+  count === 1 ? "\u{1F3AF} 1 new lead this week" : `\u{1F3AF} ${count} new leads, all scored`;
 
 export function leadsDigestEmailTemplate(params: {
   firstName: string;
@@ -149,7 +154,7 @@ ${APP}/dashboard/agents/${params.agentId}`;
 
 // ------------------------------------------------------------------ someone replied
 
-export const replySubject = (name: string) => `${name} replied`;
+export const replySubject = (name: string) => `\u{1F4AC} ${name} replied`;
 
 export function replyEmailTemplate(params: {
   firstName: string;
@@ -185,7 +190,7 @@ Read the whole thread: ${APP}/dashboard/replies`;
 
 // -------------------------------------------------------------------- first day
 
-export const firstDaySubject = "Your agent just started";
+export const firstDaySubject = "\u{26A1} Your agent just started";
 
 export function firstDayEmailTemplate(params: {
   firstName: string;
