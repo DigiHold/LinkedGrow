@@ -165,7 +165,7 @@ ${content}
                                                 </tr>
                                                 <tr>
                                                     <td align="center" style="text-align: center !important;">
-                                                        <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">LinkedGrow - AI-Powered LinkedIn Content Platform<br>78 Avenue des Champs-Elysees, Paris, France</p>
+                                                        <p style="font-family: 'Inter', sans-serif; color: #45556C; font-size: 14px; line-height: 150%; margin-bottom: 0;">LinkedGrow - Find leads and clients on LinkedIn, on autopilot<br>78 Avenue des Champs-Elysees, Paris, France</p>
                                                     </td>
                                                 </tr>
                                                 <tr>
