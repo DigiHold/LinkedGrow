@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -162,15 +162,26 @@ function SignUpContent() {
       // Account was really created (register returned ok) - fire signup goal once
       trackSignup();
 
-      // Redirect to sign in page, preserving plan selection and callbackUrl
       const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
       // Same defaults as the OAuth path above: the account exists but owns
-      // nothing until Checkout runs, so the plan travels through sign-in.
+      // nothing until Checkout runs, so the plan travels with it.
       const plan = searchParams.get("plan") || "pro";
-      const interval = searchParams.get("interval") || "month";
-      const coupon = searchParams.get("coupon");
+      const interval = (searchParams.get("interval") as "month" | "year") || "month";
+      const coupon = searchParams.get("coupon") || undefined;
       const ltd = searchParams.get("ltd");
 
+      // Straight into Checkout, signed in on the way. Bouncing through
+      // /sign-in and asking for the password a second time put a wall in the
+      // middle of the one step the whole funnel depends on, and only the
+      // Google path avoided it.
+      const signedIn = await signIn("credentials", { email, password, redirect: false });
+      if (signedIn?.ok && !ltd) {
+        const redirected = await redirectToCheckout(plan, email, undefined, interval, coupon);
+        if (redirected) return;
+      }
+
+      // Anything unexpected falls back to the old route rather than leaving
+      // somebody on a dead form: the account exists either way.
       const signInParams = new URLSearchParams({ registered: "true" });
       if (callbackUrl !== "/dashboard") signInParams.set("callbackUrl", callbackUrl);
       signInParams.set("plan", plan);

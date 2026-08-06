@@ -16,6 +16,8 @@ export const users = sqliteTable("users", {
   churnStage: integer("churn_stage").default(0),
   /** When Stripe first reported a declined payment. Cleared on recovery. */
   paymentFailedAt: integer("payment_failed_at", { mode: "timestamp" }),
+  /** When the "you stopped at the card" warning went out, so it goes out once. */
+  uncardedWarnedAt: integer("uncarded_warned_at", { mode: "timestamp" }),
   passwordChangedAt: text("password_changed_at"), // ISO timestamp - invalidates JWTs issued before this time
 
   // 2FA fields

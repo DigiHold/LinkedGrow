@@ -31,6 +31,7 @@ import {
 } from "@/lib/email";
 import { DUNNING_GRACE_DAYS } from "@/lib/plans";
 import { agents, agentLeads, linkedinAccounts } from "@/lib/db/schema";
+import { BILLING_PAUSE, pauseAgentsForBilling } from "@/lib/billing-agents";
 import { sendTrialWelcomeEmail, sendNoAgentEmail, sendNoAccountEmail, sendHalfwayEmail } from "@/lib/email";
 import { count, inArray } from "drizzle-orm";
 
@@ -208,15 +209,34 @@ async function runInactiveAccounts(): Promise<{
       eq(users.isAdmin, false)
     );
 
+  // The window is three days wide and the pass runs daily, so without a marker
+  // the same person is warned on day 11, 12 and 13. Nicolas received it ten
+  // times on 2026-08-06 while this was being tested, which is exactly what a
+  // customer would have got.
   const toWarn = await db
     .select({ id: users.id, email: users.email, name: users.name, createdAt: users.createdAt })
     .from(users)
-    .where(and(uncardedBase(), lte(users.createdAt, warnOn), gt(users.createdAt, closeOn)));
+    .where(
+      and(
+        uncardedBase(),
+        lte(users.createdAt, warnOn),
+        gt(users.createdAt, closeOn),
+        isNull(users.uncardedWarnedAt)
+      )
+    );
 
   for (const account of toWarn) {
     if (!account.email || !account.createdAt) continue;
     const goesOn = new Date(account.createdAt.getTime() + UNCARDED_DELETE_DAYS * 86400000);
     try {
+      // Stamped before the send, and only for a row still unstamped. Two passes
+      // overlapping cannot both win the update, so neither can both send.
+      const claimed = await db
+        .update(users)
+        .set({ uncardedWarnedAt: new Date(), updatedAt: new Date() })
+        .where(and(eq(users.id, account.id), isNull(users.uncardedWarnedAt)));
+      if ((claimed.rowsAffected ?? 0) === 0) continue;
+
       await sendAbandonedCheckoutEmail({
         to: account.email,
         name: account.name,
@@ -343,11 +363,11 @@ async function runInactiveAccounts(): Promise<{
       // Count what actually changed. Counting the loop instead reported a
       // pause for a workspace whose agents were already stopped, which is how
       // a no-op read as a working feature on 2026-08-06.
-      const result = await db
-        .update(agents)
-        .set({ status: "paused", updatedAt: new Date() })
-        .where(and(eq(agents.workspaceId, person.id), eq(agents.status, "active")));
-      stats.agents_paused += result.rowsAffected ?? 0;
+      //
+      // The reason is not decoration: resumeAgentsAfterBilling restarts only
+      // the agents carrying one of the billing reasons, so an agent stopped
+      // here with a blank reason would never come back when the card is fixed.
+      stats.agents_paused += await pauseAgentsForBilling(person.id, BILLING_PAUSE.payment);
     } catch {
       stats.errors++;
     }
