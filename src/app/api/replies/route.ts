@@ -75,6 +75,10 @@ export async function GET() {
           profileUrl: agentLeads.profileUrl,
           matchScore: agentLeads.matchScore,
           signalText: agentLeads.signalText,
+          // The fine state, not the coarse funnel. `step` says "replied" for
+          // somebody the agent is about to answer and for somebody it has
+          // stopped writing to for good, and those are opposite facts.
+          sequenceStatus: agentLeads.sequenceStatus,
         })
         .from(agentLeads)
         .where(
@@ -126,6 +130,7 @@ export async function GET() {
           profileUrl: who.profileUrl,
           matchScore: who.matchScore,
           signalText: who.signalText,
+          sequenceStatus: who.sequenceStatus,
           messages: everyMessage
             .filter((m) => m.leadId === leadId)
             .map((m) => ({ from: m.direction, body: m.body, at: m.sentAt })),

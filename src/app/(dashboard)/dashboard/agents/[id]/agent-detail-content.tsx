@@ -51,6 +51,7 @@ type Agent = {
   accountAvatar: string | null;
   accountHeadline: string | null;
   accountStatus: string;
+  accountLastChallengeAt: string | null;
   accountCountry: string;
 };
 
@@ -647,10 +648,16 @@ export function AgentDetailContent({ agentId }: { agentId: string }) {
                   style={{ width: agent.accountStatus === "active" ? "88%" : "35%" }}
                 />
               </div>
+              {/* What we know, rather than what the current status implies.
+                  This claimed LinkedIn had never asked for a verification,
+                  which it read off the account being green today. It said so
+                  hours after LinkedIn had asked for one. */}
               <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {agent.accountStatus === "active"
-                  ? "LinkedIn has not asked this account to verify anything since it was connected."
-                  : "Open the accounts page and answer what LinkedIn is asking, and the agent picks up on its own."}
+                {agent.accountStatus !== "active"
+                  ? "Open the accounts page and answer what LinkedIn is asking, and the agent picks up on its own."
+                  : agent.accountLastChallengeAt
+                    ? `LinkedIn last asked this account to verify itself ${since(agent.accountLastChallengeAt)}, and it has been signing in without a problem since.`
+                    : "LinkedIn has not asked this account to verify anything so far."}
               </p>
             </div>
 

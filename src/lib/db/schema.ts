@@ -933,6 +933,20 @@ export const linkedinAccounts = sqliteTable("linkedin_accounts", {
   challengeKind: text("challenge_kind"),
   challengeCodeEncrypted: text("challenge_code_encrypted"),
   challengeAskedAt: integer("challenge_asked_at", { mode: "timestamp" }),
+  /**
+   * The last time LinkedIn asked this account to prove itself, kept for good.
+   *
+   * challengeAskedAt is cleared the moment the account signs back in, which is
+   * right for "is there a challenge open" and destroys the only record that one
+   * ever happened. The health panel then read the current status and told the
+   * customer "LinkedIn has not asked this account to verify anything since it
+   * was connected", hours after LinkedIn had asked exactly that.
+   *
+   * This one is never cleared. A verification in the past is a fact about the
+   * account and it is the fact somebody wants when they are deciding how hard
+   * to push it.
+   */
+  lastChallengeAt: integer("last_challenge_at", { mode: "timestamp" }),
   profileId: text("profile_id"),
   profileUrl: text("profile_url"),
   fullName: text("full_name"),

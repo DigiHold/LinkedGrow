@@ -130,6 +130,8 @@ export async function GET(
         accountAvatar: linkedinAccounts.avatarUrl,
         accountHeadline: linkedinAccounts.headline,
         accountStatus: linkedinAccounts.status,
+        // Whether LinkedIn ever asked, which the current status cannot say.
+        accountLastChallengeAt: linkedinAccounts.lastChallengeAt,
         accountCountry: linkedinAccounts.country,
         accountId: linkedinAccounts.id,
       })

@@ -34,8 +34,39 @@ type Thread = {
   profileUrl: string;
   matchScore: number | null;
   signalText: string | null;
+  sequenceStatus: string | null;
   messages: Message[];
 };
+
+/**
+ * Whether the agent is done with this person, and what it does next.
+ *
+ * Read off sequence_status rather than off "they replied". A reply is not a
+ * hand-over: most first answers are "nice connecting" and the whole point of
+ * the sequence is that it keeps talking through those. It stops for good only
+ * once the ask has gone out, or when somebody says something a person has to
+ * answer, and saying otherwise on this page told the customer to take over a
+ * conversation the agent was still running.
+ */
+function whatHappensNext(status: string | null): { done: boolean; line: string } {
+  switch (status) {
+    case "handed_over":
+    case "stopped":
+    case "skipped":
+      return { done: true, line: "The agent has stopped writing to this person." };
+    case "ask_sent":
+      return {
+        done: true,
+        line: "The ask has gone out, which was the last message. Over to you.",
+      };
+    case "conversing":
+      return { done: false, line: "The agent answers this on its next pass." };
+    case "hello_answered":
+      return { done: false, line: "The first real message goes out in a few hours." };
+    default:
+      return { done: false, line: "The agent is still working this conversation." };
+  }
+}
 
 function ago(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
@@ -212,8 +243,8 @@ export function RepliesContent() {
                     >
                       Answer on LinkedIn
                     </a>
-                    <span className="self-center text-xs text-slate-400 dark:text-slate-500">
-                      Nothing else is sent to this person.
+                    <span className="self-center text-xs text-slate-500 dark:text-slate-400">
+                      {whatHappensNext(thread.sequenceStatus).line}
                     </span>
                   </div>
                 </div>
