@@ -59,6 +59,8 @@ async function runInactiveAccounts(): Promise<{
     uncarded_skipped: 0,
     churn_sent: 0,
     agents_paused: 0,
+    churn_candidates: 0,
+    last_error: "",
     errors: 0,
   };
 
@@ -280,6 +282,7 @@ async function runInactiveAccounts(): Promise<{
     .from(users)
     .where(and(isNotNull(users.churnedAt), lte(users.churnedAt, churnDay3), isNull(users.stripeSubscriptionId)));
 
+  stats.churn_candidates = churnQueue.length;
   for (const person of churnQueue) {
     if (!person.email || !person.churnedAt) continue;
     const stage = person.churnStage ?? 0;
@@ -317,7 +320,8 @@ async function runInactiveAccounts(): Promise<{
         .set({ churnStage: due, updatedAt: new Date() })
         .where(eq(users.id, person.id));
       stats.churn_sent++;
-    } catch {
+    } catch (error) {
+      stats.last_error = error instanceof Error ? error.message : "unknown";
       stats.errors++;
     }
   }
@@ -370,6 +374,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await runInactiveAccounts();
+    // A pass that swallowed failures must not report success. Returning 200 with
+    // errors inside it is how phase D sent nothing for a day without anybody
+    // noticing: QStash keeps no body for a 2xx, so the count was invisible.
+    if (result.errors > 0) {
+      return NextResponse.json({ ...result, error: "Some accounts failed" }, { status: 500 });
+    }
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
