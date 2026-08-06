@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isValidTimezone } from "@/lib/timezone";
 import { db, users } from "@/lib/db";
+import { linkedinAccounts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   encryptApiKey,
@@ -33,6 +34,22 @@ export async function GET() {
 
     // Use owner's AI settings for team members
     const aiUser = aiSettingsUser;
+
+    /**
+     * Whether a LinkedIn account is connected, read from where v2 keeps them.
+     *
+     * This was `!!aiUser.linkedinAccessToken`, the OAuth token v1 stored on the
+     * user row. v2 has no OAuth: an account is a row in linkedin_accounts, put
+     * there with an email and a password and driven by the worker. So the field
+     * was false for everybody, for ever, and the dashboard kept telling people
+     * who had already connected an account to go and connect one.
+     */
+    const workspaceId = isTeamMember ? aiSettingsUser.id : user.id;
+    const connected = await db
+      .select({ id: linkedinAccounts.id })
+      .from(linkedinAccounts)
+      .where(eq(linkedinAccounts.workspaceId, workspaceId))
+      .limit(1);
 
     // Build per-provider settings for text AI (API key status + model)
     const textProviderSettings: Record<string, { hasKey: boolean; model: string | null }> = {
@@ -110,7 +127,7 @@ export async function GET() {
       // User plan (from session which handles team member inheritance)
       plan: session.user.plan || 'free',
       // Other settings (use owner's voice/business settings for team members)
-      linkedinConnected: !!aiUser.linkedinAccessToken,
+      linkedinConnected: connected.length > 0,
       linkedinProfileName: aiUser.linkedinProfileName,
       samplePosts,
       neverMention: aiUser.neverMention,
