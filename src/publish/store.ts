@@ -270,9 +270,15 @@ export async function loadDuePosts(limit = 25): Promise<DuePost[]> {
            AND p.scheduled_at IS NOT NULL
            AND p.scheduled_at <= ?
            AND p.scheduled_at >= ?
+           -- The paywall, kept identical to the one in the app's src/proxy.ts.
+           -- v2 dropped has_used_trial from it: the trial is granted by Stripe
+           -- against a card, so an account that never trialled is one that
+           -- never finished signing up and gets the same wall as one that
+           -- cancelled. This copy still carried the v1 condition, which would
+           -- have let a post go out for an account the dashboard refuses to
+           -- open. Change one of these and change the other.
            AND NOT (
                  u.plan = 'free'
-             AND u.has_used_trial = 1
              AND (u.stripe_subscription_id IS NULL OR u.stripe_subscription_id = '')
              AND COALESCE(u.is_lifetime_deal, 0) = 0
            )
