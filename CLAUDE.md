@@ -404,9 +404,9 @@ The paywall condition itself lives in `src/proxy.ts` and is copied, deliberately
 | Business        | $179/mo | A team running agents: seats, routing, shared inbox, CRM sync |
 | Extra agent     | $49/mo  | Available on both plans, bought from the upsell modal |
 
-`src/lib/plans.ts` still holds the v1 tiers ($19/$39/$79) because production still sells them. **Read it before writing any feature-availability copy, and never assume the file and this table agree yet.** The Stripe products are recreated at cutover; the old ones are archived, never deleted, and existing subscribers keep what they bought.
+`src/lib/plans.ts` is already on these prices: free ("No plan", the paywall state), Pro $99 / $990 a year with 2 agents, Business $179 / $1790 a year with 3 agents, and `EXTRA_AGENT_PRICE` at $49. **Read it before writing any feature-availability copy** rather than trusting this table.
 
-Open question, do not guess: the plan contradicts itself on how many agents each tier includes (section 9 says Pro 2 / Business 3 in prose and Pro 1 / Business 2 in the table). Ask Nicolas rather than picking one.
+What has NOT moved yet, and is the remaining billing work: the Stripe products still sell v1 ($39/$79), `STRIPE_PRO_PRICE_ID` and `STRIPE_BUSINESS_PRICE_ID` still point at them, the yearly and extra-agent price IDs do not exist, and `api/stripe/checkout` sends no `trial_period_days`, so the card-at-signup trial from 7.1 is decided and unbuilt. The old Stripe products are archived at cutover, never deleted, and existing subscribers keep what they bought.
 
 ### 7.3 Marketing numbers (the only approved external claims)
 
