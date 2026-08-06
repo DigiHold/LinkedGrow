@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PROXY_COUNTRIES, countryName } from "@/lib/proxy-countries";
-import { EXTRA_AGENT_PRICE } from "@/lib/plans";
+import { EXTRA_AGENT_PRICE, EXTRA_AGENT_YEARLY_PRICE } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { ChallengePrompt } from "./challenge-prompt";
 
@@ -128,6 +128,7 @@ export function useLinkedInAccounts() {
   const [accounts, setAccounts] = useState<LinkedInAccount[] | null>(null);
   const [quota, setQuota] = useState(0);
   const [extraAgents, setExtraAgents] = useState(0);
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -143,6 +144,7 @@ export function useLinkedInAccounts() {
         const agentData = await agentsRes.json();
         setQuota(agentData.quota?.limit ?? 0);
         setExtraAgents(agentData.quota?.extra ?? 0);
+        setBillingInterval(agentData.quota?.interval === "year" ? "year" : "month");
       }
       setError(null);
     } catch (e) {
@@ -154,7 +156,7 @@ export function useLinkedInAccounts() {
     load();
   }, [load]);
 
-  return { accounts, quota, extraAgents, error, reload: load };
+  return { accounts, quota, extraAgents, billingInterval, error, reload: load };
 }
 
 /** The name a person recognises, which is the address until LinkedIn answers. */
@@ -205,7 +207,7 @@ export function LinkedInAccountsPanel({
   onChanged?: () => void;
   emptyHint?: string;
 }) {
-  const { accounts, quota, extraAgents, error, reload } = useLinkedInAccounts();
+  const { accounts, quota, extraAgents, billingInterval, error, reload } = useLinkedInAccounts();
   const [connecting, setConnecting] = useState(false);
   const [upselling, setUpselling] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -431,6 +433,7 @@ export function LinkedInAccountsPanel({
         open={connecting}
       />
       <ExtraAgentDialog
+        billingInterval={billingInterval}
         extraAgents={extraAgents}
         onOpenChange={setUpselling}
         onPurchased={() => reload()}
@@ -898,16 +901,26 @@ export function ExtraAgentDialog({
   onOpenChange,
   quota,
   extraAgents = 0,
+  billingInterval = "month",
   onPurchased,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quota: number;
   extraAgents?: number;
+  /** The customer's own billing period. The add-on follows it. */
+  billingInterval?: "month" | "year";
   onPurchased?: () => void;
 }) {
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState("");
+
+  // A yearly customer is quoted the yearly figure and keeps one invoice a year.
+  // Quoting them $49 a month and then charging $490 is the kind of surprise
+  // that arrives as a chargeback.
+  const yearly = billingInterval === "year";
+  const addonPrice = yearly ? EXTRA_AGENT_YEARLY_PRICE : EXTRA_AGENT_PRICE;
+  const per = yearly ? "a year" : "a month";
 
   const buyOne = async () => {
     setBuying(true);
@@ -941,8 +954,8 @@ export function ExtraAgentDialog({
           </DialogTitle>
           <DialogDescription>
             Every agent sends from one account of its own, so another account
-            means another agent. An extra one is ${EXTRA_AGENT_PRICE} a month
-            and brings its own targeting and its own address.
+            means another agent. An extra one is ${addonPrice} {per} and brings
+            its own targeting and its own address.
           </DialogDescription>
         </DialogHeader>
 
@@ -976,7 +989,7 @@ export function ExtraAgentDialog({
                   Adding
                 </>
               ) : (
-                `Add one for $${EXTRA_AGENT_PRICE} a month`
+                `Add one for $${addonPrice} ${per}`
               )}
             </Button>
           </div>

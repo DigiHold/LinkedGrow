@@ -32,6 +32,12 @@ async function resolveWorkspace(userId: string) {
     // Add-on agents belong to whoever pays, so a team member reads the owner's
     // count rather than their own empty one.
     extraAgents: data.owner?.extraAgents ?? data.user.extraAgents ?? 0,
+    // The add-on is billed on the plan's own cycle, so the upsell has to quote
+    // the figure that will actually be charged.
+    billingInterval:
+      (data.owner?.billingInterval ?? data.user.billingInterval) === "year"
+        ? ("year" as const)
+        : ("month" as const),
   };
 }
 
@@ -84,7 +90,7 @@ export async function GET() {
     if (rows.length === 0) {
       return NextResponse.json({
         agents: [],
-        quota: { used: 0, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents },
+        quota: { used: 0, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents, interval: workspace.billingInterval },
       });
     }
 
@@ -144,7 +150,7 @@ export async function GET() {
         // The IP itself is never exposed, only the country it sits in.
         funnel: byAgent.get(row.id),
       })),
-      quota: { used: rows.length, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents },
+      quota: { used: rows.length, limit: effectiveAgentQuota(workspace.plan, workspace.extraAgents), extra: workspace.extraAgents, interval: workspace.billingInterval },
     });
   } catch {
     return NextResponse.json(
