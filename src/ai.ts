@@ -125,7 +125,7 @@ export async function assertBudget(ctx: AgentContext, purpose = ""): Promise<voi
   // the conversations already open keep running on the last 20%. Going silent
   // on a warm lead costs the customer far more than a thin month of mining.
   const conversation = purpose === "intro" || purpose === "converse" ||
-    purpose === "ask" || purpose === "hello";
+    purpose === "ask" || purpose === "hello" || purpose === "classify-reply";
   const limit = conversation ? pool : pool * 0.8;
 
   if (day >= DAILY_CEILING_USD) throw new BudgetExceededError("day", day);
