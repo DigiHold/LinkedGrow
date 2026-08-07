@@ -166,6 +166,7 @@ export function V3Landing() {
           <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>Enter your website. LinkedGrow works out who actually buys from you, finds those exact people on LinkedIn, and opens a real conversation every working day. Lead generation on LinkedIn without the prospecting, the copy and paste, or the follow-up you forget. You show up when somebody answers.</p>
           <V3UrlForm className={`${RV} mt-9`} />
           <p className={`${RV} mt-[15px] text-[13.5px] text-[rgba(255,255,255,.55)] [&_b]:font-semibold [&_b]:text-[rgba(255,255,255,.85)]`} style={{ "--d0": ".28s" } as React.CSSProperties}><b>7-day free trial</b> on the Pro plan · Everything included · The AI is in the price</p>
+          <p className={`${RV} mt-[13px] font-v3-mono text-[12.5px] text-[rgba(255,255,255,.48)]`} style={{ "--d0": ".31s" } as React.CSSProperties}>Use any agent: OpenClaw / Hermes / Claude / ChatGPT / Codex / Cursor</p>
           <div className={`${TR} ${RV} mt-[38px]`} style={{ "--d0": ".35s" } as React.CSSProperties}>
             <span className={AVS} aria-hidden="true">
               <img src="https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/images/person1.avif" alt="" loading="lazy" />
