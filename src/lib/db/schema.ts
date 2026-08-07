@@ -1129,6 +1129,15 @@ export const agents = sqliteTable("agents", {
     .notNull()
     .default("paused"),
   pausedReason: text("paused_reason"),
+  /**
+   * What this agent has learned about who actually converts, in a few hundred
+   * bytes. Rewritten on every revision rather than appended to, so it never
+   * grows, and never shared: two agents on one account may sell different
+   * things to different people.
+   */
+  memory: text("memory"),
+  memoryRev: integer("memory_rev").notNull().default(0),
+  memoryAt: integer("memory_at", { mode: "timestamp" }),
   // The client's site, read once to pre-fill the ICP so the agent knows the business.
   website: text("website"),
   icpSummary: text("icp_summary"),
@@ -1243,6 +1252,17 @@ export const agentSources = sqliteTable("agent_sources", {
   contacted: integer("contacted").notNull().default(0),
   accepted: integer("accepted").notNull().default(0),
   replied: integer("replied").notNull().default(0),
+  /** Of leadsFound, how many scored well enough to be worth writing to. */
+  goodLeads: integer("good_leads").notNull().default(0),
+  /** How many times this source has been mined, so yield is per pass. */
+  passes: integer("passes").notNull().default(0),
+  /** Typed by the customer, or written by the agent from what worked. */
+  origin: text("origin", { enum: ["customer", "learned"] }).notNull().default("customer"),
+  /** The source this one was learned from, when it was learned. */
+  parentId: text("parent_id"),
+  /** Set when the agent stopped mining it, with the reason on the next line. */
+  retiredAt: integer("retired_at", { mode: "timestamp" }),
+  retiredReason: text("retired_reason"),
   lastMinedAt: integer("last_mined_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
