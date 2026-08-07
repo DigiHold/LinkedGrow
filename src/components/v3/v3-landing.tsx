@@ -215,7 +215,7 @@ export function V3Landing() {
       {/*═══ 2. LOGOS ═══*/}
       <section className="pt-[clamp(46px,5.5vw,74px)]">
         <div className={WRAP}>
-          <p className={`${MONO} ${RV} mb-6 text-center text-v3-faint dark:text-v3-faint-d`}>Founders who stopped doing outbound by hand</p>
+          <p className={`${MONO} ${RV} mb-6 text-center text-v3-faint dark:text-v3-faint-d`}>The bottleneck was never your product. It is that the right people never heard of you.</p>
           <div className={`${CELLS} ${RV}`}>
             <div className={CL}><b className={CL_B}>Northline</b></div><div className={CL}><b className={CL_B}>Havre Studio</b></div>
             <div className={CL}><b className={CL_B}>Atelier Kea</b></div><div className={CL}><b className={CL_B}>Velio</b></div>
@@ -525,14 +525,11 @@ export function V3Landing() {
       {/*═══ 10. TÉMOIGNAGES ═══*/}
       <section className={SEC}>
         <div className={WRAP}>
-          <div className={`${SH} ${RV} mb-11`}><span className={SH_BUL}></span><div><h2 className={H2}>They stopped chasing.</h2></div></div>
+          <div className={`${SH} ${RV} mb-11`}><span className={SH_BUL}></span><div><h2 className={H2}>No customer quotes yet.</h2></div></div>
           <div className={`${STAG_STATE} relative z-[1] grid [grid-template-columns:repeat(3,1fr)] gap-5 max-[900px]:[grid-template-columns:1fr]`}>
-            <figure className={QUOTE}><blockquote className={QUOTE_BQ}>Eleven replies in the first fortnight and I never opened the app once. What surprised me is that not a single message read like a robot had written it.</blockquote>
-              <figcaption className={QUOTE_CAP}><span className={QAV}>TM</span><span><b>Thomas M.</b><small>Founder, team of 6</small></span></figcaption></figure>
-            <figure className={QUOTE}><blockquote className={QUOTE_BQ}>I got restricted once with another tool and stopped for a year. This is the first one that showed me the limits instead of hiding them, so I actually sleep now.</blockquote>
-              <figcaption className={QUOTE_CAP}><span className={QAV}>CB</span><span><b>Camille B.</b><small>Agency owner</small></span></figcaption></figure>
-            <figure className={QUOTE}><blockquote className={QUOTE_BQ}>Clicking a lead and landing on the real comment they wrote is what sold me. No other tool has ever bothered to show me why it picked somebody.</blockquote>
-              <figcaption className={QUOTE_CAP}><span className={QAV}>RD</span><span><b>Rui D.</b><small>Independent consultant</small></span></figcaption></figure>
+            <figure className={`${QUOTE} col-span-2 max-[900px]:col-span-1`}>
+              <blockquote className={QUOTE_BQ}>Nobody has run a full month on the lead engine yet, so there is nothing here worth quoting. Inventing a founder and a number would take 10 minutes, and it is the one thing that would make everything else on this page worthless. The first real results land here, with a name on them.</blockquote>
+              <figcaption className={QUOTE_CAP}><span className={QAV}>NL</span><span><b>Nicolas Lecocq</b><small>Founder, LinkedGrow</small></span></figcaption></figure>
           </div>
         </div>
       </section>
