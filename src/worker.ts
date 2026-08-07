@@ -4,7 +4,7 @@ import { db, loadRunnableAgents, touchRun, pauseAgent, flagAccount, requestSignI
 import type { AgentContext } from "./config.ts";
 import { log, logError } from "./logger.ts";
 import { assertCanSend, HaltedError } from "./guards.ts";
-import { BudgetExceededError } from "./ai.ts";
+import { BudgetExceededError, classifyReply } from "./ai.ts";
 import {
   openSession,
   closeSession,
@@ -200,6 +200,16 @@ async function runAgent(ctx: AgentContext): Promise<void> {
       // Each step of the relationship sequence writes differently, and the
       // differences are the product. Routing them through one generic
       // "write a DM" call is how they would quietly become the same message.
+      /**
+       * Reads what came back before deciding whether to answer it.
+       *
+       * Wired here rather than inside the sequence for the same reason
+       * writeMessage is: the sequence stays free of model plumbing and can be
+       * driven in a test with no key at all.
+       */
+      readReply: async (thread) =>
+        withAddress(key, () => classifyReply(ctx, thread, ctx.cfg.business.description ?? "")),
+
       writeMessage: async (prospect, step, thread) => {
         // A message the customer wrote themselves is sent as they wrote it, and
         // costs no model call. Their own words beat anything generated, and the

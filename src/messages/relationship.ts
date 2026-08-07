@@ -598,27 +598,32 @@ ${wantsMeeting
 }
 
 /**
- * When a reply means the agent must stop.
+ * When a reply means the agent must stop, on the words alone.
  *
- * The old rule was that any reply stops everything. That is what makes every
- * other tool a broadcast: the moment a human engages, the machine goes quiet
- * and the thread dies. Here a reply to the intro is the point, so the agent
- * keeps talking. It only hands over once the ask has gone out, or once the
- * prospect says something that a person would not automate through.
+ * This used to be the whole decision and it was a list of keywords, which got
+ * it wrong in both directions: it handed over on "nice meeting you" and kept
+ * talking through "sounds great, send me more". Three leads on 2026-08-07
+ * answered a hello with small talk and every one was marked over-to-you.
+ *
+ * What is left here is only what a word settles for certain. A refusal has to
+ * stop the agent even if the model is down, and being asked whether you are a
+ * bot is the one question an agent must never answer itself. Everything else,
+ * including every buying signal, is now read by classifyReply.
  */
 export function shouldHandOver(step: RelationshipStep, thread: Turn[]): boolean {
   if (step === RELATIONSHIP_STEPS.ask) return true;
   const last = [...thread].reverse().find((t) => t.from === "them");
   if (!last) return false;
-  return NEEDS_A_HUMAN.test(last.body);
+  return STOP_AT_ONCE.test(last.body);
 }
 
 /**
- * Anything here goes to the customer immediately, whatever step it arrives at.
+ * The replies no model is asked about.
  *
- * Buying signals, because an agent must never negotiate. Refusals, because
- * continuing after one is the behaviour that earns the whole category its
- * reputation. And anything that sounds like a person rather than a prospect.
+ * Refusals, because continuing after one is the behaviour that earns the whole
+ * category its reputation, and it must hold even when the model call fails.
+ * And being asked whether this is automated, because an agent answering that
+ * question itself is the single worst thing this product could do.
  */
-const NEEDS_A_HUMAN =
-  /\b(price|pricing|cost|quote|budget|contract|demo|call|meeting|proposal|invoice|discount|not interested|no thanks|stop|unsubscribe|remove me|leave me alone|who are you|is this a bot|are you a bot|automated)\b/i;
+const STOP_AT_ONCE =
+  /\b(not interested|no thanks|no thank you|stop|unsubscribe|remove me|leave me alone|is this a bot|are you a bot|is this automated|are you a real person|are you human)\b/i;

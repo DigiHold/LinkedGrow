@@ -131,11 +131,22 @@ function fakeActions(over: Partial<LinkedInActions> = {}): LinkedInActions {
   };
 }
 
-function deps(actions: LinkedInActions, notify: (m: string) => void = () => {}): SequenceDeps {
+function deps(
+  actions: LinkedInActions,
+  notify: (m: string) => void = () => {},
+  /**
+   * What the model would have said about the reply.
+   *
+   * Left out on purpose in most tests: the sequence has to work on a box with
+   * no model access, and its behaviour there is part of the contract.
+   */
+  readReply?: SequenceDeps["readReply"]
+): SequenceDeps {
   return {
     actions,
     notify,
     pauseMs: () => 0,
+    ...(readReply ? { readReply } : {}),
     writeMessage: async (_p, step) => ({ body: `Quick question for you about your work. Maria (${step})`, angle: step }),
   };
 }
@@ -297,9 +308,16 @@ test("the same reply is not stored twice across two passes", async () => {
   drop();
 });
 
-// Buying signals and refusals both go to the customer immediately. An agent must never negotiate,
-// and continuing after a no is the behaviour that earns the category its reputation.
-test("a reply that needs a human is handed over and alerts", async () => {
+/**
+ * Who decides that a reply needs the customer, and on what.
+ *
+ * Until 2026-08-07 it was a list of keywords and it was wrong in both
+ * directions: it handed over on "nice meeting you" and carried on through
+ * "sounds great, send me more". Three real leads answered a hello with small
+ * talk and every one was marked over-to-you. The decision is now split, and
+ * these hold the split in place.
+ */
+test("a buying signal is handed over, and the reason travels with it", async () => {
   const db = await freshDb();
   const alerts: string[] = [];
   let dmCalls = 0;
@@ -309,11 +327,100 @@ test("a reply that needs a human is handed over and alerts", async () => {
     readThread: async () => [{ from: "them", body: "Interesting, what is your pricing?" }],
     sendDm: async () => { dmCalls++; return true; },
   });
-  await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(actions, (m) => alerts.push(m), async () => ({ handOver: true, why: "asked what it costs" }))
+  );
   assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
   assert.equal(await countProspectsByStatus(db, STATUS.conversing), 0);
   assert.equal(dmCalls, 0);
   assert.equal(alerts.length, 1);
+  assert.match(alerts[0] ?? "", /asked what it costs/);
+  drop();
+});
+
+test("small talk is answered by the agent, not handed over", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [
+      { from: "them", body: "Thanks Maria, nice meeting you. What made you look for solo SaaS founders?" },
+    ],
+  });
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(actions, (m) => alerts.push(m), async () => ({ handOver: false, why: "a question about us" }))
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
+  drop();
+});
+
+test("a refusal stops the agent with no model involved at all", async () => {
+  const db = await freshDb();
+  const alerts: string[] = [];
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Not interested, please remove me." }],
+  });
+  // No readReply: the words alone have to settle this one.
+  await runSequence(baseCfg(), db, deps(actions, (m) => alerts.push(m)));
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
+  assert.equal(alerts.length, 1);
+  drop();
+});
+
+test("being asked whether this is a bot is never answered by the bot", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Hold on, is this a bot?" }],
+  });
+  await runSequence(baseCfg(), db, deps(actions));
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
+  drop();
+});
+
+test("a model that fails leaves the conversation with the agent", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.introSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Thanks, good to connect." }],
+  });
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(actions, () => {}, async () => {
+      throw new Error("the model is down");
+    })
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.conversing), 1);
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 0);
+  drop();
+});
+
+test("once the ask has gone out the agent hands over whatever comes back", async () => {
+  const db = await freshDb();
+  await seed(db, STATUS.askSent, daysAgo(1));
+  const actions = fakeActions({
+    inboxRepliers: async () => ["Jane Doe"],
+    readThread: async () => [{ from: "them", body: "Sure, sounds good." }],
+  });
+  // Even a model saying "keep talking" cannot reopen it: the ask is the last
+  // thing the agent ever sends.
+  await runSequence(
+    baseCfg(),
+    db,
+    deps(actions, () => {}, async () => ({ handOver: false, why: "" }))
+  );
+  assert.equal(await countProspectsByStatus(db, STATUS.handedOver), 1);
   drop();
 });
 

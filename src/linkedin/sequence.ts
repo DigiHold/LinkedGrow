@@ -1,5 +1,5 @@
 import type { Config } from "../config.ts";
-import { log } from "../logger.ts";
+import { log, logError } from "../logger.ts";
 import { sleep } from "../browser/human.ts";
 import type { LinkedInActions } from "./actions.ts";
 import {
@@ -110,6 +110,16 @@ export interface SequenceDeps {
   ) => Promise<GeneratedMessage>;
   /** Alerts Nicolas (Telegram in production, a log line until then). */
   notify: (message: string) => Promise<void> | void;
+  /**
+   * Reads an inbound reply and says whether it needs the customer.
+   *
+   * Optional, and its absence means the keyword layer decides alone: the
+   * sequence has to keep working on a box with no model access, and a failed
+   * classification must never stop a conversation the agent could have carried.
+   */
+  readReply?: (
+    thread: Turn[]
+  ) => Promise<{ handOver: boolean; why: string }>;
   /** Pause between actions. Defaults to the human envelope delay; tests pass 0. */
   pauseMs?: (cfg: Config) => number;
 }
@@ -229,9 +239,35 @@ async function detectReplies(db: DB, deps: SequenceDeps, pause: () => Promise<vo
       await recordAction(db, p.id, "reply", p.profile_url);
 
       const step = status === STATUS.askSent ? RELATIONSHIP_STEPS.ask : RELATIONSHIP_STEPS.converse;
-      if (shouldHandOver(step, thread)) {
+
+      /**
+       * The words first, then the reading.
+       *
+       * A refusal stops the agent whatever a model would say, and the ask being
+       * out means the agent has nothing left to send. Everything else is read:
+       * most replies are a thank-you or a question the agent can answer, and
+       * handing those over is how a warm thread goes cold in somebody's inbox.
+       */
+      let handOver = shouldHandOver(step, thread);
+      let why = handOver ? "the words in the reply" : "";
+      if (!handOver && deps.readReply) {
+        try {
+          const read = await deps.readReply(thread);
+          handOver = read.handOver;
+          why = read.why;
+        } catch (error) {
+          // Keep talking. An extra friendly message costs nothing; a thread
+          // parked on a busy person because a model call timed out costs the
+          // relationship.
+          logError("could not read the reply, the agent carries on", error, { prospect: label(p) });
+        }
+      }
+
+      if (handOver) {
         await setProspectStatus(db, p.id, STATUS.handedOver);
-        await deps.notify(`${label(p)} replied and it needs you. Over to you: ${p.profile_url}`);
+        await deps.notify(
+          `${label(p)} replied and it needs you${why ? ` (${why})` : ""}. Over to you: ${p.profile_url}`
+        );
       } else if (status === STATUS.helloSent) {
         // Answering a hello that asked nothing is not a conversation yet. What
         // it buys is an open thread for the message that has something in it.

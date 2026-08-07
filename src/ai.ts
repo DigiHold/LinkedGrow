@@ -254,6 +254,54 @@ export async function prefilter(
   return candidates.map((_, i) => verdicts[i]?.startsWith("keep") ?? false);
 }
 
+/**
+ * What a reply actually means, so the agent stops only when it should.
+ *
+ * The rule used to be a list of words. It handed the conversation over the
+ * moment somebody wrote "nice meeting you" and kept going when they wrote
+ * "sounds great, send me more". Neither is what a person would do, and the
+ * first one is worse: three leads on 2026-08-07 answered a hello with small
+ * talk and every one was marked over-to-you.
+ *
+ * One call on the cheap model, per inbound reply, so the cost is proportional
+ * to the number of people who wrote rather than to the number contacted.
+ *
+ * It is asked one question and nothing else. "Is this person asking for
+ * something only a human can give?" A question about who we are, a thank-you,
+ * a bit of small talk and a question about their own business are all things
+ * the agent answers. Wanting the product, a price, a call or a demo is not.
+ */
+export async function classifyReply(
+  ctx: AgentContext,
+  thread: { from: "us" | "them"; body: string }[],
+  business: string
+): Promise<{ handOver: boolean; why: string }> {
+  const transcript = thread
+    .slice(-6)
+    .map((t) => `${t.from === "us" ? "Us" : "Them"}: ${t.body.replace(/\s+/g, " ").trim()}`)
+    .join("\n");
+
+  const answer = await generate(
+    ctx,
+    `Our business: ${business || "a software product"}\n\nThe conversation so far:\n${transcript}\n\nAnswer on one line: HUMAN or AGENT, then a short reason.`,
+    {
+      model: MODELS.fast,
+      purpose: "classify-reply",
+      maxTokens: 60,
+      systemPrompt:
+        "You read one LinkedIn conversation and decide whether the last message from the other person needs a salesperson, or whether an assistant should simply write back.\n\n" +
+        "Answer HUMAN only when they are asking for something an assistant must not give: they want to see the product, want a demo, a call or a meeting, ask what it costs, want to buy, want to be introduced to someone, or make a complaint or a request that carries a commitment.\n\n" +
+        "Answer AGENT for everything else, and everything else is most replies: thanks, hello, nice to meet you, small talk, telling you about their own work, asking who you are or why you got in touch, asking a question about their own business or yours that does not commit anybody to anything, or saying they will be in touch later.\n\n" +
+        "When you are unsure, answer AGENT. An assistant writing one more friendly message costs nothing; handing a warm conversation to a busy person who then leaves it unanswered for a week costs the relationship.\n\n" +
+        "Format: one word, HUMAN or AGENT, then a dash and at most eight words of reason.",
+    }
+  );
+
+  const verdict = answer.trim().toUpperCase().startsWith("HUMAN");
+  const why = answer.replace(/^\s*(human|agent)\s*[-:—]?\s*/i, "").trim().slice(0, 120);
+  return { handOver: verdict, why: why || answer.trim().slice(0, 120) };
+}
+
 /** Full scoring, still on the cheap model. Sonnet here is the biggest cost mistake available. */
 export async function scoreLead(
   ctx: AgentContext,
