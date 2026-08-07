@@ -135,12 +135,17 @@ export async function loadRunnableAgents(): Promise<AgentContext[]> {
       -- meant an agent could be handed an account that had never signed in and
       -- would open a browser onto a login page every five minutes.
       AND l.status = 'active'
-      -- Somebody has to be paying. The app pauses the agents when a
-      -- subscription ends, but the app and this process are separate deploys
-      -- and this query is re-read every pass, so it is the guarantee: a missed
-      -- webhook cannot leave a cancelled customer's LinkedIn account being
-      -- driven on our AI budget.
-      AND (u.plan IN ('pro', 'business') OR u.is_lifetime_deal = 1 OR u.is_admin = 1)
+      -- Somebody has to be paying for the agents specifically. The app pauses
+      -- them when a subscription ends, but the app and this process are
+      -- separate deploys and this query is re-read every pass, so it is the
+      -- guarantee: a missed webhook cannot leave a cancelled customer's
+      -- LinkedIn account being driven on our AI budget.
+      --
+      -- A lifetime holder is deliberately NOT in this list. What they bought
+      -- outright in v1 is the content half, and it stays theirs for ever; the
+      -- agents are the thing they have to subscribe for. Exempting them here
+      -- would have run agents for free for anybody holding a v1 code.
+      AND (u.plan IN ('pro', 'business') OR u.is_admin = 1)
   `);
 
   return rows.map((r) => {
