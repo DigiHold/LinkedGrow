@@ -443,19 +443,10 @@ export const MTILE =
   "after:absolute after:-inset-4 after:z-[-1] after:rounded-[30px] after:content-[''] after:[background:radial-gradient(circle,rgba(255,255,255,.22),transparent_70%)]";
 export const CHAT =
   "mt-[26px] overflow-hidden rounded-[16px] border border-[rgba(255,255,255,.09)] bg-[rgba(6,10,20,.55)] [backdrop-filter:blur(14px)_saturate(1.2)]";
-export const CHATHEAD =
-  "flex items-center gap-2.5 border-b border-[rgba(255,255,255,.07)] px-[15px] py-3 " +
-  "[&_b]:block [&_b]:text-[13.5px] [&_b]:font-semibold [&_b]:leading-[1.2] [&_b]:text-white " +
-  "[&_small]:text-[11.5px] [&_small]:text-[#6f8199]";
-export const CHAT_AV =
-  "grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-[rgba(255,255,255,.08)] [&>svg]:h-5 [&>svg]:w-5 [&>svg]:fill-white";
-export const CHATBODY = "grid gap-[11px] px-[15px] py-4";
-export const BUB = "max-w-[88%] rounded-[14px] px-[14px] py-[11px] text-[13.5px] leading-[1.5]";
-export const BUB_ME =
-  "ml-auto rounded-br-[5px] text-white [background:linear-gradient(96deg,var(--color-v3-cyan),var(--color-v3-blue))]";
-export const BUB_IT = "rounded-bl-[5px] bg-[rgba(255,255,255,0.1)] text-[#eaf2fb] [&_b]:font-semibold [&_b]:text-white";
+export const MCLIP =
+  "relative aspect-video overflow-hidden bg-[#0b0f16] [&>video]:h-full [&>video]:w-full [&>video]:object-cover";
 export const MRUN =
-  "flex items-center gap-2 px-[15px] pb-[15px] font-v3-mono text-[11px] text-[rgba(255,255,255,.55)]";
+  "flex items-center gap-2 px-[15px] py-[13px] font-v3-mono text-[11px] text-[rgba(255,255,255,.55)]";
 export const MRUN_DOT = "h-[6px] w-[6px] flex-none animate-v3-breathe rounded-full bg-[#22c55e]";
 export const MCPFOOT =
   "mt-[26px] flex flex-wrap items-center justify-between gap-7 border-t border-[rgba(255,255,255,.09)] pt-[34px]";
