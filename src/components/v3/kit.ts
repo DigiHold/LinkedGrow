@@ -301,13 +301,7 @@ export const SC =
 export const SC_HD = "flex items-center gap-[11px] [&>svg]:flex-none [&>svg]:text-[#2ec8ea]";
 export const SC_H3 = "m-0 font-v3-display! text-[19.5px] font-semibold! leading-[1.2] tracking-[-.032em]! text-white";
 export const SC_P = "mt-3 text-[15px] text-[#93a7c5]";
-export const IPCHIP =
-  "mt-[22px] flex items-start gap-[11px] rounded-[13px] border border-[rgba(255,255,255,.08)] bg-[rgba(255,255,255,.032)] px-4 py-[14px] " +
-  "[&_code]:block [&_code]:font-v3-mono [&_code]:text-[13.5px] [&_code]:text-[#dbe6f5] " +
-  "[&_small]:mt-1 [&_small]:block [&_small]:text-[12px] [&_small]:text-[#6f8199]";
-export const IPCHIP_LAMP =
-  "mt-1.5 h-[7px] w-[7px] flex-none animate-v3-breathe rounded-full bg-[#22c55e] shadow-[0_0_0_4px_rgba(34,197,94,.16)] [animation-duration:2.4s]";
-/* Four bars that grow to their --h once the card is seen. */
+/* Bars that grow to their --h once the card is seen. */
 export const BARS =
   "mt-6 grid h-[132px] [grid-template-columns:repeat(4,1fr)] items-end gap-3 " +
   "[&>div]:flex [&>div]:h-full [&>div]:flex-col [&>div]:justify-end [&>div]:text-center " +
@@ -315,19 +309,59 @@ export const BARS =
   "[&_i]:block [&_i]:h-0 [&_i]:rounded-t-[10px] [&_i]:rounded-b-[3px] [&_i]:[background:linear-gradient(180deg,#2ec8ea,#1b62f0)] " +
   "[&_i]:[transition:height_1.15s_var(--ease-v3)] [.sc.seen_&_i]:h-[var(--h)] " +
   "[&_span]:mt-2.5 [&_span]:font-v3-mono [&_span]:text-[9.5px] [&_span]:tracking-[.1em] [&_span]:text-[#6f8199]";
-export const WEEK =
-  "mt-6 grid [grid-template-columns:repeat(7,1fr)] gap-2 " +
-  "[&_u]:relative [&_u]:block [&_u]:h-[76px] [&_u]:overflow-hidden [&_u]:rounded-[9px] [&_u]:bg-[rgba(255,255,255,.05)] " +
-  "[&_u]:after:absolute [&_u]:after:left-0 [&_u]:after:right-0 [&_u]:after:top-[var(--t)] [&_u]:after:h-0 [&_u]:after:opacity-[.85] [&_u]:after:content-[''] " +
-  "[&_u]:after:[background:linear-gradient(180deg,#2ec8ea,#1b62f0)] [&_u]:after:[transition:height_.9s_var(--ease-v3)_var(--dl,0s)] " +
-  "[.sc.seen_&_u]:after:h-[var(--hh)] " +
-  "[&_span]:mt-2 [&_span]:block [&_span]:text-center [&_span]:font-v3-mono [&_span]:text-[9.5px] [&_span]:tracking-[.08em] [&_span]:text-[#6f8199]";
-export const WEEK_OFF = "[&_u]:after:hidden";
-export const ALERT =
-  "mt-[22px] flex items-start gap-3 rounded-[13px] border border-[rgba(245,158,11,.3)] bg-[rgba(245,158,11,.07)] px-4 py-[14px] " +
-  "[&>svg]:mt-px [&>svg]:flex-none [&>svg]:text-[#f59e0b] " +
-  "[&_b]:block [&_b]:text-[13.5px] [&_b]:font-semibold [&_b]:text-[#fbe3b4] " +
-  "[&_small]:mt-1 [&_small]:block [&_small]:text-[12.5px] [&_small]:text-[#a89376]";
+/* Three bars instead of four, for the weights a source is ranked on. */
+export const BARS_3 = BARS + " [grid-template-columns:repeat(3,1fr)]!";
+
+/* ── the two panels that show the agent's own state ──
+   What it has learned, and where it has decided to look. Both sit on SC so
+   the reveal observer's `.sc.seen` drives their bars too, exactly the way the
+   weight chart above works. */
+export const LGRID =
+  "relative z-[1] mb-5 grid [grid-template-columns:1.02fr_.98fr] gap-5 max-[980px]:[grid-template-columns:1fr]";
+export const PHEAD =
+  "flex items-center justify-between gap-4 border-b border-[rgba(255,255,255,.08)] pb-[14px]";
+export const PTITLE =
+  "flex items-center gap-[9px] font-v3-display text-[15.5px] font-semibold tracking-[-.025em] text-white [&>svg]:flex-none [&>svg]:text-[#2ec8ea]";
+export const PPILL =
+  "flex-none rounded-full border border-[rgba(46,200,234,.28)] bg-[rgba(46,200,234,.08)] px-[10px] py-[3px] font-v3-mono text-[11px] whitespace-nowrap text-[#8ce4f5]";
+export const PLBL = "mt-[19px] block font-v3-mono text-[9.5px] tracking-[.11em] text-[#6f8199]";
+export const CHIPS = "mt-[9px] flex flex-wrap gap-[7px]";
+const CHIP_BASE = "rounded-[8px] border px-[9px] py-[5px] text-[12.5px]";
+export const CHIP = CHIP_BASE + " border-[rgba(46,200,234,.22)] bg-[rgba(46,200,234,.07)] text-[#cfe6f2]";
+export const CHIP_MISS = CHIP_BASE + " border-[rgba(245,158,11,.24)] bg-[rgba(245,158,11,.06)] text-[#e0cba6]";
+export const CHIP_WORD =
+  CHIP_BASE + " border-[rgba(255,255,255,.09)] bg-[rgba(255,255,255,.03)] font-v3-mono text-[12px] text-[#9fb3c9]";
+export const PFOOT =
+  "mt-[22px] flex flex-wrap items-center gap-x-[9px] gap-y-1 border-t border-[rgba(255,255,255,.07)] pt-[14px] font-v3-mono text-[11.5px] text-[#6f8199]";
+export const PFOOT_HI = "text-[#8ce4f5]";
+/* One source per row: its name, what a pass of it is worth, and a bar that
+   runs out to --w once the panel is seen. */
+export const SRC = "mt-[15px] grid [grid-template-columns:1fr_auto] items-center gap-x-[14px] gap-y-[7px]";
+export const SRC_NAME = "flex min-w-0 items-center gap-[8px] text-[13.5px] text-[#dbe6f5]";
+export const SRC_VAL =
+  "text-right font-v3-mono text-[12.5px] text-[#8ce4f5] [font-variant-numeric:tabular-nums]";
+export const SRC_TRACK =
+  "col-span-2 h-[6px] overflow-hidden rounded-full bg-[rgba(255,255,255,.06)] " +
+  "[&>i]:block [&>i]:h-full [&>i]:w-0 [&>i]:rounded-full [&>i]:[background:linear-gradient(90deg,#1b62f0,#2ec8ea)] " +
+  "[&>i]:[transition:width_1.2s_var(--ease-v3)_var(--dl,0s)] [.sc.seen_&>i]:w-[var(--w)]";
+export const SRC_TAG =
+  "flex-none rounded-full border border-[rgba(140,228,245,.24)] bg-[rgba(140,228,245,.08)] px-[7px] py-[2px] font-v3-mono text-[9.5px] tracking-[.05em] text-[#8ce4f5]";
+export const SRC_DEAD = "truncate text-[#5d6b7d] line-through decoration-[rgba(255,255,255,.22)]";
+export const SRC_NOTE = "flex-none font-v3-mono text-[9.5px] tracking-[.05em] text-[#5d6b7d]";
+export const SRC_OFF = "text-right font-v3-mono text-[12.5px] text-[#5d6b7d]";
+/* Two agents on one account, each with its own revision counter. */
+export const AGT =
+  "mt-6 grid gap-[10px] " +
+  "[&>div]:flex [&>div]:items-center [&>div]:gap-[10px] [&>div]:rounded-[12px] [&>div]:border [&>div]:border-[rgba(255,255,255,.08)] [&>div]:bg-[rgba(255,255,255,.03)] [&>div]:px-[14px] [&>div]:py-[11px] " +
+  "[&_b]:text-[13.5px] [&_b]:font-medium [&_b]:text-[#dbe6f5] " +
+  "[&_i]:ml-auto [&_i]:flex-none [&_i]:not-italic [&_i]:font-v3-mono [&_i]:text-[11.5px] [&_i]:text-[#8ce4f5]";
+export const AGT_DOT =
+  "h-[7px] w-[7px] flex-none rounded-full bg-[#2ec8ea] shadow-[0_0_0_3px_rgba(46,200,234,.14)]";
+export const AGT_DOT_ALT =
+  "h-[7px] w-[7px] flex-none rounded-full bg-[#6a9bff] shadow-[0_0_0_3px_rgba(106,155,255,.14)]";
+export const AGT_FOOT =
+  "mt-[11px] text-center font-v3-mono text-[10.5px] tracking-[.05em] text-[#6f8199]";
+
 export const HARD =
   "relative z-[1] mt-5 grid [grid-template-columns:repeat(4,1fr)] gap-[18px] max-[860px]:[grid-template-columns:repeat(2,1fr)]";
 export const HARD_CELL =

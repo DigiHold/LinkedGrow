@@ -7,12 +7,16 @@ import { V3Plans } from "./pricing-section";
 import { V3_ROOT } from "./root";
 import { V3UrlForm } from "./url-form";
 import {
-  ALERT,
+  AGT,
+  AGT_DOT,
+  AGT_DOT_ALT,
+  AGT_FOOT,
   ANN,
   AVS,
   BADGE,
   BADGES,
   BARS,
+  BARS_3,
   BUB,
   BUB_IT,
   BUB_ME,
@@ -22,11 +26,16 @@ import {
   CAP_H3,
   CAP_P,
   CAP_TXT_ALT,
+  CARVE,
   CELLS,
   CHAT,
   CHATBODY,
   CHATHEAD,
   CHAT_AV,
+  CHIP,
+  CHIPS,
+  CHIP_MISS,
+  CHIP_WORD,
   CHROME_DK,
   CHROME_DOT_DK,
   CHROME_DOT_LT,
@@ -55,23 +64,21 @@ import {
   FILL_PRI,
   FILL_WIDE,
   FINALE,
-  CARVE,
   H1,
-  HERO_FIELD,
-  HERO_ORB_A,
-  HERO_ORB_B,
-  HERO_RINGS,
   H2,
   H3,
   HARD,
   HARD_B,
   HARD_CELL,
   HARD_P,
+  HERO_FIELD,
+  HERO_ORB_A,
+  HERO_ORB_B,
+  HERO_RINGS,
   INC,
-  IPCHIP,
-  IPCHIP_LAMP,
   LEAD,
   LEAD_MUT,
+  LGRID,
   MCARD,
   MCARD_A,
   MCARD_B,
@@ -100,7 +107,10 @@ import {
   NOTE,
   NUMPILL,
   PD,
+  PFOOT,
+  PFOOT_HI,
   PH,
+  PHEAD,
   PH_CHIP,
   PH_MK,
   PIP,
@@ -112,13 +122,16 @@ import {
   PLAN_PLAIN,
   PLAN_TAG,
   PLAN_UL,
+  PLBL,
   PN,
+  PPILL,
   PR,
   PSTAT,
   PSTAT_IC,
   PSTAT_IX,
   PSTAT_N,
   PSTAT_P,
+  PTITLE,
   QAV,
   QUOTE,
   QUOTE_BQ,
@@ -146,6 +159,14 @@ import {
   SH_BUL_NIGHT,
   SH_BUL_WARM,
   SPOT,
+  SRC,
+  SRC_DEAD,
+  SRC_NAME,
+  SRC_NOTE,
+  SRC_OFF,
+  SRC_TAG,
+  SRC_TRACK,
+  SRC_VAL,
   STAG,
   STAG_STATE,
   STEP,
@@ -161,8 +182,6 @@ import {
   URLBAR_INPUT,
   URLWRAP,
   VID,
-  WEEK,
-  WEEK_OFF,
   WORTH,
   WRAP,
   WSPLIT,
@@ -561,62 +580,123 @@ export function V3Landing() {
         </div>
       </section>
 
-      {/*═══ 8. SÉCURITÉ ═══*/}
-      <section className={`${SEC} ${NIGHT} v3-night`} id="safety">
+      {/*═══ 8. LE CERVEAU ═══*/}
+      <section className={`${SEC} ${NIGHT} v3-night`} id="brain">
         <span className={SPOT} id="spot"></span>
         <div className={WRAP}>
-          <div className={`${RV} relative z-[1] mb-[46px] max-w-[780px]`}>
-            <span className={EB_NIGHT}><i className={EB_DOT_NIGHT}></i>Hard limits, on every plan</span>
-            <h2 className={`${H2} mt-5 text-white`}>Rules the agent <em className={EM_SKY}>cannot break.</em></h2>
-            <p className={`${LEAD} mt-[18px] text-[#93a7c5]`}>Speed is what gets LinkedIn accounts restricted, so the agent is built around restraint you can watch working. Every safety signal sits on your dashboard rather than in a settings page nobody opens.</p>
+          <div className={`${RV} relative z-[1] mb-[46px] max-w-[820px]`}>
+            <span className={EB_NIGHT}><i className={EB_DOT_NIGHT}></i>One memory per agent, rewritten as the evidence lands</span>
+            <h2 className={`${H2} mt-5 text-white`}>It gets better at finding <em className={EM_SKY}>your buyers.</em></h2>
+            <p className={`${LEAD} mt-[18px] text-[#93a7c5]`}>Most tools search the same way on day 90 as they did on day 1. Yours keeps score of what every search actually produced, remembers who turned out to be worth writing to, and rewrites its own targeting around the answer.</p>
           </div>
+
+          <div className={LGRID}>
+            <div className={`${SC} ${RV_STATE}`}>
+              <div className={PHEAD}>
+                <span className={PTITLE}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="7" y="7" width="10" height="10" rx="2" /><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" /></svg>
+                  Agent memory
+                </span>
+                <span className={PPILL}>revision 24</span>
+              </div>
+              <span className={PLBL}>WORTH WRITING TO</span>
+              <div className={CHIPS}>
+                <span className={CHIP}>Founder running their own booking software</span>
+                <span className={CHIP}>Studio owner who builds client sites</span>
+                <span className={CHIP}>Independent practitioner, site built themselves</span>
+              </div>
+              <span className={PLBL}>LOOKED RIGHT AND WAS NOT</span>
+              <div className={CHIPS}>
+                <span className={CHIP_MISS}>Enterprise marketing manager</span>
+                <span className={CHIP_MISS}>Agency selling the same thing</span>
+              </div>
+              <span className={PLBL}>WORDS THEY USE ABOUT THEMSELVES</span>
+              <div className={CHIPS}>
+                <span className={CHIP_WORD}>bootstrapped</span>
+                <span className={CHIP_WORD}>indie hacker</span>
+                <span className={CHIP_WORD}>building in public</span>
+                <span className={CHIP_WORD}>solo founder</span>
+              </div>
+              <div className={PFOOT}>
+                <span className={PFOOT_HI}>368 B</span>
+                <span>of a 1,200 B ceiling</span>
+                <span>·</span>
+                <span>rewritten in full on every revision</span>
+              </div>
+            </div>
+
+            <div className={`${SC} ${RV_STATE}`}>
+              <div className={PHEAD}>
+                <span className={PTITLE}>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" /></svg>
+                  Where it looks now
+                </span>
+                <span className={PPILL}>worth per pass</span>
+              </div>
+              <span className={PLBL}>RANKED BY WHAT EACH ONE PRODUCED</span>
+              <div className={SRC}>
+                <span className={SRC_NAME}><span className="truncate">indie SaaS founder</span><span className={SRC_TAG}>YOUR SETUP</span></span>
+                <span className={SRC_VAL}>4.50</span>
+                <span className={SRC_TRACK}><i style={{ "--w": "100%", "--dl": ".05s" } as React.CSSProperties}></i></span>
+
+                <span className={SRC_NAME}><span className="truncate">bootstrapped software founder</span><span className={SRC_TAG}>LEARNED</span></span>
+                <span className={SRC_VAL}>3.20</span>
+                <span className={SRC_TRACK}><i style={{ "--w": "71%", "--dl": ".14s" } as React.CSSProperties}></i></span>
+
+                <span className={SRC_NAME}><span className="truncate">one-person startup</span><span className={SRC_TAG}>LEARNED</span></span>
+                <span className={SRC_VAL}>2.40</span>
+                <span className={SRC_TRACK}><i style={{ "--w": "53%", "--dl": ".23s" } as React.CSSProperties}></i></span>
+
+                <span className={SRC_NAME}><span className="truncate">vibe coding</span></span>
+                <span className={SRC_VAL}>0.20</span>
+                <span className={SRC_TRACK}><i style={{ "--w": "4%", "--dl": ".32s" } as React.CSSProperties}></i></span>
+
+                <span className={SRC_NAME}><span className={SRC_DEAD}>a competitor&apos;s followers</span><span className={SRC_NOTE}>RETIRED · 8 EMPTY PASSES</span></span>
+                <span className={SRC_OFF}>0.00</span>
+                <span className={SRC_TRACK}><i style={{ "--w": "0%" } as React.CSSProperties}></i></span>
+              </div>
+              <div className={PFOOT}>
+                <span>Anything untried is read first, so a good search can still be found.</span>
+              </div>
+            </div>
+          </div>
+
           <div className={SGRID}>
             <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3l8 3.5v5.5c0 4.5-3.2 8-8 9.5-4.8-1.5-8-5-8-9.5V6.5z" /></svg><h3 className={SC_H3}>One residential IP, yours alone</h3></div>
-              <p className={SC_P}>Your agent connects from a fixed residential address in your own country, reserved for your account for its whole life. To LinkedIn it looks like a person at home, one steady address with one routine.</p>
-              <div className={IPCHIP}><span className={IPCHIP_LAMP}></span>
-                <span><code>45.•••.•••.112 · Zurich, Switzerland</code>
-                  <small>Dedicated residential · reserved for this account · never rotated</small></span></div>
+              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8.5" /><path d="M12 6.5v6" /></svg><h3 className={SC_H3}>It stops reading what never pays</h3></div>
+              <p className={SC_P}>A search that has produced nobody worth writing to after 8 passes is switched off, and the reason sits next to it. It stays in your list and you can switch it back on, but the agent stops spending your day on it.</p>
             </div>
             <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20V10M10 20V5M16 20v-8M22 20V8" /></svg><h3 className={SC_H3}>Four weeks of warm-up, enforced</h3></div>
-              <p className={SC_P}>New agents start with a handful of actions a day and earn their pace across a month, exactly like a person new to outreach would. You cannot skip it, and that is precisely the point.</p>
-              <div className={BARS}>
-                <div><b>8/day</b><i style={{ "--h": "32%" } as React.CSSProperties}></i><span>WEEK 1</span></div>
-                <div><b>15/day</b><i style={{ "--h": "60%" } as React.CSSProperties}></i><span>WEEK 2</span></div>
-                <div><b>21/day</b><i style={{ "--h": "84%" } as React.CSSProperties}></i><span>WEEK 3</span></div>
-                <div><b>25/day</b><i style={{ "--h": "100%" } as React.CSSProperties}></i><span>WEEK 4</span></div>
+              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.9-4.9M10.5 8v5M8 10.5h5" /></svg><h3 className={SC_H3}>It writes searches you never typed</h3></div>
+              <p className={SC_P}>When a search works, the agent reads the real headlines of the people it found and writes up to 3 more searches that would find others like them. Your own wording is the starting point rather than the ceiling.</p>
+            </div>
+            <div className={`${SC} ${RV_STATE}`}>
+              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20v-4M12 20V11M20 20V5" /></svg><h3 className={SC_H3}>A reply counts more than a good score</h3></div>
+              <p className={SC_P}>A match score is our opinion of somebody. A reply from them is a fact about them. So a source that brings replies climbs 8 times faster than one that only brings good-looking profiles.</p>
+              <div className={BARS_3}>
+                <div><b>1</b><i style={{ "--h": "13%" } as React.CSSProperties}></i><span>GOOD LEAD</span></div>
+                <div><b>3</b><i style={{ "--h": "38%" } as React.CSSProperties}></i><span>ACCEPTED</span></div>
+                <div><b>8</b><i style={{ "--h": "100%" } as React.CSSProperties}></i><span>REPLIED</span></div>
               </div>
             </div>
             <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3.5" y="5" width="17" height="16" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg><h3 className={SC_H3}>A calendar a human would keep</h3></div>
-              <p className={SC_P}>Business hours in your own time zone, gaps of forty to a hundred and twenty seconds between actions, no weekends and nothing at three in the morning. The rhythm is boring on purpose, because boring is what a normal professional looks like.</p>
-              <div className={WEEK}>
-                <div><u style={{ "--t": "24%", "--hh": "52%", "--dl": ".05s" } as React.CSSProperties}></u><span>MON</span></div>
-                <div><u style={{ "--t": "20%", "--hh": "58%", "--dl": ".12s" } as React.CSSProperties}></u><span>TUE</span></div>
-                <div><u style={{ "--t": "28%", "--hh": "46%", "--dl": ".19s" } as React.CSSProperties}></u><span>WED</span></div>
-                <div><u style={{ "--t": "22%", "--hh": "56%", "--dl": ".26s" } as React.CSSProperties}></u><span>THU</span></div>
-                <div><u style={{ "--t": "30%", "--hh": "42%", "--dl": ".33s" } as React.CSSProperties}></u><span>FRI</span></div>
-                <div className={WEEK_OFF}><u></u><span>SAT</span></div>
-                <div className={WEEK_OFF}><u></u><span>SUN</span></div>
+              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="7" width="10" height="10" rx="2.4" /><path d="M17 7h2.6A1.4 1.4 0 0121 8.4V17" /><path d="M17 12h4" /></svg><h3 className={SC_H3}>One memory per agent, never shared</h3></div>
+              <p className={SC_P}>Run one agent for your booking tool and another for your cookie banner on the same LinkedIn account, and neither will learn the other&apos;s customer. They share the account&apos;s daily limits and its inbox. What each of them has learned stays its own.</p>
+              <div className={AGT}>
+                <div><span className={AGT_DOT}></span><b>Booking widget</b><i>memory rev 24</i></div>
+                <div><span className={AGT_DOT_ALT}></span><b>Cookie banner</b><i>memory rev 6</i></div>
               </div>
-            </div>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="5" y="4" width="4.5" height="16" rx="1.4" /><rect x="14.5" y="4" width="4.5" height="16" rx="1.4" /></svg><h3 className={SC_H3}>It stops at the first odd signal</h3></div>
-              <p className={SC_P}>A security prompt, an unusual response, a limit getting close: the agent stops, tells you exactly what it saw, and waits for you. Silence is the one thing it never does, because that is how people lose accounts.</p>
-              <div className={ALERT}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17v.01" /></svg>
-                <span><b>Agent paused · checkpoint detected</b>
-                  <small>Nothing sent since 14:32. Waiting for you, and an email is already in your inbox.</small></span></div>
+              <p className={AGT_FOOT}>SAME ACCOUNT · SAME DAILY LIMITS · SEPARATE MEMORIES</p>
             </div>
           </div>
+
           <div className={HARD}>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>6</b><p className={HARD_P}>messages per person, maximum, then the agent stops for good</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>1</b><p className={HARD_P}>dedicated residential IP per LinkedIn account</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>40-120<em className="not-italic text-[.44em] tracking-[-.01em]">s</em></b><p className={HARD_P}>enforced gap between any two actions</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>0</b><p className={HARD_P}>actions on weekends, public holidays included</p></div>
+            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>8</b><p className={HARD_P}>passes with nothing before a search is retired</p></div>
+            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>3</b><p className={HARD_P}>fresh searches written from every one that works</p></div>
+            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>1</b><p className={HARD_P}>memory per agent, never shared between them</p></div>
+            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>0</b><p className={HARD_P}>extra AI cost, the agent&apos;s own thinking is included</p></div>
           </div>
-          <p className={`${SFOOT} ${RV}`}>No vendor can honestly promise LinkedIn will never ask questions. What we promise is conservative defaults, an agent that stops before you have to, and a health score you can check at any hour of the day.</p>
+          <p className={`${SFOOT} ${RV}`}>None of this is magic on the first morning. The agent starts from the audience you describe in the setup, and everything here only moves once there is real evidence to move on: who accepted, who replied, and who read the invitation and never came back.</p>
         </div>
       </section>
 
