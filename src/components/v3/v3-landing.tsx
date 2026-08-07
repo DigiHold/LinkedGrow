@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { initV3Landing } from "./landing-effects";
+import { initConstellation, initV3Landing } from "./landing-effects";
 import { V3FaqAside, V3FaqList } from "./faq-section";
 import { V3Plans } from "./pricing-section";
 import { V3_ROOT } from "./root";
@@ -155,7 +155,11 @@ import {
  */
 
 export function V3Landing() {
+  /* Two effects on purpose. The landing script is a dozen effects sharing one
+     call, and the constellation used to sit at the bottom of it where a single
+     early exit above left the canvas blank with nothing in the console. */
   useEffect(() => { try { return initV3Landing(); } catch (e) { console.error("landing effects failed", e); } }, []);
+  useEffect(() => initConstellation(), []);
 
   return (
     <div className={V3_ROOT}>

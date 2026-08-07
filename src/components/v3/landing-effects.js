@@ -242,16 +242,33 @@ export function initV3Landing() {
   });
 
 
-  /* The constellation: where the agent hunts, drawn by what answered.
-     Winners grow branches of their own and leads run home along them; ground
-     that stays quiet withers and gets struck through. The shapes are fixed so
-     the frame is the same for everybody, and it only runs while on screen. */
-  (function () {
-    try {
-    const cv = document.getElementById("constellation");
-    if (!cv) return;
-    const c = cv.getContext("2d");
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+
+  return () => {
+    for (const [target, type, handler] of listeners) {
+      target.removeEventListener(type, handler);
+    }
+    for (const id of frames) cancelAnimationFrame(id);
+    for (const o of observers) o.disconnect();
+  };
+}
+
+/**
+ * The constellation, on its own effect.
+ *
+ * It used to live at the bottom of initV3Landing and never ran: execution
+ * stopped somewhere above it, silently, and the box rendered empty. A visual
+ * that big does not belong behind a dozen other effects.
+ */
+export function initConstellation() {
+  const cv = document.getElementById("constellation");
+  if (!cv) return () => {};
+  const c = cv.getContext("2d");
+  if (!c) return () => {};
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let id = 0;
+  const obs = [];
+  try {
     const N = [
       { x: .24, y: .40, mx: .12, my: .08, r: 14, k: 1, l: "indie SaaS founder", born: 0 },
       { x: .50, y: .22, mx: .23, my: .18, r: 10, k: 2, l: "building in public", born: 60 },
@@ -265,7 +282,7 @@ export function initV3Landing() {
     const E = [[0, 1], [0, 2], [1, 3], [2, 4], [3, 5]];
     const col = { 0: "58,70,88", 1: "46,200,234", 2: "106,155,255" };
     const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
-    let W = 0, H = 0, t = 0, live = false, id = 0;
+    let W = 0, H = 0, t = 0, live = false;
     const narrow = () => W < 620;
     const px = (n) => (narrow() ? n.mx : n.x) * W;
     const py = (n) => (narrow() ? n.my : n.y) * H;
@@ -335,26 +352,27 @@ export function initV3Landing() {
         c.textAlign = "left";
       });
       t += still ? 0 : 1;
-      if (live && !still) id = requestAnimationFrame(draw);
     }
 
+    /* One loop for the life of the page, paused when the section is off
+       screen. Gating the first paint on the observer left the canvas blank
+       whenever the box happened to be measured before layout settled. */
     fit();
-    const ro = new ResizeObserver(() => { fit(); if (still) draw(); });
+    const ro = new ResizeObserver(() => { fit(); draw(); });
     ro.observe(cv);
-    const io = new IntersectionObserver((es) => {
-      live = es[0].isIntersecting;
-      if (live) { draw(); frames.push(id); }
-    }, { threshold: .05 });
+    const io = new IntersectionObserver((es) => { live = es[0].isIntersecting; }, { threshold: 0 });
     io.observe(cv);
-    observers.push(io, ro);
-    } catch (e) { console.error("constellation failed", e); }
-  })();
-
-  return () => {
-    for (const [target, type, handler] of listeners) {
-      target.removeEventListener(type, handler);
+    obs.push(io, ro);
+    if (still) { t = 320; draw(); }
+    else {
+      const tick = () => { if (live) draw(); id = requestAnimationFrame(tick); };
+      id = requestAnimationFrame(tick);
     }
-    for (const id of frames) cancelAnimationFrame(id);
-    for (const o of observers) o.disconnect();
+      } catch (e) {
+    console.error("constellation failed", e);
+  }
+  return () => {
+    cancelAnimationFrame(id);
+    for (const o of obs) o.disconnect();
   };
 }

@@ -353,10 +353,10 @@ export const SRC_OFF = "text-right font-v3-mono text-[12.5px] text-[#5d6b7d]";
    A canvas of where the agent hunts, beside three cards that say why it
    changes shape. landing-effects.js draws into #constellation. */
 export const MAPWRAP =
-  "relative z-[1] grid [grid-template-columns:1fr_336px] items-start gap-5 max-[1040px]:[grid-template-columns:1fr]";
+  "relative z-[1] grid [grid-template-columns:1fr_336px] items-stretch gap-5 max-[1040px]:[grid-template-columns:1fr]";
 export const MAPBOX =
   "relative overflow-hidden rounded-[22px] border border-[rgba(255,255,255,.09)] bg-[rgba(255,255,255,.028)] " +
-  "h-[clamp(420px,46vw,580px)] max-[1040px]:h-[360px] [&>canvas]:block [&>canvas]:h-full [&>canvas]:w-full";
+  "min-h-[430px] max-[1040px]:min-h-[360px] [&>canvas]:absolute [&>canvas]:inset-0 [&>canvas]:block [&>canvas]:h-full [&>canvas]:w-full";
 export const MAPHUD =
   "pointer-events-none absolute right-[22px] top-[20px] max-[620px]:hidden text-right font-v3-mono text-[10px] leading-[1.6] tracking-[.08em] text-[#6f8199]";
 export const MAPLEG =
