@@ -276,7 +276,7 @@ export function AutomationToolsContent() {
           },
           {
             quote:
-              "The BYOK model sold me. I was paying $79 per month for an outreach tool that LinkedIn kept flagging. Now I pay $39 plus about $3 in AI costs, and I'm publishing better content more consistently than I ever did with automated messaging.",
+              "The BYOK model sold me. I was paying $79 per month for an outreach tool that LinkedIn kept flagging. Now I pay $99 plus about $3 in AI costs, and I'm publishing better content more consistently than I ever did with automated messaging.",
             author: "Sarah K.",
             role: "Agency Owner, 18K Followers",
           },
