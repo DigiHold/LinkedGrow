@@ -162,7 +162,7 @@ export function V3Landing() {
         </div>
         <div className={`${WRAP} relative z-[3] text-center`}>
           <span className={`${EB_LT} ${RV}`}><i className={EB_DOT_LT}></i>The LinkedIn AI agent for founders and sales teams</span>
-          <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[21ch] text-balance text-white`} data-blur="3">Your agent finds your LinkedIn leads <em className={EM_SKY}>and starts the conversation.</em></h1>
+          <h1 className={`${H1} ${WSPLIT} mx-auto mt-[26px] max-w-[21ch] text-balance text-white`} data-blur="3">Your agent finds your LinkedIn leads <em className={EM_SKY}>and starts the conversation</em></h1>
           <p className={`${LEAD} ${RV} mx-auto mt-6 max-w-[62ch] text-[rgba(255,255,255,.76)]`} style={{ "--d0": ".1s" } as React.CSSProperties}>Enter your website. LinkedGrow works out who actually buys from you, finds those exact people on LinkedIn, and opens a real conversation every working day. Lead generation on LinkedIn without the prospecting, the copy and paste, or the follow-up you forget. You show up when somebody answers.</p>
           <V3UrlForm className={`${RV} mt-9`} />
           <p className={`${RV} mt-[15px] text-[13.5px] text-[rgba(255,255,255,.55)] [&_b]:font-semibold [&_b]:text-[rgba(255,255,255,.85)]`} style={{ "--d0": ".28s" } as React.CSSProperties}><b>7-day free trial</b> on the Pro plan · Everything included · The AI is in the price</p>
@@ -204,7 +204,7 @@ export function V3Landing() {
       </section>
 
       {/*═══ 2. ÉNONCÉ ═══*/}
-      <section className="py-[clamp(88px,11.5vw,164px)]">
+      <section className="pb-[20px] pt-[50px]">
         <div className={NARROW}><p className={`${WSPLIT} mx-auto max-w-[21ch] text-center font-v3-display! text-[clamp(28px,4.3vw,53px)] font-medium! leading-[1.13]! tracking-[-.04em]!`}>The bottleneck was never your product. It is that the right people <em className={EM_GRAD}>never heard of you.</em></p></div>
       </section>
 
