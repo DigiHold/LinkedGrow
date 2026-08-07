@@ -241,6 +241,113 @@ export function initV3Landing() {
       if(!open){q.classList.add('open');a.style.maxHeight=a.scrollHeight+'px';}};
   });
 
+
+  /* The constellation: where the agent hunts, drawn by what answered.
+     Winners grow branches of their own and leads run home along them; ground
+     that stays quiet withers and gets struck through. The shapes are fixed so
+     the frame is the same for everybody, and it only runs while on screen. */
+  (function () {
+    const cv = document.getElementById("constellation");
+    if (!cv) return;
+    const c = cv.getContext("2d");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const N = [
+      { x: .24, y: .40, mx: .12, my: .08, r: 14, k: 1, l: "indie SaaS founder", born: 0 },
+      { x: .50, y: .22, mx: .23, my: .18, r: 10, k: 2, l: "building in public", born: 60 },
+      { x: .54, y: .64, mx: .15, my: .28, r: 11, k: 2, l: "bootstrapped", born: 95 },
+      { x: .76, y: .40, mx: .26, my: .38, r: 8, k: 2, l: "one-person startup", born: 150 },
+      { x: .38, y: .80, mx: .13, my: .48, r: 7, k: 2, l: "solo developer", born: 190 },
+      { x: .80, y: .74, mx: .25, my: .58, r: 6, k: 2, l: "side project", born: 235 },
+      { x: .13, y: .74, mx: .14, my: .68, r: 5, k: 0, l: "vibe coding", born: 0 },
+      { x: .68, y: .11, mx: .25, my: .78, r: 5, k: 0, l: "a competitor", born: 0 },
+    ];
+    const E = [[0, 1], [0, 2], [1, 3], [2, 4], [3, 5]];
+    const col = { 0: "58,70,88", 1: "46,200,234", 2: "106,155,255" };
+    const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+    let W = 0, H = 0, t = 0, live = false, id = 0;
+    const narrow = () => W < 620;
+    const px = (n) => (narrow() ? n.mx : n.x) * W;
+    const py = (n) => (narrow() ? n.my : n.y) * H;
+    const pr = (n) => n.r * (narrow() ? .74 : 1);
+
+    function fit() {
+      const b = cv.getBoundingClientRect();
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      W = b.width; H = b.height;
+      cv.width = W * d; cv.height = H * d;
+      c.setTransform(d, 0, 0, d, 0, 0);
+    }
+    const font = () => (W < 560 ? "10px " : "11px ") + "ui-monospace, SFMono-Regular, Menlo, monospace";
+
+    function draw() {
+      c.clearRect(0, 0, W, H);
+      E.forEach(([a, b]) => {
+        const p = N[a], q = N[b];
+        const k = ease((t - q.born) / 70);
+        if (k <= 0) return;
+        c.beginPath();
+        c.moveTo(px(p), py(p));
+        c.lineTo(px(p) + (px(q) - px(p)) * k, py(p) + (py(q) - py(p)) * k);
+        c.strokeStyle = "rgba(46,200,234,.24)";
+        c.lineWidth = 1.2;
+        c.stroke();
+        if (k >= 1 && !still) {
+          const f = (t / 60) % 1;
+          c.beginPath();
+          c.arc(px(q) + (px(p) - px(q)) * f, py(q) + (py(p) - py(q)) * f, 2.2, 0, 6.2832);
+          c.fillStyle = "rgba(140,228,245,.85)";
+          c.fill();
+        }
+      });
+      N.forEach((n, i) => {
+        const grown = n.born === 0 ? 1 : ease((t - n.born) / 60);
+        if (grown <= 0) return;
+        const alive = n.k !== 0;
+        const br = alive && !still ? Math.sin((t + i * 30) / 32) * 1.1 : 0;
+        const x = px(n), y = py(n), r = (pr(n) + br) * grown;
+        const fade = alive ? 1 : Math.max(.24, 1 - ease(t / 260));
+        if (alive) {
+          const g = c.createRadialGradient(x, y, 0, x, y, r * 4.4);
+          g.addColorStop(0, "rgba(" + col[n.k] + ",.32)");
+          g.addColorStop(1, "rgba(" + col[n.k] + ",0)");
+          c.fillStyle = g;
+          c.beginPath(); c.arc(x, y, r * 4.4, 0, 6.2832); c.fill();
+        }
+        c.beginPath(); c.arc(x, y, r, 0, 6.2832);
+        c.fillStyle = "rgba(" + col[n.k] + "," + fade + ")";
+        c.fill();
+        c.font = font();
+        const right = narrow() || x < W * .72;
+        c.textAlign = right ? "left" : "right";
+        c.fillStyle = alive ? "rgba(219,230,245,.82)" : "rgba(147,167,197,.32)";
+        const tx = x + (right ? r + 9 : -r - 9);
+        c.fillText(n.l, tx, y + 4);
+        if (!alive && t > 150) {
+          const w = c.measureText(n.l).width;
+          c.beginPath();
+          c.moveTo(right ? tx : tx - w, y);
+          c.lineTo(right ? tx + w : tx, y);
+          c.strokeStyle = "rgba(147,167,197,.3)";
+          c.lineWidth = 1;
+          c.stroke();
+        }
+        c.textAlign = "left";
+      });
+      t += still ? 0 : 1;
+      if (live && !still) id = requestAnimationFrame(draw);
+    }
+
+    fit();
+    const ro = new ResizeObserver(() => { fit(); if (still) draw(); });
+    ro.observe(cv);
+    const io = new IntersectionObserver((es) => {
+      live = es[0].isIntersecting;
+      if (live) { draw(); frames.push(id); }
+    }, { threshold: .05 });
+    io.observe(cv);
+    observers.push(io, ro);
+  })();
+
   return () => {
     for (const [target, type, handler] of listeners) {
       target.removeEventListener(type, handler);

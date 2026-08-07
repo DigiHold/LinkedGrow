@@ -349,6 +349,21 @@ export const SRC_TAG =
 export const SRC_DEAD = "truncate text-[#5d6b7d] line-through decoration-[rgba(255,255,255,.22)]";
 export const SRC_NOTE = "flex-none font-v3-mono text-[9.5px] tracking-[.05em] text-[#5d6b7d]";
 export const SRC_OFF = "text-right font-v3-mono text-[12.5px] text-[#5d6b7d]";
+/* ── the constellation ──
+   A canvas of where the agent hunts, beside three cards that say why it
+   changes shape. landing-effects.js draws into #constellation. */
+export const MAPWRAP =
+  "relative z-[1] grid [grid-template-columns:1fr_336px] items-start gap-5 max-[1040px]:[grid-template-columns:1fr]";
+export const MAPBOX =
+  "relative overflow-hidden rounded-[22px] border border-[rgba(255,255,255,.09)] bg-[rgba(255,255,255,.028)] " +
+  "h-[clamp(420px,46vw,580px)] max-[1040px]:h-[360px] [&>canvas]:block [&>canvas]:h-full [&>canvas]:w-full";
+export const MAPHUD =
+  "pointer-events-none absolute right-[22px] top-[20px] max-[620px]:hidden text-right font-v3-mono text-[10px] leading-[1.6] tracking-[.08em] text-[#6f8199]";
+export const MAPLEG =
+  "pointer-events-none absolute bottom-[18px] left-[22px] flex flex-wrap gap-x-[18px] gap-y-1 font-v3-mono text-[10px] tracking-[.07em] text-[#6f8199] " +
+  "[&_i]:mr-[6px] [&_i]:inline-block [&_i]:h-[7px] [&_i]:w-[7px] [&_i]:rounded-full [&_i]:align-middle max-[560px]:text-[9px]";
+export const MAPSIDE = "flex flex-col gap-[14px]";
+
 /* Two agents on one account, each with its own revision counter. */
 export const AGT =
   "mt-6 grid gap-[10px] " +

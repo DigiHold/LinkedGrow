@@ -11,8 +11,6 @@ import {
   AVS,
   BADGE,
   BADGES,
-  BARS,
-  BARS_3,
   BUB,
   BUB_IT,
   BUB_ME,
@@ -29,9 +27,6 @@ import {
   CHATHEAD,
   CHAT_AV,
   CHIP,
-  CHIPS,
-  CHIP_MISS,
-  CHIP_WORD,
   CHROME_DK,
   CHROME_DOT_DK,
   CHROME_DOT_LT,
@@ -64,7 +59,11 @@ import {
   HERO_RINGS,
   LEAD,
   LEAD_MUT,
-  LGRID,
+  MAPBOX,
+  MAPHUD,
+  MAPLEG,
+  MAPSIDE,
+  MAPWRAP,
   MCARD,
   MCARD_A,
   MCARD_B,
@@ -94,18 +93,14 @@ import {
   NUMPILL,
   PFOOT,
   PH,
-  PHEAD,
   PH_CHIP,
   PH_MK,
-  PLBL,
-  PPILL,
   PR,
   PSTAT,
   PSTAT_IC,
   PSTAT_IX,
   PSTAT_N,
   PSTAT_P,
-  PTITLE,
   QAV,
   QUOTE,
   QUOTE_BQ,
@@ -122,23 +117,13 @@ import {
   SCREEN_DK,
   SCREEN_LT,
   SC_H3,
-  SC_HD,
   SC_P,
   SEC,
   SFOOT,
-  SGRID,
   SH,
   SH_BUL,
   SH_BUL_WARM,
   SPOT,
-  SRC,
-  SRC_DEAD,
-  SRC_NAME,
-  SRC_NOTE,
-  SRC_OFF,
-  SRC_TAG,
-  SRC_TRACK,
-  SRC_VAL,
   STAG,
   STAG_STATE,
   STEP,
@@ -149,7 +134,6 @@ import {
   TR,
   TRUST,
   VID,
-  WORTH,
   WRAP,
   WSPLIT,
 } from "./kit";
@@ -550,98 +534,39 @@ export function V3Landing() {
       <section className={`${SEC} ${NIGHT} v3-night`} id="brain">
         <span className={SPOT} id="spot"></span>
         <div className={WRAP}>
-          <div className={`${RV} relative z-[1] mb-[46px] max-w-[820px]`}>
-            <span className={EB_NIGHT}><i className={EB_DOT_NIGHT}></i>One memory per agent, rewritten as the evidence lands</span>
-            <h2 className={`${H2} mt-5 text-white`}>It gets better at finding <em className={EM_SKY}>your buyers.</em></h2>
-            <p className={`${LEAD} mt-[18px] text-[#93a7c5]`}>Most tools search the same way on day 90 as they did on day 1. Yours keeps score of what every search actually produced, remembers who turned out to be worth writing to, and rewrites its own targeting around the answer.</p>
+          <div className={`${RV} relative z-[1] mb-[46px] max-w-[840px]`}>
+            <span className={EB_NIGHT}><i className={EB_DOT_NIGHT}></i>It teaches itself who your buyers are</span>
+            <h2 className={`${H2} mt-5 text-white`}>Every reply makes it better at <em className={EM_SKY}>finding the next one.</em></h2>
+            <p className={`${LEAD} mt-[18px] text-[#93a7c5]`}>Your agent starts from one description of your buyer and nothing else. Then it watches what comes back, and it rewrites its own hunting ground around the answer: what produces buyers earns more of the day and grows new searches of its own, what stays quiet gets dropped. You change nothing, and it is sharper every week than it was the week before.</p>
           </div>
 
-          <div className={LGRID}>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={PHEAD}>
-                <span className={PTITLE}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="7" y="7" width="10" height="10" rx="2" /><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" /></svg>
-                  Agent memory
-                </span>
-                <span className={PPILL}>revision 24</span>
-              </div>
-              <span className={PLBL}>WORTH WRITING TO</span>
-              <div className={CHIPS}>
-                <span className={CHIP}>Founder running their own booking software</span>
-                <span className={CHIP}>Studio owner who builds client sites</span>
-                <span className={CHIP}>Independent practitioner, site built themselves</span>
-              </div>
-              <span className={PLBL}>LOOKED RIGHT AND WAS NOT</span>
-              <div className={CHIPS}>
-                <span className={CHIP_MISS}>Enterprise marketing manager</span>
-                <span className={CHIP_MISS}>Agency selling the same thing</span>
-              </div>
-              <span className={PLBL}>WORDS THEY USE ABOUT THEMSELVES</span>
-              <div className={CHIPS}>
-                <span className={CHIP_WORD}>bootstrapped</span>
-                <span className={CHIP_WORD}>indie hacker</span>
-                <span className={CHIP_WORD}>building in public</span>
-                <span className={CHIP_WORD}>solo founder</span>
+          <div className={MAPWRAP}>
+            <div className={`${MAPBOX} ${RV_STATE}`}>
+              <canvas id="constellation" aria-hidden="true"></canvas>
+              <div className={MAPHUD}>THE BRANCHES WERE WRITTEN<br />BY THE AGENT ITSELF</div>
+              <div className={MAPLEG}>
+                <span><i className="bg-[#2ec8ea]"></i>PRODUCING BUYERS</span>
+                <span><i className="bg-[#6a9bff]"></i>GROWN FROM A WINNER</span>
+                <span><i className="bg-[#3a4658]"></i>WITHERED, DROPPED</span>
               </div>
             </div>
-
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={PHEAD}>
-                <span className={PTITLE}>
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" /></svg>
-                  Where it looks now
-                </span>
-                <span className={PPILL}>worth per pass</span>
+            <div className={MAPSIDE}>
+              <div className={`${SC} ${RV_STATE}`}>
+                <h3 className={SC_H3}>It learns who actually answers</h3>
+                <p className={SC_P}>Every accepted invitation and every reply tells the agent something about your buyer that your description never did. That picture gets sharper each week, and the searches it runs tomorrow morning come from the sharper one.</p>
               </div>
-              <span className={PLBL}>RANKED BY WHAT EACH ONE PRODUCED</span>
-              <div className={SRC}>
-                <span className={SRC_NAME}><span className="truncate">indie SaaS founder</span><span className={SRC_TAG}>YOUR SETUP</span></span>
-                <span className={SRC_VAL}>4.50</span>
-                <span className={SRC_TRACK}><i style={{ "--w": "100%", "--dl": ".05s" } as React.CSSProperties}></i></span>
-
-                <span className={SRC_NAME}><span className="truncate">bootstrapped software founder</span><span className={SRC_TAG}>LEARNED</span></span>
-                <span className={SRC_VAL}>3.20</span>
-                <span className={SRC_TRACK}><i style={{ "--w": "71%", "--dl": ".14s" } as React.CSSProperties}></i></span>
-
-                <span className={SRC_NAME}><span className="truncate">one-person startup</span><span className={SRC_TAG}>LEARNED</span></span>
-                <span className={SRC_VAL}>2.40</span>
-                <span className={SRC_TRACK}><i style={{ "--w": "53%", "--dl": ".23s" } as React.CSSProperties}></i></span>
-
-                <span className={SRC_NAME}><span className="truncate">vibe coding</span></span>
-                <span className={SRC_VAL}>0.20</span>
-                <span className={SRC_TRACK}><i style={{ "--w": "4%", "--dl": ".32s" } as React.CSSProperties}></i></span>
-
-                <span className={SRC_NAME}><span className={SRC_DEAD}>a competitor&apos;s followers</span><span className={SRC_NOTE}>RETIRED · 8 EMPTY PASSES</span></span>
-                <span className={SRC_OFF}>0.00</span>
-                <span className={SRC_TRACK}><i style={{ "--w": "0%" } as React.CSSProperties}></i></span>
+              <div className={`${SC} ${RV_STATE}`}>
+                <h3 className={SC_H3}>It writes its own searches</h3>
+                <p className={SC_P}>When a place works, the agent reads how those people describe themselves and opens new ground aimed at more of them. By month 2 most of what it hunts was never typed by anybody.</p>
               </div>
-              <div className={PFOOT}>
-                <span>Anything untried is read first, so a good search can still be found.</span>
+              <div className={`${SC} ${RV_STATE}`}>
+                <h3 className={SC_H3}>It kills its own dead ends</h3>
+                <p className={SC_P}>Ground that keeps coming back empty is switched off with the reason beside it, so your day keeps moving toward the people who reply. Nothing disappears without you being able to overrule it.</p>
               </div>
             </div>
           </div>
 
-          <div className={`${SGRID} [grid-template-columns:repeat(3,1fr)] max-[1040px]:[grid-template-columns:1fr]`}>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8.5" /><path d="M12 6.5v6" /></svg><h3 className={SC_H3}>It stops reading what never pays</h3></div>
-              <p className={SC_P}>A search that has produced nobody worth writing to after 8 passes is switched off, and the reason sits next to it. It stays in your list and you can switch it back on, but the agent stops spending your day on it.</p>
-            </div>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.9-4.9M10.5 8v5M8 10.5h5" /></svg><h3 className={SC_H3}>It writes searches you never typed</h3></div>
-              <p className={SC_P}>When a search works, the agent reads the real headlines of the people it found and writes up to 3 more searches that would find others like them. Your own wording is the starting point rather than the ceiling.</p>
-            </div>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 20v-4M12 20V11M20 20V5" /></svg><h3 className={SC_H3}>A reply counts more than a good score</h3></div>
-              <p className={SC_P}>A match score is our opinion of somebody. A reply from them is a fact about them. So a source that brings replies climbs 8 times faster than one that only brings good-looking profiles.</p>
-              <div className={BARS_3}>
-                <div><b>1</b><i style={{ "--h": "13%" } as React.CSSProperties}></i><span>GOOD LEAD</span></div>
-                <div><b>3</b><i style={{ "--h": "38%" } as React.CSSProperties}></i><span>ACCEPTED</span></div>
-                <div><b>8</b><i style={{ "--h": "100%" } as React.CSSProperties}></i><span>REPLIED</span></div>
-              </div>
-            </div>
-          </div>
-
-          <p className={`${SFOOT} ${RV}`}>None of this is magic on the first morning. The agent starts from the audience you describe in the setup, and everything here only moves once there is real evidence to move on: who accepted, who replied, and who read the invitation and never came back.</p>
+          <p className={`${SFOOT} ${RV}`}>On the first morning this map is a single point: the audience you described in the setup. Everything else on it was put there by real people who accepted, replied, or read your message and stayed silent.</p>
         </div>
       </section>
 
