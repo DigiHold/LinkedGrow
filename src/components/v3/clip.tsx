@@ -7,7 +7,7 @@ const R2 = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/video";
 /* R2 serves these immutable for a year, so a reshot clip under the same name
    would keep showing the old cut to anyone who had already loaded it. Bump
    this and every clip is fetched again. */
-const V = "4";
+const V = "5";
 
 /**
  * A feature clip that costs nothing until it is nearly on screen.
