@@ -50,7 +50,7 @@ This approach gives you a full week of content in under an hour.
 
 ## Tips for better ideas
 
-- **Be specific with your theme.** "B2B SaaS growth strategies" produces better ideas than just "marketing."
+- **Be specific with your theme.** "B2B SaaS growth strategies" produces better ideas than just "marketing".
 - **Consider your audience.** Choose themes that align with what your target audience cares about.
 - **Use engagement predictions as a guide.** Higher-predicted ideas often tap into trending topics or proven LinkedIn formats.
 - **Combine ideas.** Sometimes the best post comes from merging two related ideas into one.

@@ -1,6 +1,6 @@
 ---
 title: "Target Audience"
-description: "Define your ideal LinkedIn audience so the AI creates content that resonates with the right people."
+description: "Define your ideal LinkedIn audience so the AI writes content the right people actually read."
 category: "settings"
 order: 4
 ---
@@ -13,7 +13,7 @@ Your target audience setting tells the AI who you are writing for. This affects 
 
 Target Audience is one of the fields in the **Business Profile** card on the **Settings** page. It sits alongside your other business details like Business Name, Niche/Industry, and Key Topics. It is not a standalone section -- it is part of your overall Business Profile.
 
-The placeholder text reads: *e.g., Startup founders, Marketing managers*
+The placeholder text reads *Startup founders, Marketing managers*
 
 ## How to set it up
 

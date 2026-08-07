@@ -1,6 +1,6 @@
 ---
 title: "A/B Testing"
-description: "Test different versions of your LinkedIn posts to discover what resonates best with your audience using LinkedGrow's A/B testing."
+description: "Test different versions of your LinkedIn posts to find out which one your audience actually answers, with LinkedGrow's A/B testing."
 category: "business-features"
 order: 1
 ---
@@ -23,7 +23,7 @@ Small changes in your LinkedIn posts can have a significant impact on engagement
 - Whether shorter or longer posts perform better for your audience
 - Which calls to action drive more comments and shares
 - How different formatting styles affect readability and engagement
-- Whether certain topics resonate more with your followers
+- Whether certain topics pull more from your followers than others
 
 Instead of guessing what works, you can test and know for certain.
 
@@ -48,11 +48,11 @@ Every A/B test goes through these states:
 
 ### Draft
 
-The test has been created but is not yet running. You can still edit both variants at this stage. No data is being collected.
+The test has been created but is not yet running, so you can still edit both variants and nothing is being measured yet.
 
 ### Running
 
-The test is live. Both variants have been published or scheduled, and LinkedGrow is tracking impressions and engagement for each one. You cannot edit the variants while the test is running.
+The test is live once both variants have been published or scheduled, and LinkedGrow tracks impressions and engagement for each one. You cannot edit the variants while the test is running.
 
 ### Paused
 

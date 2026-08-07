@@ -35,7 +35,7 @@ Click a tab to configure that provider.
 After entering your key, choose a model from the dropdown. Each model shows:
 
 - **Name** - The model identifier
-- **Tag** - A label like "Recommended," "Most Capable," "Fastest," or "Cheapest"
+- **Tag** - A label like "Recommended", "Most Capable", "Fastest", or "Cheapest"
 - **Price** - Estimated cost per post generation
 - **Monthly estimate** - Projected monthly cost for 30 posts
 

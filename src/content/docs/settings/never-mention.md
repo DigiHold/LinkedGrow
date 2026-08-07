@@ -30,7 +30,7 @@ Add topics that are not appropriate for your brand or audience. This might inclu
 
 ### Overused buzzwords
 
-If you want to avoid certain buzzwords or cliches that dilute your message, add them to the list. Examples: "synergy," "disrupt," "game-changer," "pivot."
+If you want to avoid certain buzzwords or cliches that dilute your message, add them to the list. Examples: "synergy", "disrupt", "game-changer", "pivot".
 
 ### Personal preferences
 

@@ -27,7 +27,7 @@ The AI analyzes the Reddit discussion and generates multiple hooks and angles yo
 
 ### Step 3 - Pick a post variation
 
-Based on your selected hook, the AI generates 3 post variations. Each takes a different approach -- one might be a story format, another a list of takeaways, another an opinion piece. Review them and select the one you like best.
+Based on your selected hook, the AI generates 3 post variations. Each takes a different approach: one might be a story format, another a list of takeaways, another an opinion piece. Review them and select the one you like best.
 
 ### Step 4 - Edit and publish
 
@@ -45,7 +45,7 @@ The AI does not simply copy the Reddit content. It extracts the core insight or 
 
 Look for threads that:
 
-- Have high engagement (lots of upvotes and comments indicate a topic that resonates)
+- Have high engagement (plenty of upvotes and comments mean the topic already landed)
 - Contain genuine insights or contrarian viewpoints
 - Relate to your industry or your audience's interests
 - Spark debate or discussion (these translate well to LinkedIn engagement)

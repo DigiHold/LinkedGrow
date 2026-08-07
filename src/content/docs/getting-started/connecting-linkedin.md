@@ -61,7 +61,7 @@ LinkedIn sometimes asks for a security check, or the password changes on your si
 
 **"Authorization denied" message:**
 - You must click "Allow" on LinkedIn's authorization page
-- If you clicked "Cancel," try connecting again
+- If you clicked "Cancel", try connecting again
 
 **Posts failing after connection:**
 - Check if your token has expired in Settings

@@ -34,9 +34,9 @@ The AI creates 6 two-line hooks per request. Each hook shows:
 
 Look for hooks that:
 
-- **Create curiosity** - "I got fired from my dream job. Here is what happened next."
-- **Make a bold claim** - "90% of LinkedIn posts fail because of this one mistake."
-- **Promise specific value** - "5 tools that saved me 10 hours per week as a solopreneur."
+- **Create curiosity** - "I got fired from my dream job. Here is what happened next".
+- **Make a bold claim** - "90% of LinkedIn posts fail because of this one mistake".
+- **Promise specific value** - "5 tools that saved me 10 hours per week as a solopreneur".
 - **Challenge assumptions** - "The worst career advice I ever received was 'follow your passion.'"
 
 Avoid hooks that are:
@@ -47,7 +47,7 @@ Avoid hooks that are:
 
 ## Tips for using hooks effectively
 
-**Generate multiple batches.** Click regenerate to get fresh hooks until you find one that resonates. The cost per generation is minimal.
+**Generate multiple batches.** Click regenerate to get fresh hooks until one of them sounds like you. The cost per generation is minimal.
 
 **Customize after selecting.** Use the hook as a starting point, then adjust the wording to match your authentic voice.
 
@@ -57,4 +57,4 @@ Avoid hooks that are:
 
 ## Plan availability
 
-The Hooks Generator is available on Pro and Business plans, plus during your 7-day Pro trial. Starter plan users can upgrade to access this feature.
+The Hooks Generator is available on Pro and Business, and on the 7-day trial that starts every account.

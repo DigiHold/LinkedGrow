@@ -19,14 +19,14 @@ The name of your company, product, or personal brand. This helps the AI referenc
 
 ### Niche / Industry
 
-The industry or niche you operate in. Examples: "B2B SaaS," "Career coaching," "Digital marketing," "Health & wellness." This helps the AI use the right terminology and context for your field.
+The industry or niche you operate in. Examples: "B2B SaaS", "Career coaching", "Digital marketing", "Health & wellness". This helps the AI use the right terminology and context for your field.
 
 ### What do you do?
 
 A description of what your business does. Write 2-4 sentences covering your product or service, who you serve, and what makes you different.
 
 **Example:**
-"We build a project management tool for remote teams of 10-50 people. We help distributed teams stay aligned without excessive meetings. Our key differentiator is async-first communication built into every workflow."
+"We build a project management tool for remote teams of 10-50 people. We help distributed teams stay aligned without excessive meetings. Our key differentiator is async-first communication built into every workflow".
 
 ### Products / Services
 
@@ -56,7 +56,7 @@ The main topics you want to create content about. This guides the AI toward subj
 Any extra information that helps the AI understand your brand better. This could include frequently asked questions about your business, your brand values, your unique perspective, or anything else you want the AI to keep in mind.
 
 **Example:**
-"We believe meetings should be the last resort, not the default. Our audience is tired of Zoom fatigue and wants practical alternatives."
+"We believe meetings should be the last resort, not the default. Our audience is tired of Zoom fatigue and wants practical alternatives".
 
 ## How the AI uses your Business Profile
 

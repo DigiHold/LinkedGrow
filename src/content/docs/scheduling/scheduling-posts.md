@@ -36,7 +36,7 @@ All scheduled times use your configured timezone. To set or change your timezone
 2. Find the **Timezone** section
 3. Select your timezone from the dropdown, or choose "Auto" to detect your browser's timezone
 
-When you schedule a post for "9:00 AM," it will publish at 9:00 AM in your selected timezone.
+When you schedule a post for "9:00 AM", it will publish at 9:00 AM in your selected timezone.
 
 ## Managing scheduled posts
 

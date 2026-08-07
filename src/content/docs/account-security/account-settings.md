@@ -18,7 +18,7 @@ The Settings page is one continuous page with multiple card sections. There are 
 The profile section at the top of the Settings page displays your account details:
 
 - **Name** - you can update your display name at any time
-- **Email** - your email address is displayed but cannot be changed. The email field is disabled with a note that reads "Email cannot be changed."
+- **Email** - your email address is displayed but cannot be changed. The email field is disabled with a note that reads "Email cannot be changed".
 
 ## Login Methods
 

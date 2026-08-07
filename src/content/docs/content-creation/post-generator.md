@@ -22,7 +22,7 @@ The generator is a 4-step wizard:
 Select a **post type** from the four options:
 
 - **Actionable** - Practical tips and advice your audience can use immediately
-- **Inspiring** - Motivational stories and insights that resonate
+- **Inspiring** - Motivational stories and the insight behind them
 - **Introspective** - Personal reflections and lessons learned
 - **Promotional** - Content that highlights your products, services, or achievements
 
@@ -41,7 +41,7 @@ Type in a specific topic or direction for the post, then click **Generate 5 Idea
 
 ### Step 3 - Pick an idea
 
-Browse the 5 generated ideas and select the one that resonates most. Each idea represents a different angle on your topic.
+Browse the 5 generated ideas and select the one closest to what you wanted to say. Each idea represents a different angle on your topic.
 
 ### Step 4 - AI generates your post
 
@@ -71,16 +71,16 @@ There is no need to move the post to a separate editor -- everything happens inl
 
 ## Tips for better results
 
-**Be specific with your topic.** Instead of "marketing tips," try "3 counterintuitive B2B marketing strategies that work for bootstrapped SaaS companies." The more context you give, the better the output.
+**Be specific with your topic.** Instead of "marketing tips", try "3 counterintuitive B2B marketing strategies that work for bootstrapped SaaS companies". The more context you give, the better the output.
 
 **Set up your voice profile first.** Before generating, make sure you have configured your business description, target audience, writing tone, and sample posts in Settings. The AI uses all of this to produce content that matches your style. Tone is configured in Settings, not in the generator itself.
 
 **Mix post types and categories.** Variety keeps your audience engaged. Alternate between actionable tips, personal stories, and promotional content throughout the week.
 
-**Use the AI quick-edit buttons.** They are a fast way to iterate on a post without rewriting it yourself. Try combining multiple edits -- for example, "Stronger Hook" followed by "Make Shorter."
+**Use the AI quick-edit buttons.** They are a fast way to iterate on a post without rewriting it yourself. Try combining several edits, for example "Stronger Hook" followed by "Make Shorter".
 
 **Edit the output.** AI-generated posts are a starting point, not a finished product. The best results come from using AI as a first draft, then adding your personal touch.
 
 ## Plan availability
 
-Post generation is available on both plans. 7-day Pro trial users can generate up to a 7-day Pro trial. Starter, Pro, and Business plan users get unlimited generations.
+Post generation is available on Pro and Business, and on the 7-day trial that starts every account. Generations are unlimited on both plans, because the writing runs on your own provider key rather than on a bundled allowance.

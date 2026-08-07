@@ -17,7 +17,7 @@ Your display name appears in post previews and team views. Update it by editing 
 
 ### Email
 
-Your email address is displayed in your profile but cannot be changed. It is locked to the email you used when signing up (via LinkedIn or Google OAuth) and is shown as disabled with the note "Email cannot be changed."
+Your email address is displayed in your profile but cannot be changed. It is locked to the email you used when signing up (via LinkedIn or Google OAuth) and is shown as disabled with the note "Email cannot be changed".
 
 ### Profile picture
 
