@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { initV3Pricing } from "./pricing-effects";
 import { initV3Chrome } from "./chrome-effects";
 import { V3_BLOCK } from "./root";
-import { V3PlanCards, V3PriceToggle } from "./pricing-section";
+import { V3PlanCards } from "./pricing-section";
 import {
   BAR, BAR_A, BAR_B, BAR_C, BAR_D, BAR_US, CTAB, EB_DOT_LT, EB_LT, EM_SKY, FILL, FILL_LG, FILL_LIGHT,
   H1, H2, HARD, HARD_B, HARD_CELL, HARD_P, HERO_ORB_A, HERO_ORB_B, HERO_PRICING, HERO_RINGS, LEAD,
@@ -72,7 +72,6 @@ export function V3PricingHero() {
             no credit allowance to ration, no per-seat maths. Free for the first
             7 days, and the agent is running the whole time.
           </p>
-          <V3PriceToggle />
         </div>
         <div className={CARVE}></div>
       </section>

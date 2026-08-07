@@ -58,7 +58,6 @@ export default function UpgradePage() {
   const userBillingInterval = session?.user?.billingInterval || null;
   const isLtd = session?.user?.isLifetimeDeal || false;
 
-  const [isYearly, setIsYearly] = useState(true);
   /**
    * The lifetime holder's discount, read from Stripe through the billing route.
    *
@@ -107,7 +106,6 @@ export default function UpgradePage() {
         body: JSON.stringify({
           planId,
           email: userEmail,
-          interval: isYearly ? "year" : "month",
         }),
       });
 
@@ -149,7 +147,7 @@ showError("Something went wrong. Please try again.");
   };
 
   const isCurrentBillingMatch = userBillingInterval
-    ? (isYearly ? userBillingInterval === "year" : userBillingInterval === "month")
+    ? userBillingInterval === "month"
     : true; // Free users have no billing interval, always match
 
   const getPlanAction = (planId: PlanId) => {
@@ -167,7 +165,7 @@ showError("Something went wrong. Please try again.");
     if (planId === userPlan && isCurrentBillingMatch) {
       return { type: "current", label: "Current Plan" };
     } else if (planId === userPlan && !isCurrentBillingMatch) {
-      return { type: "switch", label: isYearly ? "Switch to Yearly" : "Switch to Monthly" };
+      return { type: "switch", label: "Switch to Monthly" };
     } else if (planIndex > currentPlanIndex) {
       return { type: "upgrade", label: `Upgrade to ${PLANS[planId].name}` };
     } else {
@@ -202,41 +200,6 @@ showError("Something went wrong. Please try again.");
         </p>
       </div>
 
-      {/* Billing Toggle */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-          <button
-            onClick={() => setIsYearly(false)}
-            className={cn(
-              "px-5 py-2 rounded-full text-sm font-medium transition-all",
-              !isYearly
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-            )}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setIsYearly(true)}
-            className={cn(
-              "px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
-              isYearly
-                ? "bg-linear-to-r from-cyan-500 to-blue-600 text-white shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-            )}
-          >
-            Yearly
-            <span className={cn(
-              "px-2 py-0.5 rounded-full text-xs font-semibold",
-              isYearly
-                ? "bg-white/20 text-white"
-                : "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400"
-            )}>
-              2 months free
-            </span>
-          </button>
-        </div>
-      </div>
 
       {/* Plans Grid */}
       <div className="mx-auto mb-10 grid max-w-3xl gap-4 md:grid-cols-2 lg:gap-6">
@@ -290,29 +253,19 @@ showError("Something went wrong. Please try again.");
                   <div className="flex items-baseline gap-1">
                     {hasLtdOff && plan.price > 0 && (
                       <span className="text-xl font-medium text-slate-400 line-through dark:text-slate-500">
-                        ${isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price}
+                        ${plan.price}
                       </span>
                     )}
                     <span className="text-3xl font-bold text-slate-900 dark:text-white">
                       $
                       {afterLtd(
-                        isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price
+                        plan.price
                       )}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400">
                       /mo
                     </span>
                   </div>
-                  {isYearly && plan.yearlyPrice > 0 && (
-                    <div className="mt-1">
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
-                        Billed ${afterLtd(plan.yearlyPrice)}/year
-                      </span>
-                      <span className="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        Save ${afterLtd(plan.price) * 12 - afterLtd(plan.yearlyPrice)}/yr
-                      </span>
-                    </div>
-                  )}
                   {hasLtdOff && plan.price > 0 && (
                     <p className="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                       Your lifetime price, for as long as you keep the plan
