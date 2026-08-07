@@ -1,8 +1,8 @@
 ---
 title: "MCP Server"
 description: "Drive LinkedGrow from ChatGPT, Claude, Cursor or any other assistant that speaks MCP, using one URL and one API key."
-category: "business-features"
-order: 6
+category: "integrations"
+order: 1
 ---
 
 ## Overview

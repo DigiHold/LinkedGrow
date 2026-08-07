@@ -1,0 +1,6 @@
+{
+  "title": "Integrations",
+  "description": "Reach LinkedGrow from outside the dashboard: the MCP server for assistants like ChatGPT, Claude and Cursor.",
+  "order": 6,
+  "icon": "plug"
+}
