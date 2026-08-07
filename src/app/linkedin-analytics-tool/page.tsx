@@ -59,7 +59,7 @@ const analyticsFAQs = [
   {
     question: "How much do LinkedIn analytics tools cost?",
     answer:
-      "Prices range from free (LinkedIn native, Buffer free plan) to $249+/seat/month (Sprout Social). Most LinkedIn-focused tools fall between $19 and $52/month. LinkedGrow Pro costs $99/month (Starter, billed yearly) plus $2-4 in AI API costs, making it the lowest total-cost option that includes both analytics and AI content generation.",
+      "Prices range from free (LinkedIn native, Buffer free plan) to $249+/seat/month (Sprout Social). Most LinkedIn-focused tools fall between $19 and $52/month. LinkedGrow Pro costs $99/month plus $2-4 in AI API costs, making it the lowest total-cost option that includes both analytics and AI content generation.",
   },
   {
     question: "Which LinkedIn analytics tool is best for agencies?",
