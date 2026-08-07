@@ -44,4 +44,4 @@ The selected post opens in the editor where you can refine the text, attach imag
 
 ## Plan availability
 
-YouTube to LinkedIn is available on Starter, Pro, and Business plans. It uses the same repurposing tool as Reddit, Blog, and Web page sources.
+YouTube to LinkedIn is available on Pro and Business plans. It uses the same repurposing tool as Reddit, Blog, and Web page sources.

@@ -228,4 +228,4 @@ You can also manually save your carousel with a name and description to your sav
 
 ## Plan availability
 
-The Carousel Generator is available on the Business plan. Users on Trial, Starter, and Pro plans can upgrade from the Upgrade page to access this feature.
+The Carousel Generator is available on the Business plan. Users on the trial and on Pro plans can upgrade from the Upgrade page to access this feature.

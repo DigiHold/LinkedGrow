@@ -47,4 +47,4 @@ The post opens in the editor where you can refine, add images, save as draft, sc
 
 ## Plan availability
 
-Web Page to LinkedIn is available on Starter, Pro, and Business plans.
+Web Page to LinkedIn is available on Pro and Business plans.

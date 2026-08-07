@@ -57,11 +57,10 @@ Open the post and click **Save as Draft** to remove it from the schedule. The po
 | Plan | Scheduled posts |
 |---|---|
 | 7-day Pro trial | Unlimited (full Pro access) |
-| Starter | Up to 10 scheduled posts at a time |
 | Pro | Unlimited |
 | Business | Unlimited |
 
-During your 7-day Pro trial you get unlimited scheduling (it is part of Pro). After the trial ends, pick Starter (10 scheduled posts) or Pro/Business (unlimited) to keep scheduling.
+Scheduling is unlimited on both plans and during the trial, so there is no queue cap to plan around.
 
 ## How scheduling works behind the scenes
 

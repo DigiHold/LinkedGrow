@@ -58,4 +58,4 @@ The selected post opens in a built-in editor where you can:
 
 ## Plan availability
 
-Content repurposing is available on Starter, Pro, and Business plans.
+Content repurposing is available on Pro and Business plans.

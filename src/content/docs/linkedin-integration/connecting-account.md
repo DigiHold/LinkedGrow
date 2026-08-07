@@ -28,32 +28,21 @@ Click the **Connect LinkedIn** button. A new window or tab opens with LinkedIn's
 
 ### 3. Authorize on LinkedIn
 
-Sign in to LinkedIn if you are not already logged in, then review the permissions LinkedGrow is requesting:
+Give LinkedGrow the email address and password of the LinkedIn account, plus your 2FA secret if the account has two-factor switched on. Both are encrypted before they are stored and decrypted only in memory on the machine that runs the browser.
 
-| Permission | Purpose |
-|---|---|
-| OpenID Connect | Verifies your identity securely |
-| Profile access | Reads your name and profile picture for display in LinkedGrow |
-| Email access | Reads your LinkedIn email for account matching |
-| Share on LinkedIn (w_member_social) | Allows LinkedGrow to create posts on your profile |
+There is no LinkedIn app to authorise and no permission screen, because LinkedGrow does not use LinkedIn's API. Your agent signs in to a real Chrome browser the way you would, from an address in your own country that is reserved for your account alone.
 
-Click **Allow** to grant these permissions.
+### 4. Wait for the first sign-in
 
-### 4. Return to LinkedGrow
+The first sign-in takes a minute or two. LinkedGrow opens the browser, signs in, and reads your profile back to confirm it worked. If LinkedIn asks for a code, you are asked for it once and the agent continues.
 
-After authorization, you are redirected back to LinkedGrow. Your LinkedIn profile name and a green "Connected" status indicator confirm the connection is active.
+The account shows as connected with your profile name once that has happened.
 
-## Reconnecting when your token expires
+## When the connection stops
 
-LinkedIn access tokens expire periodically. When this happens:
+The agent stops on anything unusual rather than pushing through it: a security check, a changed password, an unexpected screen. It tells you what it saw, on the dashboard and by email, and sends nothing until you have dealt with it.
 
-- A warning appears in Settings indicating the connection needs to be refreshed
-- Scheduled posts will not publish until you reconnect
-- Your drafts and generated content are not affected
-
-To reconnect, go to **Settings > LinkedIn** and click **Connect LinkedIn** again. The process takes about 10 seconds.
-
-**Tip:** Reconnect as soon as you see the expiration warning to avoid missed scheduled posts.
+Your leads, your conversations and your scheduled posts are untouched while it waits.
 
 ## Disconnecting LinkedIn
 

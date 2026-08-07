@@ -43,14 +43,14 @@ The left sidebar provides access to all features:
 | Menu item | What it does | Plan required |
 |---|---|---|
 | Dashboard | Main overview page | Trial or any plan |
-| Generator | AI post generation | Trial or Starter+ |
-| Editor | Post editing with AI assist | Trial or Starter+ |
-| Ideas | AI content ideas | Trial or Starter+ |
+| Generator | AI post generation | Trial or Pro+ |
+| Editor | Post editing with AI assist | Trial or Pro+ |
+| Ideas | AI content ideas | Trial or Pro+ |
 | Hooks | Viral opening line generator | Trial or Pro+ |
-| Repurpose | Convert URLs to posts | Trial or Starter+ |
+| Repurpose | Convert URLs to posts | Trial or Pro+ |
 | Carousel | Multi-slide carousel creator | Business |
 | Posts | Library of all your posts | Trial or any plan |
-| Calendar | Visual scheduling calendar | Trial or Starter+ |
+| Calendar | Visual scheduling calendar | Trial or Pro+ |
 | Engagement | Engagement tracking tools | Trial or Pro+ |
 | Analytics | Performance analytics | Trial or Pro+ |
 | A/B Testing | Test post variations | Business |
@@ -58,12 +58,12 @@ The left sidebar provides access to all features:
 
 ## Feature gating
 
-Every new account starts with a 7-day Pro trial that unlocks every Pro feature. After 7 days, you pick from three paid tiers - Starter ($19/mo), Pro ($39/mo), or Business ($79/mo). Features are progressively unlocked:
+Every new account starts with a 7-day trial that runs the whole product, agents included. A card is taken at signup and charged when the trial ends, and cancelling before then costs nothing. After that there are two plans:
 
-- **7-day Pro trial** - Full Pro access for 7 days, no card needed
-- **Starter** - Unlimited posts, advanced editor, 10 scheduled posts, calendar, Reddit ideas, content repurposing
-- **Pro** - Everything in Starter plus unlimited scheduling, AI image generation, hooks generator, algorithm optimizer, analytics, network notifications
-- **Business** - Everything in Pro plus carousel generator, A/B testing, team collaboration, advanced analytics
+- **Pro, $99 a month** - 2 agents finding and messaging your leads every working day, each on its own LinkedIn account and its own dedicated IP, plus unlimited posts, carousels and scheduling on your own AI key
+- **Business, $179 a month** - everything in Pro with 3 agents, seats for your team, A/B testing on your message sequences and team reporting
+
+Extra agents are $49 a month each on either plan.
 
 When you try to access a feature not included in your plan, you will see a friendly prompt explaining what the feature does and a link to upgrade.
 

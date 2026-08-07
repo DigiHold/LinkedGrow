@@ -63,4 +63,4 @@ Many users find it most efficient to set aside one session per week for content 
 
 ## Plan availability
 
-The Content Calendar is available on Starter, Pro, and Business plans.
+The Content Calendar is available on Pro and Business plans.

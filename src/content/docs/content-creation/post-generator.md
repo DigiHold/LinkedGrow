@@ -83,4 +83,4 @@ There is no need to move the post to a separate editor -- everything happens inl
 
 ## Plan availability
 
-Post generation is available on all plans. 7-day Pro trial users can generate up to a 7-day Pro trial. Starter, Pro, and Business plan users get unlimited generations.
+Post generation is available on both plans. 7-day Pro trial users can generate up to a 7-day Pro trial. Starter, Pro, and Business plan users get unlimited generations.

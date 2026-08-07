@@ -27,25 +27,30 @@ Without connecting LinkedIn, you can still generate and draft posts, but you wil
 
 Once connected, you will see your LinkedIn profile name and a green "Connected" status indicator.
 
-## Permissions explained
+## How the connection works
 
-When you authorize LinkedGrow, LinkedIn asks you to grant these permissions:
+There is no LinkedIn app to authorise, because LinkedGrow does not use LinkedIn's API. Your agent works the way you would: in a real Chrome browser, signed in to your account, on an address in your own country that is reserved for that one account and never shared.
 
-- **OpenID Connect** - Verifies your identity (name, email, profile picture)
-- **Profile access** - Reads your basic profile information
-- **Share on LinkedIn (w_member_social)** - Allows LinkedGrow to create posts on your behalf
+That is why you give LinkedGrow the email and password of the account, and a 2FA code if you have it switched on. Both are encrypted before they are stored, decrypted only in memory on the machine that drives the browser, and never written to a log.
 
-LinkedGrow only uses these permissions to publish content you explicitly choose to post. We never post without your action, and we never read your private messages or connections list.
+What this buys you is everything the API cannot do: your agent can search, open profiles, send invitations, write messages and read replies, which is the whole product. What it costs is that LinkedIn sees a browser, so the agent moves at a human pace and inside limits you can watch.
 
-## Reconnecting when your token expires
+## What the agent does on your account
 
-LinkedIn access tokens expire periodically. When this happens:
+- Opens searches and reads profiles to find people worth contacting
+- Sends connection invitations, spread through your working day
+- Writes and sends messages, and reads the replies back
+- Publishes the posts you scheduled, and leaves the first comment
 
-- You will see a yellow warning in Settings indicating the connection has expired
-- Scheduled posts will fail until you reconnect
-- Your drafts and generated content are not affected
+It never likes or comments on other people's posts on your behalf, and it never contacts anybody on your do-not-contact list.
 
-To reconnect, simply click **Connect LinkedIn** again in Settings and re-authorize. The process takes about 10 seconds.
+## When the connection needs your attention
+
+LinkedIn sometimes asks for a security check, or the password changes on your side. When that happens the agent stops, tells you exactly what it saw, and waits. It does not retry, because retrying into a checkpoint is how accounts get restricted.
+
+- The agent shows as paused with the reason on your dashboard
+- An email tells you the same thing
+- Nothing is sent until you have sorted it out
 
 ## Troubleshooting
 

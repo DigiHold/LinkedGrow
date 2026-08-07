@@ -64,4 +64,4 @@ Popular subreddits for business content include r/entrepreneur, r/startups, r/ma
 
 ## Plan availability
 
-Reddit importing is available on Starter, Pro, and Business plans as part of the content repurposing feature.
+Reddit importing is available on Pro and Business plans as part of the content repurposing feature.

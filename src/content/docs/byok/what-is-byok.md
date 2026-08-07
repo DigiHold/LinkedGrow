@@ -27,19 +27,18 @@ The AI provider charges you based on actual usage. Each post generation typicall
 
 ## Why BYOK saves money
 
-Most LinkedIn content tools charge $39-69 per month and include AI generation with monthly caps. Once you reach the cap, you either stop generating or pay extra.
+Most LinkedIn tools bundle AI into the subscription and cap how much you can generate. Once you reach the cap you either stop or pay for more.
 
-With LinkedGrow's BYOK model:
+Two different AI bills sit behind LinkedGrow, and only one of them is yours:
 
-| Scenario | LinkedGrow + BYOK | Typical competitor |
+| | Who pays | What it costs you |
 |---|---|---|
-| Platform subscription | $19/mo (Starter) | $49/mo |
-| AI generation costs | $2-4/mo | Included (limited) |
-| **Total monthly cost** | **$21-23/mo** | **$49/mo** |
-| Generation limits | Unlimited | 50-200 posts/mo |
-| Model choice | 26+ models | 1-2 models |
+| Everything the agents think: finding leads, scoring them, writing messages | LinkedGrow | Included in the plan |
+| Everything you generate: posts, carousels, hooks, ideas | You, on your own key | $2-4 a month for most people |
 
-That is a savings of 50% or more, with no limits on how much content you create.
+So the content side is unlimited at cost price. Generate 10 posts a month or 200, you pay your provider for exactly what you used, and you choose the model.
+
+There is no cap on how much content you create, and no markup on the AI that creates it.
 
 ## Benefits of BYOK
 

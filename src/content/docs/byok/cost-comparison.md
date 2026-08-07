@@ -9,18 +9,16 @@ order: 8
 
 Most LinkedIn content tools charge a flat monthly fee that includes limited AI generations. LinkedGrow's BYOK model separates platform features from AI costs, which gives you much lower total costs with no generation limits.
 
-### Monthly cost comparison
+### What you actually pay
 
-| Tool | Monthly price | AI included | Generation limits |
+| | Monthly price | AI for the agents | AI for your posts |
 |---|---|---|---|
-| **LinkedGrow Starter + BYOK** | **$19 + $2-4 AI = $21-23** | **26+ models** | **Unlimited** |
-| Taplio | $49 | 1-2 models | Limited credits |
-| AuthoredUp | $29 | Limited AI | Usage caps |
-| Supergrow | $49 | Bundled | Monthly limits |
-| Buffer | $36 | Add-on cost | Separate pricing |
-| Hootsuite | $99 | Enterprise only | Plan-dependent |
+| **LinkedGrow Pro** | **$99** | **Included** | **Your own key, $2-4** |
+| **LinkedGrow Business** | **$179** | **Included** | **Your own key, $2-4** |
 
-**Bottom line:** LinkedGrow Starter at $19/month plus typical AI costs of $2-4/month totals $21-23/month. That is 50-75% less than most competitors, with more AI model choices and zero generation limits.
+The comparison people usually want is against a lead-generation stack rather than a writing tool: a prospecting tool, a data provider and a sequencer bought separately land well past $99 a month before anybody writes a message, and none of them post for you.
+
+Against writing tools, the difference is the cap. They bundle AI and meter it. LinkedGrow does not meter the content side at all, because you are paying your own provider for exactly what you use and you pick the model.
 
 ## Cost breakdown by usage level
 
@@ -112,14 +110,3 @@ Every AI provider offers a usage dashboard where you can:
 
 We recommend setting a $10 monthly limit when you first start. You can always increase it later as you understand your usage patterns.
 
-## Yearly savings
-
-LinkedGrow offers 30% off with yearly billing:
-
-| Plan | Monthly | Yearly (per month) | Yearly savings |
-|---|---|---|---|
-| Starter | $19/mo | ~$13/mo | Save $68/year |
-| Pro | $39/mo | ~$27/mo | Save $140/year |
-| Business | $79/mo | ~$55/mo | Save $284/year |
-
-Combined with low BYOK costs, a yearly Starter plan at $13/month plus $3/month of AI comes to $16/month for unlimited LinkedIn content generation.
