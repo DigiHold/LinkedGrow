@@ -7,10 +7,6 @@ import { V3Plans } from "./pricing-section";
 import { V3_ROOT } from "./root";
 import { V3UrlForm } from "./url-form";
 import {
-  AGT,
-  AGT_DOT,
-  AGT_DOT_ALT,
-  AGT_FOOT,
   ANN,
   AVS,
   BADGE,
@@ -46,7 +42,6 @@ import {
   CL,
   CL_B,
   EB,
-  EB_BASE,
   EB_DOT,
   EB_DOT_LT,
   EB_DOT_NIGHT,
@@ -55,27 +50,18 @@ import {
   EM_GRAD,
   EM_SH,
   EM_SKY,
-  EM_WARM,
   FAQWRAP,
   FILL,
   FILL_LG,
   FILL_LIGHT,
-  FILL_MD,
-  FILL_PRI,
-  FILL_WIDE,
   FINALE,
   H1,
   H2,
   H3,
-  HARD,
-  HARD_B,
-  HARD_CELL,
-  HARD_P,
   HERO_FIELD,
   HERO_ORB_A,
   HERO_ORB_B,
   HERO_RINGS,
-  INC,
   LEAD,
   LEAD_MUT,
   LGRID,
@@ -106,24 +92,12 @@ import {
   NIGHT,
   NOTE,
   NUMPILL,
-  PD,
   PFOOT,
-  PFOOT_HI,
   PH,
   PHEAD,
   PH_CHIP,
   PH_MK,
-  PIP,
-  PLAN,
-  PLANS,
-  PLAN_BEST,
-  PLAN_LI,
-  PLAN_LI_I,
-  PLAN_PLAIN,
-  PLAN_TAG,
-  PLAN_UL,
   PLBL,
-  PN,
   PPILL,
   PR,
   PSTAT,
@@ -155,8 +129,6 @@ import {
   SGRID,
   SH,
   SH_BUL,
-  SH_BUL_BASE,
-  SH_BUL_NIGHT,
   SH_BUL_WARM,
   SPOT,
   SRC,
@@ -173,19 +145,13 @@ import {
   STEPS,
   STEP_H3,
   STEP_P,
-  TGNOTE,
   TICK,
-  TOGGLE,
   TR,
   TRUST,
-  URLBAR,
-  URLBAR_INPUT,
-  URLWRAP,
   VID,
   WORTH,
   WRAP,
   WSPLIT,
-  YR,
 } from "./kit";
 
 
@@ -617,12 +583,6 @@ export function V3Landing() {
                 <span className={CHIP_WORD}>building in public</span>
                 <span className={CHIP_WORD}>solo founder</span>
               </div>
-              <div className={PFOOT}>
-                <span className={PFOOT_HI}>368 B</span>
-                <span>of a 1,200 B ceiling</span>
-                <span>·</span>
-                <span>rewritten in full on every revision</span>
-              </div>
             </div>
 
             <div className={`${SC} ${RV_STATE}`}>
@@ -661,7 +621,7 @@ export function V3Landing() {
             </div>
           </div>
 
-          <div className={SGRID}>
+          <div className={`${SGRID} [grid-template-columns:repeat(3,1fr)] max-[1040px]:[grid-template-columns:1fr]`}>
             <div className={`${SC} ${RV_STATE}`}>
               <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="8.5" /><path d="M12 6.5v6" /></svg><h3 className={SC_H3}>It stops reading what never pays</h3></div>
               <p className={SC_P}>A search that has produced nobody worth writing to after 8 passes is switched off, and the reason sits next to it. It stays in your list and you can switch it back on, but the agent stops spending your day on it.</p>
@@ -679,23 +639,8 @@ export function V3Landing() {
                 <div><b>8</b><i style={{ "--h": "100%" } as React.CSSProperties}></i><span>REPLIED</span></div>
               </div>
             </div>
-            <div className={`${SC} ${RV_STATE}`}>
-              <div className={SC_HD}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="7" width="10" height="10" rx="2.4" /><path d="M17 7h2.6A1.4 1.4 0 0121 8.4V17" /><path d="M17 12h4" /></svg><h3 className={SC_H3}>One memory per agent, never shared</h3></div>
-              <p className={SC_P}>Run one agent for your booking tool and another for your cookie banner on the same LinkedIn account, and neither will learn the other&apos;s customer. They share the account&apos;s daily limits and its inbox. What each of them has learned stays its own.</p>
-              <div className={AGT}>
-                <div><span className={AGT_DOT}></span><b>Booking widget</b><i>memory rev 24</i></div>
-                <div><span className={AGT_DOT_ALT}></span><b>Cookie banner</b><i>memory rev 6</i></div>
-              </div>
-              <p className={AGT_FOOT}>SAME ACCOUNT · SAME DAILY LIMITS · SEPARATE MEMORIES</p>
-            </div>
           </div>
 
-          <div className={HARD}>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>8</b><p className={HARD_P}>passes with nothing before a search is retired</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>3</b><p className={HARD_P}>fresh searches written from every one that works</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>1</b><p className={HARD_P}>memory per agent, never shared between them</p></div>
-            <div className={`${RV_STATE} ${HARD_CELL}`}><b className={HARD_B}>0</b><p className={HARD_P}>extra AI cost, the agent&apos;s own thinking is included</p></div>
-          </div>
           <p className={`${SFOOT} ${RV}`}>None of this is magic on the first morning. The agent starts from the audience you describe in the setup, and everything here only moves once there is real evidence to move on: who accepted, who replied, and who read the invitation and never came back.</p>
         </div>
       </section>
@@ -708,7 +653,7 @@ export function V3Landing() {
             <span className={BADGE}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>Decrypted in memory only, never logged</span>
             <span className={BADGE}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 000 18M12 3a15 15 0 010 18" /></svg>Hosted in the EU, GDPR by design</span>
           </div>
-          <p className="text-[14.5px] text-v3-mut dark:text-v3-mut-d">Your LinkedIn login is the most valuable thing you hand us, and it is treated that way. <a href="#" className="font-semibold text-v3-blue">Read exactly how it is stored</a></p>
+          <p className="text-[14.5px] text-v3-mut dark:text-v3-mut-d">Your LinkedIn login is the most valuable thing you hand us, and it is treated that way.</p>
         </div>
       </div>
 

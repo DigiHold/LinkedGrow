@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow, the LinkedIn AI agent that finds leads and opens conversations",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     title: "Lead Generation on LinkedIn, Run by an AI Agent | LinkedGrow",
     description:
       "Lead generation on LinkedIn, run by an agent that finds your leads and opens the conversation, inside limits that keep your account safe.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/home.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai",

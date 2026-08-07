@@ -9,7 +9,7 @@ import {
 import { LinkedinAiAgentContent } from "./agent-content";
 
 const URL = "https://linkedgrow.ai/linkedin-ai-agent";
-const OG = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp";
+const OG = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-ai-agent.webp";
 const DESCRIPTION =
   "A LinkedIn AI agent that works your own account all day: it finds who buys from you, writes from what they posted, follows up once, and stops when they reply.";
 

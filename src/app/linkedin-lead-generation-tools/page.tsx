@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp",
+        url: "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-lead-generation-tools.webp",
         width: 1200,
         height: 630,
         alt: "LinkedGrow - LinkedIn Lead Generation Tools",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkedIn Lead Generation Tools for Content-Driven Growth",
     description:
       "LinkedIn lead generation tools that turn content into inbound leads. LinkedGrow combines AI writing, scheduling, carousels, and analytics from $99/mo.",
-    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/linkedgrow.webp"],
+    images: ["https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/og/linkedin-lead-generation-tools.webp"],
   },
   alternates: {
     canonical: "https://linkedgrow.ai/linkedin-lead-generation-tools",
