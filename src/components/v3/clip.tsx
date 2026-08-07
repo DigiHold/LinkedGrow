@@ -14,9 +14,9 @@ const R2 = "https://pub-86332bae77404495924b3ef7d4cbe7db.r2.dev/video";
  * The sources are attached one full screen before the clip scrolls into view,
  * which is far enough ahead that it is already playing by the time anybody
  * looks at it, and close enough that a visitor who never scrolls there never
- * pays for it. AV1 first for the browsers that decode it, H.264 behind it for
- * Safari, and a smaller cut for phones so a 4G connection is not asked for a
- * desktop-width file.
+ * pays for it. H.264 only: AV1 saved a fifth of the weight and cost more than
+ * that in text sharpness on a white interface. Phones get a smaller cut so a
+ * 4G connection is never asked for a desktop-width file.
  */
 export function V3Clip({ name, label }: { name: string; label: string }) {
   const box = useRef<HTMLVideoElement>(null);
@@ -55,7 +55,6 @@ export function V3Clip({ name, label }: { name: string; label: string }) {
       poster={`${R2}/${name}-poster.jpg`}
       aria-label={label}
     >
-      {near && <source src={`${R2}/${name}.webm`} type="video/webm" media="(min-width: 700px)" />}
       {near && <source src={`${R2}/${name}-1920.mp4`} type="video/mp4" media="(min-width: 700px)" />}
       {near && <source src={`${R2}/${name}-900.mp4`} type="video/mp4" />}
     </video>

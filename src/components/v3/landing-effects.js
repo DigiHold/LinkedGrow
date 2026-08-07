@@ -114,7 +114,13 @@ export function initV3Landing() {
          '<rect class="'+(r===0?'animate-v3-live [animation-delay:1.8s]':'')+'" x="1160" y="'+(ry+20)+'" width="'+(52+(r*37)%126)+'" height="7" rx="3.5" fill="#2ec8ea" opacity=".38"/>'+
          '<rect x="1400" y="'+(ry+16)+'" width="76" height="26" rx="13" opacity=".05"/>'; }
     W+='</g></svg></div>';
-    document.querySelectorAll('.vid').forEach(function(v){ v.insertAdjacentHTML('afterbegin',W); });
+    /* Only the frames still waiting for their clip. A real clip carries a
+       poster, and painting a fake dashboard on top of a real one was the
+       "image over the video" that made the first cut unwatchable. */
+    document.querySelectorAll('.vid').forEach(function(v){
+      if(v.querySelector('video[poster]')) return;
+      v.insertAdjacentHTML('afterbegin',W);
+    });
   })();
 
   /* ── découpe des titres en mots, dé-floutage progressif à l'entrée ── */
