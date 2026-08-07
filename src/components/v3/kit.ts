@@ -34,8 +34,6 @@ export const H3 =
    sheet rather than by the order written here. */
 export const LEAD = "max-w-[58ch] text-[clamp(16.5px,1.35vw,19px)] leading-[1.58]!";
 export const LEAD_MUT = LEAD + " text-v3-mut dark:text-v3-mut-d";
-export const MONO = "font-v3-mono text-[11px] font-medium uppercase tracking-[.15em]";
-
 /* The emphasised run inside a heading: gradient on a light ground, flat sky on
    a dark one, warm on the problem section. */
 export const EM_GRAD =
@@ -178,15 +176,6 @@ export const PH_CHIP =
 export const ANN = "absolute z-[5] hidden min-[1900px]:block [&_svg]:text-v3-sky [&_svg]:opacity-70";
 export const NOTE =
   "font-v3-hand text-[22px] leading-[1.12] text-v3-sky [transform:rotate(-3deg)]";
-
-/* The six-up logo row: one grid with hairlines drawn by the cells. */
-export const CELLS =
-  "grid [grid-template-columns:repeat(6,1fr)] overflow-hidden rounded-[16px] border-l border-t border-v3-line dark:border-v3-line-d max-[900px]:[grid-template-columns:repeat(3,1fr)] max-[520px]:[grid-template-columns:repeat(2,1fr)]";
-export const CL =
-  "group relative grid place-items-center border-b border-r border-v3-line px-[18px] py-[30px] [transition:background_.3s] hover:bg-v3-wash dark:hover:bg-v3-wash-d " +
-  "dark:border-v3-line-d dark:bg-v3-bg2-d dark:hover:bg-v3-bg2-d";
-export const CL_B =
-  "font-v3-display text-[15.5px] font-bold tracking-[-.035em] text-v3-faint [transition:color_.3s] group-hover:text-v3-ink2 dark:text-v3-faint-d dark:group-hover:text-v3-ink2-d";
 
 /* The four warm statistics under the problem heading. */
 export const PSTAT =

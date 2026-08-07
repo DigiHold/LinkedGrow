@@ -19,7 +19,6 @@ import {
   CAP_P,
   CAP_TXT_ALT,
   CARVE,
-  CELLS,
   CHAT,
   MCLIP,
   CHIP,
@@ -30,8 +29,6 @@ import {
   CHROME_URL_DK,
   CHROME_URL_LT,
   CIRCLED,
-  CL,
-  CL_B,
   EB,
   EB_DOT,
   EB_DOT_LT,
@@ -71,7 +68,6 @@ import {
   MCP,
   MCPFOOT,
   MCPGRID,
-  MONO,
   MRUN,
   MRUN_DOT,
   MSG,
@@ -97,15 +93,10 @@ import {
   PSTAT_IX,
   PSTAT_N,
   PSTAT_P,
-  QAV,
-  QUOTE,
-  QUOTE_BQ,
-  QUOTE_CAP,
   RAIL,
   RAILWRAP,
   REJ,
   RINGS_FIN,
-  RULE,
   RULE_ON2,
   RV,
   RV_STATE,
@@ -212,16 +203,9 @@ export function V3Landing() {
         <div className={CARVE}></div>
       </section>
 
-      {/*═══ 2. LOGOS ═══*/}
-      <section className="pt-[clamp(46px,5.5vw,74px)]">
-        <div className={WRAP}>
-          <p className={`${MONO} ${RV} mb-6 text-center text-v3-faint dark:text-v3-faint-d`}>The bottleneck was never your product. It is that the right people never heard of you.</p>
-          <div className={`${CELLS} ${RV}`}>
-            <div className={CL}><b className={CL_B}>Northline</b></div><div className={CL}><b className={CL_B}>Havre Studio</b></div>
-            <div className={CL}><b className={CL_B}>Atelier Kea</b></div><div className={CL}><b className={CL_B}>Velio</b></div>
-            <div className={CL}><b className={CL_B}>Tidewell</b></div><div className={CL}><b className={CL_B}>Disruptica</b></div>
-          </div>
-        </div>
+      {/*═══ 2. ÉNONCÉ ═══*/}
+      <section className="py-[clamp(88px,11.5vw,164px)]">
+        <div className={NARROW}><p className={`${WSPLIT} mx-auto max-w-[21ch] text-center font-v3-display! text-[clamp(28px,4.3vw,53px)] font-medium! leading-[1.13]! tracking-[-.04em]!`}>The bottleneck was never your product. It is that the right people <em className={EM_GRAD}>never heard of you.</em></p></div>
       </section>
 
 
@@ -248,11 +232,6 @@ export function V3Landing() {
         </div>
       </section>
 
-      {/*═══ 4. ÉNONCÉ ═══*/}
-      <section className="py-[clamp(88px,11.5vw,164px)]">
-        <div className={NARROW}><p className={`${WSPLIT} mx-auto max-w-[21ch] text-center font-v3-display! text-[clamp(28px,4.3vw,53px)] font-medium! leading-[1.13]! tracking-[-.04em]!`}>The bottleneck was never your product. It is that the right people <em className={EM_GRAD}>never heard of you.</em></p></div>
-      </section>
-      <div className={RULE}></div>
 
       {/*═══ 5. CAPACITÉS ═══*/}
       <section className={`${SEC} dark:border-y dark:border-v3-line-d dark:bg-v3-bg2-d`} id="agent">
@@ -521,18 +500,6 @@ export function V3Landing() {
           <p className="text-[14.5px] text-v3-mut dark:text-v3-mut-d">Your LinkedIn login is the most valuable thing you hand us, and it is treated that way.</p>
         </div>
       </div>
-
-      {/*═══ 10. TÉMOIGNAGES ═══*/}
-      <section className={SEC}>
-        <div className={WRAP}>
-          <div className={`${SH} ${RV} mb-11`}><span className={SH_BUL}></span><div><h2 className={H2}>No customer quotes yet.</h2></div></div>
-          <div className={`${STAG_STATE} relative z-[1] grid [grid-template-columns:repeat(3,1fr)] gap-5 max-[900px]:[grid-template-columns:1fr]`}>
-            <figure className={`${QUOTE} col-span-2 max-[900px]:col-span-1`}>
-              <blockquote className={QUOTE_BQ}>Nobody has run a full month on the lead engine yet, so there is nothing here worth quoting. Inventing a founder and a number would take 10 minutes, and it is the one thing that would make everything else on this page worthless. The first real results land here, with a name on them.</blockquote>
-              <figcaption className={QUOTE_CAP}><span className={QAV}>NL</span><span><b>Nicolas Lecocq</b><small>Founder, LinkedGrow</small></span></figcaption></figure>
-          </div>
-        </div>
-      </section>
 
       {/*═══ 11. TARIFS ═══*/}
       <V3Plans />
