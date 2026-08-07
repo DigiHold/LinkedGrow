@@ -294,10 +294,7 @@ export function V3Landing() {
               </div>
               <div className={`crop relative ${RV}`}><span></span>
                 <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/saas-founders/leads</span></div>
-                  <div className={VID}><video autoPlay muted loop playsInline></video>
-                    <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 03</small>
-                      <b>Leads tab, clicking through to the source post</b>
-                      <span className={PH_CHIP}>show the hover state and the outbound link</span></div></div></figure></div>
+                  <div className={VID}><V3Clip name="leads" label="The Leads tab, every lead linked to the post it came from" /></div></figure></div>
             </div>
 
             <div className={CAP}>
@@ -312,10 +309,7 @@ export function V3Landing() {
               </div>
               <div className={`crop relative ${RV}`}><span></span>
                 <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/saas-founders/queue</span></div>
-                  <div className={VID}><video autoPlay muted loop playsInline></video>
-                    <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 04</small>
-                      <b>Today's queue, editing a message before it sends</b>
-                      <span className={PH_CHIP}>type an edit then save, so it feels controllable</span></div></div></figure></div>
+                  <div className={VID}><V3Clip name="queue" label="Tomorrow's messages, each written from what that person posted" /></div></figure></div>
             </div>
 
             <div className={CAP_ALT}>
@@ -330,10 +324,7 @@ export function V3Landing() {
               </div>
               <div className={`crop relative ${RV}`}><span></span>
                 <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/replies</span></div>
-                  <div className={VID}><video autoPlay muted loop playsInline></video>
-                    <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 05</small>
-                      <b>Replies page, a new answer arriving live</b>
-                      <span className={PH_CHIP}>open one thread to show the context</span></div></div></figure></div>
+                  <div className={VID}><V3Clip name="replies" label="The Replies inbox, with the whole conversation attached" /></div></figure></div>
             </div>
           </div>
         </div>
@@ -360,10 +351,7 @@ export function V3Landing() {
                 <p className={STEP_P}>Your credentials are encrypted the moment they arrive, decrypted only inside the browser session that uses them, and never written to a log. The agent gets a dedicated residential address in your own country, and it keeps that same address for as long as the agent lives.</p>
                 <div className={`crop relative ${RV}`}><span></span>
                   <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/settings/linkedin</span></div>
-                    <div className={VID}><video autoPlay muted loop playsInline></video>
-                      <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 06</small>
-                        <b>Connecting an account, profile and IP confirmed</b>
-                        <span className={PH_CHIP}>end on the green connected state</span></div></div></figure></div>
+                    <div className={VID}><V3Clip name="connect" label="A connected LinkedIn account with its own address and country" /></div></figure></div>
               </div>
               <div className={STEP} id="s2">
                 <span className={NUMPILL}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M16.5 16.5L21 21" /></svg>Step 02</span>
@@ -371,10 +359,7 @@ export function V3Landing() {
                 <p className={STEP_P}>Competitor audiences, posts about the problem you solve, people who changed jobs in the last ninety days, or a search you write yourself. Pick as many sources as you like and the agent mines them every morning, deduplicating against everyone it has already contacted.</p>
                 <div className={`crop relative ${RV}`}><span></span>
                   <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/saas-founders/sources</span></div>
-                    <div className={VID}><video autoPlay muted loop playsInline></video>
-                      <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 07</small>
-                        <b>Sources tab, adding a competitor and mining it</b>
-                        <span className={PH_CHIP}>the counter climbing as leads arrive</span></div></div></figure></div>
+                    <div className={VID}><V3Clip name="sources" label="The Sources tab, what each source found and what answered" /></div></figure></div>
               </div>
               <div className={STEP} id="s3">
                 <span className={NUMPILL}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5h16v11H8l-4 3z" /></svg>Step 03</span>
@@ -382,10 +367,7 @@ export function V3Landing() {
                 <p className={STEP_P}>Read the first messages it drafts, adjust the tone once, and switch the agent on. From there it holds working hours, raises its volume slowly across the first month, and emails you the moment somebody answers.</p>
                 <div className={`crop relative ${RV}`}><span></span>
                   <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/saas-founders</span></div>
-                    <div className={VID}><video autoPlay muted loop playsInline></video>
-                      <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 08</small>
-                        <b>Switching the agent on, running indicator</b>
-                        <span className={PH_CHIP}>the activity log filling underneath</span></div></div></figure></div>
+                    <div className={VID}><V3Clip name="running" label="The agent running, its sequence and its live activity" /></div></figure></div>
               </div>
             </div>
           </div>
