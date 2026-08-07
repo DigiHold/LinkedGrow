@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { V3Clip } from "./clip";
 import { initConstellation, initV3Landing } from "./landing-effects";
 import { V3FaqAside, V3FaqList } from "./faq-section";
 import { V3Plans } from "./pricing-section";
@@ -278,10 +279,7 @@ export function V3Landing() {
               </div>
               <div className={`crop relative ${RV}`}><span></span>
                 <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/new</span></div>
-                  <div className={VID}><video autoPlay muted loop playsInline></video>
-                    <div className={PH}><span className={PH_MK}><svg><use href="#mark" /></svg></span><small>Video 02</small>
-                      <b>Wizard, website scan to ideal customer in twenty seconds</b>
-                      <span className={PH_CHIP}>steps 1 and 2 of the creation wizard</span></div></div></figure></div>
+                  <div className={VID}><V3Clip name="wizard" label="The setup wizard reading a website and naming the ideal customer" /></div></figure></div>
             </div>
 
             <div className={CAP_ALT}>
