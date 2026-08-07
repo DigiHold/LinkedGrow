@@ -35,7 +35,13 @@ export function V3Clip({ name, label }: { name: string; label: string }) {
   }, []);
 
   useEffect(() => {
-    if (near) box.current?.load();
+    if (!near) return;
+    const el = box.current;
+    if (!el) return;
+    el.load();
+    /* autoplay does not always fire on a source attached after mount, and a
+       clip stuck on its poster is the one thing that reads as a broken video */
+    el.play().catch(() => {});
   }, [near]);
 
   return (

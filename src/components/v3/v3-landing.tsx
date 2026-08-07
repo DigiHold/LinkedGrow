@@ -279,7 +279,7 @@ export function V3Landing() {
               </div>
               <div className={`crop relative ${RV}`}><span></span>
                 <figure className={SCREEN_LT}><div className={CHROME_LT}><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><i className={CHROME_DOT_LT}></i><span className={CHROME_URL_LT}>app.linkedgrow.ai/agents/new</span></div>
-                  <div className={VID}><V3Clip name="wizard" label="The setup wizard reading a website and naming the ideal customer" /></div></figure></div>
+                  <div className={VID}><V3Clip name="icp" label="The setup reading a website, then naming the audience and the sources to hunt in" /></div></figure></div>
             </div>
 
             <div className={CAP_ALT}>
