@@ -28,8 +28,7 @@ export interface PlanInfo {
   id: PlanId;
   name: string;
   description: string;
-  price: number; // Monthly price in USD
-  yearlyPrice: number; // Yearly total in USD (pay 10 months, get 12)
+  price: number; // Monthly price in USD // Yearly total in USD (pay 10 months, get 12)
   limits: PlanLimits;
   popular?: boolean;
 }
@@ -42,7 +41,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "No plan",
     description: "Your trial ended. Pick a plan to start again.",
     price: 0,
-    yearlyPrice: 0,
     limits: {
       postsPerMonth: 0,
       scheduledPosts: 0,
@@ -60,7 +58,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Pro",
     description: "Two agents finding and messaging your leads every day",
     price: 99,
-    yearlyPrice: 990,
     popular: true,
     limits: {
       postsPerMonth: -1,
@@ -79,7 +76,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: "Business",
     description: "Three agents, your whole team, and the reporting behind it",
     price: 179,
-    yearlyPrice: 1790,
     limits: {
       postsPerMonth: -1,
       scheduledPosts: -1,

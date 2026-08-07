@@ -192,11 +192,7 @@ showError("Something went wrong. Please try again.");
           <span className="font-medium text-slate-900 dark:text-white">
             {PLANS[userPlan].name}
           </span>{" "}
-          {isLtd
-            ? "(lifetime deal)"
-            : userBillingInterval === "year"
-            ? `at $${PLANS[userPlan].yearlyPrice} a year`
-            : `at $${PLANS[userPlan].price} a month`}
+          {isLtd ? "(lifetime deal)" : `at $${PLANS[userPlan].price} a month`}
         </p>
       </div>
 
