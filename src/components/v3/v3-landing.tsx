@@ -374,7 +374,7 @@ export function V3Landing() {
         <div className={WRAP}>
           <div className={`mx-auto max-w-[760px] text-center ${RV}`}>
             <span className={EB}><i className={EB_DOT}></i>Works inside the assistant you already use</span>
-            <h2 className={`${H2} mt-[22px] text-white`}>Power Your Content<br />with <span className={CIRCLED}>AI</span> and automation</h2>
+            <h2 className={`${H2} mt-[22px] text-white`}>Find the leads and fill next week<br />from a single <span className={CIRCLED}>prompt</span></h2>
             <p className={`${LEAD} mt-[18px] text-[#93a7c5]`}>LinkedGrow speaks MCP, so an assistant can drive it directly. Ask for your warmest leads, have next week's posts written, schedule them across the days you want. One URL to connect, no code, about two minutes.</p>
           </div>
 
