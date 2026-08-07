@@ -111,13 +111,24 @@ async function runAgentAlerts(): Promise<{ sent: number; skipped: number }> {
               .limit(1)
           : [];
 
+        /**
+         * Whether the agent is done with this person, read the right way round.
+         *
+         * This asked `status === "conversing"` and called everything else
+         * finished, so a lead who answered the hello was reported as "your
+         * agent has stopped writing to this person for good" while the agent
+         * was about to send them the real message. Three of those went out on
+         * 2026-08-07. The states where it is genuinely over are the short list;
+         * everything else is the agent still working.
+         */
         const status = person[0]?.sequenceStatus ?? null;
+        const OVER = ["handed_over", "ask_sent", "stopped", "skipped"];
         await sendReplyEmail({
           to: event.email,
           name: event.name,
           from: person[0]?.name ?? "Somebody",
           body: inbound[0]?.body ?? event.message,
-          agentContinues: status === "conversing",
+          agentContinues: !OVER.includes(status ?? ""),
         });
       } else {
         await sendAgentStoppedEmail({
